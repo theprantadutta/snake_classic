@@ -1,4 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:snake_classic/services/storage_service.dart';
 
 class AudioService {
@@ -44,13 +46,14 @@ class AudioService {
       final player = AudioPlayer();
       _soundPlayers[sound] = player;
       
-      // For now, we'll use a placeholder approach since we don't have audio files yet
-      // In the actual implementation, you would load real audio files
       try {
-        // await player.setSource(AssetSource('audio/$sound.wav'));
+        // Try to preload the asset - all files are now .wav
+        await player.setSource(AssetSource('audio/$sound.wav'));
+        await player.setVolume(0.7); // Set reasonable volume
+        debugPrint('Successfully loaded: $sound.wav');
       } catch (e) {
-        // Handle missing audio files gracefully
-        print('Could not load sound: $sound');
+        // If audio file doesn't exist, we'll use system sounds as fallback
+        debugPrint('Audio file not found: $sound.wav - will use system sound fallback: $e');
       }
     }
   }
@@ -61,13 +64,34 @@ class AudioService {
     final player = _soundPlayers[soundName];
     if (player != null) {
       try {
-        await player.stop();
-        // await player.resume();
-        // For now, just print the sound name since we don't have actual audio files
-        print('Playing sound: $soundName');
+        await player.stop(); // Stop any current playback
+        await player.resume(); // Play from beginning
       } catch (e) {
-        print('Error playing sound $soundName: $e');
+        // Fallback to system sounds if audio files aren't available
+        await _playSystemSound(soundName);
+        debugPrint('Using system sound fallback for: $soundName');
       }
+    } else {
+      await _playSystemSound(soundName);
+    }
+  }
+
+  Future<void> _playSystemSound(String soundName) async {
+    // Fallback system sounds for different game events
+    switch (soundName) {
+      case 'eat':
+      case 'button_click':
+        await SystemSound.play(SystemSoundType.click);
+        break;
+      case 'game_over':
+        await SystemSound.play(SystemSoundType.alert);
+        break;
+      case 'level_up':
+      case 'high_score':
+      case 'game_start':
+        // Use click for positive feedback sounds
+        await SystemSound.play(SystemSoundType.click);
+        break;
     }
   }
 
@@ -77,12 +101,13 @@ class AudioService {
     _musicPlayer ??= AudioPlayer();
     
     try {
-      // await _musicPlayer!.setSource(AssetSource('audio/background_music.mp3'));
-      // await _musicPlayer!.setReleaseMode(ReleaseMode.loop);
-      // await _musicPlayer!.resume();
-      print('Playing background music');
+      await _musicPlayer!.setSource(AssetSource('audio/background_music.mp3'));
+      await _musicPlayer!.setReleaseMode(ReleaseMode.loop);
+      await _musicPlayer!.setVolume(0.4); // Lower volume for background music
+      await _musicPlayer!.resume();
     } catch (e) {
-      print('Error playing background music: $e');
+      debugPrint('Background music not available: $e');
+      // Continue without background music - game still playable
     }
   }
 
@@ -95,6 +120,13 @@ class AudioService {
   Future<void> setSoundEnabled(bool enabled) async {
     _soundEnabled = enabled;
     await _storageService.setSoundEnabled(enabled);
+    
+    // Stop all current sounds if disabling
+    if (!enabled) {
+      for (final player in _soundPlayers.values) {
+        await player.stop();
+      }
+    }
   }
 
   Future<void> setMusicEnabled(bool enabled) async {

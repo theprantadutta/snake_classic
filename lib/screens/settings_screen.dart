@@ -66,9 +66,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     // Theme Section
                     _buildSection(
                       'VISUAL THEME',
@@ -122,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       theme,
                     ),
                     
-                    const Spacer(),
+                    const SizedBox(height: 40),
                     
                     // Back Button
                     Center(
@@ -136,6 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ],
+                  ),
                 ),
               ),
             ),
