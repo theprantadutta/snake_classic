@@ -1,321 +1,315 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import '../providers/game_provider.dart';
-import '../utils/constants.dart';
+import 'package:snake_classic/providers/game_provider.dart';
+import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:snake_classic/screens/game_screen.dart';
+import 'package:snake_classic/screens/settings_screen.dart';
+import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/animated_snake_logo.dart';
+import 'package:snake_classic/widgets/instructions_dialog.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final gameProvider = Provider.of<GameProvider>(context, listen: false);
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _backgroundController;
+  late AnimationController _logoController;
+  late Animation<double> _backgroundAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _backgroundController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    );
     
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              gameProvider.gameState.currentTheme.backgroundColor,
-              gameProvider.gameState.currentTheme.gridColor,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Adjust padding based on screen size
-              final double horizontalPadding = constraints.maxWidth > 600 ? 40.0 : 20.0;
-              final double verticalPadding = constraints.maxHeight > 800 ? 40.0 : 20.0;
-              
-              return Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: verticalPadding,
+    _logoController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+
+    _backgroundAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _backgroundController,
+      curve: Curves.easeInOut,
+    ));
+
+    _backgroundController.repeat(reverse: true);
+    _logoController.forward();
+  }
+
+  @override
+  void dispose() {
+    _backgroundController.dispose();
+    _logoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<GameProvider, ThemeProvider>(
+      builder: (context, gameProvider, themeProvider, child) {
+        final theme = themeProvider.currentTheme;
+        
+        return Scaffold(
+          body: AnimatedBuilder(
+            animation: _backgroundAnimation,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.backgroundColor,
+                      theme.backgroundColor.withValues(alpha: 0.8),
+                      theme.accentColor.withValues(alpha: 0.1),
+                    ],
+                    stops: [
+                      0.0,
+                      0.6 + (_backgroundAnimation.value * 0.2),
+                      1.0,
+                    ],
+                  ),
                 ),
-                child: SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight - verticalPadding * 2,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Animated snake title
-                          const SnakeTitle(),
-                          const SizedBox(height: 30),
-                          
-                          // High score display
-                          HighScoreDisplay(gameProvider: gameProvider),
-                          const SizedBox(height: 30),
-                          
-                          // Play button
-                          PlayButton(onPressed: () {
-                            gameProvider.startGame();
-                            Navigator.pushNamed(context, '/game');
-                          }),
-                          const SizedBox(height: 20),
-                          
-                          // Theme selector
-                          ThemeSelector(gameProvider: gameProvider),
-                          const SizedBox(height: 20),
-                          
-                          // Control type selector
-                          ControlTypeSelector(gameProvider: gameProvider),
-                          const SizedBox(height: 20),
-                          
-                          // Settings button
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/settings');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              // Adjust button size based on screen width
-                              minimumSize: Size(
-                                constraints.maxWidth > 600 ? 200 : 150,
-                                50,
-                              ),
-                            ),
-                            child: const Text(
-                              'SETTINGS',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      children: [
+                        const Spacer(flex: 2),
+                        
+                        // Logo and Title
+                        _buildHeader(theme),
+                        
+                        const Spacer(flex: 2),
+                        
+                        // High Score Display
+                        _buildHighScoreCard(gameProvider, theme),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Main Menu Buttons
+                        _buildMenuButtons(context, gameProvider, themeProvider, theme),
+                        
+                        const Spacer(flex: 3),
+                        
+                        // Footer
+                        _buildFooter(theme),
+                      ],
                     ),
                   ),
                 ),
               );
             },
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class SnakeTitle extends StatelessWidget {
-  const SnakeTitle({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (Rect bounds) {
-        return const LinearGradient(
-          colors: [Colors.green, Colors.blue, Colors.purple],
-          tileMode: TileMode.mirror,
-        ).createShader(bounds);
+        );
       },
-      child: const Text(
-        'SNAKE',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 64,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Arial',
-        ),
-      ),
     );
   }
-}
 
-class HighScoreDisplay extends StatelessWidget {
-  final GameProvider gameProvider;
-
-  const HighScoreDisplay({super.key, required this.gameProvider});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: gameProvider.gameState.currentTheme.snakeColor.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: gameProvider.gameState.currentTheme.snakeColor,
-          width: 2,
+  Widget _buildHeader(GameTheme theme) {
+    return Column(
+      children: [
+        // Animated Snake Logo
+        AnimatedSnakeLogo(
+          theme: theme,
+          controller: _logoController,
         ),
-      ),
-      child: Column(
-        children: [
-          const Text(
-            'HIGH SCORE',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+        
+        const SizedBox(height: 24),
+        
+        // Game Title
+        Text(
+          'SNAKE',
+          style: TextStyle(
+            fontSize: 48,
+            fontWeight: FontWeight.bold,
+            color: theme.accentColor,
+            letterSpacing: 8,
+            shadows: [
+              Shadow(
+                offset: const Offset(2, 2),
+                blurRadius: 4,
+                color: Colors.black.withValues(alpha: 0.5),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            gameProvider.gameState.highScore.toString(),
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+        ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.5),
+        
+        Text(
+          'CLASSIC',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w300,
+            color: theme.accentColor.withValues(alpha: 0.8),
+            letterSpacing: 3,
+          ),
+        ).animate().fadeIn(delay: 400.ms, duration: 600.ms),
+      ],
+    );
+  }
+
+  Widget _buildHighScoreCard(GameProvider gameProvider, GameTheme theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.3),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: theme.accentColor.withValues(alpha: 0.2),
+            blurRadius: 8,
+            spreadRadius: 2,
           ),
         ],
       ),
-    );
-  }
-}
-
-class PlayButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const PlayButton({super.key, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-        backgroundColor: Colors.green,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-        elevation: 10,
-      ),
-      child: const Text(
-        'PLAY',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-}
-
-class ThemeSelector extends StatelessWidget {
-  final GameProvider gameProvider;
-
-  const ThemeSelector({super.key, required this.gameProvider});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: gameProvider.gameState.currentTheme.backgroundColor.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: gameProvider.gameState.currentTheme.gridColor,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'Theme',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          Icon(
+            Icons.emoji_events,
+            color: Colors.amber,
+            size: 24,
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            children: GameTheme.values.map((theme) {
-              return ChoiceChip(
-                label: Text(
-                  theme.name,
-                  style: TextStyle(
-                    color: gameProvider.gameState.currentTheme == theme 
-                        ? Colors.white 
-                        : Colors.grey,
-                  ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'HIGH SCORE',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: theme.accentColor.withValues(alpha: 0.8),
+                  letterSpacing: 1,
                 ),
-                selected: gameProvider.gameState.currentTheme == theme,
-                selectedColor: gameProvider.gameState.currentTheme.snakeColor,
-                backgroundColor: Colors.transparent,
-                onSelected: (selected) {
-                  if (selected) {
-                    gameProvider.changeTheme(theme);
-                  }
-                },
-              );
-            }).toList(),
+              ),
+              Text(
+                '${gameProvider.gameState.highScore}',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: theme.accentColor,
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    ).animate().fadeIn(delay: 600.ms).scale(begin: const Offset(0.8, 0.8));
+  }
+
+  Widget _buildMenuButtons(
+    BuildContext context,
+    GameProvider gameProvider,
+    ThemeProvider themeProvider,
+    GameTheme theme,
+  ) {
+    return Column(
+      children: [
+        // Play Button
+        GradientButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const GameScreen(),
+              ),
+            );
+          },
+          text: 'PLAY',
+          primaryColor: theme.accentColor,
+          secondaryColor: theme.foodColor,
+          icon: Icons.play_arrow_rounded,
+          width: 200,
+        ).animate().fadeIn(delay: 800.ms).slideX(begin: -1),
+        
+        const SizedBox(height: 16),
+        
+        // How to Play Button
+        GradientButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => InstructionsDialog(theme: theme),
+            );
+          },
+          text: 'HOW TO PLAY',
+          primaryColor: theme.foodColor.withValues(alpha: 0.8),
+          secondaryColor: theme.foodColor.withValues(alpha: 0.6),
+          icon: Icons.help_outline,
+          width: 200,
+          outlined: true,
+        ).animate().fadeIn(delay: 1000.ms).slideX(begin: 1),
+        
+        const SizedBox(height: 16),
+        
+        // Settings Button
+        GradientButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const SettingsScreen(),
+              ),
+            );
+          },
+          text: 'SETTINGS',
+          primaryColor: theme.accentColor.withValues(alpha: 0.8),
+          secondaryColor: theme.accentColor.withValues(alpha: 0.6),
+          icon: Icons.settings,
+          width: 200,
+          outlined: true,
+        ).animate().fadeIn(delay: 1100.ms).slideX(begin: 1),
+        
+        const SizedBox(height: 16),
+        
+        // Theme Toggle Button
+        GradientButton(
+          onPressed: () {
+            themeProvider.cycleTheme();
+          },
+          text: theme.name.toUpperCase(),
+          primaryColor: theme.snakeColor.withValues(alpha: 0.8),
+          secondaryColor: theme.snakeColor.withValues(alpha: 0.6),
+          icon: Icons.palette,
+          width: 200,
+          outlined: true,
+        ).animate().fadeIn(delay: 1300.ms).slideY(begin: 1),
+      ],
     );
   }
-}
 
-class ControlTypeSelector extends StatelessWidget {
-  final GameProvider gameProvider;
-
-  const ControlTypeSelector({super.key, required this.gameProvider});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: gameProvider.gameState.currentTheme.backgroundColor.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: gameProvider.gameState.currentTheme.gridColor,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Controls',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+  Widget _buildFooter(GameTheme theme) {
+    return Column(
+      children: [
+        Container(
+          height: 1,
+          width: 100,
+          color: theme.accentColor.withValues(alpha: 0.3),
+        ).animate().fadeIn(delay: 1400.ms).scaleX(),
+        
+        const SizedBox(height: 16),
+        
+        Text(
+          'Swipe to control • Tap to pause',
+          style: TextStyle(
+            fontSize: 12,
+            color: theme.accentColor.withValues(alpha: 0.6),
+            letterSpacing: 1,
           ),
-          const SizedBox(height: 10),
-          ToggleButtons(
-            isSelected: [
-              gameProvider.gameState.controlType == ControlType.swipe,
-              gameProvider.gameState.controlType == ControlType.buttons,
-            ],
-            onPressed: (index) {
-              gameProvider.changeControlType(
-                index == 0 ? ControlType.swipe : ControlType.buttons,
-              );
-            },
-            borderRadius: BorderRadius.circular(8),
-            selectedColor: Colors.white,
-            fillColor: gameProvider.gameState.currentTheme.snakeColor,
-            color: Colors.grey,
-            children: const [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Swipe'),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Buttons'),
-              ),
-            ],
-          ),
-        ],
-      ),
+        ).animate().fadeIn(delay: 1600.ms),
+      ],
     );
   }
 }

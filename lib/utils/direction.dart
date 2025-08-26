@@ -1,29 +1,22 @@
-import 'package:flutter/material.dart';
+enum Direction {
+  up,
+  down,
+  left,
+  right;
 
-enum Direction { up, down, left, right }
-
-class DirectionController {
-  static Direction? validateDirectionChange(Direction current, Direction next) {
-    // Prevent 180-degree turns which would cause immediate self-collision
-    if ((current == Direction.up && next == Direction.down) ||
-        (current == Direction.down && next == Direction.up) ||
-        (current == Direction.left && next == Direction.right) ||
-        (current == Direction.right && next == Direction.left)) {
-      return null; // Invalid direction change
-    }
-    return next;
-  }
-
-  static Offset getDirectionVector(Direction direction) {
-    switch (direction) {
+  Direction get opposite {
+    switch (this) {
       case Direction.up:
-        return const Offset(0, -1);
+        return Direction.down;
       case Direction.down:
-        return const Offset(0, 1);
+        return Direction.up;
       case Direction.left:
-        return const Offset(-1, 0);
+        return Direction.right;
       case Direction.right:
-        return const Offset(1, 0);
+        return Direction.left;
     }
   }
+
+  bool get isHorizontal => this == Direction.left || this == Direction.right;
+  bool get isVertical => this == Direction.up || this == Direction.down;
 }

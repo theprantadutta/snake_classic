@@ -1,70 +1,61 @@
-import 'package:flutter/material.dart';
-import '../utils/direction.dart';
-import '../utils/constants.dart';
+import 'package:snake_classic/models/position.dart';
+import 'package:snake_classic/utils/direction.dart';
 
 class Snake {
-  List<Offset> body;
-  Direction direction;
-  bool isGrowing = false;
+  List<Position> body;
+  Direction currentDirection;
 
-  Snake({List<Offset>? initialPosition, Direction? initialDirection})
-      : body = initialPosition ?? List<Offset>.from(GameConstants.initialSnakePosition),
-        direction = initialDirection ?? Direction.right;
+  Snake({
+    required this.body,
+    this.currentDirection = Direction.right,
+  });
 
-  void move() {
-    // Calculate new head position based on current direction
-    final directionVector = DirectionController.getDirectionVector(direction);
-    final head = body.first;
-    final newHead = Offset(
-      head.dx + directionVector.dx,
-      head.dy + directionVector.dy,
+  Position get head => body.first;
+  Position get tail => body.last;
+  int get length => body.length;
+
+  factory Snake.initial() {
+    return Snake(
+      body: [
+        const Position(4, 10),
+        const Position(3, 10),
+        const Position(2, 10),
+      ],
+      currentDirection: Direction.right,
     );
+  }
 
-    // Create a new list with the new head
-    final newBody = List<Offset>.from(body);
-    newBody.insert(0, newHead);
+  void move({required bool ateFood}) {
+    final newHead = head.move(currentDirection);
+    body.insert(0, newHead);
 
-    // Remove tail unless growing
-    if (!isGrowing) {
-      newBody.removeLast();
-    } else {
-      isGrowing = false;
+    if (!ateFood) {
+      body.removeLast();
     }
-    
-    body = newBody;
-  }
-
-  void grow() {
-    isGrowing = true;
-  }
-
-  bool checkWallCollision(int gridSize) {
-    final head = body.first;
-    return head.dx < 0 ||
-        head.dx >= gridSize ||
-        head.dy < 0 ||
-        head.dy >= gridSize;
-  }
-
-  bool checkSelfCollision() {
-    // Can't collide with self if less than 4 body parts
-    if (body.length < 4) return false;
-
-    final head = body.first;
-    // Check collision with body parts except the head and the first few segments
-    for (int i = 3; i < body.length; i++) {
-      if (head == body[i]) {
-        return true;
-      }
-    }
-    return false;
   }
 
   void changeDirection(Direction newDirection) {
-    final validatedDirection = 
-        DirectionController.validateDirectionChange(direction, newDirection);
-    if (validatedDirection != null) {
-      direction = validatedDirection;
+    if (newDirection != currentDirection.opposite) {
+      currentDirection = newDirection;
     }
+  }
+
+  bool checkSelfCollision() {
+    return body.skip(1).contains(head);
+  }
+
+  bool checkWallCollision(int boardWidth, int boardHeight) {
+    return !head.isWithinBounds(boardWidth, boardHeight);
+  }
+
+  bool occupiesPosition(Position position) {
+    return body.contains(position);
+  }
+
+  Snake copy() {
+    return Snake(
+      body: List<Position>.from(body),
+      currentDirection: currentDirection,
+    );
   }
 }
