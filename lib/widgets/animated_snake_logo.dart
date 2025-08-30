@@ -19,25 +19,13 @@ class AnimatedSnakeLogo extends StatefulWidget {
 }
 
 class _AnimatedSnakeLogoState extends State<AnimatedSnakeLogo>
-    with TickerProviderStateMixin {
-  late AnimationController _rotationController;
-  late Animation<double> _rotationAnimation;
+    with SingleTickerProviderStateMixin {
   late Animation<double> _scaleAnimation;
   late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
-    
-    _rotationController = AnimationController(
-      duration: const Duration(seconds: 8),
-      vsync: this,
-    );
-    
-    _rotationAnimation = Tween<double>(
-      begin: 0,
-      end: 2 * math.pi,
-    ).animate(_rotationController);
     
     _scaleAnimation = Tween<double>(
       begin: 0.0,
@@ -49,42 +37,22 @@ class _AnimatedSnakeLogoState extends State<AnimatedSnakeLogo>
     
     _pulseAnimation = Tween<double>(
       begin: 1.0,
-      end: 1.1,
+      end: 1.05, // Reduced for smoother animation
     ).animate(CurvedAnimation(
       parent: widget.controller,
       curve: const Interval(0.6, 1.0, curve: Curves.easeInOut),
     ));
-
-    _rotationController.repeat();
-    
-    // Start pulsing animation after scale completes
-    widget.controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        // Reverse and repeat for pulsing effect
-        widget.controller.reverse().then((_) {
-          if (mounted) {
-            widget.controller.forward();
-          }
-        });
-      }
-    });
   }
 
-  @override
-  void dispose() {
-    _rotationController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([widget.controller, _rotationController]),
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value * _pulseAnimation.value,
-          child: Transform.rotate(
-            angle: _rotationAnimation.value * 0.1, // Subtle rotation
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: widget.controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value * _pulseAnimation.value,
             child: Container(
               width: widget.size,
               height: widget.size,
@@ -101,17 +69,19 @@ class _AnimatedSnakeLogoState extends State<AnimatedSnakeLogo>
                   width: 2,
                 ),
               ),
-              child: CustomPaint(
-                painter: SnakeLogoPainter(
-                  theme: widget.theme,
-                  animationValue: widget.controller.value,
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  painter: SnakeLogoPainter(
+                    theme: widget.theme,
+                    animationValue: widget.controller.value,
+                  ),
+                  size: Size(widget.size, widget.size),
                 ),
-                size: Size(widget.size, widget.size),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

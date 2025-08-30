@@ -18,39 +18,28 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _backgroundController;
+    with SingleTickerProviderStateMixin {
   late AnimationController _logoController;
-  late Animation<double> _backgroundAnimation;
 
   @override
   void initState() {
     super.initState();
-    _backgroundController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    );
     
     _logoController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1500), // Reduced duration
       vsync: this,
     );
 
-    _backgroundAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _backgroundController,
-      curve: Curves.easeInOut,
-    ));
-
-    _backgroundController.repeat(reverse: true);
-    _logoController.forward();
+    // Start logo animation with a slight delay
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _logoController.forward();
+      }
+    });
   }
 
   @override
   void dispose() {
-    _backgroundController.dispose();
     _logoController.dispose();
     super.dispose();
   }
@@ -62,40 +51,45 @@ class _HomeScreenState extends State<HomeScreen>
         final theme = themeProvider.currentTheme;
         
         return Scaffold(
-          body: AnimatedBuilder(
-            animation: _backgroundAnimation,
-            builder: (context, child) {
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      theme.backgroundColor,
-                      theme.backgroundColor.withValues(alpha: 0.8),
-                      theme.accentColor.withValues(alpha: 0.1),
-                    ],
-                    stops: [
-                      0.0,
-                      0.6 + (_backgroundAnimation.value * 0.2),
-                      1.0,
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.backgroundColor,
+                  theme.backgroundColor.withValues(alpha: 0.8),
+                  theme.accentColor.withValues(alpha: 0.1),
+                ],
+                stops: const [
+                  0.0,
+                  0.7,
+                  1.0,
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: constraints.maxWidth * 0.06,
+                    ),
                     child: Column(
                       children: [
                         const Spacer(flex: 2),
                         
                         // Logo and Title
-                        _buildHeader(theme),
+                        RepaintBoundary(
+                          child: _buildHeader(theme),
+                        ),
                         
                         const Spacer(flex: 2),
                         
                         // High Score Display
-                        _buildHighScoreCard(gameProvider, theme),
+                        RepaintBoundary(
+                          child: _buildHighScoreCard(gameProvider, theme),
+                        ),
                         
                         const SizedBox(height: 32),
                         
@@ -105,13 +99,15 @@ class _HomeScreenState extends State<HomeScreen>
                         const Spacer(flex: 3),
                         
                         // Footer
-                        _buildFooter(theme),
+                        RepaintBoundary(
+                          child: _buildFooter(theme),
+                        ),
                       ],
                     ),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
         );
       },
@@ -145,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ],
           ),
-        ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.5),
+        ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.3),
         
         Text(
           'CLASSIC',
@@ -155,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen>
             color: theme.accentColor.withValues(alpha: 0.8),
             letterSpacing: 3,
           ),
-        ).animate().fadeIn(delay: 400.ms, duration: 600.ms),
+        ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
       ],
     );
   }
@@ -208,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 600.ms).scale(begin: const Offset(0.8, 0.8));
+    ).animate().fadeIn(delay: 400.ms).scale(begin: const Offset(0.9, 0.9), duration: 400.ms);
   }
 
   Widget _buildMenuButtons(
@@ -233,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen>
           secondaryColor: theme.foodColor,
           icon: Icons.play_arrow_rounded,
           width: 200,
-        ).animate().fadeIn(delay: 800.ms).slideX(begin: -1),
+        ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.5, duration: 300.ms),
         
         const SizedBox(height: 16),
         
@@ -251,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen>
           icon: Icons.help_outline,
           width: 200,
           outlined: true,
-        ).animate().fadeIn(delay: 1000.ms).slideX(begin: 1),
+        ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.5, duration: 300.ms),
         
         const SizedBox(height: 16),
         
@@ -270,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen>
           icon: Icons.settings,
           width: 200,
           outlined: true,
-        ).animate().fadeIn(delay: 1100.ms).slideX(begin: 1),
+        ).animate().fadeIn(delay: 700.ms).slideX(begin: 0.5, duration: 300.ms),
         
         const SizedBox(height: 16),
         
@@ -285,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen>
           icon: Icons.palette,
           width: 200,
           outlined: true,
-        ).animate().fadeIn(delay: 1300.ms).slideY(begin: 1),
+        ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.5, duration: 300.ms),
       ],
     );
   }
@@ -297,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen>
           height: 1,
           width: 100,
           color: theme.accentColor.withValues(alpha: 0.3),
-        ).animate().fadeIn(delay: 1400.ms).scaleX(),
+        ).animate().fadeIn(delay: 900.ms).scaleX(duration: 400.ms),
         
         const SizedBox(height: 16),
         
@@ -308,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen>
             color: theme.accentColor.withValues(alpha: 0.6),
             letterSpacing: 1,
           ),
-        ).animate().fadeIn(delay: 1600.ms),
+        ).animate().fadeIn(delay: 1000.ms, duration: 400.ms),
       ],
     );
   }

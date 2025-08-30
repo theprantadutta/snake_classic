@@ -21,17 +21,17 @@ class GameConstants {
   static const Color classicFood = Color(0xFF9BBD0F);
   static const Color classicBorder = Color(0xFF8BAC0F);
   
-  // Colors - Modern Theme
+  // Colors - Modern Theme (Improved Contrast)
   static const Color modernBackground = Color(0xFF1a1a2e);
-  static const Color modernSnake = Color(0xFF16213e);
-  static const Color modernFood = Color(0xFFe94560);
-  static const Color modernAccent = Color(0xFF0f3460);
+  static const Color modernSnake = Color(0xFF4fc3f7);      // Bright cyan-blue
+  static const Color modernFood = Color(0xFFe94560);       // Kept - good contrast
+  static const Color modernAccent = Color(0xFF64b5f6);     // Light blue for better visibility
   
-  // Colors - Neon Theme
+  // Colors - Neon Theme (Enhanced)
   static const Color neonBackground = Color(0xFF0a0a0a);
-  static const Color neonSnake = Color(0xFF00ff41);
-  static const Color neonFood = Color(0xFFff0080);
-  static const Color neonGlow = Color(0xFF39ff14);
+  static const Color neonSnake = Color(0xFF00ffff);         // Electric cyan
+  static const Color neonFood = Color(0xFFff1493);         // Deep pink
+  static const Color neonGlow = Color(0xFF00ff00);         // Pure lime green
   
   // Animation durations
   static const Duration shortAnimation = Duration(milliseconds: 150);
@@ -42,6 +42,9 @@ class GameConstants {
   static const double cellSize = 20.0;
   static const double borderWidth = 2.0;
   static const double borderRadius = 4.0;
+  
+  // Crash feedback timing
+  static const Duration crashFeedbackDuration = Duration(seconds: 5);
   
   // Storage keys
   static const String highScoreKey = 'high_score';

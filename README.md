@@ -14,10 +14,11 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 - **60FPS smooth gameplay** with optimized rendering
 - **Grid-based movement** on 20x20 game board
 - **Progressive difficulty** - speed increases with level
-- **Multiple food types**:
-  - Normal Food (10 points)
-  - Bonus Food (25 points, expires in 15s)
-  - Special Food (50 points + level up)
+- **Enhanced crash feedback** - 5-second modal explaining why game ended
+- **Multiple food types** with accurate visual representations:
+  - 🍎 Apple Food (10 points) - red apple with stem and leaf
+  - ✨ Bonus Food (25 points, expires in 15s) - glowing circle with sparkles
+  - ⭐ Special Food (50 points) - 8-pointed pulsing star
 
 ### 🎨 Visual Experience
 - **Three premium themes**:
@@ -40,12 +41,16 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 - **System sound fallbacks** for reliability
 
 ### 🎯 Controls & UX
-- **Enhanced swipe detection** with velocity-based recognition
-- **Visual gesture feedback** with color-coded direction indicators
+- **Enhanced swipe detection** with full-screen responsive gestures
+- **Visual gesture feedback** with bottom-left direction indicator
 - **Haptic feedback** for all interactions
-- **Comprehensive tutorial** with game instructions
+- **Crash feedback system** with detailed explanation modals:
+  - 🧱 Wall collision warnings
+  - 🐍 Self-collision alerts
+  - 5-second auto-continue or tap to skip
+- **Comprehensive on-screen instructions** matching actual food visuals
 - **Pause/resume functionality**
-- **Settings screen** with theme and audio controls
+- **Fully responsive layout** adapting to all screen sizes
 
 ### 💾 Persistence
 - **High score tracking** with local storage
@@ -84,7 +89,8 @@ lib/
     ├── instructions_dialog.dart
     ├── pause_overlay.dart
     ├── particle_effect.dart
-    └── swipe_detector.dart
+    ├── swipe_detector.dart
+    └── crash_feedback_overlay.dart
 ```
 
 ### 🛠️ Technical Stack
@@ -97,11 +103,13 @@ lib/
 
 ## 🎯 Performance Features
 
-- **Custom painting** for 60FPS game board rendering
-- **Efficient collision detection** algorithms
-- **Memory-optimized** audio management
-- **Smooth animations** with proper disposal
-- **Responsive gesture recognition**
+- **Custom painting** for 60FPS game board rendering with RepaintBoundary optimization
+- **Efficient collision detection** with specific crash reason tracking
+- **Memory-optimized** audio management with proper disposal
+- **Smooth animations** with home screen performance improvements
+- **Responsive gesture recognition** with full-screen detection
+- **Square food rendering** preventing visual distortion across different screen ratios
+- **Configurable timing constants** for easy maintenance
 
 ## 🚀 Getting Started
 
@@ -192,14 +200,18 @@ The game features three distinct visual themes:
 ## 📝 Changelog
 
 ### Latest Updates
-- ✅ Enhanced gesture controls with visual feedback
+- ✅ **Crash feedback system** - 5-second modal explaining game over reasons
+- ✅ **Visual food improvements** - apple-shaped normal food with proper proportions
+- ✅ **Responsive layout fixes** - all screens adapt to different screen sizes
+- ✅ **Enhanced gesture controls** - full-screen swipe detection with visual feedback
+- ✅ **Home screen performance** - optimized animations and reduced jank
+- ✅ **Game instructions accuracy** - icons now match actual rendered food types
+- ✅ **Layout optimization** - removed fixed heights, added RepaintBoundary isolation
+- ✅ **Constants refactoring** - configurable timing for easy maintenance
 - ✅ Complete audio system implementation
-- ✅ Game instructions and tutorial
-- ✅ Settings screen overflow fixes
 - ✅ Premium UI with three themes
 - ✅ Particle effects and animations
 - ✅ High score persistence
-- ✅ Modern Flutter architecture
 
 ## 🤝 Contributing
 
@@ -218,11 +230,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🎯 Future Enhancements
 
 - [ ] Online leaderboards
-- [ ] Achievement system
+- [ ] Achievement system  
 - [ ] More visual themes
 - [ ] Multiplayer mode
 - [ ] Custom game board sizes
 - [ ] Power-ups and special abilities
+- [ ] Crash replay system
+- [ ] Customizable crash feedback duration
 
 ---
 

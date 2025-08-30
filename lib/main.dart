@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/screens/home_screen.dart';
+import 'package:snake_classic/services/audio_service.dart';
 
-void main() {
+void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -14,6 +15,9 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  
+  // Initialize audio service
+  await AudioService().initialize();
   
   runApp(const SnakeClassicApp());
 }

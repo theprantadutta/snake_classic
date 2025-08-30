@@ -4,8 +4,32 @@ import 'package:snake_classic/models/snake.dart';
 enum GameStatus {
   playing,
   paused,
+  crashed, // New state for showing crash feedback
   gameOver,
   menu;
+}
+
+enum CrashReason {
+  wallCollision,
+  selfCollision;
+  
+  String get message {
+    switch (this) {
+      case CrashReason.wallCollision:
+        return 'You crashed into the wall!';
+      case CrashReason.selfCollision:
+        return 'You crashed into yourself!';
+    }
+  }
+  
+  String get icon {
+    switch (this) {
+      case CrashReason.wallCollision:
+        return '🧱';
+      case CrashReason.selfCollision:
+        return '🐍';
+    }
+  }
 }
 
 class GameState {
@@ -14,6 +38,7 @@ class GameState {
   final int score;
   final int highScore;
   final GameStatus status;
+  final CrashReason? crashReason;
   final int level;
   final int boardWidth;
   final int boardHeight;
@@ -25,6 +50,7 @@ class GameState {
     this.score = 0,
     this.highScore = 0,
     this.status = GameStatus.menu,
+    this.crashReason,
     this.level = 1,
     this.boardWidth = 20,
     this.boardHeight = 20,
@@ -35,6 +61,7 @@ class GameState {
     return GameState(
       snake: Snake.initial(),
       status: GameStatus.menu,
+      crashReason: null,
     );
   }
 
@@ -56,6 +83,7 @@ class GameState {
     int? score,
     int? highScore,
     GameStatus? status,
+    CrashReason? crashReason,
     int? level,
     int? boardWidth,
     int? boardHeight,
@@ -67,6 +95,7 @@ class GameState {
       score: score ?? this.score,
       highScore: highScore ?? this.highScore,
       status: status ?? this.status,
+      crashReason: crashReason ?? this.crashReason,
       level: level ?? this.level,
       boardWidth: boardWidth ?? this.boardWidth,
       boardHeight: boardHeight ?? this.boardHeight,

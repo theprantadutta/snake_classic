@@ -21,31 +21,23 @@ class SwipeDetector extends StatefulWidget {
 class _SwipeDetectorState extends State<SwipeDetector>
     with SingleTickerProviderStateMixin {
   late AnimationController _feedbackController;
-  late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
   
   Direction? _lastSwipeDirection;
   bool _isProcessingSwipe = false;
+  DateTime? _lastSwipeTime;
 
   @override
   void initState() {
     super.initState();
     _feedbackController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 200), // Slightly slower for better visibility
       vsync: this,
     );
     
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _feedbackController,
-      curve: Curves.easeInOut,
-    ));
-    
     _opacityAnimation = Tween<double>(
       begin: 0.0,
-      end: 0.3,
+      end: 0.5, // More visible feedback
     ).animate(CurvedAnimation(
       parent: _feedbackController,
       curve: Curves.easeOut,
@@ -59,26 +51,52 @@ class _SwipeDetectorState extends State<SwipeDetector>
   }
 
   void _processSwipe(Direction direction) {
-    if (_isProcessingSwipe) return;
+    final now = DateTime.now();
+    
+    // Allow direction changes but prevent spam
+    if (_isProcessingSwipe && 
+        _lastSwipeTime != null && 
+        now.difference(_lastSwipeTime!).inMilliseconds < 50) {
+      return;
+    }
+    
+    // If same direction within short time, ignore
+    if (_lastSwipeDirection == direction &&
+        _lastSwipeTime != null && 
+        now.difference(_lastSwipeTime!).inMilliseconds < 150) {
+      return;
+    }
     
     setState(() {
       _isProcessingSwipe = true;
       _lastSwipeDirection = direction;
+      _lastSwipeTime = now;
     });
 
-    // Visual and haptic feedback
+    // Immediate haptic feedback
+    HapticFeedback.lightImpact();
+    
+    // Visual feedback with longer display time
     if (widget.showFeedback) {
-      HapticFeedback.lightImpact();
+      // Reset and start animation
+      _feedbackController.reset();
       _feedbackController.forward().then((_) {
-        _feedbackController.reverse();
+        if (mounted) {
+          // Stay visible longer before fading
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) {
+              _feedbackController.reverse();
+            }
+          });
+        }
       });
     }
 
-    // Call the callback
+    // Call the callback immediately
     widget.onSwipe(direction);
 
-    // Prevent rapid fire swipes
-    Future.delayed(const Duration(milliseconds: 150), () {
+    // Reset processing flag quickly to allow direction changes
+    Future.delayed(const Duration(milliseconds: 60), () {
       if (mounted) {
         setState(() {
           _isProcessingSwipe = false;
@@ -90,24 +108,46 @@ class _SwipeDetectorState extends State<SwipeDetector>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onPanEnd: (details) {
-        final velocity = details.velocity.pixelsPerSecond;
-        final absX = velocity.dx.abs();
-        final absY = velocity.dy.abs();
+      behavior: HitTestBehavior.translucent,
+      onPanUpdate: (details) {
+        // Detect swipes during pan for more responsive feeling
+        final delta = details.delta;
+        const minDelta = 2.0; // Lower threshold for faster response
         
-        // Minimum velocity threshold for swipe detection
-        const minVelocity = 500.0;
-        
-        if (absX > minVelocity || absY > minVelocity) {
-          if (absX > absY) {
+        if (delta.dx.abs() > minDelta || delta.dy.abs() > minDelta) {
+          if (delta.dx.abs() > delta.dy.abs()) {
             // Horizontal swipe
-            if (velocity.dx > 0) {
+            if (delta.dx > 0) {
               _processSwipe(Direction.right);
             } else {
               _processSwipe(Direction.left);
             }
           } else {
             // Vertical swipe
+            if (delta.dy > 0) {
+              _processSwipe(Direction.down);
+            } else {
+              _processSwipe(Direction.up);
+            }
+          }
+        }
+      },
+      onPanEnd: (details) {
+        // Backup swipe detection with velocity for missed quick swipes
+        final velocity = details.velocity.pixelsPerSecond;
+        final absX = velocity.dx.abs();
+        final absY = velocity.dy.abs();
+        
+        const minVelocity = 300.0; // Lower threshold for better responsiveness
+        
+        if (absX > minVelocity || absY > minVelocity) {
+          if (absX > absY) {
+            if (velocity.dx > 0) {
+              _processSwipe(Direction.right);
+            } else {
+              _processSwipe(Direction.left);
+            }
+          } else {
             if (velocity.dy > 0) {
               _processSwipe(Direction.down);
             } else {
@@ -117,36 +157,57 @@ class _SwipeDetectorState extends State<SwipeDetector>
         }
       },
       onTap: () {
-        // Optional tap handling for pause/resume
         HapticFeedback.selectionClick();
       },
-      child: AnimatedBuilder(
-        animation: _feedbackController,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Stack(
-              children: [
-                widget.child,
-                if (widget.showFeedback && _lastSwipeDirection != null)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _getDirectionColor(_lastSwipeDirection!)
-                              .withValues(alpha: _opacityAnimation.value),
-                          borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        children: [
+          widget.child,
+          // Gesture feedback indicator - positioned to avoid UI overlap
+          if (widget.showFeedback && _lastSwipeDirection != null)
+            Positioned(
+              bottom: 100, // Position above bottom UI elements
+              left: 20,    // Left side to avoid pause button
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _feedbackController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: _getDirectionColor(_lastSwipeDirection!)
+                            .withValues(alpha: _opacityAnimation.value * 0.9),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: _opacityAnimation.value * 0.8),
+                          width: 3,
                         ),
-                        child: Center(
-                          child: _getDirectionIcon(_lastSwipeDirection!),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _getDirectionColor(_lastSwipeDirection!)
+                                .withValues(alpha: _opacityAnimation.value * 0.4),
+                            blurRadius: 15,
+                            spreadRadius: 3,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: AnimatedScale(
+                          scale: _feedbackController.isAnimating ? 1.3 : 1.0,
+                          duration: const Duration(milliseconds: 150),
+                          child: Icon(
+                            _getDirectionIconData(_lastSwipeDirection!),
+                            size: 32,
+                            color: Colors.white.withValues(alpha: _opacityAnimation.value),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
+                    );
+                  },
+                ),
+              ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -154,41 +215,26 @@ class _SwipeDetectorState extends State<SwipeDetector>
   Color _getDirectionColor(Direction direction) {
     switch (direction) {
       case Direction.up:
-        return Colors.blue;
+        return const Color(0xFF00BCD4); // Cyan
       case Direction.down:
-        return Colors.green;
+        return const Color(0xFF4CAF50); // Green
       case Direction.left:
-        return Colors.orange;
+        return const Color(0xFFFF9800); // Orange
       case Direction.right:
-        return Colors.purple;
+        return const Color(0xFF9C27B0); // Purple
     }
   }
 
-  Widget _getDirectionIcon(Direction direction) {
-    IconData iconData;
+  IconData _getDirectionIconData(Direction direction) {
     switch (direction) {
       case Direction.up:
-        iconData = Icons.keyboard_arrow_up;
-        break;
+        return Icons.keyboard_arrow_up_rounded;
       case Direction.down:
-        iconData = Icons.keyboard_arrow_down;
-        break;
+        return Icons.keyboard_arrow_down_rounded;
       case Direction.left:
-        iconData = Icons.keyboard_arrow_left;
-        break;
+        return Icons.keyboard_arrow_left_rounded;
       case Direction.right:
-        iconData = Icons.keyboard_arrow_right;
-        break;
+        return Icons.keyboard_arrow_right_rounded;
     }
-    
-    return AnimatedScale(
-      scale: _feedbackController.isAnimating ? 1.5 : 1.0,
-      duration: const Duration(milliseconds: 100),
-      child: Icon(
-        iconData,
-        size: 48,
-        color: Colors.white.withValues(alpha: 0.8),
-      ),
-    );
   }
 }

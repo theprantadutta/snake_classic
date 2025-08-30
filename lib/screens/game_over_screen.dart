@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/screens/game_screen.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/particle_effect.dart';
 
@@ -161,12 +163,24 @@ class _GameOverScreenState extends State<GameOverScreen>
                           Column(
                             children: [
                               GradientButton(
-                                onPressed: () {
-                                  Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (context) => const GameScreen(),
-                                    ),
-                                  );
+                                onPressed: () async {
+                                  // Properly reset the game state first
+                                  gameProvider.resetGame();
+                                  
+                                  // Small delay to ensure state is updated
+                                  await Future.delayed(const Duration(milliseconds: 50));
+                                  
+                                  // Start a fresh game
+                                  gameProvider.startGame();
+                                  
+                                  // Navigate to game screen
+                                  if (context.mounted) {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute(
+                                        builder: (context) => const GameScreen(),
+                                      ),
+                                    );
+                                  }
                                 },
                                 text: 'PLAY AGAIN',
                                 primaryColor: theme.accentColor,
@@ -204,7 +218,7 @@ class _GameOverScreenState extends State<GameOverScreen>
     );
   }
 
-  Widget _buildScoreCard(gameState, theme) {
+  Widget _buildScoreCard(GameState gameState, GameTheme theme) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(

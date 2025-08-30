@@ -65,14 +65,17 @@ class AudioService {
     if (player != null) {
       try {
         await player.stop(); // Stop any current playback
-        await player.resume(); // Play from beginning
+        await player.seek(Duration.zero); // Reset to beginning
+        await player.resume(); // Start playing
+        debugPrint('Playing sound: $soundName.wav');
       } catch (e) {
         // Fallback to system sounds if audio files aren't available
         await _playSystemSound(soundName);
-        debugPrint('Using system sound fallback for: $soundName');
+        debugPrint('Audio error for $soundName, using system sound fallback: $e');
       }
     } else {
       await _playSystemSound(soundName);
+      debugPrint('No player found for: $soundName, using system sound');
     }
   }
 
