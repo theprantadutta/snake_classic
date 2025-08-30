@@ -6,6 +6,8 @@ import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/auth_service.dart';
+import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 class GameProvider extends ChangeNotifier {
@@ -14,6 +16,8 @@ class GameProvider extends ChangeNotifier {
   Timer? _animationTimer; // Use Timer instead of Ticker for simplicity
   final StorageService _storageService = StorageService();
   final AudioService _audioService = AudioService();
+  final AuthService _authService = AuthService();
+  final AchievementService _achievementService = AchievementService();
   
   // Smooth movement interpolation
   DateTime? _lastGameUpdate;
@@ -24,10 +28,21 @@ class GameProvider extends ChangeNotifier {
   bool get isPlaying => _gameState.status == GameStatus.playing;
   bool get isPaused => _gameState.status == GameStatus.paused;
   bool get isGameOver => _gameState.status == GameStatus.gameOver;
+  Duration get crashFeedbackDuration => _crashFeedbackDuration;
   
   // Smooth movement properties
   double get moveProgress => _moveProgress;
   GameState? get previousGameState => _previousGameState;
+  
+  // Achievement tracking
+  DateTime? _gameStartTime;
+  final Set<String> _foodTypesEatenThisGame = {};
+  int _consecutiveGamesWithoutWallHits = 0;
+  bool _hitWallThisGame = false;
+  bool _hitSelfThisGame = false;
+  
+  // Dynamic crash feedback duration
+  Duration _crashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration;
 
   GameProvider() {
     _initializeGame();
@@ -35,14 +50,23 @@ class GameProvider extends ChangeNotifier {
 
   Future<void> _initializeGame() async {
     final highScore = await _storageService.getHighScore();
-    _gameState = _gameState.copyWith(highScore: highScore);
+    final boardSize = await _storageService.getBoardSize();
+    _crashFeedbackDuration = await _storageService.getCrashFeedbackDuration();
+    _gameState = _gameState.copyWith(
+      highScore: highScore,
+      boardWidth: boardSize.width,
+      boardHeight: boardSize.height,
+    );
     await _audioService.initialize();
+    await _achievementService.initialize();
     notifyListeners();
   }
 
   void startGame() {
     _gameState = GameState.initial().copyWith(
       highScore: _gameState.highScore,
+      boardWidth: _gameState.boardWidth,
+      boardHeight: _gameState.boardHeight,
       status: GameStatus.playing,
     );
     
@@ -50,6 +74,12 @@ class GameProvider extends ChangeNotifier {
     _previousGameState = null;
     _moveProgress = 0.0;
     _lastGameUpdate = DateTime.now();
+    
+    // Reset achievement tracking
+    _gameStartTime = DateTime.now();
+    _foodTypesEatenThisGame.clear();
+    _hitWallThisGame = false;
+    _hitSelfThisGame = false;
     
     _generateFood();
     _startGameLoop();
@@ -125,6 +155,10 @@ class GameProvider extends ChangeNotifier {
     final selfCollision = snake.checkSelfCollision();
     
     if (wallCollision || selfCollision) {
+      // Track collision types for achievements
+      if (wallCollision) _hitWallThisGame = true;
+      if (selfCollision) _hitSelfThisGame = true;
+      
       final crashReason = wallCollision ? CrashReason.wallCollision : CrashReason.selfCollision;
       _handleCrash(crashReason);
       return;
@@ -151,6 +185,9 @@ class GameProvider extends ChangeNotifier {
   void _consumeFood(Food food) {
     final newScore = _gameState.score + food.type.points;
     int newLevel = _gameState.level;
+
+    // Track food types for achievements
+    _foodTypesEatenThisGame.add(food.type.name);
 
     // Level up logic
     if (newScore >= _gameState.targetScore && newLevel < 10) {
@@ -234,14 +271,60 @@ class GameProvider extends ChangeNotifier {
     });
   }
   
-  void _gameOver() {
+  void _gameOver() async {
+    // Calculate game duration
+    final gameDurationSeconds = _gameStartTime != null 
+      ? DateTime.now().difference(_gameStartTime!).inSeconds 
+      : 0;
+
     // Update high score if necessary
     int highScore = _gameState.highScore;
-    if (_gameState.score > highScore) {
+    bool isNewHighScore = _gameState.score > highScore;
+    
+    if (isNewHighScore) {
       highScore = _gameState.score;
       _storageService.saveHighScore(highScore);
       _audioService.playSound('high_score');
     }
+
+    // Update Firebase user stats and get user profile for achievement tracking
+    Map<String, dynamic>? userProfile;
+    try {
+      await _authService.updateHighScore(_gameState.score);
+      userProfile = await _authService.getUserProfile();
+    } catch (e) {
+      if (kDebugMode) {
+        // Failed to update Firebase high score
+      }
+    }
+
+    // Track consecutive games without wall hits
+    if (_hitWallThisGame) {
+      _consecutiveGamesWithoutWallHits = 0;
+    } else {
+      _consecutiveGamesWithoutWallHits++;
+    }
+
+    // Check achievements
+    final totalGames = userProfile?['totalGamesPlayed'] ?? 0;
+    
+    // Check score achievements
+    _achievementService.checkScoreAchievements(_gameState.score);
+    
+    // Check games played achievements
+    _achievementService.checkGamePlayedAchievements(totalGames);
+    
+    // Check survival achievements
+    _achievementService.checkSurvivalAchievements(gameDurationSeconds);
+    
+    // Check special achievements
+    _achievementService.checkSpecialAchievements(
+      level: _gameState.level,
+      hitWall: _hitWallThisGame,
+      hitSelf: _hitSelfThisGame,
+      foodTypesEaten: _foodTypesEatenThisGame,
+      noWallGames: _consecutiveGamesWithoutWallHits,
+    );
 
     _gameState = _gameState.copyWith(
       status: GameStatus.gameOver,
@@ -287,6 +370,29 @@ class GameProvider extends ChangeNotifier {
       );
       notifyListeners();
     }
+  }
+
+  Future<void> updateBoardSize(BoardSize boardSize) async {
+    // Save the board size preference
+    await _storageService.saveBoardSize(boardSize);
+    
+    // Update current game state if not playing
+    if (_gameState.status != GameStatus.playing) {
+      _gameState = _gameState.copyWith(
+        boardWidth: boardSize.width,
+        boardHeight: boardSize.height,
+      );
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateCrashFeedbackDuration(Duration duration) async {
+    // Save the crash feedback duration preference
+    await _storageService.saveCrashFeedbackDuration(duration);
+    
+    // Update current setting
+    _crashFeedbackDuration = duration;
+    notifyListeners();
   }
 
   @override

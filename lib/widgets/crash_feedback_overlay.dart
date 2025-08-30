@@ -7,12 +7,14 @@ class CrashFeedbackOverlay extends StatefulWidget {
   final CrashReason crashReason;
   final GameTheme theme;
   final VoidCallback onSkip;
+  final Duration duration;
 
   const CrashFeedbackOverlay({
     super.key,
     required this.crashReason,
     required this.theme,
     required this.onSkip,
+    required this.duration,
   });
 
   @override
@@ -208,8 +210,8 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
 
   Widget _buildCountdownTimer() {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: GameConstants.crashFeedbackDuration.inSeconds.toDouble(), end: 0.0),
-      duration: GameConstants.crashFeedbackDuration,
+      tween: Tween(begin: widget.duration.inSeconds.toDouble(), end: 0.0),
+      duration: widget.duration,
       builder: (context, value, child) {
         return Column(
           children: [
@@ -234,7 +236,7 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
               ),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor: 1 - (value / GameConstants.crashFeedbackDuration.inSeconds),
+                widthFactor: 1 - (value / widget.duration.inSeconds),
                 child: Container(
                   decoration: BoxDecoration(
                     color: widget.theme.foodColor,

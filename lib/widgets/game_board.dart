@@ -295,6 +295,24 @@ class OptimizedGameBoardPainter extends CustomPainter {
           theme.snakeColor.withValues(alpha: 0.9),
           theme.accentColor.withValues(alpha: 0.8),
         ];
+      case GameTheme.retro:
+        return [
+          theme.snakeColor.withValues(alpha: 1.0),
+          theme.snakeColor.withValues(alpha: 0.8),
+          theme.foodColor.withValues(alpha: 0.6),
+        ];
+      case GameTheme.space:
+        return [
+          theme.snakeColor.withValues(alpha: 1.0),
+          theme.snakeColor.withValues(alpha: 0.9),
+          theme.accentColor.withValues(alpha: 0.7),
+        ];
+      case GameTheme.ocean:
+        return [
+          theme.snakeColor.withValues(alpha: 1.0),
+          theme.snakeColor.withValues(alpha: 0.9),
+          theme.accentColor.withValues(alpha: 0.8),
+        ];
     }
   }
   
@@ -306,6 +324,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return const MaskFilter.blur(BlurStyle.normal, 1.5);
       case GameTheme.neon:
         return const MaskFilter.blur(BlurStyle.normal, 4.0);
+      case GameTheme.retro:
+        return const MaskFilter.blur(BlurStyle.normal, 1.0);
+      case GameTheme.space:
+        return const MaskFilter.blur(BlurStyle.normal, 3.0);
+      case GameTheme.ocean:
+        return const MaskFilter.blur(BlurStyle.normal, 2.0);
     }
   }
   
@@ -362,6 +386,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return theme.snakeColor.withValues(alpha: opacity * 0.9);
       case GameTheme.neon:
         return theme.snakeColor.withValues(alpha: opacity);
+      case GameTheme.retro:
+        return theme.snakeColor.withValues(alpha: opacity * 0.95);
+      case GameTheme.space:
+        return theme.snakeColor.withValues(alpha: opacity);
+      case GameTheme.ocean:
+        return theme.snakeColor.withValues(alpha: opacity * 0.9);
     }
   }
   
@@ -373,6 +403,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return const MaskFilter.blur(BlurStyle.normal, 0.5);
       case GameTheme.neon:
         return const MaskFilter.blur(BlurStyle.normal, 2.0);
+      case GameTheme.retro:
+        return null;
+      case GameTheme.space:
+        return const MaskFilter.blur(BlurStyle.normal, 1.5);
+      case GameTheme.ocean:
+        return const MaskFilter.blur(BlurStyle.normal, 1.0);
     }
   }
   
@@ -384,6 +420,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return Radius.circular(rect.width * 0.25);
       case GameTheme.neon:
         return Radius.circular(rect.width * 0.3);
+      case GameTheme.retro:
+        return Radius.circular(rect.width * 0.2);
+      case GameTheme.space:
+        return Radius.circular(rect.width * 0.3);
+      case GameTheme.ocean:
+        return Radius.circular(rect.width * 0.25);
     }
   }
   
@@ -423,6 +465,52 @@ class OptimizedGameBoardPainter extends CustomPainter {
           ..isAntiAlias = true;
 
         canvas.drawOval(coreRect, corePaint);
+        break;
+      case GameTheme.retro:
+        // Warm highlight for retro theme
+        final highlightRect = Rect.fromLTWH(
+          rect.left + rect.width * 0.2,
+          rect.top + rect.height * 0.2,
+          rect.width * 0.4,
+          rect.height * 0.4,
+        );
+
+        final highlightPaint = Paint()
+          ..color = theme.foodColor.withValues(alpha: 0.3 * fadeRatio)
+          ..isAntiAlias = true;
+
+        canvas.drawOval(highlightRect, highlightPaint);
+        break;
+      case GameTheme.space:
+        // Cosmic glow for space theme
+        final glowRect = Rect.fromLTWH(
+          rect.left + rect.width * 0.25,
+          rect.top + rect.height * 0.25,
+          rect.width * 0.5,
+          rect.height * 0.5,
+        );
+
+        final glowPaint = Paint()
+          ..color = theme.accentColor.withValues(alpha: 0.4 * fadeRatio)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
+          ..isAntiAlias = true;
+
+        canvas.drawOval(glowRect, glowPaint);
+        break;
+      case GameTheme.ocean:
+        // Aquatic shimmer for ocean theme
+        final shimmerRect = Rect.fromLTWH(
+          rect.left + rect.width * 0.15,
+          rect.top + rect.height * 0.15,
+          rect.width * 0.7,
+          rect.height * 0.7,
+        );
+
+        final shimmerPaint = Paint()
+          ..color = Colors.white.withValues(alpha: 0.25 * fadeRatio)
+          ..isAntiAlias = true;
+
+        canvas.drawOval(shimmerRect, shimmerPaint);
         break;
     }
   }
@@ -662,6 +750,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return const MaskFilter.blur(BlurStyle.normal, 1.0);
       case GameTheme.neon:
         return const MaskFilter.blur(BlurStyle.normal, 3.0);
+      case GameTheme.retro:
+        return const MaskFilter.blur(BlurStyle.normal, 0.5);
+      case GameTheme.space:
+        return const MaskFilter.blur(BlurStyle.normal, 2.0);
+      case GameTheme.ocean:
+        return const MaskFilter.blur(BlurStyle.normal, 1.5);
     }
   }
   

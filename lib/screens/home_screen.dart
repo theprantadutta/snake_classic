@@ -3,8 +3,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/screens/settings_screen.dart';
+import 'package:snake_classic/screens/profile_screen.dart';
+import 'package:snake_classic/screens/leaderboard_screen.dart';
+import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
@@ -46,8 +50,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<GameProvider, ThemeProvider>(
-      builder: (context, gameProvider, themeProvider, child) {
+    return Consumer3<GameProvider, ThemeProvider, UserProvider>(
+      builder: (context, gameProvider, themeProvider, userProvider, child) {
         final theme = themeProvider.currentTheme;
         
         return Scaffold(
@@ -75,34 +79,70 @@ class _HomeScreenState extends State<HomeScreen>
                     padding: EdgeInsets.symmetric(
                       horizontal: constraints.maxWidth * 0.06,
                     ),
-                    child: Column(
-                      children: [
-                        const Spacer(flex: 2),
-                        
-                        // Logo and Title
-                        RepaintBoundary(
-                          child: _buildHeader(theme),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
                         ),
-                        
-                        const Spacer(flex: 2),
-                        
-                        // High Score Display
-                        RepaintBoundary(
-                          child: _buildHighScoreCard(gameProvider, theme),
+                        child: IntrinsicHeight(
+                          child: Column(
+                            children: [
+                              // Profile Button in top-right
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => const ProfileScreen(),
+                                        ),
+                                      );
+                                    },
+                                    icon: userProvider.isSignedIn && userProvider.photoURL != null
+                                      ? CircleAvatar(
+                                          radius: 16,
+                                          backgroundImage: NetworkImage(userProvider.photoURL!),
+                                        )
+                                      : Icon(
+                                          Icons.account_circle,
+                                          size: 32,
+                                          color: theme.accentColor,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              
+                              const Spacer(flex: 2),
+                              
+                              // Logo and Title
+                              RepaintBoundary(
+                                child: _buildHeader(theme),
+                              ),
+                              
+                              const Spacer(flex: 2),
+                              
+                              // High Score Display
+                              RepaintBoundary(
+                                child: _buildHighScoreCard(gameProvider, userProvider, theme),
+                              ),
+                              
+                              const SizedBox(height: 24),
+                              
+                              // Main Menu Buttons
+                              _buildMenuButtons(context, gameProvider, themeProvider, theme),
+                              
+                              const Spacer(flex: 3),
+                              
+                              // Footer
+                              RepaintBoundary(
+                                child: _buildFooter(theme),
+                              ),
+                            ],
+                          ),
                         ),
-                        
-                        const SizedBox(height: 32),
-                        
-                        // Main Menu Buttons
-                        _buildMenuButtons(context, gameProvider, themeProvider, theme),
-                        
-                        const Spacer(flex: 3),
-                        
-                        // Footer
-                        RepaintBoundary(
-                          child: _buildFooter(theme),
-                        ),
-                      ],
+                      ),
                     ),
                   );
                 },
@@ -156,7 +196,10 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildHighScoreCard(GameProvider gameProvider, GameTheme theme) {
+  Widget _buildHighScoreCard(GameProvider gameProvider, UserProvider userProvider, GameTheme theme) {
+    final highScore = userProvider.isSignedIn ? 
+      (userProvider.highScore > gameProvider.gameState.highScore ? userProvider.highScore : gameProvider.gameState.highScore) :
+      gameProvider.gameState.highScore;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
@@ -193,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               Text(
-                '${gameProvider.gameState.highScore}',
+                '$highScore',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -231,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen>
           width: 200,
         ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.5, duration: 300.ms),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         
         // How to Play Button
         GradientButton(
@@ -249,7 +292,45 @@ class _HomeScreenState extends State<HomeScreen>
           outlined: true,
         ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.5, duration: 300.ms),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        
+        // Leaderboard Button
+        GradientButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const LeaderboardScreen(),
+              ),
+            );
+          },
+          text: 'LEADERBOARD',
+          primaryColor: Colors.amber.withValues(alpha: 0.8),
+          secondaryColor: Colors.amber.withValues(alpha: 0.6),
+          icon: Icons.leaderboard,
+          width: 200,
+          outlined: true,
+        ).animate().fadeIn(delay: 700.ms).slideX(begin: -0.5, duration: 300.ms),
+        
+        const SizedBox(height: 12),
+        
+        // Achievements Button
+        GradientButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const AchievementsScreen(),
+              ),
+            );
+          },
+          text: 'ACHIEVEMENTS',
+          primaryColor: Colors.purple.withValues(alpha: 0.8),
+          secondaryColor: Colors.purple.withValues(alpha: 0.6),
+          icon: Icons.emoji_events,
+          width: 200,
+          outlined: true,
+        ).animate().fadeIn(delay: 850.ms).slideX(begin: -0.5, duration: 300.ms),
+        
+        const SizedBox(height: 12),
         
         // Settings Button
         GradientButton(
@@ -266,9 +347,9 @@ class _HomeScreenState extends State<HomeScreen>
           icon: Icons.settings,
           width: 200,
           outlined: true,
-        ).animate().fadeIn(delay: 700.ms).slideX(begin: 0.5, duration: 300.ms),
+        ).animate().fadeIn(delay: 900.ms).slideX(begin: 0.5, duration: 300.ms),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         
         // Theme Toggle Button
         GradientButton(
@@ -281,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen>
           icon: Icons.palette,
           width: 200,
           outlined: true,
-        ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.5, duration: 300.ms),
+        ).animate().fadeIn(delay: 950.ms).slideY(begin: 0.5, duration: 300.ms),
       ],
     );
   }
@@ -293,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen>
           height: 1,
           width: 100,
           color: theme.accentColor.withValues(alpha: 0.3),
-        ).animate().fadeIn(delay: 900.ms).scaleX(duration: 400.ms),
+        ).animate().fadeIn(delay: 1000.ms).scaleX(duration: 400.ms),
         
         const SizedBox(height: 16),
         
@@ -304,7 +385,7 @@ class _HomeScreenState extends State<HomeScreen>
             color: theme.accentColor.withValues(alpha: 0.6),
             letterSpacing: 1,
           ),
-        ).animate().fadeIn(delay: 1000.ms, duration: 400.ms),
+        ).animate().fadeIn(delay: 1100.ms, duration: 400.ms),
       ],
     );
   }

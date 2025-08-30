@@ -189,6 +189,7 @@ class _GameScreenState extends State<GameScreen>
                         crashReason: gameState.crashReason!,
                         theme: theme,
                         onSkip: () => gameProvider.skipCrashFeedback(),
+                        duration: gameProvider.crashFeedbackDuration,
                       ),
                   ],
                 ),

@@ -21,14 +21,38 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
   - ⭐ Special Food (50 points) - 8-pointed pulsing star
 
 ### 🎨 Visual Experience
-- **Three premium themes**:
-  - **Classic** - Traditional retro style
-  - **Modern** - Sleek contemporary design  
-  - **Neon** - Cyberpunk-inspired visuals
+- **Six premium themes**:
+  - **Classic** - Traditional retro green monochrome
+  - **Modern** - Sleek contemporary blue design  
+  - **Neon** - Electric cyberpunk with glowing effects
+  - **Retro** - Warm earth tones with vintage gaming feel
+  - **Space** - Cosmic purple hues for interstellar adventures
+  - **Ocean** - Deep sea blues with coral accents
 - **Smooth animations** throughout the UI
 - **Custom particle effects** for special events
 - **Gradient buttons** with haptic feedback
 - **Animated snake logo** on home screen
+- **Theme selector screen** with live previews and descriptions
+
+### 🌐 Online Features
+- **Google Sign-In Authentication** with Firebase integration
+- **Anonymous sign-in option** for guest players
+- **Global leaderboards** with real-time updates and user rankings
+- **Weekly leaderboards** showcasing recent achievements
+- **User profiles** with comprehensive statistics and progress tracking
+- **Cross-platform synchronization** of scores and achievements
+- **Secure data persistence** with Firebase Firestore
+
+### 🏆 Achievement System
+- **16 unique achievements** across multiple categories:
+  - **Score Achievements**: First Bite, Century Club, High Roller, Snake Master, Legendary Serpent
+  - **Games Played**: Getting Started, Persistent Player, Dedicated Gamer, Snake Addict
+  - **Survival Challenges**: Survivor, Endurance Master
+  - **Special Feats**: Wall Avoider, Speedster, Perfectionist, Gourmet
+- **Rarity system** (Common, Rare, Epic, Legendary) with unique visual indicators
+- **Progress tracking** for locked achievements with completion percentages
+- **Animated notifications** for newly unlocked achievements
+- **Achievement browser** with filtering and detailed statistics
 
 ### 🎵 Audio System
 - **Complete sound effects**:
@@ -52,10 +76,13 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 - **Pause/resume functionality**
 - **Fully responsive layout** adapting to all screen sizes
 
-### 💾 Persistence
-- **High score tracking** with local storage
-- **Settings persistence** for user preferences
-- **Theme selection memory**
+### 💾 Persistence & Storage
+- **Dual storage system** with local and cloud backup
+- **High score synchronization** across devices (when signed in)
+- **Achievement progress** saved locally and in Firebase
+- **User preferences** including theme selection and audio settings
+- **Cross-platform compatibility** with automatic data migration
+- **Offline support** with local storage fallback for guest users
 
 ## 🏗️ Architecture
 
@@ -63,43 +90,57 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 ```
 lib/
 ├── models/           # Game data models
+│   ├── achievement.dart        # Achievement system models
 │   ├── food.dart
 │   ├── game_state.dart
 │   ├── position.dart
 │   └── snake.dart
 ├── providers/        # State management
 │   ├── game_provider.dart
-│   └── theme_provider.dart
+│   ├── theme_provider.dart
+│   └── user_provider.dart      # User authentication state
 ├── screens/          # UI screens
+│   ├── achievements_screen.dart # Achievement browser
 │   ├── game_over_screen.dart
 │   ├── game_screen.dart
 │   ├── home_screen.dart
-│   └── settings_screen.dart
+│   ├── leaderboard_screen.dart # Global and weekly leaderboards
+│   ├── profile_screen.dart     # User profile and sign-in
+│   ├── settings_screen.dart
+│   └── theme_selector_screen.dart # Visual theme browser
 ├── services/         # Business logic
+│   ├── achievement_service.dart # Achievement tracking
+│   ├── auth_service.dart       # Firebase authentication
 │   ├── audio_service.dart
+│   ├── leaderboard_service.dart # Firestore leaderboards
 │   └── storage_service.dart
 ├── utils/           # Utilities
-│   ├── constants.dart
+│   ├── constants.dart          # Enhanced with 6 themes
 │   └── direction.dart
 └── widgets/         # Reusable components
+    ├── achievement_notification.dart # Achievement popups
     ├── animated_snake_logo.dart
-    ├── game_board.dart
+    ├── crash_feedback_overlay.dart
+    ├── game_board.dart         # Enhanced theme rendering
     ├── game_hud.dart
     ├── gradient_button.dart
     ├── instructions_dialog.dart
-    ├── pause_overlay.dart
     ├── particle_effect.dart
-    ├── swipe_detector.dart
-    └── crash_feedback_overlay.dart
+    ├── pause_overlay.dart
+    └── swipe_detector.dart
 ```
 
 ### 🛠️ Technical Stack
 - **Flutter** - Cross-platform UI framework
-- **Provider** - State management
+- **Provider** - State management for game state and user data
+- **Firebase Core** - Backend infrastructure and authentication
+- **Firebase Auth** - User authentication and profile management
+- **Cloud Firestore** - Real-time database for leaderboards and achievements
+- **Google Sign-In** - Authentication provider integration
 - **AudioPlayers** - Audio system with AssetSource
-- **SharedPreferences** - Local storage
-- **FlutterAnimate** - Animations and effects
-- **VectorMath** - Game calculations
+- **SharedPreferences** - Local storage and offline support
+- **FlutterAnimate** - Smooth animations and visual effects
+- **VectorMath** - Game physics and calculations
 
 ## 🎯 Performance Features
 
@@ -166,10 +207,16 @@ flutter clean            # Clean build cache
 ## 🎨 Customization
 
 ### Themes
-The game features three distinct visual themes:
-- Access via Settings → Visual Theme
+The game features six distinct visual themes:
+- Access via Settings → Visual Theme → Browse Themes
 - Each theme has unique color schemes and visual effects
 - Theme selection is automatically saved
+- Live previews available in theme selector
+
+### Game Settings
+- **Board Size**: Choose from Small (15x15), Classic (20x20), Large (25x25), or Huge (30x30)
+- **Crash Feedback Duration**: Customize timing from 2-10 seconds
+- **Visual Theme**: Select from 6 premium themes with live previews
 
 ### Audio Settings
 - Toggle sound effects on/off
@@ -199,7 +246,21 @@ The game features three distinct visual themes:
 
 ## 📝 Changelog
 
-### Latest Updates
+### 🚀 Major Feature Updates (Latest Release)
+- ✅ **Google Sign-In Authentication** - Full Firebase integration with user profiles
+- ✅ **Online Leaderboards** - Global and weekly leaderboards with real-time sync
+- ✅ **Comprehensive Achievement System** - 16 achievements across 4 categories with rarity levels
+- ✅ **Enhanced Visual Themes** - 6 premium themes (Classic, Modern, Neon, Retro, Space, Ocean)
+- ✅ **Theme Selector Screen** - Beautiful theme browser with live previews
+- ✅ **Firebase Integration** - Complete backend infrastructure for online features
+- ✅ **User Profile System** - Profile screen with statistics and sign-in/out functionality
+- ✅ **Achievement Notifications** - Animated popups for unlocked achievements
+- ✅ **Advanced Theme Effects** - Theme-specific visual effects and rendering enhancements
+- ✅ **Custom Game Board Sizes** - Four size options with visual selector and persistence
+- ✅ **Customizable Crash Feedback Duration** - User-configurable timing (2-10 seconds)
+- ✅ **Enhanced Home Screen Layout** - Scrollable interface with optimized spacing
+
+### Previous Updates
 - ✅ **Crash feedback system** - 5-second modal explaining game over reasons
 - ✅ **Visual food improvements** - apple-shaped normal food with proper proportions
 - ✅ **Responsive layout fixes** - all screens adapt to different screen sizes
@@ -209,7 +270,7 @@ The game features three distinct visual themes:
 - ✅ **Layout optimization** - removed fixed heights, added RepaintBoundary isolation
 - ✅ **Constants refactoring** - configurable timing for easy maintenance
 - ✅ Complete audio system implementation
-- ✅ Premium UI with three themes
+- ✅ Premium UI with original three themes
 - ✅ Particle effects and animations
 - ✅ High score persistence
 
@@ -227,16 +288,26 @@ This project follows conventional commit standards:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🎯 Future Enhancements
+## 🎯 Development Roadmap
 
-- [ ] Online leaderboards
-- [ ] Achievement system  
-- [ ] More visual themes
-- [ ] Multiplayer mode
-- [ ] Custom game board sizes
-- [ ] Power-ups and special abilities
-- [ ] Crash replay system
-- [ ] Customizable crash feedback duration
+### ✅ Completed Features
+- [x] **Online leaderboards** - Global and weekly leaderboards with Firebase
+- [x] **Achievement system** - 16 achievements with rarity levels and progress tracking
+- [x] **More visual themes** - Added Retro, Space, and Ocean themes (6 total)
+- [x] **User authentication** - Google Sign-In and anonymous options
+- [x] **Firebase integration** - Complete backend infrastructure
+- [x] **Advanced UI/UX** - Theme selector, profile screen, achievement notifications
+- [x] **Custom game board sizes** - Four size options (15x15, 20x20, 25x25, 30x30) with visual selector
+- [x] **Customizable crash feedback duration** - User-configurable timing (2-10 seconds)
+- [x] **Enhanced home screen layout** - Scrollable interface with optimized spacing
+
+### 🚧 Upcoming Features
+- [ ] **Multiplayer mode** - Real-time multiplayer with Firebase sync
+- [ ] **Power-ups and special abilities** - Temporary boosts and special effects
+- [ ] **Crash replay system** - Analyze and replay game over moments
+- [ ] **Social features** - Friend systems and private leaderboards
+- [ ] **Tournament mode** - Competitive events and challenges
+- [ ] **Advanced statistics** - Detailed gameplay analytics and insights
 
 ---
 
