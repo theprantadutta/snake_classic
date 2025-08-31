@@ -97,6 +97,16 @@ class StorageService {
     await _prefs?.setInt(GameConstants.crashFeedbackDurationKey, duration.inSeconds);
   }
 
+  Future<String?> getStatistics() async {
+    await _initPrefs();
+    return _prefs?.getString(GameConstants.statisticsKey);
+  }
+
+  Future<void> saveStatistics(String statisticsJson) async {
+    await _initPrefs();
+    await _prefs?.setString(GameConstants.statisticsKey, statisticsJson);
+  }
+
   Future<void> clearAllData() async {
     await _initPrefs();
     await _prefs?.clear();

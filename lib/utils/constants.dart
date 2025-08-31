@@ -115,6 +115,7 @@ class GameConstants {
   static const String achievementsKey = 'achievements';
   static const String boardSizeKey = 'board_size';
   static const String crashFeedbackDurationKey = 'crash_feedback_duration';
+  static const String statisticsKey = 'game_statistics';
 }
 
 enum GameTheme {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/position.dart';
@@ -10,6 +11,7 @@ import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
+import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 class GameProvider extends ChangeNotifier {
@@ -20,6 +22,7 @@ class GameProvider extends ChangeNotifier {
   final AudioService _audioService = AudioService();
   final AuthService _authService = AuthService();
   final AchievementService _achievementService = AchievementService();
+  final StatisticsService _statisticsService = StatisticsService();
   
   // Smooth movement interpolation
   DateTime? _lastGameUpdate;
@@ -47,11 +50,21 @@ class GameProvider extends ChangeNotifier {
   Timer? _powerUpTimer;
   int _powerUpsCollectedThisGame = 0;
   
+  // Statistics tracking for current game
+  final Map<String, int> _currentGameFoodTypes = {};
+  final Map<String, int> _currentGamePowerUpTypes = {};
+  int _currentGameFoodPoints = 0;
+  int _currentGamePowerUpTime = 0; // Total time with active power-ups
+  
   // Dynamic crash feedback duration
   Duration _crashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration;
 
   GameProvider() {
     _initializeGame();
+    // Start a new session when the provider is created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _statisticsService.startNewSession();
+    });
   }
 
   Future<void> _initializeGame() async {
@@ -65,6 +78,7 @@ class GameProvider extends ChangeNotifier {
     );
     await _audioService.initialize();
     await _achievementService.initialize();
+    await _statisticsService.initialize();
     notifyListeners();
   }
 
@@ -87,6 +101,12 @@ class GameProvider extends ChangeNotifier {
     _hitWallThisGame = false;
     _hitSelfThisGame = false;
     _powerUpsCollectedThisGame = 0;
+    
+    // Reset statistics tracking
+    _currentGameFoodTypes.clear();
+    _currentGamePowerUpTypes.clear();
+    _currentGameFoodPoints = 0;
+    _currentGamePowerUpTime = 0;
     
     _generateFood();
     _startGameLoop();
@@ -221,6 +241,10 @@ class GameProvider extends ChangeNotifier {
 
     // Track food types for achievements
     _foodTypesEatenThisGame.add(food.type.name);
+    
+    // Track food types for statistics
+    _currentGameFoodTypes[food.type.name] = (_currentGameFoodTypes[food.type.name] ?? 0) + 1;
+    _currentGameFoodPoints += multipliedPoints;
 
     // Level up logic
     if (newScore >= _gameState.targetScore && newLevel < 10) {
@@ -273,6 +297,9 @@ class GameProvider extends ChangeNotifier {
     _gameState = _gameState.clearPowerUp();
     
     _powerUpsCollectedThisGame++;
+    
+    // Track power-up types for statistics
+    _currentGamePowerUpTypes[powerUp.type.name] = (_currentGamePowerUpTypes[powerUp.type.name] ?? 0) + 1;
     
     _audioService.playSound('power_up');
     HapticFeedback.mediumImpact();
@@ -409,6 +436,28 @@ class GameProvider extends ChangeNotifier {
       hitSelf: _hitSelfThisGame,
       foodTypesEaten: _foodTypesEatenThisGame,
       noWallGames: _consecutiveGamesWithoutWallHits,
+    );
+
+    // Calculate power-up time (approximate)
+    _currentGamePowerUpTime = _gameState.activePowerUps
+        .map((p) => p.duration.inSeconds - p.remainingTime.inSeconds)
+        .fold(0, (sum, time) => sum + time);
+
+    // Record game statistics
+    await _statisticsService.recordGameResult(
+      score: _gameState.score,
+      gameTime: gameDurationSeconds,
+      level: _gameState.level,
+      foodConsumed: _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+      foodTypes: _currentGameFoodTypes,
+      foodPoints: _currentGameFoodPoints,
+      powerUpsCollected: _powerUpsCollectedThisGame,
+      powerUpTypes: _currentGamePowerUpTypes,
+      powerUpTime: _currentGamePowerUpTime,
+      hitWall: _hitWallThisGame,
+      hitSelf: _hitSelfThisGame,
+      isPerfectGame: !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
+      unlockedAchievements: [], // This would need to be tracked separately
     );
 
     _gameState = _gameState.copyWith(
