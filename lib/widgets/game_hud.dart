@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/models/game_state.dart';
+import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 class GameHUD extends StatelessWidget {
@@ -73,6 +74,33 @@ class GameHUD extends StatelessWidget {
           
           const Spacer(),
           
+          // Active power-ups display
+          if (gameState.activePowerUps.isNotEmpty)
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8 : 12,
+                vertical: isSmallScreen ? 4 : 6,
+              ),
+              decoration: BoxDecoration(
+                color: theme.accentColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
+                border: Border.all(
+                  color: theme.accentColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: gameState.activePowerUps
+                    .where((powerUp) => !powerUp.isExpired)
+                    .map((powerUp) => _buildPowerUpIndicator(powerUp, isSmallScreen))
+                    .toList(),
+              ),
+            ),
+          
+          if (gameState.activePowerUps.isNotEmpty)
+            SizedBox(width: isSmallScreen ? 8 : 12),
+          
           // Pause button
           IconButton(
             onPressed: onPause,
@@ -82,6 +110,78 @@ class GameHUD extends StatelessWidget {
                 : Icons.play_arrow,
               color: theme.accentColor,
               size: isSmallScreen ? 20 : 24,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildPowerUpIndicator(ActivePowerUp powerUp, bool isSmallScreen) {
+    final size = isSmallScreen ? 24.0 : 30.0;
+    final progress = 1.0 - powerUp.progress; // Reverse progress for countdown
+    final remainingTime = powerUp.remainingTime;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Circular progress background
+          SizedBox(
+            width: size,
+            height: size,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: isSmallScreen ? 2.0 : 3.0,
+              backgroundColor: powerUp.type.color.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(powerUp.type.color),
+            ),
+          ),
+          
+          // Power-up icon
+          Container(
+            width: size * 0.6,
+            height: size * 0.6,
+            decoration: BoxDecoration(
+              color: powerUp.type.color.withValues(alpha: 0.9),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: powerUp.type.color.withValues(alpha: 0.3),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                powerUp.type.icon,
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 10 : 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          
+          // Time remaining tooltip (shown on long press - for future enhancement)
+          Positioned(
+            bottom: size + 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '${remainingTime.inSeconds}s',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isSmallScreen ? 8 : 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
         ],

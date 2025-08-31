@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/position.dart';
+import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -126,6 +127,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
   late final Paint _snakeHeadPaint;
   late final Paint _snakeBodyPaint;
   late final Paint _foodPaint;
+  late final Paint _powerUpPaint;
   late final Paint _gridPaint;
   late final Paint _crashPaint;
   late final Paint _collisionPaint;
@@ -144,6 +146,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     _snakeHeadPaint = Paint()..isAntiAlias = true;
     _snakeBodyPaint = Paint()..isAntiAlias = true;
     _foodPaint = Paint()..isAntiAlias = true;
+    _powerUpPaint = Paint()..isAntiAlias = true;
     _gridPaint = Paint()
       ..color = theme.accentColor.withValues(alpha: 0.08)
       ..strokeWidth = 0.5
@@ -168,6 +171,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Draw in optimal order (back to front)
     _drawGrid(canvas, size, cellWidth, cellHeight);
     _drawFood(canvas, cellWidth, cellHeight);
+    _drawPowerUp(canvas, cellWidth, cellHeight);
     _drawSnake(canvas, cellWidth, cellHeight);
     
     // Draw crash indicators on top if crashed
@@ -531,6 +535,249 @@ class OptimizedGameBoardPainter extends CustomPainter {
         canvas.drawOval(shimmerRect, shimmerPaint);
         break;
     }
+  }
+  
+  void _drawPowerUp(Canvas canvas, double cellWidth, double cellHeight) {
+    final powerUp = gameState.powerUp;
+    if (powerUp == null) return;
+
+    // Force square power-up by using the smaller dimension
+    final cellSize = math.min(cellWidth, cellHeight);
+    final padding = cellSize * 0.05;
+    
+    // Center the square power-up in the cell
+    final powerUpSize = cellSize - padding * 2;
+    final centerX = powerUp.position.x * cellWidth + cellWidth / 2;
+    final centerY = powerUp.position.y * cellHeight + cellHeight / 2;
+    
+    final rect = Rect.fromCenter(
+      center: Offset(centerX, centerY),
+      width: powerUpSize,
+      height: powerUpSize,
+    );
+
+    switch (powerUp.type) {
+      case PowerUpType.speedBoost:
+        _drawSpeedBoostPowerUp(canvas, rect, powerUp);
+        break;
+      case PowerUpType.invincibility:
+        _drawInvincibilityPowerUp(canvas, rect, powerUp);
+        break;
+      case PowerUpType.scoreMultiplier:
+        _drawScoreMultiplierPowerUp(canvas, rect, powerUp);
+        break;
+      case PowerUpType.slowMotion:
+        _drawSlowMotionPowerUp(canvas, rect, powerUp);
+        break;
+    }
+  }
+  
+  void _drawSpeedBoostPowerUp(Canvas canvas, Rect rect, PowerUp powerUp) {
+    final pulseScale = 0.9 + 0.1 * powerUp.pulsePhase;
+    final scaledRect = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * pulseScale,
+      height: rect.height * pulseScale,
+    );
+    
+    // Lightning bolt effect
+    final paint = Paint()
+      ..color = PowerUpType.speedBoost.color
+      ..isAntiAlias = true
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+    
+    // Draw glow effect for certain themes
+    if (theme == GameTheme.neon) {
+      _drawNeonGlow(canvas, scaledRect, PowerUpType.speedBoost.color, 8.0);
+    }
+    
+    // Draw lightning bolt shape
+    _drawLightningBolt(canvas, scaledRect, paint);
+  }
+  
+  void _drawInvincibilityPowerUp(Canvas canvas, Rect rect, PowerUp powerUp) {
+    final pulseScale = 0.9 + 0.1 * powerUp.pulsePhase;
+    final scaledRect = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * pulseScale,
+      height: rect.height * pulseScale,
+    );
+    
+    // Shield effect with gradient
+    final gradient = RadialGradient(
+      colors: [
+        PowerUpType.invincibility.color.withValues(alpha: 1.0),
+        PowerUpType.invincibility.color.withValues(alpha: 0.3),
+      ],
+    );
+    
+    final paint = Paint()
+      ..shader = gradient.createShader(scaledRect)
+      ..isAntiAlias = true;
+    
+    if (theme == GameTheme.neon) {
+      _drawNeonGlow(canvas, scaledRect, PowerUpType.invincibility.color, 10.0);
+    }
+    
+    // Draw shield shape
+    _drawShield(canvas, scaledRect, paint);
+  }
+  
+  void _drawScoreMultiplierPowerUp(Canvas canvas, Rect rect, PowerUp powerUp) {
+    final pulseScale = 0.9 + 0.1 * powerUp.pulsePhase;
+    final scaledRect = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * pulseScale,
+      height: rect.height * pulseScale,
+    );
+    
+    // Golden coin effect
+    final paint = Paint()
+      ..color = PowerUpType.scoreMultiplier.color
+      ..isAntiAlias = true
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+    
+    if (theme == GameTheme.neon) {
+      _drawNeonGlow(canvas, scaledRect, PowerUpType.scoreMultiplier.color, 6.0);
+    }
+    
+    // Draw coin with dollar sign
+    _drawCoin(canvas, scaledRect, paint);
+  }
+  
+  void _drawSlowMotionPowerUp(Canvas canvas, Rect rect, PowerUp powerUp) {
+    final pulseScale = 0.9 + 0.1 * powerUp.pulsePhase;
+    final scaledRect = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * pulseScale,
+      height: rect.height * pulseScale,
+    );
+    
+    // Spiral/clock effect with gradient
+    final gradient = RadialGradient(
+      colors: [
+        PowerUpType.slowMotion.color.withValues(alpha: 1.0),
+        PowerUpType.slowMotion.color.withValues(alpha: 0.5),
+      ],
+    );
+    
+    final paint = Paint()
+      ..shader = gradient.createShader(scaledRect)
+      ..isAntiAlias = true;
+    
+    if (theme == GameTheme.neon) {
+      _drawNeonGlow(canvas, scaledRect, PowerUpType.slowMotion.color, 7.0);
+    }
+    
+    // Draw clock/spiral shape
+    _drawSpiral(canvas, scaledRect, paint);
+  }
+  
+  void _drawLightningBolt(Canvas canvas, Rect rect, Paint paint) {
+    final path = Path();
+    final center = rect.center;
+    final width = rect.width * 0.6;
+    final height = rect.height * 0.8;
+    
+    // Create zigzag lightning bolt
+    path.moveTo(center.dx - width * 0.3, center.dy - height * 0.5);
+    path.lineTo(center.dx + width * 0.1, center.dy - height * 0.1);
+    path.lineTo(center.dx - width * 0.1, center.dy - height * 0.1);
+    path.lineTo(center.dx + width * 0.3, center.dy + height * 0.5);
+    path.lineTo(center.dx - width * 0.1, center.dy + height * 0.1);
+    path.lineTo(center.dx + width * 0.1, center.dy + height * 0.1);
+    path.close();
+    
+    canvas.drawPath(path, paint);
+  }
+  
+  void _drawShield(Canvas canvas, Rect rect, Paint paint) {
+    final path = Path();
+    final center = rect.center;
+    final width = rect.width * 0.7;
+    final height = rect.height * 0.8;
+    
+    // Create shield shape
+    path.moveTo(center.dx, center.dy - height * 0.5);
+    path.quadraticBezierTo(
+      center.dx + width * 0.5, center.dy - height * 0.3,
+      center.dx + width * 0.5, center.dy,
+    );
+    path.quadraticBezierTo(
+      center.dx + width * 0.5, center.dy + height * 0.3,
+      center.dx, center.dy + height * 0.5,
+    );
+    path.quadraticBezierTo(
+      center.dx - width * 0.5, center.dy + height * 0.3,
+      center.dx - width * 0.5, center.dy,
+    );
+    path.quadraticBezierTo(
+      center.dx - width * 0.5, center.dy - height * 0.3,
+      center.dx, center.dy - height * 0.5,
+    );
+    
+    canvas.drawPath(path, paint);
+  }
+  
+  void _drawCoin(Canvas canvas, Rect rect, Paint paint) {
+    // Draw circular coin
+    canvas.drawOval(rect, paint);
+    
+    // Draw dollar sign
+    final center = rect.center;
+    final textPaint = Paint()
+      ..color = Colors.white
+      ..isAntiAlias = true;
+    
+    final path = Path();
+    final size = rect.width * 0.4;
+    
+    // Simple dollar sign shape
+    path.moveTo(center.dx - size * 0.2, center.dy - size * 0.3);
+    path.quadraticBezierTo(
+      center.dx - size * 0.3, center.dy - size * 0.1,
+      center.dx, center.dy,
+    );
+    path.quadraticBezierTo(
+      center.dx + size * 0.3, center.dy + size * 0.1,
+      center.dx - size * 0.2, center.dy + size * 0.3,
+    );
+    
+    // Vertical line
+    path.moveTo(center.dx, center.dy - size * 0.4);
+    path.lineTo(center.dx, center.dy + size * 0.4);
+    
+    textPaint.strokeWidth = 2.0;
+    textPaint.style = PaintingStyle.stroke;
+    canvas.drawPath(path, textPaint);
+  }
+  
+  void _drawSpiral(Canvas canvas, Rect rect, Paint paint) {
+    final center = rect.center;
+    final maxRadius = rect.width * 0.4;
+    
+    final path = Path();
+    const turns = 2.5;
+    const points = 60;
+    
+    for (int i = 0; i <= points; i++) {
+      final t = i / points;
+      final angle = t * turns * 2 * math.pi;
+      final radius = maxRadius * t;
+      
+      final x = center.dx + radius * math.cos(angle);
+      final y = center.dy + radius * math.sin(angle);
+      
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 3.0;
+    canvas.drawPath(path, paint);
   }
 
   void _drawSnakeEyes(Canvas canvas, Rect rect, Direction direction) {
