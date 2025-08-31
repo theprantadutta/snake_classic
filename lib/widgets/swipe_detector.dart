@@ -162,12 +162,12 @@ class _SwipeDetectorState extends State<SwipeDetector>
       child: Stack(
         children: [
           widget.child,
-          // Gesture feedback indicator - positioned to avoid UI overlap
+          // Gesture feedback indicator - positioned over game board center
           if (widget.showFeedback && _lastSwipeDirection != null)
-            Positioned(
-              bottom: 100, // Position above bottom UI elements
-              left: 20,    // Left side to avoid pause button
-              child: IgnorePointer(
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.center,
+                child: IgnorePointer(
                 child: AnimatedBuilder(
                   animation: _feedbackController,
                   builder: (context, child) {
@@ -204,6 +204,7 @@ class _SwipeDetectorState extends State<SwipeDetector>
                       ),
                     );
                   },
+                ),
                 ),
               ),
             ),

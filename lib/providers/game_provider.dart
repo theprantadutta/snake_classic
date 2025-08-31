@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart';
+import 'package:snake_classic/models/position.dart';
+import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
@@ -40,6 +42,10 @@ class GameProvider extends ChangeNotifier {
   int _consecutiveGamesWithoutWallHits = 0;
   bool _hitWallThisGame = false;
   bool _hitSelfThisGame = false;
+  
+  // Power-up tracking
+  Timer? _powerUpTimer;
+  int _powerUpsCollectedThisGame = 0;
   
   // Dynamic crash feedback duration
   Duration _crashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration;
@@ -80,10 +86,12 @@ class GameProvider extends ChangeNotifier {
     _foodTypesEatenThisGame.clear();
     _hitWallThisGame = false;
     _hitSelfThisGame = false;
+    _powerUpsCollectedThisGame = 0;
     
     _generateFood();
     _startGameLoop();
     _startSmoothAnimation();
+    _startPowerUpTimer();
     _audioService.playSound('game_start');
     notifyListeners();
   }
@@ -92,6 +100,7 @@ class GameProvider extends ChangeNotifier {
     if (_gameState.status == GameStatus.playing) {
       _gameTimer?.cancel();
       _animationTimer?.cancel();
+      _powerUpTimer?.cancel();
       _gameState = _gameState.copyWith(status: GameStatus.paused);
       notifyListeners();
     }
@@ -103,6 +112,7 @@ class GameProvider extends ChangeNotifier {
       _lastGameUpdate = DateTime.now(); // Reset timing after pause
       _startGameLoop();
       _startSmoothAnimation();
+      _startPowerUpTimer();
       notifyListeners();
     }
   }
@@ -142,17 +152,30 @@ class GameProvider extends ChangeNotifier {
     if (_gameState.food?.isExpired == true) {
       _generateFood();
     }
+    
+    // Check if power-up exists and if it expired
+    if (_gameState.powerUp?.isExpired == true) {
+      _gameState = _gameState.clearPowerUp();
+    }
+    
+    // Remove expired active power-ups
+    _gameState = _gameState.removeExpiredPowerUps();
 
     // Check for food collision before moving
     final willEatFood = _gameState.food != null && 
         snake.head.move(snake.currentDirection) == _gameState.food!.position;
+        
+    // Check for power-up collision before moving
+    final willCollectPowerUp = _gameState.powerUp != null && 
+        snake.head.move(snake.currentDirection) == _gameState.powerUp!.position;
 
     // Move snake
     snake.move(ateFood: willEatFood);
 
-    // Check collisions with specific crash reasons
-    final wallCollision = snake.checkWallCollision(_gameState.boardWidth, _gameState.boardHeight);
-    final selfCollision = snake.checkSelfCollision();
+    // Check collisions with specific crash reasons (unless invincible)
+    final wallCollision = !_gameState.hasInvincibility && 
+        snake.checkWallCollision(_gameState.boardWidth, _gameState.boardHeight);
+    final selfCollision = !_gameState.hasInvincibility && snake.checkSelfCollision();
     
     if (wallCollision || selfCollision) {
       // Track collision types for achievements
@@ -160,7 +183,10 @@ class GameProvider extends ChangeNotifier {
       if (selfCollision) _hitSelfThisGame = true;
       
       final crashReason = wallCollision ? CrashReason.wallCollision : CrashReason.selfCollision;
-      _handleCrash(crashReason);
+      final crashPosition = snake.head;
+      final collisionBodyPart = selfCollision ? snake.getSelfCollisionBodyPart() : null;
+      
+      _handleCrash(crashReason, crashPosition: crashPosition, collisionBodyPart: collisionBodyPart);
       return;
     }
 
@@ -168,6 +194,11 @@ class GameProvider extends ChangeNotifier {
     if (willEatFood && _gameState.food != null) {
       _consumeFood(_gameState.food!);
       _generateFood();
+    }
+    
+    // Handle power-up collection
+    if (willCollectPowerUp && _gameState.powerUp != null) {
+      _collectPowerUp(_gameState.powerUp!);
     }
 
     _gameState = _gameState.copyWith(
@@ -183,7 +214,9 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _consumeFood(Food food) {
-    final newScore = _gameState.score + food.type.points;
+    final basePoints = food.type.points;
+    final multipliedPoints = basePoints * _gameState.scoreMultiplier;
+    final newScore = _gameState.score + multipliedPoints;
     int newLevel = _gameState.level;
 
     // Track food types for achievements
@@ -220,6 +253,45 @@ class GameProvider extends ChangeNotifier {
     _gameState = _gameState.copyWith(food: food);
   }
   
+  void _generatePowerUp() {
+    final powerUp = PowerUp.generateRandom(
+      _gameState.boardWidth,
+      _gameState.boardHeight,
+      _gameState.snake,
+      foodPosition: _gameState.food?.position,
+    );
+    
+    if (powerUp != null) {
+      _gameState = _gameState.copyWith(powerUp: powerUp);
+    }
+  }
+  
+  void _collectPowerUp(PowerUp powerUp) {
+    final activePowerUp = ActivePowerUp(type: powerUp.type);
+    
+    _gameState = _gameState.addActivePowerUp(activePowerUp);
+    _gameState = _gameState.clearPowerUp();
+    
+    _powerUpsCollectedThisGame++;
+    
+    _audioService.playSound('power_up');
+    HapticFeedback.mediumImpact();
+    
+    // Restart game loop if speed changed
+    if (powerUp.type == PowerUpType.speedBoost || powerUp.type == PowerUpType.slowMotion) {
+      _startGameLoop();
+    }
+  }
+  
+  void _startPowerUpTimer() {
+    _powerUpTimer?.cancel();
+    // Spawn power-ups every 20-30 seconds randomly
+    _powerUpTimer = Timer.periodic(
+      const Duration(seconds: 25),
+      (_) => _generatePowerUp(),
+    );
+  }
+  
   void _startSmoothAnimation() {
     _animationTimer?.cancel();
     // Run at 60FPS (approximately 16ms intervals)
@@ -248,14 +320,18 @@ class GameProvider extends ChangeNotifier {
     }
   }
 
-  void _handleCrash(CrashReason crashReason) {
+  void _handleCrash(CrashReason crashReason, {Position? crashPosition, Position? collisionBodyPart}) {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
+    _powerUpTimer?.cancel();
     
-    // First show crash feedback with reason
+    // First show crash feedback with reason and position details (visual only)
     _gameState = _gameState.copyWith(
       status: GameStatus.crashed,
       crashReason: crashReason,
+      crashPosition: crashPosition,
+      collisionBodyPart: collisionBodyPart,
+      showCrashModal: false, // Start with visual feedback only
     );
     
     // Play crash sound and haptic feedback immediately
@@ -263,10 +339,19 @@ class GameProvider extends ChangeNotifier {
     HapticFeedback.heavyImpact();
     notifyListeners();
     
-    // After crash feedback duration, proceed to game over screen
-    Future.delayed(GameConstants.crashFeedbackDuration, () {
+    // Show visual crash feedback for 2 seconds, then show modal
+    Future.delayed(const Duration(seconds: 2), () {
       if (_gameState.status == GameStatus.crashed) {
-        _gameOver();
+        // Now show the crash feedback modal
+        _gameState = _gameState.copyWith(showCrashModal: true);
+        notifyListeners();
+        
+        // After modal duration (3 seconds), proceed to game over screen
+        Future.delayed(const Duration(seconds: 3), () {
+          if (_gameState.status == GameStatus.crashed) {
+            _gameOver();
+          }
+        });
       }
     });
   }
@@ -330,6 +415,9 @@ class GameProvider extends ChangeNotifier {
       status: GameStatus.gameOver,
       highScore: highScore,
       crashReason: null, // Clear crash reason
+      crashPosition: null, // Clear crash position
+      collisionBodyPart: null, // Clear collision body part
+      showCrashModal: false, // Clear crash modal flag
     );
 
     notifyListeners();
@@ -345,6 +433,7 @@ class GameProvider extends ChangeNotifier {
   void resetGame() {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
+    _powerUpTimer?.cancel();
     _gameState = GameState.initial().copyWith(
       highScore: _gameState.highScore,
     );
@@ -356,6 +445,7 @@ class GameProvider extends ChangeNotifier {
   void backToMenu() {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
+    _powerUpTimer?.cancel();
     _gameState = _gameState.copyWith(status: GameStatus.menu);
     _previousGameState = null;
     _moveProgress = 0.0;
@@ -399,6 +489,7 @@ class GameProvider extends ChangeNotifier {
   void dispose() {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
+    _powerUpTimer?.cancel();
     _audioService.dispose();
     super.dispose();
   }

@@ -7,6 +7,7 @@ class GameHUD extends StatelessWidget {
   final GameTheme theme;
   final VoidCallback onPause;
   final VoidCallback onHome;
+  final bool isSmallScreen;
 
   const GameHUD({
     super.key,
@@ -14,12 +15,13 @@ class GameHUD extends StatelessWidget {
     required this.theme,
     required this.onPause,
     required this.onHome,
+    this.isSmallScreen = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -38,6 +40,7 @@ class GameHUD extends StatelessWidget {
             icon: Icon(
               Icons.home,
               color: theme.accentColor,
+              size: isSmallScreen ? 20 : 24,
             ),
           ),
           
@@ -51,17 +54,17 @@ class GameHUD extends StatelessWidget {
                 'SCORE',
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.8),
-                  fontSize: 12,
+                  fontSize: isSmallScreen ? 10 : 12,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: isSmallScreen ? 2 : 4),
               Text(
                 '${gameState.score}',
                 style: TextStyle(
                   color: theme.accentColor,
-                  fontSize: 24,
+                  fontSize: isSmallScreen ? 20 : 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -78,6 +81,7 @@ class GameHUD extends StatelessWidget {
                 ? Icons.pause 
                 : Icons.play_arrow,
               color: theme.accentColor,
+              size: isSmallScreen ? 20 : 24,
             ),
           ),
         ],

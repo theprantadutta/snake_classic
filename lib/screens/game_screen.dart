@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -20,14 +21,20 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen>
-    with WidgetsBindingObserver {
-  
+class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, TickerProviderStateMixin {
+  Direction? _lastSwipeDirection;
+  late AnimationController _gestureIndicatorController;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     
+    // Initialize gesture indicator animation controller
+    _gestureIndicatorController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
     // Start the game when screen loads (only if not already playing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gameProvider = context.read<GameProvider>();
@@ -40,14 +47,15 @@ class _GameScreenState extends State<GameScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _gestureIndicatorController.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final gameProvider = context.read<GameProvider>();
-    
-    if (state == AppLifecycleState.paused || 
+
+    if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       if (gameProvider.isPlaying) {
         gameProvider.pauseGame();
@@ -57,12 +65,77 @@ class _GameScreenState extends State<GameScreen>
 
   void _handleSwipe(Direction direction) {
     context.read<GameProvider>().changeDirection(direction);
+    
+    // Update last swipe direction and animate indicator
+    setState(() {
+      _lastSwipeDirection = direction;
+    });
+    
+    // Animate the gesture indicator
+    _gestureIndicatorController.forward().then((_) {
+      _gestureIndicatorController.reverse();
+    });
+  }
+
+  void _showExitConfirmation(BuildContext context) {
+    final gameProvider = context.read<GameProvider>();
+    final themeProvider = context.read<ThemeProvider>();
+    final theme = themeProvider.currentTheme;
+
+    // Pause the game if it's playing
+    if (gameProvider.isPlaying) {
+      gameProvider.pauseGame();
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+        ),
+        title: Text(
+          'Exit Game?',
+          style: TextStyle(
+            color: theme.accentColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to exit? Your current progress will be lost.',
+          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              if (gameProvider.gameState.status == GameStatus.paused) {
+                gameProvider.resumeGame(); // Resume if was playing
+              }
+            },
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(context).pop(); // Exit game
+            },
+            child: Text('Exit', style: TextStyle(color: theme.foodColor)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleKeyPress(KeyEvent event) {
     if (event is KeyDownEvent) {
       Direction? direction;
-      
+
       switch (event.logicalKey) {
         case LogicalKeyboardKey.arrowUp:
         case LogicalKeyboardKey.keyW:
@@ -84,7 +157,7 @@ class _GameScreenState extends State<GameScreen>
           context.read<GameProvider>().togglePause();
           break;
       }
-      
+
       if (direction != null) {
         _handleSwipe(direction);
       }
@@ -102,9 +175,7 @@ class _GameScreenState extends State<GameScreen>
         if (gameState.status == GameStatus.gameOver) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const GameOverScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const GameOverScreen()),
             );
           });
         }
@@ -117,6 +188,7 @@ class _GameScreenState extends State<GameScreen>
             body: SafeArea(
               child: SwipeDetector(
                 onSwipe: _handleSwipe,
+                showFeedback: false, // Disable animated feedback
                 child: Stack(
                   children: [
                     // Background gradient
@@ -133,45 +205,75 @@ class _GameScreenState extends State<GameScreen>
                         ),
                       ),
                     ),
-                    
+
                     // Main game content
-                    Column(
-                      children: [
-                        // HUD
-                        GameHUD(
-                          gameState: gameState,
-                          theme: theme,
-                          onPause: () => gameProvider.togglePause(),
-                          onHome: () => Navigator.of(context).pop(),
-                        ),
-                        
-                        // Game Instructions
-                        _buildGameInstructions(theme),
-                        
-                        // Game Board
-                        Expanded(
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                left: 16.0,
-                                right: 16.0,
-                                bottom: 50.0, // Space for gesture indicator
-                              ),
-                              child: AspectRatio(
-                                aspectRatio: 1.0,
-                                child: GameBoard(
-                                  gameState: gameState,
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final screenHeight = constraints.maxHeight;
+                        final isSmallScreen = screenHeight < 700;
+
+                        return Column(
+                          children: [
+                            // HUD
+                            GameHUD(
+                              gameState: gameState,
+                              theme: theme,
+                              onPause: () => gameProvider.togglePause(),
+                              onHome: () => _showExitConfirmation(context),
+                              isSmallScreen: isSmallScreen,
+                            ),
+
+                            // Compact Game Instructions (only show essentials)
+                            if (!isSmallScreen)
+                              _buildCompactInstructions(theme),
+
+                            // Static row above game board - Game Hint and Gesture Indicator
+                            _buildStaticGameRow(theme, isSmallScreen),
+
+                            // Game Board
+                            Expanded(
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: isSmallScreen ? 8 : 12,
+                                ),
+                                child: LayoutBuilder(
+                                  builder: (context, boardConstraints) {
+                                    // Calculate optimal board size
+                                    final availableSize = math.min(
+                                      boardConstraints.maxWidth,
+                                      boardConstraints.maxHeight - (isSmallScreen ? 40 : 60), // Reserve space for info
+                                    );
+
+                                    return Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        // Game Board
+                                        SizedBox(
+                                          width: availableSize,
+                                          height: availableSize,
+                                          child: GameBoard(
+                                            gameState: gameState,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        
-                        // Game Info Footer
-                        _buildGameInfo(gameState, theme),
-                      ],
+
+                            // Compact Game Info Footer
+                            _buildCompactGameInfo(
+                              gameState,
+                              theme,
+                              isSmallScreen,
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    
+
                     // Pause Overlay
                     if (gameState.status == GameStatus.paused)
                       PauseOverlay(
@@ -182,14 +284,18 @@ class _GameScreenState extends State<GameScreen>
                         },
                         onHome: () => Navigator.of(context).pop(),
                       ),
-                    
+
                     // Crash Feedback Overlay
-                    if (gameState.status == GameStatus.crashed && gameState.crashReason != null)
+                    if (gameState.status == GameStatus.crashed &&
+                        gameState.crashReason != null &&
+                        gameState.showCrashModal)
                       CrashFeedbackOverlay(
                         crashReason: gameState.crashReason!,
                         theme: theme,
                         onSkip: () => gameProvider.skipCrashFeedback(),
-                        duration: gameProvider.crashFeedbackDuration,
+                        duration: const Duration(
+                          seconds: 3,
+                        ), // Reduced from 5 to 3 seconds
                       ),
                   ],
                 ),
@@ -201,43 +307,54 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _buildGameInfo(GameState gameState, GameTheme theme) {
+  Widget _buildCompactGameInfo(
+    GameState gameState,
+    GameTheme theme,
+    bool isSmallScreen,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildInfoCard(
+          _buildCompactInfoCard(
             'Length',
             '${gameState.snake.length}',
             Icons.straighten,
             theme,
+            isSmallScreen,
           ),
-          _buildInfoCard(
+          _buildCompactInfoCard(
             'Level',
             '${gameState.level}',
             Icons.trending_up,
             theme,
+            isSmallScreen,
           ),
-          _buildInfoCard(
+          _buildCompactInfoCard(
             'Speed',
             '${((400 - gameState.gameSpeed) / 3).round()}%',
             Icons.speed,
             theme,
+            isSmallScreen,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard(
+  Widget _buildCompactInfoCard(
     String label,
     String value,
     IconData icon,
     GameTheme theme,
+    bool isSmallScreen,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 8 : 12,
+        vertical: isSmallScreen ? 6 : 8,
+      ),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.3),
         border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
@@ -249,117 +366,312 @@ class _GameScreenState extends State<GameScreen>
           Icon(
             icon,
             color: theme.accentColor.withValues(alpha: 0.8),
-            size: 16,
+            size: isSmallScreen ? 14 : 16,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: isSmallScreen ? 2 : 4),
           Text(
             value,
             style: TextStyle(
               color: theme.accentColor,
               fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontSize: isSmallScreen ? 11 : 12,
             ),
           ),
           Text(
             label,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.6),
-              fontSize: 10,
+              fontSize: isSmallScreen ? 8 : 10,
             ),
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildGameInstructions(GameTheme theme) {
+
+  Widget _buildCompactInstructions(GameTheme theme) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.3),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.accentColor.withValues(alpha: 0.08),
+            theme.foodColor.withValues(alpha: 0.05),
+          ],
+        ),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.2),
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: theme.accentColor.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          // Instructions in a responsive row
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isNarrow = constraints.maxWidth < 320;
-              
-              if (isNarrow) {
-                // Stack instructions vertically on very narrow screens
-                return Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildInstruction('📱 Swipe', 'to move', theme),
-                        _buildInstruction('🍎 Apple', '10 pts', theme),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildInstruction('✨ Bonus', '25 pts', theme),
-                        _buildInstruction('⭐ Star', '50 pts', theme),
-                      ],
-                    ),
-                  ],
-                );
-              } else {
-                // Normal horizontal layout
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildInstruction('📱 Swipe', 'to move', theme),
-                    _buildInstruction('🍎 Apple', '10 pts', theme),
-                    _buildInstruction('✨ Bonus', '25 pts', theme),
-                    _buildInstruction('⭐ Star', '50 pts', theme),
-                  ],
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 6),
+          // Title
           Text(
-            'Avoid walls and yourself • Speed increases with level',
+            'COLLECT FOOD',
             style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.7),
+              color: theme.accentColor.withValues(alpha: 0.8),
               fontSize: 10,
-              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          // Food types
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildEnhancedInstruction('🍎', 'Apple', '10 pts', theme),
+              _buildEnhancedInstruction('✨', 'Bonus', '25 pts', theme),
+              _buildEnhancedInstruction('⭐', 'Star', '50 pts', theme),
+            ],
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildInstruction(String icon, String text, GameTheme theme) {
+
+
+  Widget _buildEnhancedInstruction(
+    String emoji,
+    String name,
+    String points,
+    GameTheme theme,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          icon,
-          style: const TextStyle(fontSize: 14),
-        ),
+        Text(emoji, style: const TextStyle(fontSize: 16)),
         const SizedBox(height: 2),
         Text(
-          text,
+          name,
           style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.8),
-            fontSize: 9,
+            color: theme.accentColor.withValues(alpha: 0.7),
+            fontSize: 8,
             fontWeight: FontWeight.w500,
           ),
-          textAlign: TextAlign.center,
+        ),
+        Text(
+          points,
+          style: TextStyle(
+            color: theme.foodColor.withValues(alpha: 0.9),
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
+  }
+
+  Widget _buildStaticGameRow(GameTheme theme, bool isSmallScreen) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: isSmallScreen ? 6 : 8,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Left side - Game hint
+          _buildGameHint(theme, isSmallScreen),
+          // Right side - Static gesture indicator
+          _buildStaticGestureIndicator(theme, isSmallScreen),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGameHint(GameTheme theme, bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 8 : 10,
+        vertical: isSmallScreen ? 6 : 8,
+      ),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.foodColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.lightbulb_outline,
+            color: theme.foodColor.withValues(alpha: 0.7),
+            size: isSmallScreen ? 14 : 16,
+          ),
+          SizedBox(width: isSmallScreen ? 6 : 8),
+          Text(
+            'Avoid walls & yourself',
+            style: TextStyle(
+              color: theme.foodColor.withValues(alpha: 0.8),
+              fontSize: isSmallScreen ? 10 : 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStaticGestureIndicator(GameTheme theme, bool isSmallScreen) {
+    return AnimatedBuilder(
+      animation: _gestureIndicatorController,
+      builder: (context, child) {
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 8 : 10,
+            vertical: isSmallScreen ? 6 : 8,
+          ),
+          decoration: BoxDecoration(
+            color: theme.backgroundColor.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.accentColor.withValues(alpha: 0.3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Multi-directional gesture indicator
+              Container(
+                width: isSmallScreen ? 24 : 28,
+                height: isSmallScreen ? 24 : 28,
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Up arrow
+                    Positioned(
+                      top: 2,
+                      left: 0,
+                      right: 0,
+                      child: Icon(
+                        Icons.keyboard_arrow_up,
+                        color: _getDirectionColor(Direction.up, theme),
+                        size: isSmallScreen ? 8 : 10,
+                      ),
+                    ),
+                    // Down arrow
+                    Positioned(
+                      bottom: 2,
+                      left: 0,
+                      right: 0,
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: _getDirectionColor(Direction.down, theme),
+                        size: isSmallScreen ? 8 : 10,
+                      ),
+                    ),
+                    // Left arrow
+                    Positioned(
+                      left: 2,
+                      top: 0,
+                      bottom: 0,
+                      child: Icon(
+                        Icons.keyboard_arrow_left,
+                        color: _getDirectionColor(Direction.left, theme),
+                        size: isSmallScreen ? 8 : 10,
+                      ),
+                    ),
+                    // Right arrow
+                    Positioned(
+                      right: 2,
+                      top: 0,
+                      bottom: 0,
+                      child: Icon(
+                        Icons.keyboard_arrow_right,
+                        color: _getDirectionColor(Direction.right, theme),
+                        size: isSmallScreen ? 8 : 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: isSmallScreen ? 6 : 8),
+              Text(
+                'Swipe',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.8),
+                  fontSize: isSmallScreen ? 10 : 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getDirectionColor(Direction direction, GameTheme theme) {
+    // If this direction was the last swipe and animation is active, show the highlight color
+    if (_lastSwipeDirection == direction && _gestureIndicatorController.isAnimating) {
+      final animationValue = _gestureIndicatorController.value;
+      switch (direction) {
+        case Direction.up:
+          return Color.lerp(
+            theme.accentColor.withValues(alpha: 0.6),
+            const Color(0xFF00BCD4), // Cyan
+            animationValue,
+          )!;
+        case Direction.down:
+          return Color.lerp(
+            theme.accentColor.withValues(alpha: 0.6),
+            const Color(0xFF4CAF50), // Green
+            animationValue,
+          )!;
+        case Direction.left:
+          return Color.lerp(
+            theme.accentColor.withValues(alpha: 0.6),
+            const Color(0xFFFF9800), // Orange
+            animationValue,
+          )!;
+        case Direction.right:
+          return Color.lerp(
+            theme.accentColor.withValues(alpha: 0.6),
+            const Color(0xFF9C27B0), // Purple
+            animationValue,
+          )!;
+      }
+    }
+    
+    // Default color for non-active directions
+    return theme.accentColor.withValues(alpha: 0.6);
   }
 }

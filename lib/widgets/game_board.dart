@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/food.dart';
+import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -126,6 +127,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
   late final Paint _snakeBodyPaint;
   late final Paint _foodPaint;
   late final Paint _gridPaint;
+  late final Paint _crashPaint;
+  late final Paint _collisionPaint;
 
   OptimizedGameBoardPainter({
     required this.gameState,
@@ -145,6 +148,16 @@ class OptimizedGameBoardPainter extends CustomPainter {
       ..color = theme.accentColor.withValues(alpha: 0.08)
       ..strokeWidth = 0.5
       ..isAntiAlias = false; // Grid doesn't need antialiasing
+    
+    // Crash indicator paints
+    _crashPaint = Paint()
+      ..isAntiAlias = true
+      ..style = PaintingStyle.fill;
+    
+    _collisionPaint = Paint()
+      ..isAntiAlias = true
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
   }
 
   @override
@@ -156,6 +169,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
     _drawGrid(canvas, size, cellWidth, cellHeight);
     _drawFood(canvas, cellWidth, cellHeight);
     _drawSnake(canvas, cellWidth, cellHeight);
+    
+    // Draw crash indicators on top if crashed
+    if (gameState.status == GameStatus.crashed && gameState.crashPosition != null) {
+      _drawCrashIndicators(canvas, cellWidth, cellHeight);
+    }
   }
 
   void _drawGrid(
@@ -904,6 +922,135 @@ class OptimizedGameBoardPainter extends CustomPainter {
         sparklePaint,
       );
     }
+  }
+
+  void _drawCrashIndicators(Canvas canvas, double cellWidth, double cellHeight) {
+    final crashPosition = gameState.crashPosition!;
+    final crashReason = gameState.crashReason!;
+    
+    // Blinking animation for better visibility (rapid on/off blinking)
+    final blinkValue = pulseAnimation.value;
+    final isVisible = (blinkValue > 0.5); // Creates strong on/off blinking effect
+    
+    if (isVisible) {
+      final pulseIntensity = 1.0; // Full intensity when visible
+      if (crashReason == CrashReason.wallCollision) {
+        _drawWallCrashIndicator(canvas, crashPosition, cellWidth, cellHeight, pulseIntensity);
+      } else if (crashReason == CrashReason.selfCollision) {
+        _drawSelfCollisionIndicator(canvas, crashPosition, cellWidth, cellHeight, pulseIntensity);
+      }
+    }
+  }
+  
+  void _drawWallCrashIndicator(Canvas canvas, Position crashPosition, double cellWidth, double cellHeight, double pulseIntensity) {
+    // Show wall collision with red "X" and warning signs
+    final rect = Rect.fromLTWH(
+      crashPosition.x * cellWidth,
+      crashPosition.y * cellHeight,
+      cellWidth,
+      cellHeight,
+    );
+    
+    // Background flash
+    _crashPaint.color = Colors.red.withValues(alpha: 0.6 * pulseIntensity);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.1)),
+      _crashPaint,
+    );
+    
+    // Draw "X" mark
+    _collisionPaint.color = Colors.white.withValues(alpha: 0.9 * pulseIntensity);
+    _collisionPaint.strokeWidth = cellWidth * 0.15;
+    
+    final margin = cellWidth * 0.2;
+    canvas.drawLine(
+      Offset(rect.left + margin, rect.top + margin),
+      Offset(rect.right - margin, rect.bottom - margin),
+      _collisionPaint,
+    );
+    canvas.drawLine(
+      Offset(rect.right - margin, rect.top + margin),
+      Offset(rect.left + margin, rect.bottom - margin),
+      _collisionPaint,
+    );
+    
+    // Draw border around crash position
+    _collisionPaint.color = Colors.red.withValues(alpha: 0.8 * pulseIntensity);
+    _collisionPaint.strokeWidth = 4.0;
+    _collisionPaint.style = PaintingStyle.stroke;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.15)),
+      _collisionPaint,
+    );
+  }
+  
+  void _drawSelfCollisionIndicator(Canvas canvas, Position crashPosition, double cellWidth, double cellHeight, double pulseIntensity) {
+    final rect = Rect.fromLTWH(
+      crashPosition.x * cellWidth,
+      crashPosition.y * cellHeight,
+      cellWidth,
+      cellHeight,
+    );
+    
+    // Head crash position - orange flash
+    _crashPaint.color = Colors.orange.withValues(alpha: 0.7 * pulseIntensity);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.1)),
+      _crashPaint,
+    );
+    
+    // Draw collision point marker at head
+    _collisionPaint.color = Colors.white.withValues(alpha: 0.9 * pulseIntensity);
+    _collisionPaint.style = PaintingStyle.fill;
+    canvas.drawCircle(
+      rect.center,
+      cellWidth * 0.15,
+      _collisionPaint,
+    );
+    
+    // Highlight the body part that was hit (if available)
+    if (gameState.collisionBodyPart != null) {
+      final bodyPartRect = Rect.fromLTWH(
+        gameState.collisionBodyPart!.x * cellWidth,
+        gameState.collisionBodyPart!.y * cellHeight,
+        cellWidth,
+        cellHeight,
+      );
+      
+      // Yellow highlight for the body part that was hit
+      _crashPaint.color = Colors.yellow.withValues(alpha: 0.6 * pulseIntensity);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(bodyPartRect, Radius.circular(cellWidth * 0.1)),
+        _crashPaint,
+      );
+      
+      // Draw connection line between head and collision body part
+      _collisionPaint.color = Colors.red.withValues(alpha: 0.7 * pulseIntensity);
+      _collisionPaint.style = PaintingStyle.stroke;
+      _collisionPaint.strokeWidth = 3.0;
+      
+      canvas.drawLine(
+        rect.center,
+        bodyPartRect.center,
+        _collisionPaint,
+      );
+      
+      // Draw border around collision body part
+      _collisionPaint.color = Colors.yellow.withValues(alpha: 0.8 * pulseIntensity);
+      _collisionPaint.strokeWidth = 3.0;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(bodyPartRect, Radius.circular(cellWidth * 0.15)),
+        _collisionPaint,
+      );
+    }
+    
+    // Draw border around head crash position
+    _collisionPaint.color = Colors.orange.withValues(alpha: 0.8 * pulseIntensity);
+    _collisionPaint.strokeWidth = 4.0;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.15)),
+      _collisionPaint,
+    );
   }
 
   @override

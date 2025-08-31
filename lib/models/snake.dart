@@ -44,6 +44,16 @@ class Snake {
     return body.skip(1).contains(head);
   }
 
+  Position? getSelfCollisionBodyPart() {
+    // Return the specific body part that the head collided with
+    for (int i = 1; i < body.length; i++) {
+      if (body[i] == head) {
+        return body[i];
+      }
+    }
+    return null;
+  }
+
   bool checkWallCollision(int boardWidth, int boardHeight) {
     return !head.isWithinBounds(boardWidth, boardHeight);
   }
