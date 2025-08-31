@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -48,35 +47,9 @@ class StorageService {
     await _prefs?.setBool(GameConstants.soundEnabledKey, enabled);
   }
 
-  Future<bool> isMusicEnabled() async {
-    await _initPrefs();
-    return _prefs?.getBool(GameConstants.musicEnabledKey) ?? true;
-  }
-
-  Future<void> setMusicEnabled(bool enabled) async {
-    await _initPrefs();
-    await _prefs?.setBool(GameConstants.musicEnabledKey, enabled);
-  }
-
-  Future<Map<String, dynamic>> getAchievements() async {
-    await _initPrefs();
-    final achievementsJson = _prefs?.getString(GameConstants.achievementsKey) ?? '{}';
-    try {
-      return json.decode(achievementsJson) as Map<String, dynamic>;
-    } catch (e) {
-      return {};
-    }
-  }
-
-  Future<void> saveAchievements(Map<String, dynamic> achievements) async {
-    await _initPrefs();
-    final achievementsJson = json.encode(achievements);
-    await _prefs?.setString(GameConstants.achievementsKey, achievementsJson);
-  }
-
   Future<BoardSize> getBoardSize() async {
     await _initPrefs();
-    final boardSizeIndex = _prefs?.getInt(GameConstants.boardSizeKey) ?? 1; // Default to Classic (index 1)
+    final boardSizeIndex = _prefs?.getInt(GameConstants.boardSizeKey) ?? 1;
     return GameConstants.availableBoardSizes[boardSizeIndex.clamp(0, GameConstants.availableBoardSizes.length - 1)];
   }
 
@@ -105,6 +78,59 @@ class StorageService {
   Future<void> saveStatistics(String statisticsJson) async {
     await _initPrefs();
     await _prefs?.setString(GameConstants.statisticsKey, statisticsJson);
+  }
+
+  Future<String?> getAchievements() async {
+    await _initPrefs();
+    return _prefs?.getString('achievements');
+  }
+
+  Future<void> saveAchievements(String achievementsJson) async {
+    await _initPrefs();
+    await _prefs?.setString('achievements', achievementsJson);
+  }
+
+  Future<bool> isMusicEnabled() async {
+    await _initPrefs();
+    return _prefs?.getBool('music_enabled') ?? true;
+  }
+
+  Future<void> setMusicEnabled(bool enabled) async {
+    await _initPrefs();
+    await _prefs?.setBool('music_enabled', enabled);
+  }
+
+  // Replay storage methods
+  Future<void> saveReplay(String replayId, String replayJson) async {
+    await _initPrefs();
+    await _prefs?.setString('replay_$replayId', replayJson);
+    
+    // Update replay keys list
+    final keys = await getReplayKeys();
+    if (!keys.contains(replayId)) {
+      keys.add(replayId);
+      await _prefs?.setStringList('replay_keys', keys);
+    }
+  }
+
+  Future<String?> getReplay(String replayId) async {
+    await _initPrefs();
+    return _prefs?.getString('replay_$replayId');
+  }
+
+  Future<List<String>> getReplayKeys() async {
+    await _initPrefs();
+    return _prefs?.getStringList('replay_keys') ?? [];
+  }
+
+  Future<void> deleteReplay(String replayId) async {
+    await _initPrefs();
+    await _prefs?.remove('replay_$replayId');
+    
+    // Update replay keys list
+    final keys = await getReplayKeys();
+    keys.remove(replayId);
+    await _prefs?.setStringList('replay_keys', keys);
   }
 
   Future<void> clearAllData() async {

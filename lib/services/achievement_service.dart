@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:snake_classic/models/achievement.dart';
@@ -49,8 +50,8 @@ class AchievementService extends ChangeNotifier {
       } else {
         // Load from local storage for guest users
         final localData = await _storageService.getAchievements();
-        if (localData.isNotEmpty) {
-          _updateAchievementsFromData(localData);
+        if (localData != null && localData.isNotEmpty) {
+          _updateAchievementsFromData(jsonDecode(localData));
         }
       }
     } catch (e) {
@@ -97,7 +98,7 @@ class AchievementService extends ChangeNotifier {
             .set(progressData, SetOptions(merge: true));
       } else {
         // Save locally for guest users
-        await _storageService.saveAchievements(progressData);
+        await _storageService.saveAchievements(jsonEncode(progressData));
       }
     } catch (e) {
       if (kDebugMode) {

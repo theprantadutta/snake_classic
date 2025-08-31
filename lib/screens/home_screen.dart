@@ -9,6 +9,9 @@ import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/leaderboard_screen.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
+import 'package:snake_classic/screens/statistics_screen.dart';
+import 'package:snake_classic/screens/replays_screen.dart';
+import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
@@ -124,6 +127,13 @@ class _HomeScreenState extends State<HomeScreen>
                         // High Score Display
                         RepaintBoundary(
                           child: _buildHighScoreCard(gameProvider, userProvider, theme, isSmallScreen),
+                        ),
+                        
+                        SizedBox(height: isSmallScreen ? 12 : 16),
+                        
+                        // Statistics Summary
+                        RepaintBoundary(
+                          child: _buildStatisticsSummary(theme, isSmallScreen),
                         ),
                         
                         SizedBox(height: isSmallScreen ? 16 : 20),
@@ -311,6 +321,154 @@ class _HomeScreenState extends State<HomeScreen>
     ).animate().fadeIn(delay: 400.ms).scale(begin: const Offset(0.95, 0.95), duration: 500.ms);
   }
 
+  Widget _buildStatisticsSummary(GameTheme theme, bool isSmallScreen) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getQuickStats(),
+      builder: (context, snapshot) {
+        final stats = snapshot.data ?? {};
+        
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.teal.withValues(alpha: 0.15),
+                Colors.teal.withValues(alpha: 0.1),
+              ],
+            ),
+            border: Border.all(
+              color: Colors.teal.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(isSmallScreen ? 14 : 18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.teal.withValues(alpha: 0.2),
+                blurRadius: 8,
+                spreadRadius: 0,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                ),
+                child: Icon(
+                  Icons.analytics,
+                  color: Colors.teal,
+                  size: isSmallScreen ? 20 : 24,
+                ),
+              ),
+              
+              SizedBox(width: isSmallScreen ? 10 : 12),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'GAME STATS',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 10 : 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.teal.withValues(alpha: 0.8),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: isSmallScreen ? 2 : 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${stats['totalGames'] ?? 0} Games',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 12 : 14,
+                              fontWeight: FontWeight.bold,
+                              color: theme.accentColor,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${stats['totalPlayTime'] ?? 0}h Played',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 12 : 14,
+                            fontWeight: FontWeight.bold,
+                            color: theme.accentColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const StatisticsScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 6 : 8, 
+                    vertical: isSmallScreen ? 3 : 4
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                    border: Border.all(
+                      color: Colors.teal.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'VIEW',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 9 : 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.teal,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      SizedBox(width: isSmallScreen ? 3 : 4),
+                      Icon(
+                        Icons.arrow_forward,
+                        color: Colors.teal,
+                        size: isSmallScreen ? 12 : 14,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ).animate().fadeIn(delay: 450.ms).scale(begin: const Offset(0.95, 0.95), duration: 500.ms);
+  }
+
+  Future<Map<String, dynamic>> _getQuickStats() async {
+    try {
+      final statisticsService = StatisticsService();
+      await statisticsService.initialize();
+      return statisticsService.getDisplayStatistics();
+    } catch (e) {
+      return {};
+    }
+  }
+
   Widget _buildMenuButtons(
     BuildContext context,
     GameProvider gameProvider,
@@ -412,6 +570,21 @@ class _HomeScreenState extends State<HomeScreen>
             
             _buildQuickActionButton(
               context,
+              icon: Icons.analytics,
+              label: 'STATISTICS',
+              color: Colors.teal,
+              isSmallScreen: isSmallScreen,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const StatisticsScreen(),
+                  ),
+                );
+              },
+            ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3, duration: 300.ms),
+            
+            _buildQuickActionButton(
+              context,
               icon: Icons.palette,
               label: theme.name.toUpperCase().replaceAll(' ', '\n'),
               color: theme.snakeColor,
@@ -419,7 +592,30 @@ class _HomeScreenState extends State<HomeScreen>
               onTap: () {
                 themeProvider.cycleTheme();
               },
-            ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3, duration: 300.ms),
+            ).animate().fadeIn(delay: 850.ms).slideY(begin: 0.3, duration: 300.ms),
+          ],
+        ),
+        
+        SizedBox(height: isSmallScreen ? 12 : 16),
+        
+        // Third Actions Row - Replays
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildQuickActionButton(
+              context,
+              icon: Icons.movie,
+              label: 'REPLAYS',
+              color: Colors.indigo,
+              isSmallScreen: isSmallScreen,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ReplaysScreen(),
+                  ),
+                );
+              },
+            ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.3, duration: 300.ms),
           ],
         ),
       ],

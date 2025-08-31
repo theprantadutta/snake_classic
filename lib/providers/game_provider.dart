@@ -6,6 +6,7 @@ import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
+import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
@@ -23,6 +24,7 @@ class GameProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final AchievementService _achievementService = AchievementService();
   final StatisticsService _statisticsService = StatisticsService();
+  final GameRecorder _gameRecorder = GameRecorder();
   
   // Smooth movement interpolation
   DateTime? _lastGameUpdate;
@@ -107,6 +109,9 @@ class GameProvider extends ChangeNotifier {
     _currentGamePowerUpTypes.clear();
     _currentGameFoodPoints = 0;
     _currentGamePowerUpTime = 0;
+    
+    // Start recording gameplay
+    _gameRecorder.startRecording();
     
     _generateFood();
     _startGameLoop();
@@ -229,6 +234,26 @@ class GameProvider extends ChangeNotifier {
     // Reset interpolation progress
     _moveProgress = 0.0;
     _lastGameUpdate = DateTime.now();
+
+    // Record current frame for replay
+    Map<String, dynamic>? gameEvent;
+    if (willEatFood) {
+      gameEvent = {'type': 'food_consumed', 'foodType': _gameState.food?.type.name};
+    } else if (willCollectPowerUp) {
+      gameEvent = {'type': 'power_up_collected', 'powerUpType': _gameState.powerUp?.type.name};
+    }
+
+    _gameRecorder.recordFrame(
+      snakePositions: snake.body.map((pos) => [pos.x, pos.y]).toList(),
+      foodPosition: _gameState.food != null ? [_gameState.food!.position.x, _gameState.food!.position.y] : null,
+      powerUpPosition: _gameState.powerUp != null ? [_gameState.powerUp!.position.x, _gameState.powerUp!.position.y] : null,
+      powerUpType: _gameState.powerUp?.type.name,
+      score: _gameState.score,
+      level: _gameState.level,
+      direction: snake.currentDirection.name,
+      activePowerUps: _gameState.activePowerUps.map((p) => p.type.name).toList(),
+      gameEvent: gameEvent,
+    );
 
     notifyListeners();
   }
@@ -460,6 +485,37 @@ class GameProvider extends ChangeNotifier {
       unlockedAchievements: [], // This would need to be tracked separately
     );
 
+    // Save game replay
+    final crashReason = _hitWallThisGame ? 'wall' : _hitSelfThisGame ? 'self' : null;
+    final gameReplay = _gameRecorder.finishRecording(
+      playerName: _authService.currentUser?.displayName ?? 'Player',
+      finalScore: _gameState.score,
+      gameMode: 'classic',
+      gameSettings: {
+        'boardWidth': _gameState.boardWidth,
+        'boardHeight': _gameState.boardHeight,
+        'gameSpeed': _gameState.gameSpeed,
+      },
+      crashReason: crashReason,
+      gameStats: {
+        'level': _gameState.level,
+        'foodConsumed': _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+        'powerUpsCollected': _powerUpsCollectedThisGame,
+        'gameDurationSeconds': gameDurationSeconds,
+      },
+    );
+
+    // Save replay to storage (only save if it's a decent game or has a crash)
+    if (gameReplay != null && (_gameState.score >= 100 || crashReason != null)) {
+      try {
+        await _storageService.saveReplay(gameReplay.id, gameReplay.toJsonString());
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to save game replay: $e');
+        }
+      }
+    }
+
     _gameState = _gameState.copyWith(
       status: GameStatus.gameOver,
       highScore: highScore,
@@ -483,6 +539,7 @@ class GameProvider extends ChangeNotifier {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
+    _gameRecorder.stopRecording(); // Stop recording if active
     _gameState = GameState.initial().copyWith(
       highScore: _gameState.highScore,
     );
@@ -495,6 +552,7 @@ class GameProvider extends ChangeNotifier {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
+    _gameRecorder.stopRecording(); // Stop recording if active
     _gameState = _gameState.copyWith(status: GameStatus.menu);
     _previousGameState = null;
     _moveProgress = 0.0;

@@ -127,7 +127,6 @@ class OptimizedGameBoardPainter extends CustomPainter {
   late final Paint _snakeHeadPaint;
   late final Paint _snakeBodyPaint;
   late final Paint _foodPaint;
-  late final Paint _powerUpPaint;
   late final Paint _gridPaint;
   late final Paint _crashPaint;
   late final Paint _collisionPaint;
@@ -146,7 +145,6 @@ class OptimizedGameBoardPainter extends CustomPainter {
     _snakeHeadPaint = Paint()..isAntiAlias = true;
     _snakeBodyPaint = Paint()..isAntiAlias = true;
     _foodPaint = Paint()..isAntiAlias = true;
-    _powerUpPaint = Paint()..isAntiAlias = true;
     _gridPaint = Paint()
       ..color = theme.accentColor.withValues(alpha: 0.08)
       ..strokeWidth = 0.5
