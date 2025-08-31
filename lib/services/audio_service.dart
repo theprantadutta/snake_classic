@@ -40,6 +40,7 @@ class AudioService {
       'level_up',
       'high_score',
       'button_click',
+      'power_up',
     ];
 
     for (final sound in soundEffects) {
@@ -92,6 +93,7 @@ class AudioService {
       case 'level_up':
       case 'high_score':
       case 'game_start':
+      case 'power_up':
         // Use click for positive feedback sounds
         await SystemSound.play(SystemSoundType.click);
         break;
