@@ -18,7 +18,7 @@ class SocialService {
   // Search for users by display name or email
   Future<List<UserProfile>> searchUsers(String query) async {
     if (query.length < 2) return [];
-    
+
     try {
       final currentUserId = _authService.currentUser?.uid;
       if (currentUserId == null) return [];
@@ -48,9 +48,9 @@ class SocialService {
 
       // Add name search results
       for (final doc in nameQuery.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         final user = UserProfile.fromJson(data);
-        
+
         // Skip current user and duplicates
         if (user.uid != currentUserId && !seenUids.contains(user.uid)) {
           users.add(user);
@@ -63,7 +63,7 @@ class SocialService {
         for (final doc in emailQuery.docs) {
           final data = doc.data() as Map<String, dynamic>;
           final user = UserProfile.fromJson(data);
-          
+
           // Skip current user and duplicates
           if (user.uid != currentUserId && !seenUids.contains(user.uid)) {
             users.add(user);
@@ -93,11 +93,11 @@ class SocialService {
       // Check if already friends or request already exists
       final fromProfile = await getUserProfile(fromUserId);
       final toProfile = await getUserProfile(toUserId);
-      
+
       if (fromProfile == null || toProfile == null) return false;
-      
-      if (fromProfile.isFriend(toUserId) || 
-          fromProfile.hasSentRequestTo(toUserId) || 
+
+      if (fromProfile.isFriend(toUserId) ||
+          fromProfile.hasSentRequestTo(toUserId) ||
           toProfile.hasSentRequestTo(fromUserId)) {
         return false;
       }
@@ -278,13 +278,18 @@ class SocialService {
       if (userProfile == null || userProfile.friends.isEmpty) return [];
 
       final friends = <UserProfile>[];
-      
+
       // Batch get friends (Firestore allows up to 10 documents in a single 'in' query)
       final friendIds = userProfile.friends;
       final chunks = <List<String>>[];
-      
+
       for (int i = 0; i < friendIds.length; i += 10) {
-        chunks.add(friendIds.sublist(i, (i + 10 < friendIds.length) ? i + 10 : friendIds.length));
+        chunks.add(
+          friendIds.sublist(
+            i,
+            (i + 10 < friendIds.length) ? i + 10 : friendIds.length,
+          ),
+        );
       }
 
       for (final chunk in chunks) {
@@ -335,7 +340,9 @@ class SocialService {
           .get();
 
       for (final doc in receivedQuery.docs) {
-        requests.add(FriendRequest.fromJson(doc.data(), FriendRequestType.received));
+        requests.add(
+          FriendRequest.fromJson(doc.data(), FriendRequestType.received),
+        );
       }
 
       // Get sent requests
@@ -346,7 +353,9 @@ class SocialService {
           .get();
 
       for (final doc in sentQuery.docs) {
-        requests.add(FriendRequest.fromJson(doc.data(), FriendRequestType.sent));
+        requests.add(
+          FriendRequest.fromJson(doc.data(), FriendRequestType.sent),
+        );
       }
 
       return requests;
@@ -363,7 +372,7 @@ class SocialService {
     try {
       final friends = await getFriends();
       final currentUser = _authService.currentUser;
-      
+
       if (currentUser != null) {
         // Include current user in the leaderboard
         final currentProfile = await getUserProfile(currentUser.uid);
@@ -374,7 +383,7 @@ class SocialService {
 
       // Sort by high score
       friends.sort((a, b) => b.highScore.compareTo(a.highScore));
-      
+
       return friends;
     } catch (e) {
       if (kDebugMode) {
@@ -385,7 +394,10 @@ class SocialService {
   }
 
   // Update user status
-  Future<void> updateUserStatus(UserStatus status, {String? statusMessage}) async {
+  Future<void> updateUserStatus(
+    UserStatus status, {
+    String? statusMessage,
+  }) async {
     try {
       final currentUser = _authService.currentUser;
       if (currentUser == null) return;
@@ -433,45 +445,50 @@ class SocialService {
         .doc(currentUser.uid)
         .snapshots()
         .asyncMap((userDoc) async {
-      if (!userDoc.exists) return <UserProfile>[];
-      
-      final userData = userDoc.data()!;
-      final friendIds = List<String>.from(userData['friends'] ?? []);
-      
-      if (friendIds.isEmpty) return <UserProfile>[];
+          if (!userDoc.exists) return <UserProfile>[];
 
-      final friends = <UserProfile>[];
-      
-      // Batch get friends
-      final chunks = <List<String>>[];
-      for (int i = 0; i < friendIds.length; i += 10) {
-        chunks.add(friendIds.sublist(i, (i + 10 < friendIds.length) ? i + 10 : friendIds.length));
-      }
+          final userData = userDoc.data()!;
+          final friendIds = List<String>.from(userData['friends'] ?? []);
 
-      for (final chunk in chunks) {
-        final query = await _firestore
-            .collection('users')
-            .where(FieldPath.documentId, whereIn: chunk)
-            .get();
+          if (friendIds.isEmpty) return <UserProfile>[];
 
-        for (final doc in query.docs) {
-          friends.add(UserProfile.fromJson(doc.data()));
-        }
-      }
+          final friends = <UserProfile>[];
 
-      // Sort friends by status and name
-      friends.sort((a, b) {
-        if (a.status != b.status) {
-          if (a.status == UserStatus.playing) return -1;
-          if (b.status == UserStatus.playing) return 1;
-          if (a.status == UserStatus.online) return -1;
-          if (b.status == UserStatus.online) return 1;
-        }
-        return a.displayName.compareTo(b.displayName);
-      });
+          // Batch get friends
+          final chunks = <List<String>>[];
+          for (int i = 0; i < friendIds.length; i += 10) {
+            chunks.add(
+              friendIds.sublist(
+                i,
+                (i + 10 < friendIds.length) ? i + 10 : friendIds.length,
+              ),
+            );
+          }
 
-      return friends;
-    });
+          for (final chunk in chunks) {
+            final query = await _firestore
+                .collection('users')
+                .where(FieldPath.documentId, whereIn: chunk)
+                .get();
+
+            for (final doc in query.docs) {
+              friends.add(UserProfile.fromJson(doc.data()));
+            }
+          }
+
+          // Sort friends by status and name
+          friends.sort((a, b) {
+            if (a.status != b.status) {
+              if (a.status == UserStatus.playing) return -1;
+              if (b.status == UserStatus.playing) return 1;
+              if (a.status == UserStatus.online) return -1;
+              if (b.status == UserStatus.online) return 1;
+            }
+            return a.displayName.compareTo(b.displayName);
+          });
+
+          return friends;
+        });
   }
 
   // Stream friend requests for real-time updates
@@ -487,9 +504,14 @@ class SocialService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => FriendRequest.fromJson(doc.data(), FriendRequestType.received))
-          .toList();
-    });
+          return snapshot.docs
+              .map(
+                (doc) => FriendRequest.fromJson(
+                  doc.data(),
+                  FriendRequestType.received,
+                ),
+              )
+              .toList();
+        });
   }
 }
