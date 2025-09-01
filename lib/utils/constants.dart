@@ -94,6 +94,30 @@ class GameConstants {
   static const Color oceanFood = Color(0xFFFF7F50);        // Coral
   static const Color oceanAccent = Color(0xFF4682B4);      // Steel blue
   
+  // Colors - Cyberpunk Theme
+  static const Color cyberpunkBackground = Color(0xFF0A0A0A); // Pure black
+  static const Color cyberpunkSnake = Color(0xFF00FFFF);      // Electric cyan
+  static const Color cyberpunkFood = Color(0xFFFF1493);       // Deep pink
+  static const Color cyberpunkAccent = Color(0xFF39FF14);     // Electric lime
+  
+  // Colors - Forest Theme
+  static const Color forestBackground = Color(0xFF0D2818);     // Dark forest green
+  static const Color forestSnake = Color(0xFF228B22);         // Forest green
+  static const Color forestFood = Color(0xFFDC143C);          // Crimson berry
+  static const Color forestAccent = Color(0xFF32CD32);        // Lime green
+  
+  // Colors - Desert Theme
+  static const Color desertBackground = Color(0xFF2F1B14);     // Dark brown sand
+  static const Color desertSnake = Color(0xFFDAA520);         // Goldenrod
+  static const Color desertFood = Color(0xFFFF4500);          // Orange red cactus fruit
+  static const Color desertAccent = Color(0xFFF4A460);        // Sandy brown
+  
+  // Colors - Crystal Theme
+  static const Color crystalBackground = Color(0xFF1A0033);    // Deep purple
+  static const Color crystalSnake = Color(0xFF9370DB);        // Medium orchid
+  static const Color crystalFood = Color(0xFFDA70D6);         // Orchid
+  static const Color crystalAccent = Color(0xFF8A2BE2);       // Blue violet
+  
   // Animation durations
   static const Duration shortAnimation = Duration(milliseconds: 150);
   static const Duration mediumAnimation = Duration(milliseconds: 300);
@@ -116,6 +140,7 @@ class GameConstants {
   static const String boardSizeKey = 'board_size';
   static const String crashFeedbackDurationKey = 'crash_feedback_duration';
   static const String statisticsKey = 'game_statistics';
+  static const String trailSystemEnabledKey = 'trail_system_enabled';
 }
 
 enum GameTheme {
@@ -124,7 +149,11 @@ enum GameTheme {
   neon,
   retro,
   space,
-  ocean;
+  ocean,
+  cyberpunk,
+  forest,
+  desert,
+  crystal;
   
   String get name {
     switch (this) {
@@ -140,6 +169,14 @@ enum GameTheme {
         return 'Space';
       case GameTheme.ocean:
         return 'Ocean';
+      case GameTheme.cyberpunk:
+        return 'Cyberpunk';
+      case GameTheme.forest:
+        return 'Forest';
+      case GameTheme.desert:
+        return 'Desert';
+      case GameTheme.crystal:
+        return 'Crystal';
     }
   }
   
@@ -157,6 +194,14 @@ enum GameTheme {
         return GameConstants.spaceBackground;
       case GameTheme.ocean:
         return GameConstants.oceanBackground;
+      case GameTheme.cyberpunk:
+        return GameConstants.cyberpunkBackground;
+      case GameTheme.forest:
+        return GameConstants.forestBackground;
+      case GameTheme.desert:
+        return GameConstants.desertBackground;
+      case GameTheme.crystal:
+        return GameConstants.crystalBackground;
     }
   }
   
@@ -174,6 +219,14 @@ enum GameTheme {
         return GameConstants.spaceSnake;
       case GameTheme.ocean:
         return GameConstants.oceanSnake;
+      case GameTheme.cyberpunk:
+        return GameConstants.cyberpunkSnake;
+      case GameTheme.forest:
+        return GameConstants.forestSnake;
+      case GameTheme.desert:
+        return GameConstants.desertSnake;
+      case GameTheme.crystal:
+        return GameConstants.crystalSnake;
     }
   }
   
@@ -191,6 +244,14 @@ enum GameTheme {
         return GameConstants.spaceFood;
       case GameTheme.ocean:
         return GameConstants.oceanFood;
+      case GameTheme.cyberpunk:
+        return GameConstants.cyberpunkFood;
+      case GameTheme.forest:
+        return GameConstants.forestFood;
+      case GameTheme.desert:
+        return GameConstants.desertFood;
+      case GameTheme.crystal:
+        return GameConstants.crystalFood;
     }
   }
   
@@ -208,6 +269,14 @@ enum GameTheme {
         return GameConstants.spaceAccent;
       case GameTheme.ocean:
         return GameConstants.oceanAccent;
+      case GameTheme.cyberpunk:
+        return GameConstants.cyberpunkAccent;
+      case GameTheme.forest:
+        return GameConstants.forestAccent;
+      case GameTheme.desert:
+        return GameConstants.desertAccent;
+      case GameTheme.crystal:
+        return GameConstants.crystalAccent;
     }
   }
 
@@ -225,6 +294,14 @@ enum GameTheme {
         return GameConstants.spaceSnake;
       case GameTheme.ocean:
         return GameConstants.oceanSnake;
+      case GameTheme.cyberpunk:
+        return GameConstants.cyberpunkSnake;
+      case GameTheme.forest:
+        return GameConstants.forestSnake;
+      case GameTheme.desert:
+        return GameConstants.desertSnake;
+      case GameTheme.crystal:
+        return GameConstants.crystalSnake;
     }
   }
 }

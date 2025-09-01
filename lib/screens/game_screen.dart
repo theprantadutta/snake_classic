@@ -21,14 +21,15 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, TickerProviderStateMixin {
+class _GameScreenState extends State<GameScreen>
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   Direction? _lastSwipeDirection;
   late AnimationController _gestureIndicatorController;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
+
     // Initialize gesture indicator animation controller
     _gestureIndicatorController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -65,12 +66,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
 
   void _handleSwipe(Direction direction) {
     context.read<GameProvider>().changeDirection(direction);
-    
+
     // Update last swipe direction and animate indicator
     setState(() {
       _lastSwipeDirection = direction;
     });
-    
+
     // Animate the gesture indicator
     _gestureIndicatorController.forward().then((_) {
       _gestureIndicatorController.reverse();
@@ -253,11 +254,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
                                     // Calculate optimal board size
                                     final availableSize = math.min(
                                       boardConstraints.maxWidth,
-                                      boardConstraints.maxHeight - (isSmallScreen ? 40 : 60), // Reserve space for info
+                                      boardConstraints.maxHeight -
+                                          (isSmallScreen
+                                              ? 40
+                                              : 60), // Reserve space for info
                                     );
 
                                     return Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         // Game Board
                                         SizedBox(
@@ -453,7 +458,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
     );
   }
 
-
   Widget _buildEnhancedInstruction(
     String emoji,
     String name,
@@ -550,8 +554,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
     return AnimatedBuilder(
       animation: _gestureIndicatorController,
       builder: (context, child) {
-        final animationValue = _gestureIndicatorController.value;
-        
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: isSmallScreen ? 10 : 12,
@@ -568,18 +570,40 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating
-                  ? _getActiveSwipeColor(_lastSwipeDirection!, theme).withValues(alpha: 0.6)
+              color:
+                  _lastSwipeDirection != null &&
+                      _gestureIndicatorController.isAnimating
+                  ? _getActiveSwipeColor(
+                      _lastSwipeDirection!,
+                      theme,
+                    ).withValues(alpha: 0.6)
                   : theme.accentColor.withValues(alpha: 0.4),
-              width: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating ? 2.0 : 1.5,
+              width:
+                  _lastSwipeDirection != null &&
+                      _gestureIndicatorController.isAnimating
+                  ? 2.0
+                  : 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating
-                    ? _getActiveSwipeColor(_lastSwipeDirection!, theme).withValues(alpha: 0.3)
+                color:
+                    _lastSwipeDirection != null &&
+                        _gestureIndicatorController.isAnimating
+                    ? _getActiveSwipeColor(
+                        _lastSwipeDirection!,
+                        theme,
+                      ).withValues(alpha: 0.3)
                     : Colors.black.withValues(alpha: 0.2),
-                blurRadius: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating ? 8 : 6,
-                spreadRadius: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating ? 1 : 0,
+                blurRadius:
+                    _lastSwipeDirection != null &&
+                        _gestureIndicatorController.isAnimating
+                    ? 8
+                    : 6,
+                spreadRadius:
+                    _lastSwipeDirection != null &&
+                        _gestureIndicatorController.isAnimating
+                    ? 1
+                    : 0,
                 offset: const Offset(0, 3),
               ),
             ],
@@ -617,7 +641,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
                         ),
                       ),
                     ),
-                    
+
                     // Enhanced directional indicators
                     _buildDirectionalIndicator(
                       Direction.up,
@@ -652,7 +676,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
               ),
               SizedBox(width: isSmallScreen ? 8 : 10),
               SizedBox(
-                height: isSmallScreen ? 28 : 32, // Fixed height to prevent jumping
+                height: isSmallScreen
+                    ? 28
+                    : 32, // Fixed height to prevent jumping
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -669,13 +695,22 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
                     ),
                     SizedBox(height: 2), // Consistent spacing
                     AnimatedOpacity(
-                      opacity: (_lastSwipeDirection != null && _gestureIndicatorController.isAnimating) ? 1.0 : 0.0,
+                      opacity:
+                          (_lastSwipeDirection != null &&
+                              _gestureIndicatorController.isAnimating)
+                          ? 1.0
+                          : 0.0,
                       duration: const Duration(milliseconds: 200),
                       child: Text(
-                        _lastSwipeDirection != null ? _getDirectionName(_lastSwipeDirection!) : 'UP', // Placeholder to maintain layout
+                        _lastSwipeDirection != null
+                            ? _getDirectionName(_lastSwipeDirection!)
+                            : 'UP', // Placeholder to maintain layout
                         style: TextStyle(
-                          color: _lastSwipeDirection != null 
-                              ? _getActiveSwipeColor(_lastSwipeDirection!, theme)
+                          color: _lastSwipeDirection != null
+                              ? _getActiveSwipeColor(
+                                  _lastSwipeDirection!,
+                                  theme,
+                                )
                               : Colors.transparent,
                           fontSize: isSmallScreen ? 8 : 9,
                           fontWeight: FontWeight.w600,
@@ -701,9 +736,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
     GameTheme theme,
     bool isSmallScreen,
   ) {
-    final isActive = _lastSwipeDirection == direction && _gestureIndicatorController.isAnimating;
+    final isActive =
+        _lastSwipeDirection == direction &&
+        _gestureIndicatorController.isAnimating;
     final animationValue = _gestureIndicatorController.value;
-    
+
     return Align(
       alignment: alignment,
       child: Transform.translate(
@@ -713,28 +750,38 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
           width: isActive ? (isSmallScreen ? 8 : 10) : (isSmallScreen ? 6 : 8),
           height: isActive ? (isSmallScreen ? 8 : 10) : (isSmallScreen ? 6 : 8),
           decoration: BoxDecoration(
-            color: isActive 
-                ? _getActiveSwipeColor(direction, theme).withValues(alpha: 0.8 + 0.2 * animationValue)
+            color: isActive
+                ? _getActiveSwipeColor(
+                    direction,
+                    theme,
+                  ).withValues(alpha: 0.8 + 0.2 * animationValue)
                 : theme.accentColor.withValues(alpha: 0.4),
             shape: BoxShape.circle,
-            boxShadow: isActive ? [
-              BoxShadow(
-                color: _getActiveSwipeColor(direction, theme).withValues(alpha: 0.4),
-                blurRadius: 4 + 2 * animationValue,
-                spreadRadius: 1 + animationValue,
-              ),
-            ] : null,
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: _getActiveSwipeColor(
+                        direction,
+                        theme,
+                      ).withValues(alpha: 0.4),
+                      blurRadius: 4 + 2 * animationValue,
+                      spreadRadius: 1 + animationValue,
+                    ),
+                  ]
+                : null,
           ),
-          child: isActive ? Center(
-            child: Container(
-              width: isSmallScreen ? 3 : 4,
-              height: isSmallScreen ? 3 : 4,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ) : null,
+          child: isActive
+              ? Center(
+                  child: Container(
+                    width: isSmallScreen ? 3 : 4,
+                    height: isSmallScreen ? 3 : 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                )
+              : null,
         ),
       ),
     );
@@ -765,21 +812,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
         return 'RIGHT';
     }
   }
-
-  Color _getDirectionColor(Direction direction, GameTheme theme) {
-    // If this direction was the last swipe and animation is active, show the highlight color
-    if (_lastSwipeDirection == direction && _gestureIndicatorController.isAnimating) {
-      final animationValue = _gestureIndicatorController.value;
-      return Color.lerp(
-        theme.accentColor.withValues(alpha: 0.6),
-        _getActiveSwipeColor(direction, theme),
-        animationValue,
-      )!;
-    }
-    
-    // Default color for non-active directions
-    return theme.accentColor.withValues(alpha: 0.6);
-  }
 }
 
 // Custom painter for game background pattern - matching home screen
@@ -797,21 +829,13 @@ class _GameBackgroundPainter extends CustomPainter {
 
     // Draw subtle grid pattern
     const gridSize = 30.0;
-    
+
     for (double x = 0; x < size.width; x += gridSize) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-    
+
     for (double y = 0; y < size.height; y += gridSize) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
     // Draw decorative shapes

@@ -8,6 +8,7 @@ import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/providers/multiplayer_provider.dart';
 import 'package:snake_classic/screens/home_screen.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/utils/performance_monitor.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -28,7 +29,10 @@ void main() async {
   // Initialize audio service
   await AudioService().initialize();
   
-  runApp(const SnakeClassicApp());
+  // Start performance monitoring
+  PerformanceMonitor().startMonitoring();
+  
+  runApp(const SnakeClassicApp().withPerformanceMonitoring());
 }
 
 class SnakeClassicApp extends StatelessWidget {

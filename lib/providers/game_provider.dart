@@ -10,6 +10,8 @@ import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/enhanced_audio_service.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
@@ -23,6 +25,8 @@ class GameProvider extends ChangeNotifier {
   Timer? _animationTimer; // Use Timer instead of Ticker for simplicity
   final StorageService _storageService = StorageService();
   final AudioService _audioService = AudioService();
+  final EnhancedAudioService _enhancedAudioService = EnhancedAudioService();
+  final HapticService _hapticService = HapticService();
   final AuthService _authService = AuthService();
   final AchievementService _achievementService = AchievementService();
   final StatisticsService _statisticsService = StatisticsService();
@@ -91,6 +95,7 @@ class GameProvider extends ChangeNotifier {
       boardHeight: boardSize.height,
     );
     await _audioService.initialize();
+    await _enhancedAudioService.initialize();
     await _achievementService.initialize();
     await _statisticsService.initialize();
     notifyListeners();
@@ -130,6 +135,7 @@ class GameProvider extends ChangeNotifier {
     _startSmoothAnimation();
     _startPowerUpTimer();
     _audioService.playSound('game_start');
+    _enhancedAudioService.playSfx('game_start', volume: 0.8);
     notifyListeners();
   }
 
@@ -273,6 +279,7 @@ class GameProvider extends ChangeNotifier {
     
     // Handle power-up collection
     if (willCollectPowerUp && _gameState.powerUp != null) {
+      _hapticService.powerUpCollected(); // Add haptic feedback
       _collectPowerUp(_gameState.powerUp!);
     }
 
@@ -325,9 +332,21 @@ class GameProvider extends ChangeNotifier {
     if (newScore >= _gameState.targetScore && newLevel < 10) {
       newLevel++;
       _audioService.playSound('level_up');
+      _enhancedAudioService.playSfx('level_up', volume: 1.0);
       HapticFeedback.mediumImpact();
     } else {
       _audioService.playSound('eat');
+      // Enhanced spatial audio for food consumption
+      final foodPos = _gameState.food?.position;
+      if (foodPos != null) {
+        _enhancedAudioService.playSfx('eat', 
+          volume: 0.8,
+          position: SpatialAudioPosition(
+            x: foodPos.x / _gameState.boardWidth,
+            y: foodPos.y / _gameState.boardHeight,
+          ),
+        );
+      }
       HapticFeedback.lightImpact();
     }
 
@@ -377,6 +396,14 @@ class GameProvider extends ChangeNotifier {
     _currentGamePowerUpTypes[powerUp.type.name] = (_currentGamePowerUpTypes[powerUp.type.name] ?? 0) + 1;
     
     _audioService.playSound('power_up');
+    // Enhanced spatial audio for power-up collection
+    _enhancedAudioService.playSfx('power_up',
+      volume: 1.0,
+      position: SpatialAudioPosition(
+        x: powerUp.position.x / _gameState.boardWidth,
+        y: powerUp.position.y / _gameState.boardHeight,
+      ),
+    );
     HapticFeedback.mediumImpact();
     
     // Restart game loop if speed changed
@@ -423,6 +450,12 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _handleCrash(CrashReason crashReason, {Position? crashPosition, Position? collisionBodyPart}) {
+    // Add haptic feedback based on crash type
+    if (crashReason == CrashReason.wallCollision) {
+      _hapticService.wallHit();
+    } else if (crashReason == CrashReason.selfCollision) {
+      _hapticService.selfCollision();
+    }
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
@@ -438,6 +471,7 @@ class GameProvider extends ChangeNotifier {
     
     // Play crash sound and haptic feedback immediately
     _audioService.playSound('game_over');
+    _enhancedAudioService.playSfx('game_over', volume: 1.0);
     HapticFeedback.heavyImpact();
     notifyListeners();
     
@@ -459,6 +493,7 @@ class GameProvider extends ChangeNotifier {
   }
   
   void _gameOver() async {
+    _hapticService.gameOver(); // Add haptic feedback for game over
     // Calculate game duration
     final gameDurationSeconds = _gameStartTime != null 
       ? DateTime.now().difference(_gameStartTime!).inSeconds 
@@ -472,6 +507,7 @@ class GameProvider extends ChangeNotifier {
       highScore = _gameState.score;
       _storageService.saveHighScore(highScore);
       _audioService.playSound('high_score');
+      _enhancedAudioService.playSfx('high_score', volume: 1.0);
     }
 
     // Update Firebase user stats and get user profile for achievement tracking
@@ -669,6 +705,7 @@ class GameProvider extends ChangeNotifier {
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
     _audioService.dispose();
+    _enhancedAudioService.dispose();
     super.dispose();
   }
 }

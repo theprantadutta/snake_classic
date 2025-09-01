@@ -136,10 +136,11 @@ class _GameOverScreenState extends State<GameOverScreen>
                   // Main content
                   Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                      padding: const EdgeInsets.all(20.0),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
                           // Game Over Title
                           Text(
                             'GAME OVER',
@@ -250,13 +251,13 @@ class _GameOverScreenState extends State<GameOverScreen>
                           // Score Display
                           _buildScoreCard(gameState, theme),
                           
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 20),
                           
                           // Achievement Display
                           if (_achievementsLoaded && (_recentAchievements.isNotEmpty || _progressAchievements.isNotEmpty))
                             _buildAchievementSection(theme),
                           
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
                           
                           // Action Buttons
                           Column(
@@ -305,9 +306,10 @@ class _GameOverScreenState extends State<GameOverScreen>
                             ],
                           ),
                         ],
-                      ),
-                    ),
-                  ),
+                      ), // End Column
+                    ), // End SingleChildScrollView
+                  ), // End Padding
+                ), // End Center
                 ],
               ),
             ),
@@ -410,7 +412,8 @@ class _GameOverScreenState extends State<GameOverScreen>
             opacity: _achievementController.value,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              constraints: const BoxConstraints(maxHeight: 280),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -444,57 +447,67 @@ class _GameOverScreenState extends State<GameOverScreen>
                       Icon(
                         Icons.emoji_events,
                         color: Colors.amber,
-                        size: 24,
+                        size: 20,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Text(
                         'ACHIEVEMENTS',
                         style: TextStyle(
                           color: theme.accentColor,
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
+                          letterSpacing: 1.0,
                         ),
                       ),
                     ],
                   ),
                   
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   
-                  // Recent Unlocks
-                  if (_recentAchievements.isNotEmpty) ...[
-                    Text(
-                      'Recently Unlocked:',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                  // Scrollable achievement content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Recent Unlocks
+                          if (_recentAchievements.isNotEmpty) ...[
+                            Text(
+                              'Recently Unlocked:',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            ..._recentAchievements.take(2).map((achievement) => 
+                              _buildAchievementItem(achievement, theme, isUnlocked: true)
+                            ),
+                            
+                            if (_progressAchievements.isNotEmpty)
+                              const SizedBox(height: 12),
+                          ],
+                          
+                          // Progress Achievements
+                          if (_progressAchievements.isNotEmpty) ...[
+                            Text(
+                              'Progress Update:',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            ..._progressAchievements.take(2).map((achievement) => 
+                              _buildAchievementItem(achievement, theme, isUnlocked: false)
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    ..._recentAchievements.map((achievement) => 
-                      _buildAchievementItem(achievement, theme, isUnlocked: true)
-                    ).toList(),
-                    
-                    if (_progressAchievements.isNotEmpty)
-                      const SizedBox(height: 16),
-                  ],
-                  
-                  // Progress Achievements
-                  if (_progressAchievements.isNotEmpty) ...[
-                    Text(
-                      'Progress Update:',
-                      style: TextStyle(
-                        color: Colors.orange,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ..._progressAchievements.map((achievement) => 
-                      _buildAchievementItem(achievement, theme, isUnlocked: false)
-                    ).toList(),
-                  ],
+                  ),
                 ],
               ),
             ),
@@ -506,8 +519,8 @@ class _GameOverScreenState extends State<GameOverScreen>
   
   Widget _buildAchievementItem(Achievement achievement, GameTheme theme, {required bool isUnlocked}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: isUnlocked 
             ? Colors.green.withValues(alpha: 0.1)
@@ -524,19 +537,19 @@ class _GameOverScreenState extends State<GameOverScreen>
         children: [
           // Achievement Icon with Rarity Color
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: achievement.rarityColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
               achievement.icon,
               color: achievement.rarityColor,
-              size: 20,
+              size: 16,
             ),
           ),
           
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           
           // Achievement Details
           Expanded(
@@ -550,7 +563,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                         achievement.title,
                         style: TextStyle(
                           color: theme.accentColor,
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                         overflow: TextOverflow.ellipsis,

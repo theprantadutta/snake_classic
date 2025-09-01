@@ -18,6 +18,7 @@ import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
 import 'package:snake_classic/widgets/instructions_dialog.dart';
+import 'package:snake_classic/widgets/theme_transition_system.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +28,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _logoController;
 
   @override
@@ -38,6 +39,11 @@ class _HomeScreenState extends State<HomeScreen>
       duration: const Duration(milliseconds: 1500), // Reduced duration
       vsync: this,
     );
+
+    // Initialize theme transitions
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ThemeProvider>().initializeTransitions(this);
+    });
 
     // Start logo animation with a slight delay
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -59,87 +65,93 @@ class _HomeScreenState extends State<HomeScreen>
       builder: (context, gameProvider, themeProvider, userProvider, child) {
         final theme = themeProvider.currentTheme;
 
-        return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topRight,
-                radius: 1.5,
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.15),
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.9),
-                  Colors.black.withValues(alpha: 0.1),
-                ],
-                stops: const [0.0, 0.4, 0.8, 1.0],
+        return ThemeTransitionWidget(
+          controller:
+              themeProvider.transitionController ??
+              ThemeTransitionController(vsync: this),
+          currentTheme: theme,
+          child: Scaffold(
+            body: Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topRight,
+                  radius: 1.5,
+                  colors: [
+                    theme.accentColor.withValues(alpha: 0.15),
+                    theme.backgroundColor,
+                    theme.backgroundColor.withValues(alpha: 0.9),
+                    Colors.black.withValues(alpha: 0.1),
+                  ],
+                  stops: const [0.0, 0.4, 0.8, 1.0],
+                ),
               ),
-            ),
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final screenWidth = constraints.maxWidth;
-                  final screenHeight = constraints.maxHeight;
-                  final isSmallScreen = screenHeight < 700;
+              child: SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final screenWidth = constraints.maxWidth;
+                    final screenHeight = constraints.maxHeight;
+                    final isSmallScreen = screenHeight < 700;
 
-                  return Stack(
-                    children: [
-                      // Background pattern overlay
-                      _buildBackgroundPattern(theme, constraints),
+                    return Stack(
+                      children: [
+                        // Background pattern overlay
+                        _buildBackgroundPattern(theme, constraints),
 
-                      // Main content
-                      Positioned.fill(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: screenWidth * 0.04,
-                            vertical: isSmallScreen ? 8 : 12,
-                          ),
-                          child: Column(
-                            children: [
-                              // Top navigation bar
-                              _buildTopNavigation(
-                                context,
-                                userProvider,
-                                theme,
-                                isSmallScreen,
-                              ),
-
-                              SizedBox(height: isSmallScreen ? 16 : 24),
-
-                              // Game title with logo
-                              _buildGameTitle(theme, isSmallScreen),
-
-                              SizedBox(height: isSmallScreen ? 20 : 28),
-
-                              // Main play area with central button
-                              Expanded(
-                                child: _buildMainPlayArea(
+                        // Main content
+                        Positioned.fill(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth * 0.04,
+                              vertical: isSmallScreen ? 8 : 12,
+                            ),
+                            child: Column(
+                              children: [
+                                // Top navigation bar
+                                _buildTopNavigation(
                                   context,
-                                  gameProvider,
                                   userProvider,
                                   theme,
                                   isSmallScreen,
-                                  screenWidth,
-                                  screenHeight,
                                 ),
-                              ),
 
-                              // Bottom navigation grid
-                              _buildBottomNavigation(
-                                context,
-                                themeProvider,
-                                theme,
-                                isSmallScreen,
-                                screenWidth,
-                              ),
+                                SizedBox(height: isSmallScreen ? 16 : 24),
 
-                              SizedBox(height: isSmallScreen ? 8 : 12),
-                            ],
+                                // Game title with logo
+                                _buildGameTitle(theme, isSmallScreen),
+
+                                SizedBox(height: isSmallScreen ? 20 : 28),
+
+                                // Main play area with central button
+                                Expanded(
+                                  child: _buildMainPlayArea(
+                                    context,
+                                    gameProvider,
+                                    userProvider,
+                                    theme,
+                                    isSmallScreen,
+                                    screenWidth,
+                                    screenHeight,
+                                  ),
+                                ),
+
+                                // Bottom navigation grid
+                                _buildBottomNavigation(
+                                  context,
+                                  themeProvider,
+                                  theme,
+                                  isSmallScreen,
+                                  screenWidth,
+                                ),
+
+                                SizedBox(height: isSmallScreen ? 8 : 12),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -820,11 +832,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           title: Row(
             children: [
-              Icon(
-                Icons.emoji_events,
-                color: Colors.amber,
-                size: 28,
-              ),
+              Icon(Icons.emoji_events, color: Colors.amber, size: 28),
               const SizedBox(width: 12),
               Text(
                 'Snake Classic',
@@ -836,7 +844,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ],
           ),
-          content: Container(
+          content: SizedBox(
             width: double.maxFinite,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -854,11 +862,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.code,
-                        color: theme.accentColor,
-                        size: 20,
-                      ),
+                      Icon(Icons.code, color: theme.accentColor, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -885,9 +889,9 @@ class _HomeScreenState extends State<HomeScreen>
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Development credits
                 Text(
                   'Development',
@@ -904,9 +908,9 @@ class _HomeScreenState extends State<HomeScreen>
                   subtitle: 'Premium Snake Experience',
                   theme: theme,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Technology credits
                 Text(
                   'Powered By',
@@ -935,9 +939,9 @@ class _HomeScreenState extends State<HomeScreen>
                   subtitle: 'Multiplayer & Leaderboards',
                   theme: theme,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Special features highlight
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -958,11 +962,7 @@ class _HomeScreenState extends State<HomeScreen>
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            Icons.stars,
-                            color: Colors.amber,
-                            size: 20,
-                          ),
+                          Icon(Icons.stars, color: Colors.amber, size: 20),
                           const SizedBox(width: 8),
                           Text(
                             'Premium Features',
@@ -986,9 +986,9 @@ class _HomeScreenState extends State<HomeScreen>
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Footer
                 Center(
                   child: Text(
@@ -1008,7 +1008,10 @@ class _HomeScreenState extends State<HomeScreen>
               onPressed: () => Navigator.of(context).pop(),
               style: TextButton.styleFrom(
                 backgroundColor: theme.accentColor.withValues(alpha: 0.1),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
@@ -1046,11 +1049,7 @@ class _HomeScreenState extends State<HomeScreen>
               color: theme.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: theme.accentColor,
-              size: 16,
-            ),
+            child: Icon(icon, color: theme.accentColor, size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(

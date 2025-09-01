@@ -100,6 +100,16 @@ class StorageService {
     await _prefs?.setBool('music_enabled', enabled);
   }
 
+  Future<bool> isTrailSystemEnabled() async {
+    await _initPrefs();
+    return _prefs?.getBool(GameConstants.trailSystemEnabledKey) ?? false; // Default to false
+  }
+
+  Future<void> setTrailSystemEnabled(bool enabled) async {
+    await _initPrefs();
+    await _prefs?.setBool(GameConstants.trailSystemEnabledKey, enabled);
+  }
+
   // Replay storage methods
   Future<void> saveReplay(String replayId, String replayJson) async {
     await _initPrefs();

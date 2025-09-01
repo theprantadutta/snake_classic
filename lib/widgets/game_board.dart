@@ -9,6 +9,9 @@ import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/widgets/advanced_particle_system.dart';
+import 'package:snake_classic/widgets/snake_trail_system.dart';
+import 'package:snake_classic/widgets/shader_effects.dart';
 
 class GameBoard extends StatefulWidget {
   final GameState gameState;
@@ -30,6 +33,9 @@ class _GameBoardState extends State<GameBoard>
   late Animation<double> _pulseAnimation;
   GameState? _cachedGameState;
   GameTheme? _cachedTheme;
+
+  // Enhanced effects
+  final ParticleManager _particleManager = ParticleManager();
 
   @override
   void initState() {
@@ -65,6 +71,7 @@ class _GameBoardState extends State<GameBoard>
             _cachedGameState != widget.gameState || _cachedTheme != theme;
 
         if (shouldRebuild) {
+          _checkForGameEvents(_cachedGameState, widget.gameState, theme);
           _cachedGameState = widget.gameState;
           _cachedTheme = theme;
         }
@@ -152,7 +159,8 @@ class _GameBoardState extends State<GameBoard>
                     // Game content
                     AspectRatio(
                       aspectRatio:
-                          widget.gameState.boardWidth / widget.gameState.boardHeight,
+                          widget.gameState.boardWidth /
+                          widget.gameState.boardHeight,
                       child: Consumer<GameProvider>(
                         builder: (context, gameProvider, child) {
                           return CustomPaint(
@@ -172,6 +180,35 @@ class _GameBoardState extends State<GameBoard>
                         },
                       ),
                     ),
+                    // Snake trail system (conditionally shown)
+                    if (themeProvider.isTrailSystemEnabled)
+                      Positioned.fill(
+                        child: SnakeTrailSystem(
+                          snakeBody: widget.gameState.snake.body,
+                          trailType: _getTrailTypeForTheme(theme),
+                          theme: theme,
+                          cellWidth: widget.cellSize,
+                          cellHeight: widget.cellSize,
+                          isPlaying:
+                              widget.gameState.status == GameStatus.playing,
+                        ),
+                      ),
+                    // Advanced particle system
+                    Positioned.fill(
+                      child: AdvancedParticleSystem(
+                        emissions: _particleManager.emissions,
+                        autoRemoveEmissions: true,
+                      ),
+                    ),
+                    // Shader effects overlay
+                    if (_shouldUseShaderEffects(theme))
+                      Positioned.fill(
+                        child: ShaderEnhancedBackground(
+                          theme: theme,
+                          enabled: true,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -180,6 +217,112 @@ class _GameBoardState extends State<GameBoard>
         );
       },
     );
+  }
+
+  TrailType _getTrailTypeForTheme(GameTheme theme) {
+    switch (theme) {
+      case GameTheme.classic:
+        return TrailType.basic;
+      case GameTheme.modern:
+        return TrailType.glow;
+      case GameTheme.neon:
+        return TrailType.glow;
+      case GameTheme.retro:
+        return TrailType.basic;
+      case GameTheme.space:
+        return TrailType.particles;
+      case GameTheme.ocean:
+        return TrailType.glow;
+      case GameTheme.cyberpunk:
+        return TrailType.lightning;
+      case GameTheme.forest:
+        return TrailType.particles;
+      case GameTheme.desert:
+        return TrailType.fire;
+      case GameTheme.crystal:
+        return TrailType.ice;
+    }
+  }
+
+  void _addFoodParticleEffect(Offset position, GameTheme theme) {
+    _particleManager.emitAt(
+      position,
+      ParticleConfig.foodExplosion,
+      duration: const Duration(milliseconds: 800),
+    );
+  }
+
+  void _checkForGameEvents(
+    GameState? previousState,
+    GameState currentState,
+    GameTheme theme,
+  ) {
+    if (previousState == null) return;
+
+    // Check if food was consumed (score increased)
+    if (currentState.score > previousState.score && currentState.food != null) {
+      // Calculate food position in screen coordinates
+      final foodScreenX =
+          previousState.food!.position.x * widget.cellSize +
+          widget.cellSize / 2;
+      final foodScreenY =
+          previousState.food!.position.y * widget.cellSize +
+          widget.cellSize / 2;
+      final foodPosition = Offset(foodScreenX, foodScreenY);
+
+      // Add food consumption particle effect
+      _addFoodParticleEffect(foodPosition, theme);
+    }
+
+    // Check if power-up was collected
+    if (previousState.powerUp != null && currentState.powerUp == null) {
+      final powerUpScreenX =
+          previousState.powerUp!.position.x * widget.cellSize +
+          widget.cellSize / 2;
+      final powerUpScreenY =
+          previousState.powerUp!.position.y * widget.cellSize +
+          widget.cellSize / 2;
+      final powerUpPosition = Offset(powerUpScreenX, powerUpScreenY);
+
+      // Add power-up collection effect
+      _particleManager.emitAt(
+        powerUpPosition,
+        ParticleConfig.powerUpGlow,
+        duration: const Duration(milliseconds: 1500),
+      );
+    }
+
+    // Check for game over/crash
+    if (currentState.status == GameStatus.crashed &&
+        previousState.status != GameStatus.crashed) {
+      if (currentState.crashPosition != null) {
+        final crashScreenX =
+            currentState.crashPosition!.x * widget.cellSize +
+            widget.cellSize / 2;
+        final crashScreenY =
+            currentState.crashPosition!.y * widget.cellSize +
+            widget.cellSize / 2;
+        final crashPosition = Offset(crashScreenX, crashScreenY);
+
+        // Add crash explosion effect
+        _particleManager.emitAt(
+          crashPosition,
+          ParticleConfig.explosion,
+          duration: const Duration(milliseconds: 1000),
+        );
+      }
+    }
+  }
+
+  bool _shouldUseShaderEffects(GameTheme theme) {
+    // Enable shader effects for modern themes
+    return [
+      GameTheme.neon,
+      GameTheme.cyberpunk,
+      GameTheme.space,
+      GameTheme.ocean,
+      GameTheme.crystal,
+    ].contains(theme);
   }
 }
 
@@ -216,12 +359,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
       ..color = theme.accentColor.withValues(alpha: 0.08)
       ..strokeWidth = 0.5
       ..isAntiAlias = false; // Grid doesn't need antialiasing
-    
+
     // Crash indicator paints
     _crashPaint = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
-    
+
     _collisionPaint = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.stroke
@@ -238,9 +381,10 @@ class OptimizedGameBoardPainter extends CustomPainter {
     _drawFood(canvas, cellWidth, cellHeight);
     _drawPowerUp(canvas, cellWidth, cellHeight);
     _drawSnake(canvas, cellWidth, cellHeight);
-    
+
     // Draw crash indicators on top if crashed
-    if (gameState.status == GameStatus.crashed && gameState.crashPosition != null) {
+    if (gameState.status == GameStatus.crashed &&
+        gameState.crashPosition != null) {
       _drawCrashIndicators(canvas, cellWidth, cellHeight);
     }
   }
@@ -361,7 +505,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Add directional indicator (small triangle)
     _drawDirectionIndicator(canvas, rect, direction);
   }
-  
+
   List<Color> _getHeadGradientColors() {
     switch (theme) {
       case GameTheme.classic:
@@ -400,9 +544,33 @@ class OptimizedGameBoardPainter extends CustomPainter {
           theme.snakeColor.withValues(alpha: 0.9),
           theme.accentColor.withValues(alpha: 0.8),
         ];
+      case GameTheme.cyberpunk:
+        return [
+          theme.snakeColor.withValues(alpha: 1.0),
+          theme.snakeColor.withValues(alpha: 0.9),
+          theme.accentColor.withValues(alpha: 0.8),
+        ];
+      case GameTheme.forest:
+        return [
+          theme.snakeColor.withValues(alpha: 1.0),
+          theme.snakeColor.withValues(alpha: 0.9),
+          theme.accentColor.withValues(alpha: 0.7),
+        ];
+      case GameTheme.desert:
+        return [
+          theme.snakeColor.withValues(alpha: 1.0),
+          theme.snakeColor.withValues(alpha: 0.8),
+          theme.foodColor.withValues(alpha: 0.6),
+        ];
+      case GameTheme.crystal:
+        return [
+          theme.snakeColor.withValues(alpha: 1.0),
+          theme.snakeColor.withValues(alpha: 0.9),
+          theme.accentColor.withValues(alpha: 0.8),
+        ];
     }
   }
-  
+
   MaskFilter? _getHeadMaskFilter() {
     switch (theme) {
       case GameTheme.classic:
@@ -417,15 +585,23 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return const MaskFilter.blur(BlurStyle.normal, 3.0);
       case GameTheme.ocean:
         return const MaskFilter.blur(BlurStyle.normal, 2.0);
+      case GameTheme.cyberpunk:
+        return const MaskFilter.blur(BlurStyle.normal, 3.0);
+      case GameTheme.forest:
+        return const MaskFilter.blur(BlurStyle.normal, 1.5);
+      case GameTheme.desert:
+        return const MaskFilter.blur(BlurStyle.normal, 1.0);
+      case GameTheme.crystal:
+        return const MaskFilter.blur(BlurStyle.normal, 4.0);
     }
   }
-  
+
   void _drawNeonGlow(Canvas canvas, Rect rect, Color color, double intensity) {
     final glowPaint = Paint()
       ..color = color.withValues(alpha: 0.3)
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, intensity)
       ..isAntiAlias = true;
-    
+
     // Draw multiple glow layers for more intense effect
     for (int i = 0; i < 3; i++) {
       final glowRect = Rect.fromCenter(
@@ -464,7 +640,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Add theme-specific highlights
     _drawBodyHighlight(canvas, rect, isTail, fadeRatio);
   }
-  
+
   Color _getBodyColor(double opacity) {
     switch (theme) {
       case GameTheme.classic:
@@ -479,9 +655,17 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return theme.snakeColor.withValues(alpha: opacity);
       case GameTheme.ocean:
         return theme.snakeColor.withValues(alpha: opacity * 0.9);
+      case GameTheme.cyberpunk:
+        return theme.snakeColor.withValues(alpha: opacity);
+      case GameTheme.forest:
+        return theme.snakeColor.withValues(alpha: opacity * 0.9);
+      case GameTheme.desert:
+        return theme.snakeColor.withValues(alpha: opacity * 0.95);
+      case GameTheme.crystal:
+        return theme.snakeColor.withValues(alpha: opacity);
     }
   }
-  
+
   MaskFilter? _getBodyMaskFilter() {
     switch (theme) {
       case GameTheme.classic:
@@ -496,9 +680,17 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return const MaskFilter.blur(BlurStyle.normal, 1.5);
       case GameTheme.ocean:
         return const MaskFilter.blur(BlurStyle.normal, 1.0);
+      case GameTheme.cyberpunk:
+        return const MaskFilter.blur(BlurStyle.normal, 2.5);
+      case GameTheme.forest:
+        return const MaskFilter.blur(BlurStyle.normal, 0.8);
+      case GameTheme.desert:
+        return null;
+      case GameTheme.crystal:
+        return const MaskFilter.blur(BlurStyle.normal, 3.0);
     }
   }
-  
+
   Radius _getBodyRadius(Rect rect) {
     switch (theme) {
       case GameTheme.classic:
@@ -513,12 +705,25 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return Radius.circular(rect.width * 0.3);
       case GameTheme.ocean:
         return Radius.circular(rect.width * 0.25);
+      case GameTheme.cyberpunk:
+        return Radius.circular(rect.width * 0.2);
+      case GameTheme.forest:
+        return Radius.circular(rect.width * 0.3);
+      case GameTheme.desert:
+        return Radius.circular(rect.width * 0.15);
+      case GameTheme.crystal:
+        return Radius.circular(rect.width * 0.35);
     }
   }
-  
-  void _drawBodyHighlight(Canvas canvas, Rect rect, bool isTail, double fadeRatio) {
+
+  void _drawBodyHighlight(
+    Canvas canvas,
+    Rect rect,
+    bool isTail,
+    double fadeRatio,
+  ) {
     if (isTail) return;
-    
+
     switch (theme) {
       case GameTheme.classic:
         // No highlight for classic theme
@@ -599,9 +804,71 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
         canvas.drawOval(shimmerRect, shimmerPaint);
         break;
+      case GameTheme.cyberpunk:
+        // Digital matrix highlight for cyberpunk theme
+        final highlightRect = Rect.fromLTWH(
+          rect.left + rect.width * 0.2,
+          rect.top + rect.height * 0.2,
+          rect.width * 0.6,
+          rect.height * 0.6,
+        );
+
+        final highlightPaint = Paint()
+          ..color = theme.accentColor.withValues(alpha: 0.3 * fadeRatio)
+          ..isAntiAlias = true;
+
+        canvas.drawRect(highlightRect, highlightPaint);
+        break;
+      case GameTheme.forest:
+        // Natural organic highlight for forest theme
+        final highlightRect = Rect.fromLTWH(
+          rect.left + rect.width * 0.25,
+          rect.top + rect.height * 0.25,
+          rect.width * 0.5,
+          rect.height * 0.5,
+        );
+
+        final highlightPaint = Paint()
+          ..color = theme.foodColor.withValues(alpha: 0.4 * fadeRatio)
+          ..isAntiAlias = true;
+
+        canvas.drawOval(highlightRect, highlightPaint);
+        break;
+      case GameTheme.desert:
+        // Sandy shimmer highlight for desert theme
+        final highlightRect = Rect.fromLTWH(
+          rect.left + rect.width * 0.3,
+          rect.top + rect.height * 0.3,
+          rect.width * 0.4,
+          rect.height * 0.4,
+        );
+
+        final highlightPaint = Paint()
+          ..color = theme.accentColor.withValues(alpha: 0.35 * fadeRatio)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5)
+          ..isAntiAlias = true;
+
+        canvas.drawOval(highlightRect, highlightPaint);
+        break;
+      case GameTheme.crystal:
+        // Crystalline refraction highlight
+        final highlightRect = Rect.fromLTWH(
+          rect.left + rect.width * 0.2,
+          rect.top + rect.height * 0.2,
+          rect.width * 0.6,
+          rect.height * 0.6,
+        );
+
+        final highlightPaint = Paint()
+          ..color = Colors.white.withValues(alpha: 0.5 * fadeRatio)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
+          ..isAntiAlias = true;
+
+        canvas.drawOval(highlightRect, highlightPaint);
+        break;
     }
   }
-  
+
   void _drawPowerUp(Canvas canvas, double cellWidth, double cellHeight) {
     final powerUp = gameState.powerUp;
     if (powerUp == null) return;
@@ -609,12 +876,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Force square power-up by using the smaller dimension
     final cellSize = math.min(cellWidth, cellHeight);
     final padding = cellSize * 0.05;
-    
+
     // Center the square power-up in the cell
     final powerUpSize = cellSize - padding * 2;
     final centerX = powerUp.position.x * cellWidth + cellWidth / 2;
     final centerY = powerUp.position.y * cellHeight + cellHeight / 2;
-    
+
     final rect = Rect.fromCenter(
       center: Offset(centerX, centerY),
       width: powerUpSize,
@@ -636,7 +903,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
         break;
     }
   }
-  
+
   void _drawSpeedBoostPowerUp(Canvas canvas, Rect rect, PowerUp powerUp) {
     final pulseScale = 0.9 + 0.1 * powerUp.pulsePhase;
     final scaledRect = Rect.fromCenter(
@@ -644,22 +911,22 @@ class OptimizedGameBoardPainter extends CustomPainter {
       width: rect.width * pulseScale,
       height: rect.height * pulseScale,
     );
-    
+
     // Lightning bolt effect
     final paint = Paint()
       ..color = PowerUpType.speedBoost.color
       ..isAntiAlias = true
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
-    
+
     // Draw glow effect for certain themes
     if (theme == GameTheme.neon) {
       _drawNeonGlow(canvas, scaledRect, PowerUpType.speedBoost.color, 8.0);
     }
-    
+
     // Draw lightning bolt shape
     _drawLightningBolt(canvas, scaledRect, paint);
   }
-  
+
   void _drawInvincibilityPowerUp(Canvas canvas, Rect rect, PowerUp powerUp) {
     final pulseScale = 0.9 + 0.1 * powerUp.pulsePhase;
     final scaledRect = Rect.fromCenter(
@@ -667,7 +934,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       width: rect.width * pulseScale,
       height: rect.height * pulseScale,
     );
-    
+
     // Shield effect with gradient
     final gradient = RadialGradient(
       colors: [
@@ -675,19 +942,19 @@ class OptimizedGameBoardPainter extends CustomPainter {
         PowerUpType.invincibility.color.withValues(alpha: 0.3),
       ],
     );
-    
+
     final paint = Paint()
       ..shader = gradient.createShader(scaledRect)
       ..isAntiAlias = true;
-    
+
     if (theme == GameTheme.neon) {
       _drawNeonGlow(canvas, scaledRect, PowerUpType.invincibility.color, 10.0);
     }
-    
+
     // Draw shield shape
     _drawShield(canvas, scaledRect, paint);
   }
-  
+
   void _drawScoreMultiplierPowerUp(Canvas canvas, Rect rect, PowerUp powerUp) {
     final pulseScale = 0.9 + 0.1 * powerUp.pulsePhase;
     final scaledRect = Rect.fromCenter(
@@ -695,21 +962,21 @@ class OptimizedGameBoardPainter extends CustomPainter {
       width: rect.width * pulseScale,
       height: rect.height * pulseScale,
     );
-    
+
     // Golden coin effect
     final paint = Paint()
       ..color = PowerUpType.scoreMultiplier.color
       ..isAntiAlias = true
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
-    
+
     if (theme == GameTheme.neon) {
       _drawNeonGlow(canvas, scaledRect, PowerUpType.scoreMultiplier.color, 6.0);
     }
-    
+
     // Draw coin with dollar sign
     _drawCoin(canvas, scaledRect, paint);
   }
-  
+
   void _drawSlowMotionPowerUp(Canvas canvas, Rect rect, PowerUp powerUp) {
     final pulseScale = 0.9 + 0.1 * powerUp.pulsePhase;
     final scaledRect = Rect.fromCenter(
@@ -717,7 +984,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       width: rect.width * pulseScale,
       height: rect.height * pulseScale,
     );
-    
+
     // Spiral/clock effect with gradient
     final gradient = RadialGradient(
       colors: [
@@ -725,25 +992,25 @@ class OptimizedGameBoardPainter extends CustomPainter {
         PowerUpType.slowMotion.color.withValues(alpha: 0.5),
       ],
     );
-    
+
     final paint = Paint()
       ..shader = gradient.createShader(scaledRect)
       ..isAntiAlias = true;
-    
+
     if (theme == GameTheme.neon) {
       _drawNeonGlow(canvas, scaledRect, PowerUpType.slowMotion.color, 7.0);
     }
-    
+
     // Draw clock/spiral shape
     _drawSpiral(canvas, scaledRect, paint);
   }
-  
+
   void _drawLightningBolt(Canvas canvas, Rect rect, Paint paint) {
     final path = Path();
     final center = rect.center;
     final width = rect.width * 0.6;
     final height = rect.height * 0.8;
-    
+
     // Create zigzag lightning bolt
     path.moveTo(center.dx - width * 0.3, center.dy - height * 0.5);
     path.lineTo(center.dx + width * 0.1, center.dy - height * 0.1);
@@ -752,94 +1019,106 @@ class OptimizedGameBoardPainter extends CustomPainter {
     path.lineTo(center.dx - width * 0.1, center.dy + height * 0.1);
     path.lineTo(center.dx + width * 0.1, center.dy + height * 0.1);
     path.close();
-    
+
     canvas.drawPath(path, paint);
   }
-  
+
   void _drawShield(Canvas canvas, Rect rect, Paint paint) {
     final path = Path();
     final center = rect.center;
     final width = rect.width * 0.7;
     final height = rect.height * 0.8;
-    
+
     // Create shield shape
     path.moveTo(center.dx, center.dy - height * 0.5);
     path.quadraticBezierTo(
-      center.dx + width * 0.5, center.dy - height * 0.3,
-      center.dx + width * 0.5, center.dy,
+      center.dx + width * 0.5,
+      center.dy - height * 0.3,
+      center.dx + width * 0.5,
+      center.dy,
     );
     path.quadraticBezierTo(
-      center.dx + width * 0.5, center.dy + height * 0.3,
-      center.dx, center.dy + height * 0.5,
+      center.dx + width * 0.5,
+      center.dy + height * 0.3,
+      center.dx,
+      center.dy + height * 0.5,
     );
     path.quadraticBezierTo(
-      center.dx - width * 0.5, center.dy + height * 0.3,
-      center.dx - width * 0.5, center.dy,
+      center.dx - width * 0.5,
+      center.dy + height * 0.3,
+      center.dx - width * 0.5,
+      center.dy,
     );
     path.quadraticBezierTo(
-      center.dx - width * 0.5, center.dy - height * 0.3,
-      center.dx, center.dy - height * 0.5,
+      center.dx - width * 0.5,
+      center.dy - height * 0.3,
+      center.dx,
+      center.dy - height * 0.5,
     );
-    
+
     canvas.drawPath(path, paint);
   }
-  
+
   void _drawCoin(Canvas canvas, Rect rect, Paint paint) {
     // Draw circular coin
     canvas.drawOval(rect, paint);
-    
+
     // Draw dollar sign
     final center = rect.center;
     final textPaint = Paint()
       ..color = Colors.white
       ..isAntiAlias = true;
-    
+
     final path = Path();
     final size = rect.width * 0.4;
-    
+
     // Simple dollar sign shape
     path.moveTo(center.dx - size * 0.2, center.dy - size * 0.3);
     path.quadraticBezierTo(
-      center.dx - size * 0.3, center.dy - size * 0.1,
-      center.dx, center.dy,
+      center.dx - size * 0.3,
+      center.dy - size * 0.1,
+      center.dx,
+      center.dy,
     );
     path.quadraticBezierTo(
-      center.dx + size * 0.3, center.dy + size * 0.1,
-      center.dx - size * 0.2, center.dy + size * 0.3,
+      center.dx + size * 0.3,
+      center.dy + size * 0.1,
+      center.dx - size * 0.2,
+      center.dy + size * 0.3,
     );
-    
+
     // Vertical line
     path.moveTo(center.dx, center.dy - size * 0.4);
     path.lineTo(center.dx, center.dy + size * 0.4);
-    
+
     textPaint.strokeWidth = 2.0;
     textPaint.style = PaintingStyle.stroke;
     canvas.drawPath(path, textPaint);
   }
-  
+
   void _drawSpiral(Canvas canvas, Rect rect, Paint paint) {
     final center = rect.center;
     final maxRadius = rect.width * 0.4;
-    
+
     final path = Path();
     const turns = 2.5;
     const points = 60;
-    
+
     for (int i = 0; i <= points; i++) {
       final t = i / points;
       final angle = t * turns * 2 * math.pi;
       final radius = maxRadius * t;
-      
+
       final x = center.dx + radius * math.cos(angle);
       final y = center.dy + radius * math.sin(angle);
-      
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {
         path.lineTo(x, y);
       }
     }
-    
+
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 3.0;
     canvas.drawPath(path, paint);
@@ -949,12 +1228,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Force square food by using the smaller dimension
     final cellSize = math.min(cellWidth, cellHeight);
     final padding = _getFoodPadding(cellSize, food.type);
-    
+
     // Center the square food in the cell
     final foodSize = cellSize - padding * 2;
     final centerX = food.position.x * cellWidth + cellWidth / 2;
     final centerY = food.position.y * cellHeight + cellHeight / 2;
-    
+
     final rect = Rect.fromCenter(
       center: Offset(centerX, centerY),
       width: foodSize,
@@ -973,15 +1252,15 @@ class OptimizedGameBoardPainter extends CustomPainter {
         break;
     }
   }
-  
+
   double _getFoodPadding(double cellSize, FoodType type) {
     switch (type) {
       case FoodType.normal:
-        return cellSize * 0.12;  // Normal size - more padding for cleaner look
+        return cellSize * 0.12; // Normal size - more padding for cleaner look
       case FoodType.bonus:
-        return cellSize * 0.08;  // Slightly bigger
+        return cellSize * 0.08; // Slightly bigger
       case FoodType.special:
-        return cellSize * 0.04;  // Much bigger - almost fills cell
+        return cellSize * 0.04; // Much bigger - almost fills cell
     }
   }
 
@@ -989,89 +1268,93 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Draw apple-like shape for normal food
     _drawAppleFood(canvas, rect);
   }
-  
+
   void _drawAppleFood(Canvas canvas, Rect rect) {
     final center = rect.center;
     final size = rect.width; // rect is now guaranteed to be square
     final radius = size / 2;
-    
+
     // Draw neon glow for neon theme first
     if (theme == GameTheme.neon) {
       _drawNeonGlow(canvas, rect, theme.foodColor, 6.0);
     }
-    
+
     // Apple body - perfect circle for clean look
     final appleRadius = radius * 0.85; // Slightly smaller than the full rect
-    
+
     // Apple gradient - red to darker red
     final appleGradient = RadialGradient(
       center: const Alignment(-0.3, -0.4),
       radius: 0.8,
       colors: [
         const Color(0xFFFF6B6B), // Light red
-        const Color(0xFFDC143C), // Crimson  
+        const Color(0xFFDC143C), // Crimson
         const Color(0xFF8B0000), // Dark red
       ],
       stops: const [0.0, 0.6, 1.0],
     );
-    
+
     final appleRect = Rect.fromCenter(
       center: center,
       width: appleRadius * 2,
       height: appleRadius * 2,
     );
-    
+
     final applePaint = Paint()
       ..shader = appleGradient.createShader(appleRect)
       ..isAntiAlias = true;
-    
+
     if (theme == GameTheme.neon) {
       applePaint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.0);
     }
-    
+
     // Draw apple body as perfect circle
     canvas.drawCircle(center, appleRadius, applePaint);
-    
+
     // Apple highlight - smaller and better positioned
     final highlightPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.5)
       ..isAntiAlias = true;
-    
+
     final highlightCenter = Offset(
-      center.dx - appleRadius * 0.25, 
-      center.dy - appleRadius * 0.35
+      center.dx - appleRadius * 0.25,
+      center.dy - appleRadius * 0.35,
     );
-    
+
     canvas.drawCircle(highlightCenter, appleRadius * 0.2, highlightPaint);
-    
+
     // Apple stem - small rectangle at top
     final stemPaint = Paint()
-      ..color = const Color(0xFF8B4513) // Brown
+      ..color =
+          const Color(0xFF8B4513) // Brown
       ..isAntiAlias = true;
-    
+
     final stemRect = Rect.fromCenter(
       center: Offset(center.dx, center.dy - appleRadius - radius * 0.08),
       width: radius * 0.12,
       height: radius * 0.15,
     );
-    
+
     canvas.drawRect(stemRect, stemPaint);
-    
+
     // Small leaf on stem
     final leafPaint = Paint()
-      ..color = const Color(0xFF228B22) // Forest green
+      ..color =
+          const Color(0xFF228B22) // Forest green
       ..isAntiAlias = true;
-    
+
     final leafRect = Rect.fromCenter(
-      center: Offset(center.dx + radius * 0.08, center.dy - appleRadius - radius * 0.05),
+      center: Offset(
+        center.dx + radius * 0.08,
+        center.dy - appleRadius - radius * 0.05,
+      ),
       width: radius * 0.15,
       height: radius * 0.08,
     );
-    
+
     canvas.drawOval(leafRect, leafPaint);
   }
-  
-  
+
   MaskFilter? _getFoodMaskFilter() {
     switch (theme) {
       case GameTheme.classic:
@@ -1086,16 +1369,23 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return const MaskFilter.blur(BlurStyle.normal, 2.0);
       case GameTheme.ocean:
         return const MaskFilter.blur(BlurStyle.normal, 1.5);
+      case GameTheme.cyberpunk:
+        return const MaskFilter.blur(BlurStyle.normal, 2.5);
+      case GameTheme.forest:
+        return const MaskFilter.blur(BlurStyle.normal, 1.0);
+      case GameTheme.desert:
+        return const MaskFilter.blur(BlurStyle.normal, 0.8);
+      case GameTheme.crystal:
+        return const MaskFilter.blur(BlurStyle.normal, 3.5);
     }
   }
-  
 
   void _drawBonusFood(Canvas canvas, Rect rect) {
     // Enhanced bonus food with theme-specific effects
     final colors = theme == GameTheme.neon
         ? [theme.foodColor, theme.accentColor, const Color(0xFFFFD700)]
         : [theme.foodColor, Colors.orange, const Color(0xFFFFD700)];
-    
+
     final outerGradient = LinearGradient(colors: colors).createShader(rect);
     _foodPaint.shader = outerGradient;
     _foodPaint.maskFilter = _getFoodMaskFilter();
@@ -1133,8 +1423,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final colors = theme == GameTheme.neon
         ? [
             const Color(0xFFFFD700), // Gold
-            theme.accentColor,        // Neon green
-            theme.foodColor,          // Deep pink
+            theme.accentColor, // Neon green
+            theme.foodColor, // Deep pink
             const Color(0xFF00FFFF), // Electric cyan
           ]
         : [
@@ -1156,51 +1446,66 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final sparkleCount = theme == GameTheme.neon ? 12 : 8;
     _drawSparkles(canvas, rect, sparkleCount);
   }
-  
-  void _drawSpecialFoodStar(Canvas canvas, Rect rect, List<Color> colors, double scale) {
+
+  void _drawSpecialFoodStar(
+    Canvas canvas,
+    Rect rect,
+    List<Color> colors,
+    double scale,
+  ) {
     final center = rect.center;
     final outerRadius = (rect.width / 2) * scale;
     final innerRadius = outerRadius * 0.4;
-    
+
     // Multi-layer star with enhanced effects
     for (int i = colors.length - 1; i >= 0; i--) {
       final layerOuterRadius = outerRadius * (1.0 - i * 0.15);
       final layerInnerRadius = innerRadius * (1.0 - i * 0.15);
-      
+
       final layerPaint = Paint()
         ..color = colors[i].withValues(alpha: 0.95)
         ..isAntiAlias = true;
 
       // Enhanced blur effects based on theme
-      final blurIntensity = theme == GameTheme.neon 
+      final blurIntensity = theme == GameTheme.neon
           ? 4.0 + i.toDouble() * 2.0
           : 2.0 + i.toDouble();
-      
+
       layerPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, blurIntensity);
 
       // Draw 8-pointed star
-      final starPath = _createStarPath(center, layerOuterRadius, layerInnerRadius, 8);
+      final starPath = _createStarPath(
+        center,
+        layerOuterRadius,
+        layerInnerRadius,
+        8,
+      );
       canvas.drawPath(starPath, layerPaint);
     }
   }
-  
-  Path _createStarPath(Offset center, double outerRadius, double innerRadius, int points) {
+
+  Path _createStarPath(
+    Offset center,
+    double outerRadius,
+    double innerRadius,
+    int points,
+  ) {
     final path = Path();
     final angleStep = (math.pi * 2) / (points * 2);
-    
+
     for (int i = 0; i < points * 2; i++) {
       final angle = i * angleStep - math.pi / 2; // Start from top
       final radius = i % 2 == 0 ? outerRadius : innerRadius;
       final x = center.dx + radius * math.cos(angle);
       final y = center.dy + radius * math.sin(angle);
-      
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {
         path.lineTo(x, y);
       }
     }
-    
+
     path.close();
     return path;
   }
@@ -1236,25 +1541,48 @@ class OptimizedGameBoardPainter extends CustomPainter {
     }
   }
 
-  void _drawCrashIndicators(Canvas canvas, double cellWidth, double cellHeight) {
+  void _drawCrashIndicators(
+    Canvas canvas,
+    double cellWidth,
+    double cellHeight,
+  ) {
     final crashPosition = gameState.crashPosition!;
     final crashReason = gameState.crashReason!;
-    
+
     // Blinking animation for better visibility (rapid on/off blinking)
     final blinkValue = pulseAnimation.value;
-    final isVisible = (blinkValue > 0.5); // Creates strong on/off blinking effect
-    
+    final isVisible =
+        (blinkValue > 0.5); // Creates strong on/off blinking effect
+
     if (isVisible) {
       final pulseIntensity = 1.0; // Full intensity when visible
       if (crashReason == CrashReason.wallCollision) {
-        _drawWallCrashIndicator(canvas, crashPosition, cellWidth, cellHeight, pulseIntensity);
+        _drawWallCrashIndicator(
+          canvas,
+          crashPosition,
+          cellWidth,
+          cellHeight,
+          pulseIntensity,
+        );
       } else if (crashReason == CrashReason.selfCollision) {
-        _drawSelfCollisionIndicator(canvas, crashPosition, cellWidth, cellHeight, pulseIntensity);
+        _drawSelfCollisionIndicator(
+          canvas,
+          crashPosition,
+          cellWidth,
+          cellHeight,
+          pulseIntensity,
+        );
       }
     }
   }
-  
-  void _drawWallCrashIndicator(Canvas canvas, Position crashPosition, double cellWidth, double cellHeight, double pulseIntensity) {
+
+  void _drawWallCrashIndicator(
+    Canvas canvas,
+    Position crashPosition,
+    double cellWidth,
+    double cellHeight,
+    double pulseIntensity,
+  ) {
     // Show wall collision with red "X" and warning signs
     final rect = Rect.fromLTWH(
       crashPosition.x * cellWidth,
@@ -1262,18 +1590,20 @@ class OptimizedGameBoardPainter extends CustomPainter {
       cellWidth,
       cellHeight,
     );
-    
+
     // Background flash
     _crashPaint.color = Colors.red.withValues(alpha: 0.6 * pulseIntensity);
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.1)),
       _crashPaint,
     );
-    
+
     // Draw "X" mark
-    _collisionPaint.color = Colors.white.withValues(alpha: 0.9 * pulseIntensity);
+    _collisionPaint.color = Colors.white.withValues(
+      alpha: 0.9 * pulseIntensity,
+    );
     _collisionPaint.strokeWidth = cellWidth * 0.15;
-    
+
     final margin = cellWidth * 0.2;
     canvas.drawLine(
       Offset(rect.left + margin, rect.top + margin),
@@ -1285,7 +1615,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       Offset(rect.left + margin, rect.bottom - margin),
       _collisionPaint,
     );
-    
+
     // Draw border around crash position
     _collisionPaint.color = Colors.red.withValues(alpha: 0.8 * pulseIntensity);
     _collisionPaint.strokeWidth = 4.0;
@@ -1295,31 +1625,35 @@ class OptimizedGameBoardPainter extends CustomPainter {
       _collisionPaint,
     );
   }
-  
-  void _drawSelfCollisionIndicator(Canvas canvas, Position crashPosition, double cellWidth, double cellHeight, double pulseIntensity) {
+
+  void _drawSelfCollisionIndicator(
+    Canvas canvas,
+    Position crashPosition,
+    double cellWidth,
+    double cellHeight,
+    double pulseIntensity,
+  ) {
     final rect = Rect.fromLTWH(
       crashPosition.x * cellWidth,
       crashPosition.y * cellHeight,
       cellWidth,
       cellHeight,
     );
-    
+
     // Head crash position - orange flash
     _crashPaint.color = Colors.orange.withValues(alpha: 0.7 * pulseIntensity);
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.1)),
       _crashPaint,
     );
-    
+
     // Draw collision point marker at head
-    _collisionPaint.color = Colors.white.withValues(alpha: 0.9 * pulseIntensity);
-    _collisionPaint.style = PaintingStyle.fill;
-    canvas.drawCircle(
-      rect.center,
-      cellWidth * 0.15,
-      _collisionPaint,
+    _collisionPaint.color = Colors.white.withValues(
+      alpha: 0.9 * pulseIntensity,
     );
-    
+    _collisionPaint.style = PaintingStyle.fill;
+    canvas.drawCircle(rect.center, cellWidth * 0.15, _collisionPaint);
+
     // Highlight the body part that was hit (if available)
     if (gameState.collisionBodyPart != null) {
       final bodyPartRect = Rect.fromLTWH(
@@ -1328,36 +1662,41 @@ class OptimizedGameBoardPainter extends CustomPainter {
         cellWidth,
         cellHeight,
       );
-      
+
       // Yellow highlight for the body part that was hit
       _crashPaint.color = Colors.yellow.withValues(alpha: 0.6 * pulseIntensity);
       canvas.drawRRect(
         RRect.fromRectAndRadius(bodyPartRect, Radius.circular(cellWidth * 0.1)),
         _crashPaint,
       );
-      
+
       // Draw connection line between head and collision body part
-      _collisionPaint.color = Colors.red.withValues(alpha: 0.7 * pulseIntensity);
+      _collisionPaint.color = Colors.red.withValues(
+        alpha: 0.7 * pulseIntensity,
+      );
       _collisionPaint.style = PaintingStyle.stroke;
       _collisionPaint.strokeWidth = 3.0;
-      
-      canvas.drawLine(
-        rect.center,
-        bodyPartRect.center,
-        _collisionPaint,
-      );
-      
+
+      canvas.drawLine(rect.center, bodyPartRect.center, _collisionPaint);
+
       // Draw border around collision body part
-      _collisionPaint.color = Colors.yellow.withValues(alpha: 0.8 * pulseIntensity);
+      _collisionPaint.color = Colors.yellow.withValues(
+        alpha: 0.8 * pulseIntensity,
+      );
       _collisionPaint.strokeWidth = 3.0;
       canvas.drawRRect(
-        RRect.fromRectAndRadius(bodyPartRect, Radius.circular(cellWidth * 0.15)),
+        RRect.fromRectAndRadius(
+          bodyPartRect,
+          Radius.circular(cellWidth * 0.15),
+        ),
         _collisionPaint,
       );
     }
-    
+
     // Draw border around head crash position
-    _collisionPaint.color = Colors.orange.withValues(alpha: 0.8 * pulseIntensity);
+    _collisionPaint.color = Colors.orange.withValues(
+      alpha: 0.8 * pulseIntensity,
+    );
     _collisionPaint.strokeWidth = 4.0;
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.15)),
@@ -1390,21 +1729,13 @@ class _GameBoardBackgroundPainter extends CustomPainter {
       ..color = theme.accentColor.withValues(alpha: 0.08);
 
     const gridSize = 35.0;
-    
+
     for (double x = 0; x < size.width; x += gridSize) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-    
+
     for (double y = 0; y < size.height; y += gridSize) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
     // Decorative shapes matching home screen
@@ -1440,6 +1771,18 @@ class _GameBoardBackgroundPainter extends CustomPainter {
         break;
       case GameTheme.retro:
         _drawRetroEnhancements(canvas, size);
+        break;
+      case GameTheme.cyberpunk:
+        _drawCyberpunkEnhancements(canvas, size);
+        break;
+      case GameTheme.forest:
+        _drawForestEnhancements(canvas, size);
+        break;
+      case GameTheme.desert:
+        _drawDesertEnhancements(canvas, size);
+        break;
+      case GameTheme.crystal:
+        _drawCrystalEnhancements(canvas, size);
         break;
       case GameTheme.classic:
         // Minimal enhancements for classic theme
@@ -1491,7 +1834,7 @@ class _GameBoardBackgroundPainter extends CustomPainter {
     for (int i = 0; i < 4; i++) {
       final y = (i + 1) * size.height / 5;
       final path = Path()..moveTo(0, y);
-      
+
       for (double x = 0; x <= size.width; x += 15) {
         final waveY = y + math.sin((x + i * 20) * 0.03) * 6;
         path.lineTo(x, waveY);
@@ -1509,11 +1852,7 @@ class _GameBoardBackgroundPainter extends CustomPainter {
     for (int i = 0; i < 8; i++) {
       final x = (i * 71) % size.width;
       final y = (i * 97) % size.height;
-      final rect = Rect.fromCenter(
-        center: Offset(x, y),
-        width: 3,
-        height: 3,
-      );
+      final rect = Rect.fromCenter(center: Offset(x, y), width: 3, height: 3);
       canvas.drawRRect(
         RRect.fromRectAndRadius(rect, const Radius.circular(1.5)),
         paint,
@@ -1536,6 +1875,176 @@ class _GameBoardBackgroundPainter extends CustomPainter {
         paint,
       );
     }
+  }
+
+  void _drawCyberpunkEnhancements(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.06)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+
+    // Digital matrix-like grid pattern
+    for (int i = 0; i < 8; i++) {
+      final x = (i + 1) * size.width / 9;
+      final path = Path()
+        ..moveTo(x, 0)
+        ..lineTo(x, size.height * 0.3)
+        ..moveTo(x, size.height * 0.7)
+        ..lineTo(x, size.height);
+      canvas.drawPath(path, paint);
+    }
+
+    // Glowing data streams
+    paint.color = theme.foodColor.withValues(alpha: 0.04);
+    for (int i = 0; i < 3; i++) {
+      final y = (i + 1) * size.height / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  void _drawForestEnhancements(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.05)
+      ..style = PaintingStyle.fill;
+
+    // Organic leaf-like patterns
+    for (int i = 0; i < 6; i++) {
+      final x = (i * 73) % size.width;
+      final y = (i * 101) % size.height;
+      _drawLeafShape(canvas, Offset(x, y), 3.0, paint);
+    }
+
+    // Subtle branch patterns
+    final branchPaint = Paint()
+      ..color = theme.foodColor.withValues(alpha: 0.03)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    for (int i = 0; i < 4; i++) {
+      final startX = i * size.width / 4;
+      final path = Path()
+        ..moveTo(startX, size.height)
+        ..quadraticBezierTo(
+          startX + size.width / 8,
+          size.height * 0.7,
+          startX + size.width / 6,
+          size.height * 0.3,
+        );
+      canvas.drawPath(path, branchPaint);
+    }
+  }
+
+  void _drawDesertEnhancements(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.04)
+      ..style = PaintingStyle.fill;
+
+    // Sand dune patterns
+    for (int i = 0; i < 5; i++) {
+      final x = (i * 89) % size.width;
+      final y = (i * 67) % size.height;
+      _drawSandDune(canvas, Offset(x, y), 4.0, paint);
+    }
+
+    // Subtle wind lines
+    final windPaint = Paint()
+      ..color = theme.foodColor.withValues(alpha: 0.02)
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke;
+
+    for (int i = 0; i < 8; i++) {
+      final y = i * size.height / 8;
+      final path = Path()..moveTo(0, y);
+
+      for (double x = 0; x <= size.width; x += 20) {
+        final waveY = y + math.sin((x + i * 30) * 0.02) * 3;
+        path.lineTo(x, waveY);
+      }
+      canvas.drawPath(path, windPaint);
+    }
+  }
+
+  void _drawCrystalEnhancements(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    // Crystalline patterns
+    for (int i = 0; i < 10; i++) {
+      final x = (i * 59) % size.width;
+      final y = (i * 83) % size.height;
+      _drawCrystalShape(canvas, Offset(x, y), 2.0, paint);
+    }
+
+    // Prismatic light rays
+    final rayPaint = Paint()
+      ..color = theme.foodColor.withValues(alpha: 0.06)
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke;
+
+    for (int i = 0; i < 6; i++) {
+      final angle = i * math.pi / 3;
+      final startX = size.width / 2;
+      final startY = size.height / 2;
+      final endX = startX + math.cos(angle) * size.width * 0.4;
+      final endY = startY + math.sin(angle) * size.height * 0.4;
+
+      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), rayPaint);
+    }
+  }
+
+  void _drawLeafShape(Canvas canvas, Offset center, double size, Paint paint) {
+    final path = Path()
+      ..moveTo(center.dx, center.dy - size)
+      ..quadraticBezierTo(
+        center.dx + size * 0.7,
+        center.dy - size * 0.3,
+        center.dx,
+        center.dy + size,
+      )
+      ..quadraticBezierTo(
+        center.dx - size * 0.7,
+        center.dy - size * 0.3,
+        center.dx,
+        center.dy - size,
+      );
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawSandDune(Canvas canvas, Offset center, double size, Paint paint) {
+    final path = Path()
+      ..moveTo(center.dx - size * 2, center.dy)
+      ..quadraticBezierTo(
+        center.dx - size,
+        center.dy - size,
+        center.dx,
+        center.dy,
+      )
+      ..quadraticBezierTo(
+        center.dx + size,
+        center.dy + size * 0.5,
+        center.dx + size * 2,
+        center.dy,
+      );
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawCrystalShape(
+    Canvas canvas,
+    Offset center,
+    double size,
+    Paint paint,
+  ) {
+    final path = Path()
+      ..moveTo(center.dx, center.dy - size)
+      ..lineTo(center.dx + size * 0.7, center.dy - size * 0.3)
+      ..lineTo(center.dx + size * 0.3, center.dy + size)
+      ..lineTo(center.dx - size * 0.3, center.dy + size)
+      ..lineTo(center.dx - size * 0.7, center.dy - size * 0.3)
+      ..close();
+    canvas.drawPath(path, paint);
   }
 
   void _drawTinystar(Canvas canvas, Offset center, double size, Paint paint) {

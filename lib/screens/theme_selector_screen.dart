@@ -262,6 +262,14 @@ class ThemeSelectorScreen extends StatelessWidget {
         return 'Cosmic purple hues for interstellar adventures';
       case GameTheme.ocean:
         return 'Deep sea blues with coral accents';
+      case GameTheme.cyberpunk:
+        return 'Digital matrix with electric cyan and hot pink';
+      case GameTheme.forest:
+        return 'Natural greens with organic leaf patterns';
+      case GameTheme.desert:
+        return 'Warm sand tones with desert wind effects';
+      case GameTheme.crystal:
+        return 'Prismatic purples with crystalline light rays';
     }
   }
 }

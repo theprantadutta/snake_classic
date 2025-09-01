@@ -112,6 +112,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     
                     const SizedBox(height: 32),
                     
+                    // Visual Effects Section  
+                    _buildSection(
+                      'VISUAL EFFECTS',
+                      [
+                        _buildAudioSwitch(
+                          'Snake Trail Effects',
+                          themeProvider.isTrailSystemEnabled,
+                          (value) async {
+                            await themeProvider.setTrailSystemEnabled(value);
+                          },
+                          theme,
+                        ),
+                      ],
+                      theme,
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
                     // Audio Section
                     _buildSection(
                       'AUDIO SETTINGS',
