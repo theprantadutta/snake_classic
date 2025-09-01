@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:snake_classic/services/audio_service.dart';
 
 class GradientButton extends StatefulWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String text;
   final Color primaryColor;
   final Color secondaryColor;
@@ -83,11 +83,11 @@ class _GradientButtonState extends State<GradientButton>
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      onTap: () {
+      onTap: widget.onPressed != null ? () {
         HapticFeedback.lightImpact();
         AudioService().playSound('button_click');
-        widget.onPressed();
-      },
+        widget.onPressed!();
+      } : null,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {

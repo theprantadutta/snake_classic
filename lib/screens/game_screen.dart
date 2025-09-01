@@ -221,6 +221,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
                               onPause: () => gameProvider.togglePause(),
                               onHome: () => _showExitConfirmation(context),
                               isSmallScreen: isSmallScreen,
+                              tournamentId: gameProvider.tournamentId,
+                              tournamentMode: gameProvider.tournamentMode,
                             ),
 
                             // Compact Game Instructions (only show essentials)

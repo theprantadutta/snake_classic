@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/power_up.dart';
+import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 class GameHUD extends StatelessWidget {
@@ -9,6 +10,8 @@ class GameHUD extends StatelessWidget {
   final VoidCallback onPause;
   final VoidCallback onHome;
   final bool isSmallScreen;
+  final String? tournamentId;
+  final TournamentGameMode? tournamentMode;
 
   const GameHUD({
     super.key,
@@ -17,6 +20,8 @@ class GameHUD extends StatelessWidget {
     required this.onPause,
     required this.onHome,
     this.isSmallScreen = false,
+    this.tournamentId,
+    this.tournamentMode,
   });
 
   @override
@@ -71,6 +76,44 @@ class GameHUD extends StatelessWidget {
               ),
             ],
           ),
+          
+          // Tournament indicator
+          if (tournamentId != null && tournamentMode != null) ...[
+            SizedBox(width: isSmallScreen ? 8 : 12),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 6 : 8,
+                vertical: isSmallScreen ? 2 : 4,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.purple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                border: Border.all(
+                  color: Colors.purple.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    tournamentMode!.emoji,
+                    style: TextStyle(fontSize: isSmallScreen ? 10 : 12),
+                  ),
+                  SizedBox(width: isSmallScreen ? 2 : 4),
+                  Text(
+                    'TOURNAMENT',
+                    style: TextStyle(
+                      color: Colors.purple,
+                      fontSize: isSmallScreen ? 8 : 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           
           const Spacer(),
           

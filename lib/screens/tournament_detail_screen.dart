@@ -846,7 +846,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         children: [
           if (!_tournament.hasJoined && _tournament.status.canJoin)
             GradientButton(
-              onPressed: _isJoining ? null : _joinTournament,
+              onPressed: _isJoining 
+                  ? null 
+                  : () => _joinTournament(),
               text: _isJoining ? 'JOINING...' : 'JOIN TOURNAMENT',
               primaryColor: Colors.blue,
               secondaryColor: Colors.cyan,

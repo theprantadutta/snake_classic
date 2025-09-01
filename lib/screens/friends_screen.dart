@@ -899,10 +899,12 @@ class _FriendsScreenState extends State<FriendsScreen> with SingleTickerProvider
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              navigator.pop();
               final success = await _socialService.removeFriend(friend.uid);
-              if (mounted && success) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              if (success && mounted) {
+                scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('${friend.displayName} removed from friends')),
                 );
                 _loadData();

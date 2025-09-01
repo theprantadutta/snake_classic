@@ -154,6 +154,49 @@ class _GameOverScreenState extends State<GameOverScreen>
                             const SizedBox(height: 24),
                           ],
                           
+                          // Tournament Result Badge
+                          if (gameProvider.isTournamentMode && gameProvider.tournamentMode != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Colors.purple, Colors.deepPurple],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.purple.withValues(alpha: 0.4),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    gameProvider.tournamentMode!.emoji,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'TOURNAMENT SCORE SUBMITTED!',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ).animate().scale(delay: 700.ms).shimmer(delay: 1200.ms),
+                            
+                            const SizedBox(height: 20),
+                          ],
+                          
                           // Score Display
                           _buildScoreCard(gameState, theme),
                           
