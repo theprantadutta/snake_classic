@@ -13,6 +13,7 @@ import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
+import 'package:snake_classic/screens/tournaments_screen.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -535,13 +536,13 @@ class _HomeScreenState extends State<HomeScreen>
             _buildQuickActionButton(
               context,
               icon: Icons.emoji_events,
-              label: 'ACHIEVE\nMENTS',
+              label: 'TOURNA\nMENTS',
               color: Colors.purple,
               isSmallScreen: isSmallScreen,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const AchievementsScreen(),
+                    builder: (context) => const TournamentsScreen(),
                   ),
                 );
               },
@@ -648,6 +649,29 @@ class _HomeScreenState extends State<HomeScreen>
                 themeProvider.cycleTheme();
               },
             ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.3, duration: 300.ms),
+          ],
+        ),
+        
+        SizedBox(height: isSmallScreen ? 12 : 16),
+        
+        // Fourth Actions Row - Achievements
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildQuickActionButton(
+              context,
+              icon: Icons.military_tech,
+              label: 'ACHIEVE\nMENTS',
+              color: Colors.teal,
+              isSmallScreen: isSmallScreen,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AchievementsScreen(),
+                  ),
+                );
+              },
+            ).animate().fadeIn(delay: 1050.ms).slideY(begin: 0.3, duration: 300.ms),
           ],
         ),
       ],

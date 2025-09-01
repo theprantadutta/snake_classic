@@ -48,7 +48,7 @@ class SocialService {
 
       // Add name search results
       for (final doc in nameQuery.docs) {
-        final data = doc.data()!;
+        final data = doc.data();
         final user = UserProfile.fromJson(data);
         
         // Skip current user and duplicates
@@ -61,7 +61,7 @@ class SocialService {
       // Add email search results
       if (emailQuery != null) {
         for (final doc in emailQuery.docs) {
-          final data = doc.data()!;
+          final data = doc.data();
           final user = UserProfile.fromJson(data);
           
           // Skip current user and duplicates

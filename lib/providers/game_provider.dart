@@ -13,6 +13,8 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/services/tournament_service.dart';
+import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 class GameProvider extends ChangeNotifier {
@@ -24,7 +26,12 @@ class GameProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final AchievementService _achievementService = AchievementService();
   final StatisticsService _statisticsService = StatisticsService();
+  final TournamentService _tournamentService = TournamentService();
   final GameRecorder _gameRecorder = GameRecorder();
+  
+  // Tournament mode
+  String? _tournamentId;
+  TournamentGameMode? _tournamentMode;
   
   // Smooth movement interpolation
   DateTime? _lastGameUpdate;
@@ -36,6 +43,11 @@ class GameProvider extends ChangeNotifier {
   bool get isPaused => _gameState.status == GameStatus.paused;
   bool get isGameOver => _gameState.status == GameStatus.gameOver;
   Duration get crashFeedbackDuration => _crashFeedbackDuration;
+  
+  // Tournament mode getters
+  String? get tournamentId => _tournamentId;
+  TournamentGameMode? get tournamentMode => _tournamentMode;
+  bool get isTournamentMode => _tournamentId != null;
   
   // Smooth movement properties
   double get moveProgress => _moveProgress;
@@ -119,6 +131,44 @@ class GameProvider extends ChangeNotifier {
     _startPowerUpTimer();
     _audioService.playSound('game_start');
     notifyListeners();
+  }
+
+  void setTournamentMode(String tournamentId, TournamentGameMode gameMode) {
+    _tournamentId = tournamentId;
+    _tournamentMode = gameMode;
+    
+    // Apply tournament-specific game settings
+    _applyTournamentSettings(gameMode);
+    notifyListeners();
+  }
+  
+  void exitTournamentMode() {
+    _tournamentId = null;
+    _tournamentMode = null;
+    notifyListeners();
+  }
+  
+  void _applyTournamentSettings(TournamentGameMode gameMode) {
+    switch (gameMode) {
+      case TournamentGameMode.speedRun:
+        // Speed increases more rapidly
+        break;
+      case TournamentGameMode.survival:
+        // Focus on survival time over score
+        break;
+      case TournamentGameMode.noWalls:
+        // Snake wraps around edges
+        break;
+      case TournamentGameMode.powerUpMadness:
+        // More frequent power-ups
+        break;
+      case TournamentGameMode.perfectGame:
+        // Any collision ends game immediately
+        break;
+      case TournamentGameMode.classic:
+        // Standard rules
+        break;
+    }
   }
 
   void pauseGame() {
@@ -512,6 +562,27 @@ class GameProvider extends ChangeNotifier {
       } catch (e) {
         if (kDebugMode) {
           print('Failed to save game replay: $e');
+        }
+      }
+    }
+
+    // Submit score to tournament if in tournament mode
+    if (isTournamentMode && _tournamentId != null) {
+      try {
+        await _tournamentService.submitScore(
+          _tournamentId!,
+          _gameState.score,
+          {
+            'level': _gameState.level,
+            'foodConsumed': _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+            'powerUpsCollected': _powerUpsCollectedThisGame,
+            'gameDurationSeconds': gameDurationSeconds,
+            'gameMode': _tournamentMode?.name ?? 'classic',
+          },
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to submit tournament score: $e');
         }
       }
     }
