@@ -11,6 +11,8 @@ import 'package:snake_classic/screens/leaderboard_screen.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
+import 'package:snake_classic/screens/friends_screen.dart';
+import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -555,14 +557,14 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             _buildQuickActionButton(
               context,
-              icon: Icons.settings,
-              label: 'SETTINGS',
-              color: theme.accentColor,
+              icon: Icons.people,
+              label: 'FRIENDS',
+              color: Colors.blue,
               isSmallScreen: isSmallScreen,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
+                    builder: (context) => const FriendsScreen(),
                   ),
                 );
               },
@@ -585,12 +587,16 @@ class _HomeScreenState extends State<HomeScreen>
             
             _buildQuickActionButton(
               context,
-              icon: Icons.palette,
-              label: theme.name.toUpperCase().replaceAll(' ', '\n'),
-              color: theme.snakeColor,
+              icon: Icons.settings,
+              label: 'SETTINGS',
+              color: theme.accentColor,
               isSmallScreen: isSmallScreen,
               onTap: () {
-                themeProvider.cycleTheme();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
               },
             ).animate().fadeIn(delay: 850.ms).slideY(begin: 0.3, duration: 300.ms),
           ],
@@ -598,10 +604,25 @@ class _HomeScreenState extends State<HomeScreen>
         
         SizedBox(height: isSmallScreen ? 12 : 16),
         
-        // Third Actions Row - Replays
+        // Third Actions Row - Replays, Theme, Friends Leaderboard
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
+            _buildQuickActionButton(
+              context,
+              icon: Icons.leaderboard,
+              label: 'FRIENDS\nLEADER',
+              color: Colors.orange,
+              isSmallScreen: isSmallScreen,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const FriendsLeaderboardScreen(),
+                  ),
+                );
+              },
+            ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.3, duration: 300.ms),
+            
             _buildQuickActionButton(
               context,
               icon: Icons.movie,
@@ -615,7 +636,18 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 );
               },
-            ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.3, duration: 300.ms),
+            ).animate().fadeIn(delay: 950.ms).slideY(begin: 0.3, duration: 300.ms),
+            
+            _buildQuickActionButton(
+              context,
+              icon: Icons.palette,
+              label: theme.name.toUpperCase().replaceAll(' ', '\n'),
+              color: theme.snakeColor,
+              isSmallScreen: isSmallScreen,
+              onTap: () {
+                themeProvider.cycleTheme();
+              },
+            ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.3, duration: 300.ms),
           ],
         ),
       ],

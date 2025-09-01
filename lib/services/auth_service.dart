@@ -82,21 +82,31 @@ class AuthService {
           'uid': user.uid,
           'displayName': isAnonymous ? 'Anonymous Player' : (user.displayName ?? 'Player'),
           'email': user.email,
-          'photoURL': user.photoURL,
+          'photoUrl': user.photoURL,
           'isAnonymous': isAnonymous,
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastSignIn': FieldValue.serverTimestamp(),
+          'joinedDate': FieldValue.serverTimestamp(),
+          'lastSeen': FieldValue.serverTimestamp(),
+          'status': 'online',
           'highScore': 0,
           'totalGamesPlayed': 0,
           'totalScore': 0,
+          'level': 1,
           'achievements': [],
           'preferredTheme': 'classic',
           'soundEnabled': true,
           'musicEnabled': true,
+          // Social features
+          'friends': [],
+          'friendRequests': [],
+          'sentRequests': [],
+          'gameStats': {},
+          'isPublic': !isAnonymous, // Anonymous users are private by default
+          'statusMessage': null,
         });
       } else {
         await userDoc.update({
-          'lastSignIn': FieldValue.serverTimestamp(),
+          'lastSeen': FieldValue.serverTimestamp(),
+          'status': 'online',
         });
       }
     } catch (e) {
