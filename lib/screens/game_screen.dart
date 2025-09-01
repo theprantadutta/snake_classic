@@ -191,18 +191,27 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
                 showFeedback: false, // Disable animated feedback
                 child: Stack(
                   children: [
-                    // Background gradient
+                    // Background gradient - matching home screen
                     Container(
                       decoration: BoxDecoration(
                         gradient: RadialGradient(
-                          center: Alignment.center,
+                          center: Alignment.topRight,
                           radius: 1.5,
                           colors: [
+                            theme.accentColor.withValues(alpha: 0.15),
                             theme.backgroundColor,
-                            theme.backgroundColor.withValues(alpha: 0.8),
-                            Colors.black.withValues(alpha: 0.2),
+                            theme.backgroundColor.withValues(alpha: 0.9),
+                            Colors.black.withValues(alpha: 0.1),
                           ],
+                          stops: const [0.0, 0.4, 0.8, 1.0],
                         ),
+                      ),
+                    ),
+
+                    // Background pattern overlay - matching home screen
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _GameBackgroundPainter(theme),
                       ),
                     ),
 
@@ -675,5 +684,61 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
     
     // Default color for non-active directions
     return theme.accentColor.withValues(alpha: 0.6);
+  }
+}
+
+// Custom painter for game background pattern - matching home screen
+class _GameBackgroundPainter extends CustomPainter {
+  final GameTheme theme;
+
+  _GameBackgroundPainter(this.theme);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = theme.accentColor.withValues(alpha: 0.05);
+
+    // Draw subtle grid pattern
+    const gridSize = 30.0;
+    
+    for (double x = 0; x < size.width; x += gridSize) {
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        paint,
+      );
+    }
+    
+    for (double y = 0; y < size.height; y += gridSize) {
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        paint,
+      );
+    }
+
+    // Draw decorative shapes
+    final shapePaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = theme.foodColor.withValues(alpha: 0.02);
+
+    canvas.drawCircle(
+      Offset(size.width * 0.15, size.height * 0.25),
+      50,
+      shapePaint,
+    );
+
+    canvas.drawCircle(
+      Offset(size.width * 0.85, size.height * 0.75),
+      70,
+      shapePaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
   }
 }

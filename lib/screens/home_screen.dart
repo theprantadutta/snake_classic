@@ -9,14 +9,11 @@ import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/leaderboard_screen.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
-import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
-import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
 import 'package:snake_classic/widgets/instructions_dialog.dart';
 
@@ -63,102 +60,79 @@ class _HomeScreenState extends State<HomeScreen>
         return Scaffold(
           body: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              gradient: RadialGradient(
+                center: Alignment.topRight,
+                radius: 1.5,
                 colors: [
+                  theme.accentColor.withValues(alpha: 0.15),
                   theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                  theme.accentColor.withValues(alpha: 0.1),
+                  theme.backgroundColor.withValues(alpha: 0.9),
+                  Colors.black.withValues(alpha: 0.1),
                 ],
-                stops: const [
-                  0.0,
-                  0.7,
-                  1.0,
-                ],
+                stops: const [0.0, 0.4, 0.8, 1.0],
               ),
             ),
             child: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
+                  final screenWidth = constraints.maxWidth;
                   final screenHeight = constraints.maxHeight;
                   final isSmallScreen = screenHeight < 700;
                   
-                  return Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: constraints.maxWidth * 0.08,
-                      vertical: isSmallScreen ? 8 : 12,
-                    ),
-                    child: Column(
-                      children: [
-                        // Profile Button in top-right - Reduced height
-                        SizedBox(
-                          height: isSmallScreen ? 40 : 48,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              IconButton(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => const ProfileScreen(),
-                                    ),
-                                  );
-                                },
-                                icon: userProvider.isSignedIn && userProvider.photoURL != null
-                                  ? CircleAvatar(
-                                      radius: 16,
-                                      backgroundImage: NetworkImage(userProvider.photoURL!),
-                                    )
-                                  : Icon(
-                                      Icons.account_circle,
-                                      size: 28,
-                                      color: theme.accentColor,
-                                    ),
-                              ),
-                            ],
+                  return Stack(
+                    children: [
+                      // Background pattern overlay
+                      _buildBackgroundPattern(theme, constraints),
+                      
+                      // Main content
+                      Positioned.fill(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.04,
+                            vertical: isSmallScreen ? 8 : 12,
                           ),
-                        ),
-                        
-                        // Logo and Title - Compact
-                        RepaintBoundary(
-                          child: _buildHeader(theme, isSmallScreen),
-                        ),
-                        
-                        SizedBox(height: isSmallScreen ? 12 : 16),
-                        
-                        // High Score Display
-                        RepaintBoundary(
-                          child: _buildHighScoreCard(gameProvider, userProvider, theme, isSmallScreen),
-                        ),
-                        
-                        SizedBox(height: isSmallScreen ? 12 : 16),
-                        
-                        // Statistics Summary
-                        RepaintBoundary(
-                          child: _buildStatisticsSummary(theme, isSmallScreen),
-                        ),
-                        
-                        SizedBox(height: isSmallScreen ? 16 : 20),
-                        
-                        // Main Menu Buttons - Flexible
-                        Expanded(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildMenuButtons(context, gameProvider, themeProvider, theme, isSmallScreen),
+                              // Top navigation bar
+                              _buildTopNavigation(context, userProvider, theme, isSmallScreen),
+                              
+                              SizedBox(height: isSmallScreen ? 16 : 24),
+                              
+                              // Game title with logo
+                              _buildGameTitle(theme, isSmallScreen),
+                              
+                              SizedBox(height: isSmallScreen ? 20 : 28),
+                              
+                              // Main play area with central button
+                              Expanded(
+                                child: _buildMainPlayArea(
+                                  context, 
+                                  gameProvider, 
+                                  userProvider, 
+                                  theme, 
+                                  isSmallScreen,
+                                  screenWidth,
+                                  screenHeight,
+                                ),
+                              ),
+                              
+                              SizedBox(height: isSmallScreen ? 12 : 16),
+                              
+                              // Bottom navigation grid
+                              _buildBottomNavigation(
+                                context, 
+                                themeProvider, 
+                                theme, 
+                                isSmallScreen,
+                                screenWidth,
+                              ),
+                              
+                              SizedBox(height: isSmallScreen ? 8 : 12),
                             ],
                           ),
                         ),
-                        
-                        // Footer - Compact
-                        RepaintBoundary(
-                          child: _buildFooter(theme, isSmallScreen),
-                        ),
-                        
-                        SizedBox(height: isSmallScreen ? 4 : 8),
-                      ],
-                    ),
+                      ),
+                    ],
                   );
                 },
               ),
@@ -169,297 +143,603 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildHeader(GameTheme theme, bool isSmallScreen) {
-    return Column(
+  Widget _buildBackgroundPattern(GameTheme theme, BoxConstraints constraints) {
+    return Positioned.fill(
+      child: CustomPaint(
+        painter: _GameBackgroundPainter(theme),
+      ),
+    );
+  }
+
+  Widget _buildTopNavigation(BuildContext context, UserProvider userProvider, GameTheme theme, bool isSmallScreen) {
+    return Row(
       children: [
-        // Animated Snake Logo - Smaller
+        // Theme switcher
+        GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const SettingsScreen(),
+              ),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              Icons.palette,
+              color: theme.accentColor,
+              size: isSmallScreen ? 20 : 24,
+            ),
+          ),
+        ),
+        
+        const Spacer(),
+        
+        // Settings and profile
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => InstructionsDialog(theme: theme),
+                );
+              },
+              child: Container(
+                padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                decoration: BoxDecoration(
+                  color: theme.foodColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+                  border: Border.all(
+                    color: theme.foodColor.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.help_outline,
+                  color: theme.foodColor,
+                  size: isSmallScreen ? 20 : 24,
+                ),
+              ),
+            ),
+            
+            SizedBox(width: isSmallScreen ? 8 : 12),
+            
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                );
+              },
+              child: Container(
+                padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.amber.withValues(alpha: 0.2),
+                      Colors.orange.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+                  border: Border.all(
+                    color: Colors.amber.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: userProvider.isSignedIn && userProvider.photoURL != null
+                    ? CircleAvatar(
+                        radius: isSmallScreen ? 12 : 16,
+                        backgroundImage: NetworkImage(userProvider.photoURL!),
+                      )
+                    : Icon(
+                        Icons.account_circle,
+                        color: Colors.amber,
+                        size: isSmallScreen ? 20 : 24,
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGameTitle(GameTheme theme, bool isSmallScreen) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Animated logo
         SizedBox(
-          height: isSmallScreen ? 60 : 80,
+          width: isSmallScreen ? 50 : 60,
+          height: isSmallScreen ? 50 : 60,
           child: AnimatedSnakeLogo(
             theme: theme,
             controller: _logoController,
           ),
         ),
         
-        SizedBox(height: isSmallScreen ? 8 : 12),
+        SizedBox(width: isSmallScreen ? 12 : 16),
         
-        // Game Title - Smaller
-        Text(
-          'SNAKE',
-          style: TextStyle(
-            fontSize: isSmallScreen ? 36 : 42,
-            fontWeight: FontWeight.bold,
-            color: theme.accentColor,
-            letterSpacing: isSmallScreen ? 6 : 8,
-            shadows: [
-              Shadow(
-                offset: const Offset(2, 2),
-                blurRadius: 4,
-                color: Colors.black.withValues(alpha: 0.5),
+        // Title text
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SNAKE',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 32 : 40,
+                fontWeight: FontWeight.w900,
+                color: theme.accentColor,
+                letterSpacing: 3,
+                shadows: [
+                  Shadow(
+                    offset: const Offset(2, 2),
+                    blurRadius: 8,
+                    color: Colors.black.withValues(alpha: 0.3),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.3),
-        
-        Text(
-          'CLASSIC',
-          style: TextStyle(
-            fontSize: isSmallScreen ? 12 : 14,
-            fontWeight: FontWeight.w300,
-            color: theme.accentColor.withValues(alpha: 0.8),
-            letterSpacing: 2,
-          ),
-        ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
+            ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.5),
+            
+            Text(
+              'CLASSIC',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 10 : 12,
+                fontWeight: FontWeight.w300,
+                color: theme.accentColor.withValues(alpha: 0.7),
+                letterSpacing: 2,
+              ),
+            ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildHighScoreCard(GameProvider gameProvider, UserProvider userProvider, GameTheme theme, bool isSmallScreen) {
+  Widget _buildMainPlayArea(
+    BuildContext context,
+    GameProvider gameProvider, 
+    UserProvider userProvider, 
+    GameTheme theme, 
+    bool isSmallScreen,
+    double screenWidth,
+    double screenHeight,
+  ) {
     final highScore = userProvider.isSignedIn ? 
       (userProvider.highScore > gameProvider.gameState.highScore ? userProvider.highScore : gameProvider.gameState.highScore) :
       gameProvider.gameState.highScore;
+
+    return Column(
+      children: [
+        // Stats cards row
+        Row(
+          children: [
+            // High Score Card
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.emoji_events,
+                iconColor: Colors.amber,
+                title: 'BEST SCORE',
+                value: '$highScore',
+                theme: theme,
+                isSmallScreen: isSmallScreen,
+                hasSync: userProvider.isSignedIn,
+              ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.3),
+            ),
+            
+            SizedBox(width: isSmallScreen ? 12 : 16),
+            
+            // Quick Stats Card
+            Expanded(
+              child: FutureBuilder<Map<String, dynamic>>(
+                future: _getQuickStats(),
+                builder: (context, snapshot) {
+                  final stats = snapshot.data ?? {};
+                  return _buildStatCard(
+                    icon: Icons.analytics,
+                    iconColor: Colors.teal,
+                    title: 'TOTAL GAMES',
+                    value: '${stats['totalGames'] ?? 0}',
+                    theme: theme,
+                    isSmallScreen: isSmallScreen,
+                  );
+                },
+              ).animate().fadeIn(delay: 650.ms).slideX(begin: 0.3),
+            ),
+          ],
+        ),
+        
+        SizedBox(height: isSmallScreen ? 24 : 32),
+        
+        // Central Play Button
+        _buildCentralPlayButton(context, theme, isSmallScreen, screenWidth)
+            .animate()
+            .fadeIn(delay: 700.ms)
+            .scale(begin: const Offset(0.8, 0.8), duration: 600.ms)
+            .then()
+            .shimmer(duration: 2000.ms, color: theme.accentColor.withValues(alpha: 0.3)),
+        
+        SizedBox(height: isSmallScreen ? 20 : 28),
+        
+        // Quick action hint
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 12 : 16,
+            vertical: isSmallScreen ? 8 : 10,
+          ),
+          decoration: BoxDecoration(
+            color: theme.backgroundColor.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 25),
+            border: Border.all(
+              color: theme.accentColor.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            'Swipe to control • Tap to pause',
+            style: TextStyle(
+              fontSize: isSmallScreen ? 11 : 13,
+              color: theme.accentColor.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ).animate().fadeIn(delay: 800.ms),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String value,
+    required GameTheme theme,
+    required bool isSmallScreen,
+    bool hasSync = false,
+  }) {
     return Container(
-      width: double.infinity,
       padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            theme.accentColor.withValues(alpha: 0.15),
-            theme.foodColor.withValues(alpha: 0.1),
+            iconColor.withValues(alpha: 0.1),
+            iconColor.withValues(alpha: 0.05),
           ],
         ),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
         border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.3),
-          width: 1.5,
+          color: iconColor.withValues(alpha: 0.3),
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
         boxShadow: [
           BoxShadow(
-            color: theme.accentColor.withValues(alpha: 0.2),
+            color: iconColor.withValues(alpha: 0.2),
             blurRadius: 12,
             spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
-            decoration: BoxDecoration(
-              color: Colors.amber.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
-            ),
-            child: Icon(
-              Icons.emoji_events,
-              color: Colors.amber,
-              size: isSmallScreen ? 24 : 28,
-            ),
-          ),
-          SizedBox(width: isSmallScreen ? 12 : 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'BEST SCORE',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 11 : 13,
-                    fontWeight: FontWeight.w600,
-                    color: theme.accentColor.withValues(alpha: 0.8),
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                SizedBox(height: isSmallScreen ? 2 : 4),
-                Text(
-                  '$highScore',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 24 : 28,
-                    fontWeight: FontWeight.bold,
-                    color: theme.accentColor,
-                    height: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (userProvider.isSignedIn)
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 8 : 10, 
-                vertical: isSmallScreen ? 4 : 6
-              ),
-              decoration: BoxDecoration(
-                color: theme.foodColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
-                border: Border.all(
-                  color: theme.foodColor.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.cloud_done,
-                    color: theme.foodColor,
-                    size: isSmallScreen ? 14 : 16,
-                  ),
-                  SizedBox(width: isSmallScreen ? 4 : 6),
-                  Text(
-                    'SYNCED',
-                    style: TextStyle(
-                      fontSize: isSmallScreen ? 10 : 11,
-                      fontWeight: FontWeight.w600,
-                      color: theme.foodColor,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 400.ms).scale(begin: const Offset(0.95, 0.95), duration: 500.ms);
-  }
-
-  Widget _buildStatisticsSummary(GameTheme theme, bool isSmallScreen) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _getQuickStats(),
-      builder: (context, snapshot) {
-        final stats = snapshot.data ?? {};
-        
-        return Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.teal.withValues(alpha: 0.15),
-                Colors.teal.withValues(alpha: 0.1),
-              ],
-            ),
-            border: Border.all(
-              color: Colors.teal.withValues(alpha: 0.3),
-              width: 1.5,
-            ),
-            borderRadius: BorderRadius.circular(isSmallScreen ? 14 : 18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.teal.withValues(alpha: 0.2),
-                blurRadius: 8,
-                spreadRadius: 0,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
+          Row(
             children: [
               Container(
                 padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                 decoration: BoxDecoration(
-                  color: Colors.teal.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                  color: iconColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 14),
                 ),
                 child: Icon(
-                  Icons.analytics,
-                  color: Colors.teal,
+                  icon,
+                  color: iconColor,
                   size: isSmallScreen ? 20 : 24,
                 ),
               ),
-              
-              SizedBox(width: isSmallScreen ? 10 : 12),
-              
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'GAME STATS',
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 10 : 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.teal.withValues(alpha: 0.8),
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    SizedBox(height: isSmallScreen ? 2 : 4),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${stats['totalGames'] ?? 0} Games',
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 12 : 14,
-                              fontWeight: FontWeight.bold,
-                              color: theme.accentColor,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '${stats['totalPlayTime'] ?? 0}h Played',
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? 12 : 14,
-                            fontWeight: FontWeight.bold,
-                            color: theme.accentColor,
-                          ),
-                        ),
-                      ],
+              const Spacer(),
+              if (hasSync)
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 6 : 8,
+                    vertical: isSmallScreen ? 3 : 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                  ),
+                  child: Icon(
+                    Icons.cloud_done,
+                    color: Colors.green,
+                    size: isSmallScreen ? 12 : 14,
+                  ),
+                ),
+            ],
+          ),
+          
+          SizedBox(height: isSmallScreen ? 12 : 16),
+          
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 10 : 12,
+              fontWeight: FontWeight.w600,
+              color: theme.accentColor.withValues(alpha: 0.7),
+              letterSpacing: 1,
+            ),
+          ),
+          
+          SizedBox(height: isSmallScreen ? 4 : 6),
+          
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 24 : 28,
+              fontWeight: FontWeight.w900,
+              color: theme.accentColor,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCentralPlayButton(BuildContext context, GameTheme theme, bool isSmallScreen, double screenWidth) {
+    final buttonSize = isSmallScreen ? 120.0 : 140.0;
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const GameScreen()),
+        );
+      },
+      child: Container(
+        width: buttonSize,
+        height: buttonSize,
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            colors: [
+              theme.accentColor,
+              theme.foodColor,
+              theme.accentColor.withValues(alpha: 0.8),
+            ],
+            stops: const [0.0, 0.7, 1.0],
+          ),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: theme.accentColor.withValues(alpha: 0.4),
+              blurRadius: 20,
+              spreadRadius: 2,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: theme.foodColor.withValues(alpha: 0.3),
+              blurRadius: 40,
+              spreadRadius: 0,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Outer ring
+            Container(
+              width: buttonSize - 8,
+              height: buttonSize - 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+            ),
+            
+            // Centered content
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Play icon
+                Icon(
+                  Icons.play_arrow_rounded,
+                  size: isSmallScreen ? 40 : 48,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      offset: const Offset(2, 2),
+                      blurRadius: 8,
+                      color: Colors.black.withValues(alpha: 0.3),
                     ),
                   ],
                 ),
-              ),
-              
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const StatisticsScreen(),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 6 : 8, 
-                    vertical: isSmallScreen ? 3 : 4
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.teal.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
-                    border: Border.all(
-                      color: Colors.teal.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'VIEW',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 9 : 10,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.teal,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      SizedBox(width: isSmallScreen ? 3 : 4),
-                      Icon(
-                        Icons.arrow_forward,
-                        color: Colors.teal,
-                        size: isSmallScreen ? 12 : 14,
+                
+                SizedBox(height: isSmallScreen ? 4 : 6),
+                
+                // Text below icon
+                Text(
+                  'PLAY',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 11 : 13,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 2,
+                    shadows: [
+                      Shadow(
+                        offset: const Offset(1, 1),
+                        blurRadius: 4,
+                        color: Colors.black.withValues(alpha: 0.3),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation(
+    BuildContext context,
+    ThemeProvider themeProvider,
+    GameTheme theme,
+    bool isSmallScreen,
+    double screenWidth,
+  ) {
+    final navigationItems = [
+      _NavItem(Icons.leaderboard, 'BOARD', Colors.amber, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
         );
-      },
-    ).animate().fadeIn(delay: 450.ms).scale(begin: const Offset(0.95, 0.95), duration: 500.ms);
+      }),
+      _NavItem(Icons.emoji_events, 'EVENTS', Colors.purple, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const TournamentsScreen()),
+        );
+      }),
+      _NavItem(Icons.people, 'FRIENDS', Colors.blue, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const FriendsLeaderboardScreen()),
+        );
+      }),
+      _NavItem(Icons.movie, 'REPLAY', Colors.indigo, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const ReplaysScreen()),
+        );
+      }),
+      _NavItem(Icons.military_tech, 'AWARDS', Colors.teal, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const AchievementsScreen()),
+        );
+      }),
+      _NavItem(Icons.palette, 'THEME', theme.snakeColor, () {
+        themeProvider.cycleTheme();
+      }),
+    ];
+
+    return Column(
+      children: [
+        // First row - 3 items
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: navigationItems.take(3).toList().asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            
+            return _buildNavButton(
+              icon: item.icon,
+              label: item.label,
+              color: item.color,
+              onTap: item.onTap,
+              theme: theme,
+              isSmallScreen: isSmallScreen,
+            ).animate().fadeIn(
+              delay: (900 + (index * 100)).ms
+            ).slideY(begin: 0.5, duration: 400.ms);
+          }).toList(),
+        ),
+        
+        SizedBox(height: isSmallScreen ? 12 : 16),
+        
+        // Second row - 3 items
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: navigationItems.skip(3).take(3).toList().asMap().entries.map((entry) {
+            final index = entry.key + 3; // Adjust index for animation delay
+            final item = entry.value;
+            
+            return _buildNavButton(
+              icon: item.icon,
+              label: item.label,
+              color: item.color,
+              onTap: item.onTap,
+              theme: theme,
+              isSmallScreen: isSmallScreen,
+            ).animate().fadeIn(
+              delay: (900 + (index * 100)).ms
+            ).slideY(begin: 0.5, duration: 400.ms);
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+    required GameTheme theme,
+    required bool isSmallScreen,
+  }) {
+    final buttonSize = isSmallScreen ? 48.0 : 56.0;
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: buttonSize,
+            height: buttonSize,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withValues(alpha: 0.15),
+                  color.withValues(alpha: 0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 18),
+              border: Border.all(
+                color: color.withValues(alpha: 0.3),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: isSmallScreen ? 20 : 24,
+            ),
+          ),
+          
+          SizedBox(height: isSmallScreen ? 4 : 6),
+          
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 8 : 9,
+              fontWeight: FontWeight.w600,
+              color: theme.accentColor.withValues(alpha: 0.8),
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> _getQuickStats() async {
@@ -471,292 +751,70 @@ class _HomeScreenState extends State<HomeScreen>
       return {};
     }
   }
+}
 
-  Widget _buildMenuButtons(
-    BuildContext context,
-    GameProvider gameProvider,
-    ThemeProvider themeProvider,
-    GameTheme theme,
-    bool isSmallScreen,
-  ) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Main Play Button - Responsive
-        GradientButton(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const GameScreen(),
-              ),
-            );
-          },
-          text: 'PLAY NOW',
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: Icons.play_arrow_rounded,
-          width: isSmallScreen ? 200 : 240,
-        ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.9, 0.9), duration: 400.ms),
-        
-        SizedBox(height: isSmallScreen ? 16 : 20),
-        
-        // Quick Actions Row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildQuickActionButton(
-              context,
-              icon: Icons.help_outline,
-              label: 'HOW TO\nPLAY',
-              color: theme.foodColor,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => InstructionsDialog(theme: theme),
-                );
-              },
-            ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3, duration: 300.ms),
-            
-            _buildQuickActionButton(
-              context,
-              icon: Icons.leaderboard,
-              label: 'LEADER\nBOARD',
-              color: Colors.amber,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const LeaderboardScreen(),
-                  ),
-                );
-              },
-            ).animate().fadeIn(delay: 650.ms).slideY(begin: 0.3, duration: 300.ms),
-            
-            _buildQuickActionButton(
-              context,
-              icon: Icons.emoji_events,
-              label: 'TOURNA\nMENTS',
-              color: Colors.purple,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const TournamentsScreen(),
-                  ),
-                );
-              },
-            ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.3, duration: 300.ms),
-          ],
-        ),
-        
-        SizedBox(height: isSmallScreen ? 12 : 16),
-        
-        // Secondary Actions Row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildQuickActionButton(
-              context,
-              icon: Icons.people,
-              label: 'FRIENDS',
-              color: Colors.blue,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const FriendsScreen(),
-                  ),
-                );
-              },
-            ).animate().fadeIn(delay: 750.ms).slideY(begin: 0.3, duration: 300.ms),
-            
-            _buildQuickActionButton(
-              context,
-              icon: Icons.analytics,
-              label: 'STATISTICS',
-              color: Colors.teal,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const StatisticsScreen(),
-                  ),
-                );
-              },
-            ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3, duration: 300.ms),
-            
-            _buildQuickActionButton(
-              context,
-              icon: Icons.settings,
-              label: 'SETTINGS',
-              color: theme.accentColor,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
-                  ),
-                );
-              },
-            ).animate().fadeIn(delay: 850.ms).slideY(begin: 0.3, duration: 300.ms),
-          ],
-        ),
-        
-        SizedBox(height: isSmallScreen ? 12 : 16),
-        
-        // Third Actions Row - Replays, Theme, Friends Leaderboard
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildQuickActionButton(
-              context,
-              icon: Icons.leaderboard,
-              label: 'FRIENDS\nLEADER',
-              color: Colors.orange,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const FriendsLeaderboardScreen(),
-                  ),
-                );
-              },
-            ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.3, duration: 300.ms),
-            
-            _buildQuickActionButton(
-              context,
-              icon: Icons.movie,
-              label: 'REPLAYS',
-              color: Colors.indigo,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const ReplaysScreen(),
-                  ),
-                );
-              },
-            ).animate().fadeIn(delay: 950.ms).slideY(begin: 0.3, duration: 300.ms),
-            
-            _buildQuickActionButton(
-              context,
-              icon: Icons.palette,
-              label: theme.name.toUpperCase().replaceAll(' ', '\n'),
-              color: theme.snakeColor,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                themeProvider.cycleTheme();
-              },
-            ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.3, duration: 300.ms),
-          ],
-        ),
-        
-        SizedBox(height: isSmallScreen ? 12 : 16),
-        
-        // Fourth Actions Row - Achievements
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildQuickActionButton(
-              context,
-              icon: Icons.military_tech,
-              label: 'ACHIEVE\nMENTS',
-              color: Colors.teal,
-              isSmallScreen: isSmallScreen,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const AchievementsScreen(),
-                  ),
-                );
-              },
-            ).animate().fadeIn(delay: 1050.ms).slideY(begin: 0.3, duration: 300.ms),
-          ],
-        ),
-      ],
-    );
-  }
+// Navigation item helper class
+class _NavItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
 
-  Widget _buildQuickActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required Color color,
-    required bool isSmallScreen,
-    required VoidCallback onTap,
-  }) {
-    final buttonSize = isSmallScreen ? 75.0 : 90.0;
-    final iconSize = isSmallScreen ? 20.0 : 24.0;
-    final fontSize = isSmallScreen ? 8.0 : 9.0;
+  _NavItem(this.icon, this.label, this.color, this.onTap);
+}
+
+// Custom painter for game background
+class _GameBackgroundPainter extends CustomPainter {
+  final GameTheme theme;
+
+  _GameBackgroundPainter(this.theme);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = theme.accentColor.withValues(alpha: 0.05);
+
+    // Draw subtle grid pattern
+    const gridSize = 30.0;
     
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: buttonSize,
-        height: buttonSize,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.2),
-              blurRadius: 8,
-              spreadRadius: 0,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: iconSize,
-            ),
-            SizedBox(height: isSmallScreen ? 4 : 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: FontWeight.w600,
-                color: color,
-                letterSpacing: 0.5,
-                height: 1.1,
-              ),
-            ),
-          ],
-        ),
-      ),
+    for (double x = 0; x < size.width; x += gridSize) {
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        paint,
+      );
+    }
+    
+    for (double y = 0; y < size.height; y += gridSize) {
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        paint,
+      );
+    }
+
+    // Draw decorative shapes
+    final shapePaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = theme.foodColor.withValues(alpha: 0.02);
+
+    canvas.drawCircle(
+      Offset(size.width * 0.15, size.height * 0.25),
+      50,
+      shapePaint,
+    );
+
+    canvas.drawCircle(
+      Offset(size.width * 0.85, size.height * 0.75),
+      70,
+      shapePaint,
     );
   }
 
-  Widget _buildFooter(GameTheme theme, bool isSmallScreen) {
-    return Column(
-      children: [
-        Container(
-          height: 1,
-          width: isSmallScreen ? 80 : 100,
-          color: theme.accentColor.withValues(alpha: 0.3),
-        ).animate().fadeIn(delay: 1000.ms).scaleX(duration: 400.ms),
-        
-        SizedBox(height: isSmallScreen ? 8 : 12),
-        
-        Text(
-          'Swipe to control • Tap to pause',
-          style: TextStyle(
-            fontSize: isSmallScreen ? 10 : 12,
-            color: theme.accentColor.withValues(alpha: 0.6),
-            letterSpacing: 1,
-          ),
-        ).animate().fadeIn(delay: 1100.ms, duration: 400.ms),
-      ],
-    );
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
   }
 }
