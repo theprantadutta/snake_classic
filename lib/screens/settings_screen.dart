@@ -7,6 +7,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -48,7 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final theme = themeProvider.currentTheme;
         
         return Scaffold(
-          backgroundColor: theme.backgroundColor,
+          extendBodyBehindAppBar: true,
           appBar: AppBar(
             title: Text(
               'SETTINGS',
@@ -56,23 +57,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: theme.accentColor,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
+                shadows: [
+                  Shadow(
+                    offset: const Offset(0, 2),
+                    blurRadius: 4,
+                    color: Colors.black.withValues(alpha: 0.3),
+                  ),
+                ],
               ),
             ),
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(color: theme.accentColor),
           ),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                ],
-              ),
-            ),
+          body: AppBackground(
+            theme: theme,
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),

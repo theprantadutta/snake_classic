@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/providers/multiplayer_provider.dart';
 import 'package:snake_classic/screens/home_screen.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'firebase_options.dart';
@@ -40,6 +41,7 @@ class SnakeClassicApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => MultiplayerProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

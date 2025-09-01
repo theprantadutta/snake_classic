@@ -10,8 +10,10 @@ import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/leaderboard_screen.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
-import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
+import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
+import 'package:snake_classic/screens/friends_screen.dart';
+import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
@@ -607,6 +609,11 @@ class _HomeScreenState extends State<HomeScreen>
           MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
         );
       }),
+      _NavItem(Icons.group_work, 'MULTI', Colors.green, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const MultiplayerLobbyScreen()),
+        );
+      }),
       _NavItem(Icons.emoji_events, 'EVENTS', Colors.purple, () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (context) => const TournamentsScreen()),
@@ -614,7 +621,12 @@ class _HomeScreenState extends State<HomeScreen>
       }),
       _NavItem(Icons.people, 'FRIENDS', Colors.blue, () {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const FriendsLeaderboardScreen()),
+          MaterialPageRoute(builder: (context) => const FriendsScreen()),
+        );
+      }),
+      _NavItem(Icons.analytics, 'STATS', Colors.teal, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const StatisticsScreen()),
         );
       }),
       _NavItem(Icons.movie, 'REPLAY', Colors.indigo, () {
@@ -622,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen>
           MaterialPageRoute(builder: (context) => const ReplaysScreen()),
         );
       }),
-      _NavItem(Icons.military_tech, 'AWARDS', Colors.teal, () {
+      _NavItem(Icons.military_tech, 'AWARDS', Colors.orange, () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (context) => const AchievementsScreen()),
         );
@@ -634,10 +646,10 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Column(
       children: [
-        // First row - 3 items
+        // First row - 4 items
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: navigationItems.take(3).toList().asMap().entries.map((entry) {
+          children: navigationItems.take(4).toList().asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
             
@@ -656,11 +668,11 @@ class _HomeScreenState extends State<HomeScreen>
         
         SizedBox(height: isSmallScreen ? 12 : 16),
         
-        // Second row - 3 items
+        // Second row - 4 items
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: navigationItems.skip(3).take(3).toList().asMap().entries.map((entry) {
-            final index = entry.key + 3; // Adjust index for animation delay
+          children: navigationItems.skip(4).take(4).toList().asMap().entries.map((entry) {
+            final index = entry.key + 4; // Adjust index for animation delay
             final item = entry.value;
             
             return _buildNavButton(
@@ -687,7 +699,7 @@ class _HomeScreenState extends State<HomeScreen>
     required GameTheme theme,
     required bool isSmallScreen,
   }) {
-    final buttonSize = isSmallScreen ? 48.0 : 56.0;
+    final buttonSize = isSmallScreen ? 42.0 : 50.0;
     
     return GestureDetector(
       onTap: onTap,

@@ -72,41 +72,100 @@ class _GameBoardState extends State<GameBoard>
         return RepaintBoundary(
           // Isolate repaints to this widget
           child: Container(
+            margin: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              color: theme.backgroundColor,
-              border: Border.all(
-                color: theme.accentColor,
-                width: GameConstants.borderWidth,
+              // Enhanced gradient background similar to home screen
+              gradient: RadialGradient(
+                center: Alignment.topLeft,
+                radius: 1.8,
+                colors: [
+                  theme.accentColor.withValues(alpha: 0.08),
+                  theme.backgroundColor.withValues(alpha: 0.95),
+                  theme.backgroundColor,
+                  Colors.black.withValues(alpha: 0.03),
+                ],
+                stops: const [0.0, 0.3, 0.7, 1.0],
               ),
-              borderRadius: BorderRadius.circular(GameConstants.borderRadius),
+              // Enhanced border with glow effect
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.4),
+                width: 2.5,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              // Enhanced multi-layer shadow system
               boxShadow: [
+                // Inner glow
                 BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  spreadRadius: 1,
+                  color: theme.accentColor.withValues(alpha: 0.15),
+                  blurRadius: 12,
+                  spreadRadius: -2,
+                  offset: const Offset(0, -2),
+                ),
+                // Outer shadow
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 8),
+                ),
+                // Ambient glow
+                BoxShadow(
+                  color: theme.accentColor.withValues(alpha: 0.2),
+                  blurRadius: 40,
+                  spreadRadius: -5,
+                  offset: const Offset(0, 0),
                 ),
               ],
             ),
-            child: AspectRatio(
-              aspectRatio:
-                  widget.gameState.boardWidth / widget.gameState.boardHeight,
-              child: Consumer<GameProvider>(
-                builder: (context, gameProvider, child) {
-                  return CustomPaint(
-                    painter: OptimizedGameBoardPainter(
-                      gameState: widget.gameState,
-                      theme: theme,
-                      pulseAnimation: _pulseAnimation,
-                      // Smooth movement properties
-                      moveProgress: gameProvider.moveProgress,
-                      previousGameState: gameProvider.previousGameState,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                // Inner container with subtle pattern overlay
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.backgroundColor,
+                      theme.backgroundColor.withValues(alpha: 0.98),
+                      theme.accentColor.withValues(alpha: 0.03),
+                    ],
+                    stops: const [0.0, 0.6, 1.0],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Subtle pattern overlay
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _GameBoardBackgroundPainter(theme),
+                      ),
                     ),
-                    size: Size.infinite,
-                    // Performance: Only repaint when needed
-                    isComplex: false,
-                    willChange: true,
-                  );
-                },
+                    // Game content
+                    AspectRatio(
+                      aspectRatio:
+                          widget.gameState.boardWidth / widget.gameState.boardHeight,
+                      child: Consumer<GameProvider>(
+                        builder: (context, gameProvider, child) {
+                          return CustomPaint(
+                            painter: OptimizedGameBoardPainter(
+                              gameState: widget.gameState,
+                              theme: theme,
+                              pulseAnimation: _pulseAnimation,
+                              // Smooth movement properties
+                              moveProgress: gameProvider.moveProgress,
+                              previousGameState: gameProvider.previousGameState,
+                            ),
+                            size: Size.infinite,
+                            // Performance: Only repaint when needed
+                            isComplex: false,
+                            willChange: true,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1306,4 +1365,146 @@ class OptimizedGameBoardPainter extends CustomPainter {
         oldDelegate.moveProgress != moveProgress ||
         oldDelegate.previousGameState != previousGameState;
   }
+}
+
+// Background painter for enhanced visual effects
+class _GameBoardBackgroundPainter extends CustomPainter {
+  final GameTheme theme;
+
+  _GameBoardBackgroundPainter(this.theme);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Create subtle geometric pattern based on theme
+    switch (theme) {
+      case GameTheme.neon:
+        _drawNeonPattern(canvas, size);
+        break;
+      case GameTheme.space:
+        _drawSpacePattern(canvas, size);
+        break;
+      case GameTheme.ocean:
+        _drawOceanPattern(canvas, size);
+        break;
+      case GameTheme.modern:
+        _drawModernPattern(canvas, size);
+        break;
+      case GameTheme.retro:
+        _drawRetroPattern(canvas, size);
+        break;
+      case GameTheme.classic:
+        // No pattern for classic theme
+        break;
+    }
+  }
+
+  void _drawNeonPattern(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.03)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    // Draw subtle circuit-like lines
+    for (int i = 0; i < 8; i++) {
+      final y = (i + 1) * size.height / 9;
+      final path = Path()
+        ..moveTo(0, y)
+        ..lineTo(size.width * 0.3, y)
+        ..lineTo(size.width * 0.35, y - 5)
+        ..lineTo(size.width * 0.65, y - 5)
+        ..lineTo(size.width * 0.7, y)
+        ..lineTo(size.width, y);
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawSpacePattern(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.04)
+      ..style = PaintingStyle.fill;
+
+    // Draw subtle stars
+    for (int i = 0; i < 15; i++) {
+      final x = (i * 47) % size.width;
+      final y = (i * 73) % size.height;
+      _drawTinystar(canvas, Offset(x, y), 2.0, paint);
+    }
+  }
+
+  void _drawOceanPattern(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.02)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    // Draw subtle wave patterns
+    for (int i = 0; i < 6; i++) {
+      final y = (i + 1) * size.height / 7;
+      final path = Path()..moveTo(0, y);
+      
+      for (double x = 0; x <= size.width; x += 20) {
+        final waveY = y + math.sin((x + i * 30) * 0.02) * 8;
+        path.lineTo(x, waveY);
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawModernPattern(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.02)
+      ..style = PaintingStyle.fill;
+
+    // Draw subtle geometric shapes
+    for (int i = 0; i < 12; i++) {
+      final x = (i * 67) % size.width;
+      final y = (i * 89) % size.height;
+      final rect = Rect.fromCenter(
+        center: Offset(x, y),
+        width: 4,
+        height: 4,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(1)),
+        paint,
+      );
+    }
+  }
+
+  void _drawRetroPattern(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.03)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
+
+    // Draw subtle diagonal grid
+    for (int i = 0; i < 20; i++) {
+      final offset = i * 30.0;
+      // Diagonal lines
+      canvas.drawLine(
+        Offset(offset, 0),
+        Offset(offset - size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  void _drawTinystar(Canvas canvas, Offset center, double size, Paint paint) {
+    final path = Path();
+    for (int i = 0; i < 4; i++) {
+      final angle = i * math.pi / 2;
+      final x = center.dx + size * math.cos(angle);
+      final y = center.dy + size * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

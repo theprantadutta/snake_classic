@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class ThemeSelectorScreen extends StatelessWidget {
   const ThemeSelectorScreen({super.key});
@@ -13,12 +14,21 @@ class ThemeSelectorScreen extends StatelessWidget {
     final currentTheme = themeProvider.currentTheme;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Visual Themes',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 24,
+            color: currentTheme.primaryColor,
+            shadows: [
+              Shadow(
+                offset: const Offset(0, 2),
+                blurRadius: 4,
+                color: Colors.black.withValues(alpha: 0.3),
+              ),
+            ],
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -31,17 +41,8 @@ class ThemeSelectorScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              currentTheme.backgroundColor,
-              currentTheme.backgroundColor.withValues(alpha: 0.8),
-            ],
-          ),
-        ),
+      body: AppBackground(
+        theme: currentTheme,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20.0),

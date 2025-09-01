@@ -39,4 +39,16 @@ class Position {
 
   @override
   String toString() => 'Position($x, $y)';
+
+  // JSON serialization
+  Map<String, dynamic> toJson() {
+    return {
+      'x': x,
+      'y': y,
+    };
+  }
+
+  factory Position.fromJson(Map<String, dynamic> json) {
+    return Position(json['x'] ?? 0, json['y'] ?? 0);
+  }
 }

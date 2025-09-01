@@ -47,6 +47,16 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 - **Real-time status updates** (online, offline, playing) for friends
 - **Secure data persistence** with Firebase Firestore
 
+### 🎮 Real-time Multiplayer
+- **1v1 Snake battles** with real-time synchronization
+- **Quick match system** for instant gameplay
+- **Private room creation** with shareable room codes
+- **Multiple game modes**: Classic, Speed Run, Survival, Power-up Madness
+- **Real-time player status** (waiting, ready, playing, crashed)
+- **Live game state sync** with Firebase real-time database
+- **Multiplayer lobby** with player management and game settings
+- **Cross-device compatibility** for seamless multiplayer experience
+
 ### 🎮 Power-ups & Special Abilities
 - **4 unique power-up types** with special effects:
   - **⚡ Speed Boost** - Increases snake movement speed temporarily
@@ -374,9 +384,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] **Social features** - Comprehensive friend systems, search, requests, and private leaderboards
 - [x] **Tournament mode** - Competitive events with 6 game modes and real-time leaderboards
 - [x] **Advanced statistics** - 50+ detailed metrics with performance trends and AI insights
+- [x] **Multiplayer mode** - Real-time 1v1 battles with Firebase sync, matchmaking, and live gameplay
 
 ### 🚧 Upcoming Features
-- [ ] **Multiplayer mode** - Real-time multiplayer with Firebase sync
+All major features have been implemented! The Snake Classic game is now feature-complete.
 
 ---
 

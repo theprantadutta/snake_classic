@@ -4,6 +4,7 @@ import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/services/leaderboard_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -50,6 +51,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     final theme = themeProvider.currentTheme;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
           'Leaderboards',
@@ -78,17 +80,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           ],
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.backgroundColor,
-              theme.backgroundColor.withValues(alpha:0.8),
-            ],
-          ),
-        ),
+      body: AppBackground(
+        theme: theme,
         child: Column(
           children: [
             // User Rank Card
