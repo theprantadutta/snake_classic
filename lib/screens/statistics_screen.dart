@@ -196,54 +196,58 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       theme: theme,
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'High Score',
-                  '${_displayStats['highScore'] ?? 0}',
-                  Icons.emoji_events,
-                  Colors.amber,
-                  theme,
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    'High Score',
+                    '${_displayStats['highScore'] ?? 0}',
+                    Icons.emoji_events,
+                    Colors.amber,
+                    theme,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Total Games',
-                  '${_displayStats['totalGames'] ?? 0}',
-                  Icons.games,
-                  theme.accentColor,
-                  theme,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    'Total Games',
+                    '${_displayStats['totalGames'] ?? 0}',
+                    Icons.games,
+                    theme.accentColor,
+                    theme,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           
           const SizedBox(height: 12),
           
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Average Score',
-                  '${_displayStats['averageScore'] ?? 0}',
-                  Icons.trending_up,
-                  Colors.green,
-                  theme,
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    'Average Score',
+                    '${_displayStats['averageScore'] ?? 0}',
+                    Icons.trending_up,
+                    Colors.green,
+                    theme,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Win Streak',
-                  '${_displayStats['winStreak'] ?? 0}',
-                  Icons.local_fire_department,
-                  Colors.orange,
-                  theme,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    'Win Streak',
+                    '${_displayStats['winStreak'] ?? 0}',
+                    Icons.local_fire_department,
+                    Colors.orange,
+                    theme,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -689,41 +693,72 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildActionButtons(GameTheme theme) {
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: GradientButton(
-                onPressed: () => Navigator.of(context).pushNamed('/achievements'),
-                text: 'VIEW ACHIEVEMENTS',
-                primaryColor: Colors.amber,
-                secondaryColor: Colors.orange,
-                icon: Icons.emoji_events,
-              ),
-            ),
-            
-            const SizedBox(width: 16),
-            
-            Expanded(
-              child: GradientButton(
-                onPressed: () => Navigator.of(context).pushNamed('/leaderboard'),
-                text: 'LEADERBOARD',
-                primaryColor: theme.accentColor,
-                secondaryColor: theme.foodColor,
-                icon: Icons.leaderboard,
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 400) {
+              return Column(
+                children: [
+                  GradientButton(
+                    onPressed: () => Navigator.of(context).pushNamed('/achievements'),
+                    text: 'VIEW ACHIEVEMENTS',
+                    primaryColor: Colors.amber,
+                    secondaryColor: Colors.orange,
+                    icon: Icons.emoji_events,
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  GradientButton(
+                    onPressed: () => Navigator.of(context).pushNamed('/leaderboard'),
+                    text: 'LEADERBOARD',
+                    primaryColor: theme.accentColor,
+                    secondaryColor: theme.foodColor,
+                    icon: Icons.leaderboard,
+                  ),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(
+                  child: GradientButton(
+                    onPressed: () => Navigator.of(context).pushNamed('/achievements'),
+                    text: 'VIEW ACHIEVEMENTS',
+                    primaryColor: Colors.amber,
+                    secondaryColor: Colors.orange,
+                    icon: Icons.emoji_events,
+                  ),
+                ),
+                
+                const SizedBox(width: 16),
+                
+                Expanded(
+                  child: GradientButton(
+                    onPressed: () => Navigator.of(context).pushNamed('/leaderboard'),
+                    text: 'LEADERBOARD',
+                    primaryColor: theme.accentColor,
+                    secondaryColor: theme.foodColor,
+                    icon: Icons.leaderboard,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         
         const SizedBox(height: 16),
         
-        GradientButton(
-          onPressed: _showResetDialog,
-          text: 'RESET STATISTICS',
-          primaryColor: Colors.red.shade400,
-          secondaryColor: Colors.red.shade600,
-          icon: Icons.refresh,
-          width: 200,
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
+            child: GradientButton(
+              onPressed: _showResetDialog,
+              text: 'RESET STATISTICS',
+              primaryColor: Colors.red.shade400,
+              secondaryColor: Colors.red.shade600,
+              icon: Icons.refresh,
+            ),
+          ),
         ),
       ],
     );
@@ -801,6 +836,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
@@ -810,24 +846,32 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           
           const SizedBox(height: 8),
           
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: theme.accentColor,
+              ),
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ),
           
           const SizedBox(height: 4),
           
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.accentColor.withValues(alpha: 0.7),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.accentColor.withValues(alpha: 0.7),
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
