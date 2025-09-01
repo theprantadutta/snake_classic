@@ -74,63 +74,71 @@ class _GameBoardState extends State<GameBoard>
           child: Container(
             margin: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              // Enhanced gradient background similar to home screen
+              // Enhanced gradient background matching home screen exactly
               gradient: RadialGradient(
-                center: Alignment.topLeft,
-                radius: 1.8,
+                center: Alignment.topRight,
+                radius: 1.5,
                 colors: [
-                  theme.accentColor.withValues(alpha: 0.08),
-                  theme.backgroundColor.withValues(alpha: 0.95),
+                  theme.accentColor.withValues(alpha: 0.12),
+                  theme.backgroundColor.withValues(alpha: 0.98),
                   theme.backgroundColor,
-                  Colors.black.withValues(alpha: 0.03),
+                  Colors.black.withValues(alpha: 0.08),
                 ],
-                stops: const [0.0, 0.3, 0.7, 1.0],
+                stops: const [0.0, 0.4, 0.8, 1.0],
               ),
-              // Enhanced border with glow effect
+              // Enhanced border with premium glow effect
               border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.4),
-                width: 2.5,
+                color: theme.accentColor.withValues(alpha: 0.5),
+                width: 3.0,
               ),
-              borderRadius: BorderRadius.circular(24),
-              // Enhanced multi-layer shadow system
+              borderRadius: BorderRadius.circular(0),
+              // Premium multi-layer shadow system matching home screen
               boxShadow: [
-                // Inner glow
+                // Primary glow effect
+                BoxShadow(
+                  color: theme.accentColor.withValues(alpha: 0.25),
+                  blurRadius: 16,
+                  spreadRadius: -1,
+                  offset: const Offset(0, 0),
+                ),
+                // Depth shadow
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 24,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 12),
+                ),
+                // Inner highlight
+                BoxShadow(
+                  color: theme.accentColor.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  spreadRadius: -4,
+                  offset: const Offset(0, -4),
+                ),
+                // Ambient outer glow
                 BoxShadow(
                   color: theme.accentColor.withValues(alpha: 0.15),
-                  blurRadius: 12,
-                  spreadRadius: -2,
-                  offset: const Offset(0, -2),
-                ),
-                // Outer shadow
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 8),
-                ),
-                // Ambient glow
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.2),
-                  blurRadius: 40,
-                  spreadRadius: -5,
+                  blurRadius: 48,
+                  spreadRadius: -8,
                   offset: const Offset(0, 0),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(0),
               child: Container(
-                // Inner container with subtle pattern overlay
+                // Inner container with enhanced pattern overlay matching home screen
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      theme.backgroundColor,
+                      theme.backgroundColor.withValues(alpha: 0.95),
                       theme.backgroundColor.withValues(alpha: 0.98),
-                      theme.accentColor.withValues(alpha: 0.03),
+                      theme.accentColor.withValues(alpha: 0.05),
+                      theme.foodColor.withValues(alpha: 0.02),
                     ],
-                    stops: const [0.0, 0.6, 1.0],
+                    stops: const [0.0, 0.4, 0.8, 1.0],
                   ),
                 ),
                 child: Stack(
@@ -1367,7 +1375,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
   }
 }
 
-// Background painter for enhanced visual effects
+// Background painter for enhanced visual effects matching home screen
 class _GameBoardBackgroundPainter extends CustomPainter {
   final GameTheme theme;
 
@@ -1375,115 +1383,156 @@ class _GameBoardBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Create subtle geometric pattern based on theme
+    // Base grid pattern matching home screen
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = theme.accentColor.withValues(alpha: 0.08);
+
+    const gridSize = 35.0;
+    
+    for (double x = 0; x < size.width; x += gridSize) {
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        paint,
+      );
+    }
+    
+    for (double y = 0; y < size.height; y += gridSize) {
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        paint,
+      );
+    }
+
+    // Decorative shapes matching home screen
+    final shapePaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = theme.foodColor.withValues(alpha: 0.025);
+
+    canvas.drawCircle(
+      Offset(size.width * 0.15, size.height * 0.25),
+      60,
+      shapePaint,
+    );
+
+    canvas.drawCircle(
+      Offset(size.width * 0.85, size.height * 0.75),
+      80,
+      shapePaint,
+    );
+
+    // Additional theme-specific enhancements
     switch (theme) {
       case GameTheme.neon:
-        _drawNeonPattern(canvas, size);
+        _drawNeonEnhancements(canvas, size);
         break;
       case GameTheme.space:
-        _drawSpacePattern(canvas, size);
+        _drawSpaceEnhancements(canvas, size);
         break;
       case GameTheme.ocean:
-        _drawOceanPattern(canvas, size);
+        _drawOceanEnhancements(canvas, size);
         break;
       case GameTheme.modern:
-        _drawModernPattern(canvas, size);
+        _drawModernEnhancements(canvas, size);
         break;
       case GameTheme.retro:
-        _drawRetroPattern(canvas, size);
+        _drawRetroEnhancements(canvas, size);
         break;
       case GameTheme.classic:
-        // No pattern for classic theme
+        // Minimal enhancements for classic theme
         break;
     }
   }
 
-  void _drawNeonPattern(Canvas canvas, Size size) {
+  void _drawNeonEnhancements(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.03)
+      ..color = theme.accentColor.withValues(alpha: 0.04)
       ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.0);
 
-    // Draw subtle circuit-like lines
-    for (int i = 0; i < 8; i++) {
-      final y = (i + 1) * size.height / 9;
+    // Subtle glowing circuit lines
+    for (int i = 0; i < 6; i++) {
+      final y = (i + 1) * size.height / 7;
       final path = Path()
         ..moveTo(0, y)
-        ..lineTo(size.width * 0.3, y)
-        ..lineTo(size.width * 0.35, y - 5)
-        ..lineTo(size.width * 0.65, y - 5)
-        ..lineTo(size.width * 0.7, y)
+        ..lineTo(size.width * 0.4, y)
+        ..lineTo(size.width * 0.45, y - 3)
+        ..lineTo(size.width * 0.55, y - 3)
+        ..lineTo(size.width * 0.6, y)
         ..lineTo(size.width, y);
       canvas.drawPath(path, paint);
     }
   }
 
-  void _drawSpacePattern(Canvas canvas, Size size) {
+  void _drawSpaceEnhancements(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.04)
+      ..color = theme.accentColor.withValues(alpha: 0.06)
       ..style = PaintingStyle.fill;
 
-    // Draw subtle stars
-    for (int i = 0; i < 15; i++) {
-      final x = (i * 47) % size.width;
-      final y = (i * 73) % size.height;
-      _drawTinystar(canvas, Offset(x, y), 2.0, paint);
+    // Subtle floating stars
+    for (int i = 0; i < 12; i++) {
+      final x = (i * 53) % size.width;
+      final y = (i * 79) % size.height;
+      _drawTinystar(canvas, Offset(x, y), 1.5, paint);
     }
   }
 
-  void _drawOceanPattern(Canvas canvas, Size size) {
+  void _drawOceanEnhancements(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.02)
-      ..strokeWidth = 1.5
+      ..color = theme.accentColor.withValues(alpha: 0.03)
+      ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
-    // Draw subtle wave patterns
-    for (int i = 0; i < 6; i++) {
-      final y = (i + 1) * size.height / 7;
+    // Subtle wave ripples
+    for (int i = 0; i < 4; i++) {
+      final y = (i + 1) * size.height / 5;
       final path = Path()..moveTo(0, y);
       
-      for (double x = 0; x <= size.width; x += 20) {
-        final waveY = y + math.sin((x + i * 30) * 0.02) * 8;
+      for (double x = 0; x <= size.width; x += 15) {
+        final waveY = y + math.sin((x + i * 20) * 0.03) * 6;
         path.lineTo(x, waveY);
       }
       canvas.drawPath(path, paint);
     }
   }
 
-  void _drawModernPattern(Canvas canvas, Size size) {
+  void _drawModernEnhancements(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.02)
+      ..color = theme.accentColor.withValues(alpha: 0.03)
       ..style = PaintingStyle.fill;
 
-    // Draw subtle geometric shapes
-    for (int i = 0; i < 12; i++) {
-      final x = (i * 67) % size.width;
-      final y = (i * 89) % size.height;
+    // Subtle geometric dots
+    for (int i = 0; i < 8; i++) {
+      final x = (i * 71) % size.width;
+      final y = (i * 97) % size.height;
       final rect = Rect.fromCenter(
         center: Offset(x, y),
-        width: 4,
-        height: 4,
+        width: 3,
+        height: 3,
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(1)),
+        RRect.fromRectAndRadius(rect, const Radius.circular(1.5)),
         paint,
       );
     }
   }
 
-  void _drawRetroPattern(Canvas canvas, Size size) {
+  void _drawRetroEnhancements(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.03)
-      ..strokeWidth = 0.8
+      ..color = theme.accentColor.withValues(alpha: 0.04)
+      ..strokeWidth = 0.5
       ..style = PaintingStyle.stroke;
 
-    // Draw subtle diagonal grid
-    for (int i = 0; i < 20; i++) {
-      final offset = i * 30.0;
-      // Diagonal lines
+    // Subtle retro diagonal accents
+    for (int i = 0; i < 15; i++) {
+      final offset = i * 40.0;
       canvas.drawLine(
         Offset(offset, 0),
-        Offset(offset - size.height, size.height),
+        Offset(offset - size.height * 0.3, size.height * 0.3),
         paint,
       );
     }

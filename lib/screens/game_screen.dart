@@ -550,97 +550,141 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
     return AnimatedBuilder(
       animation: _gestureIndicatorController,
       builder: (context, child) {
+        final animationValue = _gestureIndicatorController.value;
+        
         return Container(
           padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 8 : 10,
-            vertical: isSmallScreen ? 6 : 8,
+            horizontal: isSmallScreen ? 10 : 12,
+            vertical: isSmallScreen ? 8 : 10,
           ),
           decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.backgroundColor.withValues(alpha: 0.95),
+                theme.backgroundColor.withValues(alpha: 0.85),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.3),
-              width: 1,
+              color: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating
+                  ? _getActiveSwipeColor(_lastSwipeDirection!, theme).withValues(alpha: 0.6)
+                  : theme.accentColor.withValues(alpha: 0.4),
+              width: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating ? 2.0 : 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                color: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating
+                    ? _getActiveSwipeColor(_lastSwipeDirection!, theme).withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.2),
+                blurRadius: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating ? 8 : 6,
+                spreadRadius: _lastSwipeDirection != null && _gestureIndicatorController.isAnimating ? 1 : 0,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Multi-directional gesture indicator
+              // Enhanced directional pad indicator
               Container(
-                width: isSmallScreen ? 24 : 28,
-                height: isSmallScreen ? 24 : 28,
+                width: isSmallScreen ? 32 : 36,
+                height: isSmallScreen ? 32 : 36,
                 decoration: BoxDecoration(
-                  color: theme.accentColor.withValues(alpha: 0.15),
+                  gradient: RadialGradient(
+                    colors: [
+                      theme.accentColor.withValues(alpha: 0.2),
+                      theme.accentColor.withValues(alpha: 0.1),
+                    ],
+                  ),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.4),
-                    width: 1,
+                    color: theme.accentColor.withValues(alpha: 0.5),
+                    width: 1.5,
                   ),
                 ),
                 child: Stack(
                   children: [
-                    // Up arrow
-                    Positioned(
-                      top: 2,
-                      left: 0,
-                      right: 0,
-                      child: Icon(
-                        Icons.keyboard_arrow_up,
-                        color: _getDirectionColor(Direction.up, theme),
-                        size: isSmallScreen ? 8 : 10,
+                    // Center dot
+                    Center(
+                      child: Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.accentColor.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                    // Down arrow
-                    Positioned(
-                      bottom: 2,
-                      left: 0,
-                      right: 0,
-                      child: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: _getDirectionColor(Direction.down, theme),
-                        size: isSmallScreen ? 8 : 10,
-                      ),
+                    
+                    // Enhanced directional indicators
+                    _buildDirectionalIndicator(
+                      Direction.up,
+                      Alignment.topCenter,
+                      Offset(0, isSmallScreen ? 4 : 5),
+                      theme,
+                      isSmallScreen,
                     ),
-                    // Left arrow
-                    Positioned(
-                      left: 2,
-                      top: 0,
-                      bottom: 0,
-                      child: Icon(
-                        Icons.keyboard_arrow_left,
-                        color: _getDirectionColor(Direction.left, theme),
-                        size: isSmallScreen ? 8 : 10,
-                      ),
+                    _buildDirectionalIndicator(
+                      Direction.down,
+                      Alignment.bottomCenter,
+                      Offset(0, isSmallScreen ? -4 : -5),
+                      theme,
+                      isSmallScreen,
                     ),
-                    // Right arrow
-                    Positioned(
-                      right: 2,
-                      top: 0,
-                      bottom: 0,
-                      child: Icon(
-                        Icons.keyboard_arrow_right,
-                        color: _getDirectionColor(Direction.right, theme),
-                        size: isSmallScreen ? 8 : 10,
-                      ),
+                    _buildDirectionalIndicator(
+                      Direction.left,
+                      Alignment.centerLeft,
+                      Offset(isSmallScreen ? 4 : 5, 0),
+                      theme,
+                      isSmallScreen,
+                    ),
+                    _buildDirectionalIndicator(
+                      Direction.right,
+                      Alignment.centerRight,
+                      Offset(isSmallScreen ? -4 : -5, 0),
+                      theme,
+                      isSmallScreen,
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: isSmallScreen ? 6 : 8),
-              Text(
-                'Swipe',
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.8),
-                  fontSize: isSmallScreen ? 10 : 11,
-                  fontWeight: FontWeight.w600,
+              SizedBox(width: isSmallScreen ? 8 : 10),
+              SizedBox(
+                height: isSmallScreen ? 28 : 32, // Fixed height to prevent jumping
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Swipe',
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.9),
+                        fontSize: isSmallScreen ? 11 : 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(height: 2), // Consistent spacing
+                    AnimatedOpacity(
+                      opacity: (_lastSwipeDirection != null && _gestureIndicatorController.isAnimating) ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Text(
+                        _lastSwipeDirection != null ? _getDirectionName(_lastSwipeDirection!) : 'UP', // Placeholder to maintain layout
+                        style: TextStyle(
+                          color: _lastSwipeDirection != null 
+                              ? _getActiveSwipeColor(_lastSwipeDirection!, theme)
+                              : Colors.transparent,
+                          fontSize: isSmallScreen ? 8 : 9,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                          height: 1.0,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -650,36 +694,87 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver, Ti
     );
   }
 
+  Widget _buildDirectionalIndicator(
+    Direction direction,
+    Alignment alignment,
+    Offset offset,
+    GameTheme theme,
+    bool isSmallScreen,
+  ) {
+    final isActive = _lastSwipeDirection == direction && _gestureIndicatorController.isAnimating;
+    final animationValue = _gestureIndicatorController.value;
+    
+    return Align(
+      alignment: alignment,
+      child: Transform.translate(
+        offset: offset,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: isActive ? (isSmallScreen ? 8 : 10) : (isSmallScreen ? 6 : 8),
+          height: isActive ? (isSmallScreen ? 8 : 10) : (isSmallScreen ? 6 : 8),
+          decoration: BoxDecoration(
+            color: isActive 
+                ? _getActiveSwipeColor(direction, theme).withValues(alpha: 0.8 + 0.2 * animationValue)
+                : theme.accentColor.withValues(alpha: 0.4),
+            shape: BoxShape.circle,
+            boxShadow: isActive ? [
+              BoxShadow(
+                color: _getActiveSwipeColor(direction, theme).withValues(alpha: 0.4),
+                blurRadius: 4 + 2 * animationValue,
+                spreadRadius: 1 + animationValue,
+              ),
+            ] : null,
+          ),
+          child: isActive ? Center(
+            child: Container(
+              width: isSmallScreen ? 3 : 4,
+              height: isSmallScreen ? 3 : 4,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ) : null,
+        ),
+      ),
+    );
+  }
+
+  Color _getActiveSwipeColor(Direction direction, GameTheme theme) {
+    switch (direction) {
+      case Direction.up:
+        return const Color(0xFF00BCD4); // Cyan
+      case Direction.down:
+        return const Color(0xFF4CAF50); // Green
+      case Direction.left:
+        return const Color(0xFFFF9800); // Orange
+      case Direction.right:
+        return const Color(0xFF9C27B0); // Purple
+    }
+  }
+
+  String _getDirectionName(Direction direction) {
+    switch (direction) {
+      case Direction.up:
+        return 'UP';
+      case Direction.down:
+        return 'DOWN';
+      case Direction.left:
+        return 'LEFT';
+      case Direction.right:
+        return 'RIGHT';
+    }
+  }
+
   Color _getDirectionColor(Direction direction, GameTheme theme) {
     // If this direction was the last swipe and animation is active, show the highlight color
     if (_lastSwipeDirection == direction && _gestureIndicatorController.isAnimating) {
       final animationValue = _gestureIndicatorController.value;
-      switch (direction) {
-        case Direction.up:
-          return Color.lerp(
-            theme.accentColor.withValues(alpha: 0.6),
-            const Color(0xFF00BCD4), // Cyan
-            animationValue,
-          )!;
-        case Direction.down:
-          return Color.lerp(
-            theme.accentColor.withValues(alpha: 0.6),
-            const Color(0xFF4CAF50), // Green
-            animationValue,
-          )!;
-        case Direction.left:
-          return Color.lerp(
-            theme.accentColor.withValues(alpha: 0.6),
-            const Color(0xFFFF9800), // Orange
-            animationValue,
-          )!;
-        case Direction.right:
-          return Color.lerp(
-            theme.accentColor.withValues(alpha: 0.6),
-            const Color(0xFF9C27B0), // Purple
-            animationValue,
-          )!;
-      }
+      return Color.lerp(
+        theme.accentColor.withValues(alpha: 0.6),
+        _getActiveSwipeColor(direction, theme),
+        animationValue,
+      )!;
     }
     
     // Default color for non-active directions
