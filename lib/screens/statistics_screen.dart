@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -51,18 +52,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final theme = themeProvider.currentTheme;
         
         return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                  theme.accentColor.withValues(alpha: 0.1),
-                ],
-              ),
-            ),
+          body: AppBackground(
+            theme: theme,
             child: SafeArea(
               child: _isLoading
                   ? Center(
@@ -799,12 +790,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   size: 24,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: theme.accentColor,
+                Flexible(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.accentColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

@@ -6,6 +6,7 @@ import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/screens/tournament_detail_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class TournamentsScreen extends StatefulWidget {
   const TournamentsScreen({super.key});
@@ -64,18 +65,8 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
         final theme = themeProvider.currentTheme;
 
         return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                  theme.accentColor.withValues(alpha: 0.1),
-                ],
-              ),
-            ),
+          body: AppBackground(
+            theme: theme,
             child: SafeArea(
               child: Column(
                 children: [

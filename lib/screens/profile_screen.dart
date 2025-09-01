@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
@@ -12,6 +11,7 @@ import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,29 +20,17 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen> {
   final StatisticsService _statisticsService = StatisticsService();
   final StorageService _storageService = StorageService();
   final AchievementService _achievementService = AchievementService();
   Map<String, dynamic> _displayStats = {};
   List<Achievement> _recentAchievements = [];
   bool _isLoading = true;
-  late AnimationController _backgroundController;
-  late Animation<double> _backgroundAnimation;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialize background animation
-    _backgroundController = AnimationController(
-      duration: const Duration(seconds: 20),
-      vsync: this,
-    );
-    _backgroundAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _backgroundController, curve: Curves.linear),
-    );
-    _backgroundController.repeat();
     
     _loadStatistics();
     _loadRecentAchievements();
@@ -67,7 +55,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   @override
   void dispose() {
-    _backgroundController.dispose();
     super.dispose();
   }
 
@@ -115,47 +102,15 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topRight,
-            radius: 1.5,
-            colors: [
-              theme.accentColor.withValues(alpha: 0.15),
-              theme.backgroundColor,
-              theme.backgroundColor.withValues(alpha: 0.9),
-              Colors.black.withValues(alpha: 0.1),
-            ],
-            stops: const [0.0, 0.4, 0.8, 1.0],
+      body: AnimatedAppBackground(
+        theme: theme,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: userProvider.isSignedIn 
+              ? _buildProfileContent(context, userProvider, themeProvider)
+              : _buildSignInContent(context, userProvider, themeProvider),
           ),
-        ),
-        child: Stack(
-          children: [
-            // Animated background pattern
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _backgroundAnimation,
-                builder: (context, child) {
-                  return CustomPaint(
-                    painter: _ProfileBackgroundPainter(
-                      theme,
-                      _backgroundAnimation.value,
-                    ),
-                  );
-                },
-              ),
-            ),
-            
-            // Main content
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: userProvider.isSignedIn 
-                  ? _buildProfileContent(context, userProvider, themeProvider)
-                  : _buildSignInContent(context, userProvider, themeProvider),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -1356,42 +1311,3 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 }
 
-// Background painter for animated effects
-class _ProfileBackgroundPainter extends CustomPainter {
-  final GameTheme theme;
-  final double animationValue;
-
-  _ProfileBackgroundPainter(this.theme, this.animationValue);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.03)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-
-    // Animated floating elements
-    for (int i = 0; i < 12; i++) {
-      final progress = (animationValue + i * 0.1) % 1.0;
-      final x = (i * 67 + progress * 20) % size.width;
-      final y = (i * 89 + math.sin(progress * math.pi * 2) * 30) % size.height;
-      
-      final opacity = (math.sin(progress * math.pi * 2) + 1) * 0.5;
-      paint.color = theme.accentColor.withValues(alpha: 0.02 * opacity);
-      
-      final rect = Rect.fromCenter(
-        center: Offset(x, y),
-        width: 8,
-        height: 8,
-      );
-      
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(2)),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}

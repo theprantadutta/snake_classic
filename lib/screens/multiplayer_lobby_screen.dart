@@ -8,6 +8,7 @@ import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/multiplayer_game_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 class MultiplayerLobbyScreen extends StatefulWidget {
@@ -58,20 +59,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         }
 
         return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topRight,
-                radius: 1.5,
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.15),
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.9),
-                  Colors.black.withValues(alpha: 0.1),
-                ],
-                stops: const [0.0, 0.4, 0.8, 1.0],
-              ),
-            ),
+          body: AppBackground(
+            theme: theme,
             child: SafeArea(
               child: multiplayerProvider.isInGame
                   ? _buildGameLobby(context, multiplayerProvider, theme, userProvider)

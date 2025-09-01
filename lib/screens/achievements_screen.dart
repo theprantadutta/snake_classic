@@ -5,6 +5,7 @@ import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
@@ -73,17 +74,8 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           ],
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.backgroundColor,
-              theme.backgroundColor.withValues(alpha: 0.8),
-            ],
-          ),
-        ),
+      body: AppBackground(
+        theme: theme,
         child: Column(
           children: [
             // Progress Summary

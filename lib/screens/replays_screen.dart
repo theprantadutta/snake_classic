@@ -5,6 +5,7 @@ import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/screens/replay_viewer_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class ReplaysScreen extends StatefulWidget {
   const ReplaysScreen({super.key});
@@ -117,17 +118,8 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
           ],
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.backgroundColor,
-              theme.backgroundColor.withValues(alpha: 0.8),
-            ],
-          ),
-        ),
+      body: AppBackground(
+        theme: theme,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : TabBarView(
