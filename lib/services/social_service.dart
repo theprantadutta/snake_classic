@@ -15,7 +15,7 @@ class SocialService {
     return _instance!;
   }
 
-  // Search for users by display name or email
+  // Search for users by username, display name or email
   Future<List<UserProfile>> searchUsers(String query) async {
     if (query.length < 2) return [];
 
@@ -23,7 +23,16 @@ class SocialService {
       final currentUserId = _authService.currentUser?.uid;
       if (currentUserId == null) return [];
 
-      // Search by display name
+      // Search by username (primary search method)
+      final usernameQuery = await _firestore
+          .collection('users')
+          .where('username', isGreaterThanOrEqualTo: query)
+          .where('username', isLessThan: '${query}z')
+          .where('isPublic', isEqualTo: true)
+          .limit(20)
+          .get();
+
+      // Search by display name (fallback)
       final nameQuery = await _firestore
           .collection('users')
           .where('displayName', isGreaterThanOrEqualTo: query)
@@ -45,6 +54,18 @@ class SocialService {
 
       final users = <UserProfile>[];
       final seenUids = <String>{};
+
+      // Add username search results first (higher priority)
+      for (final doc in usernameQuery.docs) {
+        final data = doc.data();
+        final user = UserProfile.fromJson(data);
+
+        // Skip current user and duplicates
+        if (user.uid != currentUserId && !seenUids.contains(user.uid)) {
+          users.add(user);
+          seenUids.add(user.uid);
+        }
+      }
 
       // Add name search results
       for (final doc in nameQuery.docs) {

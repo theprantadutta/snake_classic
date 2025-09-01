@@ -6,7 +6,7 @@ import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/providers/multiplayer_provider.dart';
-import 'package:snake_classic/screens/home_screen.dart';
+import 'package:snake_classic/screens/loading_screen.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/performance_monitor.dart';
 import 'firebase_options.dart';
@@ -59,7 +59,7 @@ class SnakeClassicApp extends StatelessWidget {
               useMaterial3: false,
               fontFamily: 'monospace',
             ),
-            home: const HomeScreen(),
+            home: const LoadingScreen(),
           );
         },
       ),

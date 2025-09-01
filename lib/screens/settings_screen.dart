@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/game_provider.dart';
+import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -44,8 +46,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ThemeProvider, GameProvider>(
-      builder: (context, themeProvider, gameProvider, child) {
+    return Consumer3<ThemeProvider, GameProvider, UserProvider>(
+      builder: (context, themeProvider, gameProvider, userProvider, child) {
         final theme = themeProvider.currentTheme;
         
         return Scaffold(
@@ -84,6 +86,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       'VISUAL THEME',
                       [
                         _buildThemeSelector(themeProvider, theme),
+                      ],
+                      theme,
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // User Profile Section
+                    _buildSection(
+                      'USER PROFILE',
+                      [
+                        _buildUserProfileSettings(userProvider, theme),
                       ],
                       theme,
                     ),
@@ -627,6 +640,286 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }).toList(),
         ),
       ],
+    );
+  }
+
+  Widget _buildUserProfileSettings(UserProvider userProvider, GameTheme theme) {
+    return Column(
+      children: [
+        // Current username display
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Username',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        userProvider.isGuestUser ? Icons.person_outline : Icons.verified_user,
+                        color: userProvider.isGuestUser ? Colors.orange : Colors.green,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          userProvider.displayName,
+                          style: TextStyle(
+                            color: theme.accentColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    userProvider.isGuestUser ? 'Guest Account' : 'Authenticated Account',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Profile type indicator
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: theme.backgroundColor,
+                border: Border.all(
+                  color: (userProvider.isGuestUser ? Colors.orange : Colors.green).withValues(alpha: 0.5),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Icon(
+                userProvider.isGuestUser ? Icons.person_outline : Icons.account_circle,
+                color: userProvider.isGuestUser ? Colors.orange : Colors.green,
+                size: 24,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Username actions
+        if (userProvider.isGuestUser) ...[
+          // For guest users, allow username change
+          GradientButton(
+            onPressed: () => _showUsernameDialog(userProvider, theme),
+            text: 'CHANGE USERNAME',
+            primaryColor: Colors.orange,
+            secondaryColor: Colors.deepOrange,
+            icon: Icons.edit,
+            width: double.infinity,
+            outlined: true,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Sign in to keep your progress and play with friends',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ] else ...[
+          // For authenticated users
+          GradientButton(
+            onPressed: () => _showUsernameDialog(userProvider, theme),
+            text: 'CHANGE USERNAME',
+            primaryColor: theme.accentColor,
+            secondaryColor: theme.primaryColor,
+            icon: Icons.edit,
+            width: double.infinity,
+            outlined: true,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Your username is visible to friends and on leaderboards',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _showUsernameDialog(UserProvider userProvider, GameTheme theme) {
+    final TextEditingController usernameController = TextEditingController();
+    final UsernameService usernameService = UsernameService();
+    String? errorMessage;
+    bool isLoading = false;
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: theme.backgroundColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+              ),
+              title: Text(
+                'Change Username',
+                style: TextStyle(
+                  color: theme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Choose a unique username that represents you in the game.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  TextField(
+                    controller: usernameController,
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      labelStyle: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
+                      hintText: 'Enter new username',
+                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                      filled: true,
+                      fillColor: theme.backgroundColor.withValues(alpha: 0.3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.accentColor),
+                      ),
+                      errorText: errorMessage,
+                      errorStyle: const TextStyle(color: Colors.red),
+                    ),
+                    style: TextStyle(color: Colors.white),
+                    maxLength: 20,
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  Text(
+                    '• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isLoading ? null : () async {
+                    final newUsername = usernameController.text.trim();
+                    if (newUsername.isEmpty) return;
+                    
+                    setState(() {
+                      isLoading = true;
+                      errorMessage = null;
+                    });
+                    
+                    bool success = false;
+                    
+                    if (userProvider.isGuestUser) {
+                      success = await userProvider.updateGuestUsername(newUsername);
+                      if (!success) {
+                        final validation = usernameService.validateUsername(newUsername);
+                        setState(() {
+                          errorMessage = validation.error ?? 'Failed to update username';
+                        });
+                      }
+                    } else {
+                      // For authenticated users
+                      success = await userProvider.updateAuthenticatedUsername(newUsername);
+                      if (!success) {
+                        final validation = await UsernameService().validateUsernameComplete(newUsername);
+                        setState(() {
+                          errorMessage = validation.error ?? 'Failed to update username';
+                        });
+                      }
+                    }
+                    
+                    if (success && context.mounted) {
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Username updated to "$newUsername"'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                    
+                    setState(() {
+                      isLoading = false;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.accentColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: isLoading
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        'Update',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

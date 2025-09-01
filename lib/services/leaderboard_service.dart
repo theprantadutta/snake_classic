@@ -20,6 +20,7 @@ class LeaderboardService {
           .map((doc) => {
                 'uid': doc.id,
                 'displayName': doc.data()['displayName'] ?? 'Anonymous',
+                'username': doc.data()['username'] ?? doc.data()['displayName'] ?? 'Anonymous',
                 'highScore': doc.data()['highScore'] ?? 0,
                 'photoURL': doc.data()['photoURL'],
                 'totalGamesPlayed': doc.data()['totalGamesPlayed'] ?? 0,
@@ -44,6 +45,7 @@ class LeaderboardService {
             .map((doc) => {
                   'uid': doc.id,
                   'displayName': doc.data()['displayName'] ?? 'Anonymous',
+                  'username': doc.data()['username'] ?? doc.data()['displayName'] ?? 'Anonymous',
                   'highScore': doc.data()['highScore'] ?? 0,
                   'photoURL': doc.data()['photoURL'],
                   'totalGamesPlayed': doc.data()['totalGamesPlayed'] ?? 0,
@@ -108,6 +110,7 @@ class LeaderboardService {
           .map((doc) => {
                 'uid': doc.id,
                 'displayName': doc.data()['displayName'] ?? 'Anonymous',
+                'username': doc.data()['username'] ?? doc.data()['displayName'] ?? 'Anonymous',
                 'highScore': doc.data()['highScore'] ?? 0,
                 'photoURL': doc.data()['photoURL'],
                 'totalGamesPlayed': doc.data()['totalGamesPlayed'] ?? 0,
@@ -136,6 +139,7 @@ class LeaderboardService {
             .map((doc) => {
                   'uid': doc.id,
                   'displayName': doc.data()['displayName'] ?? 'Anonymous',
+                  'username': doc.data()['username'] ?? doc.data()['displayName'] ?? 'Anonymous',
                   'highScore': doc.data()['highScore'] ?? 0,
                   'photoURL': doc.data()['photoURL'],
                   'totalGamesPlayed': doc.data()['totalGamesPlayed'] ?? 0,
@@ -161,6 +165,7 @@ class LeaderboardService {
           .map((doc) => {
                 'uid': doc.id,
                 'displayName': doc.data()['displayName'] ?? 'Anonymous',
+                'username': doc.data()['username'] ?? doc.data()['displayName'] ?? 'Anonymous',
                 'highScore': doc.data()['highScore'] ?? 0,
                 'photoURL': doc.data()['photoURL'],
                 'totalGamesPlayed': doc.data()['totalGamesPlayed'] ?? 0,

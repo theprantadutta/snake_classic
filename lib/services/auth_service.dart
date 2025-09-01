@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:snake_classic/services/username_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -10,6 +11,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final UsernameService _usernameService = UsernameService();
 
   User? get currentUser => _auth.currentUser;
   bool get isSignedIn => currentUser != null;
@@ -72,45 +74,64 @@ class AuthService {
     }
   }
 
-  Future<void> _createUserProfile(User user, {bool isAnonymous = false}) async {
+  Future<void> _createUserProfile(User user, {bool isAnonymous = false, Map<String, dynamic>? guestData}) async {
     try {
       final userDoc = _firestore.collection('users').doc(user.uid);
       final docSnapshot = await userDoc.get();
       
       if (!docSnapshot.exists) {
+        // Generate username
+        String username;
+        if (guestData != null && guestData['username'] != null) {
+          // If migrating from guest, try to keep the username
+          username = await _usernameService.findAvailableUsername(guestData['username']);
+        } else if (!isAnonymous && user.displayName != null) {
+          // Generate from display name for signed-in users
+          username = await _usernameService.findAvailableUsername(
+            _usernameService.generateUsernameFromDisplayName(user.displayName!),
+          );
+        } else {
+          // Generate random username
+          username = await _usernameService.findAvailableUsername(
+            _usernameService.generateRandomUsername(),
+          );
+        }
+        
         await userDoc.set({
           'uid': user.uid,
           'displayName': isAnonymous ? 'Anonymous Player' : (user.displayName ?? 'Player'),
+          'username': username,
           'email': user.email,
           'photoUrl': user.photoURL,
           'isAnonymous': isAnonymous,
           'joinedDate': FieldValue.serverTimestamp(),
           'lastSeen': FieldValue.serverTimestamp(),
           'status': 'online',
-          'highScore': 0,
-          'totalGamesPlayed': 0,
-          'totalScore': 0,
+          'highScore': guestData?['highScore'] ?? 0,
+          'totalGamesPlayed': guestData?['totalGamesPlayed'] ?? 0,
+          'totalScore': guestData?['totalScore'] ?? 0,
           'level': 1,
-          'achievements': [],
-          'preferredTheme': 'classic',
-          'soundEnabled': true,
-          'musicEnabled': true,
+          'achievements': guestData?['achievements'] ?? [],
+          'preferredTheme': guestData?['preferredTheme'] ?? 'classic',
+          'soundEnabled': guestData?['soundEnabled'] ?? true,
+          'musicEnabled': guestData?['musicEnabled'] ?? true,
           // Social features
           'friends': [],
           'friendRequests': [],
           'sentRequests': [],
-          'gameStats': {},
+          'gameStats': guestData?['gameStats'] ?? {},
           'isPublic': !isAnonymous, // Anonymous users are private by default
           'statusMessage': null,
         });
       } else {
+        // User exists, just update last seen and status
         await userDoc.update({
           'lastSeen': FieldValue.serverTimestamp(),
           'status': 'online',
         });
       }
     } catch (e) {
-      // Error:Error creating/updating user profile: $e');
+      print('Error creating/updating user profile: $e');
     }
   }
 
@@ -173,5 +194,31 @@ class AuthService {
     } catch (e) {
       // Error:Error updating high score: $e');
     }
+  }
+
+  // Username management methods
+
+  Future<bool> updateUsername(String newUsername) async {
+    if (currentUser == null) return false;
+    
+    final result = await _usernameService.updateUsername(currentUser!.uid, newUsername);
+    return result.success;
+  }
+
+  Future<UsernameValidationResult> validateUsername(String username) async {
+    return await _usernameService.validateUsernameComplete(username);
+  }
+
+  List<String> generateUsernameSuggestions() {
+    return _usernameService.generateUsernameSuggestions();
+  }
+
+  Future<List<Map<String, dynamic>>> searchUsersByUsername(String query) async {
+    return await _usernameService.searchUsersByUsername(query);
+  }
+
+  // Updated method to handle guest data migration
+  Future<void> createUserProfileWithGuestData(User user, Map<String, dynamic> guestData, {bool isAnonymous = false}) async {
+    await _createUserProfile(user, isAnonymous: isAnonymous, guestData: guestData);
   }
 }

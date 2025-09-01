@@ -18,6 +18,13 @@ class ThemeProvider extends ChangeNotifier {
   ThemeProvider() {
     _loadTheme();
   }
+
+  // Initialize method for explicit initialization if needed
+  Future<void> initialize() async {
+    if (!_initialized) {
+      await _loadTheme();
+    }
+  }
   
   ThemeTransitionController? get transitionController => _transitionController;
   

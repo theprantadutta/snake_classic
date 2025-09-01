@@ -31,6 +31,7 @@ enum UserStatus {
 class UserProfile {
   final String uid;
   final String displayName;
+  final String username; // Unique username for user identification
   final String email;
   final String? photoUrl;
   final int highScore;
@@ -49,6 +50,7 @@ class UserProfile {
   const UserProfile({
     required this.uid,
     required this.displayName,
+    required this.username,
     required this.email,
     this.photoUrl,
     this.highScore = 0,
@@ -68,6 +70,7 @@ class UserProfile {
   UserProfile copyWith({
     String? uid,
     String? displayName,
+    String? username,
     String? email,
     String? photoUrl,
     int? highScore,
@@ -86,6 +89,7 @@ class UserProfile {
     return UserProfile(
       uid: uid ?? this.uid,
       displayName: displayName ?? this.displayName,
+      username: username ?? this.username,
       email: email ?? this.email,
       photoUrl: photoUrl ?? this.photoUrl,
       highScore: highScore ?? this.highScore,
@@ -107,6 +111,7 @@ class UserProfile {
     return {
       'uid': uid,
       'displayName': displayName,
+      'username': username,
       'email': email,
       'photoUrl': photoUrl,
       'highScore': highScore,
@@ -128,6 +133,7 @@ class UserProfile {
     return UserProfile(
       uid: json['uid'] ?? '',
       displayName: json['displayName'] ?? '',
+      username: json['username'] ?? json['displayName'] ?? 'Player', // Fallback to displayName for existing users
       email: json['email'] ?? '',
       photoUrl: json['photoUrl'],
       highScore: json['highScore'] ?? 0,
