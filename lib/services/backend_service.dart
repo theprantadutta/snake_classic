@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../utils/logger.dart';
 
@@ -8,7 +9,10 @@ class BackendService {
   BackendService._internal();
 
   // Backend configuration
-  static const String _baseUrl = 'http://127.0.0.1:8000/api/v1';
+  static String get _baseUrl {
+    final backendUrl = dotenv.env['NOTIFICATION_BACKEND_URL'] ?? 'http://127.0.0.1:8000';
+    return '$backendUrl/api/v1';
+  }
   static const Duration _timeout = Duration(seconds: 10);
 
   /// Send FCM token to backend for storage and management
