@@ -4,7 +4,8 @@
       "Bash(flutter analyze:*)",
       "Bash(flutter pub:*)",
       "WebFetch(domain:pub.dev)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:firebase.google.com)"
     ],
     "deny": [],
     "ask": []

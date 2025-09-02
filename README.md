@@ -60,6 +60,21 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 - **Multiplayer lobby** with player management and game settings
 - **Cross-device compatibility** for seamless multiplayer experience
 
+### 📱 Push Notification System
+- **Firebase Cloud Messaging** integration for real-time notifications
+- **Smart notification targeting** with individual and topic-based messaging
+- **5 notification categories** with user preference controls:
+  - 🏆 **Tournament alerts** - New tournaments, reminders, results
+  - 👥 **Social notifications** - Friend requests, challenges, multiplayer invites  
+  - 🎖️ **Achievement unlocks** - Progress celebrations and milestone notifications
+  - 📅 **Daily reminders** - Comeback notifications and daily challenges
+  - ⭐ **Special events** - Limited-time events and announcements
+- **Deep linking navigation** - Notifications navigate directly to relevant screens
+- **Backend integration** - Powered by FastAPI notification service
+- **Local notifications** - Offline notifications and scheduling
+- **Topic subscription management** - Auto-subscribe based on user preferences
+- **Cross-platform support** - Works on Android, iOS, and web
+
 ### 🎮 Power-ups & Special Abilities
 - **4 unique power-up types** with special effects:
   - **⚡ Speed Boost** - Increases snake movement speed temporarily
@@ -208,10 +223,12 @@ lib/
 │   └── tournaments_screen.dart # Tournament browser and management
 ├── services/         # Business logic
 │   ├── achievement_service.dart # Achievement tracking
-│   ├── auth_service.dart       # Firebase authentication
 │   ├── audio_service.dart
+│   ├── backend_service.dart    # Push notification backend communication
 │   ├── data_sync_service.dart  # Background data synchronization
 │   ├── leaderboard_service.dart # Firestore leaderboards
+│   ├── navigation_service.dart # Deep linking and navigation management
+│   ├── notification_service.dart # Firebase and local notification management
 │   ├── preferences_service.dart # Synced user preferences
 │   ├── social_service.dart     # Friend system and social features
 │   ├── statistics_service.dart # Advanced gameplay analytics
@@ -235,15 +252,33 @@ lib/
     ├── particle_effect.dart
     ├── pause_overlay.dart
     └── swipe_detector.dart
+
+notification_backend/     # FastAPI Push Notification Backend
+├── app/
+│   ├── core/          # Configuration and settings
+│   ├── models/        # Pydantic data models  
+│   ├── routes/        # API endpoints (notifications, users, testing)
+│   ├── services/      # Firebase service and scheduler
+│   └── main.py        # FastAPI application
+├── requirements.txt   # Python dependencies
+├── .env.example       # Environment configuration template
+├── firebase-admin-key.json.example # Firebase credentials template
+├── run.py            # Development server script
+└── test_server.py    # Comprehensive testing suite
 ```
 
 ### 🛠️ Technical Stack
+
+#### Flutter Application
 - **Flutter** - Cross-platform UI framework (>=3.9.0)
 - **Provider** - State management for game state and user data
 - **Firebase Core** - Backend infrastructure and authentication
 - **Firebase Auth** - User authentication and profile management
+- **Firebase Messaging** - Push notification delivery
 - **Cloud Firestore** - Real-time database for leaderboards and achievements
 - **Google Sign-In** - Modern authentication provider with updated API integration
+- **Flutter Local Notifications** - Local notification scheduling and display
+- **HTTP** - RESTful API communication with backend services
 - **AudioPlayers** - Audio system with AssetSource
 - **SharedPreferences** - Local storage and offline support
 - **FlutterAnimate** - Smooth animations and visual effects
@@ -251,6 +286,14 @@ lib/
 - **Connectivity Plus** - Network connectivity detection and monitoring
 - **Talker & Talker Flutter** - Beautiful debug logging and crash reporting
 - **UUID** - Unique identifier generation for sessions and data
+
+#### Backend Services
+- **FastAPI** - High-performance Python web framework
+- **Firebase Admin SDK** - Server-side Firebase integration
+- **APScheduler** - Advanced Python job scheduling
+- **Uvicorn** - Lightning-fast ASGI server
+- **Pydantic** - Data validation and settings management
+- **HTTPx** - Modern HTTP client for Python
 
 ## 🎯 Performance Features
 

@@ -15,7 +15,10 @@ import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/notification_service.dart';
+import 'package:snake_classic/services/navigation_service.dart';
 import 'package:snake_classic/utils/performance_monitor.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -48,6 +51,14 @@ void main() async {
     AppLogger.audio('Initializing audio service...');
     await AudioService().initialize();
     AppLogger.success('Audio service initialized');
+    
+    // Initialize notification service
+    AppLogger.info('Initializing notification service...');
+    await NotificationService().initialize();
+    AppLogger.success('Notification service initialized');
+    
+    // Set background message handler
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     
     // Start performance monitoring
     if (kDebugMode) {
@@ -95,6 +106,7 @@ class SnakeClassicApp extends StatelessWidget {
           return MaterialApp(
             title: 'Snake Classic',
             debugShowCheckedModeBanner: false,
+            navigatorKey: NavigationService.navigatorKey,
             navigatorObservers: [
               if (kDebugMode) TalkerRouteObserver(AppLogger.instance),
             ],

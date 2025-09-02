@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/services/username_service.dart';
+import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 enum UserType { guest, anonymous, google }
@@ -248,6 +249,9 @@ class UnifiedUserService extends ChangeNotifier {
       AppLogger.success(
         'User loaded/created successfully: ${_currentUser?.username}',
       );
+      
+      // Initialize notification backend integration after user is loaded
+      _initializeNotificationIntegration();
     } catch (e, stackTrace) {
       AppLogger.user('Error loading/creating user', e, stackTrace);
     }
@@ -718,6 +722,19 @@ class UnifiedUserService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       AppLogger.user('Error signing out', e);
+    }
+  }
+
+  /// Initialize notification backend integration
+  Future<void> _initializeNotificationIntegration() async {
+    try {
+      // Use a brief delay to ensure notification service is fully initialized
+      await Future.delayed(const Duration(seconds: 1));
+      
+      // Initialize backend integration
+      await NotificationService().initializeBackendIntegration();
+    } catch (e) {
+      AppLogger.user('Error initializing notification integration', e);
     }
   }
 

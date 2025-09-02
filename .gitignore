@@ -67,3 +67,6 @@ firebase.json
 lib/generated/
 **/*.g.dart
 **/*.freezed.dart
+
+# Python FastAPI Backend
+notification_backend/

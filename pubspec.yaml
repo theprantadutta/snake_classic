@@ -70,6 +70,13 @@ dependencies:
   # Enhanced UI components for auth
   flutter_dotenv: ^6.0.0
   font_awesome_flutter: ^10.7.0
+  
+  # Push notifications
+  firebase_messaging: ^16.0.1
+  flutter_local_notifications: ^19.4.1
+  
+  # HTTP client for backend communication
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
