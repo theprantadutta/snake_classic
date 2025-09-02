@@ -125,11 +125,32 @@ class NotificationService {
       // Get FCM token
       _fcmToken = await _firebaseMessaging.getToken();
       AppLogger.info('🎫 FCM Token: $_fcmToken');
+      
+      // Development-only: Print FCM token for Firebase Console testing
+      if (kDebugMode && _fcmToken != null) {
+        debugPrint('');
+        debugPrint('🔥 ============ FIREBASE TESTING ============');
+        debugPrint('📱 FCM Token for Firebase Console:');
+        debugPrint(_fcmToken!);
+        debugPrint('🧪 Copy this token to Firebase Console > Cloud Messaging');
+        debugPrint('🔥 =========================================');
+        debugPrint('');
+      }
 
       // Subscribe to token refresh
       _firebaseMessaging.onTokenRefresh.listen((token) {
         _fcmToken = token;
         AppLogger.info('🔄 FCM Token refreshed: $token');
+        
+        // Development-only: Print refreshed token
+        if (kDebugMode) {
+          debugPrint('');
+          debugPrint('🔄 ========= FCM TOKEN REFRESHED =========');
+          debugPrint('📱 New FCM Token: $token');
+          debugPrint('🔄 ===================================');
+          debugPrint('');
+        }
+        
         _onTokenRefresh(token);
       });
 
@@ -420,6 +441,17 @@ class NotificationService {
 
       AppLogger.info('🔗 Initializing backend integration');
       
+      // Development-only: Print token for backend testing
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('🔗 ======== BACKEND INTEGRATION ========');
+        debugPrint('📱 FCM Token being registered with backend:');
+        debugPrint(_fcmToken!);
+        debugPrint('🧪 This token will be sent to the notification backend');
+        debugPrint('🔗 =====================================');
+        debugPrint('');
+      }
+      
       // Check backend health
       final isHealthy = await BackendService().checkBackendHealth();
       if (!isHealthy) {
@@ -532,6 +564,25 @@ class NotificationService {
       AppLogger.info('📱 Notification preferences loaded');
     } catch (e) {
       AppLogger.error('Error loading notification preferences', e);
+    }
+  }
+
+  /// Development-only method to print FCM token for Firebase Console testing
+  void printFcmTokenForTesting() {
+    if (kDebugMode && _fcmToken != null) {
+      debugPrint('');
+      debugPrint('🔥 ============ FIREBASE TESTING ============');
+      debugPrint('📱 Current FCM Token:');
+      debugPrint(_fcmToken!);
+      debugPrint('🧪 Steps to test:');
+      debugPrint('  1. Copy the token above');
+      debugPrint('  2. Go to Firebase Console > Cloud Messaging');
+      debugPrint('  3. Create a new notification');
+      debugPrint('  4. Paste token in "Send test message" field');
+      debugPrint('🔥 =========================================');
+      debugPrint('');
+    } else if (kDebugMode) {
+      debugPrint('⚠️ FCM Token not available for testing');
     }
   }
 
