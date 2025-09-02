@@ -642,7 +642,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Recent Achievements Section
           if (_recentAchievements.isNotEmpty)
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -676,7 +676,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(5),
                             decoration: BoxDecoration(
                               color: Colors.amber.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
@@ -689,7 +689,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(width: 12),
                           const Text(
-                            'Recent Achievements',
+                            'Achievements',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,

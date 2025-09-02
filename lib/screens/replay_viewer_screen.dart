@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/models/game_replay.dart';
+import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
+
+import '../widgets/app_background.dart';
 
 class ReplayViewerScreen extends StatefulWidget {
   final GameReplay replay;
@@ -27,10 +30,11 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     super.dispose();
   }
 
-  GameFrame? get _currentFrame => 
-      widget.replay.frames.isNotEmpty && _currentFrameIndex < widget.replay.frames.length
-          ? widget.replay.frames[_currentFrameIndex]
-          : null;
+  GameFrame? get _currentFrame =>
+      widget.replay.frames.isNotEmpty &&
+          _currentFrameIndex < widget.replay.frames.length
+      ? widget.replay.frames[_currentFrameIndex]
+      : null;
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +45,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
       appBar: AppBar(
         title: Text(
           'Replay: ${widget.replay.playerName}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -53,38 +54,37 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.backgroundColor,
-              theme.backgroundColor.withValues(alpha: 0.8),
+      body: AnimatedAppBackground(
+        theme: theme,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                theme.backgroundColor,
+                theme.backgroundColor.withValues(alpha: 0.8),
+              ],
+            ),
+          ),
+          child: Column(
+            children: [
+              // Game info header
+              _buildGameInfo(theme),
+
+              const SizedBox(height: 16),
+
+              // Game board
+              Expanded(child: Center(child: _buildGameBoard(theme))),
+
+              const SizedBox(height: 16),
+
+              // Playback controls
+              _buildPlaybackControls(theme),
+
+              const SizedBox(height: 16),
             ],
           ),
-        ),
-        child: Column(
-          children: [
-            // Game info header
-            _buildGameInfo(theme),
-            
-            const SizedBox(height: 16),
-            
-            // Game board
-            Expanded(
-              child: Center(
-                child: _buildGameBoard(theme),
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Playback controls
-            _buildPlaybackControls(theme),
-            
-            const SizedBox(height: 16),
-          ],
         ),
       ),
     );
@@ -92,7 +92,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
 
   Widget _buildGameInfo(GameTheme theme) {
     final frame = _currentFrame;
-    
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -106,13 +106,29 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildInfoItem('Score', frame?.score.toString() ?? '0', Icons.star),
-              _buildInfoItem('Level', frame?.level.toString() ?? '1', Icons.trending_up),
-              _buildInfoItem('Frame', '${_currentFrameIndex + 1}/${widget.replay.totalFrames}', Icons.movie),
-              _buildInfoItem('Time', widget.replay.formattedDuration, Icons.timer),
+              _buildInfoItem(
+                'Score',
+                frame?.score.toString() ?? '0',
+                Icons.star,
+              ),
+              _buildInfoItem(
+                'Level',
+                frame?.level.toString() ?? '1',
+                Icons.trending_up,
+              ),
+              _buildInfoItem(
+                'Frame',
+                '${_currentFrameIndex + 1}/${widget.replay.totalFrames}',
+                Icons.movie,
+              ),
+              _buildInfoItem(
+                'Time',
+                widget.replay.formattedDuration,
+                Icons.timer,
+              ),
             ],
           ),
-          
+
           if (frame?.gameEvent != null) ...[
             const SizedBox(height: 12),
             Container(
@@ -172,10 +188,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
           border: Border.all(color: theme.primaryColor.withValues(alpha: 0.3)),
         ),
         child: const Center(
-          child: Text(
-            'No frame data',
-            style: TextStyle(color: Colors.white),
-          ),
+          child: Text('No frame data', style: TextStyle(color: Colors.white)),
         ),
       );
     }
@@ -183,14 +196,17 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     const boardWidth = 20;
     const boardHeight = 20;
     const cellSize = 12.0;
-    
+
     return Container(
       width: boardWidth * cellSize + 2,
       height: boardHeight * cellSize + 2,
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.5), width: 2),
+        border: Border.all(
+          color: theme.primaryColor.withValues(alpha: 0.5),
+          width: 2,
+        ),
       ),
       child: CustomPaint(
         painter: ReplayBoardPainter(
@@ -240,9 +256,9 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Control buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -253,14 +269,16 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
                 icon: const Icon(Icons.skip_previous),
                 color: theme.accentColor,
               ),
-              
+
               // Step backward
               IconButton(
-                onPressed: _currentFrameIndex > 0 ? () => _seekFrames(-1) : null,
+                onPressed: _currentFrameIndex > 0
+                    ? () => _seekFrames(-1)
+                    : null,
                 icon: const Icon(Icons.keyboard_arrow_left),
                 color: theme.primaryColor,
               ),
-              
+
               // Play/Pause
               IconButton(
                 onPressed: _togglePlayback,
@@ -268,26 +286,29 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
                 color: theme.accentColor,
                 iconSize: 32,
               ),
-              
+
               // Step forward
               IconButton(
-                onPressed: _currentFrameIndex < widget.replay.totalFrames - 1 
-                    ? () => _seekFrames(1) : null,
+                onPressed: _currentFrameIndex < widget.replay.totalFrames - 1
+                    ? () => _seekFrames(1)
+                    : null,
                 icon: const Icon(Icons.keyboard_arrow_right),
                 color: theme.primaryColor,
               ),
-              
+
               // Next frame
               IconButton(
-                onPressed: _currentFrameIndex < widget.replay.totalFrames - 1 ? _nextFrame : null,
+                onPressed: _currentFrameIndex < widget.replay.totalFrames - 1
+                    ? _nextFrame
+                    : null,
                 icon: const Icon(Icons.skip_next),
                 color: theme.accentColor,
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Speed control
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -296,30 +317,43 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
                 'Speed: ',
                 style: TextStyle(color: Colors.white, fontSize: 14),
               ),
-              for (double speed in [0.25, 0.5, 1.0, 2.0, 4.0])
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text('${speed}x'),
-                    selected: _playbackSpeed == speed,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _playbackSpeed = speed;
-                        });
-                        if (_isPlaying) {
-                          _startPlayback();
-                        }
-                      }
-                    },
-                    selectedColor: theme.accentColor.withValues(alpha: 0.3),
-                    backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
-                    labelStyle: TextStyle(
-                      color: _playbackSpeed == speed ? theme.accentColor : Colors.white,
-                      fontSize: 12,
-                    ),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (double speed in [0.25, 0.5, 1.0, 2.0, 4.0])
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: ChoiceChip(
+                            label: Text('${speed}x'),
+                            selected: _playbackSpeed == speed,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() {
+                                  _playbackSpeed = speed;
+                                });
+                                if (_isPlaying) {
+                                  _startPlayback();
+                                }
+                              }
+                            },
+                            selectedColor: theme.accentColor.withOpacity(0.3),
+                            backgroundColor: theme.primaryColor.withOpacity(
+                              0.1,
+                            ),
+                            labelStyle: TextStyle(
+                              color: _playbackSpeed == speed
+                                  ? theme.accentColor
+                                  : Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+              ),
             ],
           ),
         ],
@@ -339,26 +373,23 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     if (_currentFrameIndex >= widget.replay.totalFrames - 1) {
       _currentFrameIndex = 0;
     }
-    
+
     setState(() {
       _isPlaying = true;
     });
-    
+
     _playbackTimer?.cancel();
     final interval = (100 / _playbackSpeed).round(); // Base 100ms interval
-    
-    _playbackTimer = Timer.periodic(
-      Duration(milliseconds: interval),
-      (_) {
-        if (_currentFrameIndex < widget.replay.totalFrames - 1) {
-          setState(() {
-            _currentFrameIndex++;
-          });
-        } else {
-          _pausePlayback();
-        }
-      },
-    );
+
+    _playbackTimer = Timer.periodic(Duration(milliseconds: interval), (_) {
+      if (_currentFrameIndex < widget.replay.totalFrames - 1) {
+        setState(() {
+          _currentFrameIndex++;
+        });
+      } else {
+        _pausePlayback();
+      }
+    });
   }
 
   void _pausePlayback() {
@@ -385,7 +416,10 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
   }
 
   void _seekFrames(int delta) {
-    final newIndex = (_currentFrameIndex + delta).clamp(0, widget.replay.totalFrames - 1);
+    final newIndex = (_currentFrameIndex + delta).clamp(
+      0,
+      widget.replay.totalFrames - 1,
+    );
     setState(() {
       _currentFrameIndex = newIndex;
     });
@@ -418,45 +452,53 @@ class ReplayBoardPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
-    
+
     // Draw snake
     if (frame.snakePositions.isNotEmpty) {
       for (int i = 0; i < frame.snakePositions.length; i++) {
         final pos = frame.snakePositions[i];
         final isHead = i == 0;
-        
-        paint.color = isHead ? theme.snakeColor : theme.snakeColor.withValues(alpha: 0.8);
-        
+
+        paint.color = isHead
+            ? theme.snakeColor
+            : theme.snakeColor.withValues(alpha: 0.8);
+
         final rect = Rect.fromLTWH(
           pos[0] * cellSize + 1,
           pos[1] * cellSize + 1,
           cellSize - 2,
           cellSize - 2,
         );
-        
+
         canvas.drawRRect(
           RRect.fromRectAndRadius(rect, const Radius.circular(2)),
           paint,
         );
-        
+
         if (isHead) {
           // Draw eyes
           paint.color = Colors.white;
           final eyeSize = cellSize * 0.15;
           canvas.drawCircle(
-            Offset(pos[0] * cellSize + cellSize * 0.3, pos[1] * cellSize + cellSize * 0.3),
+            Offset(
+              pos[0] * cellSize + cellSize * 0.3,
+              pos[1] * cellSize + cellSize * 0.3,
+            ),
             eyeSize,
             paint,
           );
           canvas.drawCircle(
-            Offset(pos[0] * cellSize + cellSize * 0.7, pos[1] * cellSize + cellSize * 0.3),
+            Offset(
+              pos[0] * cellSize + cellSize * 0.7,
+              pos[1] * cellSize + cellSize * 0.3,
+            ),
             eyeSize,
             paint,
           );
         }
       }
     }
-    
+
     // Draw food
     if (frame.foodPosition != null) {
       paint.color = theme.foodColor;
@@ -467,13 +509,13 @@ class ReplayBoardPainter extends CustomPainter {
         cellSize - 2,
         cellSize - 2,
       );
-      
+
       canvas.drawRRect(
         RRect.fromRectAndRadius(rect, Radius.circular(cellSize * 0.3)),
         paint,
       );
     }
-    
+
     // Draw power-up
     if (frame.powerUpPosition != null) {
       paint.color = theme.accentColor;
@@ -482,14 +524,16 @@ class ReplayBoardPainter extends CustomPainter {
         pos[0] * cellSize + cellSize / 2,
         pos[1] * cellSize + cellSize / 2,
       );
-      
+
       // Draw star shape for power-up
       final path = Path();
       final radius = cellSize * 0.4;
       for (int i = 0; i < 5; i++) {
         final angle = (i * 2 * 3.14159) / 5 - 3.14159 / 2;
-        final x = center.dx + radius * 0.6 * (i % 2 == 0 ? 1 : 0.5) * math.cos(angle);
-        final y = center.dy + radius * 0.6 * (i % 2 == 0 ? 1 : 0.5) * math.sin(angle);
+        final x =
+            center.dx + radius * 0.6 * (i % 2 == 0 ? 1 : 0.5) * math.cos(angle);
+        final y =
+            center.dy + radius * 0.6 * (i % 2 == 0 ? 1 : 0.5) * math.sin(angle);
         if (i == 0) {
           path.moveTo(x, y);
         } else {

@@ -109,7 +109,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       await _updateProgress(
         0.1,
         'Initializing core systems...',
-        'Setting up Firebase connection',
+        'Setting up Server connection',
       );
       await _initializeCoreServices();
 
