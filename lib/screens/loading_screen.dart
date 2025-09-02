@@ -509,41 +509,54 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   Widget _buildLoadingView(GameTheme theme) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const SizedBox(height: 16),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenHeight = constraints.maxHeight;
+        final isSmallScreen = screenHeight < 600;
+        
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: screenHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(height: isSmallScreen ? 8 : 16),
 
-        // Game-style header
-        _buildGameHeader(theme),
+                  // Game-style header
+                  _buildGameHeader(theme, isSmallScreen),
 
-        const SizedBox(height: 20),
+                  SizedBox(height: isSmallScreen ? 12 : 20),
 
-        // Central loading area with enhanced content
-        _buildEnhancedLoadingArea(theme),
+                  // Central loading area with enhanced content
+                  _buildEnhancedLoadingArea(theme, isSmallScreen),
 
-        const SizedBox(height: 24),
+                  SizedBox(height: isSmallScreen ? 16 : 24),
 
-        // Progress section with game-like design
-        _buildProgressSection(theme),
+                  // Progress section with game-like design
+                  _buildProgressSection(theme, isSmallScreen),
 
-        const SizedBox(height: 20),
+                  SizedBox(height: isSmallScreen ? 12 : 20),
 
-        // Game features preview
-        _buildFeaturesPreview(theme),
+                  // Game features preview
+                  if (!isSmallScreen) _buildFeaturesPreview(theme),
+                  if (!isSmallScreen) SizedBox(height: isSmallScreen ? 16 : 24),
 
-        const SizedBox(height: 24),
+                  // Branded footer
+                  _buildBrandedFooter(theme, isSmallScreen),
 
-        // Branded footer
-        _buildBrandedFooter(theme),
-
-        const SizedBox(height: 16),
-      ],
+                  SizedBox(height: isSmallScreen ? 8 : 16),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildGameHeader(GameTheme theme) {
+  Widget _buildGameHeader(GameTheme theme, [bool isSmallScreen = false]) {
     return Column(
       children: [
         // Pulsing snake logo with glow effect
@@ -555,8 +568,8 @@ class _LoadingScreenState extends State<LoadingScreen>
             return Transform.scale(
               scale: pulseScale,
               child: Container(
-                width: 100,
-                height: 100,
+                width: isSmallScreen ? 80 : 100,
+                height: isSmallScreen ? 80 : 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
@@ -579,7 +592,7 @@ class _LoadingScreenState extends State<LoadingScreen>
           },
         ),
 
-        const SizedBox(height: 20),
+        SizedBox(height: isSmallScreen ? 12 : 20),
 
         // Game title with enhanced styling
         ShaderMask(
@@ -590,10 +603,10 @@ class _LoadingScreenState extends State<LoadingScreen>
           child: Text(
             'SNAKE CLASSIC',
             style: TextStyle(
-              fontSize: 28,
+              fontSize: isSmallScreen ? 22 : 28,
               fontWeight: FontWeight.w900,
               color: Colors.white,
-              letterSpacing: 3,
+              letterSpacing: isSmallScreen ? 2 : 3,
               shadows: [
                 Shadow(
                   offset: const Offset(0, 4),
@@ -605,12 +618,12 @@ class _LoadingScreenState extends State<LoadingScreen>
           ),
         ).animate().fadeIn(delay: 300.ms).slideY(begin: -0.3),
 
-        const SizedBox(height: 12),
+        SizedBox(height: isSmallScreen ? 8 : 12),
 
         Text(
           'PREMIUM SNAKE EXPERIENCE',
           style: TextStyle(
-            fontSize: 10,
+            fontSize: isSmallScreen ? 8 : 10,
             fontWeight: FontWeight.w600,
             color: theme.accentColor.withValues(alpha: 0.7),
             letterSpacing: 1.5,
@@ -620,15 +633,15 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
   }
 
-  Widget _buildEnhancedLoadingArea(GameTheme theme) {
+  Widget _buildEnhancedLoadingArea(GameTheme theme, [bool isSmallScreen = false]) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         children: [
           // Loading status card with enhanced design and fixed height
           Container(
-            height: 100, // Fixed height to prevent layout shifts
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            height: isSmallScreen ? 80 : 100, // Responsive fixed height to prevent layout shifts
+            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 16 : 24, vertical: isSmallScreen ? 12 : 16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -657,7 +670,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                 children: [
                   // Current task with icon - fixed height area
                   SizedBox(
-                    height: 38, // Fixed height for main task area
+                    height: isSmallScreen ? 28 : 38, // Responsive fixed height for main task area
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -697,7 +710,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                           child: Text(
                             _currentTask,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: isSmallScreen ? 14 : 16,
                               fontWeight: FontWeight.w700,
                               color: theme.primaryColor,
                               height: 1.2,
@@ -713,12 +726,12 @@ class _LoadingScreenState extends State<LoadingScreen>
 
                   // Subtask area - fixed height whether content exists or not
                   SizedBox(
-                    height: 20, // Fixed height for subtask area
+                    height: isSmallScreen ? 16 : 20, // Responsive fixed height for subtask area
                     child: _subTask.isNotEmpty
                         ? Text(
                             _subTask,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: isSmallScreen ? 11 : 13,
                               color: theme.accentColor.withValues(alpha: 0.8),
                               fontStyle: FontStyle.italic,
                               fontWeight: FontWeight.w500,
@@ -739,7 +752,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
   }
 
-  Widget _buildProgressSection(GameTheme theme) {
+  Widget _buildProgressSection(GameTheme theme, [bool isSmallScreen = false]) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
@@ -813,7 +826,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
 
           // Progress percentage with enhanced styling
           Row(
@@ -992,7 +1005,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
   }
 
-  Widget _buildBrandedFooter(GameTheme theme) {
+  Widget _buildBrandedFooter(GameTheme theme, [bool isSmallScreen = false]) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -1012,7 +1025,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             ),
           ).animate().fadeIn(delay: 2000.ms).scaleX(begin: 0),
 
-          const SizedBox(height: 24),
+          SizedBox(height: isSmallScreen ? 16 : 24),
 
           // Developer attribution
           Column(
@@ -1020,14 +1033,14 @@ class _LoadingScreenState extends State<LoadingScreen>
               Text(
                 'DEVELOPED & MAINTAINED BY',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: isSmallScreen ? 8 : 10,
                   fontWeight: FontWeight.w600,
                   color: theme.accentColor.withValues(alpha: 0.6),
                   letterSpacing: 1.5,
                 ),
               ).animate().fadeIn(delay: 2200.ms),
 
-              const SizedBox(height: 8),
+              SizedBox(height: isSmallScreen ? 6 : 8),
 
               Container(
                     padding: const EdgeInsets.symmetric(
@@ -1059,7 +1072,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                         Text(
                           'Pranta Dutta',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: isSmallScreen ? 14 : 16,
                             fontWeight: FontWeight.w700,
                             color: theme.primaryColor,
                             letterSpacing: 0.5,
@@ -1072,13 +1085,13 @@ class _LoadingScreenState extends State<LoadingScreen>
                   .fadeIn(delay: 2400.ms)
                   .scale(begin: const Offset(0.9, 0.9)),
 
-              const SizedBox(height: 12),
+              SizedBox(height: isSmallScreen ? 8 : 12),
 
               // Tagline
               Text(
                 'Crafting premium mobile experiences',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: isSmallScreen ? 9 : 11,
                   color: theme.accentColor.withValues(alpha: 0.7),
                   fontStyle: FontStyle.italic,
                   fontWeight: FontWeight.w500,

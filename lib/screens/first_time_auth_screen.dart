@@ -30,17 +30,24 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final screenHeight = constraints.maxHeight;
+              final screenWidth = constraints.maxWidth;
+              final isSmallScreen = screenHeight < 600;
+              final isNarrowScreen = screenWidth < 400;
+              
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: EdgeInsets.symmetric(horizontal: isNarrowScreen ? 16.0 : 24.0),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  constraints: BoxConstraints(minHeight: screenHeight),
                   child: IntrinsicHeight(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // Add some top padding for small screens
+                        SizedBox(height: isSmallScreen ? 20 : 40),
                 // Welcome Header
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(isSmallScreen ? 15 : 20),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
@@ -53,14 +60,14 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: theme.accentColor.withValues(alpha: 0.4),
-                        blurRadius: 40,
-                        spreadRadius: 10,
+                        blurRadius: isSmallScreen ? 30 : 40,
+                        spreadRadius: isSmallScreen ? 5 : 10,
                       ),
                     ],
                   ),
                   child: Icon(
                     Icons.videogame_asset_rounded,
-                    size: MediaQuery.of(context).size.height * 0.12,
+                    size: isSmallScreen ? screenHeight * 0.08 : screenHeight * 0.12,
                     color: theme.primaryColor,
                   ),
                 )
@@ -71,11 +78,11 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                     )
                     .fadeIn(),
                 
-                SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+                SizedBox(height: isSmallScreen ? screenHeight * 0.02 : screenHeight * 0.04),
 
                 // Welcome Text Container
                 Container(
-                  padding: EdgeInsets.all(MediaQuery.of(context).size.height * 0.035),
+                  padding: EdgeInsets.all(isSmallScreen ? screenHeight * 0.02 : screenHeight * 0.035),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -109,7 +116,7 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                         child: Text(
                           'Welcome to\nSnake Classic!',
                           style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.height * 0.04,
+                            fontSize: isSmallScreen ? screenHeight * 0.03 : screenHeight * 0.04,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             height: 1.2,
@@ -117,22 +124,22 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.025),
+                      SizedBox(height: isSmallScreen ? screenHeight * 0.015 : screenHeight * 0.025),
 
                       // Feature highlights
                       Text(
                         'Choose how you\'d like to play:',
                         style: TextStyle(
-                          fontSize: MediaQuery.of(context).size.height * 0.022,
+                          fontSize: isSmallScreen ? screenHeight * 0.018 : screenHeight * 0.022,
                           color: Colors.white.withValues(alpha: 0.9),
                           height: 1.4,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                      SizedBox(height: isSmallScreen ? screenHeight * 0.015 : screenHeight * 0.02),
 
                       // Feature list
-                      ..._buildFeatureList(theme),
+                      ..._buildFeatureList(theme, isSmallScreen),
                     ],
                   ),
                 )
@@ -144,7 +151,7 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                     )
                     .fadeIn(),
 
-                SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                SizedBox(height: isSmallScreen ? screenHeight * 0.03 : screenHeight * 0.05),
 
                 // Auth buttons
                 if (_isLoading)
@@ -209,19 +216,22 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                     ],
                   ),
 
-                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                SizedBox(height: isSmallScreen ? screenHeight * 0.02 : screenHeight * 0.03),
 
                 // Privacy note
                 Text(
                   'Your data is secure and your privacy is protected',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isSmallScreen ? 10 : 12,
                     color: Colors.white.withValues(alpha: 0.6),
                   ),
                   textAlign: TextAlign.center,
                 )
                     .animate(delay: 1000.ms)
                     .fadeIn(duration: 800.ms),
+                    
+                // Bottom padding for small screens
+                SizedBox(height: isSmallScreen ? 20 : 40),
                       ],
                     ),
                   ),
@@ -234,7 +244,7 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
     );
   }
 
-  List<Widget> _buildFeatureList(GameTheme theme) {
+  List<Widget> _buildFeatureList(GameTheme theme, [bool isSmallScreen = false]) {
     final features = [
       {
         'icon': Icons.cloud_sync_rounded,
@@ -251,11 +261,11 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
     return features
         .map(
           (feature) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 6.0 : 8.0),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
                   decoration: BoxDecoration(
                     color: theme.accentColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
@@ -263,18 +273,18 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                   child: Icon(
                     feature['icon'] as IconData,
                     color: theme.accentColor,
-                    size: 20,
+                    size: isSmallScreen ? 18 : 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: isSmallScreen ? 10 : 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         feature['title'] as String,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 14 : 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -282,7 +292,7 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                       Text(
                         feature['subtitle'] as String,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: isSmallScreen ? 10 : 12,
                           color: Colors.white.withValues(alpha: 0.7),
                           height: 1.2,
                         ),
