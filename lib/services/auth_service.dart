@@ -2,17 +2,24 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:snake_classic/services/username_service.dart';
+import 'package:snake_classic/utils/logger.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
-  AuthService._internal();
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final UsernameService _usernameService = UsernameService();
+
+  AuthService._internal() {
+    // Initialize Google Sign-In with client ID
+    _googleSignIn.initialize(
+      serverClientId: dotenv.env['GOOGLE_WEB_CLIENT_ID'],
+    );
+  }
 
   User? get currentUser => _auth.currentUser;
   bool get isSignedIn => currentUser != null;
@@ -21,36 +28,48 @@ class AuthService {
 
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Initialize if needed
-      await _googleSignIn.initialize();
-      
-      // Check if authentication is supported
-      if (_googleSignIn.supportsAuthenticate()) {
-        // Trigger the authentication flow
-        final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+      AppLogger.firebase('🔐 Starting Google Sign-In...');
 
-        // Get authentication details
+      // Check if authentication is supported on this platform
+      if (_googleSignIn.supportsAuthenticate()) {
+        // Use authenticate method for supported platforms
+        final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+        
+        AppLogger.firebase('Google user signed in: ${googleUser.email}');
+
+        // Obtain the auth details from the request
         final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
-        // Create a new credential for Firebase
+        if (googleAuth.idToken == null) {
+          AppLogger.firebase('❌ Failed to get Google ID token');
+          throw Exception('Failed to get Google ID token');
+        }
+
+        // Create a new credential
         final credential = GoogleAuthProvider.credential(
           idToken: googleAuth.idToken,
         );
+
+        AppLogger.firebase('Creating Firebase credential...');
 
         // Sign in to Firebase with the credential
         final UserCredential result = await _auth.signInWithCredential(credential);
         
         if (result.user != null) {
+          AppLogger.success('Firebase sign-in successful: ${result.user!.uid}');
           await _createUserProfile(result.user!);
         }
         
         return result;
       } else {
-        // Fallback or return null if not supported
+        AppLogger.firebase('❌ Google Sign-In authenticate not supported on this platform');
         return null;
       }
-    } catch (e) {
-      // Handle error appropriately for production
+    } on FirebaseAuthException catch (e) {
+      AppLogger.firebase('Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}');
+      return null;
+    } catch (e, stackTrace) {
+      AppLogger.firebase('Error signing in with Google', e, stackTrace);
       return null;
     }
   }

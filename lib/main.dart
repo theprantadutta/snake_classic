@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/providers/game_provider.dart';
@@ -24,6 +25,11 @@ void main() async {
   AppLogger.lifecycle('Snake Classic starting up...');
   
   try {
+    // Load environment variables
+    AppLogger.info('Loading environment variables...');
+    await dotenv.load(fileName: '.env');
+    AppLogger.success('Environment variables loaded');
+    
     // Initialize Firebase
     AppLogger.firebase('Initializing Firebase...');
     await Firebase.initializeApp(

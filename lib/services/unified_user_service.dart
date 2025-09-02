@@ -5,6 +5,8 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -127,12 +129,18 @@ class UnifiedUser {
 class UnifiedUserService extends ChangeNotifier {
   static final UnifiedUserService _instance = UnifiedUserService._internal();
   factory UnifiedUserService() => _instance;
-  UnifiedUserService._internal();
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   // Note: Removed DataSyncService dependency to avoid circular imports
   final UsernameService _usernameService = UsernameService();
+
+  UnifiedUserService._internal() {
+    // Initialize Google Sign-In with client ID
+    _googleSignIn.initialize(
+      serverClientId: dotenv.env['GOOGLE_WEB_CLIENT_ID'],
+    );
+  }
 
   SharedPreferences? _prefs;
   UnifiedUser? _currentUser;
@@ -572,9 +580,51 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<bool> signInWithGoogle() async {
     try {
-      // This would be implemented with google_sign_in plugin
-      // For now, we'll simulate the process
-      AppLogger.user('Google sign-in would be implemented here');
+      AppLogger.user('🔐 Starting Google Sign-In from UnifiedUserService...');
+
+      // Check if authentication is supported on this platform
+      if (_googleSignIn.supportsAuthenticate()) {
+        // Use authenticate method for supported platforms
+        final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+        
+        AppLogger.user('Google user signed in: ${googleUser.email}');
+
+        // Obtain the auth details from the request
+        final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
+        if (googleAuth.idToken == null) {
+          AppLogger.user('❌ Failed to get Google ID token');
+          return false;
+        }
+
+        // Create a new credential
+        final credential = GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+        );
+
+        AppLogger.user('Creating Firebase credential...');
+
+        // Note: Anonymous user data migration will be handled automatically
+        // by the auth state change listener and user profile creation process
+
+        // Sign in to Firebase with the credential
+        final UserCredential result = await _auth.signInWithCredential(credential);
+        
+        if (result.user != null) {
+          AppLogger.success('Firebase sign-in successful: ${result.user!.uid}');
+          
+          // The auth state change listener will handle creating the user profile
+          // and migrating data if needed
+          return true;
+        }
+        
+        return false;
+      } else {
+        AppLogger.user('❌ Google Sign-In authenticate not supported on this platform');
+        return false;
+      }
+    } on FirebaseAuthException catch (e) {
+      AppLogger.user('Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}');
       return false;
     } catch (e, stackTrace) {
       AppLogger.user('Error signing in with Google', e, stackTrace);
@@ -657,6 +707,8 @@ class UnifiedUserService extends ChangeNotifier {
         await _usernameService.releaseUsername(_currentUser!.username);
       }
 
+      // Sign out from Google Sign-In as well
+      await _googleSignIn.signOut();
       await _auth.signOut();
       _currentUser = null;
 

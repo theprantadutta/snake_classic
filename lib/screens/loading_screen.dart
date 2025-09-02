@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/screens/first_time_auth_screen.dart';
 import 'package:snake_classic/screens/home_screen.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
@@ -161,11 +162,57 @@ class _LoadingScreenState extends State<LoadingScreen>
       );
       await _performFinalSync();
 
-      // Step 8: Complete
-      await _updateProgress(1.0, 'Ready to play!', 'Welcome to Snake Classic');
+      // Step 8: Check for first-time user
+      await _updateProgress(0.98, 'Checking setup status...', 'Almost ready!');
+
+      if (mounted) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final isFirstTime = await userProvider.isFirstTimeUser();
+
+        if (isFirstTime) {
+          await _updateProgress(1.0, 'Welcome!', 'Choose how to continue');
+          await Future.delayed(const Duration(milliseconds: 800));
+
+          // Navigate to first-time auth screen
+          if (!mounted) {
+            return;
+          }
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const FirstTimeAuthScreen(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position:
+                          Tween<Offset>(
+                            begin: const Offset(0.0, 1.0),
+                            end: Offset.zero,
+                          ).animate(
+                            CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            ),
+                          ),
+                      child: child,
+                    );
+                  },
+              transitionDuration: const Duration(milliseconds: 600),
+            ),
+          );
+          return;
+        }
+      }
+
+      // Step 9: Complete (for returning users)
+      await _updateProgress(
+        1.0,
+        'Ready to play!',
+        'Welcome back to Snake Classic',
+      );
       await Future.delayed(const Duration(milliseconds: 800));
 
-      // Navigation to Home Screen with smooth transition
+      // Navigation to Home Screen with smooth transition (returning users)
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(

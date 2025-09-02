@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
@@ -745,6 +746,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           if (_recentAchievements.isNotEmpty) const SizedBox(height: 24),
 
+          // Google Sign-In Upgrade Section (for guest users only)
+          if (userProvider.isAnonymous && !userProvider.isGoogleUser)
+            Container(
+              padding: const EdgeInsets.all(24),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.blue.withValues(alpha: 0.15),
+                    Colors.blue.withValues(alpha: 0.1),
+                    theme.backgroundColor.withValues(alpha: 0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.blue.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          FontAwesomeIcons.google,
+                          color: Colors.blue,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Upgrade to Google Account',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Save your progress and sync across devices',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Benefits list
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildUpgradeBenefit(
+                          Icons.cloud_sync,
+                          'Sync Progress',
+                          'across devices',
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildUpgradeBenefit(
+                          Icons.leaderboard,
+                          'Global Leaderboards',
+                          'compete worldwide',
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildUpgradeBenefit(
+                          Icons.people,
+                          'Friends & Social',
+                          'connect with others',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Upgrade button
+                  _buildEnhancedButton(
+                    context,
+                    'Sign in with Google',
+                    FontAwesomeIcons.google,
+                    Colors.blue,
+                    Colors.blue.shade700,
+                    () => _handleGoogleUpgrade(context, userProvider, theme),
+                  ),
+                ],
+              ),
+            ),
+
+          if (userProvider.isAnonymous && !userProvider.isGoogleUser)
+            const SizedBox(height: 24),
+
           // Recent Replays Section
           Container(
             padding: const EdgeInsets.all(24),
@@ -1264,6 +1381,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
         margin: const EdgeInsets.all(16),
       ),
     );
+  }
+
+  Widget _buildUpgradeBenefit(IconData icon, String title, String subtitle) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: Colors.blue,
+          size: 24,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleGoogleUpgrade(
+    BuildContext context,
+    UserProvider userProvider,
+    GameTheme theme,
+  ) async {
+    try {
+      final success = await userProvider.signInWithGoogle();
+      
+      if (success && context.mounted) {
+        _showStyledSnackBar(
+          context,
+          'Successfully upgraded to Google account! 🎉',
+          Colors.green,
+          theme,
+        );
+      } else if (context.mounted) {
+        _showStyledSnackBar(
+          context,
+          'Failed to upgrade account. Please try again.',
+          Colors.red,
+          theme,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showStyledSnackBar(
+          context,
+          'An error occurred during account upgrade.',
+          Colors.red,
+          theme,
+        );
+      }
+    }
   }
 
   void _showSignOutDialog(

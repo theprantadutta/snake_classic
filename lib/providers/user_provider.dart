@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 
 class UserProvider extends ChangeNotifier {
@@ -110,6 +111,25 @@ class UserProvider extends ChangeNotifier {
   // Properties that were used in the old system
   int get totalGamesPlayed => _userService?.currentUser?.totalGamesPlayed ?? 0;
   int get totalScore => _userService?.currentUser?.totalScore ?? 0;
+
+  // First-time setup management
+  Future<bool> isFirstTimeUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool('first_time_setup_complete') ?? false);
+    } catch (e) {
+      return true; // Default to showing first-time screen if error
+    }
+  }
+
+  Future<void> markFirstTimeSetupComplete() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('first_time_setup_complete', true);
+    } catch (e) {
+      // Ignore error, not critical
+    }
+  }
 
   @override
   void dispose() {

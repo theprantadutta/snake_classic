@@ -64,8 +64,12 @@ dependencies:
   connectivity_plus: ^6.0.5
   
   # Beautiful logging library
-  talker: ^4.4.1
-  talker_flutter: ^4.4.1
+  talker: ^5.0.0
+  talker_flutter: ^5.0.0
+  
+  # Enhanced UI components for auth
+  flutter_dotenv: ^6.0.0
+  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:
@@ -92,6 +96,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/audio/
+    - .env
     # - assets/images/
     # - assets/fonts/
 

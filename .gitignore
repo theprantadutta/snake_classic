@@ -47,6 +47,7 @@ app.*.map.json
 # Ignore Firebase Files
 **/GoogleService-Info.plist
 **/google-services.json
+**/google_service_client_secret.json
 **/firebase_options.dart
 
 analytics/android/app/google-services.json

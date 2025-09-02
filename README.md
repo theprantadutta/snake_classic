@@ -35,8 +35,11 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 - **Theme selector screen** with live previews and descriptions
 
 ### 🌐 Online & Social Features
-- **Google Sign-In Authentication** with Firebase integration
-- **Anonymous sign-in option** for guest players
+- **Enhanced Google Sign-In Authentication** with modern API integration and Firebase
+- **First-time user onboarding** with beautiful welcome screen and authentication choice
+- **Guest mode option** for instant play with upgrade to Google account later
+- **Seamless account migration** from guest to Google with data preservation
+- **Google account upgrade prompts** in profile screen for guest users
 - **Global leaderboards** with real-time updates and user rankings
 - **Weekly leaderboards** showcasing recent achievements
 - **Friends system** with user search, friend requests, and online status indicators
@@ -187,13 +190,15 @@ lib/
 │   └── user_provider.dart      # User authentication state
 ├── screens/          # UI screens
 │   ├── achievements_screen.dart # Achievement browser
+│   ├── first_time_auth_screen.dart # Welcome and authentication choice screen
 │   ├── friends_leaderboard_screen.dart # Private friend competitions
 │   ├── friends_screen.dart     # Social features and friend management
 │   ├── game_over_screen.dart   # Enhanced with tournament results
 │   ├── game_screen.dart        # Enhanced with tournament indicators
 │   ├── home_screen.dart        # Updated navigation to all features
 │   ├── leaderboard_screen.dart # Global and weekly leaderboards
-│   ├── profile_screen.dart     # User profile and sign-in
+│   ├── loading_screen.dart     # App initialization and first-time user detection
+│   ├── profile_screen.dart     # User profile and Google upgrade for guests
 │   ├── replays_screen.dart     # Game replay browser
 │   ├── replay_viewer_screen.dart # Interactive replay playback
 │   ├── settings_screen.dart
@@ -238,7 +243,7 @@ lib/
 - **Firebase Core** - Backend infrastructure and authentication
 - **Firebase Auth** - User authentication and profile management
 - **Cloud Firestore** - Real-time database for leaderboards and achievements
-- **Google Sign-In** - Authentication provider integration
+- **Google Sign-In** - Modern authentication provider with updated API integration
 - **AudioPlayers** - Audio system with AssetSource
 - **SharedPreferences** - Local storage and offline support
 - **FlutterAnimate** - Smooth animations and visual effects
@@ -352,6 +357,11 @@ The game features six distinct visual themes:
 ## 📝 Changelog
 
 ### 🚀 Major Feature Updates (Latest Release)
+- ✅ **Enhanced Google Sign-In System** - Modern API integration with updated authentication flow
+- ✅ **First-Time User Onboarding** - Beautiful welcome screen with Google/Guest authentication choice
+- ✅ **Responsive Authentication UI** - Mobile-optimized design with smooth animations and adaptive sizing
+- ✅ **Single Loading Experience** - Eliminated double loading screens for smoother user flow
+- ✅ **Guest Account Upgrade System** - In-app prompts and upgrade options in profile screen
 - ✅ **Unified User System** - Automatic anonymous authentication with unique usernames for all users
 - ✅ **Beautiful Debug Logging** - Categorized logging system with Talker integration (debug-only)
 - ✅ **Data Synchronization** - Real-time Firebase sync with offline support and conflict resolution
@@ -364,7 +374,6 @@ The game features six distinct visual themes:
 - ✅ **Advanced Statistics** - 50+ metrics with performance trends and AI insights
 - ✅ **Tournament Integration** - In-game HUD indicators and game over notifications
 - ✅ **Enhanced UI Navigation** - All features accessible through intuitive home screen layout
-- ✅ **Google Sign-In Authentication** - Full Firebase integration with user profiles
 - ✅ **Online Leaderboards** - Global and weekly leaderboards with real-time sync
 - ✅ **Comprehensive Achievement System** - 16 achievements across 4 categories with rarity levels
 - ✅ **Enhanced Visual Themes** - 6 premium themes (Classic, Modern, Neon, Retro, Space, Ocean)
