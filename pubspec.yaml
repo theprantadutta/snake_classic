@@ -59,6 +59,13 @@ dependencies:
   google_sign_in: ^7.1.1
   cloud_firestore: ^6.0.0
   firebase_analytics: ^12.0.0
+  
+  # Connectivity for offline/online detection
+  connectivity_plus: ^6.0.5
+  
+  # Beautiful logging library
+  talker: ^4.4.1
+  talker_flutter: ^4.4.1
 
 dev_dependencies:
   flutter_test:

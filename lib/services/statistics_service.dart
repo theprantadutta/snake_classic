@@ -1,14 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/game_statistics.dart';
 import 'package:snake_classic/services/storage_service.dart';
-import 'package:snake_classic/services/auth_service.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/unified_user_service.dart';
 
 class StatisticsService {
   static StatisticsService? _instance;
   final StorageService _storageService = StorageService();
-  final AuthService _authService = AuthService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final DataSyncService _syncService = DataSyncService();
+  final UnifiedUserService _userService = UnifiedUserService();
   
   GameStatistics _currentStatistics = GameStatistics.initial();
   bool _initialized = false;
@@ -29,9 +29,9 @@ class StatisticsService {
       // Load local statistics first
       await _loadLocalStatistics();
       
-      // If user is signed in, sync with Firebase
-      if (_authService.isSignedIn) {
-        await _syncWithFirebase();
+      // If user is signed in, sync with cloud
+      if (_userService.isSignedIn) {
+        await _syncWithCloud();
       }
       
       _initialized = true;
@@ -60,58 +60,52 @@ class StatisticsService {
     }
   }
 
-  Future<void> _syncWithFirebase() async {
-    if (!_authService.isSignedIn) return;
+  Future<void> _syncWithCloud() async {
+    if (!_userService.isSignedIn) return;
     
     try {
-      final userId = _authService.currentUser!.uid;
-      final docRef = _firestore.collection('userStatistics').doc(userId);
-      final doc = await docRef.get();
+      // Get cloud statistics
+      final cloudStats = await _syncService.getData('statistics');
       
-      if (doc.exists) {
-        final firebaseData = doc.data() as Map<String, dynamic>;
-        final firebaseStats = GameStatistics.fromJson(firebaseData);
+      if (cloudStats != null) {
+        // Merge local and cloud statistics (keep the most recent data)
+        final localStatsWithTimestamp = {
+          ..._currentStatistics.toJson(),
+          'lastUpdated': DateTime.now().toIso8601String(),
+        };
         
-        // Merge local and Firebase statistics (keep the most recent data)
-        _currentStatistics = _mergeStatistics(_currentStatistics, firebaseStats);
+        final mergedData = _syncService.mergeData(localStatsWithTimestamp, cloudStats);
+        _currentStatistics = GameStatistics.fromJson(mergedData);
       }
       
-      // Upload current statistics to Firebase
-      await _uploadToFirebase();
+      // Upload current statistics to cloud
+      await _uploadToCloud();
       
     } catch (e) {
       if (kDebugMode) {
-        print('Error syncing with Firebase: $e');
+        print('Error syncing with cloud: $e');
       }
       // Continue with local statistics
     }
   }
 
-  Future<void> _uploadToFirebase() async {
-    if (!_authService.isSignedIn) return;
+  Future<void> _uploadToCloud() async {
+    if (!_userService.isSignedIn) return;
     
     try {
-      final userId = _authService.currentUser!.uid;
-      await _firestore.collection('userStatistics').doc(userId).set(
-        _currentStatistics.toJson(),
-        SetOptions(merge: true),
-      );
+      final statisticsWithTimestamp = {
+        ..._currentStatistics.toJson(),
+        'lastUpdated': DateTime.now().toIso8601String(),
+      };
+      
+      await _syncService.queueSync('statistics', statisticsWithTimestamp);
     } catch (e) {
       if (kDebugMode) {
-        print('Error uploading to Firebase: $e');
+        print('Error uploading to cloud: $e');
       }
     }
   }
 
-  GameStatistics _mergeStatistics(GameStatistics local, GameStatistics firebase) {
-    // Use the statistics with more games played as the primary source
-    // This is a simple merge strategy - in a real app you might want more sophisticated merging
-    if (local.totalGamesPlayed >= firebase.totalGamesPlayed) {
-      return local;
-    } else {
-      return firebase;
-    }
-  }
 
   Future<void> recordGameResult({
     required int score,
@@ -152,9 +146,9 @@ class StatisticsService {
     // Save locally
     await _saveLocalStatistics();
     
-    // Upload to Firebase if signed in
-    if (_authService.isSignedIn) {
-      await _uploadToFirebase();
+    // Upload to cloud if signed in
+    if (_userService.isSignedIn) {
+      await _uploadToCloud();
     }
   }
 
@@ -176,8 +170,8 @@ class StatisticsService {
     _currentStatistics = _currentStatistics.startNewSession();
     await _saveLocalStatistics();
     
-    if (_authService.isSignedIn) {
-      await _uploadToFirebase();
+    if (_userService.isSignedIn) {
+      await _uploadToCloud();
     }
   }
 
@@ -301,24 +295,18 @@ class StatisticsService {
     _currentStatistics = GameStatistics.initial();
     await _saveLocalStatistics();
     
-    if (_authService.isSignedIn) {
-      try {
-        final userId = _authService.currentUser!.uid;
-        await _firestore.collection('userStatistics').doc(userId).delete();
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error deleting Firebase statistics: $e');
-        }
-      }
+    if (_userService.isSignedIn) {
+      await _syncService.queueSync('statistics', _currentStatistics.toJson());
     }
   }
 
-  // Force sync with Firebase (for manual sync)
+  // Force sync with cloud (for manual sync)
   Future<bool> forceSync() async {
-    if (!_authService.isSignedIn) return false;
+    if (!_userService.isSignedIn) return false;
     
     try {
-      await _uploadToFirebase();
+      await _uploadToCloud();
+      await _syncService.forceSyncNow();
       return true;
     } catch (e) {
       if (kDebugMode) {

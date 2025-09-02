@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class UsernameService {
   static final UsernameService _instance = UsernameService._internal();
@@ -86,7 +87,9 @@ class UsernameService {
       return querySnapshot.docs.isEmpty;
     } catch (e) {
       // If there's an error checking, assume it's not available
-      print('Error checking username availability: $e');
+      if (kDebugMode) {
+        print('Error checking username availability: $e');
+      }
       return false;
     }
   }
@@ -250,8 +253,36 @@ class UsernameService {
       
       return querySnapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
-      print('Error searching users by username: $e');
+      if (kDebugMode) {
+        print('Error searching users by username: $e');
+      }
       return [];
+    }
+  }
+
+  /// Reserve a username in the usernames collection
+  Future<void> reserveUsername(String username, String userId) async {
+    try {
+      await _firestore.collection('usernames').doc(username).set({
+        'username': username,
+        'userId': userId,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error reserving username: $e');
+      }
+    }
+  }
+
+  /// Release a username from the usernames collection
+  Future<void> releaseUsername(String username) async {
+    try {
+      await _firestore.collection('usernames').doc(username).delete();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error releasing username: $e');
+      }
     }
   }
 }

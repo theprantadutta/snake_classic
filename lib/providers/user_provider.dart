@@ -1,79 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:snake_classic/services/auth_service.dart';
-import 'package:snake_classic/services/guest_user_service.dart';
+import 'package:provider/provider.dart';
+import 'package:snake_classic/services/unified_user_service.dart';
 
 class UserProvider extends ChangeNotifier {
-  final AuthService _authService = AuthService();
-  final GuestUserService _guestUserService = GuestUserService();
-  
-  User? _user;
-  Map<String, dynamic>? _userProfile;
-  GuestUser? _guestUser;
+  UnifiedUserService? _userService;
+  bool _isInitialized = false;
   bool _isLoading = false;
 
-  User? get user => _user;
-  Map<String, dynamic>? get userProfile => _userProfile;
-  GuestUser? get guestUser => _guestUser;
+  // Getters that delegate to UnifiedUserService
+  bool get isSignedIn => _userService?.isSignedIn ?? false;
+  bool get isAnonymous => _userService?.isAnonymous ?? false;
+  bool get isGuestUser => _userService?.isAnonymous ?? false; // Anonymous users are like guests
+  bool get isGoogleUser => _userService?.isGoogleUser ?? false;
+  bool get isInitialized => _isInitialized;
   bool get isLoading => _isLoading;
-  bool get isSignedIn => _user != null;
-  bool get isAnonymous => _user?.isAnonymous ?? false;
-  bool get isGuestUser => _guestUser != null && _user == null;
-
-  String get displayName {
-    if (_guestUser != null) {
-      return _guestUser!.username;
-    }
-    if (_userProfile != null) {
-      return _userProfile!['displayName'] ?? 'Player';
-    }
-    return _user?.displayName ?? 'Player';
-  }
-
-  String? get photoURL => _user?.photoURL;
   
-  int get highScore {
-    if (_guestUser != null) {
-      return _guestUser!.highScore;
-    }
-    return _userProfile?['highScore'] ?? 0;
-  }
+  String get displayName => _userService?.displayName ?? 'Player';
+  String get username => _userService?.username ?? 'Guest';
+  String? get photoURL => _userService?.photoURL;
+  int get highScore => _userService?.highScore ?? 0;
   
-  int get totalGamesPlayed {
-    if (_guestUser != null) {
-      return _guestUser!.totalGamesPlayed;
-    }
-    return _userProfile?['totalGamesPlayed'] ?? 0;
-  }
+  // Firebase user for backward compatibility
+  User? get user => _userService?.currentUser?.userType == UserType.anonymous 
+      ? null : null; // This needs to be implemented properly
   
-  int get totalScore {
-    if (_guestUser != null) {
-      return _guestUser!.totalScore;
-    }
-    return _userProfile?['totalScore'] ?? 0;
-  }
+  Map<String, dynamic>? get userProfile => _userService?.currentUser != null 
+      ? _userService!.currentUser!.toFirestore() : null;
 
-  UserProvider() {
-    _authService.authStateChanges.listen((User? user) {
-      _user = user;
-      if (user != null) {
-        _loadUserProfile();
-      } else {
-        _userProfile = null;
-      }
-      notifyListeners();
-    });
+  // Initialize by getting UnifiedUserService from context
+  void initialize(BuildContext context) {
+    if (_isInitialized) return;
     
-    _user = _authService.currentUser;
-    if (_user != null) {
-      _loadUserProfile();
-    }
+    _userService = Provider.of<UnifiedUserService>(context, listen: false);
+    _userService?.addListener(_onUserServiceChanged);
+    _isInitialized = true;
+    notifyListeners();
   }
 
-  Future<void> _loadUserProfile() async {
-    if (_user == null) return;
-    
-    _userProfile = await _authService.getUserProfile();
+  void _onUserServiceChanged() {
     notifyListeners();
   }
 
@@ -82,14 +47,8 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      final result = await _authService.signInWithGoogle();
-      
-      // If successful and we have guest data, migrate it
-      if (result != null && _guestUser != null) {
-        await migrateGuestToAuthenticated();
-      }
-      
-      return result != null;
+      final result = await _userService?.signInWithGoogle() ?? false;
+      return result;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -101,12 +60,8 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      await _authService.signInAnonymously();
-      
-      // If successful and we have guest data, migrate it
-      if (_user != null && _guestUser != null) {
-        await migrateGuestToAuthenticated();
-      }
+      // UnifiedUserService already handles anonymous sign-in automatically
+      // This method exists for compatibility but doesn't need to do anything
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -118,89 +73,47 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      await _authService.signOut();
-      
-      // After signing out, create a new guest user
-      final guestUser = await _guestUserService.createGuestUser();
-      _guestUser = guestUser;
+      await _userService?.signOut();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> updateHighScore(int score) async {
-    await _authService.updateHighScore(score);
-    await _loadUserProfile();
+  Future<bool> updateUsername(String newUsername) async {
+    return await _userService?.updateUsername(newUsername) ?? false;
   }
 
-  Future<void> updateUserProfile(Map<String, dynamic> data) async {
-    await _authService.updateUserProfile(data);
-    await _loadUserProfile();
+  Future<void> updateGameStats({
+    int? newHighScore,
+    int? gamesPlayed,
+    int? totalScore,
+    int? level,
+  }) async {
+    await _userService?.updateGameStats(
+      newHighScore: newHighScore,
+      gamesPlayed: gamesPlayed,
+      totalScore: totalScore,
+      level: level,
+    );
   }
 
-  // Guest User Methods
-
-  Future<void> setGuestUser(GuestUser guestUser) async {
-    _guestUser = guestUser;
-    notifyListeners();
-  }
-
-  Future<void> updateGuestHighScore(int score) async {
-    if (_guestUser != null) {
-      await _guestUserService.updateHighScore(score);
-      _guestUser = _guestUserService.currentGuestUser;
-      notifyListeners();
-    } else if (_user != null) {
-      // If signed in, use the regular update method
-      await updateHighScore(score);
-    }
-  }
-
+  // Legacy methods for backward compatibility
   Future<bool> updateGuestUsername(String newUsername) async {
-    if (_guestUser != null) {
-      final success = await _guestUserService.updateUsername(newUsername);
-      if (success) {
-        _guestUser = _guestUserService.currentGuestUser;
-        notifyListeners();
-      }
-      return success;
-    }
-    return false;
+    return await updateUsername(newUsername);
   }
 
   Future<bool> updateAuthenticatedUsername(String newUsername) async {
-    if (_user != null) {
-      final success = await _authService.updateUsername(newUsername);
-      if (success) {
-        await _loadUserProfile();
-      }
-      return success;
-    }
-    return false;
+    return await updateUsername(newUsername);
   }
 
-  Future<void> migrateGuestToAuthenticated() async {
-    if (_guestUser != null && _user != null) {
-      try {
-        // Export guest data
-        final guestData = _guestUserService.exportGuestData();
-        
-        // Use the AuthService method that handles guest data migration
-        await _authService.createUserProfileWithGuestData(_user!, guestData);
-        
-        // Clear guest user data
-        await _guestUserService.clearGuestUser();
-        _guestUser = null;
-        
-        // Reload user profile
-        await _loadUserProfile();
-        
-      } catch (e) {
-        print('Error migrating guest user: $e');
-        // Don't clear guest data if migration fails
-      }
-    }
-  }
+  // Properties that were used in the old system
+  int get totalGamesPlayed => _userService?.currentUser?.totalGamesPlayed ?? 0;
+  int get totalScore => _userService?.currentUser?.totalScore ?? 0;
 
+  @override
+  void dispose() {
+    _userService?.removeListener(_onUserServiceChanged);
+    super.dispose();
+  }
 }

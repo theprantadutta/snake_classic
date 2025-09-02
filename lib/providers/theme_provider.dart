@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 
 class ThemeProvider extends ChangeNotifier {
   GameTheme _currentTheme = GameTheme.classic;
-  final StorageService _storageService = StorageService();
+  PreferencesService? _preferencesService;
   bool _initialized = false;
   bool _trailSystemEnabled = false; // Default to false
   
@@ -16,12 +17,14 @@ class ThemeProvider extends ChangeNotifier {
   bool get isTrailSystemEnabled => _trailSystemEnabled;
 
   ThemeProvider() {
-    _loadTheme();
+    // Will be initialized via initialize() method
   }
 
-  // Initialize method for explicit initialization if needed
-  Future<void> initialize() async {
-    if (!_initialized) {
+  // Initialize method for explicit initialization with context
+  Future<void> initialize([BuildContext? context]) async {
+    if (!_initialized && context != null) {
+      _preferencesService = Provider.of<PreferencesService>(context, listen: false);
+      await _preferencesService?.initialize();
       await _loadTheme();
     }
   }
@@ -33,8 +36,10 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> _loadTheme() async {
-    _currentTheme = await _storageService.getSelectedTheme();
-    _trailSystemEnabled = await _storageService.isTrailSystemEnabled();
+    if (_preferencesService != null) {
+      _currentTheme = _preferencesService!.selectedTheme;
+      _trailSystemEnabled = _preferencesService!.trailSystemEnabled;
+    }
     _initialized = true;
     notifyListeners();
   }
@@ -55,7 +60,7 @@ class ThemeProvider extends ChangeNotifier {
         );
       }
       
-      await _storageService.saveSelectedTheme(theme);
+      await _preferencesService?.setTheme(theme);
       notifyListeners();
     }
   }
@@ -74,7 +79,7 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> setTrailSystemEnabled(bool enabled) async {
     if (_trailSystemEnabled != enabled) {
       _trailSystemEnabled = enabled;
-      await _storageService.setTrailSystemEnabled(enabled);
+      await _preferencesService?.setTrailSystemEnabled(enabled);
       notifyListeners();
     }
   }

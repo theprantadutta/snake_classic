@@ -41,22 +41,16 @@ class _GradientButtonState extends State<GradientButton>
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
     _glowAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -83,11 +77,13 @@ class _GradientButtonState extends State<GradientButton>
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      onTap: widget.onPressed != null ? () {
-        HapticFeedback.lightImpact();
-        AudioService().playSound('button_click');
-        widget.onPressed!();
-      } : null,
+      onTap: widget.onPressed != null
+          ? () {
+              HapticFeedback.lightImpact();
+              AudioService().playSound('button_click');
+              widget.onPressed!();
+            }
+          : null,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -102,21 +98,17 @@ class _GradientButtonState extends State<GradientButton>
                     : LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          widget.primaryColor,
-                          widget.secondaryColor,
-                        ],
+                        colors: [widget.primaryColor, widget.secondaryColor],
                       ),
                 border: widget.outlined
-                    ? Border.all(
-                        color: widget.primaryColor,
-                        width: 2,
-                      )
+                    ? Border.all(color: widget.primaryColor, width: 2)
                     : null,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: widget.primaryColor.withValues(alpha: 0.3 + (_glowAnimation.value * 0.2)),
+                    color: widget.primaryColor.withValues(
+                      alpha: 0.3 + (_glowAnimation.value * 0.2),
+                    ),
                     blurRadius: 8 + (_glowAnimation.value * 4),
                     spreadRadius: 1 + (_glowAnimation.value * 2),
                     offset: const Offset(0, 2),

@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:snake_classic/services/username_service.dart';
@@ -131,7 +132,9 @@ class AuthService {
         });
       }
     } catch (e) {
-      print('Error creating/updating user profile: $e');
+      if (kDebugMode) {
+        print('Error creating/updating user profile: $e');
+      }
     }
   }
 

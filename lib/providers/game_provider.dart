@@ -8,11 +8,14 @@ import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/utils/direction.dart';
+// Future imports for enhanced features:
+// import 'package:snake_classic/services/preferences_service.dart';
+// import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
-import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/tournament_service.dart';
@@ -23,13 +26,18 @@ class GameProvider extends ChangeNotifier {
   GameState _gameState = GameState.initial();
   Timer? _gameTimer;
   Timer? _animationTimer; // Use Timer instead of Ticker for simplicity
-  final StorageService _storageService = StorageService();
+  // Future: Use these services for enhanced features
+  // PreferencesService? _preferencesService;
+  // UnifiedUserService? _userService;
   final AudioService _audioService = AudioService();
   final EnhancedAudioService _enhancedAudioService = EnhancedAudioService();
   final HapticService _hapticService = HapticService();
-  final AuthService _authService = AuthService();
   final AchievementService _achievementService = AchievementService();
   final StatisticsService _statisticsService = StatisticsService();
+  
+  // Keep legacy services for compatibility until full migration
+  final StorageService _storageService = StorageService();
+  final AuthService _authService = AuthService();
   final TournamentService _tournamentService = TournamentService();
   final GameRecorder _gameRecorder = GameRecorder();
   

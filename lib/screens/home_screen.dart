@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
@@ -16,6 +18,7 @@ import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
 import 'package:snake_classic/widgets/instructions_dialog.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
@@ -154,6 +157,21 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
             ),
+            floatingActionButton: kDebugMode
+                ? FloatingActionButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => TalkerScreen(talker: AppLogger.instance),
+                        ),
+                      );
+                    },
+                    backgroundColor: theme.accentColor.withValues(alpha: 0.1),
+                    foregroundColor: theme.accentColor,
+                    mini: true,
+                    child: const Icon(Icons.bug_report),
+                  )
+                : null,
           ),
         );
       },

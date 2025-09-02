@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +31,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Future<void> _loadStatistics() async {
     setState(() => _isLoading = true);
-    
+
     try {
       await _statisticsService.initialize();
       _displayStats = _statisticsService.getDisplayStatistics();
@@ -39,7 +40,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     } catch (e) {
       // Handle error
     }
-    
+
     if (mounted) {
       setState(() => _isLoading = false);
     }
@@ -50,7 +51,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         final theme = themeProvider.currentTheme;
-        
+
         return Scaffold(
           body: AppBackground(
             theme: theme,
@@ -61,7 +62,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.accentColor,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -78,7 +81,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       children: [
                         // Header
                         _buildHeader(theme),
-                        
+
                         // Statistics Content
                         Expanded(
                           child: SingleChildScrollView(
@@ -87,37 +90,37 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               children: [
                                 // Performance Overview
                                 _buildPerformanceOverview(theme),
-                                
+
                                 const SizedBox(height: 24),
-                                
+
                                 // Game Activity
                                 _buildGameActivity(theme),
-                                
+
                                 const SizedBox(height: 24),
-                                
+
                                 // Food & Power-ups
                                 _buildConsumptionStats(theme),
-                                
+
                                 const SizedBox(height: 24),
-                                
+
                                 // Performance Trends
                                 _buildPerformanceTrends(theme),
-                                
+
                                 const SizedBox(height: 24),
-                                
+
                                 // Play Patterns
                                 _buildPlayPatterns(theme),
-                                
+
                                 const SizedBox(height: 24),
-                                
+
                                 // Achievement Progress
                                 _buildAchievementProgress(theme),
-                                
+
                                 const SizedBox(height: 32),
-                                
+
                                 // Action Buttons
                                 _buildActionButtons(theme),
-                                
+
                                 const SizedBox(height: 24),
                               ],
                             ),
@@ -139,34 +142,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
-          
+
           const SizedBox(width: 8),
-          
-          Icon(
-            Icons.analytics,
-            color: theme.accentColor,
-            size: 28,
-          ),
-          
+
+          Icon(Icons.analytics, color: theme.accentColor, size: 28),
+
           const SizedBox(width: 12),
-          
+
           Text(
-            'Game Statistics',
+            'Statistics',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: theme.accentColor,
             ),
           ),
-          
+
           const Spacer(),
-          
+
           IconButton(
             onPressed: _refreshStatistics,
             icon: Icon(
@@ -212,9 +207,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           IntrinsicHeight(
             child: Row(
               children: [
@@ -275,9 +270,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -307,9 +302,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildConsumptionStats(GameTheme theme) {
-    final foodBreakdown = _displayStats['foodBreakdown'] as Map<String, int>? ?? {};
-    final powerUpBreakdown = _displayStats['powerUpBreakdown'] as Map<String, int>? ?? {};
-    
+    final foodBreakdown =
+        _displayStats['foodBreakdown'] as Map<String, int>? ?? {};
+    final powerUpBreakdown =
+        _displayStats['powerUpBreakdown'] as Map<String, int>? ?? {};
+
     return _buildStatSection(
       title: 'Food & Power-ups',
       icon: Icons.restaurant,
@@ -339,10 +336,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             ],
           ),
-          
+
           if (foodBreakdown.isNotEmpty || powerUpBreakdown.isNotEmpty) ...[
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 if (foodBreakdown.isNotEmpty)
@@ -354,10 +351,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       theme,
                     ),
                   ),
-                
+
                 if (foodBreakdown.isNotEmpty && powerUpBreakdown.isNotEmpty)
                   const SizedBox(width: 12),
-                
+
                 if (powerUpBreakdown.isNotEmpty)
                   Expanded(
                     child: _buildBreakdownCard(
@@ -376,9 +373,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildPerformanceTrends(GameTheme theme) {
-    final recentScores = (_performanceTrends['recentScores'] as List<int>?) ?? [];
+    final recentScores =
+        (_performanceTrends['recentScores'] as List<int>?) ?? [];
     final trend = _performanceTrends['trend'] as String? ?? 'stable';
-    
+
     return _buildStatSection(
       title: 'Performance Trends',
       icon: Icons.show_chart,
@@ -409,9 +407,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Performance Statistics Row
           Row(
             children: [
@@ -436,10 +434,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             ],
           ),
-          
+
           if (recentScores.isNotEmpty) ...[
             const SizedBox(height: 16),
-            
+
             // Enhanced Chart Container
             Container(
               padding: const EdgeInsets.all(16),
@@ -457,15 +455,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Score Progress (Last ${recentScores.length} Games)',
+                        'Progress (Last ${recentScores.length} Games)',
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.8),
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: _getTrendColor(trend).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
@@ -481,32 +483,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Enhanced Chart with Trend Line
                   SizedBox(
                     height: 80,
                     child: _buildEnhancedTrendChart(recentScores, theme, trend),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   // Chart Legend
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildLegendItem('Scores', theme.accentColor, theme),
                       const SizedBox(width: 16),
-                      _buildLegendItem('Trend Line', _getTrendColor(trend), theme),
+                      _buildLegendItem(
+                        'Trend Line',
+                        _getTrendColor(trend),
+                        theme,
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Performance Insights
             _buildPerformanceInsights(recentScores, trend, theme),
           ],
@@ -516,8 +522,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildPlayPatterns(GameTheme theme) {
-    final dailyPlayTime = (_playPatterns['dailyPlayTime'] as Map<String, int>?) ?? {};
-    
+    final dailyPlayTime =
+        (_playPatterns['dailyPlayTime'] as Map<String, int>?) ?? {};
+
     return _buildStatSection(
       title: 'Play Patterns (Last 7 Days)',
       icon: Icons.calendar_today,
@@ -547,10 +554,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             ],
           ),
-          
+
           if (dailyPlayTime.isNotEmpty) ...[
             const SizedBox(height: 16),
-            
+
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -571,12 +578,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   SizedBox(
                     height: 60,
-                    child: _buildDailyActivityChart(dailyPlayTime, theme),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical, // or horizontal if needed
+                      child: _buildDailyActivityChart(dailyPlayTime, theme),
+                    ),
                   ),
                 ],
               ),
@@ -597,9 +607,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         decoration: BoxDecoration(
           color: theme.accentColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -615,10 +623,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 children: [
                   Center(
                     child: CircularProgressIndicator(
-                      value: double.tryParse(_displayStats['achievementProgress']?.toString().replaceAll('%', '') ?? '0') ?? 0 / 100,
+                      value:
+                          double.tryParse(
+                            _displayStats['achievementProgress']
+                                    ?.toString()
+                                    .replaceAll('%', '') ??
+                                '0',
+                          ) ??
+                          0 / 100,
                       strokeWidth: 4,
                       backgroundColor: Colors.amber.withValues(alpha: 0.3),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.amber),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.amber,
+                      ),
                     ),
                   ),
                   Center(
@@ -631,9 +648,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(width: 16),
-            
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -646,9 +663,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       color: theme.accentColor,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 4),
-                  
+
                   Text(
                     '${_displayStats['achievementProgress'] ?? '0%'} Complete',
                     style: TextStyle(
@@ -656,9 +673,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       color: theme.accentColor.withValues(alpha: 0.8),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   GestureDetector(
                     onTap: () {
                       Navigator.of(context).pushNamed('/achievements');
@@ -689,22 +706,30 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             if (constraints.maxWidth < 400) {
               return Column(
                 children: [
-                  GradientButton(
-                    onPressed: () => Navigator.of(context).pushNamed('/achievements'),
-                    text: 'VIEW ACHIEVEMENTS',
-                    primaryColor: Colors.amber,
-                    secondaryColor: Colors.orange,
-                    icon: Icons.emoji_events,
+                  SizedBox(
+                    width: double.infinity,
+                    child: GradientButton(
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/achievements'),
+                      text: 'VIEW ACHIEVEMENTS',
+                      primaryColor: Colors.amber,
+                      secondaryColor: Colors.orange,
+                      icon: Icons.emoji_events,
+                    ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
-                  GradientButton(
-                    onPressed: () => Navigator.of(context).pushNamed('/leaderboard'),
-                    text: 'LEADERBOARD',
-                    primaryColor: theme.accentColor,
-                    secondaryColor: theme.foodColor,
-                    icon: Icons.leaderboard,
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: GradientButton(
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/leaderboard'),
+                      text: 'LEADERBOARD',
+                      primaryColor: theme.accentColor,
+                      secondaryColor: theme.foodColor,
+                      icon: Icons.leaderboard,
+                    ),
                   ),
                 ],
               );
@@ -713,19 +738,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               children: [
                 Expanded(
                   child: GradientButton(
-                    onPressed: () => Navigator.of(context).pushNamed('/achievements'),
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed('/achievements'),
                     text: 'VIEW ACHIEVEMENTS',
                     primaryColor: Colors.amber,
                     secondaryColor: Colors.orange,
                     icon: Icons.emoji_events,
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 Expanded(
                   child: GradientButton(
-                    onPressed: () => Navigator.of(context).pushNamed('/leaderboard'),
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed('/leaderboard'),
                     text: 'LEADERBOARD',
                     primaryColor: theme.accentColor,
                     secondaryColor: theme.foodColor,
@@ -736,19 +763,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             );
           },
         ),
-        
+
         const SizedBox(height: 16),
-        
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 200),
-            child: GradientButton(
-              onPressed: _showResetDialog,
-              text: 'RESET STATISTICS',
-              primaryColor: Colors.red.shade400,
-              secondaryColor: Colors.red.shade600,
-              icon: Icons.refresh,
-            ),
+
+        SizedBox(
+          width: double.infinity,
+          child: GradientButton(
+            onPressed: _showResetDialog,
+            text: 'RESET STATISTICS',
+            primaryColor: Colors.red.shade400,
+            secondaryColor: Colors.red.shade600,
+            icon: Icons.refresh,
           ),
         ),
       ],
@@ -766,9 +791,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
             color: theme.accentColor.withValues(alpha: 0.1),
@@ -784,11 +807,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  color: theme.accentColor,
-                  size: 24,
-                ),
+                Icon(icon, color: theme.accentColor, size: 24),
                 const SizedBox(width: 12),
                 Flexible(
                   child: Text(
@@ -803,9 +822,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             child,
           ],
         ),
@@ -825,21 +844,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 28,
-          ),
-          
+          Icon(icon, color: color, size: 28),
+
           const SizedBox(height: 8),
-          
+
           Flexible(
             child: Text(
               value,
@@ -852,9 +865,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          
+
           const SizedBox(height: 4),
-          
+
           Flexible(
             child: Text(
               label,
@@ -884,20 +897,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 28,
-          ),
-          
+          Icon(icon, color: color, size: 28),
+
           const SizedBox(height: 8),
-          
+
           Text(
             trend.toUpperCase(),
             style: TextStyle(
@@ -906,9 +913,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               color: color,
             ),
           ),
-          
+
           const SizedBox(height: 4),
-          
+
           Text(
             label,
             style: TextStyle(
@@ -933,9 +940,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       decoration: BoxDecoration(
         color: theme.accentColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -948,9 +953,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               color: theme.accentColor.withValues(alpha: 0.8),
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             favorite,
             style: TextStyle(
@@ -959,43 +964,46 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               color: theme.accentColor,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
-          ...breakdown.entries.take(3).map((entry) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  entry.key,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.accentColor.withValues(alpha: 0.7),
+
+          ...breakdown.entries
+              .take(3)
+              .map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        entry.key,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      Text(
+                        '${entry.value}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.accentColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  '${entry.value}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: theme.accentColor,
-                  ),
-                ),
-              ],
-            ),
-          )),
+              ),
         ],
       ),
     );
   }
 
-
   Widget _buildDailyActivityChart(Map<String, int> dailyData, GameTheme theme) {
-    final maxTime = dailyData.values.isNotEmpty 
+    final maxTime = dailyData.values.isNotEmpty
         ? dailyData.values.reduce((a, b) => a > b ? a : b)
         : 0;
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1003,7 +1011,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final day = entry.key;
         final time = entry.value;
         final height = maxTime > 0 ? (time / maxTime) * 40 : 8.0;
-        
+
         return Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -1011,7 +1019,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               width: 20,
               height: height + 8,
               decoration: BoxDecoration(
-                color: time > 0 
+                color: time > 0
                     ? theme.accentColor.withValues(alpha: 0.7)
                     : theme.accentColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
@@ -1069,7 +1077,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   void _showResetDialog() {
     final theme = context.read<ThemeProvider>().currentTheme;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1100,10 +1108,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               await _statisticsService.resetStatistics();
               await _loadStatistics();
             },
-            child: const Text(
-              'Reset',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Reset', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -1112,19 +1117,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   String _calculateConsistencyRating(List<int> scores) {
     if (scores.length < 3) return 'N/A';
-    
+
     final average = scores.reduce((a, b) => a + b) / scores.length;
-    final variance = scores.map((score) => (score - average) * (score - average)).reduce((a, b) => a + b) / scores.length;
+    final variance =
+        scores
+            .map((score) => (score - average) * (score - average))
+            .reduce((a, b) => a + b) /
+        scores.length;
     final standardDeviation = sqrt(variance);
     final coefficient = average > 0 ? standardDeviation / average : 0;
-    
+
     if (coefficient < 0.3) return 'Excellent';
     if (coefficient < 0.5) return 'Good';
     if (coefficient < 0.7) return 'Fair';
     return 'Poor';
   }
 
-  Widget _buildEnhancedTrendChart(List<int> scores, GameTheme theme, String trend) {
+  Widget _buildEnhancedTrendChart(
+    List<int> scores,
+    GameTheme theme,
+    String trend,
+  ) {
     if (scores.isEmpty) return const Center(child: Text('No data'));
 
     final maxScore = scores.reduce((a, b) => a > b ? a : b);
@@ -1167,17 +1180,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildPerformanceInsights(List<int> scores, String trend, GameTheme theme) {
+  Widget _buildPerformanceInsights(
+    List<int> scores,
+    String trend,
+    GameTheme theme,
+  ) {
     final insights = _generateInsights(scores, trend);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.primaryColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1201,32 +1216,34 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          ...insights.map((insight) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 4,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: 6, right: 8),
-                  decoration: BoxDecoration(
-                    color: theme.primaryColor.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    insight,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 12,
+          ...insights.map(
+            (insight) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 6, right: 8),
+                    decoration: BoxDecoration(
+                      color: theme.primaryColor.withValues(alpha: 0.6),
+                      shape: BoxShape.circle,
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: Text(
+                      insight,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -1234,38 +1251,48 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   List<String> _generateInsights(List<int> scores, String trend) {
     final insights = <String>[];
-    
+
     if (scores.isEmpty) return ['Play more games to get performance insights!'];
-    
+
     final average = scores.reduce((a, b) => a + b) / scores.length;
-    final recent = scores.length >= 3 ? scores.sublist(scores.length - 3) : scores;
+    final recent = scores.length >= 3
+        ? scores.sublist(scores.length - 3)
+        : scores;
     final recentAvg = recent.reduce((a, b) => a + b) / recent.length;
-    
+
     if (trend == 'improving') {
       insights.add('Great job! Your performance is on an upward trend.');
       if (recentAvg > average * 1.2) {
         insights.add('Your recent games are significantly above your average.');
       }
     } else if (trend == 'declining') {
-      insights.add('Your performance has declined recently. Consider practicing more.');
-      insights.add('Try focusing on avoiding collisions and planning your moves ahead.');
+      insights.add(
+        'Your performance has declined recently. Consider practicing more.',
+      );
+      insights.add(
+        'Try focusing on avoiding collisions and planning your moves ahead.',
+      );
     } else {
-      insights.add('Your performance is stable. Challenge yourself to improve!');
+      insights.add(
+        'Your performance is stable. Challenge yourself to improve!',
+      );
     }
-    
+
     final maxScore = scores.reduce((a, b) => a > b ? a : b);
     final minScore = scores.reduce((a, b) => a < b ? a : b);
     if (maxScore > minScore * 3) {
       insights.add('You have potential for high scores - work on consistency.');
     }
-    
+
     if (scores.length >= 5) {
       final lastFive = scores.sublist(scores.length - 5);
       if (lastFive.every((score) => score > average * 0.8)) {
-        insights.add('You\'re maintaining solid performance across recent games.');
+        insights.add(
+          'You\'re maintaining solid performance across recent games.',
+        );
       }
     }
-    
+
     return insights;
   }
 }
@@ -1306,16 +1333,17 @@ class TrendChartPainter extends CustomPainter {
     // Draw bars
     for (int i = 0; i < scores.length; i++) {
       final score = scores[i];
-      final normalizedHeight = ((score - minScore) / range) * (size.height - 10) + 5;
+      final normalizedHeight =
+          ((score - minScore) / range) * (size.height - 10) + 5;
       final barHeight = normalizedHeight;
-      
+
       final rect = Rect.fromLTWH(
         i * barWidth + barWidth * 0.1,
         size.height - barHeight,
         barWidth * 0.8,
         barHeight,
       );
-      
+
       canvas.drawRRect(
         RRect.fromRectAndRadius(rect, const Radius.circular(2)),
         barPaint,
@@ -1328,9 +1356,10 @@ class TrendChartPainter extends CustomPainter {
       for (int i = 0; i < scores.length; i++) {
         final score = scores[i];
         final x = i * barWidth + barWidth * 0.5;
-        final normalizedHeight = ((score - minScore) / range) * (size.height - 10) + 5;
+        final normalizedHeight =
+            ((score - minScore) / range) * (size.height - 10) + 5;
         final y = size.height - normalizedHeight;
-        
+
         if (i == 0) {
           path.moveTo(x, y);
         } else {
@@ -1338,18 +1367,19 @@ class TrendChartPainter extends CustomPainter {
         }
       }
       canvas.drawPath(path, trendPaint);
-      
+
       // Draw trend line points
       final pointPaint = Paint()
         ..color = trendColor
         ..style = PaintingStyle.fill;
-      
+
       for (int i = 0; i < scores.length; i++) {
         final score = scores[i];
         final x = i * barWidth + barWidth * 0.5;
-        final normalizedHeight = ((score - minScore) / range) * (size.height - 10) + 5;
+        final normalizedHeight =
+            ((score - minScore) / range) * (size.height - 10) + 5;
         final y = size.height - normalizedHeight;
-        
+
         canvas.drawCircle(Offset(x, y), 3, pointPaint);
       }
     }
