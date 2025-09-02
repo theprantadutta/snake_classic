@@ -261,13 +261,12 @@ class _GameBoardState extends State<GameBoard>
 
     // Check if food was consumed (score increased)
     if (currentState.score > previousState.score && currentState.food != null) {
-      // Calculate food position in screen coordinates
-      final foodScreenX =
-          previousState.food!.position.x * widget.cellSize +
-          widget.cellSize / 2;
-      final foodScreenY =
-          previousState.food!.position.y * widget.cellSize +
-          widget.cellSize / 2;
+      // Calculate food position in screen coordinates accounting for container margin
+      const containerMargin = 8.0; // Match the margin in the Container
+      final foodScreenX = previousState.food!.position.x * widget.cellSize + 
+          widget.cellSize / 2 + containerMargin;
+      final foodScreenY = previousState.food!.position.y * widget.cellSize + 
+          widget.cellSize / 2 + containerMargin;
       final foodPosition = Offset(foodScreenX, foodScreenY);
 
       // Add food consumption particle effect
@@ -276,12 +275,12 @@ class _GameBoardState extends State<GameBoard>
 
     // Check if power-up was collected
     if (previousState.powerUp != null && currentState.powerUp == null) {
-      final powerUpScreenX =
-          previousState.powerUp!.position.x * widget.cellSize +
-          widget.cellSize / 2;
-      final powerUpScreenY =
-          previousState.powerUp!.position.y * widget.cellSize +
-          widget.cellSize / 2;
+      // Calculate power-up position accounting for container margin
+      const containerMargin = 8.0; // Match the margin in the Container
+      final powerUpScreenX = previousState.powerUp!.position.x * widget.cellSize + 
+          widget.cellSize / 2 + containerMargin;
+      final powerUpScreenY = previousState.powerUp!.position.y * widget.cellSize + 
+          widget.cellSize / 2 + containerMargin;
       final powerUpPosition = Offset(powerUpScreenX, powerUpScreenY);
 
       // Add power-up collection effect

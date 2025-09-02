@@ -554,6 +554,8 @@ class _GameScreenState extends State<GameScreen>
     return AnimatedBuilder(
       animation: _gestureIndicatorController,
       builder: (context, child) {
+        final isActive = _lastSwipeDirection != null && _gestureIndicatorController.isAnimating;
+        
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: isSmallScreen ? 10 : 12,
@@ -570,40 +572,18 @@ class _GameScreenState extends State<GameScreen>
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color:
-                  _lastSwipeDirection != null &&
-                      _gestureIndicatorController.isAnimating
-                  ? _getActiveSwipeColor(
-                      _lastSwipeDirection!,
-                      theme,
-                    ).withValues(alpha: 0.6)
+              color: isActive
+                  ? _getActiveSwipeColor(_lastSwipeDirection!, theme).withValues(alpha: 0.6)
                   : theme.accentColor.withValues(alpha: 0.4),
-              width:
-                  _lastSwipeDirection != null &&
-                      _gestureIndicatorController.isAnimating
-                  ? 2.0
-                  : 1.5,
+              width: 2.0, // Fixed width to prevent layout shifts
             ),
             boxShadow: [
               BoxShadow(
-                color:
-                    _lastSwipeDirection != null &&
-                        _gestureIndicatorController.isAnimating
-                    ? _getActiveSwipeColor(
-                        _lastSwipeDirection!,
-                        theme,
-                      ).withValues(alpha: 0.3)
+                color: isActive
+                    ? _getActiveSwipeColor(_lastSwipeDirection!, theme).withValues(alpha: 0.3)
                     : Colors.black.withValues(alpha: 0.2),
-                blurRadius:
-                    _lastSwipeDirection != null &&
-                        _gestureIndicatorController.isAnimating
-                    ? 8
-                    : 6,
-                spreadRadius:
-                    _lastSwipeDirection != null &&
-                        _gestureIndicatorController.isAnimating
-                    ? 1
-                    : 0,
+                blurRadius: 8, // Fixed blur radius to prevent layout shifts
+                spreadRadius: 1, // Fixed spread radius to prevent layout shifts
                 offset: const Offset(0, 3),
               ),
             ],

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/services/statistics_service.dart';
-import 'package:snake_classic/services/storage_service.dart';
-import 'package:snake_classic/services/achievement_service.dart';
-import 'package:snake_classic/screens/statistics_screen.dart';
-import 'package:snake_classic/screens/replays_screen.dart';
+import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
-import 'package:snake_classic/models/achievement.dart';
+import 'package:snake_classic/screens/replays_screen.dart';
+import 'package:snake_classic/screens/statistics_screen.dart';
+import 'package:snake_classic/services/achievement_service.dart';
+import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -31,7 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     _loadStatistics();
     _loadRecentAchievements();
   }
@@ -47,7 +47,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadRecentAchievements() async {
     await _achievementService.initialize();
     final achievements = _achievementService.getUnlockedAchievements();
-    achievements.sort((a, b) => (b.unlockedAt ?? DateTime(0)).compareTo(a.unlockedAt ?? DateTime(0)));
+    achievements.sort(
+      (a, b) =>
+          (b.unlockedAt ?? DateTime(0)).compareTo(a.unlockedAt ?? DateTime(0)),
+    );
     setState(() {
       _recentAchievements = achievements.take(3).toList();
     });
@@ -63,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = themeProvider.currentTheme;
-    
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -89,15 +92,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             color: theme.backgroundColor.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
           ),
           child: IconButton(
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: theme.primaryColor,
-            ),
+            icon: Icon(Icons.arrow_back_rounded, color: theme.primaryColor),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -107,9 +105,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: userProvider.isSignedIn 
-              ? _buildProfileContent(context, userProvider, themeProvider)
-              : _buildSignInContent(context, userProvider, themeProvider),
+            child: userProvider.isSignedIn
+                ? _buildProfileContent(context, userProvider, themeProvider)
+                : _buildSignInContent(context, userProvider, themeProvider),
           ),
         ),
       ),
@@ -117,12 +115,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSignInContent(
-    BuildContext context, 
-    UserProvider userProvider, 
+    BuildContext context,
+    UserProvider userProvider,
     ThemeProvider themeProvider,
   ) {
     final theme = themeProvider.currentTheme;
-    
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -153,7 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 40),
-        
+
         // Enhanced welcome text
         Container(
           padding: const EdgeInsets.all(24),
@@ -161,9 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             color: theme.backgroundColor.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.2),
@@ -191,7 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              
+
               Text(
                 'Track high scores • Unlock achievements\nCompete globally • Save your progress',
                 style: TextStyle(
@@ -205,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 40),
-        
+
         // Enhanced buttons with loading state
         if (userProvider.isLoading)
           Container(
@@ -238,19 +234,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final success = await userProvider.signInWithGoogle();
               if (success && context.mounted) {
                 _showStyledSnackBar(
-                  context, 'Welcome to Snake Classic! 🎉', 
-                  Colors.green, theme,
+                  context,
+                  'Welcome to Snake Classic! 🎉',
+                  Colors.green,
+                  theme,
                 );
               } else if (context.mounted) {
                 _showStyledSnackBar(
-                  context, 'Sign in failed. Please try again.', 
-                  Colors.red, theme,
+                  context,
+                  'Sign in failed. Please try again.',
+                  Colors.red,
+                  theme,
                 );
               }
             },
           ),
           const SizedBox(height: 16),
-          
+
           _buildEnhancedButton(
             context,
             'Continue as Guest',
@@ -261,8 +261,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await userProvider.signInAnonymously();
               if (context.mounted) {
                 _showStyledSnackBar(
-                  context, 'Playing as guest 👤', 
-                  Colors.blue, theme,
+                  context,
+                  'Playing as guest 👤',
+                  Colors.blue,
+                  theme,
                 );
               }
             },
@@ -273,17 +275,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileContent(
-    BuildContext context, 
-    UserProvider userProvider, 
+    BuildContext context,
+    UserProvider userProvider,
     ThemeProvider themeProvider,
   ) {
     final theme = themeProvider.currentTheme;
-    
+
     return SingleChildScrollView(
       child: Column(
         children: [
           const SizedBox(height: 20),
-          
+
           // Enhanced Profile Header
           Container(
             padding: const EdgeInsets.all(24),
@@ -336,22 +338,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: theme.primaryColor,
                     child: CircleAvatar(
                       radius: 56,
-                      backgroundImage: userProvider.photoURL != null 
-                        ? NetworkImage(userProvider.photoURL!)
-                        : null,
+                      backgroundImage: userProvider.photoURL != null
+                          ? NetworkImage(userProvider.photoURL!)
+                          : null,
                       backgroundColor: theme.backgroundColor,
                       child: userProvider.photoURL == null
-                        ? Icon(
-                            Icons.person_rounded,
-                            size: 60,
-                            color: theme.primaryColor,
-                          )
-                        : null,
+                          ? Icon(
+                              Icons.person_rounded,
+                              size: 60,
+                              color: theme.primaryColor,
+                            )
+                          : null,
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Enhanced name with gradient text effect
                 ShaderMask(
                   shaderCallback: (bounds) => LinearGradient(
@@ -367,22 +369,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                
+
                 // Account status badge
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: userProvider.isAnonymous 
-                        ? [Colors.orange, Colors.deepOrange]
-                        : [Colors.green, Colors.teal],
+                      colors: userProvider.isAnonymous
+                          ? [Colors.orange, Colors.deepOrange]
+                          : [Colors.green, Colors.teal],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: (userProvider.isAnonymous ? Colors.orange : Colors.green)
-                            .withValues(alpha: 0.3),
+                        color:
+                            (userProvider.isAnonymous
+                                    ? Colors.orange
+                                    : Colors.green)
+                                .withValues(alpha: 0.3),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),
@@ -392,13 +400,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        userProvider.isAnonymous ? Icons.person : Icons.verified_user,
+                        userProvider.isAnonymous
+                            ? Icons.person
+                            : Icons.verified_user,
                         color: Colors.white,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        userProvider.isAnonymous ? 'Guest Player' : 'Verified Account',
+                        userProvider.isAnonymous
+                            ? 'Guest Player'
+                            : 'Verified Account',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -412,7 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Quick Actions Row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -420,29 +432,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Expanded(
                   child: _buildQuickActionButton(
-                    context, 'Statistics', Icons.analytics_rounded,
-                    theme.accentColor, () => _navigateToStatistics(context),
+                    context,
+                    'Statistics',
+                    Icons.analytics_rounded,
+                    theme.accentColor,
+                    () => _navigateToStatistics(context),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildQuickActionButton(
-                    context, 'Friends', Icons.people_rounded,
-                    Colors.blue, () => _navigateToFriends(context),
+                    context,
+                    'Friends',
+                    Icons.people_rounded,
+                    Colors.blue,
+                    () => _navigateToFriends(context),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildQuickActionButton(
-                    context, 'Achievements', Icons.emoji_events_rounded,
-                    Colors.amber, () => _navigateToAchievements(context),
+                    context,
+                    'Achievements',
+                    Icons.emoji_events_rounded,
+                    Colors.amber,
+                    () => _navigateToAchievements(context),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Enhanced Stats Section
           Container(
             padding: const EdgeInsets.all(24),
@@ -492,7 +513,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          'Game Statistics',
+                          'Statistics',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -505,7 +526,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       GestureDetector(
                         onTap: () => _navigateToStatistics(context),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [theme.accentColor, theme.primaryColor],
@@ -532,7 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 15),
-                
+
                 if (_isLoading)
                   const Center(
                     child: Padding(
@@ -614,7 +638,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Recent Achievements Section
           if (_recentAchievements.isNotEmpty)
             Container(
@@ -677,7 +701,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       GestureDetector(
                         onTap: () => _navigateToAchievements(context),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Colors.amber, Colors.orange],
@@ -704,18 +731,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Achievement cards
-                  ...(_recentAchievements.map((achievement) => 
-                    _buildAchievementCard(achievement, theme),
-                  ).toList()),
+                  ...(_recentAchievements
+                      .map(
+                        (achievement) =>
+                            _buildAchievementCard(achievement, theme),
+                      )
+                      .toList()),
                 ],
               ),
             ),
-          
-          if (_recentAchievements.isNotEmpty)
-            const SizedBox(height: 24),
-            
+
+          if (_recentAchievements.isNotEmpty) const SizedBox(height: 24),
+
           // Recent Replays Section
           Container(
             padding: const EdgeInsets.all(24),
@@ -765,7 +794,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          'Game Replays',
+                          'Replays',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -777,7 +806,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     GestureDetector(
                       onTap: () => _navigateToReplays(context),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Colors.purple, Colors.deepPurple],
@@ -815,7 +847,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     }
-                    
+
                     final replayKeys = snapshot.data ?? [];
                     if (replayKeys.isEmpty) {
                       return Center(
@@ -831,7 +863,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     }
-                    
+
                     return Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -866,7 +898,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           // Enhanced Sign Out Section
           if (!userProvider.isLoading)
             Container(
@@ -880,9 +912,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: 0.3),
-                ),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
@@ -895,7 +925,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   _buildEnhancedButton(
                     context,
                     'Sign Out',
@@ -907,7 +937,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-          
+
           const SizedBox(height: 32),
         ],
       ),
@@ -944,7 +974,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha:0.7),
+                color: Colors.white.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -952,23 +982,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     }
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: themeProvider.currentTheme.primaryColor,
-            size: 24,
-          ),
+          Icon(icon, color: themeProvider.currentTheme.primaryColor, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               label,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withValues(alpha:0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
           ),
@@ -984,7 +1010,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  
+
   Widget _buildEnhancedButton(
     BuildContext context,
     String text,
@@ -1036,7 +1062,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  
+
   Widget _buildQuickActionButton(
     BuildContext context,
     String label,
@@ -1048,10 +1074,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 80,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.8),
-            color.withValues(alpha: 0.6),
-          ],
+          colors: [color.withValues(alpha: 0.8), color.withValues(alpha: 0.6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1088,7 +1111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  
+
   Color _getRarityColor(AchievementRarity rarity) {
     switch (rarity) {
       case AchievementRarity.common:
@@ -1101,7 +1124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Colors.amber;
     }
   }
-  
+
   String _getRarityDisplayName(AchievementRarity rarity) {
     switch (rarity) {
       case AchievementRarity.common:
@@ -1128,9 +1151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: rarityColor.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: rarityColor.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
@@ -1140,11 +1161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: rarityColor.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              achievement.icon,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: Icon(achievement.icon, color: Colors.white, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1189,36 +1206,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  
+
   void _navigateToStatistics(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const StatisticsScreen()),
     );
   }
-  
+
   void _navigateToFriends(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const FriendsScreen()),
     );
   }
-  
+
   void _navigateToAchievements(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AchievementsScreen()),
     );
   }
-  
+
   void _navigateToReplays(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ReplaysScreen()),
     );
   }
-  
-  void _showStyledSnackBar(BuildContext context, String message, Color color, GameTheme theme) {
+
+  void _showStyledSnackBar(
+    BuildContext context,
+    String message,
+    Color color,
+    GameTheme theme,
+  ) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -1237,16 +1259,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         backgroundColor: color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
       ),
     );
   }
-  
-  void _showSignOutDialog(BuildContext context, UserProvider userProvider, GameTheme theme) {
+
+  void _showSignOutDialog(
+    BuildContext context,
+    UserProvider userProvider,
+    GameTheme theme,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1264,10 +1288,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         content: const Text(
           'Are you sure you want to sign out?\n\nYour progress will be saved if you\'re signed in with Google.',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 16),
         ),
         actions: [
           TextButton(
@@ -1292,8 +1313,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await userProvider.signOut();
               if (context.mounted) {
                 _showStyledSnackBar(
-                  context, 'Signed out successfully 👋', 
-                  Colors.blue, theme,
+                  context,
+                  'Signed out successfully 👋',
+                  Colors.blue,
+                  theme,
                 );
               }
             },
@@ -1310,4 +1333,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-
