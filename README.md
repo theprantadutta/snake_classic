@@ -135,12 +135,35 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 - **Fully responsive layout** adapting to all screen sizes
 
 ### 💾 Persistence & Storage
-- **Dual storage system** with local and cloud backup
-- **High score synchronization** across devices (when signed in)
+- **Unified user system** with automatic anonymous authentication
+- **Unique username generation** for all users (guest and authenticated)  
+- **Real-time Firebase synchronization** for all game data
+- **Seamless account migration** from anonymous to Google Sign-In
+- **Cross-platform data sync** with automatic conflict resolution
+- **Offline-first architecture** with sync queue and connectivity detection
 - **Achievement progress** saved locally and in Firebase
 - **User preferences** including theme selection and audio settings
-- **Cross-platform compatibility** with automatic data migration
+- **High score synchronization** across devices (when signed in)
 - **Offline support** with local storage fallback for guest users
+
+### 🛠️ Developer Experience
+- **Beautiful debug logging system** with categorized output using Talker
+- **Service-specific log categories** with emoji indicators for easy debugging:
+  - 👤 USER - User system operations  
+  - 🔥 FIREBASE - Firebase operations
+  - ☁️ SYNC - Data synchronization
+  - 🎮 GAME - Game logic
+  - 🏆 ACHIEVEMENT - Achievement system
+  - 📊 STATS - Statistics
+  - 🔊 AUDIO - Audio service
+  - 🎨 UI - Theme and UI operations
+  - 🚀 LIFECYCLE - App lifecycle events
+  - 🌐 NETWORK - Network operations
+  - 💾 STORAGE - Local storage operations
+- **Debug-only log viewer** accessible via floating action button
+- **Production-safe logging** (disabled in release builds)
+- **Global error handling** with beautiful crash reporting
+- **Route tracking** for navigation debugging
 
 ## 🏗️ Architecture
 
@@ -182,14 +205,20 @@ lib/
 │   ├── achievement_service.dart # Achievement tracking
 │   ├── auth_service.dart       # Firebase authentication
 │   ├── audio_service.dart
+│   ├── data_sync_service.dart  # Background data synchronization
 │   ├── leaderboard_service.dart # Firestore leaderboards
+│   ├── preferences_service.dart # Synced user preferences
 │   ├── social_service.dart     # Friend system and social features
 │   ├── statistics_service.dart # Advanced gameplay analytics
 │   ├── storage_service.dart
-│   └── tournament_service.dart # Tournament management and participation
+│   ├── tournament_service.dart # Tournament management and participation
+│   ├── unified_user_service.dart # Comprehensive user management
+│   └── username_service.dart   # Username validation and reservation
 ├── utils/           # Utilities
 │   ├── constants.dart          # Enhanced with 6 themes
-│   └── direction.dart
+│   ├── direction.dart
+│   ├── logger.dart             # Beautiful debug logging system
+│   └── performance_monitor.dart # FPS and performance tracking
 └── widgets/         # Reusable components
     ├── achievement_notification.dart # Achievement popups
     ├── animated_snake_logo.dart
@@ -204,7 +233,7 @@ lib/
 ```
 
 ### 🛠️ Technical Stack
-- **Flutter** - Cross-platform UI framework
+- **Flutter** - Cross-platform UI framework (>=3.9.0)
 - **Provider** - State management for game state and user data
 - **Firebase Core** - Backend infrastructure and authentication
 - **Firebase Auth** - User authentication and profile management
@@ -214,6 +243,9 @@ lib/
 - **SharedPreferences** - Local storage and offline support
 - **FlutterAnimate** - Smooth animations and visual effects
 - **VectorMath** - Game physics and calculations
+- **Connectivity Plus** - Network connectivity detection and monitoring
+- **Talker & Talker Flutter** - Beautiful debug logging and crash reporting
+- **UUID** - Unique identifier generation for sessions and data
 
 ## 🎯 Performance Features
 
@@ -320,6 +352,11 @@ The game features six distinct visual themes:
 ## 📝 Changelog
 
 ### 🚀 Major Feature Updates (Latest Release)
+- ✅ **Unified User System** - Automatic anonymous authentication with unique usernames for all users
+- ✅ **Beautiful Debug Logging** - Categorized logging system with Talker integration (debug-only)
+- ✅ **Data Synchronization** - Real-time Firebase sync with offline support and conflict resolution
+- ✅ **Visual Stability Fixes** - Resolved game board shifting and particle positioning issues
+- ✅ **Enhanced Developer Experience** - Service-specific logging with emoji categories and debug viewer
 - ✅ **Complete Social System** - Friends, friend requests, online status, private leaderboards
 - ✅ **Tournament Mode** - Competitive events with multiple game modes and real-time leaderboards
 - ✅ **Power-up System** - 4 special abilities with visual effects and HUD indicators
@@ -338,6 +375,12 @@ The game features six distinct visual themes:
 - ✅ **Advanced Theme Effects** - Theme-specific visual effects and rendering enhancements
 - ✅ **Custom Game Board Sizes** - Four size options with visual selector and persistence
 - ✅ **Customizable Crash Feedback Duration** - User-configurable timing (2-10 seconds)
+
+### Recent Bug Fixes & Improvements
+- 🔧 **Game Board Stability** - Fixed gesture indicator causing layout shifts during swipe animations
+- 🔧 **Particle Positioning** - Corrected food consumption particles to appear at exact food location
+- 🔧 **Null Safety** - Prevented null check operator crashes in leaderboard screen
+- 🔧 **Performance Optimization** - Fixed border width, blur radius, and spread radius inconsistencies
 
 ### Previous Updates
 - ✅ **Crash feedback system** - 5-second modal explaining game over reasons
