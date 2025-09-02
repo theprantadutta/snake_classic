@@ -34,7 +34,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   Future<void> _loadUserRank() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    if (userProvider.isSignedIn) {
+    if (userProvider.isSignedIn && userProvider.user != null) {
       final rank = await _leaderboardService.getUserRank(userProvider.user!.uid);
       if (mounted) {
         setState(() {
@@ -261,6 +261,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           itemBuilder: (context, index) {
             final player = leaderboard[index];
             final isCurrentUser = userProvider.isSignedIn && 
+                                 userProvider.user != null &&
                                  player['uid'] == userProvider.user!.uid;
             
             return _buildLeaderboardItem(
@@ -345,6 +346,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           itemBuilder: (context, index) {
             final player = leaderboard[index];
             final isCurrentUser = userProvider.isSignedIn && 
+                                 userProvider.user != null &&
                                  player['uid'] == userProvider.user!.uid;
             
             return _buildLeaderboardItem(
