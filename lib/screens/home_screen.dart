@@ -1,27 +1,27 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import 'package:talker_flutter/talker_flutter.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
-import 'package:snake_classic/screens/game_screen.dart';
-import 'package:snake_classic/screens/settings_screen.dart';
-import 'package:snake_classic/screens/profile_screen.dart';
-import 'package:snake_classic/screens/leaderboard_screen.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
-import 'package:snake_classic/screens/replays_screen.dart';
-import 'package:snake_classic/screens/tournaments_screen.dart';
-import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
+import 'package:snake_classic/screens/game_screen.dart';
+import 'package:snake_classic/screens/leaderboard_screen.dart';
+import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
+import 'package:snake_classic/screens/profile_screen.dart';
+import 'package:snake_classic/screens/replays_screen.dart';
+import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
+import 'package:snake_classic/screens/tournaments_screen.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
 import 'package:snake_classic/widgets/instructions_dialog.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,8 +30,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _logoController;
 
   @override
@@ -122,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 // Game title with logo
                                 _buildGameTitle(theme, isSmallScreen),
 
-                                SizedBox(height: isSmallScreen ? 20 : 28),
+                                SizedBox(height: isSmallScreen ? 16 : 24),
 
                                 // Main play area with central button
                                 Expanded(
@@ -162,7 +161,8 @@ class _HomeScreenState extends State<HomeScreen>
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => TalkerScreen(talker: AppLogger.instance),
+                          builder: (context) =>
+                              TalkerScreen(talker: AppLogger.instance),
                         ),
                       );
                     },
@@ -321,15 +321,18 @@ class _HomeScreenState extends State<HomeScreen>
       children: [
         // Use the logo with text for a cleaner look
         SizedBox(
-          width: isSmallScreen ? 120 : 150,
-          height: isSmallScreen ? 80 : 100,
-          child: AnimatedSnakeLogo(
-            theme: theme, 
-            controller: _logoController,
-            size: isSmallScreen ? 120 : 150,
-            useTextLogo: true, // Use logo with text for home screen
-          ),
-        ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
+              width: isSmallScreen ? 120 : 150,
+              height: isSmallScreen ? 80 : 100,
+              child: AnimatedSnakeLogo(
+                theme: theme,
+                controller: _logoController,
+                size: isSmallScreen ? 120 : 150,
+                useTextLogo: true, // Use logo with text for home screen
+              ),
+            )
+            .animate()
+            .fadeIn(duration: 600.ms)
+            .scale(begin: const Offset(0.8, 0.8)),
       ],
     );
   }
@@ -366,13 +369,15 @@ class _HomeScreenState extends State<HomeScreen>
                     final improvement = highScore - previousBest;
                     trend = '+$improvement';
                   }
-                  
+
                   return _buildStatCard(
                     icon: Icons.emoji_events,
                     iconColor: Colors.amber,
                     title: 'BEST SCORE',
                     value: '$highScore',
-                    subtitle: highScore > 0 ? 'Personal Record' : 'Start Playing!',
+                    subtitle: highScore > 0
+                        ? 'Personal Record'
+                        : 'Start Playing!',
                     trend: trend,
                     theme: theme,
                     isSmallScreen: isSmallScreen,
@@ -394,25 +399,25 @@ class _HomeScreenState extends State<HomeScreen>
                   final totalGames = stats['totalGames'] ?? 0;
                   final avgScore = stats['averageScore'] ?? 0.0;
                   final winRate = stats['winRate'] ?? 0.0;
-                  
+
                   return _buildStatCard(
-                    icon: totalGames > 10 
-                      ? Icons.trending_up 
-                      : totalGames > 0 
-                        ? Icons.analytics 
+                    icon: totalGames > 10
+                        ? Icons.trending_up
+                        : totalGames > 0
+                        ? Icons.analytics
                         : Icons.rocket_launch,
-                    iconColor: totalGames > 50 
-                      ? Colors.purple 
-                      : totalGames > 10 
-                        ? Colors.blue 
+                    iconColor: totalGames > 50
+                        ? Colors.purple
+                        : totalGames > 10
+                        ? Colors.blue
                         : Colors.teal,
                     title: totalGames > 0 ? 'GAMES PLAYED' : 'READY TO PLAY',
                     value: totalGames > 0 ? '$totalGames' : '🎮',
-                    subtitle: totalGames > 0 
-                      ? avgScore > 0 
-                        ? 'Avg: ${avgScore.toInt()}'
-                        : 'Keep playing!'
-                      : 'Start your journey',
+                    subtitle: totalGames > 0
+                        ? avgScore > 0
+                              ? 'Avg: ${avgScore.toInt()}'
+                              : 'Keep playing!'
+                        : 'Start your journey',
                     trend: winRate > 0.5 ? '🔥 Hot' : null,
                     theme: theme,
                     isSmallScreen: isSmallScreen,
@@ -430,9 +435,9 @@ class _HomeScreenState extends State<HomeScreen>
           builder: (context, snapshot) {
             final stats = snapshot.data ?? {};
             final totalGames = stats['totalGames'] ?? 0;
-            
+
             if (totalGames < 5) return const SizedBox.shrink();
-            
+
             return Column(
               children: [
                 SizedBox(height: isSmallScreen ? 16 : 20),
@@ -445,7 +450,8 @@ class _HomeScreenState extends State<HomeScreen>
                         iconColor: Colors.deepPurple,
                         title: 'ACHIEVEMENTS',
                         value: '${stats['unlockedAchievements'] ?? 0}',
-                        subtitle: '${stats['totalAchievements'] ?? 0} available',
+                        subtitle:
+                            '${stats['totalAchievements'] ?? 0} available',
                         theme: theme,
                         isSmallScreen: isSmallScreen,
                       ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
@@ -460,7 +466,9 @@ class _HomeScreenState extends State<HomeScreen>
                         iconColor: Colors.orange,
                         title: 'CURRENT STREAK',
                         value: '${stats['currentStreak'] ?? 0}',
-                        subtitle: stats['currentStreak'] ?? 0 > 0 ? 'games' : 'Play to start',
+                        subtitle: stats['currentStreak'] ?? 0 > 0
+                            ? 'games'
+                            : 'Play to start',
                         trend: (stats['currentStreak'] ?? 0) > 5 ? '🔥' : null,
                         theme: theme,
                         isSmallScreen: isSmallScreen,
@@ -474,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen>
           },
         ),
 
-        SizedBox(height: isSmallScreen ? 24 : 32),
+        SizedBox(height: isSmallScreen ? 20 : 30),
 
         // Central Play Button
         _buildCentralPlayButton(context, theme, isSmallScreen, screenWidth)
@@ -487,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen>
               color: theme.accentColor.withValues(alpha: 0.3),
             ),
 
-        SizedBox(height: isSmallScreen ? 20 : 28),
+        SizedBox(height: isSmallScreen ? 18 : 26),
 
         // Quick action hint
         Container(
@@ -545,8 +553,8 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
         border: Border.all(
-          color: iconColor.withValues(alpha: isPulsing ? 0.4 : 0.3), 
-          width: isPulsing ? 1.5 : 1
+          color: iconColor.withValues(alpha: isPulsing ? 0.4 : 0.3),
+          width: isPulsing ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -575,7 +583,9 @@ class _HomeScreenState extends State<HomeScreen>
                 tween: Tween(begin: 0.0, end: 1.0),
                 builder: (context, value, child) {
                   return Transform.rotate(
-                    angle: isPulsing ? value * 0.1 : 0, // Subtle rotation for pulsing cards
+                    angle: isPulsing
+                        ? value * 0.1
+                        : 0, // Subtle rotation for pulsing cards
                     child: Container(
                       padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                       decoration: BoxDecoration(
@@ -585,7 +595,9 @@ class _HomeScreenState extends State<HomeScreen>
                             iconColor.withValues(alpha: 0.15),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 14),
+                        borderRadius: BorderRadius.circular(
+                          isSmallScreen ? 12 : 14,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: iconColor.withValues(alpha: 0.2),
@@ -614,21 +626,23 @@ class _HomeScreenState extends State<HomeScreen>
                         vertical: isSmallScreen ? 2 : 3,
                       ),
                       decoration: BoxDecoration(
-                        color: trend.startsWith('+') 
-                          ? Colors.green.withValues(alpha: 0.2)
-                          : trend.startsWith('-')
+                        color: trend.startsWith('+')
+                            ? Colors.green.withValues(alpha: 0.2)
+                            : trend.startsWith('-')
                             ? Colors.red.withValues(alpha: 0.2)
                             : Colors.orange.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
+                        borderRadius: BorderRadius.circular(
+                          isSmallScreen ? 6 : 8,
+                        ),
                       ),
                       child: Text(
                         trend,
                         style: TextStyle(
                           fontSize: isSmallScreen ? 8 : 10,
                           fontWeight: FontWeight.w700,
-                          color: trend.startsWith('+') 
-                            ? Colors.green.shade700
-                            : trend.startsWith('-')
+                          color: trend.startsWith('+')
+                              ? Colors.green.shade700
+                              : trend.startsWith('-')
                               ? Colors.red.shade700
                               : Colors.orange.shade700,
                         ),
@@ -648,7 +662,9 @@ class _HomeScreenState extends State<HomeScreen>
                             Colors.green.withValues(alpha: 0.15),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                        borderRadius: BorderRadius.circular(
+                          isSmallScreen ? 8 : 10,
+                        ),
                         border: Border.all(
                           color: Colors.green.withValues(alpha: 0.3),
                           width: 0.5,
@@ -706,9 +722,9 @@ class _HomeScreenState extends State<HomeScreen>
                   duration: const Duration(milliseconds: 1000),
                   tween: Tween(begin: 0.0, end: double.tryParse(value) ?? 0.0),
                   builder: (context, animatedValue, child) {
-                    final displayValue = value.contains(RegExp(r'^\d+$')) 
-                      ? animatedValue.toInt().toString()
-                      : value;
+                    final displayValue = value.contains(RegExp(r'^\d+$'))
+                        ? animatedValue.toInt().toString()
+                        : value;
                     return Text(
                       displayValue,
                       style: TextStyle(
@@ -716,12 +732,14 @@ class _HomeScreenState extends State<HomeScreen>
                         fontWeight: FontWeight.w900,
                         color: theme.accentColor,
                         height: 0.9,
-                        shadows: isPulsing ? [
-                          Shadow(
-                            color: iconColor.withValues(alpha: 0.3),
-                            blurRadius: 2,
-                          ),
-                        ] : null,
+                        shadows: isPulsing
+                            ? [
+                                Shadow(
+                                  color: iconColor.withValues(alpha: 0.3),
+                                  blurRadius: 2,
+                                ),
+                              ]
+                            : null,
                       ),
                     );
                   },
