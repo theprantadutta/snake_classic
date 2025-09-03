@@ -244,11 +244,52 @@ class _GameBoardState extends State<GameBoard>
     }
   }
 
-  void _addFoodParticleEffect(Offset position, GameTheme theme) {
+  void _addFoodParticleEffect(Offset position, GameTheme theme, FoodType foodType) {
+    ParticleConfig particleConfig;
+    
+    // Choose particle effect based on food type
+    switch (foodType) {
+      case FoodType.normal:
+        particleConfig = ParticleConfig.appleFoodExplosion;
+        break;
+      case FoodType.bonus:
+        particleConfig = ParticleConfig.bonusFoodExplosion;
+        break;
+      case FoodType.special:
+        particleConfig = ParticleConfig.specialFoodExplosion;
+        break;
+    }
+    
     _particleManager.emitAt(
       position,
-      ParticleConfig.foodExplosion,
-      duration: const Duration(milliseconds: 800),
+      particleConfig,
+      duration: Duration(milliseconds: particleConfig.lifetime.inMilliseconds),
+    );
+  }
+
+  void _addPowerUpParticleEffect(Offset position, PowerUpType powerUpType) {
+    ParticleConfig particleConfig;
+    
+    // Choose particle effect based on power-up type
+    switch (powerUpType) {
+      case PowerUpType.speedBoost:
+        particleConfig = ParticleConfig.speedBoostCollection;
+        break;
+      case PowerUpType.invincibility:
+        particleConfig = ParticleConfig.invincibilityCollection;
+        break;
+      case PowerUpType.scoreMultiplier:
+        particleConfig = ParticleConfig.scoreMultiplierCollection;
+        break;
+      case PowerUpType.slowMotion:
+        particleConfig = ParticleConfig.slowMotionCollection;
+        break;
+    }
+    
+    _particleManager.emitAt(
+      position,
+      particleConfig,
+      duration: Duration(milliseconds: particleConfig.lifetime.inMilliseconds),
     );
   }
 
@@ -260,7 +301,7 @@ class _GameBoardState extends State<GameBoard>
     if (previousState == null) return;
 
     // Check if food was consumed (score increased)
-    if (currentState.score > previousState.score && currentState.food != null) {
+    if (currentState.score > previousState.score && previousState.food != null) {
       // Calculate food position in screen coordinates accounting for container margin
       const containerMargin = 8.0; // Match the margin in the Container
       final foodScreenX = previousState.food!.position.x * widget.cellSize + 
@@ -269,8 +310,8 @@ class _GameBoardState extends State<GameBoard>
           widget.cellSize / 2 + containerMargin;
       final foodPosition = Offset(foodScreenX, foodScreenY);
 
-      // Add food consumption particle effect
-      _addFoodParticleEffect(foodPosition, theme);
+      // Add food consumption particle effect with food type
+      _addFoodParticleEffect(foodPosition, theme, previousState.food!.type);
     }
 
     // Check if power-up was collected
@@ -283,12 +324,8 @@ class _GameBoardState extends State<GameBoard>
           widget.cellSize / 2 + containerMargin;
       final powerUpPosition = Offset(powerUpScreenX, powerUpScreenY);
 
-      // Add power-up collection effect
-      _particleManager.emitAt(
-        powerUpPosition,
-        ParticleConfig.powerUpGlow,
-        duration: const Duration(milliseconds: 1500),
-      );
+      // Add power-up collection effect with power-up type
+      _addPowerUpParticleEffect(powerUpPosition, previousState.powerUp!.type);
     }
 
     // Check for game over/crash
@@ -476,6 +513,17 @@ class OptimizedGameBoardPainter extends CustomPainter {
   }
 
   void _drawSnakeHead(Canvas canvas, Rect rect, Direction direction) {
+    // Breathing animation - subtle size variation
+    final breathingScale = 1.0 + 0.03 * math.sin(pulseAnimation.value * 2 * math.pi * 2.5); // 2.5 breaths per second
+    final breathingRect = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * breathingScale,
+      height: rect.height * breathingScale,
+    );
+
+    // Enhanced shadow for depth - drawn first
+    _drawEnhancedHeadShadow(canvas, breathingRect);
+
     // Enhanced head with better gradient and glow effect
     final gradient = RadialGradient(
       center: Alignment.center,
@@ -484,25 +532,28 @@ class OptimizedGameBoardPainter extends CustomPainter {
       stops: const [0.0, 0.6, 1.0],
     );
 
-    _snakeHeadPaint.shader = gradient.createShader(rect);
+    _snakeHeadPaint.shader = gradient.createShader(breathingRect);
 
     // Enhanced glow effects based on theme
     _snakeHeadPaint.maskFilter = _getHeadMaskFilter();
 
-    // Draw glow background for neon theme
+    // Draw glow background for neon theme with breathing effect
     if (theme == GameTheme.neon) {
-      _drawNeonGlow(canvas, rect, theme.snakeColor, 8.0);
+      _drawNeonGlow(canvas, breathingRect, theme.snakeColor, 8.0 * breathingScale);
     }
 
     // Enhanced head shape with better radius
-    final radius = Radius.circular(rect.width * 0.3);
-    canvas.drawRRect(RRect.fromRectAndRadius(rect, radius), _snakeHeadPaint);
+    final radius = Radius.circular(breathingRect.width * 0.3);
+    canvas.drawRRect(RRect.fromRectAndRadius(breathingRect, radius), _snakeHeadPaint);
 
-    // Draw enhanced snake eyes
-    _drawSnakeEyes(canvas, rect, direction);
+    // Draw enhanced snake eyes with breathing
+    _drawSnakeEyes(canvas, breathingRect, direction);
 
     // Add directional indicator (small triangle)
-    _drawDirectionIndicator(canvas, rect, direction);
+    _drawDirectionIndicator(canvas, breathingRect, direction);
+
+    // Add breathing highlight effect
+    _drawBreathingHighlight(canvas, breathingRect, breathingScale);
   }
 
   List<Color> _getHeadGradientColors() {
@@ -623,21 +674,36 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final fadeRatio = (totalLength - index) / totalLength;
     final opacity = isTail ? 0.5 : (0.6 + 0.4 * fadeRatio);
 
+    // Add breathing effect to body segments near head
+    final breathingIntensity = math.max(0.0, (5 - index) / 5.0); // First 5 segments get breathing
+    final breathingScale = 1.0 + (0.02 * breathingIntensity * math.sin(pulseAnimation.value * 2 * math.pi * 2.5));
+    
+    final breathingRect = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * breathingScale,
+      height: rect.height * breathingScale,
+    );
+
+    // Draw enhanced shadow for body segments
+    if (!isTail) {
+      _drawBodyShadow(canvas, breathingRect, fadeRatio);
+    }
+
     // Theme-specific body styling
     _snakeBodyPaint.color = _getBodyColor(opacity);
     _snakeBodyPaint.maskFilter = _getBodyMaskFilter();
 
-    // Draw neon glow for body segments
+    // Draw neon glow for body segments with breathing effect
     if (theme == GameTheme.neon && !isTail) {
-      _drawNeonGlow(canvas, rect, theme.snakeColor, 4.0 * fadeRatio);
+      _drawNeonGlow(canvas, breathingRect, theme.snakeColor, 4.0 * fadeRatio * breathingScale);
     }
 
     // Enhanced body shape with smooth curves
-    final radius = _getBodyRadius(rect);
-    canvas.drawRRect(RRect.fromRectAndRadius(rect, radius), _snakeBodyPaint);
+    final radius = _getBodyRadius(breathingRect);
+    canvas.drawRRect(RRect.fromRectAndRadius(breathingRect, radius), _snakeBodyPaint);
 
-    // Add theme-specific highlights
-    _drawBodyHighlight(canvas, rect, isTail, fadeRatio);
+    // Add theme-specific highlights with breathing
+    _drawBodyHighlight(canvas, breathingRect, isTail, fadeRatio * breathingScale);
   }
 
   Color _getBodyColor(double opacity) {
@@ -1218,6 +1284,82 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
     path.close();
     canvas.drawPath(path, indicatorPaint);
+  }
+
+  void _drawEnhancedHeadShadow(Canvas canvas, Rect rect) {
+    // Create shadow with multiple layers for more realistic depth
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0)
+      ..isAntiAlias = true;
+
+    // Main shadow - offset down and right slightly
+    final shadowRect = Rect.fromLTWH(
+      rect.left + 2,
+      rect.top + 3,
+      rect.width,
+      rect.height,
+    );
+    
+    final radius = Radius.circular(rect.width * 0.3);
+    canvas.drawRRect(RRect.fromRectAndRadius(shadowRect, radius), shadowPaint);
+
+    // Deeper shadow for more dramatic effect on certain themes
+    if (theme == GameTheme.neon || theme == GameTheme.space || theme == GameTheme.cyberpunk) {
+      final deepShadowPaint = Paint()
+        ..color = Colors.black.withValues(alpha: 0.15)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0)
+        ..isAntiAlias = true;
+
+      final deepShadowRect = Rect.fromLTWH(
+        rect.left + 4,
+        rect.top + 5,
+        rect.width,
+        rect.height,
+      );
+      
+      canvas.drawRRect(RRect.fromRectAndRadius(deepShadowRect, radius), deepShadowPaint);
+    }
+  }
+
+  void _drawBreathingHighlight(Canvas canvas, Rect rect, double breathingScale) {
+    // Subtle breathing highlight that pulses
+    final highlightIntensity = 0.15 + 0.05 * (breathingScale - 1.0) / 0.03; // Scale intensity with breathing
+    
+    final highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: highlightIntensity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
+      ..isAntiAlias = true;
+
+    // Small highlight spot that moves slightly with breathing
+    final highlightRect = Rect.fromLTWH(
+      rect.left + rect.width * 0.25,
+      rect.top + rect.height * 0.2,
+      rect.width * 0.3 * breathingScale,
+      rect.height * 0.3 * breathingScale,
+    );
+
+    canvas.drawOval(highlightRect, highlightPaint);
+  }
+
+  void _drawBodyShadow(Canvas canvas, Rect rect, double fadeRatio) {
+    // Body shadow with opacity based on position
+    final shadowOpacity = 0.2 * fadeRatio;
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: shadowOpacity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
+      ..isAntiAlias = true;
+
+    // Offset shadow slightly
+    final shadowRect = Rect.fromLTWH(
+      rect.left + 1,
+      rect.top + 2,
+      rect.width,
+      rect.height,
+    );
+    
+    final radius = Radius.circular(rect.width * 0.25);
+    canvas.drawRRect(RRect.fromRectAndRadius(shadowRect, radius), shadowPaint);
   }
 
   void _drawFood(Canvas canvas, double cellWidth, double cellHeight) {

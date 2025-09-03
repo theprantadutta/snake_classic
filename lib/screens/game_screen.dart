@@ -13,6 +13,8 @@ import 'package:snake_classic/widgets/game_hud.dart';
 import 'package:snake_classic/widgets/pause_overlay.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
+import 'package:snake_classic/widgets/screen_shake.dart';
+import 'package:snake_classic/models/food.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -25,6 +27,8 @@ class _GameScreenState extends State<GameScreen>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   Direction? _lastSwipeDirection;
   late AnimationController _gestureIndicatorController;
+  late GameJuiceController _juiceController;
+  GameState? _previousGameState;
   @override
   void initState() {
     super.initState();
@@ -35,6 +39,9 @@ class _GameScreenState extends State<GameScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+
+    // Initialize game juice controller
+    _juiceController = GameJuiceController();
 
     // Start the game when screen loads (only if not already playing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,6 +56,7 @@ class _GameScreenState extends State<GameScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _gestureIndicatorController.dispose();
+    _juiceController.dispose();
     super.dispose();
   }
 
@@ -165,12 +173,59 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+  void _checkForGameEvents(GameState? previous, GameState current) {
+    if (previous == null) return;
+
+    // Food consumption effects
+    if (current.score > previous.score && previous.food != null) {
+      switch (previous.food!.type) {
+        case FoodType.normal:
+          _juiceController.foodEaten();
+          break;
+        case FoodType.bonus:
+          _juiceController.bonusFoodEaten();
+          break;
+        case FoodType.special:
+          _juiceController.specialFoodEaten();
+          break;
+      }
+    }
+
+    // Power-up collection effects
+    if (previous.powerUp != null && current.powerUp == null) {
+      _juiceController.powerUpCollected();
+    }
+
+    // Crash effects
+    if (current.status == GameStatus.crashed && previous.status != GameStatus.crashed) {
+      if (current.crashReason == CrashReason.wallCollision) {
+        _juiceController.wallHit();
+      } else if (current.crashReason == CrashReason.selfCollision) {
+        _juiceController.selfCollision();
+      }
+    }
+
+    // Level up effects
+    if (current.level > previous.level) {
+      _juiceController.levelUp();
+    }
+
+    // Game over effects
+    if (current.status == GameStatus.gameOver && previous.status != GameStatus.gameOver) {
+      _juiceController.gameOver();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer2<GameProvider, ThemeProvider>(
       builder: (context, gameProvider, themeProvider, child) {
         final gameState = gameProvider.gameState;
         final theme = themeProvider.currentTheme;
+
+        // Check for game events and trigger screen shake effects
+        _checkForGameEvents(_previousGameState, gameState);
+        _previousGameState = gameState;
 
         // Navigate to game over screen when game ends
         if (gameState.status == GameStatus.gameOver) {
@@ -184,13 +239,17 @@ class _GameScreenState extends State<GameScreen>
         return KeyboardListener(
           focusNode: FocusNode()..requestFocus(),
           onKeyEvent: _handleKeyPress,
-          child: Scaffold(
-            backgroundColor: theme.backgroundColor,
-            body: SafeArea(
-              child: SwipeDetector(
-                onSwipe: _handleSwipe,
-                showFeedback: false, // Disable animated feedback
-                child: Stack(
+          child: GameJuiceWidget(
+            controller: _juiceController,
+            applyShake: true,
+            applyScale: false, // Don't apply scale to the entire screen
+            child: Scaffold(
+              backgroundColor: theme.backgroundColor,
+              body: SafeArea(
+                child: SwipeDetector(
+                  onSwipe: _handleSwipe,
+                  showFeedback: false, // Disable animated feedback
+                  child: Stack(
                   children: [
                     // Background gradient - matching home screen
                     Container(
@@ -317,9 +376,10 @@ class _GameScreenState extends State<GameScreen>
                 ),
               ),
             ),
-          ),
-        );
-      },
+          ), // Close Scaffold
+        ), // Close GameJuiceWidget
+      ); // Close KeyboardListener
+      }, // Close Consumer2 builder
     );
   }
 

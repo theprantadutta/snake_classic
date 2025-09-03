@@ -1,85 +1,86 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:talker_flutter/talker_flutter.dart';
-import 'package:snake_classic/utils/logger.dart';
+import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/game_provider.dart';
+import 'package:snake_classic/providers/multiplayer_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
-import 'package:snake_classic/providers/multiplayer_provider.dart';
 import 'package:snake_classic/screens/loading_screen.dart';
-import 'package:snake_classic/services/unified_user_service.dart';
-import 'package:snake_classic/services/data_sync_service.dart';
-import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
-import 'package:snake_classic/services/notification_service.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/navigation_service.dart';
+import 'package:snake_classic/services/notification_service.dart';
+import 'package:snake_classic/services/preferences_service.dart';
+import 'package:snake_classic/services/unified_user_service.dart';
+import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/performance_monitor.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:talker_flutter/talker_flutter.dart';
+
 import 'firebase_options.dart';
 
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   AppLogger.lifecycle('Snake Classic starting up...');
-  
+
   try {
     // Load environment variables
     AppLogger.info('Loading environment variables...');
     await dotenv.load(fileName: '.env');
     AppLogger.success('Environment variables loaded');
-    
+
     // Initialize Firebase
     AppLogger.firebase('Initializing Firebase...');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     AppLogger.success('Firebase initialized successfully');
-    
+
     // Set preferred orientations
     AppLogger.ui('Setting device orientation...');
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
-    
+
     // Initialize audio service
     AppLogger.audio('Initializing audio service...');
     await AudioService().initialize();
     AppLogger.success('Audio service initialized');
-    
+
     // Initialize notification service
     AppLogger.info('Initializing notification service...');
     await NotificationService().initialize();
     AppLogger.success('Notification service initialized');
-    
+
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    
+
     // Start performance monitoring
     if (kDebugMode) {
       AppLogger.info('Starting performance monitoring...');
       PerformanceMonitor().startMonitoring();
       AppLogger.success('Performance monitoring started');
     }
-    
+
     AppLogger.success('Snake Classic ready to launch!');
-    
   } catch (error, stackTrace) {
     AppLogger.error('Failed to initialize Snake Classic', error, stackTrace);
   }
-  
+
   // Setup global error handling
   if (kDebugMode) {
     FlutterError.onError = (details) {
       AppLogger.error('Flutter Error', details.exception, details.stack);
+      FlutterError.presentError(details);
     };
   }
-  
+
   runApp(const SnakeClassicApp().withPerformanceMonitoring());
 }
 
@@ -91,10 +92,16 @@ class SnakeClassicApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         // Core services
-        ChangeNotifierProvider(create: (_) => UnifiedUserService(), lazy: false),
+        ChangeNotifierProvider(
+          create: (_) => UnifiedUserService(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(create: (_) => DataSyncService(), lazy: false),
-        ChangeNotifierProvider(create: (_) => PreferencesService(), lazy: false),
-        
+        ChangeNotifierProvider(
+          create: (_) => PreferencesService(),
+          lazy: false,
+        ),
+
         // UI Providers
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => GameProvider()),
@@ -112,7 +119,8 @@ class SnakeClassicApp extends StatelessWidget {
             ],
             theme: ThemeData(
               brightness: Brightness.dark,
-              scaffoldBackgroundColor: themeProvider.currentTheme.backgroundColor,
+              scaffoldBackgroundColor:
+                  themeProvider.currentTheme.backgroundColor,
               visualDensity: VisualDensity.adaptivePlatformDensity,
               useMaterial3: false,
               fontFamily: 'monospace',

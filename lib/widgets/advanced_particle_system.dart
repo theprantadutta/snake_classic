@@ -59,20 +59,88 @@ class ParticleConfig {
   // Predefined particle configurations
   static const ParticleConfig foodExplosion = ParticleConfig(
     type: ParticleType.food,
-    count: 15,
-    lifetime: Duration(milliseconds: 800),
-    minSize: 3.0,
-    maxSize: 8.0,
-    minSpeed: 80.0,
-    maxSpeed: 200.0,
+    count: 25, // Increased from 15
+    lifetime: Duration(milliseconds: 1200), // Extended duration
+    minSize: 4.0, // Increased from 3.0
+    maxSize: 12.0, // Increased from 8.0
+    minSpeed: 100.0, // Increased from 80.0
+    maxSpeed: 280.0, // Increased from 200.0
     colors: [
       Color(0xFFFFD700), // Gold
       Color(0xFFFF6B6B), // Red
       Color(0xFF4ECDC4), // Teal
+      Color(0xFFFF69B4), // Hot pink
+      Color(0xFF00FF7F), // Spring green
+    ],
+    blendMode: ParticleBlendMode.additive,
+    gravity: 180.0, // Reduced slightly for better spread
+    friction: 0.94, // Reduced for longer travel
+  );
+
+  // New enhanced food explosion configurations for different food types
+  static const ParticleConfig appleFoodExplosion = ParticleConfig(
+    type: ParticleType.food,
+    count: 20,
+    lifetime: Duration(milliseconds: 1000),
+    minSize: 3.0,
+    maxSize: 10.0,
+    minSpeed: 90.0,
+    maxSpeed: 220.0,
+    colors: [
+      Color(0xFFDC143C), // Crimson red
+      Color(0xFF228B22), // Forest green (leaf)
+      Color(0xFFFFD700), // Gold sparkle
+      Color(0xFFFFA500), // Orange
     ],
     blendMode: ParticleBlendMode.additive,
     gravity: 200.0,
     friction: 0.95,
+  );
+
+  static const ParticleConfig bonusFoodExplosion = ParticleConfig(
+    type: ParticleType.food,
+    count: 35, // More particles for bonus food
+    lifetime: Duration(milliseconds: 1500), // Longer duration
+    minSize: 5.0,
+    maxSize: 15.0,
+    minSpeed: 120.0,
+    maxSpeed: 300.0,
+    colors: [
+      Color(0xFFFFD700), // Gold
+      Color(0xFFFF1493), // Deep pink
+      Color(0xFF00FFFF), // Cyan
+      Color(0xFFFF69B4), // Hot pink
+      Color(0xFFFFFF00), // Yellow
+      Color(0xFF00FF00), // Bright green
+    ],
+    blendMode: ParticleBlendMode.additive,
+    gravity: 150.0,
+    friction: 0.92, // Less friction for more dramatic spread
+    hasTrail: true, // Add trails to bonus food particles
+  );
+
+  static const ParticleConfig specialFoodExplosion = ParticleConfig(
+    type: ParticleType.food,
+    count: 50, // Maximum particles for special food
+    lifetime: Duration(milliseconds: 2000), // Longest duration
+    minSize: 6.0,
+    maxSize: 20.0,
+    minSpeed: 150.0,
+    maxSpeed: 400.0,
+    colors: [
+      Color(0xFFFFD700), // Gold
+      Color(0xFFFF1493), // Deep pink
+      Color(0xFF00FFFF), // Cyan
+      Color(0xFFFF69B4), // Hot pink
+      Color(0xFFFFFF00), // Yellow
+      Color(0xFF9370DB), // Medium orchid
+      Color(0xFF00FF7F), // Spring green
+      Color(0xFFFF4500), // Orange red
+    ],
+    blendMode: ParticleBlendMode.additive,
+    gravity: 100.0, // Reduced gravity for more floating effect
+    friction: 0.90, // Even less friction for maximum spread
+    hasTrail: true,
   );
 
   static const ParticleConfig scorePopup = ParticleConfig(
@@ -113,20 +181,107 @@ class ParticleConfig {
 
   static const ParticleConfig powerUpGlow = ParticleConfig(
     type: ParticleType.powerUp,
-    count: 12,
-    lifetime: Duration(milliseconds: 1500),
-    minSize: 6.0,
-    maxSize: 15.0,
-    minSpeed: 30.0,
-    maxSpeed: 80.0,
+    count: 20, // Increased from 12
+    lifetime: Duration(milliseconds: 2000), // Extended from 1500
+    minSize: 8.0, // Increased from 6.0
+    maxSize: 18.0, // Increased from 15.0
+    minSpeed: 40.0, // Increased from 30.0
+    maxSpeed: 120.0, // Increased from 80.0
     colors: [
       Color(0xFFFFD700), // Gold
       Color(0xFFFF69B4), // Hot pink
       Color(0xFF00FFFF), // Cyan
+      Color(0xFF9370DB), // Medium orchid
+      Color(0xFF00FF7F), // Spring green
+      Color(0xFFFF4500), // Orange red
     ],
     blendMode: ParticleBlendMode.additive,
-    gravity: -50.0,
-    friction: 0.94,
+    gravity: -80.0, // More upward movement
+    friction: 0.92, // Less friction for more dramatic effect
+    hasTrail: true,
+  );
+
+  // Enhanced power-up specific collection effects
+  static const ParticleConfig speedBoostCollection = ParticleConfig(
+    type: ParticleType.powerUp,
+    count: 30,
+    lifetime: Duration(milliseconds: 1800),
+    minSize: 4.0,
+    maxSize: 16.0,
+    minSpeed: 80.0,
+    maxSpeed: 250.0,
+    colors: [
+      Color(0xFFFFD700), // Gold
+      Color(0xFFFFFF00), // Yellow
+      Color(0xFFFFB347), // Peach
+      Color(0xFFFFF8DC), // Cornsilk
+    ],
+    blendMode: ParticleBlendMode.additive,
+    gravity: -60.0,
+    friction: 0.88,
+    hasTrail: true,
+  );
+
+  static const ParticleConfig invincibilityCollection = ParticleConfig(
+    type: ParticleType.powerUp,
+    count: 25,
+    lifetime: Duration(milliseconds: 2200),
+    minSize: 6.0,
+    maxSize: 20.0,
+    minSpeed: 50.0,
+    maxSpeed: 180.0,
+    colors: [
+      Color(0xFF00FFFF), // Cyan
+      Color(0xFF87CEEB), // Sky blue
+      Color(0xFFE0E0E0), // Light gray
+      Color(0xFFFFFFFF), // White
+    ],
+    blendMode: ParticleBlendMode.additive,
+    gravity: -40.0,
+    friction: 0.95,
+    hasTrail: true,
+  );
+
+  static const ParticleConfig scoreMultiplierCollection = ParticleConfig(
+    type: ParticleType.powerUp,
+    count: 35,
+    lifetime: Duration(milliseconds: 2500),
+    minSize: 5.0,
+    maxSize: 18.0,
+    minSpeed: 60.0,
+    maxSpeed: 200.0,
+    colors: [
+      Color(0xFFFFD700), // Gold
+      Color(0xFFFF8C00), // Dark orange
+      Color(0xFFDAA520), // Goldenrod
+      Color(0xFFFFA500), // Orange
+      Color(0xFFFFFF00), // Yellow
+    ],
+    blendMode: ParticleBlendMode.additive,
+    gravity: -100.0, // Strong upward movement for coins
+    friction: 0.90,
+    hasTrail: true,
+  );
+
+  static const ParticleConfig slowMotionCollection = ParticleConfig(
+    type: ParticleType.powerUp,
+    count: 28,
+    lifetime: Duration(milliseconds: 3000), // Longest for slow motion effect
+    minSize: 7.0,
+    maxSize: 14.0,
+    minSpeed: 20.0, // Slower movement to match theme
+    maxSpeed: 100.0,
+    colors: [
+      Color(0xFF9370DB), // Medium orchid
+      Color(0xFF8A2BE2), // Blue violet
+      Color(0xFF9932CC), // Dark orchid
+      Color(0xFFBA55D3), // Medium orchid
+      Color(0xFFDDA0DD), // Plum
+    ],
+    blendMode: ParticleBlendMode.additive,
+    gravity: -30.0, // Gentle floating
+    friction: 0.98, // Very low friction for smooth movement
+    hasTrail: true,
   );
 
   static const ParticleConfig explosion = ParticleConfig(

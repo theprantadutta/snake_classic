@@ -351,42 +351,127 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Column(
       children: [
-        // Stats cards row
+        // Enhanced Stats cards row
         Row(
           children: [
-            // High Score Card
-            Expanded(
-              child: _buildStatCard(
-                icon: Icons.emoji_events,
-                iconColor: Colors.amber,
-                title: 'BEST SCORE',
-                value: '$highScore',
-                theme: theme,
-                isSmallScreen: isSmallScreen,
-                hasSync: userProvider.isSignedIn,
-              ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.3),
-            ),
-
-            SizedBox(width: isSmallScreen ? 12 : 16),
-
-            // Quick Stats Card
+            // High Score Card with enhancements
             Expanded(
               child: FutureBuilder<Map<String, dynamic>>(
                 future: _getQuickStats(),
                 builder: (context, snapshot) {
                   final stats = snapshot.data ?? {};
+                  final previousBest = stats['previousBest'] ?? 0;
+                  String? trend;
+                  if (highScore > previousBest && previousBest > 0) {
+                    final improvement = highScore - previousBest;
+                    trend = '+$improvement';
+                  }
+                  
                   return _buildStatCard(
-                    icon: Icons.analytics,
-                    iconColor: Colors.teal,
-                    title: 'TOTAL GAMES',
-                    value: '${stats['totalGames'] ?? 0}',
+                    icon: Icons.emoji_events,
+                    iconColor: Colors.amber,
+                    title: 'BEST SCORE',
+                    value: '$highScore',
+                    subtitle: highScore > 0 ? 'Personal Record' : 'Start Playing!',
+                    trend: trend,
                     theme: theme,
                     isSmallScreen: isSmallScreen,
+                    hasSync: userProvider.isSignedIn,
+                    isPulsing: highScore > (stats['previousBest'] ?? 0),
+                  );
+                },
+              ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.3),
+            ),
+
+            SizedBox(width: isSmallScreen ? 12 : 16),
+
+            // Enhanced Statistics Card
+            Expanded(
+              child: FutureBuilder<Map<String, dynamic>>(
+                future: _getQuickStats(),
+                builder: (context, snapshot) {
+                  final stats = snapshot.data ?? {};
+                  final totalGames = stats['totalGames'] ?? 0;
+                  final avgScore = stats['averageScore'] ?? 0.0;
+                  final winRate = stats['winRate'] ?? 0.0;
+                  
+                  return _buildStatCard(
+                    icon: totalGames > 10 
+                      ? Icons.trending_up 
+                      : totalGames > 0 
+                        ? Icons.analytics 
+                        : Icons.rocket_launch,
+                    iconColor: totalGames > 50 
+                      ? Colors.purple 
+                      : totalGames > 10 
+                        ? Colors.blue 
+                        : Colors.teal,
+                    title: totalGames > 0 ? 'GAMES PLAYED' : 'READY TO PLAY',
+                    value: totalGames > 0 ? '$totalGames' : '🎮',
+                    subtitle: totalGames > 0 
+                      ? avgScore > 0 
+                        ? 'Avg: ${avgScore.toInt()}'
+                        : 'Keep playing!'
+                      : 'Start your journey',
+                    trend: winRate > 0.5 ? '🔥 Hot' : null,
+                    theme: theme,
+                    isSmallScreen: isSmallScreen,
+                    isPulsing: totalGames == 0, // Pulse for new players
                   );
                 },
               ).animate().fadeIn(delay: 650.ms).slideX(begin: 0.3),
             ),
           ],
+        ),
+
+        // Additional stats row (if user has played games)
+        FutureBuilder<Map<String, dynamic>>(
+          future: _getQuickStats(),
+          builder: (context, snapshot) {
+            final stats = snapshot.data ?? {};
+            final totalGames = stats['totalGames'] ?? 0;
+            
+            if (totalGames < 5) return const SizedBox.shrink();
+            
+            return Column(
+              children: [
+                SizedBox(height: isSmallScreen ? 16 : 20),
+                Row(
+                  children: [
+                    // Achievement Progress Card
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.workspace_premium,
+                        iconColor: Colors.deepPurple,
+                        title: 'ACHIEVEMENTS',
+                        value: '${stats['unlockedAchievements'] ?? 0}',
+                        subtitle: '${stats['totalAchievements'] ?? 0} available',
+                        theme: theme,
+                        isSmallScreen: isSmallScreen,
+                      ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
+                    ),
+
+                    SizedBox(width: isSmallScreen ? 12 : 16),
+
+                    // Streak Card
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.local_fire_department,
+                        iconColor: Colors.orange,
+                        title: 'CURRENT STREAK',
+                        value: '${stats['currentStreak'] ?? 0}',
+                        subtitle: stats['currentStreak'] ?? 0 > 0 ? 'games' : 'Play to start',
+                        trend: (stats['currentStreak'] ?? 0) > 5 ? '🔥' : null,
+                        theme: theme,
+                        isSmallScreen: isSmallScreen,
+                        isPulsing: (stats['currentStreak'] ?? 0) >= 10,
+                      ).animate().fadeIn(delay: 850.ms).slideY(begin: 0.2),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
 
         SizedBox(height: isSmallScreen ? 24 : 32),
@@ -440,27 +525,43 @@ class _HomeScreenState extends State<HomeScreen>
     required GameTheme theme,
     required bool isSmallScreen,
     bool hasSync = false,
+    String? subtitle,
+    String? trend,
+    bool isPulsing = false,
   }) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            iconColor.withValues(alpha: 0.1),
-            iconColor.withValues(alpha: 0.05),
+            iconColor.withValues(alpha: isPulsing ? 0.15 : 0.1),
+            iconColor.withValues(alpha: isPulsing ? 0.08 : 0.05),
+            theme.backgroundColor.withValues(alpha: 0.02),
           ],
+          stops: const [0.0, 0.7, 1.0],
         ),
         borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
-        border: Border.all(color: iconColor.withValues(alpha: 0.3), width: 1),
+        border: Border.all(
+          color: iconColor.withValues(alpha: isPulsing ? 0.4 : 0.3), 
+          width: isPulsing ? 1.5 : 1
+        ),
         boxShadow: [
           BoxShadow(
-            color: iconColor.withValues(alpha: 0.2),
-            blurRadius: 12,
-            spreadRadius: 0,
+            color: iconColor.withValues(alpha: isPulsing ? 0.3 : 0.2),
+            blurRadius: isPulsing ? 16 : 12,
+            spreadRadius: isPulsing ? 2 : 0,
             offset: const Offset(0, 4),
           ),
+          if (isPulsing) // Additional inner glow for pulsing cards
+            BoxShadow(
+              color: iconColor.withValues(alpha: 0.1),
+              blurRadius: 6,
+              spreadRadius: -2,
+              offset: const Offset(0, -2),
+            ),
         ],
       ),
       child: Column(
@@ -468,61 +569,180 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 14),
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: isSmallScreen ? 20 : 24,
-                ),
+              // Enhanced icon container with animations
+              TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 2000),
+                tween: Tween(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Transform.rotate(
+                    angle: isPulsing ? value * 0.1 : 0, // Subtle rotation for pulsing cards
+                    child: Container(
+                      padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          colors: [
+                            iconColor.withValues(alpha: 0.3),
+                            iconColor.withValues(alpha: 0.15),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: iconColor.withValues(alpha: 0.2),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        icon,
+                        color: iconColor,
+                        size: isSmallScreen ? 20 : 24,
+                      ),
+                    ),
+                  );
+                },
               ),
               const Spacer(),
-              if (hasSync)
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 6 : 8,
-                    vertical: isSmallScreen ? 3 : 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
-                  ),
-                  child: Icon(
-                    Icons.cloud_done,
-                    color: Colors.green,
-                    size: isSmallScreen ? 12 : 14,
-                  ),
-                ),
+              // Enhanced status indicators
+              Row(
+                children: [
+                  if (trend != null)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 4 : 6,
+                        vertical: isSmallScreen ? 2 : 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: trend.startsWith('+') 
+                          ? Colors.green.withValues(alpha: 0.2)
+                          : trend.startsWith('-')
+                            ? Colors.red.withValues(alpha: 0.2)
+                            : Colors.orange.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
+                      ),
+                      child: Text(
+                        trend,
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 8 : 10,
+                          fontWeight: FontWeight.w700,
+                          color: trend.startsWith('+') 
+                            ? Colors.green.shade700
+                            : trend.startsWith('-')
+                              ? Colors.red.shade700
+                              : Colors.orange.shade700,
+                        ),
+                      ),
+                    ),
+                  if (trend != null) SizedBox(width: isSmallScreen ? 4 : 6),
+                  if (hasSync)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 6 : 8,
+                        vertical: isSmallScreen ? 3 : 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.green.withValues(alpha: 0.25),
+                            Colors.green.withValues(alpha: 0.15),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+                        border: Border.all(
+                          color: Colors.green.withValues(alpha: 0.3),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.cloud_done,
+                            color: Colors.green.shade600,
+                            size: isSmallScreen ? 10 : 12,
+                          ),
+                          SizedBox(width: 2),
+                          Text(
+                            'SYNCED',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 7 : 8,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green.shade700,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
 
           SizedBox(height: isSmallScreen ? 12 : 16),
 
+          // Enhanced title with better typography
           Text(
             title,
             style: TextStyle(
               fontSize: isSmallScreen ? 10 : 12,
-              fontWeight: FontWeight.w600,
-              color: theme.accentColor.withValues(alpha: 0.7),
-              letterSpacing: 1,
+              fontWeight: FontWeight.w700,
+              color: theme.accentColor.withValues(alpha: 0.8),
+              letterSpacing: 1.2,
+              height: 1.1,
             ),
           ),
 
-          SizedBox(height: isSmallScreen ? 4 : 6),
+          SizedBox(height: isSmallScreen ? 6 : 8),
 
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 24 : 28,
-              fontWeight: FontWeight.w900,
-              color: theme.accentColor,
-              height: 1,
-            ),
+          // Enhanced value display with shimmer effect
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Flexible(
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 1000),
+                  tween: Tween(begin: 0.0, end: double.tryParse(value) ?? 0.0),
+                  builder: (context, animatedValue, child) {
+                    final displayValue = value.contains(RegExp(r'^\d+$')) 
+                      ? animatedValue.toInt().toString()
+                      : value;
+                    return Text(
+                      displayValue,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 26 : 30,
+                        fontWeight: FontWeight.w900,
+                        color: theme.accentColor,
+                        height: 0.9,
+                        shadows: isPulsing ? [
+                          Shadow(
+                            color: iconColor.withValues(alpha: 0.3),
+                            blurRadius: 2,
+                          ),
+                        ] : null,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
+
+          // Optional subtitle
+          if (subtitle != null) ...[
+            SizedBox(height: isSmallScreen ? 2 : 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 8 : 10,
+                fontWeight: FontWeight.w500,
+                color: theme.accentColor.withValues(alpha: 0.5),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ],
       ),
     );
