@@ -316,50 +316,20 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildGameTitle(GameTheme theme, bool isSmallScreen) {
-    return Row(
+    return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Animated logo
+        // Use the logo with text for a cleaner look
         SizedBox(
-          width: isSmallScreen ? 50 : 60,
-          height: isSmallScreen ? 50 : 60,
-          child: AnimatedSnakeLogo(theme: theme, controller: _logoController),
-        ),
-
-        SizedBox(width: isSmallScreen ? 12 : 16),
-
-        // Title text
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'SNAKE',
-              style: TextStyle(
-                fontSize: isSmallScreen ? 32 : 40,
-                fontWeight: FontWeight.w900,
-                color: theme.accentColor,
-                letterSpacing: 3,
-                shadows: [
-                  Shadow(
-                    offset: const Offset(2, 2),
-                    blurRadius: 8,
-                    color: Colors.black.withValues(alpha: 0.3),
-                  ),
-                ],
-              ),
-            ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.5),
-
-            Text(
-              'CLASSIC',
-              style: TextStyle(
-                fontSize: isSmallScreen ? 10 : 12,
-                fontWeight: FontWeight.w300,
-                color: theme.accentColor.withValues(alpha: 0.7),
-                letterSpacing: 2,
-              ),
-            ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
-          ],
-        ),
+          width: isSmallScreen ? 120 : 150,
+          height: isSmallScreen ? 80 : 100,
+          child: AnimatedSnakeLogo(
+            theme: theme, 
+            controller: _logoController,
+            size: isSmallScreen ? 120 : 150,
+            useTextLogo: true, // Use logo with text for home screen
+          ),
+        ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
       ],
     );
   }

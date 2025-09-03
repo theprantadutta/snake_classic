@@ -586,44 +586,19 @@ class _LoadingScreenState extends State<LoadingScreen>
                 child: AnimatedSnakeLogo(
                   theme: theme,
                   controller: _logoController,
+                  useTextLogo: true, // Use the logo with text on loading screen
                 ),
               ),
             );
           },
         ),
 
-        SizedBox(height: isSmallScreen ? 12 : 20),
-
-        // Game title with enhanced styling
-        ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [theme.accentColor, theme.foodColor, theme.accentColor],
-            stops: const [0.0, 0.5, 1.0],
-          ).createShader(bounds),
-          child: Text(
-            'SNAKE CLASSIC',
-            style: TextStyle(
-              fontSize: isSmallScreen ? 22 : 28,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: isSmallScreen ? 2 : 3,
-              shadows: [
-                Shadow(
-                  offset: const Offset(0, 4),
-                  blurRadius: 12,
-                  color: Colors.black.withValues(alpha: 0.5),
-                ),
-              ],
-            ),
-          ),
-        ).animate().fadeIn(delay: 300.ms).slideY(begin: -0.3),
-
-        SizedBox(height: isSmallScreen ? 8 : 12),
+        SizedBox(height: isSmallScreen ? 16 : 24),
 
         Text(
           'PREMIUM SNAKE EXPERIENCE',
           style: TextStyle(
-            fontSize: isSmallScreen ? 8 : 10,
+            fontSize: isSmallScreen ? 10 : 12,
             fontWeight: FontWeight.w600,
             color: theme.accentColor.withValues(alpha: 0.7),
             letterSpacing: 1.5,
