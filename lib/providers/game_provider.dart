@@ -6,8 +6,11 @@ import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
+import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:provider/provider.dart';
+import 'package:snake_classic/providers/premium_provider.dart';
 // Future imports for enhanced features:
 // import 'package:snake_classic/services/preferences_service.dart';
 // import 'package:snake_classic/services/unified_user_service.dart';
@@ -26,6 +29,8 @@ class GameProvider extends ChangeNotifier {
   GameState _gameState = GameState.initial();
   Timer? _gameTimer;
   Timer? _animationTimer; // Use Timer instead of Ticker for simplicity
+  BuildContext? _context; // Add context to access other providers
+  
   // Future: Use these services for enhanced features
   // PreferencesService? _preferencesService;
   // UnifiedUserService? _userService;
@@ -380,7 +385,22 @@ class GameProvider extends ChangeNotifier {
   }
   
   void _generatePowerUp() {
-    final powerUp = PowerUp.generateRandom(
+    // Try to generate premium power-up first if user has access
+    PowerUp? powerUp;
+    
+    if (_context != null) {
+      try {
+        final premiumProvider = _context!.read<PremiumProvider>();
+        if (premiumProvider.isInitialized) {
+          powerUp = _tryGeneratePremiumPowerUp(premiumProvider);
+        }
+      } catch (e) {
+        // PremiumProvider not available, continue with regular power-ups
+      }
+    }
+    
+    // Fallback to regular power-up if no premium power-up generated
+    powerUp ??= PowerUp.generateRandom(
       _gameState.boardWidth,
       _gameState.boardHeight,
       _gameState.snake,
@@ -391,9 +411,54 @@ class GameProvider extends ChangeNotifier {
       _gameState = _gameState.copyWith(powerUp: powerUp);
     }
   }
+
+  PowerUp? _tryGeneratePremiumPowerUp(PremiumProvider premiumProvider) {
+    // Generate premium power-up if user has premium or specific ones unlocked
+    final availablePremiumTypes = <PremiumPowerUpType>[];
+    
+    for (final type in PremiumPowerUpType.values) {
+      if (premiumProvider.isPowerUpUnlocked(type.id)) {
+        availablePremiumTypes.add(type);
+      }
+    }
+    
+    if (availablePremiumTypes.isEmpty) {
+      return null; // No premium power-ups available
+    }
+    
+    // Use premium power-up generation with available types only
+    return PremiumPowerUp.generateRandomPremium(
+      _gameState.boardWidth,
+      _gameState.boardHeight,
+      _gameState.snake,
+      foodPosition: _gameState.food?.position,
+      premiumOnly: false, // Mix premium with regular based on availability
+    );
+  }
+
+  // Method to set context from widget
+  void setContext(BuildContext context) {
+    _context = context;
+  }
   
   void _collectPowerUp(PowerUp powerUp) {
-    final activePowerUp = ActivePowerUp(type: powerUp.type);
+    ActivePowerUp activePowerUp;
+    
+    // Handle premium power-ups specially
+    if (powerUp is PremiumPowerUp) {
+      activePowerUp = PremiumActivePowerUp(
+        premiumType: powerUp.premiumType,
+        duration: powerUp.premiumType.duration,
+      );
+      
+      // Award more battle pass XP for premium power-ups
+      _awardBattlePassXP(15);
+    } else {
+      activePowerUp = ActivePowerUp(type: powerUp.type);
+      
+      // Award standard battle pass XP for regular power-ups
+      _awardBattlePassXP(5);
+    }
     
     _gameState = _gameState.addActivePowerUp(activePowerUp);
     _gameState = _gameState.clearPowerUp();
@@ -401,22 +466,45 @@ class GameProvider extends ChangeNotifier {
     _powerUpsCollectedThisGame++;
     
     // Track power-up types for statistics
-    _currentGamePowerUpTypes[powerUp.type.name] = (_currentGamePowerUpTypes[powerUp.type.name] ?? 0) + 1;
+    final powerUpName = powerUp is PremiumPowerUp ? powerUp.premiumType.id : powerUp.type.name;
+    _currentGamePowerUpTypes[powerUpName] = (_currentGamePowerUpTypes[powerUpName] ?? 0) + 1;
     
-    _audioService.playSound('power_up');
+    // Play appropriate sound based on power-up type
+    final soundEffect = powerUp is PremiumPowerUp ? 'premium_power_up' : 'power_up';
+    _audioService.playSound(soundEffect);
+    
     // Enhanced spatial audio for power-up collection
-    _enhancedAudioService.playSfx('power_up',
-      volume: 1.0,
+    _enhancedAudioService.playSfx(soundEffect,
+      volume: powerUp is PremiumPowerUp ? 1.2 : 1.0,
       position: SpatialAudioPosition(
         x: powerUp.position.x / _gameState.boardWidth,
         y: powerUp.position.y / _gameState.boardHeight,
       ),
     );
-    HapticFeedback.mediumImpact();
+    
+    // Enhanced haptic feedback for premium power-ups
+    if (powerUp is PremiumPowerUp) {
+      HapticFeedback.heavyImpact();
+    } else {
+      HapticFeedback.mediumImpact();
+    }
     
     // Restart game loop if speed changed
     if (powerUp.type == PowerUpType.speedBoost || powerUp.type == PowerUpType.slowMotion) {
       _startGameLoop();
+    }
+  }
+
+  void _awardBattlePassXP(int xp) {
+    if (_context != null) {
+      try {
+        final premiumProvider = _context!.read<PremiumProvider>();
+        if (premiumProvider.isInitialized) {
+          premiumProvider.addBattlePassXP(xp);
+        }
+      } catch (e) {
+        // PremiumProvider not available, skip XP award
+      }
     }
   }
   

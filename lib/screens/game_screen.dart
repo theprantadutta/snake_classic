@@ -46,6 +46,7 @@ class _GameScreenState extends State<GameScreen>
     // Start the game when screen loads (only if not already playing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gameProvider = context.read<GameProvider>();
+      gameProvider.setContext(context); // Set context for premium features
       if (gameProvider.gameState.status == GameStatus.menu) {
         gameProvider.startGame();
       }
