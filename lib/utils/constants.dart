@@ -304,4 +304,48 @@ enum GameTheme {
         return GameConstants.crystalSnake;
     }
   }
+
+  Color get textColor {
+    switch (this) {
+      case GameTheme.classic:
+      case GameTheme.modern:
+      case GameTheme.retro:
+        return Colors.black87;
+      case GameTheme.neon:
+      case GameTheme.space:
+      case GameTheme.cyberpunk:
+      case GameTheme.crystal:
+        return Colors.white;
+      case GameTheme.ocean:
+      case GameTheme.forest:
+        return Colors.white70;
+      case GameTheme.desert:
+        return Colors.black54;
+    }
+  }
+
+  Color get cardColor {
+    switch (this) {
+      case GameTheme.classic:
+        return Colors.white;
+      case GameTheme.modern:
+        return Colors.grey.shade100;
+      case GameTheme.neon:
+        return Colors.black12;
+      case GameTheme.retro:
+        return Colors.brown.shade100;
+      case GameTheme.space:
+        return Colors.indigo.shade900;
+      case GameTheme.ocean:
+        return Colors.blue.shade900;
+      case GameTheme.cyberpunk:
+        return Colors.purple.shade900;
+      case GameTheme.forest:
+        return Colors.green.shade900;
+      case GameTheme.desert:
+        return Colors.orange.shade100;
+      case GameTheme.crystal:
+        return Colors.purple.shade100;
+    }
+  }
 }

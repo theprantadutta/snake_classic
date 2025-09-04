@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:snake_classic/providers/premium_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
@@ -293,6 +294,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     try {
       if (!mounted) return;
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
       final preferencesService = Provider.of<PreferencesService>(
         context,
         listen: false,
@@ -302,6 +304,8 @@ class _LoadingScreenState extends State<LoadingScreen>
 
       if (mounted) {
         await themeProvider.initialize(context);
+        await premiumProvider.initialize(context);
+        AppLogger.info('Premium provider initialized successfully');
       }
     } catch (e) {
       AppLogger.prefs('Preferences initialization warning', e);

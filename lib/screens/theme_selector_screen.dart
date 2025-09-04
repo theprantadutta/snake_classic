@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:snake_classic/providers/premium_provider.dart';
+import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -11,6 +13,7 @@ class ThemeSelectorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final premiumProvider = Provider.of<PremiumProvider>(context);
     final currentTheme = themeProvider.currentTheme;
 
     return Scaffold(
@@ -89,6 +92,7 @@ class ThemeSelectorScreen extends StatelessWidget {
                         theme,
                         isSelected,
                         themeProvider,
+                        premiumProvider,
                         index,
                       );
                     },
@@ -107,107 +111,223 @@ class ThemeSelectorScreen extends StatelessWidget {
     GameTheme theme,
     bool isSelected,
     ThemeProvider themeProvider,
+    PremiumProvider premiumProvider,
     int index,
   ) {
+    final isLocked = !premiumProvider.isThemeUnlocked(theme);
+    final isPremiumTheme = PremiumContent.premiumThemes.contains(theme);
+    
     return GestureDetector(
-      onTap: () {
-        themeProvider.setTheme(theme);
+      onTap: () async {
+        if (isLocked) {
+          _showPremiumThemeDialog(context, theme, premiumProvider);
+        } else {
+          themeProvider.setTheme(theme);
+        }
       },
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.backgroundColor,
-              theme.backgroundColor.withValues(alpha: 0.8),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected 
-              ? theme.accentColor 
-              : theme.primaryColor.withValues(alpha: 0.3),
-            width: isSelected ? 3 : 1,
-          ),
-          boxShadow: [
-            if (isSelected)
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                blurRadius: 20,
-                spreadRadius: 2,
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.backgroundColor,
+                  theme.backgroundColor.withValues(alpha: 0.8),
+                ],
               ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Theme Name
-              Row(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected 
+                  ? theme.accentColor 
+                  : isLocked
+                    ? Colors.orange.withValues(alpha: 0.6)
+                    : theme.primaryColor.withValues(alpha: 0.3),
+                width: isSelected ? 3 : isLocked ? 2 : 1,
+              ),
+              boxShadow: [
+                if (isSelected)
+                  BoxShadow(
+                    color: theme.accentColor.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                if (isLocked)
+                  BoxShadow(
+                    color: Colors.orange.withValues(alpha: 0.2),
+                    blurRadius: 15,
+                    spreadRadius: 1,
+                  ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Text(
-                      theme.name,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: theme.accentColor,
+                  // Theme Name and Premium Badge
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Text(
+                              theme.name,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isLocked 
+                                  ? Colors.white.withValues(alpha: 0.6)
+                                  : theme.accentColor,
+                              ),
+                            ),
+                            if (isPremiumTheme) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'PRO',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
+                      
+                      if (isSelected && !isLocked)
+                        Icon(
+                          Icons.check_circle,
+                          color: theme.accentColor,
+                          size: 24,
+                        ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Theme Preview - Mini Game Board
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: theme.backgroundColor.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: theme.primaryColor.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: _buildMiniGamePreview(theme),
+                        ),
+                        if (isLocked)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.lock,
+                                color: Colors.orange,
+                                size: 32,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   
-                  if (isSelected)
-                    Icon(
-                      Icons.check_circle,
-                      color: theme.accentColor,
-                      size: 24,
+                  const SizedBox(height: 12),
+                  
+                  // Theme Description or Price
+                  if (isLocked)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _getThemePrice(theme),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    )
+                  else
+                    Text(
+                      _getThemeDescription(theme),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                ],
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Theme Preview - Mini Game Board
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.backgroundColor.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: theme.primaryColor.withValues(alpha: 0.3),
-                    ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Color Palette
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildColorDot(
+                        theme.snakeColor, 
+                        'Snake', 
+                        isLocked: isLocked,
+                      ),
+                      _buildColorDot(
+                        theme.foodColor, 
+                        'Food',
+                        isLocked: isLocked,
+                      ),
+                      _buildColorDot(
+                        theme.accentColor, 
+                        'UI',
+                        isLocked: isLocked,
+                      ),
+                    ],
                   ),
-                  child: _buildMiniGamePreview(theme),
-                ),
-              ),
-              
-              const SizedBox(height: 12),
-              
-              // Theme Description
-              Text(
-                _getThemeDescription(theme),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // Color Palette
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildColorDot(theme.snakeColor, 'Snake'),
-                  _buildColorDot(theme.foodColor, 'Food'),
-                  _buildColorDot(theme.accentColor, 'UI'),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+          
+          // Premium Badge Overlay
+          if (isPremiumTheme && !isLocked)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.star,
+                  color: Colors.black,
+                  size: 16,
+                ),
+              ),
+            ),
+        ],
       ),
     ).animate(delay: (index * 100).ms)
      .fadeIn(duration: 500.ms)
@@ -221,14 +341,14 @@ class ThemeSelectorScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildColorDot(Color color, String label) {
+  Widget _buildColorDot(Color color, String label, {bool isLocked = false}) {
     return Column(
       children: [
         Container(
           width: 16,
           height: 16,
           decoration: BoxDecoration(
-            color: color,
+            color: isLocked ? color.withValues(alpha: 0.4) : color,
             shape: BoxShape.circle,
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.3),
@@ -241,7 +361,7 @@ class ThemeSelectorScreen extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 10,
-            color: Colors.white.withValues(alpha: 0.6),
+            color: Colors.white.withValues(alpha: isLocked ? 0.4 : 0.6),
           ),
         ),
       ],
@@ -270,6 +390,398 @@ class ThemeSelectorScreen extends StatelessWidget {
         return 'Warm sand tones with desert wind effects';
       case GameTheme.crystal:
         return 'Prismatic purples with crystalline light rays';
+    }
+  }
+
+  String _getThemePrice(GameTheme theme) {
+    switch (theme) {
+      case GameTheme.crystal:
+      case GameTheme.cyberpunk:
+      case GameTheme.space:
+      case GameTheme.ocean:
+      case GameTheme.desert:
+        return '\$1.99';
+      default:
+        return 'FREE';
+    }
+  }
+
+  void _showPremiumThemeDialog(BuildContext context, GameTheme theme, PremiumProvider premiumProvider) {
+    final themePrice = _getThemePrice(theme);
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.black.withValues(alpha: 0.9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: theme.accentColor.withValues(alpha: 0.5),
+              width: 2,
+            ),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.lock,
+                color: Colors.orange,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Premium Theme',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Theme preview
+              Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.backgroundColor,
+                      theme.backgroundColor.withValues(alpha: 0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: _buildMiniGamePreview(theme),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              Text(
+                theme.name,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: theme.accentColor,
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              Text(
+                _getThemeDescription(theme),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontSize: 16,
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Purchase options
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.orange.withValues(alpha: 0.1),
+                      Colors.amber.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.star,
+                          color: Colors.amber,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Purchase Options',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Individual theme purchase
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Individual Theme',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              'Unlock just ${theme.name}',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          themePrice,
+                          style: TextStyle(
+                            color: Colors.amber,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Bundle purchase
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.green.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Premium Themes Bundle',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'BEST VALUE',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'All 5 premium themes + future releases',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '\$7.99',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                'Save \$2.00',
+                                style: TextStyle(
+                                  color: Colors.green.withValues(alpha: 0.8),
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Pro subscription option
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.diamond,
+                                    color: Colors.black,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Snake Classic Pro',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'All themes + premium features',
+                                style: TextStyle(
+                                  color: Colors.black.withValues(alpha: 0.8),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '\$4.99/mo',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _handleThemePurchase(context, theme, 'individual');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Buy Theme - $themePrice'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _handleThemePurchase(context, theme, 'bundle');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Buy Bundle - \$7.99'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _handleThemePurchase(BuildContext context, GameTheme theme, String purchaseType) {
+    final purchaseService = PurchaseService();
+    
+    String productId;
+    switch (purchaseType) {
+      case 'individual':
+        switch (theme) {
+          case GameTheme.crystal:
+            productId = ProductIds.crystalTheme;
+            break;
+          case GameTheme.cyberpunk:
+            productId = ProductIds.cyberpunkTheme;
+            break;
+          case GameTheme.space:
+            productId = ProductIds.spaceTheme;
+            break;
+          case GameTheme.ocean:
+            productId = ProductIds.oceanTheme;
+            break;
+          case GameTheme.desert:
+            productId = ProductIds.desertTheme;
+            break;
+          default:
+            return;
+        }
+        break;
+      case 'bundle':
+        productId = ProductIds.themesBundle;
+        break;
+      default:
+        return;
+    }
+
+    final product = purchaseService.getProduct(productId);
+    if (product != null) {
+      purchaseService.buyProduct(product);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Initiating purchase for ${theme.name}...'),
+          backgroundColor: theme.accentColor,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Product not available. Please try again later.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

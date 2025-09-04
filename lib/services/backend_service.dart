@@ -287,4 +287,173 @@ class BackendService {
 
     return topics;
   }
+
+  /// Verify a purchase with the backend
+  Future<Map<String, dynamic>?> verifyPurchase({
+    required String platform,
+    required String receiptData,
+    required String productId,
+    required String transactionId,
+    required String userId,
+    String? purchaseToken,
+    Map<String, dynamic>? deviceInfo,
+  }) async {
+    try {
+      AppLogger.network('Verifying purchase: $productId');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/purchases/verify'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'receipt': {
+            'platform': platform,
+            'receipt_data': receiptData,
+            'product_id': productId,
+            'transaction_id': transactionId,
+            'purchase_token': purchaseToken,
+            'user_id': userId,
+            'purchase_time': DateTime.now().toIso8601String(),
+          },
+          'user_id': userId,
+          'device_info': deviceInfo ?? {},
+        }),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Purchase verification successful: ${data['valid']}');
+        return data;
+      } else {
+        AppLogger.error('Purchase verification failed: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error verifying purchase', e);
+      return null;
+    }
+  }
+
+  /// Restore user's purchases
+  Future<Map<String, dynamic>?> restorePurchases({
+    required String userId,
+    required String platform,
+    required List<Map<String, dynamic>> receipts,
+  }) async {
+    try {
+      AppLogger.network('Restoring purchases for user: $userId');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/purchases/restore'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'platform': platform,
+          'receipts': receipts,
+        }),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Purchase restoration completed: ${data['restored_count']} restored');
+        return data;
+      } else {
+        AppLogger.error('Purchase restoration failed: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error restoring purchases', e);
+      return null;
+    }
+  }
+
+  /// Get user's premium content status
+  Future<Map<String, dynamic>?> getUserPremiumContent({
+    required String userId,
+    bool includeExpired = false,
+  }) async {
+    try {
+      AppLogger.network('Getting premium content for user: $userId');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/purchases/user/$userId/premium-content?include_expired=$includeExpired'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Premium content retrieved successfully');
+        return data;
+      } else {
+        AppLogger.error('Failed to get premium content: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error getting premium content', e);
+      return null;
+    }
+  }
+
+  /// Sync user's premium status with backend
+  Future<bool> syncPremiumStatus({
+    required String userId,
+  }) async {
+    try {
+      AppLogger.network('Syncing premium status for user: $userId');
+
+      final premiumData = await getUserPremiumContent(userId: userId);
+      if (premiumData == null) {
+        return false;
+      }
+
+      // The premium data will be handled by the PremiumProvider
+      AppLogger.network('Premium status synced successfully');
+      return true;
+    } catch (e) {
+      AppLogger.error('Error syncing premium status', e);
+      return false;
+    }
+  }
+
+  /// Report purchase analytics
+  Future<bool> reportPurchaseAnalytics({
+    required String userId,
+    required String productId,
+    required String eventType, // 'purchase_initiated', 'purchase_completed', 'purchase_failed'
+    Map<String, dynamic>? additionalData,
+  }) async {
+    try {
+      AppLogger.network('Reporting purchase analytics: $eventType for $productId');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/analytics/purchase'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'product_id': productId,
+          'event_type': eventType,
+          'timestamp': DateTime.now().toIso8601String(),
+          'additional_data': additionalData ?? {},
+        }),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        AppLogger.network('Purchase analytics reported successfully');
+        return true;
+      } else {
+        AppLogger.error('Failed to report analytics: ${response.statusCode}', response.body);
+        return false;
+      }
+    } catch (e) {
+      AppLogger.error('Error reporting purchase analytics', e);
+      return false;
+    }
+  }
 }

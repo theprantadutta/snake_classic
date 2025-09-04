@@ -4,10 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/providers/premium_provider.dart';
 import 'package:snake_classic/screens/theme_selector_screen.dart';
+import 'package:snake_classic/screens/cosmetics_screen.dart';
+import 'package:snake_classic/screens/battle_pass_screen.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/username_service.dart';
+import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -47,8 +51,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<ThemeProvider, GameProvider, UserProvider>(
-      builder: (context, themeProvider, gameProvider, userProvider, child) {
+    return Consumer4<ThemeProvider, GameProvider, UserProvider, PremiumProvider>(
+      builder: (context, themeProvider, gameProvider, userProvider, premiumProvider, child) {
         final theme = themeProvider.currentTheme;
         
         return Scaffold(
@@ -143,6 +147,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     
                     const SizedBox(height: 32),
+                    
+                    // Premium Section
+                    if (premiumProvider.isInitialized)
+                      _buildSection(
+                        'PREMIUM FEATURES',
+                        [
+                          _buildPremiumStatusCard(premiumProvider, theme),
+                          if (!premiumProvider.hasPremium)
+                            _buildUpgradeButton(premiumProvider, theme),
+                          _buildRestorePurchasesButton(premiumProvider, theme),
+                          if (premiumProvider.hasPremium || premiumProvider.ownedSkins.isNotEmpty)
+                            _buildCosmeticsButton(premiumProvider, theme),
+                          if (premiumProvider.hasBattlePass)
+                            _buildBattlePassButton(premiumProvider, theme),
+                        ],
+                        theme,
+                      ),
+                    
+                    if (premiumProvider.isInitialized)
+                      const SizedBox(height: 32),
                     
                     // Audio Section
                     _buildSection(
@@ -1016,4 +1040,387 @@ class _BoardSizePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Premium UI Components
+extension SettingsPremium on _SettingsScreenState {
+  Widget _buildPremiumStatusCard(PremiumProvider premiumProvider, GameTheme theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: premiumProvider.hasPremium
+            ? const LinearGradient(
+                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+              )
+            : LinearGradient(
+                colors: [
+                  theme.accentColor.withValues(alpha: 0.1),
+                  theme.backgroundColor.withValues(alpha: 0.05),
+                ],
+              ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: premiumProvider.hasPremium
+              ? Colors.amber
+              : theme.accentColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            premiumProvider.hasPremium ? Icons.diamond : Icons.lock,
+            color: premiumProvider.hasPremium ? Colors.black : theme.accentColor,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  premiumProvider.hasPremium ? 'Snake Classic Pro' : 'Premium Status',
+                  style: TextStyle(
+                    color: premiumProvider.hasPremium ? Colors.black : Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  premiumProvider.hasPremium
+                      ? 'Active subscription'
+                      : 'Unlock premium features',
+                  style: TextStyle(
+                    color: premiumProvider.hasPremium 
+                        ? Colors.black.withValues(alpha: 0.8)
+                        : Colors.white.withValues(alpha: 0.7),
+                    fontSize: 14,
+                  ),
+                ),
+                if (premiumProvider.hasPremium && premiumProvider.subscriptionExpiry != null)
+                  Text(
+                    'Renews ${premiumProvider.subscriptionExpiry!.day}/${premiumProvider.subscriptionExpiry!.month}',
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (premiumProvider.hasPremium)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'PRO',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpgradeButton(PremiumProvider premiumProvider, GameTheme theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: GradientButton(
+        onPressed: () => _showPremiumDialog(premiumProvider),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.star, color: Colors.black),
+            const SizedBox(width: 8),
+            const Text(
+              'Upgrade to Pro',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRestorePurchasesButton(PremiumProvider premiumProvider, GameTheme theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: TextButton(
+        onPressed: () => _restorePurchases(premiumProvider),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          backgroundColor: theme.accentColor.withValues(alpha: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: theme.accentColor.withValues(alpha: 0.3),
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.restore, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(
+              'Restore Purchases',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCosmeticsButton(PremiumProvider premiumProvider, GameTheme theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: TextButton(
+        onPressed: () => _openCosmeticsSelector(),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          backgroundColor: theme.accentColor.withValues(alpha: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: theme.accentColor.withValues(alpha: 0.3),
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.palette, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(
+              'Snake Cosmetics',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (premiumProvider.ownedSkins.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.accentColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${premiumProvider.ownedSkins.length}',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBattlePassButton(PremiumProvider premiumProvider, GameTheme theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.purple.withValues(alpha: 0.3),
+              Colors.blue.withValues(alpha: 0.3),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.purple.withValues(alpha: 0.5)),
+        ),
+        child: TextButton(
+          onPressed: () => _openBattlePass(),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            backgroundColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.military_tech, color: Colors.purple),
+              const SizedBox(width: 8),
+              const Text(
+                'Battle Pass',
+                style: TextStyle(
+                  color: Colors.purple,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.purple,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Tier ${premiumProvider.battlePassTier}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPremiumDialog(PremiumProvider premiumProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.9),
+        title: const Row(
+          children: [
+            Icon(Icons.diamond, color: Colors.amber),
+            SizedBox(width: 8),
+            Text('Snake Classic Pro', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Upgrade to Pro and unlock:',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            SizedBox(height: 16),
+            Text('✓ All premium themes', style: TextStyle(color: Colors.white)),
+            Text('✓ Exclusive snake skins', style: TextStyle(color: Colors.white)),
+            Text('✓ Premium power-ups', style: TextStyle(color: Colors.white)),
+            Text('✓ Battle Pass included', style: TextStyle(color: Colors.white)),
+            Text('✓ Priority support', style: TextStyle(color: Colors.white)),
+            SizedBox(height: 16),
+            Text(
+              '\$4.99/month',
+              style: TextStyle(
+                color: Colors.amber,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _purchasePro(premiumProvider);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('Subscribe'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _purchasePro(PremiumProvider premiumProvider) {
+    final purchaseService = PurchaseService();
+    final product = purchaseService.getProduct(ProductIds.snakeClassicPro);
+    
+    if (product != null) {
+      purchaseService.buyProduct(product);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Initiating Pro subscription...'),
+          backgroundColor: Colors.amber,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Subscription not available. Please try again later.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _restorePurchases(PremiumProvider premiumProvider) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Restoring purchases...'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+      
+      final purchaseService = PurchaseService();
+      await purchaseService.restorePurchases();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Purchases restored successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to restore purchases. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _openCosmeticsSelector() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const CosmeticsScreen(),
+      ),
+    );
+  }
+
+  void _openBattlePass() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const BattlePassScreen(),
+      ),
+    );
+  }
 }

@@ -7,6 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/multiplayer_provider.dart';
+import 'package:snake_classic/providers/premium_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/loading_screen.dart';
@@ -15,6 +16,7 @@ import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/navigation_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
+import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/performance_monitor.dart';
@@ -57,6 +59,11 @@ void main() async {
     AppLogger.info('Initializing notification service...');
     await NotificationService().initialize();
     AppLogger.success('Notification service initialized');
+
+    // Initialize purchase service
+    AppLogger.info('Initializing purchase service...');
+    await PurchaseService().initialize();
+    AppLogger.success('Purchase service initialized');
 
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -107,6 +114,7 @@ class SnakeClassicApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => MultiplayerProvider()),
+        ChangeNotifierProvider(create: (_) => PremiumProvider(PurchaseService())),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
