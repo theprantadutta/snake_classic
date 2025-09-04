@@ -19,7 +19,7 @@ import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
-import 'package:snake_classic/widgets/instructions_dialog.dart';
+import 'package:snake_classic/screens/instructions_screen.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
@@ -92,17 +92,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   builder: (context, constraints) {
                     final screenWidth = constraints.maxWidth;
                     final screenHeight = constraints.maxHeight;
-                    
+
                     // Improved screen size detection for better responsiveness
                     final isVerySmallScreen = screenHeight < 650;
                     final isSmallScreen = screenHeight < 750;
-                    final isMediumScreen = screenHeight >= 750 && screenHeight < 900;
+                    final isMediumScreen =
+                        screenHeight >= 750 && screenHeight < 900;
                     final isTallScreen = screenHeight >= 900;
-                    
+
                     // Dynamic spacing based on screen height
-                    final topSpacing = isVerySmallScreen ? 8.0 : isSmallScreen ? 12.0 : isMediumScreen ? 16.0 : 20.0;
-                    final sectionSpacing = isVerySmallScreen ? 16.0 : isSmallScreen ? 20.0 : isMediumScreen ? 28.0 : 36.0;
-                    final bottomSpacing = isVerySmallScreen ? 8.0 : isSmallScreen ? 12.0 : isMediumScreen ? 16.0 : 20.0;
+                    final topSpacing = isVerySmallScreen
+                        ? 8.0
+                        : isSmallScreen
+                        ? 12.0
+                        : isMediumScreen
+                        ? 16.0
+                        : 20.0;
+                    final sectionSpacing = isVerySmallScreen
+                        ? 16.0
+                        : isSmallScreen
+                        ? 20.0
+                        : isMediumScreen
+                        ? 28.0
+                        : 36.0;
+                    final bottomSpacing = isVerySmallScreen
+                        ? 8.0
+                        : isSmallScreen
+                        ? 12.0
+                        : isMediumScreen
+                        ? 16.0
+                        : 20.0;
 
                     return Stack(
                       children: [
@@ -140,7 +159,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       ? Center(
                                           child: ConstrainedBox(
                                             constraints: BoxConstraints(
-                                              maxHeight: screenHeight * 0.6, // Limit height on very tall screens
+                                              maxHeight:
+                                                  screenHeight *
+                                                  0.6, // Limit height on very tall screens
                                               maxWidth: screenWidth,
                                             ),
                                             child: _buildMainPlayArea(
@@ -281,9 +302,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             GestureDetector(
               onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => InstructionsDialog(theme: theme),
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const InstructionsScreen(),
+                  ),
                 );
               },
               child: Container(
@@ -349,8 +371,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildGameTitle(GameTheme theme, double screenHeight) {
     // Dynamic logo sizing based on screen height
-    final logoSize = screenHeight < 650 ? 100.0 : screenHeight < 750 ? 120.0 : screenHeight < 900 ? 140.0 : 160.0;
-    final logoHeight = screenHeight < 650 ? 60.0 : screenHeight < 750 ? 75.0 : screenHeight < 900 ? 85.0 : 95.0;
+    final logoSize = screenHeight < 650
+        ? 100.0
+        : screenHeight < 750
+        ? 120.0
+        : screenHeight < 900
+        ? 140.0
+        : 160.0;
+    final logoHeight = screenHeight < 650
+        ? 60.0
+        : screenHeight < 750
+        ? 75.0
+        : screenHeight < 900
+        ? 85.0
+        : 95.0;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -428,7 +462,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.3),
             ),
 
-            SizedBox(width: isVerySmallScreen ? 8 : isSmallScreen ? 12 : 16),
+            SizedBox(
+              width: isVerySmallScreen
+                  ? 8
+                  : isSmallScreen
+                  ? 12
+                  : 16,
+            ),
 
             // Enhanced Statistics Card
             Expanded(
@@ -497,7 +537,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
                     ),
 
-                    SizedBox(width: isVerySmallScreen ? 8 : isSmallScreen ? 12 : 16),
+                    SizedBox(
+                      width: isVerySmallScreen
+                          ? 8
+                          : isSmallScreen
+                          ? 12
+                          : 16,
+                    ),
 
                     // Streak Card
                     Expanded(
@@ -522,7 +568,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           },
         ),
 
-        SizedBox(height: isVerySmallScreen ? 16 : isSmallScreen ? 20 : isMediumScreen ? 28 : 36),
+        SizedBox(
+          height: isVerySmallScreen
+              ? 16
+              : isSmallScreen
+              ? 20
+              : isMediumScreen
+              ? 28
+              : 36,
+        ),
 
         // Central Play Button
         _buildCentralPlayButton(context, theme, screenHeight, screenWidth)
@@ -814,9 +868,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   ) {
     // Dynamic sizing based on screen height
     final isSmallScreen = screenHeight < 750;
-    final buttonSize = screenHeight < 650 ? 100.0 : 
-                      screenHeight < 750 ? 120.0 :
-                      screenHeight < 900 ? 140.0 : 160.0;
+    final buttonSize = screenHeight < 650
+        ? 100.0
+        : screenHeight < 750
+        ? 120.0
+        : screenHeight < 900
+        ? 140.0
+        : 160.0;
 
     return GestureDetector(
       onTap: () {
@@ -992,7 +1050,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }).toList(),
         ),
 
-        SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : 16),
+        SizedBox(
+          height: isVerySmallScreen
+              ? 8
+              : isSmallScreen
+              ? 12
+              : 16,
+        ),
 
         // Second row - 4 items
         Row(

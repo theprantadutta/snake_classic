@@ -23,61 +23,61 @@ class _GameOverScreenState extends State<GameOverScreen>
   late AnimationController _explosionController;
   late AnimationController _scoreController;
   late AnimationController _achievementController;
-  
+
   final AchievementService _achievementService = AchievementService();
   List<Achievement> _recentAchievements = [];
   List<Achievement> _progressAchievements = [];
   bool _achievementsLoaded = false;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _explosionController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _scoreController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _achievementController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
+
     _explosionController.forward();
-    
+
     // Start score animation after explosion
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         _scoreController.forward();
       }
     });
-    
+
     // Load achievements data
     _loadAchievements();
   }
-  
+
   Future<void> _loadAchievements() async {
     try {
       await _achievementService.initialize();
-      
+
       // Get recent unlocks from the service
       _recentAchievements = _achievementService.recentUnlocks;
-      
+
       // Get some in-progress achievements to show progress
       _progressAchievements = _achievementService.achievements
           .where((a) => !a.isUnlocked && a.currentProgress > 0)
           .take(3)
           .toList();
-      
+
       setState(() {
         _achievementsLoaded = true;
       });
-      
+
       // Start achievement animation if we have content to show
       if (_recentAchievements.isNotEmpty || _progressAchievements.isNotEmpty) {
         Future.delayed(const Duration(milliseconds: 800), () {
@@ -108,7 +108,8 @@ class _GameOverScreenState extends State<GameOverScreen>
       builder: (context, gameProvider, themeProvider, child) {
         final gameState = gameProvider.gameState;
         final theme = themeProvider.currentTheme;
-        final isHighScore = gameState.score == gameState.highScore && gameState.score > 0;
+        final isHighScore =
+            gameState.score == gameState.highScore && gameState.score > 0;
 
         return Scaffold(
           body: Container(
@@ -132,184 +133,289 @@ class _GameOverScreenState extends State<GameOverScreen>
                       controller: _explosionController,
                       color: Colors.amber,
                     ),
-                  
-                  // Main content
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                          // Game Over Title
-                          Text(
-                            'GAME OVER',
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: theme.foodColor,
-                              letterSpacing: 4,
-                              shadows: [
-                                Shadow(
-                                  offset: const Offset(2, 2),
-                                  blurRadius: 4,
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                ),
-                              ],
-                            ),
-                          ).animate().fadeIn().slideY(begin: -1),
-                          
-                          const SizedBox(height: 32),
-                          
-                          // High Score Badge
-                          if (isHighScore) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Colors.amber, Colors.orange],
-                                ),
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.amber.withValues(alpha: 0.5),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.emoji_events,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'NEW HIGH SCORE!',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ).animate().scale(delay: 500.ms).shimmer(delay: 1000.ms),
-                            
-                            const SizedBox(height: 24),
-                          ],
-                          
-                          // Tournament Result Badge
-                          if (gameProvider.isTournamentMode && gameProvider.tournamentMode != null) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Colors.purple, Colors.deepPurple],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.purple.withValues(alpha: 0.4),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    gameProvider.tournamentMode!.emoji,
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'TOURNAMENT SCORE SUBMITTED!',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ).animate().scale(delay: 700.ms).shimmer(delay: 1200.ms),
-                            
-                            const SizedBox(height: 20),
-                          ],
-                          
-                          // Score Display
-                          _buildScoreCard(gameState, theme),
-                          
-                          const SizedBox(height: 20),
-                          
-                          // Achievement Display
-                          if (_achievementsLoaded && (_recentAchievements.isNotEmpty || _progressAchievements.isNotEmpty))
-                            _buildAchievementSection(theme),
-                          
-                          const SizedBox(height: 24),
-                          
-                          // Action Buttons
-                          Column(
+
+                  // Main content - constrained to screen height
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SizedBox(
+                        height: constraints.maxHeight,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20.0,
+                            vertical: 16.0,
+                          ),
+                          child: Column(
                             children: [
-                              GradientButton(
-                                onPressed: () async {
-                                  // Properly reset the game state first
-                                  gameProvider.resetGame();
-                                  
-                                  // Small delay to ensure state is updated
-                                  await Future.delayed(const Duration(milliseconds: 50));
-                                  
-                                  // Start a fresh game
-                                  gameProvider.startGame();
-                                  
-                                  // Navigate to game screen
-                                  if (context.mounted) {
-                                    Navigator.of(context).pushReplacement(
-                                      MaterialPageRoute(
-                                        builder: (context) => const GameScreen(),
-                                      ),
-                                    );
-                                  }
-                                },
-                                text: 'PLAY AGAIN',
-                                primaryColor: theme.accentColor,
-                                secondaryColor: theme.foodColor,
-                                icon: Icons.refresh,
-                                width: 250,
-                              ).animate().slideX(begin: -1, delay: 1200.ms),
-                              
-                              const SizedBox(height: 16),
-                              
-                              GradientButton(
-                                onPressed: () {
-                                  gameProvider.backToMenu();
-                                  Navigator.of(context).popUntil((route) => route.isFirst);
-                                },
-                                text: 'MAIN MENU',
-                                primaryColor: theme.snakeColor.withValues(alpha: 0.8),
-                                secondaryColor: theme.snakeColor.withValues(alpha: 0.6),
-                                icon: Icons.home,
-                                width: 250,
-                                outlined: true,
-                              ).animate().slideX(begin: 1, delay: 1400.ms),
+                              // Top section - Game Over title and badges
+                              Column(
+                                children: [
+                                  // Game Over Title
+                                  Text(
+                                    'GAME OVER',
+                                    style: TextStyle(
+                                      fontSize: constraints.maxHeight < 600
+                                          ? 36
+                                          : 48,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.foodColor,
+                                      letterSpacing: 4,
+                                      shadows: [
+                                        Shadow(
+                                          offset: const Offset(2, 2),
+                                          blurRadius: 4,
+                                          color: Colors.black.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ).animate().fadeIn().slideY(begin: -1),
+
+                                  SizedBox(
+                                    height: constraints.maxHeight < 600
+                                        ? 16
+                                        : 24,
+                                  ),
+
+                                  // High Score Badge
+                                  if (isHighScore) ...[
+                                    Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal:
+                                                constraints.maxHeight < 600
+                                                ? 16
+                                                : 20,
+                                            vertical:
+                                                constraints.maxHeight < 600
+                                                ? 8
+                                                : 12,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Colors.amber,
+                                                Colors.orange,
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              25,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.amber.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                                blurRadius: 10,
+                                                spreadRadius: 2,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.emoji_events,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'NEW HIGH SCORE!',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize:
+                                                      constraints.maxHeight <
+                                                          600
+                                                      ? 12
+                                                      : 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                        .animate()
+                                        .scale(delay: 500.ms)
+                                        .shimmer(delay: 1000.ms),
+
+                                    SizedBox(
+                                      height: constraints.maxHeight < 600
+                                          ? 16
+                                          : 20,
+                                    ),
+                                  ],
+
+                                  // Tournament Result Badge
+                                  if (gameProvider.isTournamentMode &&
+                                      gameProvider.tournamentMode != null) ...[
+                                    Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal:
+                                                constraints.maxHeight < 600
+                                                ? 12
+                                                : 16,
+                                            vertical:
+                                                constraints.maxHeight < 600
+                                                ? 8
+                                                : 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Colors.purple,
+                                                Colors.deepPurple,
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.purple.withValues(
+                                                  alpha: 0.4,
+                                                ),
+                                                blurRadius: 8,
+                                                spreadRadius: 1,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                gameProvider
+                                                    .tournamentMode!
+                                                    .emoji,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'TOURNAMENT SCORE SUBMITTED!',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize:
+                                                      constraints.maxHeight <
+                                                          600
+                                                      ? 10
+                                                      : 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                        .animate()
+                                        .scale(delay: 700.ms)
+                                        .shimmer(delay: 1200.ms),
+
+                                    SizedBox(
+                                      height: constraints.maxHeight < 600
+                                          ? 12
+                                          : 16,
+                                    ),
+                                  ],
+                                ],
+                              ),
+
+                              // Score Display - always visible
+                              _buildScoreCard(gameState, theme, constraints),
+
+                              SizedBox(
+                                height: constraints.maxHeight < 600 ? 8 : 12,
+                              ),
+
+                              // Dynamic content area - achievements or spacer
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    // Achievement Display - always visible if available
+                                    if (_achievementsLoaded &&
+                                        (_recentAchievements.isNotEmpty ||
+                                            _progressAchievements.isNotEmpty))
+                                      Flexible(
+                                        child: _buildAchievementSection(
+                                          theme,
+                                          constraints,
+                                        ),
+                                      )
+                                    else
+                                      // Spacer when no achievements
+                                      const Expanded(child: SizedBox()),
+                                  ],
+                                ),
+                              ),
+
+                              SizedBox(
+                                height: constraints.maxHeight < 600 ? 8 : 12,
+                              ),
+
+                              // Bottom section - Action Buttons - always at bottom
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child:
+                                        GradientButton(
+                                          onPressed: () async {
+                                            gameProvider.resetGame();
+                                            await Future.delayed(
+                                              const Duration(milliseconds: 50),
+                                            );
+                                            gameProvider.startGame();
+
+                                            if (context.mounted) {
+                                              Navigator.of(
+                                                context,
+                                              ).pushReplacement(
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const GameScreen(),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          text: 'PLAY AGAIN',
+                                          primaryColor: theme.accentColor,
+                                          secondaryColor: theme.foodColor,
+                                          icon: Icons.refresh,
+                                        ).animate().slideX(
+                                          begin: -1,
+                                          delay: 1200.ms,
+                                        ),
+                                  ),
+
+                                  const SizedBox(width: 12),
+
+                                  Expanded(
+                                    child:
+                                        GradientButton(
+                                          onPressed: () {
+                                            gameProvider.backToMenu();
+                                            Navigator.of(context).popUntil(
+                                              (route) => route.isFirst,
+                                            );
+                                          },
+                                          text: 'MENU',
+                                          primaryColor: theme.snakeColor
+                                              .withValues(alpha: 0.8),
+                                          secondaryColor: theme.snakeColor
+                                              .withValues(alpha: 0.6),
+                                          icon: Icons.home,
+                                          outlined: true,
+                                        ).animate().slideX(
+                                          begin: 1,
+                                          delay: 1400.ms,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
-                        ],
-                      ), // End Column
-                    ), // End SingleChildScrollView
-                  ), // End Padding
-                ), // End Center
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -319,7 +425,11 @@ class _GameOverScreenState extends State<GameOverScreen>
     );
   }
 
-  Widget _buildScoreCard(GameState gameState, GameTheme theme) {
+  Widget _buildScoreCard(
+    GameState gameState,
+    GameTheme theme,
+    BoxConstraints constraints,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -350,7 +460,8 @@ class _GameOverScreenState extends State<GameOverScreen>
               AnimatedBuilder(
                 animation: _scoreController,
                 builder: (context, child) {
-                  final animatedScore = (gameState.score * _scoreController.value).round();
+                  final animatedScore =
+                      (gameState.score * _scoreController.value).round();
                   return Text(
                     '$animatedScore',
                     style: TextStyle(
@@ -363,9 +474,9 @@ class _GameOverScreenState extends State<GameOverScreen>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Game Stats
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -401,8 +512,8 @@ class _GameOverScreenState extends State<GameOverScreen>
       ],
     );
   }
-  
-  Widget _buildAchievementSection(GameTheme theme) {
+
+  Widget _buildAchievementSection(GameTheme theme, BoxConstraints constraints) {
     return AnimatedBuilder(
       animation: _achievementController,
       builder: (context, child) {
@@ -412,8 +523,7 @@ class _GameOverScreenState extends State<GameOverScreen>
             opacity: _achievementController.value,
             child: Container(
               width: double.infinity,
-              constraints: const BoxConstraints(maxHeight: 280),
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(constraints.maxHeight < 600 ? 12 : 16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -444,11 +554,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                   // Section Title
                   Row(
                     children: [
-                      Icon(
-                        Icons.emoji_events,
-                        color: Colors.amber,
-                        size: 20,
-                      ),
+                      Icon(Icons.emoji_events, color: Colors.amber, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         'ACHIEVEMENTS',
@@ -461,52 +567,65 @@ class _GameOverScreenState extends State<GameOverScreen>
                       ),
                     ],
                   ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Scrollable achievement content
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Recent Unlocks
-                          if (_recentAchievements.isNotEmpty) ...[
-                            Text(
-                              'Recently Unlocked:',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+
+                  SizedBox(height: constraints.maxHeight < 600 ? 8 : 12),
+
+                  // Achievement content - more compact
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Recent Unlocks
+                      if (_recentAchievements.isNotEmpty) ...[
+                        Text(
+                          'Recently Unlocked:',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: constraints.maxHeight < 600 ? 11 : 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: constraints.maxHeight < 600 ? 4 : 6),
+                        ..._recentAchievements
+                            .take(constraints.maxHeight < 600 ? 1 : 2)
+                            .map(
+                              (achievement) => _buildAchievementItem(
+                                achievement,
+                                theme,
+                                constraints,
+                                isUnlocked: true,
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            ..._recentAchievements.take(2).map((achievement) => 
-                              _buildAchievementItem(achievement, theme, isUnlocked: true)
-                            ),
-                            
-                            if (_progressAchievements.isNotEmpty)
-                              const SizedBox(height: 12),
-                          ],
-                          
-                          // Progress Achievements
-                          if (_progressAchievements.isNotEmpty) ...[
-                            Text(
-                              'Progress Update:',
-                              style: TextStyle(
-                                color: Colors.orange,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+
+                        if (_progressAchievements.isNotEmpty)
+                          SizedBox(
+                            height: constraints.maxHeight < 600 ? 8 : 12,
+                          ),
+                      ],
+
+                      // Progress Achievements
+                      if (_progressAchievements.isNotEmpty) ...[
+                        Text(
+                          'Progress Update:',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: constraints.maxHeight < 600 ? 11 : 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: constraints.maxHeight < 600 ? 4 : 6),
+                        ..._progressAchievements
+                            .take(constraints.maxHeight < 600 ? 1 : 2)
+                            .map(
+                              (achievement) => _buildAchievementItem(
+                                achievement,
+                                theme,
+                                constraints,
+                                isUnlocked: false,
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            ..._progressAchievements.take(2).map((achievement) => 
-                              _buildAchievementItem(achievement, theme, isUnlocked: false)
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -516,13 +635,18 @@ class _GameOverScreenState extends State<GameOverScreen>
       },
     );
   }
-  
-  Widget _buildAchievementItem(Achievement achievement, GameTheme theme, {required bool isUnlocked}) {
+
+  Widget _buildAchievementItem(
+    Achievement achievement,
+    GameTheme theme,
+    BoxConstraints constraints, {
+    required bool isUnlocked,
+  }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.all(8),
+      margin: EdgeInsets.only(bottom: constraints.maxHeight < 600 ? 4 : 6),
+      padding: EdgeInsets.all(constraints.maxHeight < 600 ? 6 : 8),
       decoration: BoxDecoration(
-        color: isUnlocked 
+        color: isUnlocked
             ? Colors.green.withValues(alpha: 0.1)
             : theme.backgroundColor.withValues(alpha: 0.4),
         border: Border.all(
@@ -537,7 +661,7 @@ class _GameOverScreenState extends State<GameOverScreen>
         children: [
           // Achievement Icon with Rarity Color
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(constraints.maxHeight < 600 ? 4 : 6),
             decoration: BoxDecoration(
               color: achievement.rarityColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(6),
@@ -545,12 +669,12 @@ class _GameOverScreenState extends State<GameOverScreen>
             child: Icon(
               achievement.icon,
               color: achievement.rarityColor,
-              size: 16,
+              size: constraints.maxHeight < 600 ? 14 : 16,
             ),
           ),
-          
+
           const SizedBox(width: 8),
-          
+
           // Achievement Details
           Expanded(
             child: Column(
@@ -563,7 +687,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                         achievement.title,
                         style: TextStyle(
                           color: theme.accentColor,
-                          fontSize: 12,
+                          fontSize: constraints.maxHeight < 600 ? 11 : 12,
                           fontWeight: FontWeight.w600,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -574,63 +698,70 @@ class _GameOverScreenState extends State<GameOverScreen>
                       Icon(
                         Icons.check_circle,
                         color: Colors.green,
-                        size: 16,
+                        size: constraints.maxHeight < 600 ? 14 : 16,
                       )
                     else
                       Text(
                         '${(achievement.progressPercentage * 100).toInt()}%',
                         style: TextStyle(
                           color: Colors.orange,
-                          fontSize: 12,
+                          fontSize: constraints.maxHeight < 600 ? 11 : 12,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                   ],
                 ),
-                
-                const SizedBox(height: 4),
-                
+
+                SizedBox(height: constraints.maxHeight < 600 ? 2 : 4),
+
                 Text(
                   achievement.description,
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 12,
+                    fontSize: constraints.maxHeight < 600 ? 10 : 11,
                   ),
+                  maxLines: constraints.maxHeight < 600 ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                
-                if (!isUnlocked) ...[
-                  const SizedBox(height: 6),
+
+                if (!isUnlocked && constraints.maxHeight >= 600) ...[
+                  const SizedBox(height: 4),
                   LinearProgressIndicator(
                     value: achievement.progressPercentage,
-                    backgroundColor: theme.backgroundColor.withValues(alpha: 0.3),
+                    backgroundColor: theme.backgroundColor.withValues(
+                      alpha: 0.3,
+                    ),
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
-                    minHeight: 3,
+                    minHeight: 2,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     '${achievement.currentProgress}/${achievement.targetValue}',
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.6),
-                      fontSize: 10,
+                      fontSize: 9,
                     ),
                   ),
                 ],
               ],
             ),
           ),
-          
+
           // Points Display
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: EdgeInsets.symmetric(
+              horizontal: constraints.maxHeight < 600 ? 6 : 8,
+              vertical: constraints.maxHeight < 600 ? 2 : 4,
+            ),
             decoration: BoxDecoration(
               color: Colors.amber.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               '+${achievement.points}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.amber,
-                fontSize: 11,
+                fontSize: constraints.maxHeight < 600 ? 10 : 11,
                 fontWeight: FontWeight.bold,
               ),
             ),

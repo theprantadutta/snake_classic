@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
@@ -356,10 +357,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildControlItem('Swipe Up/Down/Left/Right', 'Change direction', theme),
-        _buildControlItem('Tap screen', 'Pause/Resume game', theme),
-        _buildControlItem('Arrow Keys / WASD', 'Change direction (Desktop)', theme),
-        _buildControlItem('Spacebar', 'Pause/Resume (Desktop)', theme),
+        // Platform-specific controls
+        if (kIsWeb || (!defaultTargetPlatform.toString().contains('android') && !defaultTargetPlatform.toString().contains('ios'))) ...[
+          // Desktop/Web controls
+          Text(
+            'Desktop/Web Controls',
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildControlItem('Arrow Keys', 'Change direction', theme),
+          _buildControlItem('WASD Keys', 'Change direction', theme),
+          _buildControlItem('Spacebar', 'Pause/Resume game', theme),
+          _buildControlItem('Mouse Click', 'Pause/Resume game', theme),
+          if (!kIsWeb) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Touch Controls (if available)',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.7),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildControlItem('Swipe Gestures', 'Change direction', theme),
+            _buildControlItem('Tap Screen', 'Pause/Resume game', theme),
+          ],
+        ] else ...[
+          // Mobile controls
+          Text(
+            'Touch Controls',
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildControlItem('Swipe Up ↑', 'Move snake up', theme),
+          _buildControlItem('Swipe Down ↓', 'Move snake down', theme),
+          _buildControlItem('Swipe Left ←', 'Move snake left', theme),
+          _buildControlItem('Swipe Right →', 'Move snake right', theme),
+          _buildControlItem('Tap Screen', 'Pause/Resume game', theme),
+        ],
       ],
     );
   }

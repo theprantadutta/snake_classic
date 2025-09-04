@@ -35,7 +35,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   Future<void> _loadUserRank() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (userProvider.isSignedIn && userProvider.user != null) {
-      final rank = await _leaderboardService.getUserRank(userProvider.user!.uid);
+      final rank = await _leaderboardService.getUserRank(
+        userProvider.user!.uid,
+      );
       if (mounted) {
         setState(() {
           _userRank = rank;
@@ -55,25 +57,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       appBar: AppBar(
         title: const Text(
           'Leaderboards',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: theme.primaryColor,
-          ),
+          icon: Icon(Icons.arrow_back, color: theme.primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: theme.accentColor,
           labelColor: theme.accentColor,
-          unselectedLabelColor: theme.accentColor.withValues(alpha:0.6),
+          unselectedLabelColor: theme.accentColor.withValues(alpha: 0.6),
           tabs: const [
             Tab(text: 'Global'),
             Tab(text: 'Weekly'),
@@ -84,10 +80,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         theme: theme,
         child: Column(
           children: [
+            // Add top padding to account for AppBar and TabBar
+            SizedBox(
+              height:
+                  MediaQuery.of(context).padding.top +
+                  kToolbarHeight +
+                  kTextTabBarHeight,
+            ),
+
             // User Rank Card
             if (userProvider.isSignedIn && _userRank != null)
               _buildUserRankCard(userProvider, theme),
-            
+
             // Leaderboard Content
             Expanded(
               child: TabBarView(
@@ -109,11 +113,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.primaryColor.withValues(alpha:0.2),
+        color: theme.primaryColor.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.primaryColor.withValues(alpha:0.3),
-        ),
+        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -124,14 +126,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 : null,
             backgroundColor: theme.primaryColor,
             child: userProvider.photoURL == null
-                ? Icon(
-                    Icons.person,
-                    color: theme.backgroundColor,
-                  )
+                ? Icon(Icons.person, color: theme.backgroundColor)
                 : null,
           ),
           const SizedBox(width: 12),
-          
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,24 +147,20 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   'Score: ${userProvider.highScore}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withValues(alpha:0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
             ),
           ),
-          
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.leaderboard,
-                    color: theme.accentColor,
-                    size: 20,
-                  ),
+                  Icon(Icons.leaderboard, color: theme.accentColor, size: 20),
                   const SizedBox(width: 4),
                   Text(
                     '#${_userRank!['rank']}',
@@ -181,7 +176,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 'Top ${_userRank!['percentile']}%',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withValues(alpha:0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -207,13 +202,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 Icon(
                   Icons.error_outline,
                   size: 64,
-                  color: theme.primaryColor.withValues(alpha:0.5),
+                  color: theme.primaryColor.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load leaderboard',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha:0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 16,
                   ),
                 ),
@@ -223,7 +218,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         }
 
         final leaderboard = snapshot.data ?? [];
-        
+
         if (leaderboard.isEmpty) {
           return Center(
             child: Column(
@@ -232,13 +227,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 Icon(
                   Icons.emoji_events_outlined,
                   size: 64,
-                  color: theme.primaryColor.withValues(alpha:0.5),
+                  color: theme.primaryColor.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No scores yet',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha:0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 16,
                   ),
                 ),
@@ -246,7 +241,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 Text(
                   'Be the first to set a high score!',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha:0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 14,
                   ),
                 ),
@@ -260,10 +255,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           itemCount: leaderboard.length,
           itemBuilder: (context, index) {
             final player = leaderboard[index];
-            final isCurrentUser = userProvider.isSignedIn && 
-                                 userProvider.user != null &&
-                                 player['uid'] == userProvider.user!.uid;
-            
+            final isCurrentUser =
+                userProvider.isSignedIn &&
+                userProvider.user != null &&
+                player['uid'] == userProvider.user!.uid;
+
             return _buildLeaderboardItem(
               index + 1,
               player,
@@ -292,13 +288,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 Icon(
                   Icons.error_outline,
                   size: 64,
-                  color: theme.primaryColor.withValues(alpha:0.5),
+                  color: theme.primaryColor.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load weekly leaderboard',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha:0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 16,
                   ),
                 ),
@@ -308,7 +304,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         }
 
         final leaderboard = snapshot.data ?? [];
-        
+
         if (leaderboard.isEmpty) {
           return Center(
             child: Column(
@@ -317,13 +313,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 Icon(
                   Icons.calendar_today_outlined,
                   size: 64,
-                  color: theme.primaryColor.withValues(alpha:0.5),
+                  color: theme.primaryColor.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No weekly scores yet',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha:0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 16,
                   ),
                 ),
@@ -331,7 +327,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 Text(
                   'Play this week to appear here!',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha:0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 14,
                   ),
                 ),
@@ -345,10 +341,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           itemCount: leaderboard.length,
           itemBuilder: (context, index) {
             final player = leaderboard[index];
-            final isCurrentUser = userProvider.isSignedIn && 
-                                 userProvider.user != null &&
-                                 player['uid'] == userProvider.user!.uid;
-            
+            final isCurrentUser =
+                userProvider.isSignedIn &&
+                userProvider.user != null &&
+                player['uid'] == userProvider.user!.uid;
+
             return _buildLeaderboardItem(
               index + 1,
               player,
@@ -369,7 +366,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   ) {
     Color rankColor = Colors.white;
     IconData? rankIcon;
-    
+
     if (rank == 1) {
       rankColor = Colors.amber;
       rankIcon = Icons.emoji_events;
@@ -385,13 +382,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isCurrentUser 
-          ? theme.accentColor.withValues(alpha:0.2)
-          : theme.primaryColor.withValues(alpha:0.1),
+        color: isCurrentUser
+            ? theme.accentColor.withValues(alpha: 0.2)
+            : theme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: isCurrentUser 
-          ? Border.all(color: theme.accentColor.withValues(alpha:0.5))
-          : Border.all(color: theme.primaryColor.withValues(alpha:0.2)),
+        border: isCurrentUser
+            ? Border.all(color: theme.accentColor.withValues(alpha: 0.5))
+            : Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -401,11 +398,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             child: Row(
               children: [
                 if (rankIcon != null) ...[
-                  Icon(
-                    rankIcon,
-                    color: rankColor,
-                    size: 20,
-                  ),
+                  Icon(rankIcon, color: rankColor, size: 20),
                 ] else ...[
                   Text(
                     '#$rank',
@@ -419,9 +412,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               ],
             ),
           ),
-          
-          const SizedBox(width: 12),
-          
+
+          // const SizedBox(width: 12),
+
           // Avatar
           CircleAvatar(
             radius: 20,
@@ -430,16 +423,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 : null,
             backgroundColor: theme.primaryColor,
             child: player['photoURL'] == null
-                ? Icon(
-                    Icons.person,
-                    color: theme.backgroundColor,
-                    size: 20,
-                  )
+                ? Icon(Icons.person, color: theme.backgroundColor, size: 20)
                 : null,
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // Name and details
           Expanded(
             child: Column(
@@ -454,13 +443,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                         fontWeight: FontWeight.bold,
                         color: isCurrentUser ? theme.accentColor : Colors.white,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                     if (player['isAnonymous'] == true) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha:0.2),
+                          color: Colors.orange.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -476,9 +469,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     if (isCurrentUser) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: theme.accentColor.withValues(alpha:0.2),
+                          color: theme.accentColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -497,13 +493,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   '${player['totalGamesPlayed']} games played',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha:0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // Score
           Text(
             '${player['highScore']}',
