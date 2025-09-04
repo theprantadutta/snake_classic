@@ -83,9 +83,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       _gameSpeed = game.gameSettings['initialSpeed'] ?? 200;
       
       // Get current user's snake
-      final currentUser = context.read<UserProvider>().user;
-      if (currentUser != null) {
-        final myPlayer = game.getPlayer(currentUser.uid);
+      final userProvider = context.read<UserProvider>();
+      final currentUserId = userProvider.currentUserId;
+      if (currentUserId != null) {
+        final myPlayer = game.getPlayer(currentUserId);
         if (myPlayer != null) {
           _mySnake = List.from(myPlayer.snake);
           _currentDirection = myPlayer.currentDirection;
@@ -150,7 +151,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     final game = multiplayerProvider.currentGame;
     if (game != null) {
       for (final player in game.players) {
-        if (player.userId != context.read<UserProvider>().user?.uid) {
+        if (player.userId != context.read<UserProvider>().currentUserId) {
           if (player.snake.contains(newHead)) {
             _handleCrash();
             return;
@@ -164,15 +165,26 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
     // Check food collision
     bool ateFood = false;
+    int pointsEarned = 0;
     if (game?.foodPosition == newHead) {
       ateFood = true;
-      _myScore += 10;
+      pointsEarned = 10;
+      _myScore += pointsEarned;
+      // Generate new food position
+      multiplayerProvider.generateNewFood();
     } else if (game?.bonusFoodPosition == newHead) {
       ateFood = true;
-      _myScore += 25;
+      pointsEarned = 25;
+      _myScore += pointsEarned;
     } else if (game?.specialFoodPosition == newHead) {
       ateFood = true;
-      _myScore += 50;
+      pointsEarned = 50;
+      _myScore += pointsEarned;
+    }
+    
+    // Handle food consumption with integrated services
+    if (ateFood) {
+      multiplayerProvider.onFoodEaten(pointsEarned);
     }
 
     if (!ateFood) {
@@ -181,6 +193,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
     // Update multiplayer state
     _updateMultiplayerState();
+    
+    // Check if game should end
+    if (_myStatus == PlayerStatus.crashed) {
+      multiplayerProvider.checkGameEnd();
+    }
     
     setState(() {});
   }
@@ -199,12 +216,34 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     _gameTimer?.cancel();
     _updateMultiplayerState();
     
+    final multiplayerProvider = context.read<MultiplayerProvider>();
+    
+    // Handle crash with integrated services
+    multiplayerProvider.onPlayerCrash();
+    
+    // Check if game should end
+    multiplayerProvider.checkGameEnd();
+    
     // Show crash feedback
     _showCrashDialog();
   }
 
   void _showCrashDialog() {
     final theme = context.read<ThemeProvider>().currentTheme;
+    final multiplayerProvider = context.read<MultiplayerProvider>();
+    
+    // Check if this player won or lost
+    final isWinner = multiplayerProvider.currentGame?.winnerId == context.read<UserProvider>().currentUserId;
+    final gameFinished = multiplayerProvider.isGameFinished;
+    
+    // Handle game outcome
+    if (gameFinished) {
+      if (isWinner) {
+        multiplayerProvider.onGameWon(_myScore);
+      } else {
+        multiplayerProvider.onGameLost(_myScore);
+      }
+    }
     
     showDialog(
       context: context,
@@ -467,7 +506,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           
           // Current player info
           Expanded(
-            child: _buildPlayerInfo(theme, game, userProvider.user?.uid ?? '', true),
+            child: _buildPlayerInfo(theme, game, userProvider.currentUserId ?? '', true),
           ),
           
           const SizedBox(width: 16),
@@ -493,7 +532,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           
           // Opponent info
           Expanded(
-            child: _buildOpponentInfo(theme, game, userProvider.user?.uid ?? ''),
+            child: _buildOpponentInfo(theme, game, userProvider.currentUserId ?? ''),
           ),
         ],
       ),
@@ -661,7 +700,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   theme: theme,
                   boardSize: _boardSize,
                   mySnake: _mySnake,
-                  opponentSnakes: _getOpponentSnakes(game, userProvider.user?.uid ?? ''),
+                  opponentSnakes: _getOpponentSnakes(game, userProvider.currentUserId ?? ''),
                   foodPosition: game.foodPosition,
                   bonusFoodPosition: game.bonusFoodPosition,
                   specialFoodPosition: game.specialFoodPosition,

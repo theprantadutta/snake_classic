@@ -47,22 +47,22 @@ class _LoadingScreenState extends State<LoadingScreen>
     super.initState();
 
     _logoController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1000), // Faster logo animation
       vsync: this,
     );
 
     _progressController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 200), // Faster progress updates
       vsync: this,
     );
 
     _particleController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
+      duration: const Duration(milliseconds: 2000), // Faster particles
       vsync: this,
     );
 
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1000), // Faster pulse
       vsync: this,
     );
 
@@ -171,7 +171,7 @@ class _LoadingScreenState extends State<LoadingScreen>
 
         if (isFirstTime) {
           await _updateProgress(1.0, 'Welcome!', 'Choose how to continue');
-          await Future.delayed(const Duration(milliseconds: 800));
+          await Future.delayed(const Duration(milliseconds: 100));
 
           // Navigate to first-time auth screen
           if (!mounted) {
@@ -197,7 +197,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                       child: child,
                     );
                   },
-              transitionDuration: const Duration(milliseconds: 600),
+              transitionDuration: const Duration(milliseconds: 300),
             ),
           );
           return;
@@ -210,7 +210,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         'Ready to play!',
         'Welcome back to Snake Classic',
       );
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       // Navigation to Home Screen with smooth transition (returning users)
       if (mounted) {
@@ -246,16 +246,9 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<void> _initializeCoreServices() async {
     try {
       AppLogger.lifecycle('Initializing core services');
-      // Run actual work and minimum delay concurrently
-      await Future.wait([
-        Future.delayed(const Duration(seconds: 2)), // Minimum 2-second delay
-        Future(() async {
-          // Initialize Firebase and core services here
-          await Future.delayed(
-            const Duration(milliseconds: 300),
-          ); // Simulate work
-        }),
-      ]);
+
+      // Initialize Firebase and core services here
+      await Future.delayed(const Duration(milliseconds: 300)); // Simulate work
     } catch (e) {
       AppLogger.error('Core services initialization warning', e);
     }
@@ -265,36 +258,30 @@ class _LoadingScreenState extends State<LoadingScreen>
     try {
       AppLogger.lifecycle('Starting user system initialization...');
 
-      // Run actual work and minimum delay concurrently
-      await Future.wait([
-        Future.delayed(const Duration(seconds: 2)), // Minimum 2-second delay
-        Future(() async {
-          if (!mounted) return;
-          final unifiedUserService = Provider.of<UnifiedUserService>(
+      if (!mounted) return;
+      final unifiedUserService = Provider.of<UnifiedUserService>(
+        context,
+        listen: false,
+      );
+
+      await unifiedUserService.initialize();
+      AppLogger.success('UnifiedUserService initialized');
+
+      // Initialize UserProvider if we can get it safely
+      if (mounted) {
+        try {
+          final userProvider = Provider.of<UserProvider>(
             context,
             listen: false,
           );
-
-          await unifiedUserService.initialize();
-          AppLogger.success('UnifiedUserService initialized');
-
-          // Initialize UserProvider if we can get it safely
           if (mounted) {
-            try {
-              final userProvider = Provider.of<UserProvider>(
-                context,
-                listen: false,
-              );
-              if (mounted) {
-                userProvider.initialize(context);
-                AppLogger.success('UserProvider initialized');
-              }
-            } catch (e) {
-              AppLogger.warning('UserProvider initialization warning: $e');
-            }
+            userProvider.initialize(context);
+            AppLogger.success('UserProvider initialized');
           }
-        }),
-      ]);
+        } catch (e) {
+          AppLogger.warning('UserProvider initialization warning: $e');
+        }
+      }
 
       AppLogger.success('User system initialization complete');
     } catch (e) {
@@ -304,27 +291,18 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   Future<void> _initializePreferences() async {
     try {
-      // Run actual work and minimum delay concurrently
-      await Future.wait([
-        Future.delayed(const Duration(seconds: 2)), // Minimum 2-second delay
-        Future(() async {
-          if (!mounted) return;
-          final themeProvider = Provider.of<ThemeProvider>(
-            context,
-            listen: false,
-          );
-          final preferencesService = Provider.of<PreferencesService>(
-            context,
-            listen: false,
-          );
+      if (!mounted) return;
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final preferencesService = Provider.of<PreferencesService>(
+        context,
+        listen: false,
+      );
 
-          await preferencesService.initialize();
+      await preferencesService.initialize();
 
-          if (mounted) {
-            await themeProvider.initialize(context);
-          }
-        }),
-      ]);
+      if (mounted) {
+        await themeProvider.initialize(context);
+      }
     } catch (e) {
       AppLogger.prefs('Preferences initialization warning', e);
     }
@@ -334,14 +312,8 @@ class _LoadingScreenState extends State<LoadingScreen>
     try {
       AppLogger.stats('Initializing statistics service');
 
-      // Run actual work and minimum delay concurrently
-      await Future.wait([
-        Future.delayed(const Duration(seconds: 2)), // Minimum 2-second delay
-        Future(() async {
-          final statisticsService = StatisticsService();
-          await statisticsService.initialize();
-        }),
-      ]);
+      final statisticsService = StatisticsService();
+      await statisticsService.initialize();
 
       AppLogger.success('Statistics service initialized');
     } catch (e) {
@@ -353,14 +325,8 @@ class _LoadingScreenState extends State<LoadingScreen>
     try {
       AppLogger.achievement('Initializing achievement system');
 
-      // Run actual work and minimum delay concurrently
-      await Future.wait([
-        Future.delayed(const Duration(seconds: 2)), // Minimum 2-second delay
-        Future(() async {
-          final achievementService = AchievementService();
-          await achievementService.initialize();
-        }),
-      ]);
+      final achievementService = AchievementService();
+      await achievementService.initialize();
 
       AppLogger.success('Achievement system initialized');
     } catch (e) {
@@ -372,14 +338,8 @@ class _LoadingScreenState extends State<LoadingScreen>
     try {
       AppLogger.audio('Initializing audio service');
 
-      // Run actual work and minimum delay concurrently
-      await Future.wait([
-        Future.delayed(const Duration(seconds: 2)), // Minimum 2-second delay
-        Future(() async {
-          final audioService = AudioService();
-          await audioService.initialize();
-        }),
-      ]);
+      final audioService = AudioService();
+      await audioService.initialize();
 
       AppLogger.success('Audio service initialized');
     } catch (e) {
@@ -391,19 +351,10 @@ class _LoadingScreenState extends State<LoadingScreen>
     try {
       AppLogger.sync('Performing final sync operations');
 
-      // Run actual work and minimum delay concurrently
-      await Future.wait([
-        Future.delayed(const Duration(seconds: 2)), // Minimum 2-second delay
-        Future(() async {
-          if (!mounted) return;
-          final syncService = Provider.of<DataSyncService>(
-            context,
-            listen: false,
-          );
-          // Perform any pending sync operations
-          await syncService.forceSyncNow();
-        }),
-      ]);
+      if (!mounted) return;
+      final syncService = Provider.of<DataSyncService>(context, listen: false);
+      // Perform any pending sync operations
+      await syncService.forceSyncNow();
 
       AppLogger.success('Final sync completed');
     } catch (e) {
@@ -428,7 +379,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     _progressController.forward();
 
     // Small delay for UI update
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 50));
   }
 
   void _handleError(String error) {
@@ -513,7 +464,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       builder: (context, constraints) {
         final screenHeight = constraints.maxHeight;
         final isSmallScreen = screenHeight < 600;
-        
+
         return SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: screenHeight),
@@ -608,15 +559,23 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
   }
 
-  Widget _buildEnhancedLoadingArea(GameTheme theme, [bool isSmallScreen = false]) {
+  Widget _buildEnhancedLoadingArea(
+    GameTheme theme, [
+    bool isSmallScreen = false,
+  ]) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         children: [
           // Loading status card with enhanced design and fixed height
           Container(
-            height: isSmallScreen ? 80 : 100, // Responsive fixed height to prevent layout shifts
-            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 16 : 24, vertical: isSmallScreen ? 12 : 16),
+            height: isSmallScreen
+                ? 80
+                : 100, // Responsive fixed height to prevent layout shifts
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 16 : 24,
+              vertical: isSmallScreen ? 12 : 16,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -645,7 +604,9 @@ class _LoadingScreenState extends State<LoadingScreen>
                 children: [
                   // Current task with icon - fixed height area
                   SizedBox(
-                    height: isSmallScreen ? 28 : 38, // Responsive fixed height for main task area
+                    height: isSmallScreen
+                        ? 28
+                        : 38, // Responsive fixed height for main task area
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -701,7 +662,9 @@ class _LoadingScreenState extends State<LoadingScreen>
 
                   // Subtask area - fixed height whether content exists or not
                   SizedBox(
-                    height: isSmallScreen ? 16 : 20, // Responsive fixed height for subtask area
+                    height: isSmallScreen
+                        ? 16
+                        : 20, // Responsive fixed height for subtask area
                     child: _subTask.isNotEmpty
                         ? Text(
                             _subTask,

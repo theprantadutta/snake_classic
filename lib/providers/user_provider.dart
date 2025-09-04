@@ -25,6 +25,12 @@ class UserProvider extends ChangeNotifier {
   // Firebase user for backward compatibility
   User? get user => _userService?.currentUser?.userType == UserType.anonymous 
       ? null : null; // This needs to be implemented properly
+      
+  // Get current user ID regardless of user type
+  String? get currentUserId => _userService?.currentUser?.uid;
+  
+  // Get current user object (unified user)
+  UnifiedUser? get currentUser => _userService?.currentUser;
   
   Map<String, dynamic>? get userProfile => _userService?.currentUser != null 
       ? _userService!.currentUser!.toFirestore() : null;

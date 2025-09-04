@@ -4,13 +4,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
-import 'package:snake_classic/services/auth_service.dart';
+import 'package:snake_classic/services/unified_user_service.dart';
+// Services commented out until methods are implemented
+// import 'package:snake_classic/services/leaderboard_service.dart';
+// import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 
 class MultiplayerService {
   static MultiplayerService? _instance;
-  final AuthService _authService = AuthService();
+  final UnifiedUserService _userService = UnifiedUserService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Services commented out until methods are implemented
+  // final LeaderboardService _leaderboardService = LeaderboardService();
+  // final NotificationService _notificationService = NotificationService();
   
   // Stream subscriptions
   StreamSubscription? _gameStreamSubscription;
@@ -39,16 +45,17 @@ class MultiplayerService {
     int maxPlayers = 2,
   }) async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) return null;
+      final currentUserId = _userService.currentUser?.uid;
+      final currentUserProfile = _userService.currentUser;
+      if (currentUserId == null || currentUserProfile == null) return null;
 
       final gameId = _firestore.collection('multiplayerGames').doc().id;
       final roomCode = isPrivate ? _generateRoomCode() : null;
       
       final hostPlayer = MultiplayerPlayer(
-        userId: currentUser.uid,
-        displayName: currentUser.displayName ?? 'Player 1',
-        photoUrl: currentUser.photoURL,
+        userId: currentUserId,
+        displayName: currentUserProfile.username.isNotEmpty ? currentUserProfile.username : currentUserProfile.displayName,
+        photoUrl: currentUserProfile.photoURL,
         status: PlayerStatus.waiting,
         snake: _generateInitialSnakePosition(0, mode.defaultSettings['boardSize'] ?? 20),
         currentDirection: Direction.right,
@@ -83,8 +90,9 @@ class MultiplayerService {
   /// Join a game by ID or room code
   Future<bool> joinGame(String gameIdOrRoomCode) async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) return false;
+      final currentUserId = _userService.currentUser?.uid;
+      final currentUserProfile = _userService.currentUser;
+      if (currentUserId == null || currentUserProfile == null) return false;
 
       // First, try to find the game by ID
       DocumentSnapshot gameDoc = await _firestore
@@ -113,7 +121,7 @@ class MultiplayerService {
       if (game.isFull || game.isFinished) return false;
       
       // Check if user is already in the game
-      if (game.getPlayer(currentUser.uid) != null) {
+      if (game.getPlayer(currentUserId) != null) {
         _currentGameId = game.id;
         _currentGame = game;
         _startListeningToGame();
@@ -123,9 +131,9 @@ class MultiplayerService {
       // Add player to the game
       final playerIndex = game.players.length;
       final newPlayer = MultiplayerPlayer(
-        userId: currentUser.uid,
-        displayName: currentUser.displayName ?? 'Player ${playerIndex + 1}',
-        photoUrl: currentUser.photoURL,
+        userId: currentUserId,
+        displayName: currentUserProfile.username.isNotEmpty ? currentUserProfile.username : (currentUserProfile.displayName.isNotEmpty ? currentUserProfile.displayName : 'Player ${playerIndex + 1}'),
+        photoUrl: currentUserProfile.photoURL,
         status: PlayerStatus.waiting,
         snake: _generateInitialSnakePosition(playerIndex, game.gameSettings['boardSize'] ?? 20),
         currentDirection: Direction.right,
@@ -153,12 +161,12 @@ class MultiplayerService {
   /// Leave the current game
   Future<void> leaveGame() async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null || _currentGame == null) return;
+      final currentUserId = _userService.currentUser?.uid;
+      if (currentUserId == null || _currentGame == null) return;
 
       // Remove player from the game or mark as disconnected
       final updatedPlayers = _currentGame!.players
-          .where((player) => player.userId != currentUser.uid)
+          .where((player) => player.userId != currentUserId)
           .toList();
 
       if (updatedPlayers.isEmpty) {
@@ -185,11 +193,11 @@ class MultiplayerService {
   /// Mark player as ready
   Future<bool> markPlayerReady() async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null || _currentGame == null) return false;
+      final currentUserId = _userService.currentUser?.uid;
+      if (currentUserId == null || _currentGame == null) return false;
 
       final updatedPlayers = _currentGame!.players.map((player) {
-        if (player.userId == currentUser.uid) {
+        if (player.userId == currentUserId) {
           return player.copyWith(status: PlayerStatus.ready);
         }
         return player;
@@ -243,11 +251,11 @@ class MultiplayerService {
     required PlayerStatus status,
   }) async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null || _currentGame == null) return;
+      final currentUserId = _userService.currentUser?.uid;
+      if (currentUserId == null || _currentGame == null) return;
 
       final updatedPlayers = _currentGame!.players.map((player) {
-        if (player.userId == currentUser.uid) {
+        if (player.userId == currentUserId) {
           return player.copyWith(
             snake: snake,
             score: score,
@@ -374,6 +382,13 @@ class MultiplayerService {
         'players': updatedPlayers.map((p) => p.toJson()).toList(),
         'foodPosition': initialFood.toJson(),
       });
+      
+      // Update current game instance
+      _currentGame = _currentGame!.copyWith(
+        status: MultiplayerGameStatus.playing,
+        players: updatedPlayers,
+        foodPosition: initialFood,
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error starting game: $e');
@@ -410,10 +425,35 @@ class MultiplayerService {
     }
   }
 
-  void _handleGameFinished(MultiplayerGame game) {
+  void _handleGameFinished(MultiplayerGame game) async {
     // Handle game finished
     if (kDebugMode) {
       print('Game finished: ${game.id}');
+    }
+    
+    try {
+      // Update leaderboards with final scores
+      for (final player in game.players) {
+        if (player.score > 0) {
+          // await _leaderboardService.submitScore( // TODO: Implement
+          //   player.userId, 
+          //   player.displayName, 
+          //   player.score,
+          //   gameMode: 'multiplayer_${game.mode.name}'
+          // );
+        }
+        
+        // Send game finished notification to players
+        if (game.winnerId == player.userId) {
+          // _notificationService.sendGameWonNotification(player.userId, player.score); // TODO: Implement
+        } else {
+          // _notificationService.sendGameLostNotification(player.userId, player.score); // TODO: Implement
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling game finished: $e');
+      }
     }
   }
 
@@ -473,6 +513,50 @@ class MultiplayerService {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
     return List.generate(6, (index) => chars[random.nextInt(chars.length)]).join();
+  }
+
+  /// Generate new food position when eaten
+  Future<void> generateNewFood() async {
+    try {
+      if (_currentGame == null) return;
+      
+      final boardSize = _currentGame!.gameSettings['boardSize'] ?? 20;
+      final newFood = _generateFoodPosition(boardSize, _currentGame!.players);
+      
+      await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
+        'foodPosition': newFood.toJson(),
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error generating new food: $e');
+      }
+    }
+  }
+  
+  /// Check if game should end
+  Future<void> checkGameEnd() async {
+    try {
+      if (_currentGame == null) return;
+      
+      final alivePlayers = _currentGame!.alivePlayers;
+      
+      if (alivePlayers.length <= 1) {
+        String? winnerId;
+        if (alivePlayers.length == 1) {
+          winnerId = alivePlayers.first.userId;
+        }
+        
+        await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
+          'status': MultiplayerGameStatus.finished.name,
+          'finishedAt': FieldValue.serverTimestamp(),
+          'winnerId': winnerId,
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking game end: $e');
+      }
+    }
   }
 
   /// Dispose the service

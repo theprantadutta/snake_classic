@@ -742,7 +742,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   }
 
   Widget _buildPlayerItem(GameTheme theme, MultiplayerPlayer player, UserProvider userProvider) {
-    final isCurrentUser = userProvider.isSignedIn && userProvider.user?.uid == player.userId;
+    final currentUserId = userProvider.currentUserId;
+    final isCurrentUser = currentUserId == player.userId;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -884,7 +885,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     MultiplayerGame game,
     UserProvider userProvider,
   ) {
-    final currentPlayer = game.getPlayer(userProvider.user?.uid ?? '');
+    final currentUserId = userProvider.currentUserId;
+    final currentPlayer = game.getPlayer(currentUserId ?? '');
     final isReady = currentPlayer?.status == PlayerStatus.ready;
     
     return Row(

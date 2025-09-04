@@ -92,7 +92,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   builder: (context, constraints) {
                     final screenWidth = constraints.maxWidth;
                     final screenHeight = constraints.maxHeight;
-                    final isSmallScreen = screenHeight < 700;
+                    
+                    // Improved screen size detection for better responsiveness
+                    final isVerySmallScreen = screenHeight < 650;
+                    final isSmallScreen = screenHeight < 750;
+                    final isMediumScreen = screenHeight >= 750 && screenHeight < 900;
+                    final isTallScreen = screenHeight >= 900;
+                    
+                    // Dynamic spacing based on screen height
+                    final topSpacing = isVerySmallScreen ? 8.0 : isSmallScreen ? 12.0 : isMediumScreen ? 16.0 : 20.0;
+                    final sectionSpacing = isVerySmallScreen ? 16.0 : isSmallScreen ? 20.0 : isMediumScreen ? 28.0 : 36.0;
+                    final bottomSpacing = isVerySmallScreen ? 8.0 : isSmallScreen ? 12.0 : isMediumScreen ? 16.0 : 20.0;
 
                     return Stack(
                       children: [
@@ -113,39 +123,61 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   context,
                                   userProvider,
                                   theme,
-                                  isSmallScreen,
+                                  isVerySmallScreen,
                                 ),
 
-                                SizedBox(height: isSmallScreen ? 16 : 24),
+                                SizedBox(height: topSpacing),
 
-                                // Game title with logo
-                                _buildGameTitle(theme, isSmallScreen),
+                                // Game title with logo - flexible size
+                                _buildGameTitle(theme, screenHeight),
 
-                                SizedBox(height: isSmallScreen ? 16 : 24),
+                                // Flexible spacing based on screen size
+                                SizedBox(height: sectionSpacing * 0.7),
 
-                                // Main play area with central button
+                                // Main play area with central button - constrained for tall screens
                                 Expanded(
-                                  child: _buildMainPlayArea(
-                                    context,
-                                    gameProvider,
-                                    userProvider,
-                                    theme,
-                                    isSmallScreen,
-                                    screenWidth,
-                                    screenHeight,
-                                  ),
+                                  child: isTallScreen
+                                      ? Center(
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxHeight: screenHeight * 0.6, // Limit height on very tall screens
+                                              maxWidth: screenWidth,
+                                            ),
+                                            child: _buildMainPlayArea(
+                                              context,
+                                              gameProvider,
+                                              userProvider,
+                                              theme,
+                                              screenHeight,
+                                              screenWidth,
+                                              screenHeight,
+                                            ),
+                                          ),
+                                        )
+                                      : _buildMainPlayArea(
+                                          context,
+                                          gameProvider,
+                                          userProvider,
+                                          theme,
+                                          screenHeight,
+                                          screenWidth,
+                                          screenHeight,
+                                        ),
                                 ),
 
-                                // Bottom navigation grid
+                                // Flexible spacing before bottom nav
+                                SizedBox(height: sectionSpacing * 0.5),
+
+                                // Bottom navigation grid - responsive sizing
                                 _buildBottomNavigation(
                                   context,
                                   themeProvider,
                                   theme,
-                                  isSmallScreen,
+                                  screenHeight,
                                   screenWidth,
                                 ),
 
-                                SizedBox(height: isSmallScreen ? 8 : 12),
+                                SizedBox(height: bottomSpacing),
                               ],
                             ),
                           ),
@@ -315,18 +347,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildGameTitle(GameTheme theme, bool isSmallScreen) {
+  Widget _buildGameTitle(GameTheme theme, double screenHeight) {
+    // Dynamic logo sizing based on screen height
+    final logoSize = screenHeight < 650 ? 100.0 : screenHeight < 750 ? 120.0 : screenHeight < 900 ? 140.0 : 160.0;
+    final logoHeight = screenHeight < 650 ? 60.0 : screenHeight < 750 ? 75.0 : screenHeight < 900 ? 85.0 : 95.0;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Use the logo with text for a cleaner look
         SizedBox(
-              width: isSmallScreen ? 120 : 150,
-              height: isSmallScreen ? 80 : 100,
+              width: logoSize,
+              height: logoHeight,
               child: AnimatedSnakeLogo(
                 theme: theme,
                 controller: _logoController,
-                size: isSmallScreen ? 120 : 150,
+                size: logoSize,
                 useTextLogo: true, // Use logo with text for home screen
               ),
             )
@@ -342,10 +377,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     GameProvider gameProvider,
     UserProvider userProvider,
     GameTheme theme,
-    bool isSmallScreen,
-    double screenWidth,
     double screenHeight,
+    double screenWidth,
+    double actualScreenHeight,
   ) {
+    // Dynamic sizing based on screen height
+    final isVerySmallScreen = screenHeight < 650;
+    final isSmallScreen = screenHeight < 750;
+    final isMediumScreen = screenHeight >= 750 && screenHeight < 900;
+    // Note: isTallScreen handled in main build method
     final highScore = userProvider.isSignedIn
         ? (userProvider.highScore > gameProvider.gameState.highScore
               ? userProvider.highScore
@@ -380,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         : 'Start Playing!',
                     trend: trend,
                     theme: theme,
-                    isSmallScreen: isSmallScreen,
+                    isSmallScreen: isVerySmallScreen || isSmallScreen,
                     hasSync: userProvider.isSignedIn,
                     isPulsing: highScore > (stats['previousBest'] ?? 0),
                   );
@@ -388,7 +428,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.3),
             ),
 
-            SizedBox(width: isSmallScreen ? 12 : 16),
+            SizedBox(width: isVerySmallScreen ? 8 : isSmallScreen ? 12 : 16),
 
             // Enhanced Statistics Card
             Expanded(
@@ -420,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         : 'Start your journey',
                     trend: winRate > 0.5 ? '🔥 Hot' : null,
                     theme: theme,
-                    isSmallScreen: isSmallScreen,
+                    isSmallScreen: isVerySmallScreen || isSmallScreen,
                     isPulsing: totalGames == 0, // Pulse for new players
                   );
                 },
@@ -453,11 +493,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         subtitle:
                             '${stats['totalAchievements'] ?? 0} available',
                         theme: theme,
-                        isSmallScreen: isSmallScreen,
+                        isSmallScreen: isVerySmallScreen || isSmallScreen,
                       ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
                     ),
 
-                    SizedBox(width: isSmallScreen ? 12 : 16),
+                    SizedBox(width: isVerySmallScreen ? 8 : isSmallScreen ? 12 : 16),
 
                     // Streak Card
                     Expanded(
@@ -471,7 +511,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             : 'Play to start',
                         trend: (stats['currentStreak'] ?? 0) > 5 ? '🔥' : null,
                         theme: theme,
-                        isSmallScreen: isSmallScreen,
+                        isSmallScreen: isVerySmallScreen || isSmallScreen,
                         isPulsing: (stats['currentStreak'] ?? 0) >= 10,
                       ).animate().fadeIn(delay: 850.ms).slideY(begin: 0.2),
                     ),
@@ -482,10 +522,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           },
         ),
 
-        SizedBox(height: isSmallScreen ? 20 : 30),
+        SizedBox(height: isVerySmallScreen ? 16 : isSmallScreen ? 20 : isMediumScreen ? 28 : 36),
 
         // Central Play Button
-        _buildCentralPlayButton(context, theme, isSmallScreen, screenWidth)
+        _buildCentralPlayButton(context, theme, screenHeight, screenWidth)
             .animate()
             .fadeIn(delay: 700.ms)
             .scale(begin: const Offset(0.8, 0.8), duration: 600.ms)
@@ -696,7 +736,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
           ),
 
-          SizedBox(height: isSmallScreen ? 12 : 16),
+          SizedBox(height: isSmallScreen ? 8 : 16),
 
           // Enhanced title with better typography
           Text(
@@ -769,10 +809,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildCentralPlayButton(
     BuildContext context,
     GameTheme theme,
-    bool isSmallScreen,
+    double screenHeight,
     double screenWidth,
   ) {
-    final buttonSize = isSmallScreen ? 120.0 : 140.0;
+    // Dynamic sizing based on screen height
+    final isSmallScreen = screenHeight < 750;
+    final buttonSize = screenHeight < 650 ? 100.0 : 
+                      screenHeight < 750 ? 120.0 :
+                      screenHeight < 900 ? 140.0 : 160.0;
 
     return GestureDetector(
       onTap: () {
@@ -873,9 +917,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     BuildContext context,
     ThemeProvider themeProvider,
     GameTheme theme,
-    bool isSmallScreen,
+    double screenHeight,
     double screenWidth,
   ) {
+    // Dynamic sizing based on screen height
+    final isVerySmallScreen = screenHeight < 650;
+    final isSmallScreen = screenHeight < 750;
+    // Note: isMediumScreen not needed in bottom navigation
     final navigationItems = [
       _NavItem(Icons.leaderboard, 'BOARD', Colors.amber, () {
         Navigator.of(context).push(
@@ -936,7 +984,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: item.color,
                   onTap: item.onTap,
                   theme: theme,
-                  isSmallScreen: isSmallScreen,
+                  isSmallScreen: isVerySmallScreen || isSmallScreen,
                 )
                 .animate()
                 .fadeIn(delay: (900 + (index * 100)).ms)
@@ -944,7 +992,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }).toList(),
         ),
 
-        SizedBox(height: isSmallScreen ? 12 : 16),
+        SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : 16),
 
         // Second row - 4 items
         Row(
@@ -965,7 +1013,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       color: item.color,
                       onTap: item.onTap,
                       theme: theme,
-                      isSmallScreen: isSmallScreen,
+                      isSmallScreen: isVerySmallScreen || isSmallScreen,
                     )
                     .animate()
                     .fadeIn(delay: (900 + (index * 100)).ms)
