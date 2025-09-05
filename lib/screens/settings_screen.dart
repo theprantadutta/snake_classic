@@ -1134,24 +1134,10 @@ extension SettingsPremium on _SettingsScreenState {
       margin: const EdgeInsets.only(bottom: 12),
       child: GradientButton(
         onPressed: () => _showPremiumDialog(premiumProvider),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.star, color: Colors.black),
-            const SizedBox(width: 8),
-            const Text(
-              'Upgrade to Pro',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
+        text: 'Upgrade to Pro',
+        primaryColor: const Color(0xFFFFD700),
+        secondaryColor: const Color(0xFFFFA500),
+        icon: Icons.star,
       ),
     );
   }
@@ -1360,7 +1346,7 @@ extension SettingsPremium on _SettingsScreenState {
 
   void _purchasePro(PremiumProvider premiumProvider) {
     final purchaseService = PurchaseService();
-    final product = purchaseService.getProduct(ProductIds.snakeClassicPro);
+    final product = purchaseService.getProduct(ProductIds.snakeClassicProMonthly);
     
     if (product != null) {
       purchaseService.buyProduct(product);
@@ -1392,19 +1378,23 @@ extension SettingsPremium on _SettingsScreenState {
       final purchaseService = PurchaseService();
       await purchaseService.restorePurchases();
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Purchases restored successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchases restored successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to restore purchases. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to restore purchases. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

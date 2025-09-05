@@ -165,156 +165,105 @@ class GameHUD extends StatelessWidget {
     final progress = 1.0 - powerUp.progress; // Reverse progress for countdown
     final remainingTime = powerUp.remainingTime;
     final isUrgent = progress < 0.25; // Last 25% of duration
-    final isNew = powerUp.progress < 0.1; // First 10% after activation
     
-    return TweenAnimationBuilder<double>(
-      duration: Duration(milliseconds: isNew ? 800 : 0), // Only animate when new
-      tween: Tween(begin: isNew ? 0.0 : 1.0, end: 1.0),
-      builder: (context, animationValue, child) {
-        final pulseScale = isUrgent 
-          ? 1.0 + 0.1 * (0.5 + 0.5 * (DateTime.now().millisecondsSinceEpoch % 1000) / 1000.0)
-          : 1.0;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Simple glow effect for active power-ups
+          if (powerUp.type == PowerUpType.invincibility || 
+              powerUp.type == PowerUpType.speedBoost ||
+              isUrgent)
+            Container(
+              width: size * 1.2,
+              height: size * 1.2,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: powerUp.type.color.withValues(alpha: isUrgent ? 0.3 : 0.2),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+            ),
           
-        return Transform.scale(
-          scale: animationValue * pulseScale,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Enhanced glow effect for active power-ups
-                if (powerUp.type == PowerUpType.invincibility || 
-                    powerUp.type == PowerUpType.speedBoost ||
-                    isUrgent)
-                  Container(
-                    width: size * 1.4,
-                    height: size * 1.4,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: powerUp.type.color.withValues(alpha: isUrgent ? 0.4 : 0.2),
-                          blurRadius: isUrgent ? 12 : 8,
-                          spreadRadius: isUrgent ? 3 : 2,
-                        ),
-                      ],
-                    ),
-                  ),
-                
-                // Circular progress background with enhanced styling
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: isSmallScreen ? 2.5 : 3.5,
-                    strokeCap: StrokeCap.round,
-                    backgroundColor: powerUp.type.color.withValues(alpha: 0.15),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isUrgent 
-                        ? Color.lerp(powerUp.type.color, Colors.red, 0.3)!
-                        : powerUp.type.color
-                    ),
-                  ),
-                ),
-                
-                // Enhanced power-up icon container
-                Container(
-                  width: size * 0.65,
-                  height: size * 0.65,
-                  decoration: BoxDecoration(
-                    color: powerUp.type.color.withValues(
-                      alpha: isNew ? 0.6 + 0.4 * animationValue : 0.9
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: powerUp.type.color.withValues(alpha: isUrgent ? 0.5 : 0.3),
-                        blurRadius: isUrgent ? 6 : 4,
-                        spreadRadius: isUrgent ? 2 : 1,
-                      ),
-                    ],
-                    border: isUrgent ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      width: 1.0,
-                    ) : null,
-                  ),
-                  child: Center(
-                    child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 200),
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? (isUrgent ? 11 : 10) : (isUrgent ? 14 : 12),
-                        fontWeight: FontWeight.bold,
-                        color: isUrgent ? Colors.white : Colors.black87,
-                        shadows: isUrgent ? [
-                          Shadow(
-                            color: powerUp.type.color,
-                            blurRadius: 2,
-                          ),
-                        ] : null,
-                      ),
-                      child: Text(powerUp.type.icon),
-                    ),
-                  ),
-                ),
-                
-                // Enhanced time remaining indicator
-                if (progress < 0.5) // Only show when halfway through duration
-                  Positioned(
-                    bottom: size * 0.85,
-                    child: AnimatedOpacity(
-                      opacity: isUrgent ? 1.0 : 0.7,
-                      duration: const Duration(milliseconds: 300),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isSmallScreen ? 3 : 4, 
-                          vertical: isSmallScreen ? 1 : 2
-                        ),
-                        decoration: BoxDecoration(
-                          color: isUrgent ? Colors.red.shade800 : Colors.black87,
-                          borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
-                          border: isUrgent ? Border.all(color: Colors.white, width: 0.5) : null,
-                          boxShadow: [
-                            BoxShadow(
-                              color: isUrgent 
-                                ? Colors.red.withValues(alpha: 0.3)
-                                : Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 2,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          '${remainingTime.inSeconds}${isUrgent ? '!' : ''}',
-                          style: TextStyle(
-                            color: isUrgent ? Colors.white : Colors.white70,
-                            fontSize: isSmallScreen ? 8 : 9,
-                            fontWeight: isUrgent ? FontWeight.w700 : FontWeight.w500,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                // Activation burst effect for new power-ups
-                if (isNew && animationValue < 1.0)
-                  Container(
-                    width: size * (1.0 + animationValue * 0.5),
-                    height: size * (1.0 + animationValue * 0.5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: powerUp.type.color.withValues(alpha: 0.8 * (1.0 - animationValue)),
-                        width: 2.0,
-                      ),
-                    ),
-                  ),
-              ],
+          // Circular progress background
+          SizedBox(
+            width: size,
+            height: size,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: isSmallScreen ? 2.5 : 3.5,
+              strokeCap: StrokeCap.round,
+              backgroundColor: powerUp.type.color.withValues(alpha: 0.15),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isUrgent 
+                  ? Color.lerp(powerUp.type.color, Colors.red, 0.3)!
+                  : powerUp.type.color
+              ),
             ),
           ),
-        );
-      },
+          
+          // Power-up icon container
+          Container(
+            width: size * 0.65,
+            height: size * 0.65,
+            decoration: BoxDecoration(
+              color: powerUp.type.color.withValues(alpha: 0.9),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: powerUp.type.color.withValues(alpha: 0.3),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+              border: isUrgent ? Border.all(
+                color: Colors.white.withValues(alpha: 0.6),
+                width: 1.0,
+              ) : null,
+            ),
+            child: Center(
+              child: Text(
+                powerUp.type.icon,
+                style: TextStyle(
+                  fontSize: isSmallScreen ? (isUrgent ? 11 : 10) : (isUrgent ? 14 : 12),
+                  fontWeight: FontWeight.bold,
+                  color: isUrgent ? Colors.white : Colors.black87,
+                ),
+              ),
+            ),
+          ),
+          
+          // Time remaining indicator
+          if (progress < 0.5) // Only show when halfway through duration
+            Positioned(
+              bottom: size * 0.85,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 3 : 4, 
+                  vertical: isSmallScreen ? 1 : 2
+                ),
+                decoration: BoxDecoration(
+                  color: isUrgent ? Colors.red.shade800 : Colors.black87,
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
+                  border: isUrgent ? Border.all(color: Colors.white, width: 0.5) : null,
+                ),
+                child: Text(
+                  '${remainingTime.inSeconds}${isUrgent ? '!' : ''}',
+                  style: TextStyle(
+                    color: isUrgent ? Colors.white : Colors.white70,
+                    fontSize: isSmallScreen ? 8 : 9,
+                    fontWeight: isUrgent ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

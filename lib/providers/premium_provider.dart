@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/purchase_service.dart';
 import '../services/preferences_service.dart';
+import '../providers/coins_provider.dart';
 import '../utils/logger.dart';
 import '../utils/constants.dart';
 
@@ -88,6 +89,12 @@ class PremiumProvider extends ChangeNotifier {
   int _battlePassXP = 0;
   DateTime? _battlePassExpiry;
 
+  // Premium Trial
+  bool _isOnTrial = false;
+  DateTime? _trialStartDate;
+  DateTime? _trialEndDate;
+  static const Duration trialDuration = Duration(days: 3);
+
   // Tournament entries
   int _bronzeTournamentEntries = 0;
   int _silverTournamentEntries = 0;
@@ -100,10 +107,27 @@ class PremiumProvider extends ChangeNotifier {
   PremiumTier get currentTier => _currentTier;
   DateTime? get subscriptionExpiry => _subscriptionExpiry;
   bool get isInitialized => _isInitialized;
-  bool get hasPremium => _currentTier == PremiumTier.pro && !isSubscriptionExpired;
+  bool get hasPremium => (_currentTier == PremiumTier.pro && !isSubscriptionExpired) || (_isOnTrial && !isTrialExpired);
   bool get hasBattlePass => _hasBattlePass && !isBattlePassExpired;
   int get battlePassTier => _battlePassTier;
   int get battlePassXP => _battlePassXP;
+  
+  // Trial getters
+  bool get isOnTrial => _isOnTrial && !isTrialExpired;
+  DateTime? get trialStartDate => _trialStartDate;
+  DateTime? get trialEndDate => _trialEndDate;
+  bool get hasUsedTrial => _trialStartDate != null;
+  
+  bool get isTrialExpired {
+    if (_trialEndDate == null) return true;
+    return DateTime.now().isAfter(_trialEndDate!);
+  }
+  
+  Duration? get trialTimeRemaining {
+    if (!_isOnTrial || _trialEndDate == null) return null;
+    final remaining = _trialEndDate!.difference(DateTime.now());
+    return remaining.isNegative ? null : remaining;
+  }
   
   Set<GameTheme> get ownedThemes => _ownedThemes;
   Set<String> get ownedPowerUps => _ownedPowerUps;
@@ -137,6 +161,9 @@ class PremiumProvider extends ChangeNotifier {
       await _loadPremiumStatus();
       await _syncWithPurchaseService();
       
+      // Update coins provider with premium multipliers
+      _updateCoinsMultiplier();
+      
       // Listen to purchase status updates
       _purchaseStatusSubscription = _purchaseService.purchaseStatusStream.listen((status) {
         if (status.startsWith('purchase_completed:')) {
@@ -151,6 +178,15 @@ class PremiumProvider extends ChangeNotifier {
       AppLogger.info('Premium Provider initialized successfully');
     } catch (e) {
       AppLogger.error('Error initializing Premium Provider', e);
+    }
+  }
+
+  void _updateCoinsMultiplier() {
+    try {
+      final coinsProvider = CoinsProvider();
+      coinsProvider.updatePremiumMultiplier(hasPremium, hasBattlePass);
+    } catch (e) {
+      AppLogger.error('Error updating coins multiplier', e);
     }
   }
 
@@ -212,6 +248,17 @@ class PremiumProvider extends ChangeNotifier {
       _goldTournamentEntries = prefs.getInt('gold_tournament_entries') ?? 0;
       _championshipEntries = prefs.getInt('championship_entries') ?? 0;
       
+      // Load trial data
+      _isOnTrial = prefs.getBool('is_on_trial') ?? false;
+      final trialStartString = prefs.getString('trial_start_date');
+      if (trialStartString != null) {
+        _trialStartDate = DateTime.parse(trialStartString);
+      }
+      final trialEndString = prefs.getString('trial_end_date');
+      if (trialEndString != null) {
+        _trialEndDate = DateTime.parse(trialEndString);
+      }
+      
       AppLogger.info('Premium status loaded successfully');
     } catch (e) {
       AppLogger.error('Error loading premium status', e);
@@ -221,7 +268,8 @@ class PremiumProvider extends ChangeNotifier {
   Future<void> _syncWithPurchaseService() async {
     try {
       // Check if user has active subscriptions
-      if (_purchaseService.hasActiveSubscription(ProductIds.snakeClassicPro)) {
+      if (_purchaseService.hasActiveSubscription(ProductIds.snakeClassicProMonthly) ||
+          _purchaseService.hasActiveSubscription(ProductIds.snakeClassicProYearly)) {
         await _activatePremium(PremiumTier.pro);
       }
       
@@ -259,11 +307,11 @@ class PremiumProvider extends ChangeNotifier {
       await _unlockAllPremiumThemes();
     }
     
-    if (_purchaseService.isPurchased(ProductIds.powerupsBundle)) {
+    if (_purchaseService.isPurchased(ProductIds.premiumPowerupsBundle)) {
       await _unlockAllPremiumPowerUps();
     }
     
-    if (_purchaseService.isPurchased(ProductIds.cosmeticsBundle)) {
+    if (_purchaseService.isPurchased(ProductIds.ultimateCosmetics)) {
       await _unlockAllPremiumCosmetics();
     }
   }
@@ -434,12 +482,18 @@ class PremiumProvider extends ChangeNotifier {
   Future<void> addBattlePassXP(int xp) async {
     if (!hasBattlePass) return;
     
-    _battlePassXP += xp;
+    // Apply premium multiplier for XP
+    final multiplier = hasPremium ? 1.25 : 1.0; // 25% bonus for premium users
+    final finalXP = (xp * multiplier).round();
+    
+    _battlePassXP += finalXP;
     
     // Calculate tier progression (100 XP per tier)
     final newTier = (_battlePassXP / 100).floor();
     if (newTier > _battlePassTier) {
+      // final oldTier = _battlePassTier;
       _battlePassTier = newTier.clamp(0, 100); // Max 100 tiers
+      
       AppLogger.info('Battle Pass tier increased to: $_battlePassTier');
     }
     
@@ -534,6 +588,15 @@ class PremiumProvider extends ChangeNotifier {
       await prefs.setInt('gold_tournament_entries', _goldTournamentEntries);
       await prefs.setInt('championship_entries', _championshipEntries);
       
+      // Save trial data
+      await prefs.setBool('is_on_trial', _isOnTrial);
+      if (_trialStartDate != null) {
+        await prefs.setString('trial_start_date', _trialStartDate!.toIso8601String());
+      }
+      if (_trialEndDate != null) {
+        await prefs.setString('trial_end_date', _trialEndDate!.toIso8601String());
+      }
+      
     } catch (e) {
       AppLogger.error('Error saving premium status', e);
     }
@@ -544,7 +607,8 @@ class PremiumProvider extends ChangeNotifier {
     AppLogger.info('Handling purchase completion for: $productId');
     
     switch (productId) {
-      case ProductIds.snakeClassicPro:
+      case ProductIds.snakeClassicProMonthly:
+      case ProductIds.snakeClassicProYearly:
         await _activatePremium(PremiumTier.pro);
         break;
       case ProductIds.battlePass:
@@ -553,10 +617,10 @@ class PremiumProvider extends ChangeNotifier {
       case ProductIds.themesBundle:
         await _unlockAllPremiumThemes();
         break;
-      case ProductIds.powerupsBundle:
+      case ProductIds.premiumPowerupsBundle:
         await _unlockAllPremiumPowerUps();
         break;
-      case ProductIds.cosmeticsBundle:
+      case ProductIds.ultimateCosmetics:
         await _unlockAllPremiumCosmetics();
         break;
       case ProductIds.crystalTheme:
@@ -579,6 +643,59 @@ class PremiumProvider extends ChangeNotifier {
         await addTournamentEntry('championship');
         break;
     }
+  }
+
+  // Trial management
+  Future<bool> startFreeTrial() async {
+    try {
+      if (hasUsedTrial) {
+        AppLogger.warning('User has already used their free trial');
+        return false;
+      }
+      
+      final now = DateTime.now();
+      _isOnTrial = true;
+      _trialStartDate = now;
+      _trialEndDate = now.add(trialDuration);
+      
+      await _savePremiumStatus();
+      notifyListeners();
+      
+      AppLogger.info('Free trial started - expires ${_trialEndDate!.toIso8601String()}');
+      return true;
+    } catch (e) {
+      AppLogger.error('Error starting free trial', e);
+      return false;
+    }
+  }
+
+  Future<void> endTrial() async {
+    try {
+      _isOnTrial = false;
+      await _savePremiumStatus();
+      notifyListeners();
+      
+      AppLogger.info('Free trial ended');
+    } catch (e) {
+      AppLogger.error('Error ending trial', e);
+    }
+  }
+
+  // Check if board size is unlocked
+  bool isBoardSizeUnlocked(String boardSizeId) {
+    final size = GameConstants.availableBoardSizes.firstWhere(
+      (s) => s.id == boardSizeId,
+      orElse: () => GameConstants.availableBoardSizes.first,
+    );
+    
+    if (!size.isPremium) return true;
+    return hasPremium;
+  }
+
+  // Check if game mode is unlocked
+  bool isGameModeUnlocked(GameMode gameMode) {
+    if (!gameMode.isPremium) return true;
+    return hasPremium;
   }
 
   @override

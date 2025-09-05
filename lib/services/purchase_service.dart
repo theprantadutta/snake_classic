@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../utils/logger.dart';
+import 'backend_service.dart';
+import '../providers/user_provider.dart';
 
 // Product IDs for different categories
 class ProductIds {
@@ -10,45 +12,94 @@ class ProductIds {
   static const String spaceTheme = 'space_theme';
   static const String oceanTheme = 'ocean_theme';
   static const String desertTheme = 'desert_theme';
+  static const String forestTheme = 'forest_theme';
   static const String themesBundle = 'premium_themes_bundle';
 
+  // Snake Coins (Consumable)
+  static const String coinPackSmall = 'coin_pack_small';
+  static const String coinPackMedium = 'coin_pack_medium';
+  static const String coinPackLarge = 'coin_pack_large';
+  static const String coinPackMega = 'coin_pack_mega';
+
   // Premium Power-ups
-  static const String megaPowerups = 'mega_powerups';
-  static const String exclusivePowerups = 'exclusive_powerups';
-  static const String powerupsBundle = 'powerups_bundle';
+  static const String megaPowerupsPack = 'mega_powerups_pack';
+  static const String exclusivePowerupsPack = 'exclusive_powerups_pack';
+  static const String premiumPowerupsBundle = 'premium_powerups_bundle';
 
   // Snake Cosmetics
   static const String goldenSnake = 'golden_snake';
   static const String rainbowSnake = 'rainbow_snake';
   static const String galaxySnake = 'galaxy_snake';
   static const String dragonSnake = 'dragon_snake';
-  static const String premiumTrails = 'premium_trails';
-  static const String cosmeticsBundle = 'cosmetics_bundle';
+  static const String electricSnake = 'electric_snake';
+  static const String fireSnake = 'fire_snake';
+  static const String iceSnake = 'ice_snake';
+  static const String shadowSnake = 'shadow_snake';
+  static const String neonSnake = 'neon_snake';
+  static const String crystalSnake = 'crystal_snake';
+  static const String cosmicSnake = 'cosmic_snake';
+
+  // Trail Effects
+  static const String particleTrail = 'particle_trail';
+  static const String glowTrail = 'glow_trail';
+  static const String rainbowTrail = 'rainbow_trail';
+  static const String fireTrail = 'fire_trail';
+  static const String electricTrail = 'electric_trail';
+  static const String starTrail = 'star_trail';
+  static const String cosmicTrail = 'cosmic_trail';
+  static const String neonTrail = 'neon_trail';
+  static const String shadowTrail = 'shadow_trail';
+  static const String crystalTrail = 'crystal_trail';
+  static const String dragonTrail = 'dragon_trail';
+
+  // Cosmetic Bundles
+  static const String starterCosmetics = 'starter_cosmetics';
+  static const String elementalCosmetics = 'elemental_cosmetics';
+  static const String cosmicCosmetics = 'cosmic_cosmetics';
+  static const String ultimateCosmetics = 'ultimate_cosmetics';
 
   // Subscriptions
-  static const String snakeClassicPro = 'snake_classic_pro';
+  static const String snakeClassicProMonthly = 'snake_classic_pro_monthly';
+  static const String snakeClassicProYearly = 'snake_classic_pro_yearly';
   static const String battlePass = 'battle_pass_season';
 
-  // Tournament Entries
+  // Tournament Entries (Consumable)
   static const String tournamentBronze = 'tournament_bronze';
   static const String tournamentSilver = 'tournament_silver';
   static const String tournamentGold = 'tournament_gold';
   static const String championshipEntry = 'championship_entry';
+  static const String tournamentVipEntry = 'tournament_vip_entry';
 
   static List<String> get allProductIds => [
-    crystalTheme, cyberpunkTheme, spaceTheme, oceanTheme, desertTheme, themesBundle,
-    megaPowerups, exclusivePowerups, powerupsBundle,
-    goldenSnake, rainbowSnake, galaxySnake, dragonSnake, premiumTrails, cosmeticsBundle,
-    snakeClassicPro, battlePass,
-    tournamentBronze, tournamentSilver, tournamentGold, championshipEntry,
+    // Themes
+    crystalTheme, cyberpunkTheme, spaceTheme, oceanTheme, desertTheme, forestTheme, themesBundle,
+    // Coins
+    coinPackSmall, coinPackMedium, coinPackLarge, coinPackMega,
+    // Power-ups
+    megaPowerupsPack, exclusivePowerupsPack, premiumPowerupsBundle,
+    // Snake skins
+    goldenSnake, rainbowSnake, galaxySnake, dragonSnake, electricSnake, fireSnake, 
+    iceSnake, shadowSnake, neonSnake, crystalSnake, cosmicSnake,
+    // Trail effects
+    particleTrail, glowTrail, rainbowTrail, fireTrail, electricTrail, starTrail,
+    cosmicTrail, neonTrail, shadowTrail, crystalTrail, dragonTrail,
+    // Bundles
+    starterCosmetics, elementalCosmetics, cosmicCosmetics, ultimateCosmetics,
+    // Subscriptions
+    snakeClassicProMonthly, snakeClassicProYearly, battlePass,
+    // Tournament entries
+    tournamentBronze, tournamentSilver, tournamentGold, championshipEntry, tournamentVipEntry,
   ];
 
   static List<String> get consumableIds => [
-    tournamentBronze, tournamentSilver, tournamentGold, championshipEntry,
+    // Coins
+    coinPackSmall, coinPackMedium, coinPackLarge, coinPackMega,
+    // Tournament entries
+    tournamentBronze, tournamentSilver, tournamentGold, championshipEntry, tournamentVipEntry,
   ];
 
   static List<String> get subscriptionIds => [
-    snakeClassicPro, battlePass,
+    snakeClassicProMonthly, snakeClassicProYearly, battlePass,
   ];
 }
 
@@ -65,6 +116,7 @@ class PurchaseService {
   final List<PurchaseDetails> _purchases = [];
   bool _purchasePending = false;
   String? _queryProductError;
+  UserProvider? _userProvider;
 
   // Getters
   bool get isAvailable => _isAvailable;
@@ -81,6 +133,11 @@ class PurchaseService {
   Stream<bool> get purchasePendingStream => _purchasePendingController.stream;
   Stream<List<ProductDetails>> get productsStream => _productsController.stream;
   Stream<String> get purchaseStatusStream => _purchaseStatusController.stream;
+
+  // Set user provider for accessing current user information
+  void setUserProvider(UserProvider userProvider) {
+    _userProvider = userProvider;
+  }
 
   Future<void> initialize() async {
     try {
@@ -230,10 +287,77 @@ class PurchaseService {
   }
 
   Future<bool> _verifyWithBackend(PurchaseDetails purchaseDetails) async {
-    // This would be implemented with your Python backend
-    // For now, return true for testing
-    // TODO: Implement actual backend verification
-    return true;
+    try {
+      final backendService = BackendService();
+      
+      // Extract platform-specific data
+      String platform = 'unknown';
+      String receiptData = '';
+      String? purchaseToken;
+      
+      // Platform detection and receipt extraction
+      if (purchaseDetails.verificationData.source == 'app_store') {
+        platform = 'ios';
+        receiptData = purchaseDetails.verificationData.serverVerificationData;
+      } else if (purchaseDetails.verificationData.source == 'google_play') {
+        platform = 'android';
+        receiptData = purchaseDetails.verificationData.serverVerificationData;
+        purchaseToken = purchaseDetails.purchaseID;
+      }
+      
+      // Get current user ID from UserProvider
+      String userId = _userProvider?.currentUser?.uid ?? 'anonymous_user';
+      
+      final verificationResult = await backendService.verifyPurchase(
+        platform: platform,
+        receiptData: receiptData,
+        productId: purchaseDetails.productID,
+        transactionId: purchaseDetails.purchaseID ?? '',
+        userId: userId,
+        purchaseToken: purchaseToken,
+        deviceInfo: {
+          'source': purchaseDetails.verificationData.source,
+          'local_verification_data': purchaseDetails.verificationData.localVerificationData,
+        },
+      );
+      
+      if (verificationResult != null && verificationResult['valid'] == true) {
+        AppLogger.info('Purchase verified successfully by backend');
+        
+        // Handle premium content unlocking based on backend response
+        if (verificationResult['premium_content_unlocked'] != null) {
+          await _unlockPremiumContent(verificationResult['premium_content_unlocked']);
+        }
+        
+        return true;
+      } else {
+        AppLogger.error('Backend verification failed: ${verificationResult?['error_message'] ?? 'Unknown error'}');
+        return false;
+      }
+    } catch (e) {
+      AppLogger.error('Error verifying purchase with backend', e);
+      return false; // Fail securely - don't unlock content if verification fails
+    }
+  }
+
+  Future<void> _unlockPremiumContent(List<dynamic> contentList) async {
+    try {
+      AppLogger.info('Unlocking premium content: ${contentList.join(', ')}');
+      
+      // Trigger a premium content sync with the backend
+      if (_userProvider != null) {
+        final userId = _userProvider!.currentUser?.uid;
+        if (userId != null) {
+          final backendService = BackendService();
+          await backendService.syncPremiumStatus(userId: userId);
+        }
+      }
+      
+      // Content will be applied when PremiumProvider syncs with backend
+      AppLogger.info('Premium content unlock initiated');
+    } catch (e) {
+      AppLogger.error('Error unlocking premium content', e);
+    }
   }
 
   Future<void> _deliverProduct(PurchaseDetails purchaseDetails) async {
@@ -256,9 +380,9 @@ class PurchaseService {
           break;
           
         // Power-ups
-        case ProductIds.megaPowerups:
-        case ProductIds.exclusivePowerups:
-        case ProductIds.powerupsBundle:
+        case ProductIds.megaPowerupsPack:
+        case ProductIds.exclusivePowerupsPack:
+        case ProductIds.premiumPowerupsBundle:
           await _unlockPowerups(purchaseDetails.productID);
           break;
           
@@ -267,13 +391,23 @@ class PurchaseService {
         case ProductIds.rainbowSnake:
         case ProductIds.galaxySnake:
         case ProductIds.dragonSnake:
-        case ProductIds.premiumTrails:
-        case ProductIds.cosmeticsBundle:
+        case ProductIds.electricSnake:
+        case ProductIds.fireSnake:
+        case ProductIds.iceSnake:
+        case ProductIds.shadowSnake:
+        case ProductIds.neonSnake:
+        case ProductIds.crystalSnake:
+        case ProductIds.cosmicSnake:
+        case ProductIds.starterCosmetics:
+        case ProductIds.elementalCosmetics:
+        case ProductIds.cosmicCosmetics:
+        case ProductIds.ultimateCosmetics:
           await _unlockCosmetics(purchaseDetails.productID);
           break;
           
         // Subscriptions
-        case ProductIds.snakeClassicPro:
+        case ProductIds.snakeClassicProMonthly:
+        case ProductIds.snakeClassicProYearly:
         case ProductIds.battlePass:
           await _activateSubscription(purchaseDetails.productID);
           break;
@@ -329,7 +463,22 @@ class PurchaseService {
   Future<void> restorePurchases() async {
     try {
       AppLogger.info('Restoring purchases...');
+      
+      // First, restore with the platform store
       await _inAppPurchase.restorePurchases();
+      
+      // Then sync with backend to ensure premium status is up to date
+      if (_userProvider != null) {
+        final userId = _userProvider!.currentUser?.uid;
+        if (userId != null) {
+          final backendService = BackendService();
+          final syncSuccess = await backendService.syncPremiumStatus(userId: userId);
+          if (syncSuccess) {
+            AppLogger.info('Premium status synced with backend during restore');
+          }
+        }
+      }
+      
       AppLogger.info('Purchases restored successfully');
     } catch (e) {
       AppLogger.error('Error restoring purchases', e);

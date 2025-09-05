@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:snake_classic/providers/coins_provider.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/multiplayer_provider.dart';
 import 'package:snake_classic/providers/premium_provider.dart';
@@ -114,6 +115,7 @@ class SnakeClassicApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => MultiplayerProvider()),
+        ChangeNotifierProvider(create: (_) => CoinsProvider()),
         ChangeNotifierProvider(create: (_) => PremiumProvider(PurchaseService())),
       ],
       child: Consumer<ThemeProvider>(

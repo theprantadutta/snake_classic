@@ -571,61 +571,63 @@ class _GameOverScreenState extends State<GameOverScreen>
                   SizedBox(height: constraints.maxHeight < 600 ? 8 : 12),
 
                   // Achievement content - more compact
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Recent Unlocks
-                      if (_recentAchievements.isNotEmpty) ...[
-                        Text(
-                          'Recently Unlocked:',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: constraints.maxHeight < 600 ? 11 : 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: constraints.maxHeight < 600 ? 4 : 6),
-                        ..._recentAchievements
-                            .take(constraints.maxHeight < 600 ? 1 : 2)
-                            .map(
-                              (achievement) => _buildAchievementItem(
-                                achievement,
-                                theme,
-                                constraints,
-                                isUnlocked: true,
-                              ),
+                  SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Recent Unlocks
+                        if (_recentAchievements.isNotEmpty) ...[
+                          Text(
+                            'Recently Unlocked:',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: constraints.maxHeight < 600 ? 11 : 12,
+                              fontWeight: FontWeight.w600,
                             ),
-
-                        if (_progressAchievements.isNotEmpty)
-                          SizedBox(
-                            height: constraints.maxHeight < 600 ? 8 : 12,
                           ),
-                      ],
-
-                      // Progress Achievements
-                      if (_progressAchievements.isNotEmpty) ...[
-                        Text(
-                          'Progress Update:',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: constraints.maxHeight < 600 ? 11 : 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: constraints.maxHeight < 600 ? 4 : 6),
-                        ..._progressAchievements
-                            .take(constraints.maxHeight < 600 ? 1 : 2)
-                            .map(
-                              (achievement) => _buildAchievementItem(
-                                achievement,
-                                theme,
-                                constraints,
-                                isUnlocked: false,
+                          SizedBox(height: constraints.maxHeight < 600 ? 4 : 6),
+                          ..._recentAchievements
+                              .take(constraints.maxHeight < 600 ? 1 : 2)
+                              .map(
+                                (achievement) => _buildAchievementItem(
+                                  achievement,
+                                  theme,
+                                  constraints,
+                                  isUnlocked: true,
+                                ),
                               ),
+
+                          if (_progressAchievements.isNotEmpty)
+                            SizedBox(
+                              height: constraints.maxHeight < 600 ? 8 : 12,
                             ),
+                        ],
+
+                        // Progress Achievements
+                        if (_progressAchievements.isNotEmpty) ...[
+                          Text(
+                            'Progress Update:',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: constraints.maxHeight < 600 ? 11 : 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: constraints.maxHeight < 600 ? 4 : 6),
+                          ..._progressAchievements
+                              .take(constraints.maxHeight < 600 ? 1 : 2)
+                              .map(
+                                (achievement) => _buildAchievementItem(
+                                  achievement,
+                                  theme,
+                                  constraints,
+                                  isUnlocked: false,
+                                ),
+                              ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ],
               ),

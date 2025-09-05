@@ -145,7 +145,7 @@ class BattlePassReward {
       quantity: json['quantity'] ?? 1,
       itemId: json['item_id'],
       icon: json['icon'] ?? '🎁',
-      color: Color(json['color'] ?? Colors.blue.value),
+      color: Color(json['color'] ?? 0xFF2196F3),
       isSpecial: json['is_special'] ?? false,
     );
   }
@@ -324,7 +324,7 @@ class BattlePassSeason {
           .toList(),
       price: json['price']?.toDouble() ?? 9.99,
       bannerImage: json['banner_image'] ?? '',
-      themeColor: Color(json['theme_color'] ?? Colors.purple.value),
+      themeColor: Color(json['theme_color'] ?? 0xFF9C27B0),
       metadata: json['metadata'] ?? {},
     );
   }
