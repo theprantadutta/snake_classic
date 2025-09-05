@@ -222,7 +222,6 @@ class _BattlePassScreenState extends State<BattlePassScreen>
 
   Widget _buildProgressBar(GameTheme theme, int currentLevel, int currentXp) {
     final nextLevel = currentLevel + 1;
-    final currentLevelData = _currentSeason.getLevelData(currentLevel);
     final nextLevelData = _currentSeason.getLevelData(nextLevel);
     
     final xpForCurrentLevel = _currentSeason.getTotalXpForLevel(currentLevel);

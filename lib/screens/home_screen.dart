@@ -15,12 +15,13 @@ import 'package:snake_classic/screens/replays_screen.dart';
 import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
-import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/screens/store_screen.dart';
+import 'package:snake_classic/screens/premium_benefits_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
-import 'package:snake_classic/widgets/animated_snake_logo.dart';
 import 'package:snake_classic/screens/instructions_screen.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -73,20 +74,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ThemeTransitionController(vsync: this),
           currentTheme: theme,
           child: Scaffold(
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.topRight,
-                  radius: 1.5,
-                  colors: [
-                    theme.accentColor.withValues(alpha: 0.15),
-                    theme.backgroundColor,
-                    theme.backgroundColor.withValues(alpha: 0.9),
-                    Colors.black.withValues(alpha: 0.1),
-                  ],
-                  stops: const [0.0, 0.4, 0.8, 1.0],
-                ),
-              ),
+            body: AppBackground(
+              theme: theme,
               child: SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -123,14 +112,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ? 16.0
                         : 20.0;
 
-                    return Stack(
-                      children: [
-                        // Background pattern overlay
-                        _buildBackgroundPattern(theme, constraints),
-
-                        // Main content
-                        Positioned.fill(
-                          child: Padding(
+                    return Padding(
                             padding: EdgeInsets.symmetric(
                               horizontal: screenWidth * 0.04,
                               vertical: isSmallScreen ? 8 : 12,
@@ -147,49 +129,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                                 SizedBox(height: topSpacing),
 
-                                // Game title with logo - flexible size
+                                // Game title with logo - fixed size
                                 _buildGameTitle(theme, screenHeight),
 
-                                // Flexible spacing based on screen size
-                                SizedBox(height: sectionSpacing * 0.7),
-
-                                // Main play area with central button - constrained for tall screens
-                                Expanded(
-                                  child: isTallScreen
-                                      ? Center(
-                                          child: ConstrainedBox(
-                                            constraints: BoxConstraints(
-                                              maxHeight:
-                                                  screenHeight *
-                                                  0.6, // Limit height on very tall screens
-                                              maxWidth: screenWidth,
-                                            ),
-                                            child: _buildMainPlayArea(
-                                              context,
-                                              gameProvider,
-                                              userProvider,
-                                              theme,
-                                              screenHeight,
-                                              screenWidth,
-                                              screenHeight,
-                                            ),
-                                          ),
-                                        )
-                                      : _buildMainPlayArea(
-                                          context,
-                                          gameProvider,
-                                          userProvider,
-                                          theme,
-                                          screenHeight,
-                                          screenWidth,
-                                          screenHeight,
-                                        ),
-                                ),
-
-                                // Flexible spacing before bottom nav
                                 SizedBox(height: sectionSpacing * 0.5),
 
-                                // Bottom navigation grid - responsive sizing
+                                // Main play area with central button
+                                _buildMainPlayArea(
+                                  context,
+                                  gameProvider,
+                                  userProvider,
+                                  theme,
+                                  screenHeight,
+                                  screenWidth,
+                                  screenHeight,
+                                ),
+
+                                const Spacer(), // Push bottom navigation to bottom
+
+                                // Bottom navigation grid - fixed at bottom
                                 _buildBottomNavigation(
                                   context,
                                   themeProvider,
@@ -201,14 +159,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 SizedBox(height: bottomSpacing),
                               ],
                             ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
             floatingActionButton: kDebugMode
                 ? FloatingActionButton(
                     onPressed: () {
@@ -231,9 +186,62 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildBackgroundPattern(GameTheme theme, BoxConstraints constraints) {
-    return Positioned.fill(
-      child: CustomPaint(painter: _GameBackgroundPainter(theme)),
+  Widget _buildActionButton({
+    required BuildContext context,
+    required GameTheme theme,
+    required bool isSmallScreen,
+    required IconData icon,
+    required String label,
+    required List<Color> colors,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: isSmallScreen ? 50 : 60,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colors.first.withValues(alpha: 0.15),
+              colors.last.withValues(alpha: 0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(isSmallScreen ? 14 : 16),
+          border: Border.all(
+            color: colors.first.withValues(alpha: 0.3),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colors.first.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: colors.first,
+              size: isSmallScreen ? 16 : 20,
+            ),
+            SizedBox(width: isSmallScreen ? 6 : 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 11 : 13,
+                fontWeight: FontWeight.w700,
+                color: colors.first,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -370,39 +378,71 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildGameTitle(GameTheme theme, double screenHeight) {
-    // Dynamic logo sizing based on screen height
-    final logoSize = screenHeight < 650
-        ? 100.0
-        : screenHeight < 750
-        ? 120.0
-        : screenHeight < 900
-        ? 140.0
-        : 160.0;
-    final logoHeight = screenHeight < 650
-        ? 60.0
-        : screenHeight < 750
-        ? 75.0
-        : screenHeight < 900
-        ? 85.0
-        : 95.0;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Use the logo with text for a cleaner look
-        SizedBox(
-              width: logoSize,
-              height: logoHeight,
-              child: AnimatedSnakeLogo(
-                theme: theme,
-                controller: _logoController,
-                size: logoSize,
-                useTextLogo: true, // Use logo with text for home screen
+    // Simplified logo sizing
+    final logoSize = screenHeight < 650 ? 120.0 : screenHeight < 750 ? 140.0 : 160.0;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Simplified logo container
+          Container(
+            width: logoSize,
+            height: logoSize * 0.6, // Maintain aspect ratio
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.accentColor.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                'assets/images/snake_classic_logo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback to text if image fails
+                  return Container(
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [theme.accentColor, theme.foodColor],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.games,
+                          size: logoSize * 0.3,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'SNAKE\nCLASSIC',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: logoSize * 0.08,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-            )
-            .animate()
-            .fadeIn(duration: 600.ms)
-            .scale(begin: const Offset(0.8, 0.8)),
-      ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -426,439 +466,92 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               : gameProvider.gameState.highScore)
         : gameProvider.gameState.highScore;
 
-    return Column(
-      children: [
-        // Enhanced Stats cards row
-        Row(
-          children: [
-            // High Score Card with enhancements
-            Expanded(
-              child: FutureBuilder<Map<String, dynamic>>(
-                future: _getQuickStats(),
-                builder: (context, snapshot) {
-                  final stats = snapshot.data ?? {};
-                  final previousBest = stats['previousBest'] ?? 0;
-                  String? trend;
-                  if (highScore > previousBest && previousBest > 0) {
-                    final improvement = highScore - previousBest;
-                    trend = '+$improvement';
-                  }
-
-                  return _buildStatCard(
-                    icon: Icons.emoji_events,
-                    iconColor: Colors.amber,
-                    title: 'BEST SCORE',
-                    value: '$highScore',
-                    subtitle: highScore > 0
-                        ? 'Personal Record'
-                        : 'Start Playing!',
-                    trend: trend,
-                    theme: theme,
-                    isSmallScreen: isVerySmallScreen || isSmallScreen,
-                    hasSync: userProvider.isSignedIn,
-                    isPulsing: highScore > (stats['previousBest'] ?? 0),
-                  );
-                },
-              ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.3),
-            ),
-
-            SizedBox(
-              width: isVerySmallScreen
-                  ? 8
-                  : isSmallScreen
-                  ? 12
-                  : 16,
-            ),
-
-            // Enhanced Statistics Card
-            Expanded(
-              child: FutureBuilder<Map<String, dynamic>>(
-                future: _getQuickStats(),
-                builder: (context, snapshot) {
-                  final stats = snapshot.data ?? {};
-                  final totalGames = stats['totalGames'] ?? 0;
-                  final avgScore = stats['averageScore'] ?? 0.0;
-                  final winRate = stats['winRate'] ?? 0.0;
-
-                  return _buildStatCard(
-                    icon: totalGames > 10
-                        ? Icons.trending_up
-                        : totalGames > 0
-                        ? Icons.analytics
-                        : Icons.rocket_launch,
-                    iconColor: totalGames > 50
-                        ? Colors.purple
-                        : totalGames > 10
-                        ? Colors.blue
-                        : Colors.teal,
-                    title: totalGames > 0 ? 'GAMES PLAYED' : 'READY TO PLAY',
-                    value: totalGames > 0 ? '$totalGames' : '🎮',
-                    subtitle: totalGames > 0
-                        ? avgScore > 0
-                              ? 'Avg: ${avgScore.toInt()}'
-                              : 'Keep playing!'
-                        : 'Start your journey',
-                    trend: winRate > 0.5 ? '🔥 Hot' : null,
-                    theme: theme,
-                    isSmallScreen: isVerySmallScreen || isSmallScreen,
-                    isPulsing: totalGames == 0, // Pulse for new players
-                  );
-                },
-              ).animate().fadeIn(delay: 650.ms).slideX(begin: 0.3),
-            ),
-          ],
-        ),
-
-        // Additional stats row (if user has played games)
-        FutureBuilder<Map<String, dynamic>>(
-          future: _getQuickStats(),
-          builder: (context, snapshot) {
-            final stats = snapshot.data ?? {};
-            final totalGames = stats['totalGames'] ?? 0;
-
-            if (totalGames < 5) return const SizedBox.shrink();
-
-            return Column(
-              children: [
-                SizedBox(height: isSmallScreen ? 16 : 20),
-                Row(
-                  children: [
-                    // Achievement Progress Card
-                    Expanded(
-                      child: _buildStatCard(
-                        icon: Icons.workspace_premium,
-                        iconColor: Colors.deepPurple,
-                        title: 'ACHIEVEMENTS',
-                        value: '${stats['unlockedAchievements'] ?? 0}',
-                        subtitle:
-                            '${stats['totalAchievements'] ?? 0} available',
-                        theme: theme,
-                        isSmallScreen: isVerySmallScreen || isSmallScreen,
-                      ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
-                    ),
-
-                    SizedBox(
-                      width: isVerySmallScreen
-                          ? 8
-                          : isSmallScreen
-                          ? 12
-                          : 16,
-                    ),
-
-                    // Streak Card
-                    Expanded(
-                      child: _buildStatCard(
-                        icon: Icons.local_fire_department,
-                        iconColor: Colors.orange,
-                        title: 'CURRENT STREAK',
-                        value: '${stats['currentStreak'] ?? 0}',
-                        subtitle: stats['currentStreak'] ?? 0 > 0
-                            ? 'games'
-                            : 'Play to start',
-                        trend: (stats['currentStreak'] ?? 0) > 5 ? '🔥' : null,
-                        theme: theme,
-                        isSmallScreen: isVerySmallScreen || isSmallScreen,
-                        isPulsing: (stats['currentStreak'] ?? 0) >= 10,
-                      ).animate().fadeIn(delay: 850.ms).slideY(begin: 0.2),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
-        ),
-
-        SizedBox(
-          height: isVerySmallScreen
-              ? 16
-              : isSmallScreen
-              ? 20
-              : isMediumScreen
-              ? 28
-              : 36,
-        ),
-
-        // Central Play Button
-        _buildCentralPlayButton(context, theme, screenHeight, screenWidth)
-            .animate()
-            .fadeIn(delay: 700.ms)
-            .scale(begin: const Offset(0.8, 0.8), duration: 600.ms)
-            .then()
-            .shimmer(
-              duration: 2000.ms,
-              color: theme.accentColor.withValues(alpha: 0.3),
-            ),
-
-        SizedBox(height: isSmallScreen ? 18 : 26),
-
-        // Quick action hint
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 12 : 16,
-            vertical: isSmallScreen ? 8 : 10,
-          ),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 25),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.2),
-              width: 1,
-            ),
-          ),
-          child: Text(
-            'Swipe to control • Tap to pause',
-            style: TextStyle(
-              fontSize: isSmallScreen ? 11 : 13,
-              color: theme.accentColor.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ).animate().fadeIn(delay: 800.ms),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String value,
-    required GameTheme theme,
-    required bool isSmallScreen,
-    bool hasSync = false,
-    String? subtitle,
-    String? trend,
-    bool isPulsing = false,
-  }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            iconColor.withValues(alpha: isPulsing ? 0.15 : 0.1),
-            iconColor.withValues(alpha: isPulsing ? 0.08 : 0.05),
-            theme.backgroundColor.withValues(alpha: 0.02),
-          ],
-          stops: const [0.0, 0.7, 1.0],
-        ),
-        borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
-        border: Border.all(
-          color: iconColor.withValues(alpha: isPulsing ? 0.4 : 0.3),
-          width: isPulsing ? 1.5 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: iconColor.withValues(alpha: isPulsing ? 0.3 : 0.2),
-            blurRadius: isPulsing ? 16 : 12,
-            spreadRadius: isPulsing ? 2 : 0,
-            offset: const Offset(0, 4),
-          ),
-          if (isPulsing) // Additional inner glow for pulsing cards
-            BoxShadow(
-              color: iconColor.withValues(alpha: 0.1),
-              blurRadius: 6,
-              spreadRadius: -2,
-              offset: const Offset(0, -2),
-            ),
-        ],
-      ),
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 16 : 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              // Enhanced icon container with animations
-              TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 2000),
-                tween: Tween(begin: 0.0, end: 1.0),
-                builder: (context, value, child) {
-                  return Transform.rotate(
-                    angle: isPulsing
-                        ? value * 0.1
-                        : 0, // Subtle rotation for pulsing cards
-                    child: Container(
-                      padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          colors: [
-                            iconColor.withValues(alpha: 0.3),
-                            iconColor.withValues(alpha: 0.15),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(
-                          isSmallScreen ? 12 : 14,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: iconColor.withValues(alpha: 0.2),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        icon,
-                        color: iconColor,
-                        size: isSmallScreen ? 20 : 24,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const Spacer(),
-              // Enhanced status indicators
-              Row(
-                children: [
-                  if (trend != null)
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isSmallScreen ? 4 : 6,
-                        vertical: isSmallScreen ? 2 : 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: trend.startsWith('+')
-                            ? Colors.green.withValues(alpha: 0.2)
-                            : trend.startsWith('-')
-                            ? Colors.red.withValues(alpha: 0.2)
-                            : Colors.orange.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(
-                          isSmallScreen ? 6 : 8,
-                        ),
-                      ),
-                      child: Text(
-                        trend,
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 8 : 10,
-                          fontWeight: FontWeight.w700,
-                          color: trend.startsWith('+')
-                              ? Colors.green.shade700
-                              : trend.startsWith('-')
-                              ? Colors.red.shade700
-                              : Colors.orange.shade700,
-                        ),
-                      ),
-                    ),
-                  if (trend != null) SizedBox(width: isSmallScreen ? 4 : 6),
-                  if (hasSync)
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isSmallScreen ? 6 : 8,
-                        vertical: isSmallScreen ? 3 : 4,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.green.withValues(alpha: 0.25),
-                            Colors.green.withValues(alpha: 0.15),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(
-                          isSmallScreen ? 8 : 10,
-                        ),
-                        border: Border.all(
-                          color: Colors.green.withValues(alpha: 0.3),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.cloud_done,
-                            color: Colors.green.shade600,
-                            size: isSmallScreen ? 10 : 12,
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            'SYNCED',
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 7 : 8,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green.shade700,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
+          // Best Score Card as full width
+          _buildCompactScoreCard(
+            highScore: highScore,
+            trend: null,
+            theme: theme,
+            isSmallScreen: isVerySmallScreen || isSmallScreen,
+            hasSync: userProvider.isSignedIn,
+            isPulsing: false,
           ),
 
-          SizedBox(height: isSmallScreen ? 8 : 16),
+          SizedBox(height: isSmallScreen ? 16 : 20),
 
-          // Enhanced title with better typography
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 10 : 12,
-              fontWeight: FontWeight.w700,
-              color: theme.accentColor.withValues(alpha: 0.8),
-              letterSpacing: 1.2,
-              height: 1.1,
-            ),
-          ),
-
-          SizedBox(height: isSmallScreen ? 6 : 8),
-
-          // Enhanced value display with shimmer effect
+          // Store and Premium buttons row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
             children: [
-              Flexible(
-                child: TweenAnimationBuilder<double>(
-                  duration: const Duration(milliseconds: 1000),
-                  tween: Tween(begin: 0.0, end: double.tryParse(value) ?? 0.0),
-                  builder: (context, animatedValue, child) {
-                    final displayValue = value.contains(RegExp(r'^\d+$'))
-                        ? animatedValue.toInt().toString()
-                        : value;
-                    return Text(
-                      displayValue,
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 26 : 30,
-                        fontWeight: FontWeight.w900,
-                        color: theme.accentColor,
-                        height: 0.9,
-                        shadows: isPulsing
-                            ? [
-                                Shadow(
-                                  color: iconColor.withValues(alpha: 0.3),
-                                  blurRadius: 2,
-                                ),
-                              ]
-                            : null,
-                      ),
-                    );
-                  },
+              Expanded(
+                child: _buildActionButton(
+                  context: context,
+                  theme: theme,
+                  isSmallScreen: isVerySmallScreen || isSmallScreen,
+                  icon: Icons.star,
+                  label: 'PREMIUM',
+                  colors: [Colors.purple, Colors.blue],
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const PremiumBenefitsScreen()),
+                  ),
+                ),
+              ),
+              SizedBox(width: isSmallScreen ? 12 : 16),
+              Expanded(
+                child: _buildActionButton(
+                  context: context,
+                  theme: theme,
+                  isSmallScreen: isVerySmallScreen || isSmallScreen,
+                  icon: Icons.store,
+                  label: 'STORE',
+                  colors: [Colors.orange, Colors.amber],
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const StoreScreen()),
+                  ),
                 ),
               ),
             ],
           ),
 
-          // Optional subtitle
-          if (subtitle != null) ...[
-            SizedBox(height: isSmallScreen ? 2 : 4),
-            Text(
-              subtitle,
+          SizedBox(height: isSmallScreen ? 24 : 32),
+
+          // Central Play Button
+          _buildCentralPlayButton(context, theme, screenHeight, screenWidth),
+
+          SizedBox(height: isSmallScreen ? 16 : 20),
+
+          // Quick action hint
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 12 : 16,
+              vertical: isSmallScreen ? 8 : 10,
+            ),
+            decoration: BoxDecoration(
+              color: theme.backgroundColor.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 25),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              'Swipe to control • Tap to pause',
               style: TextStyle(
-                fontSize: isSmallScreen ? 8 : 10,
+                fontSize: isSmallScreen ? 11 : 13,
+                color: theme.accentColor.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w500,
-                color: theme.accentColor.withValues(alpha: 0.5),
                 letterSpacing: 0.5,
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
   }
+
 
   Widget _buildCentralPlayButton(
     BuildContext context,
@@ -866,15 +559,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     double screenHeight,
     double screenWidth,
   ) {
-    // Dynamic sizing based on screen height
+    // Dynamic sizing based on screen height - slightly larger to balance with bigger logo
     final isSmallScreen = screenHeight < 750;
     final buttonSize = screenHeight < 650
-        ? 100.0
+        ? 110.0
         : screenHeight < 750
-        ? 120.0
+        ? 130.0
         : screenHeight < 900
-        ? 140.0
-        : 160.0;
+        ? 150.0
+        : 170.0;
 
     return GestureDetector(
       onTap: () {
@@ -1145,15 +838,121 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<Map<String, dynamic>> _getQuickStats() async {
-    try {
-      final statisticsService = StatisticsService();
-      await statisticsService.initialize();
-      return statisticsService.getDisplayStatistics();
-    } catch (e) {
-      return {};
-    }
+  Widget _buildCompactScoreCard({
+    required int highScore,
+    String? trend,
+    required GameTheme theme,
+    required bool isSmallScreen,
+    bool hasSync = false,
+    bool isPulsing = false,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const StatisticsScreen()),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.amber.withValues(alpha: isPulsing ? 0.2 : 0.15),
+              Colors.amber.withValues(alpha: isPulsing ? 0.1 : 0.08),
+              theme.backgroundColor.withValues(alpha: 0.02),
+            ],
+            stops: const [0.0, 0.7, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+          border: Border.all(
+            color: Colors.amber.withValues(alpha: isPulsing ? 0.4 : 0.3),
+            width: isPulsing ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.amber.withValues(alpha: isPulsing ? 0.3 : 0.2),
+              blurRadius: isPulsing ? 16 : 12,
+              spreadRadius: isPulsing ? 2 : 0,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.emoji_events,
+                  color: Colors.amber,
+                  size: isSmallScreen ? 18 : 22,
+                ),
+                const Spacer(),
+                if (trend != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 4 : 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      trend,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 8 : 9,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ),
+                if (hasSync) ...[
+                  if (trend != null) const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.cloud_done,
+                      color: Colors.green.shade600,
+                      size: isSmallScreen ? 8 : 10,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            SizedBox(height: isSmallScreen ? 4 : 6),
+            Text(
+              'BEST SCORE',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 9 : 10,
+                fontWeight: FontWeight.w700,
+                color: theme.accentColor.withValues(alpha: 0.7),
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '$highScore',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 20 : 24,
+                fontWeight: FontWeight.w900,
+                color: Colors.amber,
+                height: 1.0,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+
+
 
   void _showCreditsDialog(BuildContext context, GameTheme theme) {
     showDialog(
@@ -1428,50 +1227,3 @@ class _NavItem {
   _NavItem(this.icon, this.label, this.color, this.onTap);
 }
 
-// Custom painter for game background
-class _GameBackgroundPainter extends CustomPainter {
-  final GameTheme theme;
-
-  _GameBackgroundPainter(this.theme);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = theme.accentColor.withValues(alpha: 0.05);
-
-    // Draw subtle grid pattern
-    const gridSize = 30.0;
-
-    for (double x = 0; x < size.width; x += gridSize) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    for (double y = 0; y < size.height; y += gridSize) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-
-    // Draw decorative shapes
-    final shapePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = theme.foodColor.withValues(alpha: 0.02);
-
-    canvas.drawCircle(
-      Offset(size.width * 0.15, size.height * 0.25),
-      50,
-      shapePaint,
-    );
-
-    canvas.drawCircle(
-      Offset(size.width * 0.85, size.height * 0.75),
-      70,
-      shapePaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
-  }
-}

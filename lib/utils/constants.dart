@@ -5,8 +5,17 @@ class BoardSize {
   final int height;
   final String name;
   final String description;
+  final bool isPremium;
+  final String icon;
 
-  const BoardSize(this.width, this.height, this.name, this.description);
+  const BoardSize(
+    this.width, 
+    this.height, 
+    this.name, 
+    this.description, {
+    this.isPremium = false,
+    this.icon = '📐',
+  });
 
   @override
   bool operator ==(Object other) =>
@@ -21,6 +30,8 @@ class BoardSize {
 
   @override
   String toString() => '$name (${width}x$height)';
+
+  String get id => '${width}x$height';
 }
 
 class GameConstants {
@@ -30,11 +41,20 @@ class GameConstants {
   
   // Available board sizes
   static const List<BoardSize> availableBoardSizes = [
-    BoardSize(15, 15, 'Small', 'Quick games, tight spaces'),
-    BoardSize(20, 20, 'Classic', 'The original Snake experience'),
-    BoardSize(25, 25, 'Large', 'More room to grow'),
-    BoardSize(30, 30, 'Huge', 'Maximum challenge and space'),
+    BoardSize(15, 15, 'Small', 'Quick games, tight spaces', icon: '🎯'),
+    BoardSize(20, 20, 'Classic', 'The original Snake experience', icon: '🐍'),
+    BoardSize(25, 25, 'Large', 'More room to grow', icon: '📏'),
+    BoardSize(30, 30, 'Huge', 'Maximum challenge and space', icon: '🏟️'),
+    BoardSize(35, 35, 'Epic', 'Premium board for advanced players', isPremium: true, icon: '⭐'),
+    BoardSize(40, 40, 'Massive', 'Enormous board for epic games', isPremium: true, icon: '🏆'),
+    BoardSize(50, 50, 'Ultimate', 'The largest possible board', isPremium: true, icon: '👑'),
   ];
+
+  // Free board sizes (accessible without premium)
+  static List<BoardSize> get freeBoardSizes => availableBoardSizes.where((size) => !size.isPremium).toList();
+  
+  // Premium board sizes (require premium subscription)
+  static List<BoardSize> get premiumBoardSizes => availableBoardSizes.where((size) => size.isPremium).toList();
   
   // Game timing
   static const int initialGameSpeed = 300; // milliseconds
@@ -346,6 +366,126 @@ enum GameTheme {
         return Colors.orange.shade100;
       case GameTheme.crystal:
         return Colors.purple.shade100;
+    }
+  }
+}
+
+enum GameMode {
+  classic,
+  zen,
+  speedChallenge,
+  multiFood,
+  survival,
+  timeAttack;
+
+  String get name {
+    switch (this) {
+      case GameMode.classic:
+        return 'Classic';
+      case GameMode.zen:
+        return 'Zen Mode';
+      case GameMode.speedChallenge:
+        return 'Speed Challenge';
+      case GameMode.multiFood:
+        return 'Multi-Food';
+      case GameMode.survival:
+        return 'Survival';
+      case GameMode.timeAttack:
+        return 'Time Attack';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case GameMode.classic:
+        return 'The classic Snake game with walls';
+      case GameMode.zen:
+        return 'No walls - snake wraps around the screen';
+      case GameMode.speedChallenge:
+        return 'Speed increases rapidly for maximum challenge';
+      case GameMode.multiFood:
+        return 'Multiple food items appear at once';
+      case GameMode.survival:
+        return 'Survive as long as possible with limited lives';
+      case GameMode.timeAttack:
+        return 'Score as much as possible in limited time';
+    }
+  }
+
+  String get icon {
+    switch (this) {
+      case GameMode.classic:
+        return '🐍';
+      case GameMode.zen:
+        return '🧘';
+      case GameMode.speedChallenge:
+        return '⚡';
+      case GameMode.multiFood:
+        return '🍎';
+      case GameMode.survival:
+        return '❤️';
+      case GameMode.timeAttack:
+        return '⏰';
+    }
+  }
+
+  bool get isPremium {
+    switch (this) {
+      case GameMode.classic:
+        return false;
+      case GameMode.zen:
+      case GameMode.speedChallenge:
+      case GameMode.multiFood:
+      case GameMode.survival:
+      case GameMode.timeAttack:
+        return true;
+    }
+  }
+
+  Duration? get timeLimit {
+    switch (this) {
+      case GameMode.timeAttack:
+        return const Duration(minutes: 3);
+      default:
+        return null;
+    }
+  }
+
+  int get initialLives {
+    switch (this) {
+      case GameMode.survival:
+        return 3;
+      default:
+        return 1;
+    }
+  }
+
+  bool get hasWalls {
+    switch (this) {
+      case GameMode.zen:
+        return false;
+      default:
+        return true;
+    }
+  }
+
+  bool get hasMultipleFood {
+    switch (this) {
+      case GameMode.multiFood:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  int get speedIncreaseRate {
+    switch (this) {
+      case GameMode.speedChallenge:
+        return 15; // Faster speed increase
+      case GameMode.timeAttack:
+        return 20; // Very fast speed increase
+      default:
+        return 10; // Normal speed increase
     }
   }
 }

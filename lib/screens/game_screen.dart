@@ -295,9 +295,8 @@ class _GameScreenState extends State<GameScreen>
                               tournamentMode: gameProvider.tournamentMode,
                             ),
 
-                            // Compact Game Instructions (only show essentials)
-                            if (!isSmallScreen)
-                              _buildCompactInstructions(theme),
+                            // Compact Game Instructions (consistent spacing)
+                            _buildCompactInstructions(theme, isSmallScreen),
 
                             // Static row above game board - Game Hint and Gesture Indicator
                             _buildStaticGameRow(theme, isSmallScreen),
@@ -466,56 +465,78 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _buildCompactInstructions(GameTheme theme) {
+  Widget _buildCompactInstructions(GameTheme theme, bool isSmallScreen) {
+    // Always return a container with consistent spacing to prevent layout shifts
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.accentColor.withValues(alpha: 0.08),
-            theme.foodColor.withValues(alpha: 0.05),
-          ],
-        ),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: theme.accentColor.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      margin: EdgeInsets.only(
+        left: 16, 
+        right: 16, 
+        top: isSmallScreen ? 6 : 12, 
+        bottom: isSmallScreen ? 4 : 8,
       ),
-      child: Column(
-        children: [
-          // Title
-          Text(
-            'COLLECT FOOD',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.8),
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
+      height: isSmallScreen ? 24 : 70, // Fixed height prevents layout shifts
+      child: isSmallScreen 
+          ? // Simple hint for small screens
+            Center(
+              child: Text(
+                'Swipe to control • Tap to pause • Collect food to grow',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.7),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            )
+          : // Full instructions for larger screens
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.accentColor.withValues(alpha: 0.08),
+                    theme.foodColor.withValues(alpha: 0.05),
+                  ],
+                ),
+                border: Border.all(
+                  color: theme.accentColor.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.accentColor.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  // Title
+                  Text(
+                    'COLLECT FOOD',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.8),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Food types
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildEnhancedInstruction('🍎', 'Apple', '10 pts', theme),
+                      _buildEnhancedInstruction('✨', 'Bonus', '25 pts', theme),
+                      _buildEnhancedInstruction('⭐', 'Star', '50 pts', theme),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          // Food types
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildEnhancedInstruction('🍎', 'Apple', '10 pts', theme),
-              _buildEnhancedInstruction('✨', 'Bonus', '25 pts', theme),
-              _buildEnhancedInstruction('⭐', 'Star', '50 pts', theme),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -683,34 +704,26 @@ class _GameScreenState extends State<GameScreen>
                       ),
                     ),
 
-                    // Enhanced directional indicators
-                    _buildDirectionalIndicator(
-                      Direction.up,
-                      Alignment.topCenter,
-                      Offset(0, isSmallScreen ? 4 : 5),
-                      theme,
-                      isSmallScreen,
+                    // Simple directional indicators with fixed positions
+                    Positioned(
+                      top: isSmallScreen ? 4 : 5,
+                      left: (isSmallScreen ? 32 : 36) / 2 - (isSmallScreen ? 4 : 5),
+                      child: _buildSimpleIndicator(Direction.up, theme, isSmallScreen),
                     ),
-                    _buildDirectionalIndicator(
-                      Direction.down,
-                      Alignment.bottomCenter,
-                      Offset(0, isSmallScreen ? -4 : -5),
-                      theme,
-                      isSmallScreen,
+                    Positioned(
+                      bottom: isSmallScreen ? 4 : 5,
+                      left: (isSmallScreen ? 32 : 36) / 2 - (isSmallScreen ? 4 : 5),
+                      child: _buildSimpleIndicator(Direction.down, theme, isSmallScreen),
                     ),
-                    _buildDirectionalIndicator(
-                      Direction.left,
-                      Alignment.centerLeft,
-                      Offset(isSmallScreen ? 4 : 5, 0),
-                      theme,
-                      isSmallScreen,
+                    Positioned(
+                      left: isSmallScreen ? 4 : 5,
+                      top: (isSmallScreen ? 32 : 36) / 2 - (isSmallScreen ? 4 : 5),
+                      child: _buildSimpleIndicator(Direction.left, theme, isSmallScreen),
                     ),
-                    _buildDirectionalIndicator(
-                      Direction.right,
-                      Alignment.centerRight,
-                      Offset(isSmallScreen ? -4 : -5, 0),
-                      theme,
-                      isSmallScreen,
+                    Positioned(
+                      right: isSmallScreen ? 4 : 5,
+                      top: (isSmallScreen ? 32 : 36) / 2 - (isSmallScreen ? 4 : 5),
+                      child: _buildSimpleIndicator(Direction.right, theme, isSmallScreen),
                     ),
                   ],
                 ),
@@ -770,61 +783,43 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _buildDirectionalIndicator(
+  Widget _buildSimpleIndicator(
     Direction direction,
-    Alignment alignment,
-    Offset offset,
     GameTheme theme,
     bool isSmallScreen,
   ) {
-    final isActive =
-        _lastSwipeDirection == direction &&
-        _gestureIndicatorController.isAnimating;
-    final animationValue = _gestureIndicatorController.value;
-
-    return Align(
-      alignment: alignment,
-      child: Transform.translate(
-        offset: offset,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: isActive ? (isSmallScreen ? 8 : 10) : (isSmallScreen ? 6 : 8),
-          height: isActive ? (isSmallScreen ? 8 : 10) : (isSmallScreen ? 6 : 8),
-          decoration: BoxDecoration(
-            color: isActive
-                ? _getActiveSwipeColor(
-                    direction,
-                    theme,
-                  ).withValues(alpha: 0.8 + 0.2 * animationValue)
-                : theme.accentColor.withValues(alpha: 0.4),
-            shape: BoxShape.circle,
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: _getActiveSwipeColor(
-                        direction,
-                        theme,
-                      ).withValues(alpha: 0.4),
-                      blurRadius: 4 + 2 * animationValue,
-                      spreadRadius: 1 + animationValue,
-                    ),
-                  ]
-                : null,
-          ),
-          child: isActive
-              ? Center(
-                  child: Container(
-                    width: isSmallScreen ? 3 : 4,
-                    height: isSmallScreen ? 3 : 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                )
-              : null,
-        ),
+    final isActive = _lastSwipeDirection == direction && _gestureIndicatorController.isAnimating;
+    
+    return Container(
+      width: isSmallScreen ? 8 : 10,
+      height: isSmallScreen ? 8 : 10,
+      decoration: BoxDecoration(
+        color: isActive
+            ? _getActiveSwipeColor(direction, theme).withValues(alpha: 0.9)
+            : theme.accentColor.withValues(alpha: 0.4),
+        shape: BoxShape.circle,
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: _getActiveSwipeColor(direction, theme).withValues(alpha: 0.3),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
       ),
+      child: isActive
+          ? Center(
+              child: Container(
+                width: isSmallScreen ? 3 : 4,
+                height: isSmallScreen ? 3 : 4,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            )
+          : null,
     );
   }
 

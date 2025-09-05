@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/screens/store_screen.dart';
+import 'package:snake_classic/screens/premium_benefits_screen.dart';
 
 class PauseOverlay extends StatelessWidget {
   final GameTheme theme;
@@ -63,9 +65,37 @@ class PauseOverlay extends StatelessWidget {
                 ),
               ).animate().fadeIn(delay: 200.ms),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               
-              // Buttons
+              // Store Access Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildStoreButton(
+                    context: context,
+                    icon: Icons.star,
+                    label: 'Premium',
+                    colors: [Colors.purple, Colors.blue],
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const PremiumBenefitsScreen()),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  _buildStoreButton(
+                    context: context,
+                    icon: Icons.store,
+                    label: 'Store',
+                    colors: [Colors.orange, Colors.amber],
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const StoreScreen()),
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(delay: 250.ms),
+              
+              const SizedBox(height: 24),
+              
+              // Main Action Buttons
               Column(
                 children: [
                   GradientButton(
@@ -104,6 +134,50 @@ class PauseOverlay extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoreButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required List<Color> colors,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: colors.map((c) => c.withValues(alpha: 0.2)).toList(),
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colors.first.withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: colors.first,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: colors.first,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

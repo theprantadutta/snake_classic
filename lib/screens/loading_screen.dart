@@ -12,6 +12,7 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
+import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -278,6 +279,11 @@ class _LoadingScreenState extends State<LoadingScreen>
           if (mounted) {
             userProvider.initialize(context);
             AppLogger.success('UserProvider initialized');
+            
+            // Connect UserProvider to PurchaseService for purchase verification
+            final purchaseService = PurchaseService();
+            purchaseService.setUserProvider(userProvider);
+            AppLogger.info('PurchaseService connected to UserProvider');
           }
         } catch (e) {
           AppLogger.warning('UserProvider initialization warning: $e');
