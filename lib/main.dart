@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/coins_provider.dart';
 import 'package:snake_classic/providers/game_provider.dart';
@@ -26,8 +27,9 @@ import 'package:talker_flutter/talker_flutter.dart';
 import 'firebase_options.dart';
 
 void main() async {
-  // Ensure Flutter is initialized
-  WidgetsFlutterBinding.ensureInitialized();
+  // Ensure Flutter is initialized and preserve splash screen
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   AppLogger.lifecycle('Snake Classic starting up...');
 

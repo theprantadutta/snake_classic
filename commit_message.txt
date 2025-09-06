@@ -1,13 +1,1 @@
-feat(monetization): implement in-app purchases and premium features
-
-This commit introduces a comprehensive monetization system to the Snake Classic game.
-
-Key features include:
-- In-app currency (Snake Coins) for purchasing items.
-- A dedicated store to buy themes, cosmetics, and power-ups.
-- Premium subscription ("Snake Classic Pro") with exclusive benefits like new game modes and larger board sizes.
-- Seasonal Battle Pass with tiered rewards.
-- Backend purchase verification for security.
-- UI updates across the app to integrate and promote the new monetization features.
-
-This lays the groundwork for the game's economy and provides players with more ways to customize their experience.
+This is a commit message file.
