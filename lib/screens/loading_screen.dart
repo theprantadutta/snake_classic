@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/premium_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
@@ -47,6 +48,9 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   void initState() {
     super.initState();
+
+    // Hide the Splash Screen after initialization
+    FlutterNativeSplash.remove();
 
     _logoController = AnimationController(
       duration: const Duration(milliseconds: 1000), // Faster logo animation
@@ -279,7 +283,7 @@ class _LoadingScreenState extends State<LoadingScreen>
           if (mounted) {
             userProvider.initialize(context);
             AppLogger.success('UserProvider initialized');
-            
+
             // Connect UserProvider to PurchaseService for purchase verification
             final purchaseService = PurchaseService();
             purchaseService.setUserProvider(userProvider);
@@ -300,7 +304,10 @@ class _LoadingScreenState extends State<LoadingScreen>
     try {
       if (!mounted) return;
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-      final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+      final premiumProvider = Provider.of<PremiumProvider>(
+        context,
+        listen: false,
+      );
       final preferencesService = Provider.of<PreferencesService>(
         context,
         listen: false,

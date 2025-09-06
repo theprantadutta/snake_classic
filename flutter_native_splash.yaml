@@ -1,0 +1,27 @@
+flutter_native_splash:
+  color: "#335832"
+  color_dark: "#335832"
+  # image: assets/images/splash.png
+  # image_dark: assets/images/splash.png
+  # background_image: assets/splash/splash_bg.png
+  # background_image_dark: assets/splash/splash_bg.png
+  # android_gravity: fill
+  # fullscreen: true
+  # branding: assets/images/branding.png
+
+  # background_image: assets/splash/splash_background_light.png
+  # background_image_dark: assets/splash/splash_background_dark.png
+  
+  image: assets/splash/splash_logo_transparent.png
+  image_dark: assets/splash/splash_logo_transparent.png
+
+  branding: assets/splash/branding_text_dark.png
+  branding_dark: assets/splash/branding_text_dark.png
+
+  android_12:
+    image: assets/splash/android_12_splash_dark.png
+    image_dark: assets/splash/android_12_splash_dark.png
+    color: "#335832"
+    color_dark: "#335832"
+    branding: assets/splash/branding_dark.png
+    branding_dark: assets/splash/branding_dark.png
