@@ -32,6 +32,9 @@ void main() async {
   AppLogger.lifecycle('Snake Classic starting up...');
 
   try {
+    // Initialize system UI mode
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+
     // Load environment variables
     AppLogger.info('Loading environment variables...');
     await dotenv.load(fileName: '.env');
@@ -116,7 +119,9 @@ class SnakeClassicApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => MultiplayerProvider()),
         ChangeNotifierProvider(create: (_) => CoinsProvider()),
-        ChangeNotifierProvider(create: (_) => PremiumProvider(PurchaseService())),
+        ChangeNotifierProvider(
+          create: (_) => PremiumProvider(PurchaseService()),
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

@@ -5,7 +5,18 @@
       "Bash(flutter pub:*)",
       "WebFetch(domain:pub.dev)",
       "WebSearch",
-      "WebFetch(domain:firebase.google.com)"
+      "WebFetch(domain:firebase.google.com)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)"
     ],
     "deny": [],
     "ask": []
