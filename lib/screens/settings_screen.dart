@@ -157,6 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (!premiumProvider.hasPremium)
                             _buildUpgradeButton(premiumProvider, theme),
                           _buildRestorePurchasesButton(premiumProvider, theme),
+                          _buildPurchaseHistoryButton(premiumProvider, theme),
                           if (premiumProvider.hasPremium || premiumProvider.ownedSkins.isNotEmpty)
                             _buildCosmeticsButton(premiumProvider, theme),
                           if (premiumProvider.hasBattlePass)
@@ -1043,7 +1044,7 @@ class _BoardSizePainter extends CustomPainter {
 }
 
 // Premium UI Components
-extension SettingsPremium on _SettingsScreenState {
+extension _SettingsPremium on _SettingsScreenState {
   Widget _buildPremiumStatusCard(PremiumProvider premiumProvider, GameTheme theme) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1164,6 +1165,39 @@ extension SettingsPremium on _SettingsScreenState {
             const SizedBox(width: 8),
             Text(
               'Restore Purchases',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPurchaseHistoryButton(PremiumProvider premiumProvider, GameTheme theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: TextButton(
+        onPressed: () => _showPurchaseHistory(premiumProvider),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          backgroundColor: theme.accentColor.withValues(alpha: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: theme.accentColor.withValues(alpha: 0.3),
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.history, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(
+              'Purchase History',
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.w500,
@@ -1395,6 +1429,134 @@ extension SettingsPremium on _SettingsScreenState {
           ),
         );
       }
+    }
+  }
+
+  void _showPurchaseHistory(PremiumProvider premiumProvider) async {
+    try {
+      final history = await premiumProvider.getPurchaseHistory();
+      
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Purchase History'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: history.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No purchases found',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: history.length,
+                    itemBuilder: (context, index) {
+                      final purchase = history[index];
+                      // Parse the JSON string to extract purchase details
+                      try {
+                        // Simple parsing since we control the format
+                        final data = purchase.replaceAll('{', '').replaceAll('}', '');
+                        final parts = data.split(',');
+                        final Map<String, String> purchaseData = {};
+                        
+                        for (final part in parts) {
+                          final keyValue = part.split(':');
+                          if (keyValue.length == 2) {
+                            purchaseData[keyValue[0].replaceAll('"', '').trim()] = 
+                                keyValue[1].replaceAll('"', '').trim();
+                          }
+                        }
+                        
+                        return Card(
+                          child: ListTile(
+                            leading: Icon(_getPurchaseIcon(purchaseData['type'] ?? 'unknown')),
+                            title: Text(purchaseData['itemName'] ?? 'Unknown Item'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Type: ${purchaseData['type'] ?? 'Unknown'}'),
+                                Text('Date: ${_formatDate(purchaseData['timestamp'] ?? '')}'),
+                              ],
+                            ),
+                            trailing: Text(
+                              '${purchaseData['currency'] == 'coins' ? '' : '\$'}${_formatPrice(purchaseData['price'] ?? '0', purchaseData['currency'] ?? 'USD')}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        return ListTile(
+                          title: Text('Purchase #${index + 1}'),
+                          subtitle: const Text('Data parsing error'),
+                        );
+                      }
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to load purchase history'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  IconData _getPurchaseIcon(String type) {
+    switch (type) {
+      case 'subscription':
+        return Icons.star;
+      case 'theme':
+        return Icons.palette;
+      case 'skin':
+        return Icons.pets;
+      case 'trail':
+        return Icons.auto_awesome;
+      case 'bundle':
+        return Icons.shopping_bag;
+      case 'battlepass':
+        return Icons.emoji_events;
+      case 'tournament':
+        return Icons.sports_esports;
+      default:
+        return Icons.shopping_cart;
+    }
+  }
+
+  String _formatPrice(String price, String currency) {
+    try {
+      final amount = int.parse(price);
+      if (currency == 'coins') {
+        return '$amount coins';
+      } else {
+        return (amount / 100).toStringAsFixed(2);
+      }
+    } catch (e) {
+      return price;
+    }
+  }
+
+  String _formatDate(String timestamp) {
+    try {
+      final date = DateTime.parse(timestamp);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return 'Unknown date';
     }
   }
 

@@ -2,6 +2,8 @@ import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/snake.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
+import 'package:snake_classic/models/premium_power_up.dart';
+import 'package:snake_classic/utils/constants.dart';
 
 enum GameStatus {
   playing,
@@ -37,6 +39,7 @@ enum CrashReason {
 class GameState {
   final Snake snake;
   final Food? food;
+  final List<Food> foods;
   final PowerUp? powerUp;
   final List<ActivePowerUp> activePowerUps;
   final int score;
@@ -50,10 +53,12 @@ class GameState {
   final int boardWidth;
   final int boardHeight;
   final DateTime? lastMoveTime;
+  final GameMode gameMode;
 
   const GameState({
     required this.snake,
     this.food,
+    this.foods = const [],
     this.powerUp,
     this.activePowerUps = const [],
     this.score = 0,
@@ -67,6 +72,7 @@ class GameState {
     this.boardWidth = 20,
     this.boardHeight = 20,
     this.lastMoveTime,
+    this.gameMode = GameMode.classic,
   });
 
   factory GameState.initial() {
@@ -84,10 +90,10 @@ class GameState {
 
   int get gameSpeed {
     // Speed increases with level (lower milliseconds = faster)
-    // Start at 300ms, decrease by 20ms per level, minimum 100ms
+    // Start at 300ms, decrease by game mode-specific amount per level
     final baseSpeed = 300;
-    final speedDecrease = (level - 1) * 20;
-    int speed = (baseSpeed - speedDecrease).clamp(100, 300);
+    final speedDecrease = (level - 1) * gameMode.speedIncreaseRate;
+    int speed = (baseSpeed - speedDecrease).clamp(50, 300);
     
     // Apply power-up effects
     final hasSpeedBoost = activePowerUps.any((p) => p.type == PowerUpType.speedBoost && !p.isExpired);
@@ -107,9 +113,52 @@ class GameState {
 
   bool get shouldLevelUp => score >= targetScore;
 
+  // Additional power-up effect getters (hasInvincibility is defined later in file)
+  bool get hasSpeedBoost => activePowerUps.any((p) => 
+      (p.type == PowerUpType.speedBoost || _isPremiumSpeedBoost(p)) && !p.isExpired);
+      
+  bool get hasSlowMotion => activePowerUps.any((p) => 
+      (p.type == PowerUpType.slowMotion || _isPremiumSlowMotion(p)) && !p.isExpired);
+      
+  bool get hasScoreMultiplier => activePowerUps.any((p) => 
+      (p.type == PowerUpType.scoreMultiplier || _isPremiumScoreMultiplier(p)) && !p.isExpired);
+      
+  // Premium-specific power-up effects
+  bool get hasGhostMode => activePowerUps.any((p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.ghostMode && !p.isExpired);
+      
+  bool get hasSizeReducer => activePowerUps.any((p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.sizeReducer && !p.isExpired);
+      
+  bool get hasScoreShield => activePowerUps.any((p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.scoreShield && !p.isExpired);
+      
+  bool get hasTimeWarp => activePowerUps.any((p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.timeWarp && !p.isExpired);
+      
+  bool get hasMagneticFood => activePowerUps.any((p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.magneticFood && !p.isExpired);
+      
+  bool get hasComboMultiplier => activePowerUps.any((p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.comboMultiplier && !p.isExpired);
+
+  // Helper methods for checking premium variants of basic power-ups
+  bool _isPremiumInvincibility(ActivePowerUp p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.megaInvincibility;
+      
+  bool _isPremiumSpeedBoost(ActivePowerUp p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.megaSpeedBoost;
+      
+  bool _isPremiumSlowMotion(ActivePowerUp p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.megaSlowMotion;
+      
+  bool _isPremiumScoreMultiplier(ActivePowerUp p) => 
+      p is PremiumActivePowerUp && p.premiumType == PremiumPowerUpType.megaScoreMultiplier;
+
   GameState copyWith({
     Snake? snake,
     Food? food,
+    List<Food>? foods,
     PowerUp? powerUp,
     List<ActivePowerUp>? activePowerUps,
     int? score,
@@ -123,10 +172,12 @@ class GameState {
     int? boardWidth,
     int? boardHeight,
     DateTime? lastMoveTime,
+    GameMode? gameMode,
   }) {
     return GameState(
       snake: snake ?? this.snake,
       food: food ?? this.food,
+      foods: foods ?? this.foods,
       powerUp: powerUp ?? this.powerUp,
       activePowerUps: activePowerUps ?? this.activePowerUps,
       score: score ?? this.score,
@@ -140,6 +191,7 @@ class GameState {
       boardWidth: boardWidth ?? this.boardWidth,
       boardHeight: boardHeight ?? this.boardHeight,
       lastMoveTime: lastMoveTime ?? this.lastMoveTime,
+      gameMode: gameMode ?? this.gameMode,
     );
   }
 
@@ -161,7 +213,8 @@ class GameState {
   }
   
   bool get hasInvincibility {
-    return activePowerUps.any((p) => p.type == PowerUpType.invincibility && !p.isExpired);
+    return activePowerUps.any((p) => 
+      (p.type == PowerUpType.invincibility || _isPremiumInvincibility(p)) && !p.isExpired);
   }
   
   int get scoreMultiplier {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -263,13 +264,23 @@ class GameProvider extends ChangeNotifier {
     final willCollectPowerUp = _gameState.powerUp != null && 
         snake.head.move(snake.currentDirection) == _gameState.powerUp!.position;
 
-    // Move snake
-    snake.move(ateFood: willEatFood);
+    // Move snake with game mode specific behavior
+    snake.move(
+      ateFood: willEatFood, 
+      boardWidth: _gameState.boardWidth,
+      boardHeight: _gameState.boardHeight,
+      wrapAround: !_gameState.gameMode.hasWalls,
+    );
 
-    // Check collisions with specific crash reasons (unless invincible)
-    final wallCollision = !_gameState.hasInvincibility && 
+    // Check collisions with specific crash reasons (unless invincible or in ghost mode)
+    // In Zen mode, no wall collisions - snake wraps around
+    // Ghost mode allows phasing through walls and self
+    final hasCollisionImmunity = _gameState.hasInvincibility || _gameState.hasGhostMode;
+    
+    final wallCollision = !hasCollisionImmunity && 
+        _gameState.gameMode.hasWalls &&
         snake.checkWallCollision(_gameState.boardWidth, _gameState.boardHeight);
-    final selfCollision = !_gameState.hasInvincibility && snake.checkSelfCollision();
+    final selfCollision = !hasCollisionImmunity && snake.checkSelfCollision();
     
     if (wallCollision || selfCollision) {
       // Track collision types for achievements
@@ -368,6 +379,13 @@ class GameProvider extends ChangeNotifier {
       level: newLevel,
     );
 
+    // Award Battle Pass XP for eating food
+    int xpEarned = food.type.points; // Base XP equals food points
+    if (food.type == FoodType.special || food.type == FoodType.bonus) {
+      xpEarned *= 2; // Double XP for special foods
+    }
+    _awardBattlePassXP(xpEarned);
+
     // Update game speed if level changed
     if (newLevel > _gameState.level) {
       _startGameLoop();
@@ -446,6 +464,12 @@ class GameProvider extends ChangeNotifier {
     
     // Handle premium power-ups specially
     if (powerUp is PremiumPowerUp) {
+      // Handle instant-effect premium power-ups
+      if (powerUp.premiumType == PremiumPowerUpType.teleport) {
+        _teleportSnake();
+        return; // Don't add to active power-ups, effect is instant
+      }
+      
       activePowerUp = PremiumActivePowerUp(
         premiumType: powerUp.premiumType,
         duration: powerUp.premiumType.duration,
@@ -719,6 +743,33 @@ class GameProvider extends ChangeNotifier {
       }
     }
 
+    // Award Battle Pass XP for game completion based on performance
+    int gameCompletionXP = 10; // Base XP for completing a game
+    
+    // Bonus XP for score milestones
+    if (_gameState.score >= 500) gameCompletionXP += 25;
+    if (_gameState.score >= 1000) gameCompletionXP += 50;
+    if (_gameState.score >= 2000) gameCompletionXP += 100;
+    
+    // Bonus XP for survival time
+    if (gameDurationSeconds >= 60) gameCompletionXP += 15; // Survived 1 minute
+    if (gameDurationSeconds >= 300) gameCompletionXP += 30; // Survived 5 minutes
+    
+    // Bonus XP for perfect games (no collisions and decent time)
+    if (!_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30) {
+      gameCompletionXP += 50; // Perfect game bonus
+    }
+    
+    // Bonus XP for new high score
+    if (isNewHighScore) {
+      gameCompletionXP += 100;
+    }
+    
+    // Bonus XP for level achieved
+    gameCompletionXP += (_gameState.level - 1) * 5;
+    
+    _awardBattlePassXP(gameCompletionXP);
+
     _gameState = _gameState.copyWith(
       status: GameStatus.gameOver,
       highScore: highScore,
@@ -793,6 +844,53 @@ class GameProvider extends ChangeNotifier {
     // Update current setting
     _crashFeedbackDuration = duration;
     notifyListeners();
+  }
+
+  // Premium power-up effects implementation
+  void _teleportSnake() {
+    // Find a safe random location for teleport
+    Position? safePosition = _findSafePosition();
+    
+    if (safePosition != null) {
+      // Create new snake body with teleported head position
+      final currentSnake = _gameState.snake;
+      final newBody = [safePosition, ...currentSnake.body.take(currentSnake.length - 1)];
+      
+      // Update the snake body directly
+      currentSnake.body = newBody;
+      
+      _gameState = _gameState.copyWith(snake: currentSnake);
+      
+      // Play teleport sound and haptic feedback
+      _audioService.playSound('teleport');
+      HapticFeedback.heavyImpact(); // Strong haptic for teleport
+      
+      if (kDebugMode) {
+        print('Snake teleported to safe position: $safePosition');
+      }
+    }
+  }
+  
+  Position? _findSafePosition() {
+    final random = Random();
+    const maxAttempts = 100;
+    
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      final x = random.nextInt(_gameState.boardWidth);
+      final y = random.nextInt(_gameState.boardHeight);
+      final position = Position(x, y);
+      
+      // Check if position is safe (not occupied by snake, food, or power-up)
+      final isOccupiedBySnake = _gameState.snake.body.contains(position);
+      final isOccupiedByFood = _gameState.food?.position == position;
+      final isOccupiedByPowerUp = _gameState.powerUp?.position == position;
+      
+      if (!isOccupiedBySnake && !isOccupiedByFood && !isOccupiedByPowerUp) {
+        return position;
+      }
+    }
+    
+    return null; // No safe position found
   }
 
   @override

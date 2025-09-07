@@ -358,7 +358,7 @@ class PremiumPowerUp extends PowerUp {
       'created_at': createdAt.toIso8601String(),
       'has_visual_effect': hasVisualEffect,
       'has_sound_effect': hasSoundEffect,
-      'glow_colors': glowColors.map((c) => c.value).toList(),
+      'glow_colors': glowColors.map((c) => c.toARGB32()).toList(),
     };
   }
 

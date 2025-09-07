@@ -124,7 +124,7 @@ class BattlePassReward {
       'quantity': quantity,
       'item_id': itemId,
       'icon': icon,
-      'color': color.value,
+      'color': color.toARGB32(),
       'is_special': isSpecial,
     };
   }
@@ -306,7 +306,7 @@ class BattlePassSeason {
       'levels': levels.map((l) => l.toJson()).toList(),
       'price': price,
       'banner_image': bannerImage,
-      'theme_color': themeColor.value,
+      'theme_color': themeColor.toARGB32(),
       'metadata': metadata,
     };
   }

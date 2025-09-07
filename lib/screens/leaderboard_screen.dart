@@ -53,57 +53,84 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     final theme = themeProvider.currentTheme;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text(
-          'Leaderboards',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-          onPressed: () => Navigator.pop(context),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: theme.accentColor,
-          labelColor: theme.accentColor,
-          unselectedLabelColor: theme.accentColor.withValues(alpha: 0.6),
-          tabs: const [
-            Tab(text: 'Global'),
-            Tab(text: 'Weekly'),
-          ],
-        ),
-      ),
       body: AppBackground(
         theme: theme,
-        child: Column(
-          children: [
-            // Add top padding to account for AppBar and TabBar
-            SizedBox(
-              height:
-                  MediaQuery.of(context).padding.top +
-                  kToolbarHeight +
-                  kTextTabBarHeight,
-            ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              _buildHeader(theme),
+              
+              // Tab Bar
+              _buildTabBar(theme),
 
-            // User Rank Card
-            if (userProvider.isSignedIn && _userRank != null)
-              _buildUserRankCard(userProvider, theme),
+              // User Rank Card
+              if (userProvider.isSignedIn && _userRank != null)
+                _buildUserRankCard(userProvider, theme),
 
-            // Leaderboard Content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildGlobalLeaderboard(theme, userProvider),
-                  _buildWeeklyLeaderboard(theme, userProvider),
-                ],
+              // Leaderboard Content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildGlobalLeaderboard(theme, userProvider),
+                    _buildWeeklyLeaderboard(theme, userProvider),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(GameTheme theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: Icon(
+              Icons.arrow_back,
+              color: theme.accentColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.leaderboard,
+            color: theme.accentColor,
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Leaderboards',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: theme.accentColor,
+            ),
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar(GameTheme theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: TabBar(
+        controller: _tabController,
+        indicatorColor: theme.accentColor,
+        labelColor: theme.accentColor,
+        unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+        tabs: const [
+          Tab(text: 'Global'),
+          Tab(text: 'Weekly'),
+        ],
       ),
     );
   }

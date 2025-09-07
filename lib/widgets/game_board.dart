@@ -7,6 +7,8 @@ import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:snake_classic/providers/premium_provider.dart';
+import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/advanced_particle_system.dart';
@@ -62,8 +64,8 @@ class _GameBoardState extends State<GameBoard>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
+    return Consumer2<ThemeProvider, PremiumProvider>(
+      builder: (context, themeProvider, premiumProvider, child) {
         final theme = themeProvider.currentTheme;
 
         // Performance optimization: Only rebuild if gameState actually changed
@@ -171,6 +173,7 @@ class _GameBoardState extends State<GameBoard>
                               // Smooth movement properties
                               moveProgress: gameProvider.moveProgress,
                               previousGameState: gameProvider.previousGameState,
+                              premiumProvider: premiumProvider,
                             ),
                             size: Size.infinite,
                             // Performance: Only repaint when needed
@@ -368,6 +371,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final Animation<double> pulseAnimation;
   final double moveProgress;
   final GameState? previousGameState;
+  final PremiumProvider premiumProvider;
 
   // Cache paint objects to avoid recreation
   late final Paint _snakeHeadPaint;
@@ -383,6 +387,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     required this.pulseAnimation,
     this.moveProgress = 0.0,
     this.previousGameState,
+    required this.premiumProvider,
   }) : super(repaint: pulseAnimation) {
     _initializePaints();
   }
@@ -557,6 +562,24 @@ class OptimizedGameBoardPainter extends CustomPainter {
   }
 
   List<Color> _getHeadGradientColors() {
+    // Use selected skin colors if available, otherwise fall back to theme colors
+    final skinColors = _getSelectedSkinColors();
+    
+    if (skinColors.isNotEmpty && premiumProvider.selectedSkinId != 'classic') {
+      // Use skin colors for premium skins
+      if (skinColors.length == 1) {
+        return [
+          skinColors[0].withValues(alpha: 1.0),
+          skinColors[0].withValues(alpha: 0.8),
+          skinColors[0].withValues(alpha: 0.6),
+        ];
+      } else {
+        // For multi-color skins, use the colors directly with varying alpha
+        return skinColors.take(3).toList();
+      }
+    }
+    
+    // Fall back to original theme-based colors for classic skin
     switch (theme) {
       case GameTheme.classic:
         return [
@@ -707,6 +730,21 @@ class OptimizedGameBoardPainter extends CustomPainter {
   }
 
   Color _getBodyColor(double opacity) {
+    // Use selected skin colors if available, otherwise fall back to theme colors
+    final skinColors = _getSelectedSkinColors();
+    
+    if (skinColors.isNotEmpty && premiumProvider.selectedSkinId != 'classic') {
+      // For single color skins, use the color with opacity
+      if (skinColors.length == 1) {
+        return skinColors[0].withValues(alpha: opacity);
+      } else {
+        // For multi-color skins, cycle through colors - could be enhanced with animation
+        final colorIndex = (DateTime.now().millisecondsSinceEpoch ~/ 500) % skinColors.length;
+        return skinColors[colorIndex].withValues(alpha: opacity);
+      }
+    }
+    
+    // Fall back to original theme-based colors for classic skin
     switch (theme) {
       case GameTheme.classic:
         return theme.snakeColor.withValues(alpha: opacity);
@@ -1845,13 +1883,25 @@ class OptimizedGameBoardPainter extends CustomPainter {
     );
   }
 
+  // Get the selected skin colors
+  List<Color> _getSelectedSkinColors() {
+    final selectedSkinType = SnakeSkinType.values.firstWhere(
+      (type) => type.id == premiumProvider.selectedSkinId,
+      orElse: () => SnakeSkinType.classic,
+    );
+    return selectedSkinType.colors;
+  }
+
+
   @override
   bool shouldRepaint(covariant OptimizedGameBoardPainter oldDelegate) {
     return oldDelegate.gameState != gameState ||
         oldDelegate.theme != theme ||
         oldDelegate.pulseAnimation.value != pulseAnimation.value ||
         oldDelegate.moveProgress != moveProgress ||
-        oldDelegate.previousGameState != previousGameState;
+        oldDelegate.previousGameState != previousGameState ||
+        oldDelegate.premiumProvider.selectedSkinId != premiumProvider.selectedSkinId ||
+        oldDelegate.premiumProvider.selectedTrailId != premiumProvider.selectedTrailId;
   }
 }
 

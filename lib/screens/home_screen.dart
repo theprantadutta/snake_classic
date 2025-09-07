@@ -6,6 +6,8 @@ import 'package:snake_classic/providers/game_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
+import 'package:snake_classic/screens/battle_pass_screen.dart';
+import 'package:snake_classic/screens/cosmetics_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/screens/instructions_screen.dart';
@@ -13,10 +15,10 @@ import 'package:snake_classic/screens/leaderboard_screen.dart';
 import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
 import 'package:snake_classic/screens/premium_benefits_screen.dart';
 import 'package:snake_classic/screens/profile_screen.dart';
-import 'package:snake_classic/screens/replays_screen.dart';
 import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/store_screen.dart';
+import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -1039,6 +1041,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           MaterialPageRoute(builder: (context) => const TournamentsScreen()),
         );
       }),
+      _NavItem(Icons.timeline, 'BATTLE', Colors.deepPurple, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const BattlePassScreen()),
+        );
+      }),
       _NavItem(Icons.people, 'FRIENDS', Colors.blue, () {
         Navigator.of(
           context,
@@ -1049,10 +1056,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           MaterialPageRoute(builder: (context) => const StatisticsScreen()),
         );
       }),
-      _NavItem(Icons.movie, 'REPLAY', Colors.indigo, () {
+      _NavItem(Icons.palette, 'COSMETICS', Colors.indigo, () {
         Navigator.of(
           context,
-        ).push(MaterialPageRoute(builder: (context) => const ReplaysScreen()));
+        ).push(MaterialPageRoute(builder: (context) => const CosmeticsScreen()));
       }),
       _NavItem(Icons.military_tech, 'AWARDS', Colors.orange, () {
         Navigator.of(context).push(
@@ -1060,7 +1067,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         );
       }),
       _NavItem(Icons.palette, 'THEME', theme.snakeColor, () {
-        themeProvider.cycleTheme();
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const ThemeSelectorScreen()),
+        );
       }),
     ];
 

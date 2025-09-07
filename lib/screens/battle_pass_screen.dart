@@ -5,6 +5,7 @@ import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class BattlePassScreen extends StatefulWidget {
   const BattlePassScreen({super.key});
@@ -42,15 +43,27 @@ class _BattlePassScreenState extends State<BattlePassScreen>
         final currentXp = premiumProvider.battlePassXP;
         
         return Scaffold(
-          backgroundColor: theme.backgroundColor,
-          body: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              _buildAppBar(theme, hasBattlePass),
-              _buildSeasonInfo(theme, hasBattlePass),
-              _buildProgressBar(theme, currentLevel, currentXp),
-              _buildRewardTrack(theme, premiumProvider, hasBattlePass, currentLevel),
-            ],
+          body: AppBackground(
+            theme: theme,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Header
+                  _buildHeader(theme, hasBattlePass),
+
+                  // Season info header
+                  _buildSeasonInfoHeader(theme, hasBattlePass),
+
+                  // Progress bar
+                  _buildProgressSection(theme, currentLevel, currentXp),
+
+                  // Reward track
+                  Expanded(
+                    child: _buildRewardTrackList(theme, premiumProvider, hasBattlePass, currentLevel),
+                  ),
+                ],
+              ),
+            ),
           ),
           bottomNavigationBar: !hasBattlePass ? _buildPurchaseBar(theme) : null,
         );
@@ -58,160 +71,140 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     );
   }
 
-  Widget _buildAppBar(GameTheme theme, bool hasBattlePass) {
-    return SliverAppBar(
-      expandedHeight: 200,
-      pinned: true,
-      backgroundColor: _currentSeason.themeColor,
-      foregroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          _currentSeason.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            shadows: [
-              Shadow(
-                offset: Offset(1, 1),
-                blurRadius: 3,
-                color: Colors.black54,
-              ),
-            ],
-          ),
-        ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _currentSeason.themeColor,
-                _currentSeason.themeColor.withValues(alpha: 0.7),
-                theme.backgroundColor.withValues(alpha: 0.9),
-              ],
+  Widget _buildHeader(GameTheme theme, bool hasBattlePass) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: Icon(
+              Icons.arrow_back,
+              color: theme.accentColor,
+              size: 24,
             ),
           ),
-          child: Stack(
-            children: [
-              // Background pattern
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _BattlePassBackgroundPainter(_currentSeason.themeColor),
-                ),
-              ),
-              
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 60), // App bar space
-                    Text(
-                      _currentSeason.description,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1, 1),
-                            blurRadius: 3,
-                            color: Colors.black54,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: hasBattlePass ? Colors.amber : Colors.grey,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        hasBattlePass ? 'PREMIUM' : 'FREE',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          const SizedBox(width: 8),
+          Icon(
+            Icons.timeline,
+            color: theme.accentColor,
+            size: 28,
           ),
-        ),
+          const SizedBox(width: 12),
+          Text(
+            'Battle Pass',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: theme.accentColor,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _showPremiumPreview = !_showPremiumPreview;
+              });
+            },
+            icon: Icon(
+              _showPremiumPreview ? Icons.visibility_off : Icons.visibility,
+              color: theme.accentColor.withValues(alpha: 0.7),
+              size: 24,
+            ),
+            tooltip: _showPremiumPreview ? 'Hide Premium Preview' : 'Show Premium Preview',
+          ),
+        ],
       ),
-      actions: [
-        IconButton(
-          icon: Icon(_showPremiumPreview ? Icons.visibility_off : Icons.visibility),
-          onPressed: () {
-            setState(() {
-              _showPremiumPreview = !_showPremiumPreview;
-            });
-          },
-          tooltip: _showPremiumPreview ? 'Hide Premium Preview' : 'Show Premium Preview',
-        ),
-      ],
     );
   }
 
-  Widget _buildSeasonInfo(GameTheme theme, bool hasBattlePass) {
-    final timeRemaining = _currentSeason.timeRemaining;
-    final daysLeft = timeRemaining.inDays;
-    final hoursLeft = timeRemaining.inHours % 24;
-
-    return SliverToBoxAdapter(
+  Widget _buildSeasonInfoHeader(GameTheme theme, bool hasBattlePass) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       child: Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: theme.cardColor.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _currentSeason.themeColor.withValues(alpha: 0.2),
+              _currentSeason.themeColor.withValues(alpha: 0.1),
+              theme.accentColor.withValues(alpha: 0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: _currentSeason.themeColor.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Season Progress',
-                    style: TextStyle(
-                      color: theme.textColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _currentSeason.themeColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Season ends in $daysLeft days, $hoursLeft hours',
-                    style: TextStyle(
-                      color: theme.textColor.withValues(alpha: 0.7),
-                      fontSize: 14,
-                    ),
+                  child: Icon(
+                    Icons.timeline,
+                    color: _currentSeason.themeColor,
+                    size: 28,
                   ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: _currentSeason.themeColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${_currentSeason.maxLevel} Tiers',
-                style: TextStyle(
-                  color: _currentSeason.themeColor,
-                  fontWeight: FontWeight.bold,
                 ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Current Season',
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _currentSeason.name,
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: hasBattlePass ? Colors.amber : Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    hasBattlePass ? 'PREMIUM' : 'FREE',
+                    style: TextStyle(
+                      color: hasBattlePass ? Colors.white : theme.accentColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _currentSeason.description,
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.8),
+                fontSize: 16,
+                height: 1.4,
               ),
             ),
           ],
@@ -220,7 +213,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     );
   }
 
-  Widget _buildProgressBar(GameTheme theme, int currentLevel, int currentXp) {
+  Widget _buildProgressSection(GameTheme theme, int currentLevel, int currentXp) {
     final nextLevel = currentLevel + 1;
     final nextLevelData = _currentSeason.getLevelData(nextLevel);
     
@@ -230,130 +223,184 @@ class _BattlePassScreenState extends State<BattlePassScreen>
         ? ((currentXp - xpForCurrentLevel) / xpForNextLevel).clamp(0.0, 1.0)
         : 1.0;
 
-    return SliverToBoxAdapter(
+    final timeRemaining = _currentSeason.timeRemaining;
+    final daysLeft = timeRemaining.inDays;
+    final hoursLeft = timeRemaining.inHours % 24;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.cardColor.withValues(alpha: 0.3),
+          color: theme.accentColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _currentSeason.themeColor.withValues(alpha: 0.3),
+            width: 1,
+          ),
         ),
         child: Column(
           children: [
+            // Level and XP header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Tier $currentLevel',
-                  style: TextStyle(
-                    color: theme.textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tier $currentLevel',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$currentXp XP earned',
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '$currentXp XP',
-                  style: TextStyle(
-                    color: theme.textColor.withValues(alpha: 0.7),
-                    fontSize: 16,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Season ends in',
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$daysLeft days, $hoursLeft hours',
+                      style: TextStyle(
+                        color: _currentSeason.themeColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+            
             const SizedBox(height: 16),
             
             // Progress bar
-            Stack(
+            Column(
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Progress to Tier $nextLevel',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${(progressInLevel * 100).toInt()}%',
+                      style: TextStyle(
+                        color: _currentSeason.themeColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Container(
+                  width: double.infinity,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: theme.textColor.withValues(alpha: 0.2),
+                    color: theme.accentColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                ),
-                FractionallySizedBox(
-                  widthFactor: progressInLevel,
-                  child: Container(
-                    height: 8,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          _currentSeason.themeColor,
-                          _currentSeason.themeColor.withValues(alpha: 0.7),
-                        ],
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: progressInLevel,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            _currentSeason.themeColor,
+                            _currentSeason.themeColor.withValues(alpha: 0.8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            
-            if (nextLevelData != null)
-              Text(
-                '${(currentXp - xpForCurrentLevel).clamp(0, xpForNextLevel)} / $xpForNextLevel XP to next tier',
-                style: TextStyle(
-                  color: theme.textColor.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
-              )
-            else
-              Text(
-                'Max tier reached!',
-                style: TextStyle(
-                  color: Colors.amber,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRewardTrack(GameTheme theme, PremiumProvider premiumProvider, 
+
+  Widget _buildRewardTrackList(GameTheme theme, PremiumProvider premiumProvider, 
       bool hasBattlePass, int currentLevel) {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final level = index + 1;
-          final levelData = _currentSeason.getLevelData(level);
-          if (levelData == null) return null;
-          
-          final isUnlocked = level <= currentLevel;
-          final isNextLevel = level == currentLevel + 1;
-          
-          return Container(
-            margin: EdgeInsets.fromLTRB(16, index == 0 ? 16 : 8, 16, 8),
-            decoration: BoxDecoration(
-              color: theme.cardColor.withValues(alpha: isUnlocked ? 0.4 : 0.2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isNextLevel 
-                    ? _currentSeason.themeColor
-                    : theme.accentColor.withValues(alpha: 0.3),
-                width: isNextLevel ? 2 : 1,
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _currentSeason.maxLevel,
+      itemBuilder: (context, index) {
+        final level = index + 1;
+        final levelData = _currentSeason.getLevelData(level);
+        if (levelData == null) return const SizedBox.shrink();
+        
+        final isUnlocked = level <= currentLevel;
+        final isNextLevel = level == currentLevel + 1;
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.accentColor.withValues(alpha: isUnlocked ? 0.15 : 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isNextLevel 
+                  ? _currentSeason.themeColor
+                  : isUnlocked
+                      ? Colors.green.withValues(alpha: 0.4)
+                      : theme.accentColor.withValues(alpha: 0.2),
+              width: isNextLevel ? 2 : 1,
+            ),
+            boxShadow: isNextLevel ? [
+              BoxShadow(
+                color: _currentSeason.themeColor.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
-            child: _buildLevelRow(
-              theme, 
-              levelData, 
-              isUnlocked, 
-              isNextLevel, 
-              hasBattlePass || _showPremiumPreview,
-            ),
-          );
-        },
-        childCount: _currentSeason.maxLevel,
-      ),
+            ] : null,
+          ),
+          child: _buildLevelRow(
+            theme, 
+            levelData, 
+            isUnlocked, 
+            isNextLevel, 
+            hasBattlePass || _showPremiumPreview,
+            premiumProvider,
+            level,
+          ),
+        );
+      },
     );
   }
 
   Widget _buildLevelRow(GameTheme theme, BattlePassLevel levelData, 
-      bool isUnlocked, bool isNextLevel, bool showPremiumRewards) {
+      bool isUnlocked, bool isNextLevel, bool showPremiumRewards, 
+      PremiumProvider premiumProvider, int level) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -396,6 +443,8 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                       levelData.freeReward!,
                       isUnlocked,
                       BattlePassTier.free,
+                      premiumProvider,
+                      level,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -409,6 +458,8 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                       levelData.premiumReward!,
                       isUnlocked && showPremiumRewards,
                       BattlePassTier.premium,
+                      premiumProvider,
+                      level,
                       showLocked: !showPremiumRewards,
                     ),
                   ),
@@ -446,7 +497,8 @@ class _BattlePassScreenState extends State<BattlePassScreen>
   }
 
   Widget _buildRewardCard(GameTheme theme, BattlePassReward reward, 
-      bool isUnlocked, BattlePassTier tier, {bool showLocked = false}) {
+      bool isUnlocked, BattlePassTier tier, PremiumProvider premiumProvider, 
+      int level, {bool showLocked = false}) {
     final isPremium = tier == BattlePassTier.premium;
     
     return Container(
@@ -506,6 +558,28 @@ class _BattlePassScreenState extends State<BattlePassScreen>
               ),
             ],
           ),
+          
+          // Claim button for unlocked, unclaimed rewards
+          if (isUnlocked && !showLocked && _canClaimReward(premiumProvider, reward, level, tier))
+            Positioned(
+              right: 4,
+              top: 4,
+              child: GestureDetector(
+                onTap: () => _claimReward(premiumProvider, reward, level, tier),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(
+                    Icons.download,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                ),
+              ),
+            ),
           
           // Lock overlay
           if (showLocked || (!isUnlocked && isPremium))
@@ -663,45 +737,52 @@ class _BattlePassScreenState extends State<BattlePassScreen>
       );
     }
   }
-}
 
-class _BattlePassBackgroundPainter extends CustomPainter {
-  final Color themeColor;
-
-  _BattlePassBackgroundPainter(this.themeColor);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = themeColor.withValues(alpha: 0.1)
-      ..style = PaintingStyle.fill;
-
-    // Draw decorative patterns
-    for (int i = 0; i < 20; i++) {
-      final x = (i * size.width / 10) % size.width;
-      final y = (i * 30.0) % size.height;
-      
-      canvas.drawCircle(
-        Offset(x, y),
-        2.0 + (i % 3),
-        paint,
-      );
-    }
-
-    // Draw connecting lines
-    final linePaint = Paint()
-      ..color = themeColor.withValues(alpha: 0.05)
-      ..strokeWidth = 1;
-
-    for (int i = 0; i < 10; i++) {
-      canvas.drawLine(
-        Offset(0, i * size.height / 10),
-        Offset(size.width, (i + 1) * size.height / 10),
-        linePaint,
-      );
-    }
+  bool _canClaimReward(PremiumProvider premiumProvider, BattlePassReward reward, int level, BattlePassTier tier) {
+    // Check if reward is already claimed
+    // This would need to be implemented in PremiumProvider to check claimed rewards
+    // For now, assume all unlocked rewards can be claimed
+    return true; // TODO: Implement proper claimed reward checking
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  Future<void> _claimReward(PremiumProvider premiumProvider, BattlePassReward reward, int level, BattlePassTier tier) async {
+    try {
+      final rewardData = {
+        'type': reward.type.name,
+        'itemId': reward.itemId,
+        'quantity': reward.quantity,
+        'tier': tier.name,
+        'level': level,
+      };
+
+      final success = await premiumProvider.claimBattlePassReward(reward.id, rewardData);
+      
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${reward.name} claimed successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {}); // Refresh the UI
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to claim reward'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error claiming reward: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 }
+

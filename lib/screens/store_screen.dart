@@ -4,8 +4,10 @@ import 'package:snake_classic/providers/premium_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/coins_provider.dart';
 import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/screens/cosmetics_screen.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -645,15 +647,6 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildSkinsTab(GameTheme theme, PremiumProvider premiumProvider, CoinsProvider coinsProvider) {
-    final skins = [
-      _SkinItem('Classic Snake', Icons.straighten, 'Free', true, false),
-      _SkinItem('Rainbow Trail', Icons.auto_awesome, '50 coins', false, false),
-      _SkinItem('Electric Snake', Icons.electric_bolt, '75 coins', false, false),
-      _SkinItem('Fire Snake', Icons.local_fire_department, '100 coins', false, true),
-      _SkinItem('Ice Snake', Icons.ac_unit, '125 coins', false, true),
-      _SkinItem('Cosmic Snake', Icons.stars, '150 coins', false, true),
-    ];
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -668,97 +661,104 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.0,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+          Text(
+            'Customize your snake with unique skins and trail effects!',
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.8),
+              fontSize: 16,
             ),
-            itemCount: skins.length,
-            itemBuilder: (context, index) {
-              return _buildSkinCard(skins[index], theme);
-            },
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const CosmeticsScreen(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.accentColor,
+                foregroundColor: theme.backgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.palette,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Open Cosmetics Store',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: theme.accentColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'What\'s Available',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '• 12 unique snake skins with different colors and patterns\n'
+                  '• 12 trail effects for visual flair\n'
+                  '• 4 cosmetic bundles with discounted pricing\n'
+                  '• Premium and coin-based options available',
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.8),
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSkinCard(_SkinItem skin, GameTheme theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: skin.isOwned 
-              ? Colors.green.withValues(alpha: 0.4)
-              : skin.isPremium
-                  ? Colors.purple.shade400.withValues(alpha: 0.4)
-                  : theme.accentColor.withValues(alpha: 0.2),
-          width: skin.isOwned ? 2 : 1,
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: skin.isOwned
-                  ? Colors.green.withValues(alpha: 0.2)
-                  : skin.isPremium
-                      ? Colors.purple.shade400.withValues(alpha: 0.2)
-                      : theme.accentColor.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              skin.icon,
-              color: skin.isOwned
-                  ? Colors.green
-                  : skin.isPremium
-                      ? Colors.purple.shade400
-                      : theme.accentColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            skin.name,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: skin.isOwned
-                  ? Colors.green
-                  : skin.isPremium
-                      ? Colors.purple.shade400
-                      : Colors.amber,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              skin.isOwned ? 'OWNED' : skin.price,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildPowerUpsTab(GameTheme theme, PremiumProvider premiumProvider, CoinsProvider coinsProvider) {
     final powerUps = [
@@ -783,6 +783,28 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 16),
           ...powerUps.map((powerUp) => _buildPowerUpCard(powerUp, theme)),
+          
+          const SizedBox(height: 24),
+          
+          // Power-up Bundles Section
+          Text(
+            'Power-up Bundles',
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            'Get multiple power-ups at discounted prices!',
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.7),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...PowerUpBundle.availableBundles.map((bundle) => 
+            _buildBundleCard(bundle, theme, premiumProvider, coinsProvider)),
         ],
       ),
     );
@@ -846,6 +868,238 @@ class _StoreScreenState extends State<StoreScreen>
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBundleCard(PowerUpBundle bundle, GameTheme theme, PremiumProvider premiumProvider, CoinsProvider coinsProvider) {
+    final isOwned = premiumProvider.isBundleOwned(bundle.id);
+    final canAfford = coinsProvider.balance.total >= bundle.bundlePrice;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.purple.withValues(alpha: 0.15),
+            Colors.indigo.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isOwned ? Colors.green.withValues(alpha: 0.4) : Colors.purple.withValues(alpha: 0.3),
+          width: isOwned ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple, Colors.indigo],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  bundle.icon,
+                  style: const TextStyle(fontSize: 24),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bundle.name,
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      bundle.description,
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Power-ups included
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: bundle.powerUps.map((powerUp) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.purple.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${powerUp.icon} ${powerUp.displayName}',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            )).toList(),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        '\$${bundle.originalPrice.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.5),
+                          fontSize: 14,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${bundle.savingsPercentage.toInt()}% OFF',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${bundle.bundlePrice.toInt()} coins',
+                    style: TextStyle(
+                      color: Colors.amber,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: isOwned ? null : (canAfford ? () => _purchaseBundle(bundle, coinsProvider, premiumProvider) : null),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isOwned ? Colors.green : (canAfford ? Colors.purple : Colors.grey),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  isOwned ? 'OWNED' : (canAfford ? 'BUY NOW' : 'NOT ENOUGH COINS'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _purchaseBundle(PowerUpBundle bundle, CoinsProvider coinsProvider, PremiumProvider premiumProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Purchase ${bundle.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('You will get:'),
+            const SizedBox(height: 8),
+            ...bundle.powerUps.map((powerUp) => Padding(
+              padding: const EdgeInsets.only(left: 16, bottom: 4),
+              child: Text('• ${powerUp.displayName}'),
+            )),
+            const SizedBox(height: 16),
+            Text('Price: ${bundle.bundlePrice.toInt()} coins'),
+            Text('You save: \$${bundle.savings.toStringAsFixed(2)} (${bundle.savingsPercentage.toInt()}%)'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+              
+              // Deduct coins and unlock bundle
+              final success = await coinsProvider.spendCoins(
+                bundle.bundlePrice.toInt(), 
+                CoinSpendingCategory.powerUps,
+                itemName: bundle.name,
+              );
+              
+              if (success) {
+                await premiumProvider.unlockBundle(bundle.id);
+                
+                // Show success message
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('${bundle.name} purchased successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } else {
+                // Show error message
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Purchase failed: Insufficient coins'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Purchase'),
           ),
         ],
       ),
@@ -1090,15 +1344,6 @@ class _StoreScreenState extends State<StoreScreen>
   }
 }
 
-class _SkinItem {
-  final String name;
-  final IconData icon;
-  final String price;
-  final bool isOwned;
-  final bool isPremium;
-
-  _SkinItem(this.name, this.icon, this.price, this.isOwned, this.isPremium);
-}
 
 class _PowerUpItem {
   final String name;

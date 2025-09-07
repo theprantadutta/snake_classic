@@ -303,21 +303,26 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<void> _initializePreferences() async {
     try {
       if (!mounted) return;
-      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      
+      // Cache context before async operations
+      final currentContext = context;
+      final themeProvider = Provider.of<ThemeProvider>(currentContext, listen: false);
       final premiumProvider = Provider.of<PremiumProvider>(
-        context,
+        currentContext,
         listen: false,
       );
       final preferencesService = Provider.of<PreferencesService>(
-        context,
+        currentContext,
         listen: false,
       );
 
       await preferencesService.initialize();
 
       if (mounted) {
-        await themeProvider.initialize(context);
-        await premiumProvider.initialize(context);
+        // ignore: use_build_context_synchronously
+        await themeProvider.initialize(currentContext);
+        // ignore: use_build_context_synchronously
+        await premiumProvider.initialize(currentContext);
         AppLogger.info('Premium provider initialized successfully');
       }
     } catch (e) {

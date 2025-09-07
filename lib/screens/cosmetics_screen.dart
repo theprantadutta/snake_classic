@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/premium_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:snake_classic/providers/coins_provider.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/app_background.dart';
 
 class CosmeticsScreen extends StatefulWidget {
   const CosmeticsScreen({super.key});
@@ -36,77 +38,79 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
   }
 
   void _loadCurrentSelection() {
-    // TODO: Load from preferences service
-    // For now, use defaults
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
     setState(() {
-      _selectedSkin = SnakeSkinType.classic;
-      _selectedTrail = TrailEffectType.none;
+      _selectedSkin = _skinIdToType(premiumProvider.selectedSkinId);
+      _selectedTrail = _trailIdToType(premiumProvider.selectedTrailId);
     });
   }
 
-  void _saveSelection() {
-    // TODO: Save to preferences service
+  Future<void> _saveSelection() async {
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    
+    // Save selections to premium provider
+    await premiumProvider.selectSkin(_selectedSkin.id);
+    await premiumProvider.selectTrail(_selectedTrail.id);
+    
     // Show confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cosmetics applied successfully!'),
-        backgroundColor: Colors.green,
-      ),
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cosmetics applied successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+  
+  SnakeSkinType _skinIdToType(String skinId) {
+    return SnakeSkinType.values.firstWhere(
+      (type) => type.id == skinId,
+      orElse: () => SnakeSkinType.classic,
+    );
+  }
+  
+  TrailEffectType _trailIdToType(String trailId) {
+    return TrailEffectType.values.firstWhere(
+      (type) => type.id == trailId,
+      orElse: () => TrailEffectType.none,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<PremiumProvider, ThemeProvider>(
-      builder: (context, premiumProvider, themeProvider, child) {
+    return Consumer3<PremiumProvider, ThemeProvider, CoinsProvider>(
+      builder: (context, premiumProvider, themeProvider, coinsProvider, child) {
         final theme = themeProvider.currentTheme;
         
         return Scaffold(
-          backgroundColor: theme.backgroundColor,
-          appBar: AppBar(
-            title: const Text('Cosmetics'),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            foregroundColor: theme.textColor,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.check),
-                onPressed: _saveSelection,
-                tooltip: 'Apply Selection',
-              ),
-            ],
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: theme.accentColor,
-              labelColor: theme.textColor,
-              unselectedLabelColor: theme.textColor.withValues(alpha: 0.6),
-              tabs: const [
-                Tab(text: 'Snake Skins', icon: Icon(Icons.pets)),
-                Tab(text: 'Trail Effects', icon: Icon(Icons.auto_awesome)),
-                Tab(text: 'Bundles', icon: Icon(Icons.card_giftcard)),
-              ],
-            ),
-          ),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topRight,
-                radius: 1.5,
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.1),
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.9),
+          body: AppBackground(
+            theme: theme,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Header
+                  _buildHeader(theme),
+                  
+                  // Coins display header
+                  _buildCoinsHeader(theme, coinsProvider),
+
+                  // Tab Bar
+                  _buildTabBar(theme),
+
+                  // Tab content
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildSkinsTab(premiumProvider, coinsProvider, theme),
+                        _buildTrailsTab(premiumProvider, coinsProvider, theme),
+                        _buildBundlesTab(premiumProvider, coinsProvider, theme),
+                      ],
+                    ),
+                  ),
                 ],
-                stops: const [0.0, 0.6, 1.0],
               ),
-            ),
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildSkinsTab(premiumProvider, theme),
-                _buildTrailsTab(premiumProvider, theme),
-                _buildBundlesTab(premiumProvider, theme),
-              ],
             ),
           ),
         );
@@ -114,7 +118,147 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  Widget _buildSkinsTab(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildHeader(GameTheme theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: Icon(
+              Icons.arrow_back,
+              color: theme.accentColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.palette,
+            color: theme.accentColor,
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Cosmetics',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: theme.accentColor,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: _saveSelection,
+            icon: Icon(
+              Icons.check,
+              color: theme.accentColor,
+              size: 24,
+            ),
+            tooltip: 'Apply Selection',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar(GameTheme theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: TabBar(
+        controller: _tabController,
+        indicatorColor: theme.accentColor,
+        labelColor: theme.accentColor,
+        unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+        tabs: const [
+          Tab(text: 'Skins'),
+          Tab(text: 'Trails'),
+          Tab(text: 'Bundles'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCoinsHeader(GameTheme theme, CoinsProvider coinsProvider) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.amber.withValues(alpha: 0.2),
+              Colors.orange.withValues(alpha: 0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.amber.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.monetization_on,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Snake Coins',
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${coinsProvider.balance.total}',
+                  style: TextStyle(
+                    color: Colors.amber.shade700,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            ElevatedButton.icon(
+              onPressed: () {
+                // Navigate back to store coins tab
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Buy More'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkinsTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -153,7 +297,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  Widget _buildTrailsTab(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildTrailsTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -192,7 +336,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  Widget _buildBundlesTab(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildBundlesTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: CosmeticBundle.availableBundles.length,
@@ -317,149 +461,133 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.cardColor.withValues(alpha: 0.3),
+          color: theme.accentColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected 
-                ? theme.accentColor 
-                : theme.accentColor.withValues(alpha: 0.3),
-            width: isSelected ? 3 : 1,
+                ? theme.accentColor
+                : isUnlocked 
+                    ? Colors.green.withValues(alpha: 0.4)
+                    : isPremium
+                        ? Colors.purple.shade400.withValues(alpha: 0.4)
+                        : theme.accentColor.withValues(alpha: 0.2),
+            width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: theme.accentColor.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
         ),
         child: Stack(
           children: [
             Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Header with icon and price/status
+                // Icon container with color background
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colors.isNotEmpty 
-                        ? colors.first.withValues(alpha: 0.2)
-                        : theme.accentColor.withValues(alpha: 0.1),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
+                    color: isUnlocked
+                        ? (isSelected ? theme.accentColor : Colors.green.withValues(alpha: 0.2))
+                        : isPremium
+                            ? Colors.purple.shade400.withValues(alpha: 0.2)
+                            : theme.accentColor.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        icon,
-                        style: const TextStyle(fontSize: 40),
-                      ),
-                      const SizedBox(height: 8),
-                      if (colors.length > 1)
-                        Container(
-                          height: 4,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: colors),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                    ],
+                  child: Text(
+                    icon,
+                    style: TextStyle(
+                      fontSize: 32,
+                      color: isUnlocked
+                          ? (isSelected ? Colors.white : Colors.green)
+                          : isPremium
+                              ? Colors.purple.shade400
+                              : theme.accentColor,
+                    ),
                   ),
                 ),
                 
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            color: theme.textColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          description,
-                          style: TextStyle(
-                            color: theme.textColor.withValues(alpha: 0.7),
-                            fontSize: 12,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const Spacer(),
-                        
-                        // Status/Price
-                        if (isUnlocked) ...[
-                          if (isSelected)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.accentColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'SELECTED',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            )
-                          else
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'OWNED',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ] else ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.accentColor.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              price > 0 ? '\$${price.toStringAsFixed(2)}' : 'FREE',
-                              style: TextStyle(
-                                color: theme.accentColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                const SizedBox(height: 12),
+                
+                // Title
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                
+                const SizedBox(height: 4),
+                
+                // Description
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.7),
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // Color gradient preview
+                if (colors.length > 1)
+                  Container(
+                    height: 6,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: colors),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                
+                if (colors.length > 1) const SizedBox(height: 12),
+                
+                // Status badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.accentColor
+                        : isUnlocked
+                            ? Colors.green
+                            : isPremium
+                                ? Colors.purple.shade400
+                                : Colors.amber,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isSelected 
+                        ? 'SELECTED'
+                        : isUnlocked 
+                            ? 'OWNED' 
+                            : price > 0 
+                                ? '${price.toInt()} coins'
+                                : 'FREE',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
             
-            // Lock overlay for premium items
+            // Premium lock overlay
             if (!isUnlocked && isPremium)
               Positioned.fill(
                 child: Container(
@@ -471,7 +599,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                     child: Icon(
                       Icons.lock,
                       color: Colors.white,
-                      size: 32,
+                      size: 24,
                     ),
                   ),
                 ),

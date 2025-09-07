@@ -25,8 +25,31 @@ class Snake {
     );
   }
 
-  void move({required bool ateFood}) {
-    final newHead = head.move(currentDirection);
+  void move({required bool ateFood, int? boardWidth, int? boardHeight, bool wrapAround = false}) {
+    Position newHead = head.move(currentDirection);
+    
+    // Handle wrap-around for Zen mode
+    if (wrapAround && boardWidth != null && boardHeight != null) {
+      int x = newHead.x;
+      int y = newHead.y;
+      
+      // Wrap horizontally
+      if (x < 0) {
+        x = boardWidth - 1;
+      } else if (x >= boardWidth) {
+        x = 0;
+      }
+      
+      // Wrap vertically  
+      if (y < 0) {
+        y = boardHeight - 1;
+      } else if (y >= boardHeight) {
+        y = 0;
+      }
+      
+      newHead = Position(x, y);
+    }
+    
     body.insert(0, newHead);
 
     if (!ateFood) {

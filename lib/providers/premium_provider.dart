@@ -4,7 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/purchase_service.dart';
 import '../services/preferences_service.dart';
+import '../services/storage_service.dart';
 import '../providers/coins_provider.dart';
+import '../models/premium_power_up.dart';
+import '../models/premium_cosmetics.dart';
+import '../models/snake_coins.dart';
 import '../utils/logger.dart';
 import '../utils/constants.dart';
 
@@ -70,6 +74,7 @@ class PremiumContent {
 class PremiumProvider extends ChangeNotifier {
   final PurchaseService _purchaseService;
   PreferencesService? _preferencesService;
+  final StorageService _storageService = StorageService();
   StreamSubscription<String>? _purchaseStatusSubscription;
   
   PremiumTier _currentTier = PremiumTier.free;
@@ -82,6 +87,11 @@ class PremiumProvider extends ChangeNotifier {
   final Set<String> _ownedSkins = {};
   final Set<String> _ownedTrails = {};
   final Set<String> _ownedBoardSizes = {};
+  final Set<String> _ownedBundles = {};
+  
+  // Selected cosmetics
+  String _selectedSkinId = 'classic';
+  String _selectedTrailId = 'none';
   
   // Battle Pass
   bool _hasBattlePass = false;
@@ -111,6 +121,15 @@ class PremiumProvider extends ChangeNotifier {
   bool get hasBattlePass => _hasBattlePass && !isBattlePassExpired;
   int get battlePassTier => _battlePassTier;
   int get battlePassXP => _battlePassXP;
+  
+  // Cosmetics getters
+  String get selectedSkinId => _selectedSkinId;
+  String get selectedTrailId => _selectedTrailId;
+
+  // Purchase history accessor
+  Future<List<String>> getPurchaseHistory() async {
+    return await _storageService.getPurchaseHistory();
+  }
   
   // Trial getters
   bool get isOnTrial => _isOnTrial && !isTrialExpired;
@@ -232,6 +251,14 @@ class PremiumProvider extends ChangeNotifier {
       _ownedBoardSizes.clear();
       _ownedBoardSizes.addAll(prefs.getStringList('owned_board_sizes') ?? []);
       
+      // Load owned bundles
+      _ownedBundles.clear();
+      _ownedBundles.addAll(prefs.getStringList('owned_bundles') ?? []);
+      
+      // Load selected cosmetics
+      _selectedSkinId = prefs.getString('selected_skin_id') ?? 'classic';
+      _selectedTrailId = prefs.getString('selected_trail_id') ?? 'none';
+      
       // Load battle pass status
       _hasBattlePass = prefs.getBool('has_battle_pass') ?? false;
       _battlePassTier = prefs.getInt('battle_pass_tier') ?? 0;
@@ -332,6 +359,18 @@ class PremiumProvider extends ChangeNotifier {
   Future<void> unlockTheme(GameTheme theme) async {
     if (!_ownedThemes.contains(theme)) {
       _ownedThemes.add(theme);
+      
+      // Record the purchase if it's a premium theme
+      if (PremiumContent.premiumThemes.contains(theme)) {
+        await _recordPurchase(
+          type: 'theme',
+          itemId: theme.name,
+          itemName: '${theme.name.toUpperCase()} Theme',
+          price: 199, // $1.99 in cents
+          currency: 'USD',
+        );
+      }
+      
       await _savePremiumStatus();
       notifyListeners();
       AppLogger.info('Theme unlocked: ${theme.name}');
@@ -425,6 +464,23 @@ class PremiumProvider extends ChangeNotifier {
   Future<void> unlockSkin(String skinId) async {
     if (!_ownedSkins.contains(skinId)) {
       _ownedSkins.add(skinId);
+      
+      // Record the purchase if it's a premium skin
+      if (PremiumContent.premiumSkins.contains(skinId)) {
+        try {
+          final skinType = SnakeSkinType.values.firstWhere((s) => s.id == skinId);
+          await _recordPurchase(
+            type: 'skin',
+            itemId: skinId,
+            itemName: skinType.displayName,
+            price: (skinType.price * 100).round(), // Convert to cents
+            currency: 'USD',
+          );
+        } catch (e) {
+          AppLogger.error('Error recording skin purchase', e);
+        }
+      }
+      
       await _savePremiumStatus();
       notifyListeners();
       AppLogger.info('Skin unlocked: $skinId');
@@ -434,6 +490,23 @@ class PremiumProvider extends ChangeNotifier {
   Future<void> unlockTrail(String trailId) async {
     if (!_ownedTrails.contains(trailId)) {
       _ownedTrails.add(trailId);
+      
+      // Record the purchase if it's a premium trail
+      if (PremiumContent.premiumTrails.contains(trailId)) {
+        try {
+          final trailType = TrailEffectType.values.firstWhere((t) => t.id == trailId);
+          await _recordPurchase(
+            type: 'trail',
+            itemId: trailId,
+            itemName: trailType.displayName,
+            price: (trailType.price * 100).round(), // Convert to cents
+            currency: 'USD',
+          );
+        } catch (e) {
+          AppLogger.error('Error recording trail purchase', e);
+        }
+      }
+      
       await _savePremiumStatus();
       notifyListeners();
       AppLogger.info('Trail unlocked: $trailId');
@@ -446,6 +519,65 @@ class PremiumProvider extends ChangeNotifier {
     }
     for (final trail in PremiumContent.premiumTrails) {
       await unlockTrail(trail);
+    }
+  }
+
+  // Bundle Management
+  bool isBundleOwned(String bundleId) {
+    return _ownedBundles.contains(bundleId);
+  }
+
+  Future<void> unlockBundle(String bundleId) async {
+    if (!_ownedBundles.contains(bundleId)) {
+      _ownedBundles.add(bundleId);
+      
+      // Also unlock all power-ups in the bundle
+      final bundle = _getBundleById(bundleId);
+      if (bundle != null) {
+        for (final powerUp in bundle.powerUps) {
+          await unlockPowerUp(powerUp.id);
+        }
+        
+        // Record the purchase
+        await _recordPurchase(
+          type: 'bundle',
+          itemId: bundleId,
+          itemName: bundle.name,
+          price: bundle.bundlePrice.round(),
+          currency: 'coins',
+        );
+      }
+      
+      await _savePremiumStatus();
+      notifyListeners();
+      AppLogger.info('Bundle unlocked: $bundleId');
+    }
+  }
+
+  PowerUpBundle? _getBundleById(String bundleId) {
+    try {
+      return PowerUpBundle.availableBundles.firstWhere((bundle) => bundle.id == bundleId);
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  // Cosmetic selection methods
+  Future<void> selectSkin(String skinId) async {
+    if (isSkinUnlocked(skinId)) {
+      _selectedSkinId = skinId;
+      await _savePremiumStatus();
+      notifyListeners();
+      AppLogger.info('Skin selected: $skinId');
+    }
+  }
+  
+  Future<void> selectTrail(String trailId) async {
+    if (isTrailUnlocked(trailId)) {
+      _selectedTrailId = trailId;
+      await _savePremiumStatus();
+      notifyListeners();
+      AppLogger.info('Trail selected: $trailId');
     }
   }
 
@@ -573,6 +705,11 @@ class PremiumProvider extends ChangeNotifier {
       await prefs.setStringList('owned_skins', _ownedSkins.toList());
       await prefs.setStringList('owned_trails', _ownedTrails.toList());
       await prefs.setStringList('owned_board_sizes', _ownedBoardSizes.toList());
+      await prefs.setStringList('owned_bundles', _ownedBundles.toList());
+      
+      // Save selected cosmetics
+      await prefs.setString('selected_skin_id', _selectedSkinId);
+      await prefs.setString('selected_trail_id', _selectedTrailId);
       
       // Save battle pass
       await prefs.setBool('has_battle_pass', _hasBattlePass);
@@ -602,9 +739,92 @@ class PremiumProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _recordPurchase({
+    required String type,
+    required String itemId,
+    required String itemName,
+    required int price,
+    String? currency = 'USD',
+  }) async {
+    try {
+      final purchase = {
+        'type': type,
+        'itemId': itemId,
+        'itemName': itemName,
+        'price': price,
+        'currency': currency,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
+      final purchaseJson = purchase.entries
+          .map((e) => '"${e.key}":"${e.value}"')
+          .join(',');
+      await _storageService.addPurchaseToHistory('{$purchaseJson}');
+      
+      AppLogger.info('Purchase recorded: $itemName (\$${price / 100})');
+    } catch (e) {
+      AppLogger.error('Error recording purchase history', e);
+    }
+  }
+
+  Future<void> _recordProductPurchase(String productId) async {
+    try {
+      final productInfo = _getProductInfo(productId);
+      await _recordPurchase(
+        type: productInfo['type'] as String,
+        itemId: productId,
+        itemName: productInfo['name'] as String,
+        price: productInfo['price'] as int,
+        currency: productInfo['currency'] as String,
+      );
+    } catch (e) {
+      AppLogger.error('Error recording product purchase', e);
+    }
+  }
+
+  Map<String, dynamic> _getProductInfo(String productId) {
+    switch (productId) {
+      case ProductIds.snakeClassicProMonthly:
+        return {'type': 'subscription', 'name': 'Snake Classic Pro Monthly', 'price': 399, 'currency': 'USD'};
+      case ProductIds.snakeClassicProYearly:
+        return {'type': 'subscription', 'name': 'Snake Classic Pro Yearly', 'price': 2999, 'currency': 'USD'};
+      case ProductIds.battlePass:
+        return {'type': 'battlepass', 'name': 'Battle Pass', 'price': 999, 'currency': 'USD'};
+      case ProductIds.themesBundle:
+        return {'type': 'bundle', 'name': 'All Premium Themes Bundle', 'price': 699, 'currency': 'USD'};
+      case ProductIds.premiumPowerupsBundle:
+        return {'type': 'bundle', 'name': 'Premium Power-ups Bundle', 'price': 499, 'currency': 'USD'};
+      case ProductIds.ultimateCosmetics:
+        return {'type': 'bundle', 'name': 'Ultimate Cosmetics Bundle', 'price': 899, 'currency': 'USD'};
+      case ProductIds.crystalTheme:
+        return {'type': 'theme', 'name': 'Crystal Theme', 'price': 199, 'currency': 'USD'};
+      case ProductIds.cyberpunkTheme:
+        return {'type': 'theme', 'name': 'Cyberpunk Theme', 'price': 199, 'currency': 'USD'};
+      case ProductIds.spaceTheme:
+        return {'type': 'theme', 'name': 'Space Theme', 'price': 199, 'currency': 'USD'};
+      case ProductIds.oceanTheme:
+        return {'type': 'theme', 'name': 'Ocean Theme', 'price': 199, 'currency': 'USD'};
+      case ProductIds.desertTheme:
+        return {'type': 'theme', 'name': 'Desert Theme', 'price': 199, 'currency': 'USD'};
+      case ProductIds.tournamentBronze:
+        return {'type': 'tournament', 'name': 'Bronze Tournament Entry', 'price': 99, 'currency': 'USD'};
+      case ProductIds.tournamentSilver:
+        return {'type': 'tournament', 'name': 'Silver Tournament Entry', 'price': 199, 'currency': 'USD'};
+      case ProductIds.tournamentGold:
+        return {'type': 'tournament', 'name': 'Gold Tournament Entry', 'price': 299, 'currency': 'USD'};
+      case ProductIds.championshipEntry:
+        return {'type': 'tournament', 'name': 'Championship Entry', 'price': 499, 'currency': 'USD'};
+      default:
+        return {'type': 'unknown', 'name': 'Unknown Product', 'price': 0, 'currency': 'USD'};
+    }
+  }
+
   // Public method to handle purchase completion
   Future<void> handlePurchaseCompletion(String productId) async {
     AppLogger.info('Handling purchase completion for: $productId');
+    
+    // Record the purchase in history
+    await _recordProductPurchase(productId);
     
     switch (productId) {
       case ProductIds.snakeClassicProMonthly:
@@ -697,6 +917,210 @@ class PremiumProvider extends ChangeNotifier {
     if (!gameMode.isPremium) return true;
     return hasPremium;
   }
+
+  // Battle Pass reward distribution methods
+  Future<bool> claimBattlePassReward(String rewardId, Map<String, dynamic> rewardData) async {
+    try {
+      final rewardType = rewardData['type'] as String?;
+      final quantity = rewardData['quantity'] as int? ?? 1;
+      final itemId = rewardData['item_id'] as String?;
+      
+      bool success = false;
+      
+      switch (rewardType) {
+        case 'coins':
+          success = await _awardCoins(quantity);
+          break;
+        case 'theme':
+          if (itemId != null) {
+            success = await _unlockThemeFromId(itemId);
+          }
+          break;
+        case 'skin':
+          if (itemId != null) {
+            success = await _unlockSkin(itemId);
+          }
+          break;
+        case 'trail':
+          if (itemId != null) {
+            success = await _unlockTrail(itemId);
+          }
+          break;
+        case 'powerUp':
+          if (itemId != null) {
+            success = await _unlockPowerUp(itemId);
+          }
+          break;
+        case 'tournamentEntry':
+          if (itemId != null) {
+            success = await _awardTournamentEntry(itemId, quantity);
+          }
+          break;
+        case 'xp':
+          success = await _awardBattlePassXP(quantity);
+          break;
+        case 'special':
+          success = await _handleSpecialReward(itemId, quantity);
+          break;
+        default:
+          AppLogger.warning('Unknown reward type: $rewardType');
+          success = false;
+      }
+      
+      if (success) {
+        await _savePremiumStatus();
+        notifyListeners();
+        AppLogger.info('Battle Pass reward claimed: $rewardId');
+      }
+      
+      return success;
+    } catch (e) {
+      AppLogger.error('Error claiming Battle Pass reward', e);
+      return false;
+    }
+  }
+
+  Future<bool> _awardCoins(int amount) async {
+    try {
+      // Get CoinsProvider instance and add coins
+      final coinsProvider = CoinsProvider();
+      await coinsProvider.initialize();
+      final success = await coinsProvider.earnCoins(
+        CoinEarningSource.battlePassReward,
+        customAmount: amount,
+        itemName: 'Battle Pass Reward',
+      );
+      
+      if (success) {
+        AppLogger.info('Awarded $amount coins from Battle Pass');
+        return true;
+      } else {
+        AppLogger.error('Failed to award coins from Battle Pass');
+        return false;
+      }
+    } catch (e) {
+      AppLogger.error('Error awarding coins', e);
+      return false;
+    }
+  }
+
+  Future<bool> _unlockThemeFromId(String themeId) async {
+    try {
+      // Convert theme ID to GameTheme enum
+      final theme = GameTheme.values.firstWhere(
+        (t) => t.name.toLowerCase() == themeId.toLowerCase(),
+        orElse: () => GameTheme.classic,
+      );
+      
+      if (theme != GameTheme.classic) {
+        await unlockTheme(theme);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      AppLogger.error('Error unlocking theme from Battle Pass', e);
+      return false;
+    }
+  }
+
+  Future<bool> _unlockSkin(String skinId) async {
+    try {
+      if (!_ownedSkins.contains(skinId)) {
+        _ownedSkins.add(skinId);
+        await _savePremiumStatus();
+        notifyListeners();
+        AppLogger.info('Unlocked skin from Battle Pass: $skinId');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      AppLogger.error('Error unlocking skin from Battle Pass', e);
+      return false;
+    }
+  }
+
+  Future<bool> _unlockTrail(String trailId) async {
+    try {
+      if (!_ownedTrails.contains(trailId)) {
+        _ownedTrails.add(trailId);
+        await _savePremiumStatus();
+        notifyListeners();
+        AppLogger.info('Unlocked trail from Battle Pass: $trailId');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      AppLogger.error('Error unlocking trail from Battle Pass', e);
+      return false;
+    }
+  }
+
+  Future<bool> _unlockPowerUp(String powerUpId) async {
+    try {
+      if (!_ownedPowerUps.contains(powerUpId)) {
+        _ownedPowerUps.add(powerUpId);
+        await _savePremiumStatus();
+        notifyListeners();
+        AppLogger.info('Unlocked power-up from Battle Pass: $powerUpId');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      AppLogger.error('Error unlocking power-up from Battle Pass', e);
+      return false;
+    }
+  }
+
+  Future<bool> _awardTournamentEntry(String entryType, int quantity) async {
+    try {
+      switch (entryType.toLowerCase()) {
+        case 'bronze':
+          _bronzeTournamentEntries += quantity;
+          break;
+        case 'silver':
+          _silverTournamentEntries += quantity;
+          break;
+        case 'gold':
+          _goldTournamentEntries += quantity;
+          break;
+        case 'championship':
+          _championshipEntries += quantity;
+          break;
+        default:
+          AppLogger.warning('Unknown tournament entry type: $entryType');
+          return false;
+      }
+      
+      AppLogger.info('Awarded $quantity $entryType tournament entries');
+      return true;
+    } catch (e) {
+      AppLogger.error('Error awarding tournament entry', e);
+      return false;
+    }
+  }
+
+  Future<bool> _awardBattlePassXP(int amount) async {
+    try {
+      _battlePassXP += amount;
+      AppLogger.info('Awarded $amount Battle Pass XP');
+      return true;
+    } catch (e) {
+      AppLogger.error('Error awarding Battle Pass XP', e);
+      return false;
+    }
+  }
+
+  Future<bool> _handleSpecialReward(String? itemId, int quantity) async {
+    try {
+      // Handle special rewards like exclusive titles, avatars, etc.
+      AppLogger.info('Awarded special reward: $itemId (quantity: $quantity)');
+      return true;
+    } catch (e) {
+      AppLogger.error('Error handling special reward', e);
+      return false;
+    }
+  }
+
 
   @override
   void dispose() {

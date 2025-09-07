@@ -456,4 +456,214 @@ class BackendService {
       return false;
     }
   }
+
+  /// Battle Pass endpoints
+  
+  /// Get current Battle Pass season information
+  Future<Map<String, dynamic>?> getCurrentBattlePassSeason() async {
+    try {
+      AppLogger.network('Getting current Battle Pass season');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/battle-pass/current-season'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Current Battle Pass season retrieved successfully');
+        return data;
+      } else {
+        AppLogger.error('Failed to get Battle Pass season: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error getting Battle Pass season', e);
+      return null;
+    }
+  }
+
+  /// Get user's Battle Pass progress
+  Future<Map<String, dynamic>?> getUserBattlePassProgress({
+    required String userId,
+  }) async {
+    try {
+      AppLogger.network('Getting Battle Pass progress for user: $userId');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/battle-pass/user/$userId/progress'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Battle Pass progress retrieved successfully');
+        return data;
+      } else {
+        AppLogger.error('Failed to get Battle Pass progress: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error getting Battle Pass progress', e);
+      return null;
+    }
+  }
+
+  /// Add XP to user's Battle Pass
+  Future<Map<String, dynamic>?> addBattlePassXP({
+    required String userId,
+    required int xp,
+    String source = 'gameplay',
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      AppLogger.network('Adding $xp XP to Battle Pass for user: $userId');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/battle-pass/user/$userId/add-xp'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'xp': xp,
+          'source': source,
+          'metadata': metadata ?? {},
+        }),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Battle Pass XP added successfully: ${data['message']}');
+        return data;
+      } else {
+        AppLogger.error('Failed to add Battle Pass XP: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error adding Battle Pass XP', e);
+      return null;
+    }
+  }
+
+  /// Claim Battle Pass reward
+  Future<Map<String, dynamic>?> claimBattlePassReward({
+    required String userId,
+    required int level,
+    required String tier,
+    required String rewardId,
+  }) async {
+    try {
+      AppLogger.network('Claiming Battle Pass reward: $tier reward at level $level for user: $userId');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/battle-pass/user/$userId/claim-reward'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'level': level,
+          'tier': tier,
+          'reward_id': rewardId,
+        }),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Battle Pass reward claimed successfully: ${data['message']}');
+        return data;
+      } else {
+        AppLogger.error('Failed to claim Battle Pass reward: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error claiming Battle Pass reward', e);
+      return null;
+    }
+  }
+
+  /// Purchase premium Battle Pass
+  Future<bool> purchasePremiumBattlePass({
+    required String userId,
+  }) async {
+    try {
+      AppLogger.network('Purchasing premium Battle Pass for user: $userId');
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/battle-pass/user/$userId/purchase-premium'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Premium Battle Pass purchased successfully: ${data['message']}');
+        return data['success'] ?? false;
+      } else {
+        AppLogger.error('Failed to purchase premium Battle Pass: ${response.statusCode}', response.body);
+        return false;
+      }
+    } catch (e) {
+      AppLogger.error('Error purchasing premium Battle Pass', e);
+      return false;
+    }
+  }
+
+  /// Get all Battle Pass levels and rewards
+  Future<Map<String, dynamic>?> getBattlePassLevels() async {
+    try {
+      AppLogger.network('Getting Battle Pass levels and rewards');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/battle-pass/levels'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Battle Pass levels retrieved successfully');
+        return data;
+      } else {
+        AppLogger.error('Failed to get Battle Pass levels: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error getting Battle Pass levels', e);
+      return null;
+    }
+  }
+
+  /// Get Battle Pass statistics
+  Future<Map<String, dynamic>?> getBattlePassStats() async {
+    try {
+      AppLogger.network('Getting Battle Pass statistics');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/battle-pass/stats'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        AppLogger.network('Battle Pass statistics retrieved successfully');
+        return data;
+      } else {
+        AppLogger.error('Failed to get Battle Pass statistics: ${response.statusCode}', response.body);
+        return null;
+      }
+    } catch (e) {
+      AppLogger.error('Error getting Battle Pass statistics', e);
+      return null;
+    }
+  }
 }
