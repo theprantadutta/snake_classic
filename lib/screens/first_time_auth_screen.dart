@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +18,60 @@ class FirstTimeAuthScreen extends StatefulWidget {
 
 class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
   bool _isLoading = false;
+  bool _showPrivacyPolicy = true;
+  bool _privacyAccepted = false;
+  String _privacyPolicyContent = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrivacyPolicy();
+  }
+
+  Future<void> _loadPrivacyPolicy() async {
+    try {
+      final content = await rootBundle.loadString('PRIVACY.md');
+      setState(() {
+        _privacyPolicyContent = content;
+      });
+    } catch (e) {
+      // Fallback if file can't be loaded
+      setState(() {
+        _privacyPolicyContent = '''# Privacy Policy for Snake Classic
+
+**Effective Date: January 17, 2025**
+
+## Introduction
+Snake Classic respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application.
+
+## Information We Collect
+We collect various types of information to provide and improve our services, including:
+- Authentication data when you sign in with Google
+- Game data such as scores, achievements, and progress
+- Device information for app functionality
+- Usage analytics to improve the game experience
+
+## How We Use Your Information
+Your information is used to:
+- Provide core game functionality
+- Save your progress and achievements
+- Enable social features and leaderboards
+- Improve app performance and user experience
+
+## Data Security
+We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
+
+## Your Rights
+You have the right to access, update, or delete your personal information. Contact us for any privacy-related requests.
+
+## Contact Information
+For questions about this Privacy Policy, please contact us at: privacy@snakeclassic.game
+
+By using Snake Classic, you acknowledge that you have read, understood, and agree to this Privacy Policy.
+''';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +89,10 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
               final screenWidth = constraints.maxWidth;
               final isSmallScreen = screenHeight < 600;
               final isNarrowScreen = screenWidth < 400;
+              
+              if (_showPrivacyPolicy) {
+                return _buildPrivacyPolicyView(theme, screenHeight, screenWidth, isSmallScreen, isNarrowScreen);
+              }
               
               return SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: isNarrowScreen ? 16.0 : 24.0),
@@ -219,13 +278,41 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
                 SizedBox(height: isSmallScreen ? screenHeight * 0.02 : screenHeight * 0.03),
 
                 // Privacy note
-                Text(
-                  'Your data is secure and your privacy is protected',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 10 : 12,
-                    color: Colors.white.withValues(alpha: 0.6),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.green.withValues(alpha: 0.2),
+                        Colors.green.withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.green.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.verified_user,
+                        color: Colors.green.shade300,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Privacy Policy Accepted ✓',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 12 : 14,
+                          color: Colors.green.shade200,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 )
                     .animate(delay: 1000.ms)
                     .fadeIn(duration: 800.ms),
@@ -240,6 +327,240 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
             },
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyPolicyView(GameTheme theme, double screenHeight, double screenWidth, bool isSmallScreen, bool isNarrowScreen) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isNarrowScreen ? 16.0 : 24.0),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.accentColor.withValues(alpha: 0.2),
+                  theme.accentColor.withValues(alpha: 0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.privacy_tip_outlined,
+                    color: theme.accentColor,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Privacy Policy',
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: isSmallScreen ? 20 : 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Please review our privacy policy before continuing',
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          fontSize: isSmallScreen ? 12 : 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )
+              .animate()
+              .slideY(begin: -0.3, duration: 600.ms, curve: Curves.easeOutBack)
+              .fadeIn(),
+          
+          const SizedBox(height: 16),
+          
+          // Privacy Policy Content
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    theme.backgroundColor.withValues(alpha: 0.4),
+                    theme.backgroundColor.withValues(alpha: 0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.accentColor.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  _privacyPolicyContent,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: isSmallScreen ? 12 : 14,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            )
+                .animate(delay: 300.ms)
+                .slideY(begin: 0.3, duration: 600.ms, curve: Curves.easeOut)
+                .fadeIn(),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Acceptance Checkbox
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.accentColor.withValues(alpha: 0.15),
+                  theme.accentColor.withValues(alpha: 0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Transform.scale(
+                  scale: 1.2,
+                  child: Checkbox(
+                    value: _privacyAccepted,
+                    onChanged: (value) {
+                      setState(() {
+                        _privacyAccepted = value ?? false;
+                      });
+                    },
+                    activeColor: theme.accentColor,
+                    checkColor: Colors.white,
+                    side: BorderSide(
+                      color: theme.accentColor.withValues(alpha: 0.6),
+                      width: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'I have read and agree to the Privacy Policy and Terms of Service',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: isSmallScreen ? 14 : 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+              .animate(delay: 600.ms)
+              .slideY(begin: 0.5, duration: 600.ms, curve: Curves.easeOut)
+              .fadeIn(),
+          
+          const SizedBox(height: 20),
+          
+          // Continue Button
+          Container(
+            width: double.infinity,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: _privacyAccepted
+                    ? [theme.primaryColor, theme.accentColor]
+                    : [Colors.grey.shade600, Colors.grey.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: _privacyAccepted
+                  ? [
+                      BoxShadow(
+                        color: theme.accentColor.withValues(alpha: 0.4),
+                        blurRadius: 15,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: _privacyAccepted
+                    ? () {
+                        setState(() {
+                          _showPrivacyPolicy = false;
+                        });
+                      }
+                    : null,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: _privacyAccepted
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.5),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Continue to Sign In',
+                      style: TextStyle(
+                        color: _privacyAccepted
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.5),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+              .animate(delay: 800.ms)
+              .slideY(begin: 0.5, duration: 600.ms, curve: Curves.easeOut)
+              .fadeIn(),
+              
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }

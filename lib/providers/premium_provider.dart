@@ -41,26 +41,32 @@ class PremiumContent {
 
   // Premium Snake Skins
   static const Set<String> premiumSkins = {
-    'golden_snake',
-    'rainbow_snake',
-    'galaxy_snake',
-    'dragon_snake',
-    'electric_snake',
-    'fire_snake',
-    'ice_snake',
-    'shadow_snake',
+    'golden',
+    'rainbow',
+    'galaxy',
+    'dragon',
+    'electric',
+    'fire',
+    'ice',
+    'shadow',
+    'neon',
+    'crystal',
+    'cosmic',
   };
 
   // Premium Trails
   static const Set<String> premiumTrails = {
-    'particle_trail',
-    'glow_trail',
-    'rainbow_trail',
-    'fire_trail',
-    'electric_trail',
-    'star_trail',
-    'cosmic_trail',
-    'neon_trail',
+    'particle',
+    'glow',
+    'rainbow',
+    'fire',
+    'electric',
+    'star',
+    'cosmic',
+    'neon',
+    'shadow',
+    'crystal',
+    'dragon',
   };
 
   // Premium Board Sizes (larger boards)

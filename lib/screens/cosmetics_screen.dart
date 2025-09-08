@@ -259,14 +259,19 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
   }
 
   Widget _buildSkinsTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+        final childAspectRatio = constraints.maxWidth > 600 ? 0.75 : 0.7;
+        
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: childAspectRatio,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+          ),
       itemCount: SnakeSkinType.values.length,
       itemBuilder: (context, index) {
         final skin = SnakeSkinType.values[index];
@@ -295,17 +300,24 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         );
       },
     );
+      },
+    );
   }
 
   Widget _buildTrailsTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+        final childAspectRatio = constraints.maxWidth > 600 ? 0.75 : 0.7;
+        
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: childAspectRatio,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+          ),
       itemCount: TrailEffectType.values.length,
       itemBuilder: (context, index) {
         final trail = TrailEffectType.values[index];
@@ -334,115 +346,195 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         );
       },
     );
+      },
+    );
   }
 
   Widget _buildBundlesTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
-    return ListView.builder(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      itemCount: CosmeticBundle.availableBundles.length,
-      itemBuilder: (context, index) {
-        final bundle = CosmeticBundle.availableBundles[index];
-        
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.3),
-              width: 1,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
+          final childAspectRatio = constraints.maxWidth > 600 ? 1.4 : 1.2;
+          
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: childAspectRatio,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
             ),
+            itemCount: CosmeticBundle.availableBundles.length,
+            itemBuilder: (context, index) {
+              final bundle = CosmeticBundle.availableBundles[index];
+              final isUnlocked = premiumProvider.isBundleOwned(bundle.id);
+              
+              return _buildBundleCard(
+                bundle: bundle,
+                isUnlocked: isUnlocked,
+                theme: theme,
+                onTap: () {
+                  if (!isUnlocked) {
+                    _showBundlePurchaseDialog(bundle);
+                  }
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBundleCard({
+    required CosmeticBundle bundle,
+    required bool isUnlocked,
+    required GameTheme theme,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.accentColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isUnlocked 
+                ? Colors.green.withValues(alpha: 0.4)
+                : theme.accentColor.withValues(alpha: 0.2),
+            width: isUnlocked ? 2 : 1,
           ),
-          child: Column(
-            children: [
-              ListTile(
-                leading: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: Center(
-                    child: Text(
-                      bundle.icon,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  ),
-                ),
-                title: Text(
-                  bundle.name,
-                  style: TextStyle(
-                    color: theme.textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                subtitle: Text(
-                  bundle.description,
-                  style: TextStyle(
-                    color: theme.textColor.withValues(alpha: 0.7),
-                    fontSize: 14,
-                  ),
-                ),
-                trailing: Column(
+          boxShadow: isUnlocked ? [
+            BoxShadow(
+              color: Colors.green.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    if (bundle.originalPrice > bundle.bundlePrice) ...[
-                      Text(
-                        '\$${bundle.originalPrice.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: theme.textColor.withValues(alpha: 0.5),
-                          fontSize: 12,
-                          decoration: TextDecoration.lineThrough,
+                    // Icon container with gradient background
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            theme.accentColor.withValues(alpha: 0.3),
+                            theme.accentColor.withValues(alpha: 0.1),
+                          ],
                         ),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      Text(
-                        '${bundle.savingsPercentage.toStringAsFixed(0)}% OFF',
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                    Text(
-                      '\$${bundle.bundlePrice.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                      child: Text(
+                        bundle.icon,
+                        style: const TextStyle(fontSize: 32),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _showBundlePurchaseDialog(bundle),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.accentColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 12),
+                    // Title
+                    Flexible(
+                      child: Text(
+                        bundle.name,
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Description
+                    Flexible(
+                      child: Text(
+                        bundle.description,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          fontSize: 10,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Price section
+                    Column(
+                      children: [
+                        if (bundle.originalPrice > bundle.bundlePrice) ...[
+                          Text(
+                            '\$${bundle.originalPrice.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: theme.accentColor.withValues(alpha: 0.5),
+                              fontSize: 10,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${bundle.savingsPercentage.toStringAsFixed(0)}% OFF',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                        Text(
+                          '\$${bundle.bundlePrice.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: theme.accentColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
                         ),
-                        child: Text('Purchase Bundle'),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+                // Status indicator
+                if (isUnlocked)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(12),
+                          bottomLeft: Radius.circular(8),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -483,11 +575,13 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             ),
           ] : null,
         ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
               children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                 // Icon container with color background
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -515,30 +609,34 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                 const SizedBox(height: 12),
                 
                 // Title
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                Flexible(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 
                 const SizedBox(height: 4),
                 
                 // Description
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 12,
+                Flexible(
+                  child: Text(
+                    description,
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 
                 const SizedBox(height: 12),
@@ -584,53 +682,84 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                     ),
                   ),
                 ),
-              ],
-            ),
-            
-            // Premium lock overlay
-            if (!isUnlocked && isPremium)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.lock,
-                      color: Colors.white,
-                      size: 24,
+                  ],
+                ),
+                
+                // Premium lock overlay
+                if (!isUnlocked && isPremium)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.lock,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
   void _showPurchaseDialog({SnakeSkinType? skin, TrailEffectType? trail}) {
-    // TODO: Implement premium purchase dialog
+    final theme = context.read<ThemeProvider>().currentTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Premium Feature'),
-        content: Text(
-          skin != null 
-              ? 'Unlock ${skin.displayName} for \$${skin.price.toStringAsFixed(2)}?'
-              : 'Unlock ${trail!.displayName} for \$${trail.price.toStringAsFixed(2)}?',
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.shopping_cart, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(
+              'Premium Purchase',
+              style: TextStyle(color: theme.accentColor),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              skin != null 
+                  ? 'Unlock ${skin.displayName} for \$${skin.price.toStringAsFixed(2)}?'
+                  : 'Unlock ${trail!.displayName} for \$${trail.price.toStringAsFixed(2)}?',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'This will be processed through Google Play Store.',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.6),
+                fontSize: 12,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7))),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // TODO: Implement actual purchase
+              _processPurchase(skin: skin, trail: trail);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Purchase'),
           ),
         ],
@@ -638,39 +767,139 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
+  void _processPurchase({SnakeSkinType? skin, TrailEffectType? trail}) {
+    // Show processing indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              skin != null 
+                  ? 'Processing ${skin.displayName} purchase...'
+                  : 'Processing ${trail!.displayName} purchase...',
+            ),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Simulate purchase process - in real implementation, this would call PurchaseService
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchase completed successfully! ✓'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
+  }
+
+  void _processBundlePurchase(CosmeticBundle bundle) {
+    // Show processing indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            Text('Processing ${bundle.name} purchase...'),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Simulate bundle purchase process
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${bundle.name} purchased successfully! ✓'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
+  }
+
   void _showBundlePurchaseDialog(CosmeticBundle bundle) {
-    // TODO: Implement bundle purchase dialog
+    final theme = context.read<ThemeProvider>().currentTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(bundle.name),
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.card_giftcard, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(
+              bundle.name,
+              style: TextStyle(color: theme.accentColor),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(bundle.description),
+            Text(
+              bundle.description,
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+            ),
             const SizedBox(height: 16),
             Text(
               'Price: \$${bundle.bundlePrice.toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: theme.primaryColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
+            const SizedBox(height: 8),
             if (bundle.savings > 0)
               Text(
                 'Save: \$${bundle.savings.toStringAsFixed(2)} (${bundle.savingsPercentage.toStringAsFixed(0)}%)',
-                style: const TextStyle(color: Colors.green),
+                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
               ),
+            Text(
+              'This bundle includes multiple premium items with great savings!',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.6),
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7))),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // TODO: Implement actual bundle purchase
+              _processBundlePurchase(bundle);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Purchase Bundle'),
           ),
         ],

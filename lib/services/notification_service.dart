@@ -298,7 +298,12 @@ class NotificationService {
     AppLogger.info('⚙️ ${type.key} notifications ${enabled ? 'enabled' : 'disabled'}');
     
     // Save to preferences
-    // TODO: Integrate with PreferencesService to persist settings
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('notification_${type.key}', enabled);
+    } catch (e) {
+      AppLogger.error('Failed to save notification preference: $e');
+    }
   }
 
   Map<NotificationType, bool> get notificationPreferences => Map.from(_notificationPreferences);

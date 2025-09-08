@@ -198,7 +198,8 @@ class _GameScreenState extends State<GameScreen>
     }
 
     // Crash effects
-    if (current.status == GameStatus.crashed && previous.status != GameStatus.crashed) {
+    if (current.status == GameStatus.crashed &&
+        previous.status != GameStatus.crashed) {
       if (current.crashReason == CrashReason.wallCollision) {
         _juiceController.wallHit();
       } else if (current.crashReason == CrashReason.selfCollision) {
@@ -212,7 +213,8 @@ class _GameScreenState extends State<GameScreen>
     }
 
     // Game over effects
-    if (current.status == GameStatus.gameOver && previous.status != GameStatus.gameOver) {
+    if (current.status == GameStatus.gameOver &&
+        previous.status != GameStatus.gameOver) {
       _juiceController.gameOver();
     }
   }
@@ -251,134 +253,134 @@ class _GameScreenState extends State<GameScreen>
                   onSwipe: _handleSwipe,
                   showFeedback: false, // Disable animated feedback
                   child: Stack(
-                  children: [
-                    // Background gradient - matching home screen
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment.topRight,
-                          radius: 1.5,
-                          colors: [
-                            theme.accentColor.withValues(alpha: 0.15),
-                            theme.backgroundColor,
-                            theme.backgroundColor.withValues(alpha: 0.9),
-                            Colors.black.withValues(alpha: 0.1),
-                          ],
-                          stops: const [0.0, 0.4, 0.8, 1.0],
+                    children: [
+                      // Background gradient - matching home screen
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: Alignment.topRight,
+                            radius: 1.5,
+                            colors: [
+                              theme.accentColor.withValues(alpha: 0.15),
+                              theme.backgroundColor,
+                              theme.backgroundColor.withValues(alpha: 0.9),
+                              Colors.black.withValues(alpha: 0.1),
+                            ],
+                            stops: const [0.0, 0.4, 0.8, 1.0],
+                          ),
                         ),
                       ),
-                    ),
 
-                    // Background pattern overlay - matching home screen
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _GameBackgroundPainter(theme),
+                      // Background pattern overlay - matching home screen
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _GameBackgroundPainter(theme),
+                        ),
                       ),
-                    ),
 
-                    // Main game content
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final screenHeight = constraints.maxHeight;
-                        final isSmallScreen = screenHeight < 700;
+                      // Main game content
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final screenHeight = constraints.maxHeight;
+                          final isSmallScreen = screenHeight < 700;
 
-                        return Column(
-                          children: [
-                            // HUD
-                            GameHUD(
-                              gameState: gameState,
-                              theme: theme,
-                              onPause: () => gameProvider.togglePause(),
-                              onHome: () => _showExitConfirmation(context),
-                              isSmallScreen: isSmallScreen,
-                              tournamentId: gameProvider.tournamentId,
-                              tournamentMode: gameProvider.tournamentMode,
-                            ),
+                          return Column(
+                            children: [
+                              // HUD
+                              GameHUD(
+                                gameState: gameState,
+                                theme: theme,
+                                onPause: () => gameProvider.togglePause(),
+                                onHome: () => _showExitConfirmation(context),
+                                isSmallScreen: isSmallScreen,
+                                tournamentId: gameProvider.tournamentId,
+                                tournamentMode: gameProvider.tournamentMode,
+                              ),
 
-                            // Compact Game Instructions (consistent spacing)
-                            _buildCompactInstructions(theme, isSmallScreen),
+                              // Compact Game Instructions (consistent spacing)
+                              _buildCompactInstructions(theme, isSmallScreen),
 
-                            // Static row above game board - Game Hint and Gesture Indicator
-                            _buildStaticGameRow(theme, isSmallScreen),
+                              // Static row above game board - Game Hint and Gesture Indicator
+                              _buildStaticGameRow(theme, isSmallScreen),
 
-                            // Game Board
-                            Expanded(
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: isSmallScreen ? 8 : 12,
-                                ),
-                                child: LayoutBuilder(
-                                  builder: (context, boardConstraints) {
-                                    // Calculate optimal board size
-                                    final availableSize = math.min(
-                                      boardConstraints.maxWidth,
-                                      boardConstraints.maxHeight -
-                                          (isSmallScreen
-                                              ? 40
-                                              : 60), // Reserve space for info
-                                    );
+                              // Game Board
+                              Expanded(
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: isSmallScreen ? 8 : 12,
+                                  ),
+                                  child: LayoutBuilder(
+                                    builder: (context, boardConstraints) {
+                                      // Calculate optimal board size
+                                      final availableSize = math.min(
+                                        boardConstraints.maxWidth,
+                                        boardConstraints.maxHeight -
+                                            (isSmallScreen
+                                                ? 40
+                                                : 60), // Reserve space for info
+                                      );
 
-                                    return Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        // Game Board
-                                        SizedBox(
-                                          width: availableSize,
-                                          height: availableSize,
-                                          child: GameBoard(
-                                            gameState: gameState,
+                                      return Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          // Game Board
+                                          SizedBox(
+                                            width: availableSize,
+                                            height: availableSize,
+                                            child: GameBoard(
+                                              gameState: gameState,
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    );
-                                  },
+                                        ],
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
-                            ),
 
-                            // Compact Game Info Footer
-                            _buildCompactGameInfo(
-                              gameState,
-                              theme,
-                              isSmallScreen,
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-
-                    // Pause Overlay
-                    if (gameState.status == GameStatus.paused)
-                      PauseOverlay(
-                        theme: theme,
-                        onResume: () => gameProvider.resumeGame(),
-                        onRestart: () {
-                          gameProvider.startGame();
+                              // Compact Game Info Footer
+                              _buildCompactGameInfo(
+                                gameState,
+                                theme,
+                                isSmallScreen,
+                              ),
+                            ],
+                          );
                         },
-                        onHome: () => Navigator.of(context).pop(),
                       ),
 
-                    // Crash Feedback Overlay
-                    if (gameState.status == GameStatus.crashed &&
-                        gameState.crashReason != null &&
-                        gameState.showCrashModal)
-                      CrashFeedbackOverlay(
-                        crashReason: gameState.crashReason!,
-                        theme: theme,
-                        onSkip: () => gameProvider.skipCrashFeedback(),
-                        duration: const Duration(
-                          seconds: 3,
-                        ), // Reduced from 5 to 3 seconds
-                      ),
-                  ],
+                      // Pause Overlay
+                      if (gameState.status == GameStatus.paused)
+                        PauseOverlay(
+                          theme: theme,
+                          onResume: () => gameProvider.resumeGame(),
+                          onRestart: () {
+                            gameProvider.startGame();
+                          },
+                          onHome: () => Navigator.of(context).pop(),
+                        ),
+
+                      // Crash Feedback Overlay
+                      if (gameState.status == GameStatus.crashed &&
+                          gameState.crashReason != null &&
+                          gameState.showCrashModal)
+                        CrashFeedbackOverlay(
+                          crashReason: gameState.crashReason!,
+                          theme: theme,
+                          onSkip: () => gameProvider.skipCrashFeedback(),
+                          duration: const Duration(
+                            seconds: 3,
+                          ), // Reduced from 5 to 3 seconds
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ), // Close Scaffold
-        ), // Close GameJuiceWidget
-      ); // Close KeyboardListener
+            ), // Close Scaffold
+          ), // Close GameJuiceWidget
+        ); // Close KeyboardListener
       }, // Close Consumer2 builder
     );
   }
@@ -469,14 +471,17 @@ class _GameScreenState extends State<GameScreen>
     // Always return a container with consistent spacing to prevent layout shifts
     return Container(
       margin: EdgeInsets.only(
-        left: 16, 
-        right: 16, 
-        top: isSmallScreen ? 6 : 12, 
-        bottom: isSmallScreen ? 4 : 8,
+        left: 16,
+        right: 16,
+        top: isSmallScreen ? 6 : 8,
+        bottom: isSmallScreen ? 4 : 6,
       ),
-      height: isSmallScreen ? 24 : 70, // Fixed height prevents layout shifts
-      child: isSmallScreen 
-          ? // Simple hint for small screens
+      constraints: BoxConstraints(
+        minHeight: isSmallScreen ? 24 : 50, // Minimum height for layout stability
+        maxHeight: isSmallScreen ? 32 : 90, // Allow more height to prevent overflow
+      ),
+      child: isSmallScreen
+          ? // Simple hint for small screens - guaranteed to fit
             Center(
               child: Text(
                 'Swipe to control • Tap to pause • Collect food to grow',
@@ -485,11 +490,14 @@ class _GameScreenState extends State<GameScreen>
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             )
-          : // Full instructions for larger screens
+          : // Optimized instructions for larger screens
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -503,73 +511,71 @@ class _GameScreenState extends State<GameScreen>
                   color: theme.accentColor.withValues(alpha: 0.2),
                   width: 1,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
                     color: theme.accentColor.withValues(alpha: 0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
-              child: Column(
-                children: [
-                  // Title
-                  Text(
-                    'COLLECT FOOD',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.8),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+              child: IntrinsicHeight(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Compact title
+                    Text(
+                      'COLLECT FOOD',
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.8),
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Food types
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildEnhancedInstruction('🍎', 'Apple', '10 pts', theme),
-                      _buildEnhancedInstruction('✨', 'Bonus', '25 pts', theme),
-                      _buildEnhancedInstruction('⭐', 'Star', '50 pts', theme),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    // Compact food types row
+                    Flexible(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildCompactInstruction('🍎', '10', theme),
+                          _buildCompactInstruction('✨', '25', theme),
+                          _buildCompactInstruction('⭐', '50', theme),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
     );
   }
 
-  Widget _buildEnhancedInstruction(
-    String emoji,
-    String name,
-    String points,
-    GameTheme theme,
-  ) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 16)),
-        const SizedBox(height: 2),
-        Text(
-          name,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.7),
-            fontSize: 8,
-            fontWeight: FontWeight.w500,
+  Widget _buildCompactInstruction(String emoji, String points, GameTheme theme) {
+    return Flexible(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            emoji, 
+            style: const TextStyle(fontSize: 14),
           ),
-        ),
-        Text(
-          points,
-          style: TextStyle(
-            color: theme.foodColor.withValues(alpha: 0.9),
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
+          const SizedBox(height: 2),
+          Text(
+            points,
+            style: TextStyle(
+              color: theme.foodColor.withValues(alpha: 0.9),
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+
 
   Widget _buildStaticGameRow(GameTheme theme, bool isSmallScreen) {
     return Container(
@@ -636,8 +642,10 @@ class _GameScreenState extends State<GameScreen>
     return AnimatedBuilder(
       animation: _gestureIndicatorController,
       builder: (context, child) {
-        final isActive = _lastSwipeDirection != null && _gestureIndicatorController.isAnimating;
-        
+        final isActive =
+            _lastSwipeDirection != null &&
+            _gestureIndicatorController.isAnimating;
+
         return Container(
           padding: EdgeInsets.symmetric(
             horizontal: isSmallScreen ? 10 : 12,
@@ -655,14 +663,20 @@ class _GameScreenState extends State<GameScreen>
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isActive
-                  ? _getActiveSwipeColor(_lastSwipeDirection!, theme).withValues(alpha: 0.6)
+                  ? _getActiveSwipeColor(
+                      _lastSwipeDirection!,
+                      theme,
+                    ).withValues(alpha: 0.6)
                   : theme.accentColor.withValues(alpha: 0.4),
               width: 2.0, // Fixed width to prevent layout shifts
             ),
             boxShadow: [
               BoxShadow(
                 color: isActive
-                    ? _getActiveSwipeColor(_lastSwipeDirection!, theme).withValues(alpha: 0.3)
+                    ? _getActiveSwipeColor(
+                        _lastSwipeDirection!,
+                        theme,
+                      ).withValues(alpha: 0.3)
                     : Colors.black.withValues(alpha: 0.2),
                 blurRadius: 8, // Fixed blur radius to prevent layout shifts
                 spreadRadius: 1, // Fixed spread radius to prevent layout shifts
@@ -707,23 +721,47 @@ class _GameScreenState extends State<GameScreen>
                     // Simple directional indicators with fixed positions
                     Positioned(
                       top: isSmallScreen ? 4 : 5,
-                      left: (isSmallScreen ? 32 : 36) / 2 - (isSmallScreen ? 4 : 5),
-                      child: _buildSimpleIndicator(Direction.up, theme, isSmallScreen),
+                      left:
+                          (isSmallScreen ? 32 : 36) / 2 -
+                          (isSmallScreen ? 4 : 5),
+                      child: _buildSimpleIndicator(
+                        Direction.up,
+                        theme,
+                        isSmallScreen,
+                      ),
                     ),
                     Positioned(
                       bottom: isSmallScreen ? 4 : 5,
-                      left: (isSmallScreen ? 32 : 36) / 2 - (isSmallScreen ? 4 : 5),
-                      child: _buildSimpleIndicator(Direction.down, theme, isSmallScreen),
+                      left:
+                          (isSmallScreen ? 32 : 36) / 2 -
+                          (isSmallScreen ? 4 : 5),
+                      child: _buildSimpleIndicator(
+                        Direction.down,
+                        theme,
+                        isSmallScreen,
+                      ),
                     ),
                     Positioned(
                       left: isSmallScreen ? 4 : 5,
-                      top: (isSmallScreen ? 32 : 36) / 2 - (isSmallScreen ? 4 : 5),
-                      child: _buildSimpleIndicator(Direction.left, theme, isSmallScreen),
+                      top:
+                          (isSmallScreen ? 32 : 36) / 2 -
+                          (isSmallScreen ? 4 : 5),
+                      child: _buildSimpleIndicator(
+                        Direction.left,
+                        theme,
+                        isSmallScreen,
+                      ),
                     ),
                     Positioned(
                       right: isSmallScreen ? 4 : 5,
-                      top: (isSmallScreen ? 32 : 36) / 2 - (isSmallScreen ? 4 : 5),
-                      child: _buildSimpleIndicator(Direction.right, theme, isSmallScreen),
+                      top:
+                          (isSmallScreen ? 32 : 36) / 2 -
+                          (isSmallScreen ? 4 : 5),
+                      child: _buildSimpleIndicator(
+                        Direction.right,
+                        theme,
+                        isSmallScreen,
+                      ),
                     ),
                   ],
                 ),
@@ -758,7 +796,7 @@ class _GameScreenState extends State<GameScreen>
                       child: Text(
                         _lastSwipeDirection != null
                             ? _getDirectionName(_lastSwipeDirection!)
-                            : 'UP', // Placeholder to maintain layout
+                            : 'SWIPE', // Initial state indicator
                         style: TextStyle(
                           color: _lastSwipeDirection != null
                               ? _getActiveSwipeColor(
@@ -788,8 +826,10 @@ class _GameScreenState extends State<GameScreen>
     GameTheme theme,
     bool isSmallScreen,
   ) {
-    final isActive = _lastSwipeDirection == direction && _gestureIndicatorController.isAnimating;
-    
+    final isActive =
+        _lastSwipeDirection == direction &&
+        _gestureIndicatorController.isAnimating;
+
     return Container(
       width: isSmallScreen ? 8 : 10,
       height: isSmallScreen ? 8 : 10,
@@ -801,7 +841,10 @@ class _GameScreenState extends State<GameScreen>
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: _getActiveSwipeColor(direction, theme).withValues(alpha: 0.3),
+                  color: _getActiveSwipeColor(
+                    direction,
+                    theme,
+                  ).withValues(alpha: 0.3),
                   blurRadius: 4,
                   spreadRadius: 1,
                 ),

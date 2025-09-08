@@ -16,7 +16,9 @@
       "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
       "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
       "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
-      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)"
+      "Read(/F:\\Personal\\MyProjects\\snake_classic\\lib\\screens/**)",
+      "Bash(sed:*)",
+      "Bash(dos2unix:*)"
     ],
     "deny": [],
     "ask": []

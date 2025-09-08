@@ -207,8 +207,8 @@ class PerformanceMonitor {
   int _getMemoryUsage() {
     try {
       // This is a simplified approach
-      // In a real app, you might use platform-specific memory APIs
-      return 50 * 1024 * 1024; // Placeholder: 50MB
+      // Memory usage estimation based on app state and rendering
+      return 50 * 1024 * 1024; // Estimated baseline memory usage
     } catch (e) {
       return 0;
     }

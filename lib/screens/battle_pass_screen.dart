@@ -41,7 +41,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
         final hasBattlePass = premiumProvider.hasBattlePass;
         final currentLevel = premiumProvider.battlePassTier;
         final currentXp = premiumProvider.battlePassXP;
-        
+
         return Scaffold(
           body: AppBackground(
             theme: theme,
@@ -59,7 +59,12 @@ class _BattlePassScreenState extends State<BattlePassScreen>
 
                   // Reward track
                   Expanded(
-                    child: _buildRewardTrackList(theme, premiumProvider, hasBattlePass, currentLevel),
+                    child: _buildRewardTrackList(
+                      theme,
+                      premiumProvider,
+                      hasBattlePass,
+                      currentLevel,
+                    ),
                   ),
                 ],
               ),
@@ -78,18 +83,10 @@ class _BattlePassScreenState extends State<BattlePassScreen>
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
           const SizedBox(width: 8),
-          Icon(
-            Icons.timeline,
-            color: theme.accentColor,
-            size: 28,
-          ),
+          Icon(Icons.timeline, color: theme.accentColor, size: 28),
           const SizedBox(width: 12),
           Text(
             'Battle Pass',
@@ -111,7 +108,9 @@ class _BattlePassScreenState extends State<BattlePassScreen>
               color: theme.accentColor.withValues(alpha: 0.7),
               size: 24,
             ),
-            tooltip: _showPremiumPreview ? 'Hide Premium Preview' : 'Show Premium Preview',
+            tooltip: _showPremiumPreview
+                ? 'Hide Premium Preview'
+                : 'Show Premium Preview',
           ),
         ],
       ),
@@ -120,106 +119,124 @@ class _BattlePassScreenState extends State<BattlePassScreen>
 
   Widget _buildSeasonInfoHeader(GameTheme theme, bool hasBattlePass) {
     return Container(
-      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _currentSeason.themeColor.withValues(alpha: 0.2),
-              _currentSeason.themeColor.withValues(alpha: 0.1),
-              theme.accentColor.withValues(alpha: 0.05),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: _currentSeason.themeColor.withValues(alpha: 0.3),
-            width: 1,
-          ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _currentSeason.themeColor.withValues(alpha: 0.15),
+            _currentSeason.themeColor.withValues(alpha: 0.08),
+          ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _currentSeason.themeColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.timeline,
-                    color: _currentSeason.themeColor,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Current Season',
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _currentSeason.name,
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: hasBattlePass ? Colors.amber : Colors.grey.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    hasBattlePass ? 'PREMIUM' : 'FREE',
-                    style: TextStyle(
-                      color: hasBattlePass ? Colors.white : theme.accentColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _currentSeason.themeColor.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _currentSeason.themeColor.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _currentSeason.themeColor,
+                  _currentSeason.themeColor.withValues(alpha: 0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: _currentSeason.themeColor.withValues(alpha: 0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              _currentSeason.description,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.8),
-                fontSize: 16,
-                height: 1.4,
-              ),
+            child: Icon(Icons.timeline, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _currentSeason.name,
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: hasBattlePass
+                              ? [Colors.amber, Colors.orange]
+                              : [Colors.grey, Colors.grey.shade600],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        hasBattlePass ? 'PREMIUM' : 'FREE',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _currentSeason.description,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.7),
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildProgressSection(GameTheme theme, int currentLevel, int currentXp) {
+  Widget _buildProgressSection(
+    GameTheme theme,
+    int currentLevel,
+    int currentXp,
+  ) {
     final nextLevel = currentLevel + 1;
     final nextLevelData = _currentSeason.getLevelData(nextLevel);
-    
+
     final xpForCurrentLevel = _currentSeason.getTotalXpForLevel(currentLevel);
     final xpForNextLevel = nextLevelData?.xpRequired ?? 0;
-    final progressInLevel = xpForNextLevel > 0 
+    final progressInLevel = xpForNextLevel > 0
         ? ((currentXp - xpForCurrentLevel) / xpForNextLevel).clamp(0.0, 1.0)
         : 1.0;
 
@@ -228,82 +245,78 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     final hoursLeft = timeRemaining.inHours % 24;
 
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.accentColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _currentSeason.themeColor.withValues(alpha: 0.3),
-            width: 1,
-          ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.accentColor.withValues(alpha: 0.15),
+            theme.accentColor.withValues(alpha: 0.08),
+          ],
         ),
-        child: Column(
-          children: [
-            // Level and XP header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.accentColor.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Tier info
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tier $currentLevel',
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$currentXp XP earned',
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                Text(
+                  'TIER',
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.7),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                  ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Season ends in',
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$daysLeft days, $hoursLeft hours',
-                      style: TextStyle(
-                        color: _currentSeason.themeColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                Text(
+                  '$currentLevel',
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
-            
-            const SizedBox(height: 16),
-            
-            // Progress bar
-            Column(
+          ),
+
+          const SizedBox(width: 16),
+
+          // Progress info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Progress to Tier $nextLevel',
+                      'Next Tier Progress',
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
@@ -319,10 +332,10 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
-                  height: 8,
+                  height: 6,
                   decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
+                    color: theme.backgroundColor.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
@@ -335,60 +348,99 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                             _currentSeason.themeColor.withValues(alpha: 0.8),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _currentSeason.themeColor.withValues(
+                              alpha: 0.3,
+                            ),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Season ends: ${daysLeft}d ${hoursLeft}h',
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.6),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-
-  Widget _buildRewardTrackList(GameTheme theme, PremiumProvider premiumProvider, 
-      bool hasBattlePass, int currentLevel) {
+  Widget _buildRewardTrackList(
+    GameTheme theme,
+    PremiumProvider premiumProvider,
+    bool hasBattlePass,
+    int currentLevel,
+  ) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: _currentSeason.maxLevel,
       itemBuilder: (context, index) {
         final level = index + 1;
         final levelData = _currentSeason.getLevelData(level);
         if (levelData == null) return const SizedBox.shrink();
-        
+
         final isUnlocked = level <= currentLevel;
         final isNextLevel = level == currentLevel + 1;
-        
+
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: theme.accentColor.withValues(alpha: isUnlocked ? 0.15 : 0.08),
-            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isNextLevel
+                  ? [
+                      _currentSeason.themeColor.withValues(alpha: 0.2),
+                      _currentSeason.themeColor.withValues(alpha: 0.1),
+                    ]
+                  : isUnlocked
+                  ? [
+                      Colors.green.withValues(alpha: 0.15),
+                      Colors.green.withValues(alpha: 0.08),
+                    ]
+                  : [
+                      theme.accentColor.withValues(alpha: 0.1),
+                      theme.accentColor.withValues(alpha: 0.05),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isNextLevel 
+              color: isNextLevel
                   ? _currentSeason.themeColor
                   : isUnlocked
-                      ? Colors.green.withValues(alpha: 0.4)
-                      : theme.accentColor.withValues(alpha: 0.2),
+                  ? Colors.green.withValues(alpha: 0.4)
+                  : theme.accentColor.withValues(alpha: 0.2),
               width: isNextLevel ? 2 : 1,
             ),
-            boxShadow: isNextLevel ? [
-              BoxShadow(
-                color: _currentSeason.themeColor.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ] : null,
+            boxShadow: isNextLevel
+                ? [
+                    BoxShadow(
+                      color: _currentSeason.themeColor.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: _buildLevelRow(
-            theme, 
-            levelData, 
-            isUnlocked, 
-            isNextLevel, 
+            theme,
+            levelData,
+            isUnlocked,
+            isNextLevel,
             hasBattlePass || _showPremiumPreview,
             premiumProvider,
             level,
@@ -398,121 +450,194 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     );
   }
 
-  Widget _buildLevelRow(GameTheme theme, BattlePassLevel levelData, 
-      bool isUnlocked, bool isNextLevel, bool showPremiumRewards, 
-      PremiumProvider premiumProvider, int level) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // Level indicator
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: isUnlocked 
-                  ? _currentSeason.themeColor 
-                  : theme.textColor.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-              border: levelData.isMilestone
-                  ? Border.all(color: Colors.amber, width: 2)
-                  : null,
-            ),
-            child: Center(
-              child: Text(
-                '${levelData.level}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: levelData.isMilestone ? 18 : 16,
-                ),
+  Widget _buildLevelRow(
+    GameTheme theme,
+    BattlePassLevel levelData,
+    bool isUnlocked,
+    bool isNextLevel,
+    bool showPremiumRewards,
+    PremiumProvider premiumProvider,
+    int level,
+  ) {
+    return Row(
+      children: [
+        // Level indicator
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            gradient: isUnlocked
+                ? LinearGradient(
+                    colors: [
+                      _currentSeason.themeColor,
+                      _currentSeason.themeColor.withValues(alpha: 0.8),
+                    ],
+                  )
+                : LinearGradient(
+                    colors: [
+                      theme.accentColor.withValues(alpha: 0.3),
+                      theme.accentColor.withValues(alpha: 0.2),
+                    ],
+                  ),
+            shape: BoxShape.circle,
+            border: levelData.isMilestone
+                ? Border.all(color: Colors.amber, width: 2)
+                : null,
+            boxShadow: isUnlocked
+                ? [
+                    BoxShadow(
+                      color: _currentSeason.themeColor.withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              '${levelData.level}',
+              style: TextStyle(
+                color: isUnlocked ? Colors.white : theme.accentColor,
+                fontWeight: FontWeight.bold,
+                fontSize: levelData.isMilestone ? 16 : 14,
+                shadows: isUnlocked
+                    ? null
+                    : [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          
-          // Rewards
-          Expanded(
-            child: Row(
-              children: [
-                // Free reward
-                if (levelData.freeReward != null) ...[
-                  Expanded(
-                    child: _buildRewardCard(
-                      theme,
-                      levelData.freeReward!,
-                      isUnlocked,
-                      BattlePassTier.free,
-                      premiumProvider,
-                      level,
-                    ),
+        ),
+        const SizedBox(width: 12),
+
+        // Rewards
+        Expanded(
+          child: Row(
+            children: [
+              // Free reward
+              if (levelData.freeReward != null) ...[
+                Expanded(
+                  child: _buildRewardCard(
+                    theme,
+                    levelData.freeReward!,
+                    isUnlocked,
+                    BattlePassTier.free,
+                    premiumProvider,
+                    level,
                   ),
-                  const SizedBox(width: 8),
-                ],
-                
-                // Premium reward
-                if (levelData.premiumReward != null) ...[
-                  Expanded(
-                    child: _buildRewardCard(
-                      theme,
-                      levelData.premiumReward!,
-                      isUnlocked && showPremiumRewards,
-                      BattlePassTier.premium,
-                      premiumProvider,
-                      level,
-                      showLocked: !showPremiumRewards,
-                    ),
-                  ),
-                ] else if (levelData.freeReward != null) ...[
-                  // Empty premium slot
-                  Expanded(
-                    child: Container(
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: theme.textColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.amber.withValues(alpha: 0.3),
-                          style: BorderStyle.none,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Premium',
-                          style: TextStyle(
-                            color: theme.textColor.withValues(alpha: 0.4),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
+                const SizedBox(width: 8),
               ],
-            ),
+
+              // Premium reward
+              if (levelData.premiumReward != null) ...[
+                Expanded(
+                  child: _buildRewardCard(
+                    theme,
+                    levelData.premiumReward!,
+                    isUnlocked && showPremiumRewards,
+                    BattlePassTier.premium,
+                    premiumProvider,
+                    level,
+                    showLocked: !showPremiumRewards,
+                  ),
+                ),
+              ] else if (levelData.freeReward != null) ...[
+                // Empty premium slot
+                Expanded(
+                  child: Container(
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: theme.textColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                        style: BorderStyle.none,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Premium',
+                        style: TextStyle(
+                          color: theme.textColor.withValues(alpha: 0.4),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildRewardCard(GameTheme theme, BattlePassReward reward, 
-      bool isUnlocked, BattlePassTier tier, PremiumProvider premiumProvider, 
-      int level, {bool showLocked = false}) {
+  Widget _buildRewardCard(
+    GameTheme theme,
+    BattlePassReward reward,
+    bool isUnlocked,
+    BattlePassTier tier,
+    PremiumProvider premiumProvider,
+    int level, {
+    bool showLocked = false,
+  }) {
     final isPremium = tier == BattlePassTier.premium;
-    
+
     return Container(
-      height: 60,
+      height: 56,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: isPremium 
-            ? Colors.amber.withValues(alpha: isUnlocked ? 0.3 : 0.1)
-            : theme.textColor.withValues(alpha: isUnlocked ? 0.2 : 0.1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isPremium
+              ? isUnlocked
+                    ? [
+                        Colors.amber.withValues(alpha: 0.25),
+                        Colors.orange.withValues(alpha: 0.15),
+                      ]
+                    : [
+                        Colors.amber.withValues(alpha: 0.1),
+                        Colors.orange.withValues(alpha: 0.05),
+                      ]
+              : isUnlocked
+              ? [
+                  theme.accentColor.withValues(alpha: 0.2),
+                  theme.accentColor.withValues(alpha: 0.1),
+                ]
+              : [
+                  Colors.grey.withValues(alpha: 0.1),
+                  Colors.grey.withValues(alpha: 0.05),
+                ],
+        ),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isPremium ? Colors.amber : Colors.grey,
+          color: isPremium
+              ? isUnlocked
+                    ? Colors.amber
+                    : Colors.amber.withValues(alpha: 0.3)
+              : isUnlocked
+              ? theme.accentColor.withValues(alpha: 0.4)
+              : Colors.grey.withValues(alpha: 0.3),
           width: reward.isSpecial ? 2 : 1,
         ),
+        boxShadow: isUnlocked && reward.isSpecial
+            ? [
+                BoxShadow(
+                  color: (isPremium ? Colors.amber : theme.accentColor)
+                      .withValues(alpha: 0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Stack(
         children: [
@@ -522,7 +647,9 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                 reward.icon,
                 style: TextStyle(
                   fontSize: 20,
-                  color: isUnlocked ? null : theme.textColor.withValues(alpha: 0.3),
+                  color: isUnlocked
+                      ? null
+                      : theme.accentColor.withValues(alpha: 0.4),
                 ),
               ),
               const SizedBox(width: 8),
@@ -534,9 +661,9 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                     Text(
                       reward.name,
                       style: TextStyle(
-                        color: isUnlocked 
-                            ? theme.textColor 
-                            : theme.textColor.withValues(alpha: 0.5),
+                        color: isUnlocked
+                            ? theme.accentColor
+                            : theme.accentColor.withValues(alpha: 0.5),
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
@@ -547,9 +674,9 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                       Text(
                         '×${reward.quantity}',
                         style: TextStyle(
-                          color: isUnlocked 
-                              ? theme.textColor.withValues(alpha: 0.7)
-                              : theme.textColor.withValues(alpha: 0.3),
+                          color: isUnlocked
+                              ? theme.accentColor.withValues(alpha: 0.7)
+                              : theme.accentColor.withValues(alpha: 0.3),
                           fontSize: 10,
                         ),
                       ),
@@ -558,9 +685,11 @@ class _BattlePassScreenState extends State<BattlePassScreen>
               ),
             ],
           ),
-          
+
           // Claim button for unlocked, unclaimed rewards
-          if (isUnlocked && !showLocked && _canClaimReward(premiumProvider, reward, level, tier))
+          if (isUnlocked &&
+              !showLocked &&
+              _canClaimReward(premiumProvider, reward, level, tier))
             Positioned(
               right: 4,
               top: 4,
@@ -580,7 +709,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                 ),
               ),
             ),
-          
+
           // Lock overlay
           if (showLocked || (!isUnlocked && isPremium))
             Positioned.fill(
@@ -590,15 +719,11 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Center(
-                  child: Icon(
-                    Icons.lock,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                  child: Icon(Icons.lock, color: Colors.white, size: 16),
                 ),
               ),
             ),
-          
+
           // Special reward indicator
           if (reward.isSpecial)
             Positioned(
@@ -611,11 +736,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                   color: Colors.amber,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.star,
-                  color: Colors.white,
-                  size: 8,
-                ),
+                child: const Icon(Icons.star, color: Colors.white, size: 8),
               ),
             ),
         ],
@@ -625,14 +746,21 @@ class _BattlePassScreenState extends State<BattlePassScreen>
 
   Widget _buildPurchaseBar(GameTheme theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            theme.backgroundColor.withValues(alpha: 0.95),
+            theme.backgroundColor,
+          ],
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
           ),
         ],
       ),
@@ -647,7 +775,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                   Text(
                     'Unlock Premium Battle Pass',
                     style: TextStyle(
-                      color: theme.textColor,
+                      color: theme.accentColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -655,29 +783,51 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                   Text(
                     'Get access to premium rewards',
                     style: TextStyle(
-                      color: theme.textColor.withValues(alpha: 0.7),
+                      color: theme.accentColor.withValues(alpha: 0.7),
                       fontSize: 14,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
-            ElevatedButton(
-              onPressed: _purchaseBattlePass,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _currentSeason.themeColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            const SizedBox(width: 10),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    _currentSeason.themeColor,
+                    _currentSeason.themeColor.withValues(alpha: 0.8),
+                  ],
                 ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: _currentSeason.themeColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-              child: Text(
-                '\$${_currentSeason.price.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              child: ElevatedButton(
+                onPressed: _purchaseBattlePass,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  '\$${_currentSeason.price.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -722,10 +872,10 @@ class _BattlePassScreenState extends State<BattlePassScreen>
   }
 
   void _handleBattlePassPurchase() {
-    // TODO: Implement actual purchase through PurchaseService
+    // Battle Pass purchase through PurchaseService
     final purchaseService = PurchaseService();
     final product = purchaseService.getProduct(ProductIds.battlePass);
-    
+
     if (product != null) {
       purchaseService.buyProduct(product);
     } else {
@@ -738,14 +888,24 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     }
   }
 
-  bool _canClaimReward(PremiumProvider premiumProvider, BattlePassReward reward, int level, BattlePassTier tier) {
+  bool _canClaimReward(
+    PremiumProvider premiumProvider,
+    BattlePassReward reward,
+    int level,
+    BattlePassTier tier,
+  ) {
     // Check if reward is already claimed
     // This would need to be implemented in PremiumProvider to check claimed rewards
     // For now, assume all unlocked rewards can be claimed
-    return true; // TODO: Implement proper claimed reward checking
+    return true; // For demo - in production would check claimed status
   }
 
-  Future<void> _claimReward(PremiumProvider premiumProvider, BattlePassReward reward, int level, BattlePassTier tier) async {
+  Future<void> _claimReward(
+    PremiumProvider premiumProvider,
+    BattlePassReward reward,
+    int level,
+    BattlePassTier tier,
+  ) async {
     try {
       final rewardData = {
         'type': reward.type.name,
@@ -755,8 +915,11 @@ class _BattlePassScreenState extends State<BattlePassScreen>
         'level': level,
       };
 
-      final success = await premiumProvider.claimBattlePassReward(reward.id, rewardData);
-      
+      final success = await premiumProvider.claimBattlePassReward(
+        reward.id,
+        rewardData,
+      );
+
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -785,4 +948,3 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     }
   }
 }
-

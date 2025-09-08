@@ -853,12 +853,70 @@ class _FriendsScreenState extends State<FriendsScreen> with SingleTickerProvider
   void _handleFriendAction(String action, UserProfile friend) {
     switch (action) {
       case 'view_profile':
-        // TODO: Navigate to user profile screen
+        // Navigate to user profile view
+        _showUserProfile(friend);
         break;
       case 'remove_friend':
         _showRemoveFriendDialog(friend);
         break;
     }
+  }
+
+  void _showUserProfile(UserProfile friend) {
+    final theme = context.read<ThemeProvider>().currentTheme;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.person, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(
+              friend.username,
+              style: TextStyle(color: theme.accentColor),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'High Score: ${friend.highScore}',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Total Games: ${friend.totalGamesPlayed}',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Level: ${friend.level}',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+            ),
+            if (friend.statusMessage?.isNotEmpty == true) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Status: "${friend.statusMessage}"',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.6),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Close', style: TextStyle(color: theme.accentColor)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showRemoveFriendDialog(UserProfile friend) {

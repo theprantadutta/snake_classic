@@ -105,7 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         theme: theme,
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
             child: userProvider.isSignedIn
                 ? _buildProfileContent(context, userProvider, themeProvider)
                 : _buildSignInContent(context, userProvider, themeProvider),
@@ -289,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           // Enhanced Profile Header
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -467,7 +467,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           // Enhanced Stats Section
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -1386,11 +1386,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildUpgradeBenefit(IconData icon, String title, String subtitle) {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: Colors.blue,
-          size: 24,
-        ),
+        Icon(icon, color: Colors.blue, size: 24),
         const SizedBox(height: 8),
         Text(
           title,
@@ -1420,7 +1416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ) async {
     try {
       final success = await userProvider.signInWithGoogle();
-      
+
       if (success && context.mounted) {
         _showStyledSnackBar(
           context,

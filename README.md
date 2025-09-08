@@ -4,8 +4,28 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 
 ## 📸 Screenshots
 
-<!-- TODO: Add screenshots here -->
-*Screenshots will be added here showcasing the game's premium UI and different themes.*
+Experience Snake Classic's beautiful, modern interface and premium game design:
+
+<div align="center">
+
+### 🏠 Home Screen
+<img src="screenshots/screenshot_1_home_screen.jpg" width="300" alt="Snake Classic Home Screen - Beautiful animated logo and intuitive navigation">
+
+### 🎮 Gameplay Experience  
+<img src="screenshots/screenshot_2_game_screen.jpg" width="300" alt="Snake Classic Game Screen - Smooth 60FPS gameplay with responsive controls">
+<img src="screenshots/screenshot_7_another_game_screen.jpg" width="300" alt="Snake Classic In-Game Action - Progressive difficulty and food collection">
+
+### 🏆 Game Over & Statistics
+<img src="screenshots/screenshot_3_game_over_screen.jpg" width="300" alt="Snake Classic Game Over Screen - Detailed crash feedback and score summary">
+<img src="screenshots/screenshot_4_statistics_screen.jpg" width="300" alt="Snake Classic Statistics - Comprehensive gameplay analytics and achievements">
+
+### 🛒 Premium Store & Profile
+<img src="screenshots/screenshot_5_snake_store_screen.jpg" width="300" alt="Snake Classic Store - Premium themes, cosmetics, and in-app purchases">
+<img src="screenshots/screenshot_6_profile_screen.jpg" width="300" alt="Snake Classic Profile - User account management and social features">
+
+</div>
+
+*All screenshots showcase the premium UI with smooth animations, consistent theming, and professional game design quality.*
 
 ## ✨ Features
 
