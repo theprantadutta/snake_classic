@@ -871,20 +871,50 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     );
   }
 
-  void _handleBattlePassPurchase() {
-    // Battle Pass purchase through PurchaseService
+  void _handleBattlePassPurchase() async {
     final purchaseService = PurchaseService();
-    final product = purchaseService.getProduct(ProductIds.battlePass);
-
-    if (product != null) {
-      purchaseService.buyProduct(product);
-    } else {
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    
+    try {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Battle Pass product not available'),
-          backgroundColor: Colors.red,
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              SizedBox(width: 12),
+              Text('Processing Battle Pass purchase...'),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
         ),
       );
+
+      await purchaseService.purchaseProduct(ProductIds.battlePass);
+      await premiumProvider.unlockBattlePass();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Battle Pass purchased successfully! ✓'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {}); // Refresh UI
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Battle Pass purchase failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

@@ -59,42 +59,42 @@ Create the following **Managed Products**:
 
 | Product ID | Name | Description | Price |
 |------------|------|-------------|-------|
-| `golden_snake` | Golden Snake | Gleaming gold snake skin | $1.99 |
-| `rainbow_snake` | Rainbow Snake | Colorful rainbow snake skin | $2.99 |
-| `galaxy_snake` | Galaxy Snake | Cosmic galaxy snake skin | $3.99 |
-| `dragon_snake` | Dragon Snake | Fierce dragon-scaled snake | $4.99 |
-| `electric_snake` | Electric Snake | Crackling electric snake skin | $2.99 |
-| `fire_snake` | Fire Snake | Burning fire snake skin | $2.99 |
-| `ice_snake` | Ice Snake | Frozen crystal snake skin | $2.99 |
-| `shadow_snake` | Shadow Snake | Dark mysterious snake skin | $2.99 |
-| `neon_snake` | Neon Snake | Cyberpunk neon snake skin | $3.99 |
-| `crystal_snake` | Crystal Snake | Translucent crystal snake skin | $3.99 |
-| `cosmic_snake` | Cosmic Snake | Stardust cosmic snake skin | $4.99 |
+| `golden` | Golden Snake | Gleaming gold snake skin | $1.99 |
+| `rainbow` | Rainbow Snake | Colorful rainbow snake skin | $2.99 |
+| `galaxy` | Galaxy Snake | Cosmic galaxy snake skin | $3.99 |
+| `dragon` | Dragon Snake | Fierce dragon-scaled snake | $4.99 |
+| `electric` | Electric Snake | Crackling electric snake skin | $1.99 |
+| `fire` | Fire Snake | Burning fire snake skin | $1.99 |
+| `ice` | Ice Snake | Frozen crystal snake skin | $1.99 |
+| `shadow` | Shadow Snake | Dark mysterious snake skin | $2.99 |
+| `neon` | Neon Snake | Cyberpunk neon snake skin | $2.99 |
+| `crystal` | Crystal Snake | Translucent crystal snake skin | $3.99 |
+| `cosmic` | Cosmic Snake | Stardust cosmic snake skin | $3.99 |
 
 ### 2.5 Premium Trail Effects ($0.99 - $3.99)
 
 | Product ID | Name | Description | Price |
 |------------|------|-------------|-------|
-| `particle_trail` | Particle Trail | Sparkling particle effects | $0.99 |
-| `glow_trail` | Glow Trail | Glowing trail effect | $0.99 |
-| `rainbow_trail` | Rainbow Trail | Colorful rainbow trail | $1.99 |
-| `fire_trail` | Fire Trail | Blazing fire trail with embers | $2.99 |
-| `electric_trail` | Electric Trail | Crackling lightning trail | $2.99 |
-| `star_trail` | Star Trail | Twinkling star effects | $2.99 |
-| `cosmic_trail` | Cosmic Trail | Nebula and cosmic dust | $3.99 |
-| `neon_trail` | Neon Trail | Cyberpunk neon glow | $1.99 |
-| `shadow_trail` | Shadow Trail | Dark smoky effects | $1.99 |
-| `crystal_trail` | Crystal Trail | Crystalline shard effects | $3.99 |
-| `dragon_trail` | Dragon Trail | Mystical dragon breath | $3.99 |
+| `particle` | Particle Trail | Sparkling particle effects | $0.99 |
+| `glow` | Glow Trail | Glowing trail effect | $0.99 |
+| `rainbow` | Rainbow Trail | Colorful rainbow trail | $1.99 |
+| `fire` | Fire Trail | Blazing fire trail with embers | $2.99 |
+| `electric` | Electric Trail | Crackling lightning trail | $2.99 |
+| `star` | Star Trail | Twinkling star effects | $2.99 |
+| `cosmic` | Cosmic Trail | Nebula and cosmic dust | $3.99 |
+| `neon` | Neon Trail | Cyberpunk neon glow | $1.99 |
+| `shadow` | Shadow Trail | Dark smoky effects | $1.99 |
+| `crystal` | Crystal Trail | Crystalline shard effects | $3.99 |
+| `dragon` | Dragon Trail | Mystical dragon breath | $3.99 |
 
 ### 2.6 Cosmetic Bundles
 
 | Product ID | Name | Description | Price |
 |------------|------|-------------|-------|
-| `starter_cosmetics` | Starter Cosmetics Pack | 2 skins + 2 trails perfect for new players | $3.99 |
-| `elemental_cosmetics` | Elemental Pack | Fire, ice, electric skins and matching trails | $7.99 |
-| `cosmic_cosmetics` | Cosmic Collection | Galaxy, cosmic, crystal skins and trails | $14.99 |
-| `ultimate_cosmetics` | Ultimate Collection | Every premium skin and trail | $29.99 |
+| `starter_pack` | Starter Pack | Golden & Fire skins + Particle & Glow trails | $3.99 |
+| `elemental_pack` | Elemental Pack | Fire, Ice, Electric skins + matching trails | $7.99 |
+| `cosmic_collection` | Cosmic Collection | Galaxy, Cosmic, Crystal skins + trails | $14.99 |
+| `ultimate_collection` | Ultimate Collection | Every premium skin and trail | $29.99 |
 
 ### 2.7 Tournament Entries (Consumable Products)
 

@@ -560,6 +560,26 @@ class PremiumProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> unlockBattlePass() async {
+    if (!_hasBattlePass) {
+      _hasBattlePass = true;
+      _battlePassExpiry = DateTime.now().add(const Duration(days: 60)); // 2 months
+      
+      // Record the purchase
+      await _recordPurchase(
+        type: 'battle_pass',
+        itemId: 'battle_pass_season',
+        itemName: 'Battle Pass Season',
+        price: 999, // $9.99 in cents
+        currency: 'USD',
+      );
+      
+      await _savePremiumStatus();
+      notifyListeners();
+      AppLogger.info('Battle Pass unlocked');
+    }
+  }
+
   PowerUpBundle? _getBundleById(String bundleId) {
     try {
       return PowerUpBundle.availableBundles.firstWhere((bundle) => bundle.id == bundleId);

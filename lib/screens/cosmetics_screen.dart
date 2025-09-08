@@ -4,6 +4,7 @@ import 'package:snake_classic/providers/premium_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/coins_provider.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
+import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -767,74 +768,125 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  void _processPurchase({SnakeSkinType? skin, TrailEffectType? trail}) {
-    // Show processing indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              skin != null 
-                  ? 'Processing ${skin.displayName} purchase...'
-                  : 'Processing ${trail!.displayName} purchase...',
-            ),
-          ],
-        ),
-        backgroundColor: Colors.blue,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    // Simulate purchase process - in real implementation, this would call PurchaseService
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Purchase completed successfully! ✓'),
-            backgroundColor: Colors.green,
+  void _processPurchase({SnakeSkinType? skin, TrailEffectType? trail}) async {
+    final purchaseService = PurchaseService();
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    
+    try {
+      // Show processing indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                skin != null 
+                    ? 'Processing ${skin.displayName} purchase...'
+                    : 'Processing ${trail!.displayName} purchase...',
+              ),
+            ],
           ),
-        );
-      }
-    });
-  }
-
-  void _processBundlePurchase(CosmeticBundle bundle) {
-    // Show processing indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-            Text('Processing ${bundle.name} purchase...'),
-          ],
+          backgroundColor: Colors.blue,
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor: Colors.blue,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
 
-    // Simulate bundle purchase process
-    Future.delayed(const Duration(seconds: 2), () {
+      String productId;
+      if (skin != null) {
+        productId = skin.id;
+        await purchaseService.purchaseProduct(productId);
+        await premiumProvider.unlockSkin(productId);
+      } else if (trail != null) {
+        productId = trail.id;
+        await purchaseService.purchaseProduct(productId);
+        await premiumProvider.unlockTrail(productId);
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${bundle.name} purchased successfully! ✓'),
+            content: Text(
+              skin != null 
+                  ? '${skin.displayName} purchased successfully! ✓'
+                  : '${trail!.displayName} purchased successfully! ✓'
+            ),
             backgroundColor: Colors.green,
           ),
         );
+        setState(() {}); // Refresh UI to show unlocked state
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Purchase failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _processBundlePurchase(CosmeticBundle bundle) async {
+    final purchaseService = PurchaseService();
+    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    
+    try {
+      // Show processing indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Text('Processing ${bundle.name} purchase...'),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Purchase the bundle
+      await purchaseService.purchaseProduct(bundle.id);
+      
+      // Unlock all items in the bundle
+      for (final skin in bundle.skins) {
+        await premiumProvider.unlockSkin(skin.id);
+      }
+      for (final trail in bundle.trails) {
+        await premiumProvider.unlockTrail(trail.id);
+      }
+      await premiumProvider.unlockBundle(bundle.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${bundle.name} purchased successfully! All items unlocked! ✓'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {}); // Refresh UI to show unlocked states
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Bundle purchase failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showBundlePurchaseDialog(CosmeticBundle bundle) {

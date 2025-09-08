@@ -27,36 +27,36 @@ class ProductIds {
   static const String premiumPowerupsBundle = 'premium_powerups_bundle';
 
   // Snake Cosmetics
-  static const String goldenSnake = 'golden_snake';
-  static const String rainbowSnake = 'rainbow_snake';
-  static const String galaxySnake = 'galaxy_snake';
-  static const String dragonSnake = 'dragon_snake';
-  static const String electricSnake = 'electric_snake';
-  static const String fireSnake = 'fire_snake';
-  static const String iceSnake = 'ice_snake';
-  static const String shadowSnake = 'shadow_snake';
-  static const String neonSnake = 'neon_snake';
-  static const String crystalSnake = 'crystal_snake';
-  static const String cosmicSnake = 'cosmic_snake';
+  static const String goldenSnake = 'golden';
+  static const String rainbowSnake = 'rainbow';
+  static const String galaxySnake = 'galaxy';
+  static const String dragonSnake = 'dragon';
+  static const String electricSnake = 'electric';
+  static const String fireSnake = 'fire';
+  static const String iceSnake = 'ice';
+  static const String shadowSnake = 'shadow';
+  static const String neonSnake = 'neon';
+  static const String crystalSnake = 'crystal';
+  static const String cosmicSnake = 'cosmic';
 
   // Trail Effects
-  static const String particleTrail = 'particle_trail';
-  static const String glowTrail = 'glow_trail';
-  static const String rainbowTrail = 'rainbow_trail';
-  static const String fireTrail = 'fire_trail';
-  static const String electricTrail = 'electric_trail';
-  static const String starTrail = 'star_trail';
-  static const String cosmicTrail = 'cosmic_trail';
-  static const String neonTrail = 'neon_trail';
-  static const String shadowTrail = 'shadow_trail';
-  static const String crystalTrail = 'crystal_trail';
-  static const String dragonTrail = 'dragon_trail';
+  static const String particleTrail = 'particle';
+  static const String glowTrail = 'glow';
+  static const String rainbowTrail = 'rainbow';
+  static const String fireTrail = 'fire';
+  static const String electricTrail = 'electric';
+  static const String starTrail = 'star';
+  static const String cosmicTrail = 'cosmic';
+  static const String neonTrail = 'neon';
+  static const String shadowTrail = 'shadow';
+  static const String crystalTrail = 'crystal';
+  static const String dragonTrail = 'dragon';
 
   // Cosmetic Bundles
-  static const String starterCosmetics = 'starter_cosmetics';
-  static const String elementalCosmetics = 'elemental_cosmetics';
-  static const String cosmicCosmetics = 'cosmic_cosmetics';
-  static const String ultimateCosmetics = 'ultimate_cosmetics';
+  static const String starterCosmetics = 'starter_pack';
+  static const String elementalCosmetics = 'elemental_pack';
+  static const String cosmicCosmetics = 'cosmic_collection';
+  static const String ultimateCosmetics = 'ultimate_collection';
 
   // Subscriptions
   static const String snakeClassicProMonthly = 'snake_classic_pro_monthly';
@@ -492,6 +492,14 @@ class PurchaseService {
     } catch (e) {
       return null;
     }
+  }
+
+  Future<bool> purchaseProduct(String productId) async {
+    final product = getProduct(productId);
+    if (product == null) {
+      throw Exception('Product $productId not found');
+    }
+    return await buyProduct(product);
   }
 
   bool isPurchased(String productId) {
