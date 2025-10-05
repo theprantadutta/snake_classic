@@ -10,8 +10,10 @@ plugins {
 
 android {
     namespace = "com.example.snake_classic"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
+    // ndkVersion = flutter.ndkVersion
+    ndkVersion = "29.0.13113456"
 
     compileOptions {
         // Flag to enable support for the new language APIs
