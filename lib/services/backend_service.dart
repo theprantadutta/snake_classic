@@ -10,7 +10,7 @@ class BackendService {
 
   // Backend configuration
   static String get _baseUrl {
-    final backendUrl = dotenv.env['NOTIFICATION_BACKEND_URL'] ?? 'http://127.0.0.1:8000';
+    final backendUrl = dotenv.env['NOTIFICATION_BACKEND_URL'] ?? 'http://127.0.0.1:8393';
     return '$backendUrl/api/v1';
   }
   static const Duration _timeout = Duration(seconds: 10);
