@@ -662,179 +662,143 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required bool isSmallScreen,
     required bool hasSync,
   }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Row(
-          children: [
-            // Best Score - compact version
-            Expanded(
-              flex: 2,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const StatisticsScreen(),
-                  ),
-                ),
-                child: Container(
-                  constraints: BoxConstraints(
-                    minHeight: 80,
-                    maxHeight: constraints.maxHeight,
-                  ),
-                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.amber.withValues(alpha: 0.15),
-                        Colors.orange.withValues(alpha: 0.08),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(
-                      isSmallScreen ? 16 : 20,
-                    ),
-                    border: Border.all(
-                      color: Colors.amber.withValues(alpha: 0.3),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 12 : 16,
+        vertical: isSmallScreen ? 10 : 14,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            theme.accentColor.withValues(alpha: 0.08),
+            Colors.amber.withValues(alpha: 0.12),
+            theme.accentColor.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
+        border: Border.all(
+          color: Colors.amber.withValues(alpha: 0.25),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Stats button (left)
+          _buildCircularNavButton(
+            icon: Icons.analytics,
+            color: theme.accentColor,
+            isSmallScreen: isSmallScreen,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const StatisticsScreen()),
+            ),
+          ),
+
+          // Center: High Score display
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const StatisticsScreen()),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.emoji_events,
-                            color: Colors.amber,
-                            size: isSmallScreen ? 16 : 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              'BEST',
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 10 : 11,
-                                fontWeight: FontWeight.w700,
-                                color: theme.accentColor.withValues(alpha: 0.8),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                          if (hasSync)
-                            Icon(
-                              Icons.cloud_done,
-                              color: Colors.green,
-                              size: isSmallScreen ? 12 : 14,
-                            ),
-                        ],
+                      Icon(
+                        Icons.emoji_events,
+                        color: Colors.amber,
+                        size: isSmallScreen ? 18 : 22,
                       ),
-                      const SizedBox(height: 6),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          '$highScore',
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? 20 : 24,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.amber,
-                            height: 1.0,
-                          ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'HIGH SCORE',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 10 : 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          letterSpacing: 1.5,
                         ),
                       ),
+                      if (hasSync) ...[
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.cloud_done,
+                          color: Colors.green,
+                          size: isSmallScreen ? 14 : 16,
+                        ),
+                      ],
                     ],
                   ),
-                ),
-              ),
-            ),
-
-            SizedBox(width: isSmallScreen ? 8 : 12),
-
-            // Quick stats
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: _buildQuickStatCard(
-                      icon: Icons.analytics,
-                      label: 'STATS',
-                      theme: theme,
-                      isSmallScreen: isSmallScreen,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const StatisticsScreen(),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$highScore',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 28 : 34,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.amber,
+                      height: 1.0,
+                      shadows: [
+                        Shadow(
+                          color: Colors.amber.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: isSmallScreen ? 6 : 8),
-                  Expanded(
-                    child: _buildQuickStatCard(
-                      icon: Icons.leaderboard,
-                      label: 'RANKS',
-                      theme: theme,
-                      isSmallScreen: isSmallScreen,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const LeaderboardScreen(),
-                        ),
-                      ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        );
-      },
+          ),
+
+          // Leaderboard button (right)
+          _buildCircularNavButton(
+            icon: Icons.leaderboard,
+            color: Colors.amber,
+            isSmallScreen: isSmallScreen,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildQuickStatCard({
+  Widget _buildCircularNavButton({
     required IconData icon,
-    required String label,
-    required GameTheme theme,
+    required Color color,
     required bool isSmallScreen,
     required VoidCallback onTap,
   }) {
+    final size = isSmallScreen ? 44.0 : 52.0;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        constraints: BoxConstraints(minHeight: isSmallScreen ? 32 : 36),
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 8 : 12,
-          vertical: isSmallScreen ? 6 : 8,
-        ),
+        width: size,
+        height: size,
         decoration: BoxDecoration(
-          color: theme.accentColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
+          color: color.withValues(alpha: 0.15),
+          shape: BoxShape.circle,
           border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.3),
-            width: 1,
+            color: color.withValues(alpha: 0.3),
+            width: 1.5,
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: theme.accentColor, size: isSmallScreen ? 14 : 16),
-            const SizedBox(width: 4),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 9 : 10,
-                    fontWeight: FontWeight.w700,
-                    color: theme.accentColor,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: isSmallScreen ? 20 : 24,
         ),
       ),
     );
