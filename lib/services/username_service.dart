@@ -1,20 +1,20 @@
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:snake_classic/services/api_service.dart';
 
 class UsernameService {
   static final UsernameService _instance = UsernameService._internal();
   factory UsernameService() => _instance;
   UsernameService._internal();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ApiService _apiService = ApiService();
   final Random _random = Random();
 
   // Username validation rules
   static const int minLength = 3;
   static const int maxLength = 20;
   static final RegExp _validUsernameRegex = RegExp(r'^[a-zA-Z][a-zA-Z0-9_]{2,19}$');
-  
+
   // Reserved/blocked usernames
   static const List<String> _reservedUsernames = [
     'admin', 'administrator', 'mod', 'moderator', 'system', 'support',
@@ -30,7 +30,7 @@ class UsernameService {
     'Silent', 'Shadow', 'Golden', 'Silver', 'Diamond', 'Ruby', 'Fire', 'Ice',
     'Thunder', 'Lightning', 'Storm', 'Wind', 'Ocean', 'Mountain', 'Forest', 'Sky',
   ];
-  
+
   static const List<String> _nouns = [
     'Snake', 'Viper', 'Python', 'Cobra', 'Serpent', 'Player', 'Gamer',
     'Champion', 'Hunter', 'Racer', 'Striker', 'Warrior', 'Hero', 'Legend',
@@ -48,14 +48,14 @@ class UsernameService {
         error: 'Username must be at least $minLength characters long',
       );
     }
-    
+
     if (username.length > maxLength) {
       return UsernameValidationResult(
         isValid: false,
         error: 'Username must be no more than $maxLength characters long',
       );
     }
-    
+
     // Check format (alphanumeric + underscore, must start with letter)
     if (!_validUsernameRegex.hasMatch(username)) {
       return UsernameValidationResult(
@@ -63,7 +63,7 @@ class UsernameService {
         error: 'Username must start with a letter and contain only letters, numbers, and underscores',
       );
     }
-    
+
     // Check reserved words
     if (_reservedUsernames.contains(username.toLowerCase())) {
       return UsernameValidationResult(
@@ -71,22 +71,16 @@ class UsernameService {
         error: 'This username is reserved and cannot be used',
       );
     }
-    
+
     return UsernameValidationResult(isValid: true);
   }
 
-  /// Check if username is available in Firebase
+  /// Check if username is available via backend API
   Future<bool> isUsernameAvailable(String username) async {
     try {
-      final querySnapshot = await _firestore
-          .collection('users')
-          .where('username', isEqualTo: username)
-          .limit(1)
-          .get();
-          
-      return querySnapshot.docs.isEmpty;
+      final result = await _apiService.checkUsername(username);
+      return result?['available'] == true;
     } catch (e) {
-      // If there's an error checking, assume it's not available
       if (kDebugMode) {
         print('Error checking username availability: $e');
       }
@@ -101,7 +95,7 @@ class UsernameService {
     if (!formatResult.isValid) {
       return formatResult;
     }
-    
+
     // Then check availability
     final isAvailable = await isUsernameAvailable(username);
     if (!isAvailable) {
@@ -110,7 +104,7 @@ class UsernameService {
         error: 'This username is already taken',
       );
     }
-    
+
     return UsernameValidationResult(isValid: true);
   }
 
@@ -119,7 +113,7 @@ class UsernameService {
     final adjective = _adjectives[_random.nextInt(_adjectives.length)];
     final noun = _nouns[_random.nextInt(_nouns.length)];
     final number = _random.nextInt(9999) + 1;
-    
+
     return '${adjective}_${noun}_$number';
   }
 
@@ -127,15 +121,15 @@ class UsernameService {
   List<String> generateUsernameSuggestions({int count = 5}) {
     final suggestions = <String>[];
     final usedCombinations = <String>{};
-    
+
     while (suggestions.length < count && usedCombinations.length < _adjectives.length * _nouns.length) {
       final adjective = _adjectives[_random.nextInt(_adjectives.length)];
       final noun = _nouns[_random.nextInt(_nouns.length)];
       final combination = '$adjective$noun';
-      
+
       if (usedCombinations.contains(combination)) continue;
       usedCombinations.add(combination);
-      
+
       // Try different variations
       final variations = [
         '${adjective}_$noun',
@@ -143,7 +137,7 @@ class UsernameService {
         '${adjective}_${noun}_${_random.nextInt(999) + 1}',
         '$adjective$noun${_random.nextInt(9999) + 1}',
       ];
-      
+
       for (final variation in variations) {
         if (validateUsername(variation).isValid && !suggestions.contains(variation)) {
           suggestions.add(variation);
@@ -151,7 +145,7 @@ class UsernameService {
         }
       }
     }
-    
+
     return suggestions;
   }
 
@@ -161,26 +155,26 @@ class UsernameService {
     String cleaned = displayName
         .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
         .toLowerCase();
-    
+
     // If cleaned name is empty or too short, generate random
     if (cleaned.length < 3) {
       return generateRandomUsername();
     }
-    
+
     // Truncate if too long
     if (cleaned.length > maxLength - 3) {
       cleaned = cleaned.substring(0, maxLength - 3);
     }
-    
+
     // Add random number to ensure uniqueness
     final number = _random.nextInt(999) + 1;
     final username = '${cleaned}_$number';
-    
+
     // Ensure it starts with a letter
     if (!RegExp(r'^[a-zA-Z]').hasMatch(username)) {
       return generateRandomUsername();
     }
-    
+
     return username;
   }
 
@@ -190,7 +184,7 @@ class UsernameService {
     if ((await validateUsernameComplete(desiredUsername)).isValid) {
       return desiredUsername;
     }
-    
+
     // Try variations with numbers
     for (int i = 1; i <= 999; i++) {
       final variation = '${desiredUsername}_$i';
@@ -200,7 +194,7 @@ class UsernameService {
         }
       }
     }
-    
+
     // If all variations are taken, generate a random one
     String randomUsername;
     int attempts = 0;
@@ -208,11 +202,11 @@ class UsernameService {
       randomUsername = generateRandomUsername();
       attempts++;
     } while (!(await isUsernameAvailable(randomUsername)) && attempts < 10);
-    
+
     return randomUsername;
   }
 
-  /// Update username in Firestore with validation
+  /// Update username via backend API
   Future<UsernameUpdateResult> updateUsername(String userId, String newUsername) async {
     try {
       // Validate the new username
@@ -223,12 +217,16 @@ class UsernameService {
           error: validation.error!,
         );
       }
-      
-      // Update in Firestore
-      await _firestore.collection('users').doc(userId).update({
-        'username': newUsername,
-      });
-      
+
+      // Update via API
+      final result = await _apiService.setUsername(newUsername);
+      if (result == null) {
+        return UsernameUpdateResult(
+          success: false,
+          error: 'Failed to update username',
+        );
+      }
+
       return UsernameUpdateResult(success: true);
     } catch (e) {
       return UsernameUpdateResult(
@@ -241,17 +239,10 @@ class UsernameService {
   /// Search users by username (partial match)
   Future<List<Map<String, dynamic>>> searchUsersByUsername(String query) async {
     if (query.length < 2) return [];
-    
+
     try {
-      final querySnapshot = await _firestore
-          .collection('users')
-          .where('username', isGreaterThanOrEqualTo: query)
-          .where('username', isLessThan: '${query}z')
-          .where('isPublic', isEqualTo: true)
-          .limit(20)
-          .get();
-      
-      return querySnapshot.docs.map((doc) => doc.data()).toList();
+      final results = await _apiService.searchUsers(query);
+      return results ?? [];
     } catch (e) {
       if (kDebugMode) {
         print('Error searching users by username: $e');
@@ -260,37 +251,21 @@ class UsernameService {
     }
   }
 
-  /// Reserve a username in the usernames collection
+  /// Reserve a username (now handled by backend automatically)
   Future<void> reserveUsername(String username, String userId) async {
-    try {
-      await _firestore.collection('usernames').doc(username).set({
-        'username': username,
-        'userId': userId,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error reserving username: $e');
-      }
-    }
+    // The backend handles username reservation during user creation
   }
 
-  /// Release a username from the usernames collection
+  /// Release a username (now handled by backend automatically)
   Future<void> releaseUsername(String username) async {
-    try {
-      await _firestore.collection('usernames').doc(username).delete();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error releasing username: $e');
-      }
-    }
+    // The backend handles username release during user deletion
   }
 }
 
 class UsernameValidationResult {
   final bool isValid;
   final String? error;
-  
+
   const UsernameValidationResult({
     required this.isValid,
     this.error,
@@ -300,7 +275,7 @@ class UsernameValidationResult {
 class UsernameUpdateResult {
   final bool success;
   final String? error;
-  
+
   const UsernameUpdateResult({
     required this.success,
     this.error,

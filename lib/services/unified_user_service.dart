@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:snake_classic/services/username_service.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -85,7 +84,7 @@ class UnifiedUser {
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toJson() {
     return {
       'uid': uid,
       'userType': userType.name,
@@ -93,8 +92,8 @@ class UnifiedUser {
       'displayName': displayName,
       'email': email,
       'photoURL': photoURL,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'lastSeen': Timestamp.fromDate(lastSeen),
+      'createdAt': createdAt.toIso8601String(),
+      'lastSeen': lastSeen.toIso8601String(),
       'isPublic': isPublic,
       'highScore': highScore,
       'totalGamesPlayed': totalGamesPlayed,
@@ -104,26 +103,59 @@ class UnifiedUser {
     };
   }
 
-  static UnifiedUser fromFirestore(Map<String, dynamic> data) {
+  static UnifiedUser fromJson(Map<String, dynamic> data) {
     return UnifiedUser(
-      uid: data['uid'] ?? '',
-      userType: UserType.values.firstWhere(
-        (type) => type.name == data['userType'],
-        orElse: () => UserType.anonymous,
-      ),
+      uid: data['uid'] ?? data['id']?.toString() ?? '',
+      userType: _parseUserType(data),
       username: data['username'] ?? '',
-      displayName: data['displayName'] ?? '',
+      displayName: data['displayName'] ?? data['display_name'] ?? '',
       email: data['email'],
-      photoURL: data['photoURL'],
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      lastSeen: (data['lastSeen'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      isPublic: data['isPublic'] ?? true,
-      highScore: data['highScore'] ?? 0,
-      totalGamesPlayed: data['totalGamesPlayed'] ?? 0,
-      totalScore: data['totalScore'] ?? 0,
+      photoURL: data['photoURL'] ?? data['photo_url'],
+      createdAt: _parseDateTime(data['createdAt'] ?? data['created_at'] ?? data['joined_date']),
+      lastSeen: _parseDateTime(data['lastSeen'] ?? data['last_seen']),
+      isPublic: data['isPublic'] ?? data['is_public'] ?? true,
+      highScore: data['highScore'] ?? data['high_score'] ?? 0,
+      totalGamesPlayed: data['totalGamesPlayed'] ?? data['total_games_played'] ?? 0,
+      totalScore: data['totalScore'] ?? data['total_score'] ?? 0,
       level: data['level'] ?? 1,
       preferences: Map<String, dynamic>.from(data['preferences'] ?? {}),
     );
+  }
+
+  /// Parse user type from backend response
+  static UserType _parseUserType(Map<String, dynamic> data) {
+    // Check explicit userType field first
+    final userType = data['userType'] ?? data['user_type'];
+    if (userType != null) {
+      return UserType.values.firstWhere(
+        (type) => type.name == userType,
+        orElse: () => UserType.anonymous,
+      );
+    }
+
+    // Otherwise, derive from auth_provider/is_anonymous (backend format)
+    final authProvider = data['auth_provider'] ?? data['authProvider'];
+    final isAnonymous = data['is_anonymous'] ?? data['isAnonymous'] ?? false;
+
+    if (isAnonymous == true) {
+      return UserType.anonymous;
+    }
+
+    if (authProvider == 'google') {
+      return UserType.google;
+    }
+
+    // Default to anonymous
+    return UserType.anonymous;
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+    return DateTime.now();
   }
 }
 
@@ -131,10 +163,8 @@ class UnifiedUserService extends ChangeNotifier {
   static final UnifiedUserService _instance = UnifiedUserService._internal();
   factory UnifiedUserService() => _instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
-  // Note: Removed DataSyncService dependency to avoid circular imports
-  final UsernameService _usernameService = UsernameService();
+  final ApiService _apiService = ApiService();
 
   UnifiedUserService._internal() {
     // Initialize Google Sign-In with client ID
@@ -163,7 +193,7 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<void> initialize() async {
     try {
-      AppLogger.user('🚀 STARTING UnifiedUserService initialization...');
+      AppLogger.user('STARTING UnifiedUserService initialization...');
 
       if (_isInitialized) {
         AppLogger.user('Already initialized');
@@ -173,6 +203,9 @@ class UnifiedUserService extends ChangeNotifier {
       AppLogger.user('Getting SharedPreferences...');
       _prefs = await SharedPreferences.getInstance();
       AppLogger.success('SharedPreferences obtained');
+
+      // Initialize API service
+      await _apiService.initialize();
 
       // Start listening to auth state changes
       AppLogger.user('Setting up auth state listener...');
@@ -198,11 +231,11 @@ class UnifiedUserService extends ChangeNotifier {
 
       _isInitialized = true;
       AppLogger.success(
-        '🎉 UnifiedUserService initialization complete. Current user: ${_currentUser?.username}',
+        'UnifiedUserService initialization complete. Current user: ${_currentUser?.username}',
       );
     } catch (e, stackTrace) {
       AppLogger.error(
-        '❌ UnifiedUserService initialization failed',
+        'UnifiedUserService initialization failed',
         e,
         stackTrace,
       );
@@ -223,33 +256,34 @@ class UnifiedUserService extends ChangeNotifier {
     try {
       AppLogger.user('Loading/creating user for UID: ${firebaseUser.uid}');
 
-      // Try to load existing user from Firestore
-      final doc = await _firestore
-          .collection('users')
-          .doc(firebaseUser.uid)
-          .get();
-      AppLogger.firebase('Firestore document exists: ${doc.exists}');
+      // Authenticate with backend using Firebase token
+      final idToken = await firebaseUser.getIdToken();
+      if (idToken != null) {
+        final authResult = await _apiService.authenticateWithFirebase(idToken);
 
-      if (doc.exists) {
-        // User exists, load their data
-        AppLogger.user('Loading existing user data');
-        _currentUser = UnifiedUser.fromFirestore(doc.data()!);
+        if (authResult != null) {
+          AppLogger.success('Backend authentication successful');
 
-        // Update last seen
-        await _updateLastSeen();
+          // Load user profile from backend
+          final userProfile = await _apiService.getCurrentUser();
+          if (userProfile != null) {
+            _currentUser = UnifiedUser.fromJson(userProfile);
+            AppLogger.success('User loaded from backend: ${_currentUser?.username}');
+          } else {
+            // Create local user object from Firebase data
+            _currentUser = await _createUserFromFirebase(firebaseUser);
+          }
+        } else {
+          // Backend auth failed, create local user
+          _currentUser = await _createUserFromFirebase(firebaseUser);
+        }
       } else {
-        // New user, create their profile
-        AppLogger.user('Creating new user profile');
-        await _createNewUser(firebaseUser);
+        // No token, create local user
+        _currentUser = await _createUserFromFirebase(firebaseUser);
       }
 
-      // Sync service will be initialized separately
-
       notifyListeners();
-      AppLogger.success(
-        'User loaded/created successfully: ${_currentUser?.username}',
-      );
-      
+
       // Initialize notification backend integration after user is loaded
       _initializeNotificationIntegration();
     } catch (e, stackTrace) {
@@ -257,234 +291,62 @@ class UnifiedUserService extends ChangeNotifier {
     }
   }
 
-  Future<void> _createNewUser(User firebaseUser) async {
-    try {
-      AppLogger.user('Creating new user: ${firebaseUser.uid}');
-
-      // Determine user type
-      UserType userType = UserType.anonymous;
-      if (firebaseUser.providerData.any(
-        (provider) => provider.providerId == 'google.com',
-      )) {
-        userType = UserType.google;
-      }
-
-      AppLogger.user('User type: $userType');
-
-      // Generate unique username
-      final username = await _generateUniqueUsername();
-      AppLogger.user('Generated username: $username');
-
-      // Create default preferences
-      final preferences = await _getDefaultPreferences();
-
-      // Check if we have local guest data to migrate
-      final guestData = await _getLocalGuestData();
-
-      _currentUser = UnifiedUser(
-        uid: firebaseUser.uid,
-        userType: userType,
-        username: username,
-        displayName: firebaseUser.displayName ?? username,
-        email: firebaseUser.email,
-        photoURL: firebaseUser.photoURL,
-        createdAt: DateTime.now(),
-        lastSeen: DateTime.now(),
-        highScore: guestData['highScore'] ?? 0,
-        totalGamesPlayed: guestData['totalGamesPlayed'] ?? 0,
-        totalScore: guestData['totalScore'] ?? 0,
-        level: guestData['level'] ?? 1,
-        preferences: preferences,
-      );
-
-      // Save to Firestore
-      await _saveUserToFirestore();
-      AppLogger.success('User saved to Firestore');
-
-      // Reserve username
-      await _usernameService.reserveUsername(username, firebaseUser.uid);
-      AppLogger.success('Username reserved');
-
-      // Clear local guest data if migrated
-      if (guestData.isNotEmpty) {
-        await _clearLocalGuestData();
-      }
-    } catch (e, stackTrace) {
-      AppLogger.user('Error creating user', e, stackTrace);
-      rethrow;
+  Future<UnifiedUser> _createUserFromFirebase(User firebaseUser) async {
+    // Determine user type
+    UserType userType = UserType.anonymous;
+    if (firebaseUser.providerData.any(
+      (provider) => provider.providerId == 'google.com',
+    )) {
+      userType = UserType.google;
     }
+
+    // Generate unique username
+    final username = await _generateUniqueUsername();
+
+    // Get default preferences
+    final preferences = await _getDefaultPreferences();
+
+    // Check if we have local guest data to migrate
+    final guestData = await _getLocalGuestData();
+
+    return UnifiedUser(
+      uid: firebaseUser.uid,
+      userType: userType,
+      username: username,
+      displayName: firebaseUser.displayName ?? username,
+      email: firebaseUser.email,
+      photoURL: firebaseUser.photoURL,
+      createdAt: DateTime.now(),
+      lastSeen: DateTime.now(),
+      highScore: guestData['highScore'] ?? 0,
+      totalGamesPlayed: guestData['totalGamesPlayed'] ?? 0,
+      totalScore: guestData['totalScore'] ?? 0,
+      level: guestData['level'] ?? 1,
+      preferences: preferences,
+    );
   }
 
   Future<String> _generateUniqueUsername() async {
     final adjectives = [
-      'Swift',
-      'Quick',
-      'Fast',
-      'Sneaky',
-      'Sharp',
-      'Cool',
-      'Epic',
-      'Super',
-      'Mega',
-      'Ultra',
-      'Pro',
-      'Elite',
-      'Master',
-      'Ace',
-      'Clever',
-      'Smart',
-      'Brave',
-      'Savage',
-      'Mighty',
-      'Crazy',
-      'Silent',
-      'Deadly',
-      'Furious',
-      'Stealthy',
-      'Fearless',
-      'Wicked',
-      'Wild',
-      'Dark',
-      'Glorious',
-      'Lucky',
-      'Blazing',
-      'Icy',
-      'Stormy',
-      'Golden',
-      'Shadow',
-      'Crimson',
-      'Electric',
-      'Phantom',
-      'Cosmic',
-      'Galactic',
-      'Infernal',
-      'Radiant',
-      'Silver',
-      'Iron',
-      'Neon',
-      'Toxic',
-      'Venomous',
-      'Turbo',
-      'Dynamic',
-      'Atomic',
-      'Frozen',
-      'Legendary',
-      'Supreme',
-      'Obsidian',
-      'Lunar',
-      'Solar',
-      'Stellar',
-      'Epic',
-      'Cyber',
-      'Virtual',
-      'Mystic',
-      'Enchanted',
-      'Chaotic',
-      'Noble',
-      'Savvy',
+      'Swift', 'Quick', 'Fast', 'Sneaky', 'Sharp', 'Cool', 'Epic', 'Super',
+      'Mega', 'Ultra', 'Pro', 'Elite', 'Master', 'Ace', 'Clever', 'Smart',
+      'Brave', 'Bold', 'Wild', 'Fierce', 'Mighty', 'Strong', 'Agile', 'Smooth',
+      'Silent', 'Shadow', 'Golden', 'Silver', 'Diamond', 'Ruby', 'Fire', 'Ice',
     ];
 
     final nouns = [
-      'Snake',
-      'Viper',
-      'Python',
-      'Cobra',
-      'Serpent',
-      'Player',
-      'Gamer',
-      'Champion',
-      'Hunter',
-      'Racer',
-      'Striker',
-      'Warrior',
-      'Hero',
-      'Legend',
-      'Beast',
-      'Dragon',
-      'Wolf',
-      'Tiger',
-      'Panther',
-      'Eagle',
-      'Falcon',
-      'Hawk',
-      'Shark',
-      'Leopard',
-      'Lion',
-      'Bear',
-      'Cheetah',
-      'Rogue',
-      'Knight',
-      'Samurai',
-      'Ninja',
-      'Assassin',
-      'Viking',
-      'Pirate',
-      'Wizard',
-      'Witch',
-      'Mage',
-      'Druid',
-      'Paladin',
-      'Demon',
-      'Angel',
-      'Reaper',
-      'Phantom',
-      'Ghost',
-      'Specter',
-      'Zombie',
-      'Ghoul',
-      'Ogre',
-      'Goblin',
-      'Elf',
-      'Orc',
-      'Troll',
-      'Golem',
-      'Phoenix',
-      'Hydra',
-      'Kraken',
-      'Cyclone',
-      'Tornado',
-      'Blizzard',
-      'Storm',
-      'Bolt',
-      'Inferno',
-      'Meteor',
-      'Comet',
-      'Galaxy',
-      'Nebula',
-      'Asteroid',
-      'Star',
-      'Nova',
-      'Titan',
-      'Colossus',
-      'Juggernaut',
-      'Destroyer',
-      'Overlord',
-      'Champion',
-      'Gladiator',
-      'Sentinel',
-      'Guardian',
-      'Ranger',
+      'Snake', 'Viper', 'Python', 'Cobra', 'Serpent', 'Player', 'Gamer',
+      'Champion', 'Hunter', 'Racer', 'Striker', 'Warrior', 'Hero', 'Legend',
+      'Dragon', 'Phoenix', 'Eagle', 'Hawk', 'Wolf', 'Tiger', 'Lion', 'Bear',
+      'Fox', 'Shark', 'Panther', 'Falcon', 'Raven', 'Knight', 'Ninja', 'Samurai',
     ];
 
     final random = Random();
+    final adjective = adjectives[random.nextInt(adjectives.length)];
+    final noun = nouns[random.nextInt(nouns.length)];
+    final number = random.nextInt(9999) + 1;
 
-    for (int attempt = 0; attempt < 10; attempt++) {
-      final adjective = adjectives[random.nextInt(adjectives.length)];
-      final noun = nouns[random.nextInt(nouns.length)];
-      final number = random.nextInt(9999) + 1;
-      final username = '${adjective}_${noun}_$number';
-
-      // Check if username is available
-      final validation = await _usernameService.validateUsernameComplete(
-        username,
-      );
-      if (validation.isValid) {
-        return username;
-      }
-    }
-
-    // Fallback: use Firebase UID with prefix
-    return 'Player_${_auth.currentUser?.uid.substring(0, 8) ?? Random().nextInt(99999)}';
+    return '${adjective}_${noun}_$number';
   }
 
   Future<Map<String, dynamic>> _getDefaultPreferences() async {
@@ -518,6 +380,7 @@ class UnifiedUserService extends ChangeNotifier {
     return {};
   }
 
+  // ignore: unused_element - May be useful later for guest data migration
   Future<void> _clearLocalGuestData() async {
     if (_prefs == null) return;
 
@@ -525,79 +388,39 @@ class UnifiedUserService extends ChangeNotifier {
     await _prefs!.remove('has_initialized_guest');
   }
 
-  Future<void> _saveUserToFirestore() async {
-    if (_currentUser == null) {
-      AppLogger.user('Cannot save - no current user');
-      return;
-    }
-
-    try {
-      AppLogger.firebase('Saving user to Firestore: ${_currentUser!.uid}');
-      AppLogger.logObject('User data', _currentUser!.toFirestore());
-
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .set(_currentUser!.toFirestore(), SetOptions(merge: true));
-
-      AppLogger.success('Successfully saved to Firestore');
-    } catch (e, stackTrace) {
-      AppLogger.firebase('Error saving user to Firestore', e, stackTrace);
-      // Don't rethrow to prevent app crashes, but log the error
-    }
-  }
-
-  Future<void> _updateLastSeen() async {
-    if (_currentUser == null) return;
-
-    _currentUser = _currentUser!.copyWith(lastSeen: DateTime.now());
-
-    // Just save directly to Firestore for now, avoiding DataSyncService dependency
-    try {
-      await _firestore.collection('users').doc(_currentUser!.uid).update({
-        'lastSeen': Timestamp.now(),
-      });
-    } catch (e) {
-      AppLogger.firebase('Error updating last seen', e);
-    }
-  }
-
   // Public methods
 
   Future<bool> _signInAnonymously() async {
     try {
-      AppLogger.firebase('🔐 Attempting anonymous sign-in...');
+      AppLogger.firebase('Attempting anonymous sign-in...');
 
       final result = await _auth.signInAnonymously();
 
-      AppLogger.success('🎯 Anonymous sign-in successful: ${result.user?.uid}');
-      AppLogger.user(
-        'User providers: ${result.user?.providerData.map((p) => p.providerId).toList()}',
-      );
+      AppLogger.success('Anonymous sign-in successful: ${result.user?.uid}');
 
       return true;
     } catch (e, stackTrace) {
-      AppLogger.firebase('❌ Error signing in anonymously', e, stackTrace);
+      AppLogger.firebase('Error signing in anonymously', e, stackTrace);
       return false;
     }
   }
 
   Future<bool> signInWithGoogle() async {
     try {
-      AppLogger.user('🔐 Starting Google Sign-In from UnifiedUserService...');
+      AppLogger.user('Starting Google Sign-In from UnifiedUserService...');
 
       // Check if authentication is supported on this platform
       if (_googleSignIn.supportsAuthenticate()) {
         // Use authenticate method for supported platforms
         final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-        
+
         AppLogger.user('Google user signed in: ${googleUser.email}');
 
         // Obtain the auth details from the request
         final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
         if (googleAuth.idToken == null) {
-          AppLogger.user('❌ Failed to get Google ID token');
+          AppLogger.user('Failed to get Google ID token');
           return false;
         }
 
@@ -608,23 +431,20 @@ class UnifiedUserService extends ChangeNotifier {
 
         AppLogger.user('Creating Firebase credential...');
 
-        // Note: Anonymous user data migration will be handled automatically
-        // by the auth state change listener and user profile creation process
-
         // Sign in to Firebase with the credential
         final UserCredential result = await _auth.signInWithCredential(credential);
-        
+
         if (result.user != null) {
           AppLogger.success('Firebase sign-in successful: ${result.user!.uid}');
-          
+
           // The auth state change listener will handle creating the user profile
           // and migrating data if needed
           return true;
         }
-        
+
         return false;
       } else {
-        AppLogger.user('❌ Google Sign-In authenticate not supported on this platform');
+        AppLogger.user('Google Sign-In authenticate not supported on this platform');
         return false;
       }
     } on FirebaseAuthException catch (e) {
@@ -640,21 +460,12 @@ class UnifiedUserService extends ChangeNotifier {
     if (_currentUser == null) return false;
 
     try {
-      // Validate username
-      final validation = await _usernameService.validateUsernameComplete(
-        newUsername,
-      );
-      if (!validation.isValid) return false;
+      // Update via backend API
+      final result = await _apiService.setUsername(newUsername);
+      if (result == null) return false;
 
-      // Release old username and reserve new one
-      await _usernameService.releaseUsername(_currentUser!.username);
-      await _usernameService.reserveUsername(newUsername, _currentUser!.uid);
-
-      // Update user
+      // Update local user
       _currentUser = _currentUser!.copyWith(username: newUsername);
-
-      // Save directly to Firestore
-      await _saveUserToFirestore();
 
       notifyListeners();
       return true;
@@ -684,8 +495,20 @@ class UnifiedUserService extends ChangeNotifier {
       level: level ?? _currentUser!.level,
     );
 
-    // Save to Firestore directly
-    await _saveUserToFirestore();
+    // Update via backend API
+    if (_apiService.isAuthenticated) {
+      await _apiService.updateProfile({
+        'high_score': _currentUser!.highScore,
+        'total_games_played': _currentUser!.totalGamesPlayed,
+        'total_score': _currentUser!.totalScore,
+        'level': _currentUser!.level,
+      });
+
+      // Also submit the score
+      if (newHighScore != null) {
+        await _apiService.submitScore(score: newHighScore);
+      }
+    }
 
     notifyListeners();
   }
@@ -698,18 +521,20 @@ class UnifiedUserService extends ChangeNotifier {
 
     _currentUser = _currentUser!.copyWith(preferences: updatedPrefs);
 
-    // Save to Firestore directly
-    await _saveUserToFirestore();
+    // Update via backend API
+    if (_apiService.isAuthenticated) {
+      await _apiService.updateProfile({
+        'preferences': updatedPrefs,
+      });
+    }
 
     notifyListeners();
   }
 
   Future<void> signOut() async {
     try {
-      if (_currentUser != null) {
-        // Release username
-        await _usernameService.releaseUsername(_currentUser!.username);
-      }
+      // Logout from backend
+      await _apiService.logout();
 
       // Sign out from Google Sign-In as well
       await _googleSignIn.signOut();
@@ -730,7 +555,7 @@ class UnifiedUserService extends ChangeNotifier {
     try {
       // Use a brief delay to ensure notification service is fully initialized
       await Future.delayed(const Duration(seconds: 1));
-      
+
       // Initialize backend integration
       await NotificationService().initializeBackendIntegration();
     } catch (e) {

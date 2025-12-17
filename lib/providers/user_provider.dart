@@ -32,8 +32,8 @@ class UserProvider extends ChangeNotifier {
   // Get current user object (unified user)
   UnifiedUser? get currentUser => _userService?.currentUser;
   
-  Map<String, dynamic>? get userProfile => _userService?.currentUser != null 
-      ? _userService!.currentUser!.toFirestore() : null;
+  Map<String, dynamic>? get userProfile => _userService?.currentUser != null
+      ? _userService!.currentUser!.toJson() : null;
 
   // Initialize by getting UnifiedUserService from context
   void initialize(BuildContext context) {

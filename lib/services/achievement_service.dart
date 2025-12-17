@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:snake_classic/models/achievement.dart';
-import 'package:snake_classic/services/auth_service.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 
 class AchievementService extends ChangeNotifier {
@@ -10,22 +9,21 @@ class AchievementService extends ChangeNotifier {
   factory AchievementService() => _instance;
   AchievementService._internal();
 
-  final AuthService _authService = AuthService();
+  final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<Achievement> _achievements = [];
   final List<Achievement> _recentUnlocks = [];
 
   List<Achievement> get achievements => _achievements;
   List<Achievement> get recentUnlocks => _recentUnlocks;
-  
+
   int get totalAchievementPoints => _achievements
       .where((a) => a.isUnlocked)
       .fold(0, (total, a) => total + a.points);
 
-  double get completionPercentage => _achievements.isEmpty 
-    ? 0.0 
+  double get completionPercentage => _achievements.isEmpty
+    ? 0.0
     : _achievements.where((a) => a.isUnlocked).length / _achievements.length;
 
   Future<void> initialize() async {
@@ -36,16 +34,13 @@ class AchievementService extends ChangeNotifier {
 
   Future<void> _loadUserProgress() async {
     try {
-      if (_authService.isSignedIn) {
-        // Load from Firebase
-        final doc = await _firestore
-            .collection('achievements')
-            .doc(_authService.currentUser!.uid)
-            .get();
+      if (_apiService.isAuthenticated) {
+        // Load from backend API
+        final response = await _apiService.getUserAchievements();
 
-        if (doc.exists) {
-          final data = doc.data()!;
-          _updateAchievementsFromData(data);
+        if (response != null && response['achievements'] != null) {
+          final backendAchievements = List<Map<String, dynamic>>.from(response['achievements']);
+          _updateAchievementsFromBackend(backendAchievements);
         }
       } else {
         // Load from local storage for guest users
@@ -56,7 +51,31 @@ class AchievementService extends ChangeNotifier {
       }
     } catch (e) {
       if (kDebugMode) {
-        // Error:Error loading achievement progress: $e');
+        print('Error loading achievement progress: $e');
+      }
+    }
+  }
+
+  void _updateAchievementsFromBackend(List<Map<String, dynamic>> backendAchievements) {
+    for (int i = 0; i < _achievements.length; i++) {
+      final achievement = _achievements[i];
+
+      // Find matching backend achievement
+      final backendData = backendAchievements.firstWhere(
+        (a) => a['achievement_id'] == achievement.id || a['achievementId'] == achievement.id,
+        orElse: () => {},
+      );
+
+      if (backendData.isNotEmpty) {
+        _achievements[i] = achievement.copyWith(
+          isUnlocked: backendData['is_unlocked'] ?? backendData['isUnlocked'] ?? false,
+          currentProgress: backendData['current_progress'] ?? backendData['currentProgress'] ?? 0,
+          unlockedAt: backendData['unlocked_at'] != null
+            ? DateTime.tryParse(backendData['unlocked_at'].toString())
+            : backendData['unlockedAt'] != null
+              ? DateTime.tryParse(backendData['unlockedAt'].toString())
+              : null,
+        );
       }
     }
   }
@@ -65,12 +84,12 @@ class AchievementService extends ChangeNotifier {
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
       final savedData = data[achievement.id] as Map<String, dynamic>?;
-      
+
       if (savedData != null) {
         _achievements[i] = achievement.copyWith(
           isUnlocked: savedData['isUnlocked'] ?? false,
           currentProgress: savedData['currentProgress'] ?? 0,
-          unlockedAt: savedData['unlockedAt'] != null 
+          unlockedAt: savedData['unlockedAt'] != null
             ? DateTime.parse(savedData['unlockedAt'])
             : null,
         );
@@ -81,7 +100,7 @@ class AchievementService extends ChangeNotifier {
   Future<void> _saveProgress() async {
     try {
       final progressData = <String, dynamic>{};
-      
+
       for (final achievement in _achievements) {
         progressData[achievement.id] = {
           'isUnlocked': achievement.isUnlocked,
@@ -90,29 +109,33 @@ class AchievementService extends ChangeNotifier {
         };
       }
 
-      if (_authService.isSignedIn) {
-        // Save to Firebase
-        await _firestore
-            .collection('achievements')
-            .doc(_authService.currentUser!.uid)
-            .set(progressData, SetOptions(merge: true));
+      if (_apiService.isAuthenticated) {
+        // Sync with backend - update each changed achievement
+        for (final achievement in _achievements) {
+          if (achievement.currentProgress > 0) {
+            await _apiService.updateAchievementProgress(
+              achievementId: achievement.id,
+              progressIncrement: 0, // Backend tracks absolute progress
+            );
+          }
+        }
       } else {
         // Save locally for guest users
         await _storageService.saveAchievements(jsonEncode(progressData));
       }
     } catch (e) {
       if (kDebugMode) {
-        // Error:Error saving achievement progress: $e');
+        print('Error saving achievement progress: $e');
       }
     }
   }
 
   Future<List<Achievement>> checkScoreAchievements(int score) async {
     final newUnlocks = <Achievement>[];
-    
+
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
-      
+
       if (achievement.type == AchievementType.score && !achievement.isUnlocked) {
         if (score >= achievement.targetValue) {
           _achievements[i] = achievement.copyWith(
@@ -121,6 +144,14 @@ class AchievementService extends ChangeNotifier {
             unlockedAt: DateTime.now(),
           );
           newUnlocks.add(_achievements[i]);
+
+          // Update backend
+          if (_apiService.isAuthenticated) {
+            await _apiService.updateAchievementProgress(
+              achievementId: achievement.id,
+              progressIncrement: achievement.targetValue,
+            );
+          }
         } else {
           _achievements[i] = achievement.copyWith(
             currentProgress: score,
@@ -140,10 +171,10 @@ class AchievementService extends ChangeNotifier {
 
   Future<List<Achievement>> checkGamePlayedAchievements(int totalGames) async {
     final newUnlocks = <Achievement>[];
-    
+
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
-      
+
       if (achievement.type == AchievementType.games && !achievement.isUnlocked) {
         if (totalGames >= achievement.targetValue) {
           _achievements[i] = achievement.copyWith(
@@ -152,6 +183,14 @@ class AchievementService extends ChangeNotifier {
             unlockedAt: DateTime.now(),
           );
           newUnlocks.add(_achievements[i]);
+
+          // Update backend
+          if (_apiService.isAuthenticated) {
+            await _apiService.updateAchievementProgress(
+              achievementId: achievement.id,
+              progressIncrement: achievement.targetValue,
+            );
+          }
         } else {
           _achievements[i] = achievement.copyWith(
             currentProgress: totalGames,
@@ -171,10 +210,10 @@ class AchievementService extends ChangeNotifier {
 
   Future<List<Achievement>> checkSurvivalAchievements(int survivalTime) async {
     final newUnlocks = <Achievement>[];
-    
+
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
-      
+
       if (achievement.type == AchievementType.survival && !achievement.isUnlocked) {
         if (survivalTime >= achievement.targetValue) {
           _achievements[i] = achievement.copyWith(
@@ -183,6 +222,14 @@ class AchievementService extends ChangeNotifier {
             unlockedAt: DateTime.now(),
           );
           newUnlocks.add(_achievements[i]);
+
+          // Update backend
+          if (_apiService.isAuthenticated) {
+            await _apiService.updateAchievementProgress(
+              achievementId: achievement.id,
+              progressIncrement: achievement.targetValue,
+            );
+          }
         } else if (survivalTime > achievement.currentProgress) {
           _achievements[i] = achievement.copyWith(
             currentProgress: survivalTime,
@@ -208,10 +255,10 @@ class AchievementService extends ChangeNotifier {
     int? noWallGames,
   }) async {
     final newUnlocks = <Achievement>[];
-    
+
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
-      
+
       if (achievement.type == AchievementType.special && !achievement.isUnlocked) {
         bool shouldUnlock = false;
         int newProgress = achievement.currentProgress;
@@ -257,6 +304,14 @@ class AchievementService extends ChangeNotifier {
             unlockedAt: DateTime.now(),
           );
           newUnlocks.add(_achievements[i]);
+
+          // Update backend
+          if (_apiService.isAuthenticated) {
+            await _apiService.updateAchievementProgress(
+              achievementId: achievement.id,
+              progressIncrement: newProgress,
+            );
+          }
         } else if (newProgress != achievement.currentProgress) {
           _achievements[i] = achievement.copyWith(
             currentProgress: newProgress,

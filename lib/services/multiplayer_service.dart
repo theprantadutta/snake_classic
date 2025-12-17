@@ -1,30 +1,27 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
-import 'package:snake_classic/services/unified_user_service.dart';
-// Services commented out until methods are implemented
-// import 'package:snake_classic/services/leaderboard_service.dart';
-// import 'package:snake_classic/services/notification_service.dart';
-import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/services/api_service.dart';
 
 class MultiplayerService {
   static MultiplayerService? _instance;
-  final UnifiedUserService _userService = UnifiedUserService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  // Services commented out until methods are implemented
-  // final LeaderboardService _leaderboardService = LeaderboardService();
-  // final NotificationService _notificationService = NotificationService();
-  
-  // Stream subscriptions
-  StreamSubscription? _gameStreamSubscription;
-  StreamSubscription? _gameActionsSubscription;
-  
+  final ApiService _apiService = ApiService();
+
+  // WebSocket connection
+  WebSocketChannel? _channel;
+  StreamSubscription? _wsSubscription;
+
   // Current game state
   MultiplayerGame? _currentGame;
   String? _currentGameId;
+
+  // Stream controllers for game events
+  final _gameStreamController = StreamController<MultiplayerGame?>.broadcast();
+  final _gameActionsController = StreamController<MultiplayerGameAction>.broadcast();
 
   MultiplayerService._internal();
 
@@ -45,40 +42,23 @@ class MultiplayerService {
     int maxPlayers = 2,
   }) async {
     try {
-      final currentUserId = _userService.currentUser?.uid;
-      final currentUserProfile = _userService.currentUser;
-      if (currentUserId == null || currentUserProfile == null) return null;
-
-      final gameId = _firestore.collection('multiplayerGames').doc().id;
-      final roomCode = isPrivate ? _generateRoomCode() : null;
-      
-      final hostPlayer = MultiplayerPlayer(
-        userId: currentUserId,
-        displayName: currentUserProfile.username.isNotEmpty ? currentUserProfile.username : currentUserProfile.displayName,
-        photoUrl: currentUserProfile.photoURL,
-        status: PlayerStatus.waiting,
-        snake: _generateInitialSnakePosition(0, mode.defaultSettings['boardSize'] ?? 20),
-        currentDirection: Direction.right,
-      );
-
-      final game = MultiplayerGame(
-        id: gameId,
-        mode: mode,
-        status: MultiplayerGameStatus.waiting,
-        players: [hostPlayer],
-        createdAt: DateTime.now(),
+      final response = await _apiService.createMultiplayerGame(
+        mode: mode.name,
         maxPlayers: maxPlayers,
-        isPrivate: isPrivate,
-        roomCode: roomCode,
-        gameSettings: mode.defaultSettings,
+        gridSize: mode.defaultSettings['boardSize'] ?? 20,
+        speed: mode.defaultSettings['speed'] ?? 100,
       );
 
-      await _firestore.collection('multiplayerGames').doc(gameId).set(game.toJson());
-      
-      // Start listening to this game
-      await joinGame(gameId);
-      
-      return gameId;
+      if (response == null) return null;
+
+      final gameId = response['game_id'] ?? response['id'];
+      if (gameId != null) {
+        _currentGameId = gameId.toString();
+        await _connectWebSocket(_currentGameId!);
+        return _currentGameId;
+      }
+
+      return null;
     } catch (e) {
       if (kDebugMode) {
         print('Error creating multiplayer game: $e');
@@ -90,66 +70,18 @@ class MultiplayerService {
   /// Join a game by ID or room code
   Future<bool> joinGame(String gameIdOrRoomCode) async {
     try {
-      final currentUserId = _userService.currentUser?.uid;
-      final currentUserProfile = _userService.currentUser;
-      if (currentUserId == null || currentUserProfile == null) return false;
+      final response = await _apiService.joinMultiplayerGame(gameIdOrRoomCode);
 
-      // First, try to find the game by ID
-      DocumentSnapshot gameDoc = await _firestore
-          .collection('multiplayerGames')
-          .doc(gameIdOrRoomCode)
-          .get();
+      if (response == null) return false;
 
-      // If not found, try to find by room code
-      if (!gameDoc.exists) {
-        final roomQuery = await _firestore
-            .collection('multiplayerGames')
-            .where('roomCode', isEqualTo: gameIdOrRoomCode.toUpperCase())
-            .where('status', whereIn: [MultiplayerGameStatus.waiting.name, MultiplayerGameStatus.starting.name])
-            .limit(1)
-            .get();
-
-        if (roomQuery.docs.isEmpty) return false;
-        gameDoc = roomQuery.docs.first;
-      }
-
-      if (!gameDoc.exists) return false;
-
-      final game = MultiplayerGame.fromJson(gameDoc.data() as Map<String, dynamic>);
-      
-      // Check if game is joinable
-      if (game.isFull || game.isFinished) return false;
-      
-      // Check if user is already in the game
-      if (game.getPlayer(currentUserId) != null) {
-        _currentGameId = game.id;
-        _currentGame = game;
-        _startListeningToGame();
+      final gameId = response['game_id'] ?? response['id'];
+      if (gameId != null) {
+        _currentGameId = gameId.toString();
+        await _connectWebSocket(_currentGameId!);
         return true;
       }
 
-      // Add player to the game
-      final playerIndex = game.players.length;
-      final newPlayer = MultiplayerPlayer(
-        userId: currentUserId,
-        displayName: currentUserProfile.username.isNotEmpty ? currentUserProfile.username : (currentUserProfile.displayName.isNotEmpty ? currentUserProfile.displayName : 'Player ${playerIndex + 1}'),
-        photoUrl: currentUserProfile.photoURL,
-        status: PlayerStatus.waiting,
-        snake: _generateInitialSnakePosition(playerIndex, game.gameSettings['boardSize'] ?? 20),
-        currentDirection: Direction.right,
-      );
-
-      final updatedPlayers = [...game.players, newPlayer];
-      
-      await _firestore.collection('multiplayerGames').doc(game.id).update({
-        'players': updatedPlayers.map((p) => p.toJson()).toList(),
-      });
-
-      _currentGameId = game.id;
-      _currentGame = game.copyWith(players: updatedPlayers);
-      _startListeningToGame();
-      
-      return true;
+      return false;
     } catch (e) {
       if (kDebugMode) {
         print('Error joining multiplayer game: $e');
@@ -161,57 +93,23 @@ class MultiplayerService {
   /// Leave the current game
   Future<void> leaveGame() async {
     try {
-      final currentUserId = _userService.currentUser?.uid;
-      if (currentUserId == null || _currentGame == null) return;
-
-      // Remove player from the game or mark as disconnected
-      final updatedPlayers = _currentGame!.players
-          .where((player) => player.userId != currentUserId)
-          .toList();
-
-      if (updatedPlayers.isEmpty) {
-        // If no players left, delete the game
-        await _firestore.collection('multiplayerGames').doc(_currentGameId!).delete();
-      } else {
-        // Update game without this player
-        await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
-          'players': updatedPlayers.map((p) => p.toJson()).toList(),
-          'status': MultiplayerGameStatus.abandoned.name,
-        });
-      }
+      _sendWebSocketMessage({'action': 'leave'});
     } catch (e) {
       if (kDebugMode) {
         print('Error leaving game: $e');
       }
     } finally {
-      _stopListeningToGame();
+      _disconnectWebSocket();
       _currentGame = null;
       _currentGameId = null;
+      _gameStreamController.add(null);
     }
   }
 
   /// Mark player as ready
   Future<bool> markPlayerReady() async {
     try {
-      final currentUserId = _userService.currentUser?.uid;
-      if (currentUserId == null || _currentGame == null) return false;
-
-      final updatedPlayers = _currentGame!.players.map((player) {
-        if (player.userId == currentUserId) {
-          return player.copyWith(status: PlayerStatus.ready);
-        }
-        return player;
-      }).toList();
-
-      await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
-        'players': updatedPlayers.map((p) => p.toJson()).toList(),
-      });
-
-      // Check if all players are ready to start the game
-      if (updatedPlayers.length >= 2 && updatedPlayers.every((p) => p.status == PlayerStatus.ready)) {
-        await _startGame();
-      }
-
+      _sendWebSocketMessage({'action': 'ready'});
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -224,19 +122,11 @@ class MultiplayerService {
   /// Send player action (direction change, game update)
   Future<void> sendPlayerAction(MultiplayerGameAction action) async {
     try {
-      if (_currentGameId == null) return;
-
-      // Add action to game actions subcollection
-      await _firestore
-          .collection('multiplayerGames')
-          .doc(_currentGameId!)
-          .collection('actions')
-          .add(action.toJson());
-
-      // For direction changes, also update the player's current direction in the main game document
-      if (action.actionType == 'changeDirection') {
-        await _updatePlayerDirection(action.playerId, action.data['direction']);
-      }
+      _sendWebSocketMessage({
+        'action': action.actionType,
+        'data': action.data,
+        'timestamp': action.timestamp.toIso8601String(),
+      });
     } catch (e) {
       if (kDebugMode) {
         print('Error sending player action: $e');
@@ -251,23 +141,11 @@ class MultiplayerService {
     required PlayerStatus status,
   }) async {
     try {
-      final currentUserId = _userService.currentUser?.uid;
-      if (currentUserId == null || _currentGame == null) return;
-
-      final updatedPlayers = _currentGame!.players.map((player) {
-        if (player.userId == currentUserId) {
-          return player.copyWith(
-            snake: snake,
-            score: score,
-            status: status,
-            lastUpdate: DateTime.now(),
-          );
-        }
-        return player;
-      }).toList();
-
-      await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
-        'players': updatedPlayers.map((p) => p.toJson()).toList(),
+      _sendWebSocketMessage({
+        'action': 'update_state',
+        'snake': snake.map((p) => p.toJson()).toList(),
+        'score': score,
+        'status': status.name,
       });
     } catch (e) {
       if (kDebugMode) {
@@ -279,18 +157,9 @@ class MultiplayerService {
   /// Get available games to join
   Future<List<MultiplayerGame>> getAvailableGames() async {
     try {
-      final query = await _firestore
-          .collection('multiplayerGames')
-          .where('status', isEqualTo: MultiplayerGameStatus.waiting.name)
-          .where('isPrivate', isEqualTo: false)
-          .orderBy('createdAt', descending: true)
-          .limit(20)
-          .get();
-
-      return query.docs
-          .map((doc) => MultiplayerGame.fromJson(doc.data()))
-          .where((game) => !game.isFull)
-          .toList();
+      // For now, we don't have a list endpoint, so return empty
+      // The backend would need a /multiplayer/available endpoint
+      return [];
     } catch (e) {
       if (kDebugMode) {
         print('Error getting available games: $e');
@@ -300,166 +169,125 @@ class MultiplayerService {
   }
 
   /// Stream of current game updates
-  Stream<MultiplayerGame?> get gameStream {
-    if (_currentGameId == null) {
-      return Stream.value(null);
-    }
-
-    return _firestore
-        .collection('multiplayerGames')
-        .doc(_currentGameId!)
-        .snapshots()
-        .map((doc) {
-      if (!doc.exists) return null;
-      final game = MultiplayerGame.fromJson(doc.data()!);
-      _currentGame = game;
-      return game;
-    });
-  }
+  Stream<MultiplayerGame?> get gameStream => _gameStreamController.stream;
 
   /// Stream of game actions for real-time updates
-  Stream<MultiplayerGameAction> get gameActionsStream {
-    if (_currentGameId == null) {
-      return const Stream.empty();
-    }
+  Stream<MultiplayerGameAction> get gameActionsStream => _gameActionsController.stream;
 
-    return _firestore
-        .collection('multiplayerGames')
-        .doc(_currentGameId!)
-        .collection('actions')
-        .orderBy('timestamp', descending: false)
-        .snapshots()
-        .expand((snapshot) => snapshot.docChanges)
-        .where((change) => change.type == DocumentChangeType.added)
-        .map((change) => MultiplayerGameAction.fromJson(change.doc.data()!));
-  }
+  // WebSocket management
 
-  // Private helper methods
-
-  void _startListeningToGame() {
-    _stopListeningToGame();
-    
-    // Listen to game updates
-    _gameStreamSubscription = gameStream.listen((game) {
-      if (game != null) {
-        _currentGame = game;
-        
-        // Check for game end conditions
-        if (game.isFinished) {
-          _handleGameFinished(game);
-        }
-      }
-    });
-
-    // Listen to game actions
-    _gameActionsSubscription = gameActionsStream.listen((action) {
-      _handleGameAction(action);
-    });
-  }
-
-  void _stopListeningToGame() {
-    _gameStreamSubscription?.cancel();
-    _gameActionsSubscription?.cancel();
-    _gameStreamSubscription = null;
-    _gameActionsSubscription = null;
-  }
-
-  Future<void> _startGame() async {
+  Future<void> _connectWebSocket(String gameId) async {
     try {
-      if (_currentGame == null) return;
+      final wsUrl = _apiService.getMultiplayerWebSocketUrl(gameId);
 
-      // Initialize game state
-      final boardSize = _currentGame!.gameSettings['boardSize'] ?? 20;
-      final initialFood = _generateFoodPosition(boardSize, _currentGame!.players);
+      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
-      final updatedPlayers = _currentGame!.players.map((player) {
-        return player.copyWith(status: PlayerStatus.playing);
-      }).toList();
-
-      await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
-        'status': MultiplayerGameStatus.playing.name,
-        'startedAt': FieldValue.serverTimestamp(),
-        'players': updatedPlayers.map((p) => p.toJson()).toList(),
-        'foodPosition': initialFood.toJson(),
-      });
-      
-      // Update current game instance
-      _currentGame = _currentGame!.copyWith(
-        status: MultiplayerGameStatus.playing,
-        players: updatedPlayers,
-        foodPosition: initialFood,
+      _wsSubscription = _channel!.stream.listen(
+        _handleWebSocketMessage,
+        onError: _handleWebSocketError,
+        onDone: _handleWebSocketDone,
       );
+
+      if (kDebugMode) {
+        print('Connected to multiplayer WebSocket: $wsUrl');
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('Error starting game: $e');
+        print('Error connecting to WebSocket: $e');
       }
     }
   }
 
-  Future<void> _updatePlayerDirection(String playerId, String directionName) async {
+  void _disconnectWebSocket() {
+    _wsSubscription?.cancel();
+    _wsSubscription = null;
+    _channel?.sink.close();
+    _channel = null;
+  }
+
+  void _sendWebSocketMessage(Map<String, dynamic> message) {
+    if (_channel != null) {
+      _channel!.sink.add(jsonEncode(message));
+    }
+  }
+
+  void _handleWebSocketMessage(dynamic message) {
     try {
-      if (_currentGame == null) return;
+      final data = jsonDecode(message.toString());
+      final type = data['type'] as String?;
 
-      final direction = Direction.values.firstWhere((d) => d.name == directionName);
-      final updatedPlayers = _currentGame!.players.map((player) {
-        if (player.userId == playerId) {
-          return player.copyWith(currentDirection: direction);
-        }
-        return player;
-      }).toList();
+      switch (type) {
+        case 'game_state':
+          _currentGame = MultiplayerGame.fromJson(data['game']);
+          _gameStreamController.add(_currentGame);
+          break;
 
-      await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
-        'players': updatedPlayers.map((p) => p.toJson()).toList(),
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error updating player direction: $e');
-      }
-    }
-  }
+        case 'player_action':
+          final action = MultiplayerGameAction.fromJson(data);
+          _gameActionsController.add(action);
+          break;
 
-  void _handleGameAction(MultiplayerGameAction action) {
-    // Handle real-time game actions
-    if (kDebugMode) {
-      print('Game action received: ${action.actionType} from ${action.playerId}');
-    }
-  }
+        case 'game_started':
+          _currentGame = _currentGame?.copyWith(
+            status: MultiplayerGameStatus.playing,
+          );
+          _gameStreamController.add(_currentGame);
+          break;
 
-  void _handleGameFinished(MultiplayerGame game) async {
-    // Handle game finished
-    if (kDebugMode) {
-      print('Game finished: ${game.id}');
-    }
-    
-    try {
-      // Update leaderboards with final scores
-      for (final player in game.players) {
-        if (player.score > 0) {
-          // await _leaderboardService.submitScore( // TODO: Implement
-          //   player.userId, 
-          //   player.displayName, 
-          //   player.score,
-          //   gameMode: 'multiplayer_${game.mode.name}'
-          // );
-        }
-        
-        // Send game finished notification to players
-        if (game.winnerId == player.userId) {
-          // _notificationService.sendGameWonNotification(player.userId, player.score); // TODO: Implement
-        } else {
-          // _notificationService.sendGameLostNotification(player.userId, player.score); // TODO: Implement
-        }
+        case 'game_ended':
+          _currentGame = _currentGame?.copyWith(
+            status: MultiplayerGameStatus.finished,
+            winnerId: data['winner_id'],
+          );
+          _gameStreamController.add(_currentGame);
+          break;
+
+        case 'player_joined':
+        case 'player_left':
+        case 'player_ready':
+          // Update game state with new player info
+          if (data['game'] != null) {
+            _currentGame = MultiplayerGame.fromJson(data['game']);
+            _gameStreamController.add(_currentGame);
+          }
+          break;
+
+        case 'food_eaten':
+          // Handle food position update
+          if (data['new_food_position'] != null) {
+            final newFood = Position.fromJson(data['new_food_position']);
+            _currentGame = _currentGame?.copyWith(foodPosition: newFood);
+            _gameStreamController.add(_currentGame);
+          }
+          break;
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error handling game finished: $e');
+        print('Error handling WebSocket message: $e');
       }
     }
   }
 
-  List<Position> _generateInitialSnakePosition(int playerIndex, int boardSize) {
+  void _handleWebSocketError(dynamic error) {
+    if (kDebugMode) {
+      print('WebSocket error: $error');
+    }
+  }
+
+  void _handleWebSocketDone() {
+    if (kDebugMode) {
+      print('WebSocket connection closed');
+    }
+    _currentGame = null;
+    _currentGameId = null;
+    _gameStreamController.add(null);
+  }
+
+  // Helper methods
+
+  List<Position> generateInitialSnakePosition(int playerIndex, int boardSize) {
     final centerY = boardSize ~/ 2;
-    
+
     switch (playerIndex) {
       case 0:
         // Player 1 starts on the left
@@ -486,7 +314,7 @@ class MultiplayerService {
     }
   }
 
-  Position _generateFoodPosition(int boardSize, List<MultiplayerPlayer> players) {
+  Position generateFoodPosition(int boardSize, List<MultiplayerPlayer> players) {
     final random = Random();
     Position foodPos;
 
@@ -509,47 +337,33 @@ class MultiplayerService {
     return false;
   }
 
-  String _generateRoomCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = Random();
-    return List.generate(6, (index) => chars[random.nextInt(chars.length)]).join();
-  }
-
   /// Generate new food position when eaten
   Future<void> generateNewFood() async {
     try {
-      if (_currentGame == null) return;
-      
-      final boardSize = _currentGame!.gameSettings['boardSize'] ?? 20;
-      final newFood = _generateFoodPosition(boardSize, _currentGame!.players);
-      
-      await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
-        'foodPosition': newFood.toJson(),
-      });
+      _sendWebSocketMessage({'action': 'food_eaten'});
     } catch (e) {
       if (kDebugMode) {
         print('Error generating new food: $e');
       }
     }
   }
-  
+
   /// Check if game should end
   Future<void> checkGameEnd() async {
     try {
       if (_currentGame == null) return;
-      
+
       final alivePlayers = _currentGame!.alivePlayers;
-      
+
       if (alivePlayers.length <= 1) {
         String? winnerId;
         if (alivePlayers.length == 1) {
           winnerId = alivePlayers.first.userId;
         }
-        
-        await _firestore.collection('multiplayerGames').doc(_currentGameId!).update({
-          'status': MultiplayerGameStatus.finished.name,
-          'finishedAt': FieldValue.serverTimestamp(),
-          'winnerId': winnerId,
+
+        _sendWebSocketMessage({
+          'action': 'game_over',
+          'winner_id': winnerId,
         });
       }
     } catch (e) {
@@ -561,6 +375,8 @@ class MultiplayerService {
 
   /// Dispose the service
   void dispose() {
-    _stopListeningToGame();
+    _disconnectWebSocket();
+    _gameStreamController.close();
+    _gameActionsController.close();
   }
 }

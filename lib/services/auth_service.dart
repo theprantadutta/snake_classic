@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:snake_classic/services/username_service.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 class AuthService {
@@ -13,6 +14,7 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final UsernameService _usernameService = UsernameService();
+  final ApiService _apiService = ApiService();
 
   AuthService._internal() {
     // Initialize Google Sign-In with client ID
@@ -23,6 +25,12 @@ class AuthService {
 
   User? get currentUser => _auth.currentUser;
   bool get isSignedIn => currentUser != null;
+
+  /// Check if authenticated with backend
+  bool get isBackendAuthenticated => _apiService.isAuthenticated;
+
+  /// Get backend user ID
+  String? get backendUserId => _apiService.currentUserId;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
@@ -54,12 +62,17 @@ class AuthService {
 
         // Sign in to Firebase with the credential
         final UserCredential result = await _auth.signInWithCredential(credential);
-        
+
         if (result.user != null) {
           AppLogger.success('Firebase sign-in successful: ${result.user!.uid}');
+
+          // Authenticate with backend using Firebase token
+          await _authenticateWithBackend(result.user!);
+
+          // Create/update user profile in Firestore (legacy support)
           await _createUserProfile(result.user!);
         }
-        
+
         return result;
       } else {
         AppLogger.firebase('❌ Google Sign-In authenticate not supported on this platform');
@@ -87,11 +100,59 @@ class AuthService {
 
   Future<void> signOut() async {
     try {
+      // Logout from backend first
+      await _apiService.logout();
+
       await _googleSignIn.signOut();
       await _auth.signOut();
     } catch (e) {
       // Error signing out
     }
+  }
+
+  /// Authenticate with backend using Firebase ID token
+  Future<bool> _authenticateWithBackend(User user) async {
+    try {
+      // Get Firebase ID token
+      final idToken = await user.getIdToken();
+      if (idToken == null) {
+        AppLogger.error('Failed to get Firebase ID token');
+        return false;
+      }
+
+      // Authenticate with backend
+      final result = await _apiService.authenticateWithFirebase(idToken);
+      if (result != null) {
+        AppLogger.success('Backend authentication successful');
+        return true;
+      }
+
+      AppLogger.error('Backend authentication failed');
+      return false;
+    } catch (e) {
+      AppLogger.error('Error authenticating with backend', e);
+      return false;
+    }
+  }
+
+  /// Ensure user is authenticated with backend (call on app startup)
+  Future<bool> ensureBackendAuthentication() async {
+    if (!isSignedIn) return false;
+
+    // If already authenticated with backend, we're good
+    if (_apiService.isAuthenticated) {
+      // Verify the token is still valid
+      final user = await _apiService.getCurrentUser();
+      if (user != null) return true;
+    }
+
+    // Need to re-authenticate
+    return await _authenticateWithBackend(currentUser!);
+  }
+
+  /// Initialize API service (call on app startup)
+  Future<void> initializeApiService() async {
+    await _apiService.initialize();
   }
 
   Future<void> _createUserProfile(User user, {bool isAnonymous = false, Map<String, dynamic>? guestData}) async {

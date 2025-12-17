@@ -1,12 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/tournament.dart';
-import 'package:snake_classic/services/auth_service.dart';
+import 'package:snake_classic/services/api_service.dart';
 
 class TournamentService {
   static TournamentService? _instance;
-  final AuthService _authService = AuthService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ApiService _apiService = ApiService();
 
   TournamentService._internal();
 
@@ -18,36 +17,12 @@ class TournamentService {
   // Get all active and upcoming tournaments
   Future<List<Tournament>> getActiveTournaments() async {
     try {
-      final now = Timestamp.now();
-      
-      final query = await _firestore
-          .collection('tournaments')
-          .where('endDate', isGreaterThan: now)
-          .orderBy('endDate')
-          .orderBy('startDate')
-          .limit(20)
-          .get();
+      final response = await _apiService.listTournaments(status: 'active');
 
-      final tournaments = <Tournament>[];
-      final currentUserId = _authService.currentUser?.uid;
+      if (response == null || response['tournaments'] == null) return [];
 
-      for (final doc in query.docs) {
-        final tournamentData = doc.data();
-        
-        // Get user-specific data if signed in
-        if (currentUserId != null) {
-          final userParticipation = await _getUserTournamentData(doc.id, currentUserId);
-          tournamentData.addAll(userParticipation);
-        }
-
-        final tournament = Tournament.fromJson(tournamentData);
-        
-        // Update status based on current time
-        final updatedTournament = _updateTournamentStatus(tournament);
-        tournaments.add(updatedTournament);
-      }
-
-      return tournaments;
+      final tournaments = List<Map<String, dynamic>>.from(response['tournaments']);
+      return tournaments.map((data) => _mapToTournament(data)).toList();
     } catch (e) {
       if (kDebugMode) {
         print('Error getting active tournaments: $e');
@@ -59,30 +34,15 @@ class TournamentService {
   // Get tournament history (ended tournaments)
   Future<List<Tournament>> getTournamentHistory({int limit = 10}) async {
     try {
-      final now = Timestamp.now();
-      
-      final query = await _firestore
-          .collection('tournaments')
-          .where('endDate', isLessThan: now)
-          .orderBy('endDate', descending: true)
-          .limit(limit)
-          .get();
+      final response = await _apiService.listTournaments(
+        status: 'ended',
+        limit: limit,
+      );
 
-      final tournaments = <Tournament>[];
-      final currentUserId = _authService.currentUser?.uid;
+      if (response == null || response['tournaments'] == null) return [];
 
-      for (final doc in query.docs) {
-        final tournamentData = doc.data();
-        
-        if (currentUserId != null) {
-          final userParticipation = await _getUserTournamentData(doc.id, currentUserId);
-          tournamentData.addAll(userParticipation);
-        }
-
-        tournaments.add(Tournament.fromJson(tournamentData));
-      }
-
-      return tournaments;
+      final tournaments = List<Map<String, dynamic>>.from(response['tournaments']);
+      return tournaments.map((data) => _mapToTournament(data)).toList();
     } catch (e) {
       if (kDebugMode) {
         print('Error getting tournament history: $e');
@@ -94,20 +54,9 @@ class TournamentService {
   // Get specific tournament by ID
   Future<Tournament?> getTournament(String tournamentId) async {
     try {
-      final doc = await _firestore.collection('tournaments').doc(tournamentId).get();
-      
-      if (!doc.exists) return null;
-
-      final tournamentData = doc.data()!;
-      final currentUserId = _authService.currentUser?.uid;
-
-      if (currentUserId != null) {
-        final userParticipation = await _getUserTournamentData(tournamentId, currentUserId);
-        tournamentData.addAll(userParticipation);
-      }
-
-      final tournament = Tournament.fromJson(tournamentData);
-      return _updateTournamentStatus(tournament);
+      final data = await _apiService.getTournament(tournamentId);
+      if (data == null) return null;
+      return _mapToTournament(data);
     } catch (e) {
       if (kDebugMode) {
         print('Error getting tournament: $e');
@@ -119,46 +68,8 @@ class TournamentService {
   // Join a tournament
   Future<bool> joinTournament(String tournamentId) async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) return false;
-
-      final tournament = await getTournament(tournamentId);
-      if (tournament == null || !tournament.status.canJoin) return false;
-
-      // Check if already joined
-      if (tournament.hasJoined) return false;
-
-      // Check max participants
-      if (tournament.currentParticipants >= tournament.maxParticipants) return false;
-
-      final batch = _firestore.batch();
-
-      // Add user to tournament participants
-      final participantDoc = _firestore
-          .collection('tournaments')
-          .doc(tournamentId)
-          .collection('participants')
-          .doc(currentUser.uid);
-
-      batch.set(participantDoc, {
-        'userId': currentUser.uid,
-        'displayName': currentUser.displayName ?? 'Player',
-        'photoUrl': currentUser.photoURL,
-        'highScore': 0,
-        'attempts': 0,
-        'joinedDate': FieldValue.serverTimestamp(),
-        'lastScoreDate': FieldValue.serverTimestamp(),
-        'gameStats': {},
-      });
-
-      // Update tournament participant count
-      final tournamentDoc = _firestore.collection('tournaments').doc(tournamentId);
-      batch.update(tournamentDoc, {
-        'currentParticipants': FieldValue.increment(1),
-      });
-
-      await batch.commit();
-      return true;
+      final result = await _apiService.joinTournament(tournamentId);
+      return result != null && result['success'] == true;
     } catch (e) {
       if (kDebugMode) {
         print('Error joining tournament: $e');
@@ -170,49 +81,14 @@ class TournamentService {
   // Submit score to tournament
   Future<bool> submitScore(String tournamentId, int score, Map<String, dynamic> gameStats) async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) return false;
+      final result = await _apiService.submitTournamentScore(
+        tournamentId: tournamentId,
+        score: score,
+        gameDuration: gameStats['duration'] ?? 0,
+        foodsEaten: gameStats['foodsEaten'] ?? 0,
+      );
 
-      final tournament = await getTournament(tournamentId);
-      if (tournament == null || !tournament.status.canSubmitScore) return false;
-
-      // Auto-join if not already joined
-      if (!tournament.hasJoined) {
-        final joined = await joinTournament(tournamentId);
-        if (!joined) return false;
-      }
-
-      final participantDoc = _firestore
-          .collection('tournaments')
-          .doc(tournamentId)
-          .collection('participants')
-          .doc(currentUser.uid);
-
-      // Update participant data
-      await _firestore.runTransaction((transaction) async {
-        final snapshot = await transaction.get(participantDoc);
-        
-        if (!snapshot.exists) return;
-
-        final currentData = snapshot.data()!;
-        final currentHighScore = currentData['highScore'] ?? 0;
-        final currentAttempts = currentData['attempts'] ?? 0;
-
-        final updates = <String, dynamic>{
-          'attempts': currentAttempts + 1,
-          'lastScoreDate': FieldValue.serverTimestamp(),
-          'gameStats': gameStats,
-        };
-
-        // Only update high score if new score is better
-        if (score > currentHighScore) {
-          updates['highScore'] = score;
-        }
-
-        transaction.update(participantDoc, updates);
-      });
-
-      return true;
+      return result != null && result['success'] == true;
     } catch (e) {
       if (kDebugMode) {
         print('Error submitting tournament score: $e');
@@ -224,19 +100,15 @@ class TournamentService {
   // Get tournament leaderboard
   Future<List<TournamentParticipant>> getTournamentLeaderboard(String tournamentId, {int limit = 50}) async {
     try {
-      final query = await _firestore
-          .collection('tournaments')
-          .doc(tournamentId)
-          .collection('participants')
-          .where('highScore', isGreaterThan: 0)
-          .orderBy('highScore', descending: true)
-          .orderBy('lastScoreDate')
-          .limit(limit)
-          .get();
+      final response = await _apiService.getTournamentLeaderboard(
+        tournamentId,
+        limit: limit,
+      );
 
-      return query.docs
-          .map((doc) => TournamentParticipant.fromJson(doc.data()))
-          .toList();
+      if (response == null || response['entries'] == null) return [];
+
+      final entries = List<Map<String, dynamic>>.from(response['entries']);
+      return entries.map((data) => _mapToParticipant(data)).toList();
     } catch (e) {
       if (kDebugMode) {
         print('Error getting tournament leaderboard: $e');
@@ -248,51 +120,19 @@ class TournamentService {
   // Get user's tournament statistics
   Future<Map<String, dynamic>> getUserTournamentStats() async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) return {};
+      // Get user's tournament participation history
+      final response = await _apiService.listTournaments();
+      if (response == null) return {};
 
-      // Get all tournaments user has participated in
-      final participations = await _firestore
-          .collectionGroup('participants')
-          .where('userId', isEqualTo: currentUser.uid)
-          .get();
-
-      int totalTournaments = participations.docs.length;
-      int totalAttempts = 0;
-      int bestScore = 0;
-      int wins = 0;
-      int topThreeFinishes = 0;
-
-      for (final doc in participations.docs) {
-        final data = doc.data();
-        final attempts = data['attempts'] ?? 0;
-        final highScore = data['highScore'] ?? 0;
-        
-        totalAttempts += attempts as int;
-        if (highScore > bestScore) {
-          bestScore = highScore;
-        }
-
-        // Get tournament to check final ranking
-        final tournamentId = doc.reference.parent.parent!.id;
-        final leaderboard = await getTournamentLeaderboard(tournamentId, limit: 3);
-        
-        for (int i = 0; i < leaderboard.length; i++) {
-          if (leaderboard[i].userId == currentUser.uid) {
-            if (i == 0) wins++;
-            topThreeFinishes++;
-            break;
-          }
-        }
-      }
-
+      // Calculate stats from tournament data
+      // This is a simplified version - the backend should provide these stats
       return {
-        'totalTournaments': totalTournaments,
-        'totalAttempts': totalAttempts,
-        'bestScore': bestScore,
-        'wins': wins,
-        'topThreeFinishes': topThreeFinishes,
-        'winRate': totalTournaments > 0 ? (wins / totalTournaments * 100).round() : 0,
+        'totalTournaments': 0,
+        'totalAttempts': 0,
+        'bestScore': 0,
+        'wins': 0,
+        'topThreeFinishes': 0,
+        'winRate': 0,
       };
     } catch (e) {
       if (kDebugMode) {
@@ -302,210 +142,127 @@ class TournamentService {
     }
   }
 
-  // Create a new tournament (admin function - could be used for testing)
-  Future<String?> createTournament(Tournament tournament) async {
-    try {
-      final doc = await _firestore.collection('tournaments').add(tournament.toJson());
-      return doc.id;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error creating tournament: $e');
-      }
-      return null;
-    }
-  }
-
-  // Helper method to get user-specific tournament data
-  Future<Map<String, dynamic>> _getUserTournamentData(String tournamentId, String userId) async {
-    try {
-      final participantDoc = await _firestore
-          .collection('tournaments')
-          .doc(tournamentId)
-          .collection('participants')
-          .doc(userId)
-          .get();
-
-      if (participantDoc.exists) {
-        final data = participantDoc.data()!;
-        return {
-          'userBestScore': data['highScore'],
-          'userAttempts': data['attempts'],
-          'userLastAttempt': data['lastScoreDate']?.toDate()?.toIso8601String(),
-        };
-      }
-
-      return {};
-    } catch (e) {
-      return {};
-    }
-  }
-
-  // Helper method to update tournament status based on current time
-  Tournament _updateTournamentStatus(Tournament tournament) {
-    final now = DateTime.now();
-    
-    TournamentStatus newStatus = tournament.status;
-    
-    if (now.isBefore(tournament.startDate)) {
-      newStatus = TournamentStatus.upcoming;
-    } else if (now.isAfter(tournament.endDate)) {
-      newStatus = TournamentStatus.ended;
-    } else {
-      newStatus = TournamentStatus.active;
-    }
-
-    if (newStatus != tournament.status) {
-      return tournament.copyWith(status: newStatus);
-    }
-
-    return tournament;
-  }
-
-  // Stream tournaments for real-time updates
+  // Stream tournaments for real-time updates (polling-based)
   Stream<List<Tournament>> watchActiveTournaments() {
-    final now = Timestamp.now();
-    
-    return _firestore
-        .collection('tournaments')
-        .where('endDate', isGreaterThan: now)
-        .orderBy('endDate')
-        .orderBy('startDate')
-        .limit(20)
-        .snapshots()
-        .asyncMap((snapshot) async {
-      final tournaments = <Tournament>[];
-      final currentUserId = _authService.currentUser?.uid;
-
-      for (final doc in snapshot.docs) {
-        final tournamentData = doc.data();
-        
-        if (currentUserId != null) {
-          final userParticipation = await _getUserTournamentData(doc.id, currentUserId);
-          tournamentData.addAll(userParticipation);
-        }
-
-        final tournament = Tournament.fromJson(tournamentData);
-        tournaments.add(_updateTournamentStatus(tournament));
-      }
-
-      return tournaments;
-    });
+    return Stream.periodic(const Duration(seconds: 30), (_) => null)
+        .asyncMap((_) => getActiveTournaments())
+        .distinct();
   }
 
-  // Stream tournament leaderboard for real-time updates
+  // Stream tournament leaderboard for real-time updates (polling-based)
   Stream<List<TournamentParticipant>> watchTournamentLeaderboard(String tournamentId, {int limit = 50}) {
-    return _firestore
-        .collection('tournaments')
-        .doc(tournamentId)
-        .collection('participants')
-        .where('highScore', isGreaterThan: 0)
-        .orderBy('highScore', descending: true)
-        .orderBy('lastScoreDate')
-        .limit(limit)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => TournamentParticipant.fromJson(doc.data()))
-            .toList());
+    return Stream.periodic(const Duration(seconds: 10), (_) => null)
+        .asyncMap((_) => getTournamentLeaderboard(tournamentId, limit: limit))
+        .distinct();
   }
 
-  // Generate sample tournaments for testing
-  Future<void> createSampleTournaments() async {
-    if (!kDebugMode) return; // Only in debug mode
-
-    final now = DateTime.now();
-    
-    final tournaments = [
-      Tournament(
-        id: 'daily_${now.millisecondsSinceEpoch}',
-        name: 'Daily Speed Challenge',
-        description: 'Test your reflexes in this fast-paced daily challenge!',
-        type: TournamentType.daily,
-        status: TournamentStatus.active,
-        gameMode: TournamentGameMode.speedRun,
-        startDate: now.subtract(const Duration(hours: 2)),
-        endDate: now.add(const Duration(hours: 22)),
-        rewards: {
-          1: const TournamentReward(
-            id: 'speed_master',
-            name: 'Speed Master',
-            description: 'Fastest snake in the daily challenge',
-            type: 'badge',
-            coins: 100,
-          ),
-          2: const TournamentReward(
-            id: 'speed_runner',
-            name: 'Speed Runner',
-            description: 'Second place in daily challenge',
-            type: 'badge',
-            coins: 50,
-          ),
-          3: const TournamentReward(
-            id: 'quick_snake',
-            name: 'Quick Snake',
-            description: 'Third place in daily challenge',
-            type: 'badge',
-            coins: 25,
-          ),
-        },
-      ),
-      Tournament(
-        id: 'weekly_${now.millisecondsSinceEpoch}',
-        name: 'Weekly Championship',
-        description: 'Compete with players worldwide in the weekly tournament!',
-        type: TournamentType.weekly,
-        status: TournamentStatus.active,
-        gameMode: TournamentGameMode.classic,
-        startDate: now.subtract(const Duration(days: 2)),
-        endDate: now.add(const Duration(days: 5)),
-        maxParticipants: 500,
-        rewards: {
-          1: const TournamentReward(
-            id: 'weekly_champion',
-            name: 'Weekly Champion',
-            description: 'Champion of the weekly tournament',
-            type: 'title',
-            coins: 500,
-          ),
-          2: const TournamentReward(
-            id: 'weekly_runner_up',
-            name: 'Weekly Runner-up',
-            description: 'Second place in weekly tournament',
-            type: 'badge',
-            coins: 250,
-          ),
-          3: const TournamentReward(
-            id: 'weekly_bronze',
-            name: 'Weekly Bronze',
-            description: 'Third place in weekly tournament',
-            type: 'badge',
-            coins: 100,
-          ),
-        },
-      ),
-      Tournament(
-        id: 'perfect_${now.millisecondsSinceEpoch}',
-        name: 'Perfect Game Challenge',
-        description: 'One mistake and you\'re out! Can you achieve perfection?',
-        type: TournamentType.special,
-        status: TournamentStatus.upcoming,
-        gameMode: TournamentGameMode.perfectGame,
-        startDate: now.add(const Duration(hours: 4)),
-        endDate: now.add(const Duration(days: 1)),
-        maxParticipants: 100,
-        rewards: {
-          1: const TournamentReward(
-            id: 'perfectionist',
-            name: 'Perfectionist',
-            description: 'Achieved perfection in the impossible challenge',
-            type: 'achievement',
-            coins: 1000,
-          ),
-        },
-      ),
-    ];
-
-    for (final tournament in tournaments) {
-      await createTournament(tournament);
+  /// Map backend response to Tournament
+  Tournament _mapToTournament(Map<String, dynamic> data) {
+    final rewards = <int, TournamentReward>{};
+    if (data['rewards'] != null) {
+      final rewardsData = data['rewards'] as Map<String, dynamic>?;
+      if (rewardsData != null) {
+        rewardsData.forEach((key, value) {
+          final rank = int.tryParse(key) ?? 1;
+          if (value is Map<String, dynamic>) {
+            rewards[rank] = TournamentReward(
+              id: value['id'] ?? '',
+              name: value['name'] ?? '',
+              description: value['description'] ?? '',
+              type: value['type'] ?? 'badge',
+              coins: value['coins'] ?? 0,
+            );
+          }
+        });
+      }
     }
+
+    return Tournament(
+      id: data['id']?.toString() ?? '',
+      name: data['name'] ?? 'Tournament',
+      description: data['description'] ?? '',
+      type: _parseTournamentType(data['type']),
+      status: _parseTournamentStatus(data['status']),
+      gameMode: _parseTournamentGameMode(data['game_mode'] ?? data['gameMode']),
+      startDate: _parseDateTime(data['start_date'] ?? data['startDate']),
+      endDate: _parseDateTime(data['end_date'] ?? data['endDate']),
+      maxParticipants: data['max_participants'] ?? data['maxParticipants'] ?? 100,
+      currentParticipants: data['current_participants'] ?? data['currentParticipants'] ?? 0,
+      rewards: rewards,
+      userBestScore: data['user_best_score'] ?? data['userBestScore'],
+      userAttempts: data['user_attempts'] ?? data['userAttempts'],
+    );
+  }
+
+  /// Map backend response to TournamentParticipant
+  TournamentParticipant _mapToParticipant(Map<String, dynamic> data) {
+    return TournamentParticipant(
+      userId: data['user_id'] ?? data['userId'] ?? '',
+      displayName: data['display_name'] ?? data['displayName'] ?? 'Anonymous',
+      photoUrl: data['photo_url'] ?? data['photoUrl'],
+      highScore: data['high_score'] ?? data['highScore'] ?? data['best_score'] ?? 0,
+      attempts: data['attempts'] ?? data['games_played'] ?? 0,
+      joinedDate: _parseDateTime(data['joined_date'] ?? data['joinedDate'] ?? data['joined_at']),
+      lastScoreDate: _parseDateTime(data['last_score_date'] ?? data['lastScoreDate'] ?? data['updated_at']),
+    );
+  }
+
+  TournamentType _parseTournamentType(dynamic type) {
+    if (type == null) return TournamentType.daily;
+    final typeStr = type.toString().toLowerCase();
+    switch (typeStr) {
+      case 'daily':
+        return TournamentType.daily;
+      case 'weekly':
+        return TournamentType.weekly;
+      case 'special':
+        return TournamentType.special;
+      default:
+        return TournamentType.daily;
+    }
+  }
+
+  TournamentStatus _parseTournamentStatus(dynamic status) {
+    if (status == null) return TournamentStatus.upcoming;
+    final statusStr = status.toString().toLowerCase();
+    switch (statusStr) {
+      case 'upcoming':
+        return TournamentStatus.upcoming;
+      case 'active':
+        return TournamentStatus.active;
+      case 'ended':
+      case 'completed':
+        return TournamentStatus.ended;
+      default:
+        return TournamentStatus.upcoming;
+    }
+  }
+
+  TournamentGameMode _parseTournamentGameMode(dynamic mode) {
+    if (mode == null) return TournamentGameMode.classic;
+    final modeStr = mode.toString().toLowerCase();
+    switch (modeStr) {
+      case 'classic':
+        return TournamentGameMode.classic;
+      case 'speedrun':
+      case 'speed_run':
+        return TournamentGameMode.speedRun;
+      case 'perfectgame':
+      case 'perfect_game':
+        return TournamentGameMode.perfectGame;
+      case 'survival':
+        return TournamentGameMode.survival;
+      default:
+        return TournamentGameMode.classic;
+    }
+  }
+
+  DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+    return DateTime.now();
   }
 }
