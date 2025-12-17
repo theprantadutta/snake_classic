@@ -42,7 +42,7 @@ dependencies:
   firebase_analytics: ^12.0.0
   
   # Connectivity for offline/online detection
-  connectivity_plus: ^6.0.5
+  connectivity_plus: ^7.0.0
   
   # Beautiful logging library
   talker: ^5.0.0
