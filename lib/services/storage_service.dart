@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -318,5 +319,94 @@ class StorageService {
   Future<void> clearAllData() async {
     await _initPrefs();
     await _prefs?.clear();
+  }
+
+  // Sync queue persistence methods
+  static const String _syncQueueKey = 'sync_queue';
+  static const String _syncQueueMetaKey = 'sync_queue_meta';
+
+  /// Get the persisted sync queue
+  Future<List<Map<String, dynamic>>> getSyncQueue() async {
+    await _initPrefs();
+    final queueJson = _prefs?.getString(_syncQueueKey);
+    if (queueJson == null) return [];
+
+    try {
+      final List<dynamic> decoded = json.decode(queueJson);
+      return decoded.cast<Map<String, dynamic>>();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Save the sync queue for persistence
+  Future<void> saveSyncQueue(List<Map<String, dynamic>> queue) async {
+    await _initPrefs();
+    await _prefs?.setString(_syncQueueKey, json.encode(queue));
+  }
+
+  /// Get sync queue metadata (last sync time, stats)
+  Future<Map<String, dynamic>?> getSyncQueueMeta() async {
+    await _initPrefs();
+    final metaJson = _prefs?.getString(_syncQueueMetaKey);
+    if (metaJson == null) return null;
+
+    try {
+      return json.decode(metaJson) as Map<String, dynamic>;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Save sync queue metadata
+  Future<void> saveSyncQueueMeta(Map<String, dynamic> meta) async {
+    await _initPrefs();
+    await _prefs?.setString(_syncQueueMetaKey, json.encode(meta));
+  }
+
+  /// Clear the sync queue
+  Future<void> clearSyncQueue() async {
+    await _initPrefs();
+    await _prefs?.remove(_syncQueueKey);
+    await _prefs?.remove(_syncQueueMetaKey);
+  }
+
+  // Local score queue for offline games
+  static const String _localScoresKey = 'local_scores_pending';
+
+  /// Get pending local scores that need to be synced
+  Future<List<Map<String, dynamic>>> getPendingLocalScores() async {
+    await _initPrefs();
+    final scoresJson = _prefs?.getString(_localScoresKey);
+    if (scoresJson == null) return [];
+
+    try {
+      final List<dynamic> decoded = json.decode(scoresJson);
+      return decoded.cast<Map<String, dynamic>>();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Add a local score to pending sync queue
+  Future<void> addPendingLocalScore(Map<String, dynamic> score) async {
+    await _initPrefs();
+    final scores = await getPendingLocalScores();
+    scores.add(score);
+    await _prefs?.setString(_localScoresKey, json.encode(scores));
+  }
+
+  /// Clear pending local scores after successful sync
+  Future<void> clearPendingLocalScores() async {
+    await _initPrefs();
+    await _prefs?.remove(_localScoresKey);
+  }
+
+  /// Remove specific local scores by IDs
+  Future<void> removePendingLocalScores(List<String> ids) async {
+    await _initPrefs();
+    final scores = await getPendingLocalScores();
+    scores.removeWhere((score) => ids.contains(score['id']));
+    await _prefs?.setString(_localScoresKey, json.encode(scores));
   }
 }

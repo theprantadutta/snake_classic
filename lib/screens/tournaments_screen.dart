@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/models/tournament.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/screens/tournament_detail_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -17,24 +18,62 @@ class TournamentsScreen extends StatefulWidget {
 
 class _TournamentsScreenState extends State<TournamentsScreen> with SingleTickerProviderStateMixin {
   final TournamentService _tournamentService = TournamentService();
-  
+  final ConnectivityService _connectivityService = ConnectivityService();
+
   late TabController _tabController;
   List<Tournament> _activeTournaments = [];
   List<Tournament> _historyTournaments = [];
   Map<String, dynamic> _userStats = {};
   bool _isLoading = true;
+  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _isOffline = !_connectivityService.isOnline;
+    _connectivityService.addListener(_onConnectivityChanged);
     _loadData();
   }
 
   @override
   void dispose() {
+    _connectivityService.removeListener(_onConnectivityChanged);
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _onConnectivityChanged() {
+    final wasOffline = _isOffline;
+    setState(() {
+      _isOffline = !_connectivityService.isOnline;
+    });
+    // Refresh data when coming back online
+    if (wasOffline && !_isOffline) {
+      _loadData();
+    }
+  }
+
+  void _showOfflineMessage(String action) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.cloud_off, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'You\'re offline. $action when connected.',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.grey.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   Future<void> _loadData() async {

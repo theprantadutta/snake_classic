@@ -177,6 +177,8 @@ class UnifiedUserService extends ChangeNotifier {
   UnifiedUser? _currentUser;
   StreamSubscription<User?>? _authSubscription;
   bool _isInitialized = false;
+  bool _isLoadingUser = false; // Prevents concurrent user loading
+  String? _loadingUserId; // Track which user is being loaded
 
   // Getters
   UnifiedUser? get currentUser => _currentUser;
@@ -245,6 +247,14 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<void> _handleAuthStateChange(User? firebaseUser) async {
     if (firebaseUser != null) {
+      // Skip if this user is already loaded or currently being loaded
+      if (_currentUser != null && _currentUser!.uid == firebaseUser.uid) {
+        return;
+      }
+      if (_isLoadingUser && _loadingUserId == firebaseUser.uid) {
+        AppLogger.user('User ${firebaseUser.uid} is already being loaded, skipping duplicate');
+        return;
+      }
       await _loadOrCreateUser(firebaseUser);
     } else {
       _currentUser = null;
@@ -253,6 +263,15 @@ class UnifiedUserService extends ChangeNotifier {
   }
 
   Future<void> _loadOrCreateUser(User firebaseUser) async {
+    // Prevent concurrent loading of the same user
+    if (_isLoadingUser && _loadingUserId == firebaseUser.uid) {
+      AppLogger.user('Already loading user ${firebaseUser.uid}, skipping');
+      return;
+    }
+
+    _isLoadingUser = true;
+    _loadingUserId = firebaseUser.uid;
+
     try {
       AppLogger.user('Loading/creating user for UID: ${firebaseUser.uid}');
 
@@ -288,6 +307,9 @@ class UnifiedUserService extends ChangeNotifier {
       _initializeNotificationIntegration();
     } catch (e, stackTrace) {
       AppLogger.user('Error loading/creating user', e, stackTrace);
+    } finally {
+      _isLoadingUser = false;
+      _loadingUserId = null;
     }
   }
 

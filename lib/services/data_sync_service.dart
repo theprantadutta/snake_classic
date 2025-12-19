@@ -1,11 +1,88 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
 
-enum SyncStatus { syncing, synced, offline, error }
+enum SyncStatus { idle, syncing, synced, offline, error }
+
+enum SyncPriority {
+  critical, // Purchases, premium status - sync immediately
+  high,     // Scores, achievements - sync soon
+  normal,   // Statistics, preferences - sync when convenient
+  low,      // Profile updates, non-essential - sync eventually
+}
+
+/// Represents an item in the sync queue
+class SyncQueueItem {
+  final String id;
+  final String dataType;
+  final Map<String, dynamic> data;
+  final SyncPriority priority;
+  final DateTime queuedAt;
+  int retryCount;
+  String? lastError;
+  SyncItemStatus status;
+
+  SyncQueueItem({
+    required this.id,
+    required this.dataType,
+    required this.data,
+    required this.priority,
+    required this.queuedAt,
+    this.retryCount = 0,
+    this.lastError,
+    this.status = SyncItemStatus.pending,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'dataType': dataType,
+    'data': data,
+    'priority': priority.index,
+    'queuedAt': queuedAt.toIso8601String(),
+    'retryCount': retryCount,
+    'lastError': lastError,
+    'status': status.index,
+  };
+
+  factory SyncQueueItem.fromJson(Map<String, dynamic> json) => SyncQueueItem(
+    id: json['id'],
+    dataType: json['dataType'],
+    data: Map<String, dynamic>.from(json['data']),
+    priority: SyncPriority.values[json['priority'] ?? 2],
+    queuedAt: DateTime.parse(json['queuedAt']),
+    retryCount: json['retryCount'] ?? 0,
+    lastError: json['lastError'],
+    status: SyncItemStatus.values[json['status'] ?? 0],
+  );
+}
+
+enum SyncItemStatus { pending, syncing, failed, completed }
+
+/// Sync state exposed to UI
+class SyncState {
+  final int pendingCount;
+  final int failedCount;
+  final bool isSyncing;
+  final DateTime? lastSyncTime;
+  final DateTime? lastSuccessTime;
+  final List<SyncQueueItem> pendingItems;
+
+  SyncState({
+    this.pendingCount = 0,
+    this.failedCount = 0,
+    this.isSyncing = false,
+    this.lastSyncTime,
+    this.lastSuccessTime,
+    this.pendingItems = const [],
+  });
+
+  bool get hasPending => pendingCount > 0;
+  bool get hasFailures => failedCount > 0;
+}
 
 class DataSyncService extends ChangeNotifier {
   static final DataSyncService _instance = DataSyncService._internal();
@@ -13,157 +90,445 @@ class DataSyncService extends ChangeNotifier {
   DataSyncService._internal();
 
   final ApiService _apiService = ApiService();
-  final Connectivity _connectivity = Connectivity();
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   SharedPreferences? _prefs;
   Timer? _syncTimer;
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  Timer? _retryTimer;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   SyncStatus _syncStatus = SyncStatus.offline;
-  bool _isOnline = false;
   String? _currentUserId;
+  DateTime? _lastSyncTime;
+  DateTime? _lastSuccessTime;
+  bool _isSyncing = false;
+  bool _isInitialized = false;
 
-  final Map<String, dynamic> _pendingSyncData = {};
-  final List<String> _syncQueue = [];
+  final List<SyncQueueItem> _syncQueue = [];
+  static const int _maxRetries = 5;
+  static const Duration _syncInterval = Duration(minutes: 2);
+
+  // Stream controller for sync state changes
+  final StreamController<SyncState> _syncStateController =
+      StreamController<SyncState>.broadcast();
+  Stream<SyncState> get syncStateStream => _syncStateController.stream;
 
   // Getters
   SyncStatus get syncStatus => _syncStatus;
-  bool get isOnline => _isOnline;
-  bool get hasPendingSync => _syncQueue.isNotEmpty;
+  bool get isOnline => _connectivityService.isOnline;
+  bool get hasPendingSync => _syncQueue.any((item) => item.status == SyncItemStatus.pending);
+  int get pendingCount => _syncQueue.where((item) =>
+      item.status == SyncItemStatus.pending || item.status == SyncItemStatus.failed
+  ).length;
+  int get failedCount => _syncQueue.where((item) => item.status == SyncItemStatus.failed).length;
+
+  SyncState get currentSyncState => SyncState(
+    pendingCount: pendingCount,
+    failedCount: failedCount,
+    isSyncing: _isSyncing,
+    lastSyncTime: _lastSyncTime,
+    lastSuccessTime: _lastSuccessTime,
+    pendingItems: List.unmodifiable(_syncQueue),
+  );
 
   Future<void> initialize(String userId) async {
+    // Prevent re-initialization
+    if (_isInitialized && _currentUserId == userId) {
+      if (kDebugMode) {
+        print('DataSyncService already initialized for user: $userId');
+      }
+      return;
+    }
+
     _currentUserId = userId;
     _prefs = await SharedPreferences.getInstance();
 
+    // Initialize connectivity service (safe to call multiple times)
+    await _connectivityService.initialize();
+
     // Load pending sync data
-    await _loadPendingSyncData();
+    await _loadSyncQueue();
 
-    // Start connectivity monitoring
-    _startConnectivityMonitoring();
-
-    // Check initial connectivity
-    final connectivityResult = await _connectivity.checkConnectivity();
-    _updateConnectionStatus(connectivityResult);
+    // Listen to connectivity changes
+    _connectivitySubscription = _connectivityService.onlineStatusStream.listen((isOnline) {
+      if (isOnline) {
+        // Just came online, attempt sync
+        _performSync();
+      }
+      _updateSyncStatus();
+    });
 
     // Start periodic sync timer
     _startSyncTimer();
 
-    if (kDebugMode) {
-      print('DataSyncService initialized for user: $userId');
-    }
-  }
-
-  void _startConnectivityMonitoring() {
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((result) {
-      _updateConnectionStatus(result);
-    });
-  }
-
-  void _updateConnectionStatus(List<ConnectivityResult> results) {
-    final wasOnline = _isOnline;
-    _isOnline = !results.contains(ConnectivityResult.none) && results.isNotEmpty;
-
-    if (_isOnline && !wasOnline) {
-      // Just came online, sync pending data
+    // Initial sync if online
+    if (_connectivityService.isOnline) {
       _performSync();
     }
 
     _updateSyncStatus();
+
+    _isInitialized = true;
+
+    if (kDebugMode) {
+      print('DataSyncService initialized for user: $userId');
+      print('Pending sync items: ${_syncQueue.length}');
+    }
   }
 
   void _updateSyncStatus() {
-    if (!_isOnline) {
+    if (!_connectivityService.isOnline) {
       _syncStatus = SyncStatus.offline;
-    } else if (_syncQueue.isNotEmpty) {
+    } else if (_isSyncing) {
       _syncStatus = SyncStatus.syncing;
+    } else if (failedCount > 0) {
+      _syncStatus = SyncStatus.error;
+    } else if (pendingCount > 0) {
+      _syncStatus = SyncStatus.idle;
     } else {
       _syncStatus = SyncStatus.synced;
     }
+
+    _emitSyncState();
     notifyListeners();
   }
 
+  void _emitSyncState() {
+    _syncStateController.add(currentSyncState);
+  }
+
   void _startSyncTimer() {
-    _syncTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
-      if (_isOnline && _syncQueue.isNotEmpty) {
+    _syncTimer?.cancel();
+    _syncTimer = Timer.periodic(_syncInterval, (timer) {
+      if (_connectivityService.isOnline && hasPendingSync) {
         _performSync();
       }
     });
   }
 
-  // Queue data for sync
-  Future<void> queueSync(String dataType, Map<String, dynamic> data) async {
+  /// Calculate retry delay with exponential backoff
+  /// Delays: 1s, 2s, 4s, 8s, 16s (max)
+  Duration _getRetryDelay(int retryCount) {
+    final seconds = min(pow(2, retryCount).toInt(), 16);
+    return Duration(seconds: seconds);
+  }
+
+  /// Generate a unique idempotency key for offline score submissions
+  String _generateIdempotencyKey() {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final randomPart = Random().nextInt(999999).toString().padLeft(6, '0');
+    return '${timestamp}_$randomPart';
+  }
+
+  /// Queue data for sync with priority
+  Future<void> queueSync(
+    String dataType,
+    Map<String, dynamic> data, {
+    SyncPriority priority = SyncPriority.normal,
+  }) async {
     if (_currentUserId == null) return;
 
-    // Store data locally first
-    _pendingSyncData[dataType] = {
-      'data': data,
-      'timestamp': DateTime.now().toIso8601String(),
+    final id = '${dataType}_${DateTime.now().millisecondsSinceEpoch}';
+
+    // For scores, add idempotency key and played_at timestamp
+    final enrichedData = <String, dynamic>{
+      ...data,
       'userId': _currentUserId,
     };
 
-    // Add to sync queue if not already present
-    if (!_syncQueue.contains(dataType)) {
-      _syncQueue.add(dataType);
+    if (dataType == 'score') {
+      // Generate idempotency key if not already present
+      enrichedData['idempotencyKey'] ??= _generateIdempotencyKey();
+      // Capture the actual play time for offline games
+      enrichedData['playedAt'] ??= DateTime.now().toIso8601String();
     }
 
-    // Save pending data to local storage
-    await _savePendingSyncData();
+    final item = SyncQueueItem(
+      id: id,
+      dataType: dataType,
+      data: enrichedData,
+      priority: priority,
+      queuedAt: DateTime.now(),
+    );
 
-    // Attempt immediate sync if online
-    if (_isOnline) {
+    _syncQueue.add(item);
+
+    // Sort by priority (critical first)
+    _syncQueue.sort((a, b) => a.priority.index.compareTo(b.priority.index));
+
+    // Save queue to storage
+    await _saveSyncQueue();
+
+    if (kDebugMode) {
+      print('Queued sync item: $dataType (priority: ${priority.name})');
+    }
+
+    // Attempt immediate sync for critical/high priority if online
+    if (_connectivityService.isOnline &&
+        (priority == SyncPriority.critical || priority == SyncPriority.high)) {
       _performSync();
     }
 
     _updateSyncStatus();
   }
 
-  // Sync specific data type via backend API
-  Future<bool> syncData(String dataType, Map<String, dynamic> data) async {
-    if (_currentUserId == null || !_isOnline || !_apiService.isAuthenticated) return false;
+  /// Sync specific data type via backend API
+  Future<bool> _syncItem(SyncQueueItem item) async {
+    if (_currentUserId == null || !_connectivityService.isOnline) return false;
+    if (!_apiService.isAuthenticated) return false;
 
     try {
-      // Use the appropriate API endpoint based on data type
-      switch (dataType) {
+      switch (item.dataType) {
         case 'profile':
-          final result = await _apiService.updateProfile(data);
+          final result = await _apiService.updateProfile(item.data);
           return result != null;
 
         case 'score':
+          // Parse playedAt timestamp if present
+          DateTime? playedAt;
+          if (item.data['playedAt'] != null) {
+            playedAt = DateTime.tryParse(item.data['playedAt']);
+          }
+
           final result = await _apiService.submitScore(
-            score: data['score'] ?? 0,
-            gameDuration: data['gameDuration'] ?? 0,
-            foodsEaten: data['foodsEaten'] ?? 0,
-            gameMode: data['gameMode'] ?? 'classic',
-            difficulty: data['difficulty'] ?? 'normal',
+            score: item.data['score'] ?? 0,
+            gameDuration: item.data['gameDuration'] ?? 0,
+            foodsEaten: item.data['foodsEaten'] ?? 0,
+            gameMode: item.data['gameMode'] ?? 'classic',
+            difficulty: item.data['difficulty'] ?? 'normal',
+            playedAt: playedAt,
+            idempotencyKey: item.data['idempotencyKey'],
           );
           return result != null;
 
         case 'preferences':
           final result = await _apiService.updateProfile({
-            'preferences': data,
+            'preferences': item.data,
+          });
+          return result != null;
+
+        case 'statistics':
+          final result = await _apiService.updateProfile({
+            'statistics': item.data,
           });
           return result != null;
 
         case 'achievements':
-          // Achievements are synced individually through the achievement service
+          // Achievements are synced individually
           return true;
 
         default:
           // Generic profile update
-          final result = await _apiService.updateProfile({dataType: data});
+          final result = await _apiService.updateProfile({item.dataType: item.data});
           return result != null;
       }
     } catch (e) {
+      item.lastError = e.toString();
       if (kDebugMode) {
-        print('Error syncing $dataType: $e');
+        print('Error syncing ${item.dataType}: $e');
       }
       return false;
     }
   }
 
-  // Get data from backend API
+  /// Sync multiple scores in batch
+  Future<List<String>> _syncScoresBatch(List<SyncQueueItem> scoreItems) async {
+    if (scoreItems.isEmpty) return [];
+
+    // Prepare batch payload
+    final scores = scoreItems.map((item) {
+      DateTime? playedAt;
+      if (item.data['playedAt'] != null) {
+        playedAt = DateTime.tryParse(item.data['playedAt']);
+      }
+
+      return {
+        'score': item.data['score'] ?? 0,
+        'game_duration_seconds': item.data['gameDuration'] ?? 0,
+        'foods_eaten': item.data['foodsEaten'] ?? 0,
+        'game_mode': item.data['gameMode'] ?? 'classic',
+        'difficulty': item.data['difficulty'] ?? 'normal',
+        if (playedAt != null) 'played_at': playedAt.toUtc().toIso8601String(),
+        if (item.data['idempotencyKey'] != null) 'idempotency_key': item.data['idempotencyKey'],
+      };
+    }).toList();
+
+    final result = await _apiService.submitScoresBatch(scores);
+
+    if (result == null) return [];
+
+    // Process batch results
+    final completedIds = <String>[];
+    final results = result['results'] as List<dynamic>?;
+
+    if (results != null) {
+      for (int i = 0; i < results.length && i < scoreItems.length; i++) {
+        final scoreResult = results[i] as Map<String, dynamic>;
+        final item = scoreItems[i];
+
+        if (scoreResult['success'] == true) {
+          item.status = SyncItemStatus.completed;
+          completedIds.add(item.id);
+
+          if (kDebugMode) {
+            final wasDup = scoreResult['was_duplicate'] == true;
+            print('Batch synced score: ${item.data['score']} ${wasDup ? '(duplicate)' : ''}');
+          }
+        } else {
+          item.lastError = scoreResult['error'] ?? 'Unknown error';
+        }
+      }
+    }
+
+    return completedIds;
+  }
+
+  /// Perform sync with retry logic
+  Future<void> _performSync() async {
+    if (!_connectivityService.isOnline || _currentUserId == null) return;
+    if (!_apiService.isAuthenticated) return;
+    if (_isSyncing) return; // Prevent concurrent syncs
+
+    final pendingItems = _syncQueue.where((item) =>
+        item.status == SyncItemStatus.pending ||
+        (item.status == SyncItemStatus.failed && item.retryCount < _maxRetries)
+    ).toList();
+
+    if (pendingItems.isEmpty) return;
+
+    _isSyncing = true;
+    _lastSyncTime = DateTime.now();
+    _updateSyncStatus();
+
+    if (kDebugMode) {
+      print('Starting sync of ${pendingItems.length} items...');
+    }
+
+    final completedIds = <String>[];
+    final retryItems = <SyncQueueItem>[];
+
+    // Separate score items for batch processing
+    final scoreItems = pendingItems.where((item) => item.dataType == 'score').toList();
+    final otherItems = pendingItems.where((item) => item.dataType != 'score').toList();
+
+    // Batch sync scores if there are multiple
+    if (scoreItems.length >= 2) {
+      for (final item in scoreItems) {
+        item.status = SyncItemStatus.syncing;
+      }
+      _emitSyncState();
+
+      final batchCompleted = await _syncScoresBatch(scoreItems);
+      completedIds.addAll(batchCompleted);
+
+      // Handle failures
+      for (final item in scoreItems) {
+        if (!batchCompleted.contains(item.id)) {
+          item.retryCount++;
+          if (item.retryCount >= _maxRetries) {
+            item.status = SyncItemStatus.failed;
+          } else {
+            item.status = SyncItemStatus.pending;
+            retryItems.add(item);
+          }
+        }
+      }
+    } else {
+      // Single score, add to otherItems for individual processing
+      otherItems.addAll(scoreItems);
+    }
+
+    // Process non-score items individually
+    for (final item in otherItems) {
+      item.status = SyncItemStatus.syncing;
+      _emitSyncState();
+
+      final success = await _syncItem(item);
+
+      if (success) {
+        item.status = SyncItemStatus.completed;
+        completedIds.add(item.id);
+        if (kDebugMode) {
+          print('Synced: ${item.dataType}');
+        }
+      } else {
+        item.retryCount++;
+        if (item.retryCount >= _maxRetries) {
+          item.status = SyncItemStatus.failed;
+          if (kDebugMode) {
+            print('Failed permanently: ${item.dataType} (max retries exceeded)');
+          }
+        } else {
+          item.status = SyncItemStatus.pending;
+          retryItems.add(item);
+          if (kDebugMode) {
+            print('Will retry: ${item.dataType} (attempt ${item.retryCount}/$_maxRetries)');
+          }
+        }
+      }
+    }
+
+    // Remove completed items
+    _syncQueue.removeWhere((item) => completedIds.contains(item.id));
+
+    // Schedule retries with exponential backoff
+    if (retryItems.isNotEmpty) {
+      _scheduleRetry(retryItems);
+    }
+
+    _isSyncing = false;
+
+    if (completedIds.isNotEmpty) {
+      _lastSuccessTime = DateTime.now();
+    }
+
+    // Save updated queue
+    await _saveSyncQueue();
+    _updateSyncStatus();
+
+    if (kDebugMode) {
+      print('Sync complete. Completed: ${completedIds.length}, Pending retries: ${retryItems.length}');
+    }
+  }
+
+  /// Schedule retry for failed items
+  void _scheduleRetry(List<SyncQueueItem> items) {
+    if (items.isEmpty) return;
+
+    // Use the shortest retry delay among items
+    final minRetryCount = items.map((i) => i.retryCount).reduce(min);
+    final delay = _getRetryDelay(minRetryCount);
+
+    _retryTimer?.cancel();
+    _retryTimer = Timer(delay, () {
+      if (_connectivityService.isOnline) {
+        _performSync();
+      }
+    });
+
+    if (kDebugMode) {
+      print('Scheduled retry in ${delay.inSeconds}s for ${items.length} items');
+    }
+  }
+
+  /// Force sync now
+  Future<void> forceSyncNow() async {
+    if (_connectivityService.isOnline) {
+      // Reset retry counts for failed items to allow retry
+      for (final item in _syncQueue) {
+        if (item.status == SyncItemStatus.failed && item.retryCount >= _maxRetries) {
+          item.retryCount = 0;
+          item.status = SyncItemStatus.pending;
+        }
+      }
+      await _performSync();
+    }
+  }
+
+  /// Get data from backend API
   Future<Map<String, dynamic>?> getData(String dataType) async {
-    if (_currentUserId == null || !_isOnline || !_apiService.isAuthenticated) return null;
+    if (_currentUserId == null || !_connectivityService.isOnline) return null;
+    if (!_apiService.isAuthenticated) return null;
 
     try {
       final profile = await _apiService.getCurrentUser();
@@ -179,7 +544,7 @@ class DataSyncService extends ChangeNotifier {
     }
   }
 
-  // Merge data with conflict resolution (most recent wins)
+  /// Merge data with conflict resolution (most recent wins)
   Map<String, dynamic> mergeData(
     Map<String, dynamic> localData,
     Map<String, dynamic> cloudData,
@@ -187,7 +552,6 @@ class DataSyncService extends ChangeNotifier {
     final localTimestamp = DateTime.tryParse(localData['lastUpdated'] ?? '') ?? DateTime(2000);
     final cloudTimestamp = DateTime.tryParse(cloudData['lastUpdated'] ?? '') ?? DateTime(2000);
 
-    // Most recent data wins
     if (localTimestamp.isAfter(cloudTimestamp)) {
       return localData;
     } else {
@@ -195,121 +559,108 @@ class DataSyncService extends ChangeNotifier {
     }
   }
 
-  // Perform actual sync
-  Future<void> _performSync() async {
-    if (!_isOnline || _currentUserId == null || _syncQueue.isEmpty) return;
-    if (!_apiService.isAuthenticated) return;
-
-    _syncStatus = SyncStatus.syncing;
-    notifyListeners();
-
-    final syncErrors = <String>[];
-    final completedSyncs = <String>[];
-
-    for (final dataType in List<String>.from(_syncQueue)) {
-      final pendingData = _pendingSyncData[dataType];
-      if (pendingData == null) continue;
-
-      final success = await syncData(dataType, pendingData['data']);
-      if (success) {
-        completedSyncs.add(dataType);
-        _pendingSyncData.remove(dataType);
-      } else {
-        syncErrors.add(dataType);
-      }
-    }
-
-    // Remove completed syncs from queue
-    _syncQueue.removeWhere((item) => completedSyncs.contains(item));
-
-    // Update status
-    if (syncErrors.isNotEmpty) {
-      _syncStatus = SyncStatus.error;
-      if (kDebugMode) {
-        print('Sync errors for: ${syncErrors.join(', ')}');
-      }
-    } else {
-      _syncStatus = SyncStatus.synced;
-    }
-
-    // Save updated pending data
-    await _savePendingSyncData();
-    notifyListeners();
-  }
-
-  // Force sync now
-  Future<void> forceSyncNow() async {
-    if (_isOnline && _syncQueue.isNotEmpty) {
-      await _performSync();
-    }
-  }
-
-  // Load pending sync data from local storage
-  Future<void> _loadPendingSyncData() async {
+  /// Load sync queue from local storage
+  Future<void> _loadSyncQueue() async {
     if (_prefs == null) return;
 
-    final pendingDataJson = _prefs!.getString('pending_sync_data');
-    final syncQueueJson = _prefs!.getString('sync_queue');
-
-    if (pendingDataJson != null) {
+    final queueJson = _prefs!.getString('sync_queue_items');
+    if (queueJson != null) {
       try {
-        final data = jsonDecode(pendingDataJson) as Map<String, dynamic>;
-        _pendingSyncData.addAll(data);
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error loading pending sync data: $e');
+        final List<dynamic> decoded = jsonDecode(queueJson);
+        _syncQueue.clear();
+        for (final item in decoded) {
+          _syncQueue.add(SyncQueueItem.fromJson(item));
         }
-      }
-    }
 
-    if (syncQueueJson != null) {
-      try {
-        final queue = List<String>.from(jsonDecode(syncQueueJson));
-        _syncQueue.addAll(queue);
+        // Sort by priority
+        _syncQueue.sort((a, b) => a.priority.index.compareTo(b.priority.index));
+
+        if (kDebugMode) {
+          print('Loaded ${_syncQueue.length} sync queue items');
+        }
       } catch (e) {
         if (kDebugMode) {
           print('Error loading sync queue: $e');
         }
       }
     }
-  }
 
-  // Save pending sync data to local storage
-  Future<void> _savePendingSyncData() async {
-    if (_prefs == null) return;
-
-    try {
-      await _prefs!.setString('pending_sync_data', jsonEncode(_pendingSyncData));
-      await _prefs!.setStringList('sync_queue', _syncQueue);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error saving pending sync data: $e');
+    // Load metadata
+    final metaJson = _prefs!.getString('sync_queue_meta');
+    if (metaJson != null) {
+      try {
+        final meta = jsonDecode(metaJson) as Map<String, dynamic>;
+        _lastSyncTime = meta['lastSyncTime'] != null
+            ? DateTime.parse(meta['lastSyncTime'])
+            : null;
+        _lastSuccessTime = meta['lastSuccessTime'] != null
+            ? DateTime.parse(meta['lastSuccessTime'])
+            : null;
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error loading sync metadata: $e');
+        }
       }
     }
   }
 
-  // Clear all pending sync data
+  /// Save sync queue to local storage
+  Future<void> _saveSyncQueue() async {
+    if (_prefs == null) return;
+
+    try {
+      final queueJson = jsonEncode(_syncQueue.map((item) => item.toJson()).toList());
+      await _prefs!.setString('sync_queue_items', queueJson);
+
+      final meta = {
+        'lastSyncTime': _lastSyncTime?.toIso8601String(),
+        'lastSuccessTime': _lastSuccessTime?.toIso8601String(),
+      };
+      await _prefs!.setString('sync_queue_meta', jsonEncode(meta));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving sync queue: $e');
+      }
+    }
+  }
+
+  /// Clear all pending sync data
   Future<void> clearPendingData() async {
-    _pendingSyncData.clear();
     _syncQueue.clear();
-    await _savePendingSyncData();
+    await _saveSyncQueue();
     _updateSyncStatus();
   }
 
-  // Get sync info for UI display
+  /// Remove completed and old failed items
+  Future<void> cleanupQueue() async {
+    _syncQueue.removeWhere((item) =>
+        item.status == SyncItemStatus.completed ||
+        (item.status == SyncItemStatus.failed &&
+         item.queuedAt.isBefore(DateTime.now().subtract(const Duration(days: 7))))
+    );
+    await _saveSyncQueue();
+    _updateSyncStatus();
+  }
+
+  /// Get sync info for UI display
   Map<String, dynamic> getSyncInfo() {
     return {
       'status': _syncStatus.name,
-      'isOnline': _isOnline,
-      'pendingItems': _syncQueue.length,
-      'lastSync': DateTime.now().toIso8601String(),
+      'isOnline': _connectivityService.isOnline,
+      'pendingItems': pendingCount,
+      'failedItems': failedCount,
+      'isSyncing': _isSyncing,
+      'lastSync': _lastSyncTime?.toIso8601String(),
+      'lastSuccess': _lastSuccessTime?.toIso8601String(),
     };
   }
 
   @override
   void dispose() {
     _syncTimer?.cancel();
+    _retryTimer?.cancel();
     _connectivitySubscription?.cancel();
+    _syncStateController.close();
     super.dispose();
   }
 }

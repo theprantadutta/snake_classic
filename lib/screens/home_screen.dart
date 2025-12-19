@@ -23,6 +23,7 @@ import 'package:snake_classic/screens/tournaments_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
@@ -724,9 +725,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       if (hasSync) ...[
                         const SizedBox(width: 6),
-                        Icon(
-                          Icons.cloud_done,
-                          color: Colors.green,
+                        SyncStatusIndicator(
                           size: isSmallScreen ? 14 : 16,
                         ),
                       ],

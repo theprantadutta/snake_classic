@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/offline_cache_service.dart';
 
 class LeaderboardService {
   static final LeaderboardService _instance = LeaderboardService._internal();
@@ -7,38 +10,87 @@ class LeaderboardService {
   LeaderboardService._internal();
 
   final ApiService _apiService = ApiService();
+  final ConnectivityService _connectivityService = ConnectivityService();
+  final OfflineCacheService _cacheService = OfflineCacheService();
 
-  // Cache for leaderboard data
-  List<Map<String, dynamic>>? _cachedGlobalLeaderboard;
-  DateTime? _lastGlobalFetch;
-  static const Duration _cacheExpiry = Duration(minutes: 2);
+  // Cache keys
+  static const String _globalLeaderboardKey = 'leaderboard_global';
+  static const String _weeklyLeaderboardKey = 'leaderboard_weekly';
+  static const String _dailyLeaderboardKey = 'leaderboard_daily';
+  static const String _friendsLeaderboardKey = 'leaderboard_friends';
 
+  /// Get global leaderboard with cache-first pattern
   Future<List<Map<String, dynamic>>> getGlobalLeaderboard({int limit = 50}) async {
-    try {
-      // Check cache
-      if (_cachedGlobalLeaderboard != null &&
-          _lastGlobalFetch != null &&
-          DateTime.now().difference(_lastGlobalFetch!) < _cacheExpiry) {
-        return _cachedGlobalLeaderboard!;
-      }
+    // 1. Try to get cached data first
+    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+      _globalLeaderboardKey,
+      (data) => List<Map<String, dynamic>>.from(
+        (data as List).map((e) => Map<String, dynamic>.from(e)),
+      ),
+    );
 
+    if (cached != null) {
+      // Cache hit - return cached data and refresh in background if online
+      if (_connectivityService.isOnline) {
+        _refreshGlobalLeaderboardInBackground(limit);
+      }
+      return cached;
+    }
+
+    // 2. No fresh cache - check if we're offline
+    if (!_connectivityService.isOnline) {
+      // Try to get stale cached data as fallback
+      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
+        _globalLeaderboardKey,
+        (data) => List<Map<String, dynamic>>.from(
+          (data as List).map((e) => Map<String, dynamic>.from(e)),
+        ),
+      );
+      return fallback ?? [];
+    }
+
+    // 3. Online with no cache - fetch fresh data
+    return await _fetchAndCacheGlobalLeaderboard(limit);
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAndCacheGlobalLeaderboard(int limit) async {
+    try {
       final response = await _apiService.getGlobalLeaderboard(pageSize: limit);
 
       if (response != null && response['entries'] != null) {
         final entries = List<Map<String, dynamic>>.from(response['entries']);
-        _cachedGlobalLeaderboard = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
-        _lastGlobalFetch = DateTime.now();
-        return _cachedGlobalLeaderboard!;
+        final mapped = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+
+        // Cache the result
+        await _cacheService.setCache<List<Map<String, dynamic>>>(
+          _globalLeaderboardKey,
+          mapped,
+          (data) => data,
+        );
+
+        return mapped;
       }
 
       return [];
     } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching global leaderboard: $e');
+      }
       return [];
     }
   }
 
+  void _refreshGlobalLeaderboardInBackground(int limit) {
+    // Non-blocking background refresh
+    _fetchAndCacheGlobalLeaderboard(limit).catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <Map<String, dynamic>>[];
+    });
+  }
+
   Stream<List<Map<String, dynamic>>> getGlobalLeaderboardStream({int limit = 50}) {
-    // For real-time updates, we poll the API periodically
     return Stream.periodic(const Duration(seconds: 30), (_) => null)
         .asyncMap((_) => getGlobalLeaderboard(limit: limit))
         .distinct();
@@ -46,7 +98,6 @@ class LeaderboardService {
 
   Future<Map<String, dynamic>?> getUserRank(String userId) async {
     try {
-      // Get global leaderboard and find user's position
       final leaderboard = await getGlobalLeaderboard(limit: 100);
 
       int rank = -1;
@@ -77,19 +128,71 @@ class LeaderboardService {
     }
   }
 
+  /// Get weekly leaderboard with cache-first pattern
   Future<List<Map<String, dynamic>>> getWeeklyLeaderboard({int limit = 50}) async {
+    // 1. Try to get cached data first
+    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+      _weeklyLeaderboardKey,
+      (data) => List<Map<String, dynamic>>.from(
+        (data as List).map((e) => Map<String, dynamic>.from(e)),
+      ),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshWeeklyLeaderboardInBackground(limit);
+      }
+      return cached;
+    }
+
+    // 2. No fresh cache - check if we're offline
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
+        _weeklyLeaderboardKey,
+        (data) => List<Map<String, dynamic>>.from(
+          (data as List).map((e) => Map<String, dynamic>.from(e)),
+        ),
+      );
+      return fallback ?? [];
+    }
+
+    // 3. Online with no cache - fetch fresh data
+    return await _fetchAndCacheWeeklyLeaderboard(limit);
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAndCacheWeeklyLeaderboard(int limit) async {
     try {
       final response = await _apiService.getWeeklyLeaderboard(pageSize: limit);
 
       if (response != null && response['entries'] != null) {
         final entries = List<Map<String, dynamic>>.from(response['entries']);
-        return entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+        final mapped = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+
+        await _cacheService.setCache<List<Map<String, dynamic>>>(
+          _weeklyLeaderboardKey,
+          mapped,
+          (data) => data,
+        );
+
+        return mapped;
       }
 
       return [];
     } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching weekly leaderboard: $e');
+      }
       return [];
     }
+  }
+
+  void _refreshWeeklyLeaderboardInBackground(int limit) {
+    _fetchAndCacheWeeklyLeaderboard(limit).catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <Map<String, dynamic>>[];
+    });
   }
 
   Stream<List<Map<String, dynamic>>> getWeeklyLeaderboardStream({int limit = 50}) {
@@ -98,42 +201,189 @@ class LeaderboardService {
         .distinct();
   }
 
+  /// Get daily leaderboard with cache-first pattern
   Future<List<Map<String, dynamic>>> getDailyLeaderboard({int limit = 50}) async {
+    // 1. Try to get cached data first
+    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+      _dailyLeaderboardKey,
+      (data) => List<Map<String, dynamic>>.from(
+        (data as List).map((e) => Map<String, dynamic>.from(e)),
+      ),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshDailyLeaderboardInBackground(limit);
+      }
+      return cached;
+    }
+
+    // 2. No fresh cache - check if we're offline
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
+        _dailyLeaderboardKey,
+        (data) => List<Map<String, dynamic>>.from(
+          (data as List).map((e) => Map<String, dynamic>.from(e)),
+        ),
+      );
+      return fallback ?? [];
+    }
+
+    // 3. Online with no cache - fetch fresh data
+    return await _fetchAndCacheDailyLeaderboard(limit);
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAndCacheDailyLeaderboard(int limit) async {
     try {
       final response = await _apiService.getDailyLeaderboard(pageSize: limit);
 
       if (response != null && response['entries'] != null) {
         final entries = List<Map<String, dynamic>>.from(response['entries']);
-        return entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+        final mapped = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+
+        await _cacheService.setCache<List<Map<String, dynamic>>>(
+          _dailyLeaderboardKey,
+          mapped,
+          (data) => data,
+        );
+
+        return mapped;
       }
 
       return [];
     } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching daily leaderboard: $e');
+      }
       return [];
     }
   }
 
-  Future<List<Map<String, dynamic>>> getFriendsLeaderboard(List<String> friendIds, {int limit = 50}) async {
-    try {
-      if (friendIds.isEmpty) return [];
+  void _refreshDailyLeaderboardInBackground(int limit) {
+    _fetchAndCacheDailyLeaderboard(limit).catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <Map<String, dynamic>>[];
+    });
+  }
 
+  /// Get friends leaderboard with cache-first pattern
+  Future<List<Map<String, dynamic>>> getFriendsLeaderboard(List<String> friendIds, {int limit = 50}) async {
+    if (friendIds.isEmpty) return [];
+
+    // 1. Try to get cached data first
+    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+      _friendsLeaderboardKey,
+      (data) => List<Map<String, dynamic>>.from(
+        (data as List).map((e) => Map<String, dynamic>.from(e)),
+      ),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshFriendsLeaderboardInBackground(limit);
+      }
+      return cached;
+    }
+
+    // 2. No fresh cache - check if we're offline
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
+        _friendsLeaderboardKey,
+        (data) => List<Map<String, dynamic>>.from(
+          (data as List).map((e) => Map<String, dynamic>.from(e)),
+        ),
+      );
+      return fallback ?? [];
+    }
+
+    // 3. Online with no cache - fetch fresh data
+    return await _fetchAndCacheFriendsLeaderboard(limit);
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAndCacheFriendsLeaderboard(int limit) async {
+    try {
       final response = await _apiService.getFriendsLeaderboard(pageSize: limit);
 
       if (response != null && response['entries'] != null) {
         final entries = List<Map<String, dynamic>>.from(response['entries']);
-        return entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+        final mapped = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+
+        await _cacheService.setCache<List<Map<String, dynamic>>>(
+          _friendsLeaderboardKey,
+          mapped,
+          (data) => data,
+        );
+
+        return mapped;
       }
 
       return [];
     } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching friends leaderboard: $e');
+      }
       return [];
     }
   }
 
-  /// Clear cached data
-  void clearCache() {
-    _cachedGlobalLeaderboard = null;
-    _lastGlobalFetch = null;
+  void _refreshFriendsLeaderboardInBackground(int limit) {
+    _fetchAndCacheFriendsLeaderboard(limit).catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <Map<String, dynamic>>[];
+    });
+  }
+
+  /// Check if we have any cached leaderboard data
+  Future<bool> hasCachedData() async {
+    return await _cacheService.hasCachedData(_globalLeaderboardKey) ||
+           await _cacheService.hasCachedData(_weeklyLeaderboardKey) ||
+           await _cacheService.hasCachedData(_dailyLeaderboardKey);
+  }
+
+  /// Get cache freshness info for UI
+  Future<Map<String, dynamic>?> getCacheInfo(String leaderboardType) async {
+    String key;
+    switch (leaderboardType) {
+      case 'global':
+        key = _globalLeaderboardKey;
+        break;
+      case 'weekly':
+        key = _weeklyLeaderboardKey;
+        break;
+      case 'daily':
+        key = _dailyLeaderboardKey;
+        break;
+      case 'friends':
+        key = _friendsLeaderboardKey;
+        break;
+      default:
+        return null;
+    }
+    return await _cacheService.getCacheInfo(key);
+  }
+
+  /// Clear all cached leaderboard data
+  Future<void> clearCache() async {
+    await _cacheService.invalidateCache(_globalLeaderboardKey);
+    await _cacheService.invalidateCache(_weeklyLeaderboardKey);
+    await _cacheService.invalidateCache(_dailyLeaderboardKey);
+    await _cacheService.invalidateCache(_friendsLeaderboardKey);
+  }
+
+  /// Force refresh all leaderboards
+  Future<void> forceRefreshAll({int limit = 50}) async {
+    if (!_connectivityService.isOnline) return;
+
+    await Future.wait([
+      _fetchAndCacheGlobalLeaderboard(limit),
+      _fetchAndCacheWeeklyLeaderboard(limit),
+      _fetchAndCacheDailyLeaderboard(limit),
+      _fetchAndCacheFriendsLeaderboard(limit),
+    ]);
   }
 
   /// Map backend response to the expected format

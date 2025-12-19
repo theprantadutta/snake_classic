@@ -7,6 +7,7 @@ import 'package:snake_classic/providers/multiplayer_provider.dart';
 import 'package:snake_classic/providers/theme_provider.dart';
 import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/multiplayer_game_screen.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -22,23 +23,68 @@ class MultiplayerLobbyScreen extends StatefulWidget {
 
 class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
+  final ConnectivityService _connectivityService = ConnectivityService();
+  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
-    
+    _isOffline = !_connectivityService.isOnline;
+    _connectivityService.addListener(_onConnectivityChanged);
+
     // If gameId is provided, join that game
     if (widget.gameId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<MultiplayerProvider>().joinGame(widget.gameId!);
+        if (_connectivityService.isOnline) {
+          context.read<MultiplayerProvider>().joinGame(widget.gameId!);
+        } else {
+          _showOfflineMessage();
+        }
       });
     }
   }
 
   @override
   void dispose() {
+    _connectivityService.removeListener(_onConnectivityChanged);
     _roomCodeController.dispose();
     super.dispose();
+  }
+
+  void _onConnectivityChanged() {
+    setState(() {
+      _isOffline = !_connectivityService.isOnline;
+    });
+  }
+
+  void _showOfflineMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.cloud_off, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'You\'re offline. Multiplayer requires an internet connection.',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.grey.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  bool _checkConnectivity() {
+    if (_isOffline) {
+      _showOfflineMessage();
+      return false;
+    }
+    return true;
   }
 
   @override

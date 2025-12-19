@@ -10,6 +10,7 @@ import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
 import 'package:snake_classic/screens/home_screen.dart';
 import 'package:snake_classic/services/achievement_service.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -251,8 +252,13 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<void> _initializeCoreServices() async {
     try {
       AppLogger.lifecycle('Initializing core services');
+
+      // Initialize connectivity service early so sync indicator works
+      final connectivityService = ConnectivityService();
+      await connectivityService.initialize();
+      AppLogger.success('ConnectivityService initialized');
+
       // Core services (Firebase, Audio, etc.) already initialized in main()
-      // No artificial delay needed
     } catch (e) {
       AppLogger.error('Core services initialization warning', e);
     }
@@ -370,9 +376,25 @@ class _LoadingScreenState extends State<LoadingScreen>
       AppLogger.sync('Performing final sync operations');
 
       if (!mounted) return;
-      final syncService = Provider.of<DataSyncService>(context, listen: false);
-      // Perform any pending sync operations
-      await syncService.forceSyncNow();
+
+      // Get the user ID for DataSyncService initialization
+      final unifiedUserService = Provider.of<UnifiedUserService>(
+        context,
+        listen: false,
+      );
+      final userId = unifiedUserService.currentUser?.uid;
+
+      if (userId != null) {
+        final syncService = Provider.of<DataSyncService>(context, listen: false);
+        // Initialize DataSyncService with userId (this also sets up sync)
+        await syncService.initialize(userId);
+        AppLogger.success('DataSyncService initialized');
+
+        // Perform any pending sync operations
+        await syncService.forceSyncNow();
+      } else {
+        AppLogger.warning('No user ID available for sync service initialization');
+      }
 
       AppLogger.success('Final sync completed');
     } catch (e) {

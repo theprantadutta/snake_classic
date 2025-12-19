@@ -265,24 +265,52 @@ class ApiService {
     String gameMode = 'classic',
     String difficulty = 'normal',
     Map<String, dynamic>? gameData,
+    DateTime? playedAt,
+    String? idempotencyKey,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'score': score,
+        'game_duration_seconds': gameDuration,
+        'foods_eaten': foodsEaten,
+        'game_mode': gameMode,
+        'difficulty': difficulty,
+        'game_data': gameData,
+      };
+
+      // Add offline-first fields if provided
+      if (playedAt != null) {
+        body['played_at'] = playedAt.toUtc().toIso8601String();
+      }
+      if (idempotencyKey != null) {
+        body['idempotency_key'] = idempotencyKey;
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/scores'),
         headers: _authHeaders,
-        body: jsonEncode({
-          'score': score,
-          'game_duration_seconds': gameDuration,
-          'foods_eaten': foodsEaten,
-          'game_mode': gameMode,
-          'difficulty': difficulty,
-          'game_data': gameData,
-        }),
+        body: jsonEncode(body),
       ).timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
       AppLogger.error('Error submitting score', e);
+      return null;
+    }
+  }
+
+  /// Submit multiple scores in batch (for offline sync)
+  Future<Map<String, dynamic>?> submitScoresBatch(List<Map<String, dynamic>> scores) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/scores/batch'),
+        headers: _authHeaders,
+        body: jsonEncode({'scores': scores}),
+      ).timeout(const Duration(seconds: 30)); // Longer timeout for batch
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error submitting scores batch', e);
       return null;
     }
   }
@@ -893,7 +921,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/notifications/topics/subscribe'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _authHeaders,
         body: jsonEncode({
           'fcm_token': fcmToken,
           'topic': topic,
@@ -912,7 +940,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/notifications/topics/unsubscribe'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _authHeaders,
         body: jsonEncode({
           'fcm_token': fcmToken,
           'topic': topic,

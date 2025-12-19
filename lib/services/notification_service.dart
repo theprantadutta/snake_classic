@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
+import 'api_service.dart';
 import 'backend_service.dart';
-import 'unified_user_service.dart';
 import 'navigation_service.dart';
 
 enum NotificationType {
@@ -390,22 +390,24 @@ class NotificationService {
   // Backend integration methods
   Future<void> _registerTokenWithBackend(String token) async {
     try {
-      final userService = UnifiedUserService();
-      final user = userService.currentUser;
-      
-      if (user != null) {
-        final success = await BackendService().registerFcmToken(
-          fcmToken: token,
-          userId: user.uid,
-          username: user.displayName.isNotEmpty ? user.displayName : user.uid,
-        );
-        
-        if (success) {
-          AppLogger.network('FCM token registered with backend successfully');
-          await _syncTopicSubscriptions(token);
-        } else {
-          AppLogger.error('Failed to register FCM token with backend');
-        }
+      final apiService = ApiService();
+
+      // Only register if authenticated with backend
+      if (!apiService.isAuthenticated) {
+        AppLogger.warning('Cannot register FCM token: Not authenticated with backend');
+        return;
+      }
+
+      final success = await apiService.registerFcmToken(
+        fcmToken: token,
+        platform: 'flutter',
+      );
+
+      if (success) {
+        AppLogger.network('FCM token registered with backend successfully');
+        await _syncTopicSubscriptions(token);
+      } else {
+        AppLogger.error('Failed to register FCM token with backend');
       }
     } catch (e) {
       AppLogger.error('Error registering token with backend', e);
@@ -415,8 +417,8 @@ class NotificationService {
   Future<void> _syncTopicSubscriptions(String token) async {
     try {
       AppLogger.network('Syncing topic subscriptions with backend');
-      
-        // Get recommended topics based on user preferences
+
+      // Get recommended topics based on user preferences
       final topics = BackendService().getRecommendedTopics(
         tournamentsEnabled: _notificationPreferences[NotificationType.tournament] ?? true,
         socialEnabled: _notificationPreferences[NotificationType.social] ?? true,
@@ -424,12 +426,13 @@ class NotificationService {
         dailyRemindersEnabled: _notificationPreferences[NotificationType.dailyReminder] ?? true,
         specialEventsEnabled: _notificationPreferences[NotificationType.specialEvent] ?? true,
       );
-      
-      await BackendService().subscribeToTopics(
-        fcmToken: token,
-        topics: topics,
-      );
-      
+
+      // Use authenticated ApiService for topic subscriptions
+      final apiService = ApiService();
+      for (final topic in topics) {
+        await apiService.subscribeToTopic(token, topic);
+      }
+
       AppLogger.network('Topic subscriptions synced: ${topics.join(', ')}');
     } catch (e) {
       AppLogger.error('Error syncing topic subscriptions', e);
@@ -444,8 +447,14 @@ class NotificationService {
         return;
       }
 
+      final apiService = ApiService();
+      if (!apiService.isAuthenticated) {
+        AppLogger.warning('Cannot initialize backend integration: Not authenticated');
+        return;
+      }
+
       AppLogger.info('🔗 Initializing backend integration');
-      
+
       // Development-only: Print token for backend testing
       if (kDebugMode) {
         debugPrint('');
@@ -456,17 +465,10 @@ class NotificationService {
         debugPrint('🔗 =====================================');
         debugPrint('');
       }
-      
-      // Check backend health
-      final isHealthy = await BackendService().checkBackendHealth();
-      if (!isHealthy) {
-        AppLogger.warning('Backend health check failed - notifications may not work properly');
-        return;
-      }
 
-      // Register token with backend
+      // Register token with backend (using authenticated ApiService)
       await _registerTokenWithBackend(_fcmToken!);
-      
+
       AppLogger.info('✅ Backend integration initialized');
     } catch (e) {
       AppLogger.error('Failed to initialize backend integration', e);

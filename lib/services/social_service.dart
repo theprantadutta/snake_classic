@@ -2,10 +2,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/offline_cache_service.dart';
 
 class SocialService {
   static SocialService? _instance;
   final ApiService _apiService = ApiService();
+  final ConnectivityService _connectivityService = ConnectivityService();
+  final OfflineCacheService _cacheService = OfflineCacheService();
 
   SocialService._internal();
 
@@ -14,9 +18,17 @@ class SocialService {
     return _instance!;
   }
 
-  // Search for users by username, display name or email
+  // Cache keys
+  static const String _friendsListKey = 'friends_list';
+  static const String _friendRequestsKey = 'friend_requests';
+
+  /// Search for users by username, display name or email (requires online)
   Future<List<UserProfile>> searchUsers(String query) async {
     if (query.length < 2) return [];
+
+    if (!_connectivityService.isOnline) {
+      return [];
+    }
 
     try {
       final results = await _apiService.searchUsers(query);
@@ -31,11 +43,20 @@ class SocialService {
     }
   }
 
-  // Send friend request
+  /// Send friend request (requires online)
   Future<bool> sendFriendRequest(String toUserId) async {
+    if (!_connectivityService.isOnline) {
+      return false;
+    }
+
     try {
       final result = await _apiService.sendFriendRequest(userId: toUserId);
-      return result != null && result['success'] == true;
+      if (result != null && result['success'] == true) {
+        // Invalidate friend requests cache
+        await _cacheService.invalidateCache(_friendRequestsKey);
+        return true;
+      }
+      return false;
     } catch (e) {
       if (kDebugMode) {
         print('Error sending friend request: $e');
@@ -44,11 +65,21 @@ class SocialService {
     }
   }
 
-  // Accept friend request
+  /// Accept friend request (requires online)
   Future<bool> acceptFriendRequest(String fromUserId) async {
+    if (!_connectivityService.isOnline) {
+      return false;
+    }
+
     try {
       final result = await _apiService.acceptFriendRequest(fromUserId);
-      return result != null && result['success'] == true;
+      if (result != null && result['success'] == true) {
+        // Invalidate caches
+        await _cacheService.invalidateCache(_friendsListKey);
+        await _cacheService.invalidateCache(_friendRequestsKey);
+        return true;
+      }
+      return false;
     } catch (e) {
       if (kDebugMode) {
         print('Error accepting friend request: $e');
@@ -57,11 +88,19 @@ class SocialService {
     }
   }
 
-  // Reject friend request
+  /// Reject friend request (requires online)
   Future<bool> rejectFriendRequest(String fromUserId) async {
+    if (!_connectivityService.isOnline) {
+      return false;
+    }
+
     try {
       final result = await _apiService.rejectFriendRequest(fromUserId);
-      return result != null && result['success'] == true;
+      if (result != null && result['success'] == true) {
+        await _cacheService.invalidateCache(_friendRequestsKey);
+        return true;
+      }
+      return false;
     } catch (e) {
       if (kDebugMode) {
         print('Error rejecting friend request: $e');
@@ -70,11 +109,19 @@ class SocialService {
     }
   }
 
-  // Remove friend
+  /// Remove friend (requires online)
   Future<bool> removeFriend(String friendUserId) async {
+    if (!_connectivityService.isOnline) {
+      return false;
+    }
+
     try {
       final result = await _apiService.removeFriend(friendUserId);
-      return result != null && result['success'] == true;
+      if (result != null && result['success'] == true) {
+        await _cacheService.invalidateCache(_friendsListKey);
+        return true;
+      }
+      return false;
     } catch (e) {
       if (kDebugMode) {
         print('Error removing friend: $e');
@@ -83,11 +130,48 @@ class SocialService {
     }
   }
 
-  // Get user profile
+  /// Get user profile with caching
   Future<UserProfile?> getUserProfile(String userId) async {
+    final cacheKey = 'user_profile_$userId';
+
+    // Try cached first
+    final cached = await _cacheService.getCached<Map<String, dynamic>>(
+      cacheKey,
+      (data) => Map<String, dynamic>.from(data as Map),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshUserProfileInBackground(userId);
+      }
+      return _mapToUserProfile(cached);
+    }
+
+    // Offline fallback
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<Map<String, dynamic>>(
+        cacheKey,
+        (data) => Map<String, dynamic>.from(data as Map),
+      );
+      return fallback != null ? _mapToUserProfile(fallback) : null;
+    }
+
+    // Fetch fresh
+    return await _fetchAndCacheUserProfile(userId);
+  }
+
+  Future<UserProfile?> _fetchAndCacheUserProfile(String userId) async {
     try {
       final data = await _apiService.getUserProfile(userId);
       if (data == null) return null;
+
+      await _cacheService.setCache<Map<String, dynamic>>(
+        'user_profile_$userId',
+        data,
+        (d) => d,
+        customTtl: const Duration(minutes: 5),
+      );
+
       return _mapToUserProfile(data);
     } catch (e) {
       if (kDebugMode) {
@@ -97,27 +181,63 @@ class SocialService {
     }
   }
 
-  // Get friends list
+  void _refreshUserProfileInBackground(String userId) {
+    _fetchAndCacheUserProfile(userId).catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return null;
+    });
+  }
+
+  /// Get friends list with cache-first pattern
   Future<List<UserProfile>> getFriends() async {
+    // 1. Try cached data first
+    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+      _friendsListKey,
+      (data) => List<Map<String, dynamic>>.from(
+        (data as List).map((e) => Map<String, dynamic>.from(e)),
+      ),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshFriendsInBackground();
+      }
+      return _sortFriends(cached.map((data) => _mapToUserProfile(data)).toList());
+    }
+
+    // 2. Offline fallback
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
+        _friendsListKey,
+        (data) => List<Map<String, dynamic>>.from(
+          (data as List).map((e) => Map<String, dynamic>.from(e)),
+        ),
+      );
+      return fallback != null
+          ? _sortFriends(fallback.map((data) => _mapToUserProfile(data)).toList())
+          : [];
+    }
+
+    // 3. Fetch fresh
+    return await _fetchAndCacheFriends();
+  }
+
+  Future<List<UserProfile>> _fetchAndCacheFriends() async {
     try {
       final response = await _apiService.getFriends();
       if (response == null || response['friends'] == null) return [];
 
       final friends = List<Map<String, dynamic>>.from(response['friends']);
-      final profiles = friends.map((data) => _mapToUserProfile(data)).toList();
 
-      // Sort friends by status (online first) and then by name
-      profiles.sort((a, b) {
-        if (a.status != b.status) {
-          if (a.status == UserStatus.playing) return -1;
-          if (b.status == UserStatus.playing) return 1;
-          if (a.status == UserStatus.online) return -1;
-          if (b.status == UserStatus.online) return 1;
-        }
-        return a.displayName.compareTo(b.displayName);
-      });
+      await _cacheService.setCache<List<Map<String, dynamic>>>(
+        _friendsListKey,
+        friends,
+        (data) => data,
+      );
 
-      return profiles;
+      return _sortFriends(friends.map((data) => _mapToUserProfile(data)).toList());
     } catch (e) {
       if (kDebugMode) {
         print('Error getting friends: $e');
@@ -126,31 +246,69 @@ class SocialService {
     }
   }
 
-  // Get friend requests
+  void _refreshFriendsInBackground() {
+    _fetchAndCacheFriends().catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <UserProfile>[];
+    });
+  }
+
+  List<UserProfile> _sortFriends(List<UserProfile> profiles) {
+    profiles.sort((a, b) {
+      if (a.status != b.status) {
+        if (a.status == UserStatus.playing) return -1;
+        if (b.status == UserStatus.playing) return 1;
+        if (a.status == UserStatus.online) return -1;
+        if (b.status == UserStatus.online) return 1;
+      }
+      return a.displayName.compareTo(b.displayName);
+    });
+    return profiles;
+  }
+
+  /// Get friend requests with cache-first pattern
   Future<List<FriendRequest>> getFriendRequests() async {
+    // 1. Try cached data first
+    final cached = await _cacheService.getCached<Map<String, dynamic>>(
+      _friendRequestsKey,
+      (data) => Map<String, dynamic>.from(data as Map),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshFriendRequestsInBackground();
+      }
+      return _parseFriendRequests(cached);
+    }
+
+    // 2. Offline fallback
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<Map<String, dynamic>>(
+        _friendRequestsKey,
+        (data) => Map<String, dynamic>.from(data as Map),
+      );
+      return fallback != null ? _parseFriendRequests(fallback) : [];
+    }
+
+    // 3. Fetch fresh
+    return await _fetchAndCacheFriendRequests();
+  }
+
+  Future<List<FriendRequest>> _fetchAndCacheFriendRequests() async {
     try {
       final response = await _apiService.getPendingRequests();
       if (response == null) return [];
 
-      final requests = <FriendRequest>[];
+      await _cacheService.setCache<Map<String, dynamic>>(
+        _friendRequestsKey,
+        response,
+        (data) => data,
+        customTtl: const Duration(minutes: 3),
+      );
 
-      // Get received requests
-      if (response['received'] != null) {
-        final received = List<Map<String, dynamic>>.from(response['received']);
-        for (final data in received) {
-          requests.add(_mapToFriendRequest(data, FriendRequestType.received));
-        }
-      }
-
-      // Get sent requests
-      if (response['sent'] != null) {
-        final sent = List<Map<String, dynamic>>.from(response['sent']);
-        for (final data in sent) {
-          requests.add(_mapToFriendRequest(data, FriendRequestType.sent));
-        }
-      }
-
-      return requests;
+      return _parseFriendRequests(response);
     } catch (e) {
       if (kDebugMode) {
         print('Error getting friend requests: $e');
@@ -159,7 +317,36 @@ class SocialService {
     }
   }
 
-  // Get friends leaderboard
+  void _refreshFriendRequestsInBackground() {
+    _fetchAndCacheFriendRequests().catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <FriendRequest>[];
+    });
+  }
+
+  List<FriendRequest> _parseFriendRequests(Map<String, dynamic> response) {
+    final requests = <FriendRequest>[];
+
+    if (response['received'] != null) {
+      final received = List<Map<String, dynamic>>.from(response['received']);
+      for (final data in received) {
+        requests.add(_mapToFriendRequest(data, FriendRequestType.received));
+      }
+    }
+
+    if (response['sent'] != null) {
+      final sent = List<Map<String, dynamic>>.from(response['sent']);
+      for (final data in sent) {
+        requests.add(_mapToFriendRequest(data, FriendRequestType.sent));
+      }
+    }
+
+    return requests;
+  }
+
+  /// Get friends leaderboard with caching (uses LeaderboardService cache key)
   Future<List<UserProfile>> getFriendsLeaderboard() async {
     try {
       final response = await _apiService.getFriendsLeaderboard();
@@ -177,7 +364,6 @@ class SocialService {
         });
       }).toList();
 
-      // Sort by high score
       profiles.sort((a, b) => b.highScore.compareTo(a.highScore));
 
       return profiles;
@@ -189,11 +375,13 @@ class SocialService {
     }
   }
 
-  // Update user status
+  /// Update user status (requires online)
   Future<void> updateUserStatus(
     UserStatus status, {
     String? statusMessage,
   }) async {
+    if (!_connectivityService.isOnline) return;
+
     try {
       await _apiService.updateProfile({
         'status': status.name,
@@ -206,8 +394,10 @@ class SocialService {
     }
   }
 
-  // Update user privacy setting
+  /// Update user privacy setting (requires online)
   Future<bool> updatePrivacySetting(bool isPublic) async {
+    if (!_connectivityService.isOnline) return false;
+
     try {
       final result = await _apiService.updateProfile({'is_public': isPublic});
       return result != null;
@@ -217,6 +407,18 @@ class SocialService {
       }
       return false;
     }
+  }
+
+  /// Check if we have cached friends data
+  Future<bool> hasCachedFriends() async {
+    return await _cacheService.hasCachedData(_friendsListKey);
+  }
+
+  /// Clear all social cache
+  Future<void> clearCache() async {
+    await _cacheService.invalidateCache(_friendsListKey);
+    await _cacheService.invalidateCache(_friendRequestsKey);
+    await _cacheService.invalidateCachePattern('user_profile_');
   }
 
   // Stream friends for real-time updates (polling-based)

@@ -2,10 +2,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/offline_cache_service.dart';
 
 class TournamentService {
   static TournamentService? _instance;
   final ApiService _apiService = ApiService();
+  final ConnectivityService _connectivityService = ConnectivityService();
+  final OfflineCacheService _cacheService = OfflineCacheService();
 
   TournamentService._internal();
 
@@ -14,14 +18,59 @@ class TournamentService {
     return _instance!;
   }
 
-  // Get all active and upcoming tournaments
+  // Cache keys
+  static const String _activeTournamentsKey = 'tournaments_active';
+  static const String _tournamentHistoryKey = 'tournaments_history';
+
+  /// Get all active and upcoming tournaments with cache-first pattern
   Future<List<Tournament>> getActiveTournaments() async {
+    // 1. Try to get cached data first
+    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+      _activeTournamentsKey,
+      (data) => List<Map<String, dynamic>>.from(
+        (data as List).map((e) => Map<String, dynamic>.from(e)),
+      ),
+    );
+
+    if (cached != null) {
+      // Cache hit - return cached data and refresh in background if online
+      if (_connectivityService.isOnline) {
+        _refreshActiveTournamentsInBackground();
+      }
+      return cached.map((data) => _mapToTournament(data)).toList();
+    }
+
+    // 2. No fresh cache - check if we're offline
+    if (!_connectivityService.isOnline) {
+      // Try to get stale cached data as fallback
+      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
+        _activeTournamentsKey,
+        (data) => List<Map<String, dynamic>>.from(
+          (data as List).map((e) => Map<String, dynamic>.from(e)),
+        ),
+      );
+      return fallback?.map((data) => _mapToTournament(data)).toList() ?? [];
+    }
+
+    // 3. Online with no cache - fetch fresh data
+    return await _fetchAndCacheActiveTournaments();
+  }
+
+  Future<List<Tournament>> _fetchAndCacheActiveTournaments() async {
     try {
       final response = await _apiService.listTournaments(status: 'active');
 
       if (response == null || response['tournaments'] == null) return [];
 
       final tournaments = List<Map<String, dynamic>>.from(response['tournaments']);
+
+      // Cache the raw data
+      await _cacheService.setCache<List<Map<String, dynamic>>>(
+        _activeTournamentsKey,
+        tournaments,
+        (data) => data,
+      );
+
       return tournaments.map((data) => _mapToTournament(data)).toList();
     } catch (e) {
       if (kDebugMode) {
@@ -31,8 +80,48 @@ class TournamentService {
     }
   }
 
-  // Get tournament history (ended tournaments)
+  void _refreshActiveTournamentsInBackground() {
+    _fetchAndCacheActiveTournaments().catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <Tournament>[];
+    });
+  }
+
+  /// Get tournament history (ended tournaments) with cache-first pattern
   Future<List<Tournament>> getTournamentHistory({int limit = 10}) async {
+    // 1. Try to get cached data first
+    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+      _tournamentHistoryKey,
+      (data) => List<Map<String, dynamic>>.from(
+        (data as List).map((e) => Map<String, dynamic>.from(e)),
+      ),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshTournamentHistoryInBackground(limit);
+      }
+      return cached.map((data) => _mapToTournament(data)).toList();
+    }
+
+    // 2. No fresh cache - check if we're offline
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
+        _tournamentHistoryKey,
+        (data) => List<Map<String, dynamic>>.from(
+          (data as List).map((e) => Map<String, dynamic>.from(e)),
+        ),
+      );
+      return fallback?.map((data) => _mapToTournament(data)).toList() ?? [];
+    }
+
+    // 3. Online with no cache - fetch fresh data
+    return await _fetchAndCacheTournamentHistory(limit);
+  }
+
+  Future<List<Tournament>> _fetchAndCacheTournamentHistory(int limit) async {
     try {
       final response = await _apiService.listTournaments(
         status: 'ended',
@@ -42,6 +131,14 @@ class TournamentService {
       if (response == null || response['tournaments'] == null) return [];
 
       final tournaments = List<Map<String, dynamic>>.from(response['tournaments']);
+
+      await _cacheService.setCache<List<Map<String, dynamic>>>(
+        _tournamentHistoryKey,
+        tournaments,
+        (data) => data,
+        customTtl: const Duration(hours: 1), // History doesn't change often
+      );
+
       return tournaments.map((data) => _mapToTournament(data)).toList();
     } catch (e) {
       if (kDebugMode) {
@@ -51,11 +148,57 @@ class TournamentService {
     }
   }
 
-  // Get specific tournament by ID
+  void _refreshTournamentHistoryInBackground(int limit) {
+    _fetchAndCacheTournamentHistory(limit).catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <Tournament>[];
+    });
+  }
+
+  /// Get specific tournament by ID with caching
   Future<Tournament?> getTournament(String tournamentId) async {
+    final cacheKey = 'tournament_$tournamentId';
+
+    // 1. Try to get cached data first
+    final cached = await _cacheService.getCached<Map<String, dynamic>>(
+      cacheKey,
+      (data) => Map<String, dynamic>.from(data as Map),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshTournamentInBackground(tournamentId);
+      }
+      return _mapToTournament(cached);
+    }
+
+    // 2. No fresh cache - check if we're offline
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<Map<String, dynamic>>(
+        cacheKey,
+        (data) => Map<String, dynamic>.from(data as Map),
+      );
+      return fallback != null ? _mapToTournament(fallback) : null;
+    }
+
+    // 3. Online with no cache - fetch fresh data
+    return await _fetchAndCacheTournament(tournamentId);
+  }
+
+  Future<Tournament?> _fetchAndCacheTournament(String tournamentId) async {
     try {
       final data = await _apiService.getTournament(tournamentId);
       if (data == null) return null;
+
+      await _cacheService.setCache<Map<String, dynamic>>(
+        'tournament_$tournamentId',
+        data,
+        (d) => d,
+        customTtl: const Duration(minutes: 5),
+      );
+
       return _mapToTournament(data);
     } catch (e) {
       if (kDebugMode) {
@@ -65,11 +208,33 @@ class TournamentService {
     }
   }
 
-  // Join a tournament
+  void _refreshTournamentInBackground(String tournamentId) {
+    _fetchAndCacheTournament(tournamentId).catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return null;
+    });
+  }
+
+  /// Join a tournament (requires online)
   Future<bool> joinTournament(String tournamentId) async {
+    if (!_connectivityService.isOnline) {
+      if (kDebugMode) {
+        print('Cannot join tournament while offline');
+      }
+      return false;
+    }
+
     try {
       final result = await _apiService.joinTournament(tournamentId);
-      return result != null && result['success'] == true;
+      if (result != null && result['success'] == true) {
+        // Invalidate cache to get updated participant count
+        await _cacheService.invalidateCache('tournament_$tournamentId');
+        await _cacheService.invalidateCache(_activeTournamentsKey);
+        return true;
+      }
+      return false;
     } catch (e) {
       if (kDebugMode) {
         print('Error joining tournament: $e');
@@ -78,8 +243,15 @@ class TournamentService {
     }
   }
 
-  // Submit score to tournament
+  /// Submit score to tournament (requires online)
   Future<bool> submitScore(String tournamentId, int score, Map<String, dynamic> gameStats) async {
+    if (!_connectivityService.isOnline) {
+      if (kDebugMode) {
+        print('Cannot submit tournament score while offline');
+      }
+      return false;
+    }
+
     try {
       final result = await _apiService.submitTournamentScore(
         tournamentId: tournamentId,
@@ -88,7 +260,12 @@ class TournamentService {
         foodsEaten: gameStats['foodsEaten'] ?? 0,
       );
 
-      return result != null && result['success'] == true;
+      if (result != null && result['success'] == true) {
+        // Invalidate leaderboard cache
+        await _cacheService.invalidateCache('tournament_leaderboard_$tournamentId');
+        return true;
+      }
+      return false;
     } catch (e) {
       if (kDebugMode) {
         print('Error submitting tournament score: $e');
@@ -97,8 +274,41 @@ class TournamentService {
     }
   }
 
-  // Get tournament leaderboard
+  /// Get tournament leaderboard with caching
   Future<List<TournamentParticipant>> getTournamentLeaderboard(String tournamentId, {int limit = 50}) async {
+    final cacheKey = 'tournament_leaderboard_$tournamentId';
+
+    // 1. Try to get cached data first
+    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+      cacheKey,
+      (data) => List<Map<String, dynamic>>.from(
+        (data as List).map((e) => Map<String, dynamic>.from(e)),
+      ),
+    );
+
+    if (cached != null) {
+      if (_connectivityService.isOnline) {
+        _refreshTournamentLeaderboardInBackground(tournamentId, limit);
+      }
+      return cached.map((data) => _mapToParticipant(data)).toList();
+    }
+
+    // 2. No fresh cache - check if we're offline
+    if (!_connectivityService.isOnline) {
+      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
+        cacheKey,
+        (data) => List<Map<String, dynamic>>.from(
+          (data as List).map((e) => Map<String, dynamic>.from(e)),
+        ),
+      );
+      return fallback?.map((data) => _mapToParticipant(data)).toList() ?? [];
+    }
+
+    // 3. Online with no cache - fetch fresh data
+    return await _fetchAndCacheTournamentLeaderboard(tournamentId, limit);
+  }
+
+  Future<List<TournamentParticipant>> _fetchAndCacheTournamentLeaderboard(String tournamentId, int limit) async {
     try {
       final response = await _apiService.getTournamentLeaderboard(
         tournamentId,
@@ -108,6 +318,14 @@ class TournamentService {
       if (response == null || response['entries'] == null) return [];
 
       final entries = List<Map<String, dynamic>>.from(response['entries']);
+
+      await _cacheService.setCache<List<Map<String, dynamic>>>(
+        'tournament_leaderboard_$tournamentId',
+        entries,
+        (data) => data,
+        customTtl: const Duration(minutes: 2), // Short TTL for leaderboards
+      );
+
       return entries.map((data) => _mapToParticipant(data)).toList();
     } catch (e) {
       if (kDebugMode) {
@@ -117,15 +335,21 @@ class TournamentService {
     }
   }
 
-  // Get user's tournament statistics
+  void _refreshTournamentLeaderboardInBackground(String tournamentId, int limit) {
+    _fetchAndCacheTournamentLeaderboard(tournamentId, limit).catchError((e) {
+      if (kDebugMode) {
+        print('Background refresh failed: $e');
+      }
+      return <TournamentParticipant>[];
+    });
+  }
+
+  /// Get user's tournament statistics
   Future<Map<String, dynamic>> getUserTournamentStats() async {
     try {
-      // Get user's tournament participation history
       final response = await _apiService.listTournaments();
       if (response == null) return {};
 
-      // Calculate stats from tournament data
-      // This is a simplified version - the backend should provide these stats
       return {
         'totalTournaments': 0,
         'totalAttempts': 0,
@@ -140,6 +364,16 @@ class TournamentService {
       }
       return {};
     }
+  }
+
+  /// Check if we have cached tournament data
+  Future<bool> hasCachedData() async {
+    return await _cacheService.hasCachedData(_activeTournamentsKey);
+  }
+
+  /// Clear all tournament cache
+  Future<void> clearCache() async {
+    await _cacheService.invalidateCachePattern('tournament');
   }
 
   // Stream tournaments for real-time updates (polling-based)
