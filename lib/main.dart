@@ -21,7 +21,7 @@ import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
-import 'package:snake_classic/utils/performance_monitor.dart';
+// import 'package:snake_classic/utils/performance_monitor.dart'; // temporarily disabled
 import 'package:talker_flutter/talker_flutter.dart';
 
 import 'firebase_options.dart';
@@ -74,12 +74,12 @@ void main() async {
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    // Start performance monitoring
-    if (kDebugMode) {
-      AppLogger.info('Starting performance monitoring...');
-      PerformanceMonitor().startMonitoring();
-      AppLogger.success('Performance monitoring started');
-    }
+    // Start performance monitoring (temporarily disabled)
+    // if (kDebugMode) {
+    //   AppLogger.info('Starting performance monitoring...');
+    //   PerformanceMonitor().startMonitoring();
+    //   AppLogger.success('Performance monitoring started');
+    // }
 
     AppLogger.success('Snake Classic ready to launch!');
   } catch (error, stackTrace) {
@@ -94,7 +94,7 @@ void main() async {
     };
   }
 
-  runApp(const SnakeClassicApp().withPerformanceMonitoring());
+  runApp(const SnakeClassicApp()); // .withPerformanceMonitoring() temporarily disabled
 }
 
 class SnakeClassicApp extends StatelessWidget {

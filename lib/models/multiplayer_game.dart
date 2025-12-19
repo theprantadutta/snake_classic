@@ -1,6 +1,19 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/direction.dart';
+
+/// Helper function to parse DateTime from various JSON formats
+DateTime? _parseDateTime(dynamic value) {
+  if (value == null) return null;
+  if (value is DateTime) return value;
+  if (value is String) return DateTime.tryParse(value);
+  if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+  return null;
+}
+
+/// Helper function to convert DateTime to JSON-friendly format
+String? _dateTimeToJson(DateTime? dateTime) {
+  return dateTime?.toIso8601String();
+}
 
 enum MultiplayerGameStatus {
   waiting,
@@ -89,13 +102,9 @@ class MultiplayerGame {
       powerUps: (json['powerUps'] as List? ?? [])
           .map((powerUp) => PowerUpSpawn.fromJson(powerUp))
           .toList(),
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      startedAt: json['startedAt'] != null
-          ? (json['startedAt'] as Timestamp).toDate()
-          : null,
-      finishedAt: json['finishedAt'] != null
-          ? (json['finishedAt'] as Timestamp).toDate()
-          : null,
+      createdAt: _parseDateTime(json['createdAt']) ?? DateTime.now(),
+      startedAt: _parseDateTime(json['startedAt']),
+      finishedAt: _parseDateTime(json['finishedAt']),
       winnerId: json['winnerId'],
       maxPlayers: json['maxPlayers'] ?? 2,
       isPrivate: json['isPrivate'] ?? false,
@@ -114,9 +123,9 @@ class MultiplayerGame {
       'bonusFoodPosition': bonusFoodPosition?.toJson(),
       'specialFoodPosition': specialFoodPosition?.toJson(),
       'powerUps': powerUps.map((powerUp) => powerUp.toJson()).toList(),
-      'createdAt': Timestamp.fromDate(createdAt),
-      'startedAt': startedAt != null ? Timestamp.fromDate(startedAt!) : null,
-      'finishedAt': finishedAt != null ? Timestamp.fromDate(finishedAt!) : null,
+      'createdAt': createdAt.toIso8601String(),
+      'startedAt': _dateTimeToJson(startedAt),
+      'finishedAt': _dateTimeToJson(finishedAt),
       'winnerId': winnerId,
       'maxPlayers': maxPlayers,
       'isPrivate': isPrivate,
@@ -278,9 +287,7 @@ class MultiplayerPlayer {
       ),
       score: json['score'] ?? 0,
       rank: json['rank'] ?? 0,
-      lastUpdate: json['lastUpdate'] != null
-          ? (json['lastUpdate'] as Timestamp).toDate()
-          : null,
+      lastUpdate: _parseDateTime(json['lastUpdate']),
       activePowerUps: List<String>.from(json['activePowerUps'] ?? []),
     );
   }
@@ -295,7 +302,7 @@ class MultiplayerPlayer {
       'currentDirection': currentDirection.name,
       'score': score,
       'rank': rank,
-      'lastUpdate': lastUpdate != null ? Timestamp.fromDate(lastUpdate!) : null,
+      'lastUpdate': _dateTimeToJson(lastUpdate),
       'activePowerUps': activePowerUps,
     };
   }
@@ -354,8 +361,8 @@ class PowerUpSpawn {
       id: json['id'] ?? '',
       type: json['type'] ?? '',
       position: Position.fromJson(json['position']),
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      expiresAt: (json['expiresAt'] as Timestamp).toDate(),
+      createdAt: _parseDateTime(json['createdAt']) ?? DateTime.now(),
+      expiresAt: _parseDateTime(json['expiresAt']) ?? DateTime.now().add(const Duration(minutes: 1)),
     );
   }
 
@@ -364,8 +371,8 @@ class PowerUpSpawn {
       'id': id,
       'type': type,
       'position': position.toJson(),
-      'createdAt': Timestamp.fromDate(createdAt),
-      'expiresAt': Timestamp.fromDate(expiresAt),
+      'createdAt': createdAt.toIso8601String(),
+      'expiresAt': expiresAt.toIso8601String(),
     };
   }
 
@@ -390,7 +397,7 @@ class MultiplayerGameAction {
       playerId: json['playerId'] ?? '',
       actionType: json['actionType'] ?? '',
       data: Map<String, dynamic>.from(json['data'] ?? {}),
-      timestamp: (json['timestamp'] as Timestamp).toDate(),
+      timestamp: _parseDateTime(json['timestamp']) ?? DateTime.now(),
     );
   }
 
@@ -399,7 +406,7 @@ class MultiplayerGameAction {
       'playerId': playerId,
       'actionType': actionType,
       'data': data,
-      'timestamp': Timestamp.fromDate(timestamp),
+      'timestamp': timestamp.toIso8601String(),
     };
   }
 

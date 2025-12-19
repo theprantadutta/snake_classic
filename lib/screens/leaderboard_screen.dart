@@ -19,11 +19,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   final LeaderboardService _leaderboardService = LeaderboardService();
   Map<String, dynamic>? _userRank;
 
+  // Leaderboard data
+  List<Map<String, dynamic>> _globalLeaderboard = [];
+  List<Map<String, dynamic>> _weeklyLeaderboard = [];
+  bool _isLoadingGlobal = true;
+  bool _isLoadingWeekly = true;
+  String? _globalError;
+  String? _weeklyError;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadUserRank();
+    _loadData();
   }
 
   @override
@@ -32,15 +40,84 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     super.dispose();
   }
 
-  Future<void> _loadUserRank() async {
+  Future<void> _loadData() async {
+    // Load both leaderboards in parallel first
+    await Future.wait([
+      _loadGlobalLeaderboard(),
+      _loadWeeklyLeaderboard(),
+    ]);
+    // Then calculate user rank from already loaded data (no extra API call)
+    _calculateUserRank();
+  }
+
+  void _calculateUserRank() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    if (userProvider.isSignedIn && userProvider.user != null) {
-      final rank = await _leaderboardService.getUserRank(
-        userProvider.user!.uid,
-      );
+    if (!userProvider.isSignedIn || userProvider.user == null) return;
+    if (_globalLeaderboard.isEmpty) return;
+
+    final userId = userProvider.user!.uid;
+    for (int i = 0; i < _globalLeaderboard.length; i++) {
+      if (_globalLeaderboard[i]['uid'] == userId) {
+        if (mounted) {
+          setState(() {
+            _userRank = {
+              'rank': i + 1,
+              'totalPlayers': _globalLeaderboard.length,
+              'userScore': _globalLeaderboard[i]['highScore'] ?? 0,
+              'percentile': ((_globalLeaderboard.length - i) / _globalLeaderboard.length * 100).round(),
+            };
+          });
+        }
+        return;
+      }
+    }
+  }
+
+  Future<void> _loadGlobalLeaderboard() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingGlobal = true;
+      _globalError = null;
+    });
+
+    try {
+      final data = await _leaderboardService.getGlobalLeaderboard();
       if (mounted) {
         setState(() {
-          _userRank = rank;
+          _globalLeaderboard = data;
+          _isLoadingGlobal = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _globalError = 'Failed to load leaderboard';
+          _isLoadingGlobal = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadWeeklyLeaderboard() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingWeekly = true;
+      _weeklyError = null;
+    });
+
+    try {
+      final data = await _leaderboardService.getWeeklyLeaderboard();
+      if (mounted) {
+        setState(() {
+          _weeklyLeaderboard = data;
+          _isLoadingWeekly = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _weeklyError = 'Failed to load weekly leaderboard';
+          _isLoadingWeekly = false;
         });
       }
     }
@@ -214,174 +291,178 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildGlobalLeaderboard(GameTheme theme, UserProvider userProvider) {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _leaderboardService.getGlobalLeaderboardStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    if (_isLoadingGlobal) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: theme.primaryColor.withValues(alpha: 0.5),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load leaderboard',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 16,
-                  ),
-                ),
-              ],
+    if (_globalError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.primaryColor.withValues(alpha: 0.5),
             ),
-          );
-        }
-
-        final leaderboard = snapshot.data ?? [];
-
-        if (leaderboard.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.emoji_events_outlined,
-                  size: 64,
-                  color: theme.primaryColor.withValues(alpha: 0.5),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No scores yet',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Be the first to set a high score!',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+            Text(
+              _globalError!,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 16,
+              ),
             ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadGlobalLeaderboard,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_globalLeaderboard.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.emoji_events_outlined,
+              size: 64,
+              color: theme.primaryColor.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No scores yet',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Be the first to set a high score!',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadGlobalLeaderboard,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _globalLeaderboard.length,
+        itemBuilder: (context, index) {
+          final player = _globalLeaderboard[index];
+          final isCurrentUser =
+              userProvider.isSignedIn &&
+              userProvider.user != null &&
+              player['uid'] == userProvider.user!.uid;
+
+          return _buildLeaderboardItem(
+            index + 1,
+            player,
+            theme,
+            isCurrentUser,
           );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: leaderboard.length,
-          itemBuilder: (context, index) {
-            final player = leaderboard[index];
-            final isCurrentUser =
-                userProvider.isSignedIn &&
-                userProvider.user != null &&
-                player['uid'] == userProvider.user!.uid;
-
-            return _buildLeaderboardItem(
-              index + 1,
-              player,
-              theme,
-              isCurrentUser,
-            );
-          },
-        );
-      },
+        },
+      ),
     );
   }
 
   Widget _buildWeeklyLeaderboard(GameTheme theme, UserProvider userProvider) {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _leaderboardService.getWeeklyLeaderboardStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    if (_isLoadingWeekly) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: theme.primaryColor.withValues(alpha: 0.5),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load weekly leaderboard',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 16,
-                  ),
-                ),
-              ],
+    if (_weeklyError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.primaryColor.withValues(alpha: 0.5),
             ),
-          );
-        }
-
-        final leaderboard = snapshot.data ?? [];
-
-        if (leaderboard.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 64,
-                  color: theme.primaryColor.withValues(alpha: 0.5),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No weekly scores yet',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Play this week to appear here!',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+            Text(
+              _weeklyError!,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 16,
+              ),
             ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadWeeklyLeaderboard,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_weeklyLeaderboard.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 64,
+              color: theme.primaryColor.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No weekly scores yet',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Play this week to appear here!',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadWeeklyLeaderboard,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _weeklyLeaderboard.length,
+        itemBuilder: (context, index) {
+          final player = _weeklyLeaderboard[index];
+          final isCurrentUser =
+              userProvider.isSignedIn &&
+              userProvider.user != null &&
+              player['uid'] == userProvider.user!.uid;
+
+          return _buildLeaderboardItem(
+            index + 1,
+            player,
+            theme,
+            isCurrentUser,
           );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: leaderboard.length,
-          itemBuilder: (context, index) {
-            final player = leaderboard[index];
-            final isCurrentUser =
-                userProvider.isSignedIn &&
-                userProvider.user != null &&
-                player['uid'] == userProvider.user!.uid;
-
-            return _buildLeaderboardItem(
-              index + 1,
-              player,
-              theme,
-              isCurrentUser,
-            );
-          },
-        );
-      },
+        },
+      ),
     );
   }
 

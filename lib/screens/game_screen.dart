@@ -642,176 +642,58 @@ class _GameScreenState extends State<GameScreen>
     return AnimatedBuilder(
       animation: _gestureIndicatorController,
       builder: (context, child) {
-        final isActive =
-            _lastSwipeDirection != null &&
+        final isActive = _lastSwipeDirection != null &&
             _gestureIndicatorController.isAnimating;
+        final activeColor = isActive
+            ? _getActiveSwipeColor(_lastSwipeDirection!, theme)
+            : theme.accentColor;
 
         return Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 10 : 12,
-            vertical: isSmallScreen ? 8 : 10,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.backgroundColor.withValues(alpha: 0.95),
-                theme.backgroundColor.withValues(alpha: 0.85),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
+            color: theme.backgroundColor.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isActive
-                  ? _getActiveSwipeColor(
-                      _lastSwipeDirection!,
-                      theme,
-                    ).withValues(alpha: 0.6)
-                  : theme.accentColor.withValues(alpha: 0.4),
-              width: 2.0, // Fixed width to prevent layout shifts
+              color: activeColor.withValues(alpha: isActive ? 0.7 : 0.3),
+              width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: isActive
-                    ? _getActiveSwipeColor(
-                        _lastSwipeDirection!,
-                        theme,
-                      ).withValues(alpha: 0.3)
-                    : Colors.black.withValues(alpha: 0.2),
-                blurRadius: 8, // Fixed blur radius to prevent layout shifts
-                spreadRadius: 1, // Fixed spread radius to prevent layout shifts
-                offset: const Offset(0, 3),
+                    ? activeColor.withValues(alpha: 0.25)
+                    : Colors.black.withValues(alpha: 0.1),
+                blurRadius: isActive ? 8 : 4,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Enhanced directional pad indicator
-              Container(
-                width: isSmallScreen ? 32 : 36,
-                height: isSmallScreen ? 32 : 36,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [
-                      theme.accentColor.withValues(alpha: 0.2),
-                      theme.accentColor.withValues(alpha: 0.1),
-                    ],
+              // Direction arrow with rotation
+              AnimatedRotation(
+                turns: _getDirectionRotation(_lastSwipeDirection),
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                child: AnimatedScale(
+                  scale: isActive ? 1.1 : 1.0,
+                  duration: const Duration(milliseconds: 150),
+                  child: Icon(
+                    Icons.arrow_upward_rounded,
+                    color: activeColor.withValues(alpha: isActive ? 1.0 : 0.6),
+                    size: 18,
                   ),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.5),
-                    width: 1.5,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Center dot
-                    Center(
-                      child: Container(
-                        width: 4,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: theme.accentColor.withValues(alpha: 0.6),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-
-                    // Simple directional indicators with fixed positions
-                    Positioned(
-                      top: isSmallScreen ? 4 : 5,
-                      left:
-                          (isSmallScreen ? 32 : 36) / 2 -
-                          (isSmallScreen ? 4 : 5),
-                      child: _buildSimpleIndicator(
-                        Direction.up,
-                        theme,
-                        isSmallScreen,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: isSmallScreen ? 4 : 5,
-                      left:
-                          (isSmallScreen ? 32 : 36) / 2 -
-                          (isSmallScreen ? 4 : 5),
-                      child: _buildSimpleIndicator(
-                        Direction.down,
-                        theme,
-                        isSmallScreen,
-                      ),
-                    ),
-                    Positioned(
-                      left: isSmallScreen ? 4 : 5,
-                      top:
-                          (isSmallScreen ? 32 : 36) / 2 -
-                          (isSmallScreen ? 4 : 5),
-                      child: _buildSimpleIndicator(
-                        Direction.left,
-                        theme,
-                        isSmallScreen,
-                      ),
-                    ),
-                    Positioned(
-                      right: isSmallScreen ? 4 : 5,
-                      top:
-                          (isSmallScreen ? 32 : 36) / 2 -
-                          (isSmallScreen ? 4 : 5),
-                      child: _buildSimpleIndicator(
-                        Direction.right,
-                        theme,
-                        isSmallScreen,
-                      ),
-                    ),
-                  ],
                 ),
               ),
-              SizedBox(width: isSmallScreen ? 8 : 10),
-              SizedBox(
-                height: isSmallScreen
-                    ? 28
-                    : 32, // Fixed height to prevent jumping
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Swipe',
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.9),
-                        fontSize: isSmallScreen ? 11 : 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    SizedBox(height: 2), // Consistent spacing
-                    AnimatedOpacity(
-                      opacity:
-                          (_lastSwipeDirection != null &&
-                              _gestureIndicatorController.isAnimating)
-                          ? 1.0
-                          : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Text(
-                        _lastSwipeDirection != null
-                            ? _getDirectionName(_lastSwipeDirection!)
-                            : 'SWIPE', // Initial state indicator
-                        style: TextStyle(
-                          color: _lastSwipeDirection != null
-                              ? _getActiveSwipeColor(
-                                  _lastSwipeDirection!,
-                                  theme,
-                                )
-                              : Colors.transparent,
-                          fontSize: isSmallScreen ? 8 : 9,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                          height: 1.0,
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 6),
+              // "Swipe" label
+              Text(
+                'Swipe',
+                style: TextStyle(
+                  color: activeColor.withValues(alpha: isActive ? 0.9 : 0.6),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
                 ),
               ),
             ],
@@ -821,49 +703,18 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _buildSimpleIndicator(
-    Direction direction,
-    GameTheme theme,
-    bool isSmallScreen,
-  ) {
-    final isActive =
-        _lastSwipeDirection == direction &&
-        _gestureIndicatorController.isAnimating;
-
-    return Container(
-      width: isSmallScreen ? 8 : 10,
-      height: isSmallScreen ? 8 : 10,
-      decoration: BoxDecoration(
-        color: isActive
-            ? _getActiveSwipeColor(direction, theme).withValues(alpha: 0.9)
-            : theme.accentColor.withValues(alpha: 0.4),
-        shape: BoxShape.circle,
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: _getActiveSwipeColor(
-                    direction,
-                    theme,
-                  ).withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  spreadRadius: 1,
-                ),
-              ]
-            : null,
-      ),
-      child: isActive
-          ? Center(
-              child: Container(
-                width: isSmallScreen ? 3 : 4,
-                height: isSmallScreen ? 3 : 4,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            )
-          : null,
-    );
+  double _getDirectionRotation(Direction? direction) {
+    if (direction == null) return 0.0;
+    switch (direction) {
+      case Direction.up:
+        return 0.0;
+      case Direction.right:
+        return 0.25;
+      case Direction.down:
+        return 0.5;
+      case Direction.left:
+        return 0.75;
+    }
   }
 
   Color _getActiveSwipeColor(Direction direction, GameTheme theme) {
@@ -879,18 +730,6 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-  String _getDirectionName(Direction direction) {
-    switch (direction) {
-      case Direction.up:
-        return 'UP';
-      case Direction.down:
-        return 'DOWN';
-      case Direction.left:
-        return 'LEFT';
-      case Direction.right:
-        return 'RIGHT';
-    }
-  }
 }
 
 // Custom painter for game background pattern - matching home screen
