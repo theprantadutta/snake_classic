@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 
 class SwipeDetector extends StatefulWidget {
   final Widget child;
   final Function(Direction) onSwipe;
+  final VoidCallback? onTap; // Callback for tap gesture (e.g., to pause)
   final bool showFeedback;
 
   const SwipeDetector({
     super.key,
     required this.child,
     required this.onSwipe,
+    this.onTap,
     this.showFeedback = true,
   });
 
@@ -54,16 +57,16 @@ class _SwipeDetectorState extends State<SwipeDetector>
     final now = DateTime.now();
     
     // Allow direction changes but prevent spam
-    if (_isProcessingSwipe && 
-        _lastSwipeTime != null && 
-        now.difference(_lastSwipeTime!).inMilliseconds < 50) {
+    if (_isProcessingSwipe &&
+        _lastSwipeTime != null &&
+        now.difference(_lastSwipeTime!).inMilliseconds < GameConstants.swipeSpamPreventionMs) {
       return;
     }
-    
+
     // If same direction within short time, ignore
     if (_lastSwipeDirection == direction &&
-        _lastSwipeTime != null && 
-        now.difference(_lastSwipeTime!).inMilliseconds < 150) {
+        _lastSwipeTime != null &&
+        now.difference(_lastSwipeTime!).inMilliseconds < GameConstants.swipeSameDirectionThresholdMs) {
       return;
     }
     
@@ -112,9 +115,9 @@ class _SwipeDetectorState extends State<SwipeDetector>
       onPanUpdate: (details) {
         // Detect swipes during pan for more responsive feeling
         final delta = details.delta;
-        const minDelta = 2.0; // Lower threshold for faster response
-        
-        if (delta.dx.abs() > minDelta || delta.dy.abs() > minDelta) {
+
+        if (delta.dx.abs() > GameConstants.swipeMinDelta ||
+            delta.dy.abs() > GameConstants.swipeMinDelta) {
           if (delta.dx.abs() > delta.dy.abs()) {
             // Horizontal swipe
             if (delta.dx > 0) {
@@ -137,10 +140,9 @@ class _SwipeDetectorState extends State<SwipeDetector>
         final velocity = details.velocity.pixelsPerSecond;
         final absX = velocity.dx.abs();
         final absY = velocity.dy.abs();
-        
-        const minVelocity = 300.0; // Lower threshold for better responsiveness
-        
-        if (absX > minVelocity || absY > minVelocity) {
+
+        if (absX > GameConstants.swipeMinVelocity ||
+            absY > GameConstants.swipeMinVelocity) {
           if (absX > absY) {
             if (velocity.dx > 0) {
               _processSwipe(Direction.right);
@@ -158,6 +160,7 @@ class _SwipeDetectorState extends State<SwipeDetector>
       },
       onTap: () {
         HapticFeedback.selectionClick();
+        widget.onTap?.call(); // Call external tap handler (e.g., toggle pause)
       },
       child: Stack(
         children: [
@@ -172,8 +175,8 @@ class _SwipeDetectorState extends State<SwipeDetector>
                   animation: _feedbackController,
                   builder: (context, child) {
                     return Container(
-                      width: 70,
-                      height: 70,
+                      width: GameConstants.gestureIndicatorSize,
+                      height: GameConstants.gestureIndicatorSize,
                       decoration: BoxDecoration(
                         color: _getDirectionColor(_lastSwipeDirection!)
                             .withValues(alpha: _opacityAnimation.value * 0.9),

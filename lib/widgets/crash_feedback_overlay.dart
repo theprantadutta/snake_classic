@@ -143,27 +143,43 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
 
                   const SizedBox(height: 24),
 
-                  // Progress indicator showing auto-continue
+                  // Progress indicator showing auto-continue (or wait for tap)
                   Column(
                     children: [
-                      Text(
-                        'Game Over in...',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: widget.theme.accentColor.withValues(
-                            alpha: 0.7,
+                      // "Until Tap" mode shows waiting message, others show countdown
+                      if (widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap) ...[
+                        // Until Tap mode - no countdown, just waiting
+                        Text(
+                          'Ready when you are...',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: widget.theme.accentColor.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                      ] else ...[
+                        // Normal mode - show countdown
+                        Text(
+                          'Game Over in...',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: widget.theme.accentColor.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        ),
 
-                      const SizedBox(height: 8),
+                        const SizedBox(height: 8),
 
-                      // Countdown timer
-                      _buildCountdownTimer(),
+                        // Countdown timer
+                        _buildCountdownTimer(),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                      ],
 
-                      // Skip button
+                      // Skip/Continue button
                       GestureDetector(
                             onTap: widget.onSkip,
                             child: Container(
@@ -172,19 +188,26 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
+                                color: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap
+                                    ? widget.theme.accentColor.withValues(alpha: 0.2)
+                                    : Colors.transparent,
                                 border: Border.all(
                                   color: widget.theme.accentColor.withValues(
-                                    alpha: 0.5,
+                                    alpha: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap ? 0.8 : 0.5,
                                   ),
+                                  width: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap ? 2 : 1,
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 'TAP TO CONTINUE',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap ? 14 : 12,
+                                  fontWeight: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                   color: widget.theme.accentColor.withValues(
-                                    alpha: 0.8,
+                                    alpha: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap ? 1.0 : 0.8,
                                   ),
                                   letterSpacing: 1,
                                 ),

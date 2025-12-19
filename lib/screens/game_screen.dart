@@ -14,6 +14,8 @@ import 'package:snake_classic/widgets/pause_overlay.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
+import 'package:snake_classic/widgets/dpad_controls.dart';
+import 'package:snake_classic/widgets/score_popup.dart';
 import 'package:snake_classic/models/food.dart';
 
 class GameScreen extends StatefulWidget {
@@ -29,16 +31,49 @@ class _GameScreenState extends State<GameScreen>
   late AnimationController _gestureIndicatorController;
   late GameJuiceController _juiceController;
   GameState? _previousGameState;
+  late FocusNode _keyboardFocusNode;
+  bool _hasNavigatedToGameOver = false;
+
+  // Score popup system
+  final ScorePopupManager _scorePopupManager = ScorePopupManager();
+  Size? _boardSize;
+  Offset? _boardOffset;
+
+  // Level-up celebration
+  bool _showLevelUpCelebration = false;
+  int _celebratingLevel = 0;
+  late AnimationController _levelUpController;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Initialize keyboard focus node
+    _keyboardFocusNode = FocusNode();
 
     // Initialize gesture indicator animation controller
     _gestureIndicatorController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+
+    // Initialize level-up celebration controller
+    _levelUpController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _levelUpController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _showLevelUpCelebration = false;
+        });
+        _levelUpController.reset();
+        // Auto-resume after celebration ends
+        if (mounted) {
+          context.read<GameProvider>().resumeGame();
+        }
+      }
+    });
 
     // Initialize game juice controller
     _juiceController = GameJuiceController();
@@ -50,15 +85,51 @@ class _GameScreenState extends State<GameScreen>
       if (gameProvider.gameState.status == GameStatus.menu) {
         gameProvider.startGame();
       }
+      // Add listener for game state changes (navigation, events)
+      gameProvider.addListener(_onGameStateChanged);
+      // Request keyboard focus
+      _keyboardFocusNode.requestFocus();
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // Remove listener before disposing
+    try {
+      context.read<GameProvider>().removeListener(_onGameStateChanged);
+    } catch (_) {
+      // Provider may not be available during dispose
+    }
+    _keyboardFocusNode.dispose();
     _gestureIndicatorController.dispose();
+    _levelUpController.dispose();
     _juiceController.dispose();
     super.dispose();
+  }
+
+  // Listener for game state changes - handles navigation and events
+  void _onGameStateChanged() {
+    if (!mounted) return;
+
+    final gameProvider = context.read<GameProvider>();
+    final currentState = gameProvider.gameState;
+
+    // Check for game events (moved from build method)
+    _checkForGameEvents(_previousGameState, currentState);
+    _previousGameState = currentState;
+
+    // Handle game over navigation
+    if (currentState.status == GameStatus.gameOver && !_hasNavigatedToGameOver) {
+      _hasNavigatedToGameOver = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const GameOverScreen()),
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -85,6 +156,23 @@ class _GameScreenState extends State<GameScreen>
     _gestureIndicatorController.forward().then((_) {
       _gestureIndicatorController.reverse();
     });
+  }
+
+  // Convert game speed (ms per tick) to human-readable label
+  String _getSpeedLabel(int gameSpeed) {
+    if (gameSpeed >= 280) return 'Normal';
+    if (gameSpeed >= 230) return 'Fast';
+    if (gameSpeed >= 180) return 'Faster';
+    if (gameSpeed >= 130) return 'Blazing';
+    if (gameSpeed >= 80) return 'Insane';
+    return 'MAX';
+  }
+
+  // Get icon for current speed level
+  IconData _getSpeedIcon(int gameSpeed) {
+    if (gameSpeed >= 230) return Icons.speed;
+    if (gameSpeed >= 130) return Icons.local_fire_department;
+    return Icons.bolt;
   }
 
   void _showExitConfirmation(BuildContext context) {
@@ -177,9 +265,21 @@ class _GameScreenState extends State<GameScreen>
   void _checkForGameEvents(GameState? previous, GameState current) {
     if (previous == null) return;
 
-    // Food consumption effects
+    // Food consumption effects with score popup
     if (current.score > previous.score && previous.food != null) {
-      switch (previous.food!.type) {
+      final food = previous.food!;
+      final pointsEarned = current.score - previous.score;
+
+      // Spawn score popup at food position with combo multiplier
+      _spawnScorePopup(
+        food,
+        pointsEarned,
+        current.boardWidth,
+        current.boardHeight,
+        comboMultiplier: current.comboMultiplier,
+      );
+
+      switch (food.type) {
         case FoodType.normal:
           _juiceController.foodEaten();
           break;
@@ -207,9 +307,10 @@ class _GameScreenState extends State<GameScreen>
       }
     }
 
-    // Level up effects
+    // Level up effects with celebration
     if (current.level > previous.level) {
       _juiceController.levelUp();
+      _triggerLevelUpCelebration(current.level);
     }
 
     // Game over effects
@@ -219,6 +320,243 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+  /// Spawns a score popup at the food position
+  void _spawnScorePopup(Food food, int points, int boardWidth, int boardHeight, {double comboMultiplier = 1.0}) {
+    if (_boardSize == null || _boardOffset == null) return;
+
+    // Calculate screen position from grid position
+    final cellWidth = _boardSize!.width / boardWidth;
+    final cellHeight = _boardSize!.height / boardHeight;
+
+    final screenX = _boardOffset!.dx + (food.position.x + 0.5) * cellWidth;
+    final screenY = _boardOffset!.dy + (food.position.y + 0.5) * cellHeight;
+
+    final color = switch (food.type) {
+      FoodType.normal => Colors.red,
+      FoodType.bonus => Colors.amber,
+      FoodType.special => Colors.purple,
+    };
+
+    // Show multiplier if combo is active (1.5x or higher)
+    final displayMultiplier = comboMultiplier >= 1.5 ? comboMultiplier.round() : 1;
+
+    setState(() {
+      _scorePopupManager.addPopup(
+        points: points,
+        position: Offset(screenX, screenY),
+        color: color,
+        multiplier: displayMultiplier,
+      );
+    });
+  }
+
+  /// Triggers the level-up celebration overlay with brief pause
+  void _triggerLevelUpCelebration(int newLevel) {
+    // Pause the game so player can enjoy the celebration safely
+    context.read<GameProvider>().pauseGame();
+
+    setState(() {
+      _showLevelUpCelebration = true;
+      _celebratingLevel = newLevel;
+    });
+    _levelUpController.forward();
+    // Game will auto-resume when animation completes (see initState listener)
+  }
+
+  /// Builds the D-Pad control positioned according to user preference
+  Widget _buildPositionedDPad(DPadPosition position, GameTheme theme) {
+    double? left;
+    double? right;
+
+    switch (position) {
+      case DPadPosition.bottomLeft:
+        left = 20;
+        right = null;
+        break;
+      case DPadPosition.bottomCenter:
+        left = 0;
+        right = 0;
+        break;
+      case DPadPosition.bottomRight:
+        left = null;
+        right = 20;
+        break;
+    }
+
+    return Positioned(
+      bottom: 100,
+      left: left,
+      right: right,
+      child: position == DPadPosition.bottomCenter
+          ? Center(
+              child: DPadControls(
+                onDirection: _handleSwipe,
+                theme: theme,
+                opacity: 0.6,
+                size: 140,
+              ),
+            )
+          : DPadControls(
+              onDirection: _handleSwipe,
+              theme: theme,
+              opacity: 0.6,
+              size: 140,
+            ),
+    );
+  }
+
+  /// Builds the level-up celebration overlay
+  Widget _buildLevelUpCelebration(GameTheme theme) {
+    return AnimatedBuilder(
+      animation: _levelUpController,
+      builder: (context, child) {
+        // Animation phases:
+        // 0.0-0.3: Scale in with flash
+        // 0.3-0.7: Hold with glow pulse
+        // 0.7-1.0: Fade out
+        final progress = _levelUpController.value;
+
+        double opacity;
+        double scale;
+        double flashOpacity;
+
+        if (progress < 0.3) {
+          // Scale in phase
+          final phase = progress / 0.3;
+          scale = 0.5 + (0.7 * Curves.elasticOut.transform(phase));
+          opacity = phase;
+          flashOpacity = (1 - phase) * 0.3;
+        } else if (progress < 0.7) {
+          // Hold phase
+          scale = 1.2;
+          opacity = 1.0;
+          flashOpacity = 0;
+        } else {
+          // Fade out phase
+          final phase = (progress - 0.7) / 0.3;
+          scale = 1.2 - (0.2 * phase);
+          opacity = 1.0 - phase;
+          flashOpacity = 0;
+        }
+
+        return Stack(
+          children: [
+            // Screen flash
+            if (flashOpacity > 0)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.white.withValues(alpha: flashOpacity),
+                ),
+              ),
+            // Level up text
+            Positioned.fill(
+              child: Center(
+                child: Opacity(
+                  opacity: opacity,
+                  child: Transform.scale(
+                    scale: scale,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.amber.withValues(alpha: 0.9),
+                            Colors.orange.withValues(alpha: 0.9),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withValues(alpha: 0.6),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                          BoxShadow(
+                            color: Colors.orange.withValues(alpha: 0.4),
+                            blurRadius: 40,
+                            spreadRadius: 10,
+                          ),
+                        ],
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                '⬆️',
+                                style: TextStyle(fontSize: 24),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'LEVEL UP!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                      offset: const Offset(2, 2),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                '⬆️',
+                                style: TextStyle(fontSize: 24),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Level $_celebratingLevel',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    offset: const Offset(1, 1),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer2<GameProvider, ThemeProvider>(
@@ -226,21 +564,11 @@ class _GameScreenState extends State<GameScreen>
         final gameState = gameProvider.gameState;
         final theme = themeProvider.currentTheme;
 
-        // Check for game events and trigger screen shake effects
-        _checkForGameEvents(_previousGameState, gameState);
-        _previousGameState = gameState;
-
-        // Navigate to game over screen when game ends
-        if (gameState.status == GameStatus.gameOver) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const GameOverScreen()),
-            );
-          });
-        }
+        // NOTE: Game events and navigation are now handled in _onGameStateChanged listener
+        // This keeps the build method pure (no side effects)
 
         return KeyboardListener(
-          focusNode: FocusNode()..requestFocus(),
+          focusNode: _keyboardFocusNode,
           onKeyEvent: _handleKeyPress,
           child: GameJuiceWidget(
             controller: _juiceController,
@@ -249,133 +577,189 @@ class _GameScreenState extends State<GameScreen>
             child: Scaffold(
               backgroundColor: theme.backgroundColor,
               body: SafeArea(
-                child: SwipeDetector(
-                  onSwipe: _handleSwipe,
-                  showFeedback: false, // Disable animated feedback
-                  child: Stack(
-                    children: [
-                      // Background gradient - matching home screen
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: Alignment.topRight,
-                            radius: 1.5,
-                            colors: [
-                              theme.accentColor.withValues(alpha: 0.15),
-                              theme.backgroundColor,
-                              theme.backgroundColor.withValues(alpha: 0.9),
-                              Colors.black.withValues(alpha: 0.1),
-                            ],
-                            stops: const [0.0, 0.4, 0.8, 1.0],
+                child: Stack(
+                  children: [
+                    // SwipeDetector only wraps the game content, not overlays
+                    SwipeDetector(
+                      onSwipe: _handleSwipe,
+                      onTap: () {
+                        // Only toggle pause when playing (not when crashed or game over)
+                        if (gameState.status == GameStatus.playing ||
+                            gameState.status == GameStatus.paused) {
+                          gameProvider.togglePause();
+                        }
+                      },
+                      showFeedback: false, // Disable animated feedback
+                      child: Stack(
+                        children: [
+                          // Background gradient - matching home screen
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment.topRight,
+                                radius: 1.5,
+                                colors: [
+                                  theme.accentColor.withValues(alpha: 0.15),
+                                  theme.backgroundColor,
+                                  theme.backgroundColor.withValues(alpha: 0.9),
+                                  Colors.black.withValues(alpha: 0.1),
+                                ],
+                                stops: const [0.0, 0.4, 0.8, 1.0],
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
 
-                      // Background pattern overlay - matching home screen
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: _GameBackgroundPainter(theme),
-                        ),
-                      ),
+                          // Background pattern overlay - matching home screen
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _GameBackgroundPainter(theme),
+                            ),
+                          ),
 
-                      // Main game content
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final screenHeight = constraints.maxHeight;
-                          final isSmallScreen = screenHeight < 700;
+                          // Main game content
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final screenHeight = constraints.maxHeight;
+                              final isSmallScreen = screenHeight < 700;
 
-                          return Column(
-                            children: [
-                              // HUD
-                              GameHUD(
-                                gameState: gameState,
-                                theme: theme,
-                                onPause: () => gameProvider.togglePause(),
-                                onHome: () => _showExitConfirmation(context),
-                                isSmallScreen: isSmallScreen,
-                                tournamentId: gameProvider.tournamentId,
-                                tournamentMode: gameProvider.tournamentMode,
-                              ),
-
-                              // Compact Game Instructions (consistent spacing)
-                              _buildCompactInstructions(theme, isSmallScreen),
-
-                              // Static row above game board - Game Hint and Gesture Indicator
-                              _buildStaticGameRow(theme, isSmallScreen),
-
-                              // Game Board
-                              Expanded(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: isSmallScreen ? 8 : 12,
+                              return Column(
+                                children: [
+                                  // HUD
+                                  GameHUD(
+                                    gameState: gameState,
+                                    theme: theme,
+                                    onPause: () => gameProvider.togglePause(),
+                                    onHome: () => _showExitConfirmation(context),
+                                    isSmallScreen: isSmallScreen,
+                                    tournamentId: gameProvider.tournamentId,
+                                    tournamentMode: gameProvider.tournamentMode,
                                   ),
-                                  child: LayoutBuilder(
-                                    builder: (context, boardConstraints) {
-                                      // Calculate optimal board size
-                                      final availableSize = math.min(
-                                        boardConstraints.maxWidth,
-                                        boardConstraints.maxHeight -
-                                            (isSmallScreen
-                                                ? 40
-                                                : 60), // Reserve space for info
-                                      );
 
-                                      return Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          // Game Board
-                                          SizedBox(
-                                            width: availableSize,
-                                            height: availableSize,
-                                            child: GameBoard(
-                                              gameState: gameState,
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
+                                  // Note: Instructions moved to pause menu for cleaner gameplay view
+
+                                  // Static row above game board - Game Hint and Gesture Indicator
+                                  _buildStaticGameRow(theme, isSmallScreen),
+
+                                  // Game Board
+                                  Expanded(
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: isSmallScreen ? 8 : 12,
+                                      ),
+                                      child: LayoutBuilder(
+                                        builder: (context, boardConstraints) {
+                                          // Calculate optimal board size
+                                          final availableSize = math.min(
+                                            boardConstraints.maxWidth,
+                                            boardConstraints.maxHeight -
+                                                (isSmallScreen
+                                                    ? 40
+                                                    : 60), // Reserve space for info
+                                          );
+
+                                          // Track board size for score popups
+                                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                                            if (mounted) {
+                                              _boardSize = Size(availableSize, availableSize);
+                                            }
+                                          });
+
+                                          return Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              // Game Board with GlobalKey for position tracking
+                                              Builder(
+                                                builder: (boardContext) {
+                                                  // Track board offset after layout
+                                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                    if (mounted) {
+                                                      final box = boardContext.findRenderObject() as RenderBox?;
+                                                      if (box != null) {
+                                                        _boardOffset = box.localToGlobal(Offset.zero);
+                                                      }
+                                                    }
+                                                  });
+
+                                                  return SizedBox(
+                                                    width: availableSize,
+                                                    height: availableSize,
+                                                    child: GameBoard(
+                                                      gameState: gameState,
+                                                      isTournamentMode: gameProvider.isTournamentMode,
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
 
-                              // Compact Game Info Footer
-                              _buildCompactGameInfo(
-                                gameState,
-                                theme,
-                                isSmallScreen,
-                              ),
-                            ],
-                          );
-                        },
+                                  // Compact Game Info Footer
+                                  _buildCompactGameInfo(
+                                    gameState,
+                                    theme,
+                                    isSmallScreen,
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+
+                          // Pause Overlay (don't show during level-up celebration)
+                          if (gameState.status == GameStatus.paused && !_showLevelUpCelebration)
+                            PauseOverlay(
+                              theme: theme,
+                              onResume: () => gameProvider.resumeGame(),
+                              onRestart: () {
+                                gameProvider.startGame();
+                              },
+                              onHome: () => Navigator.of(context).pop(),
+                            ),
+
+                          // D-Pad Controls Overlay (optional, user preference)
+                          if (gameProvider.dPadEnabled &&
+                              gameState.status == GameStatus.playing)
+                            _buildPositionedDPad(gameProvider.dPadPosition, theme),
+
+                          // Score Popups Layer
+                          ..._scorePopupManager.activePopups.map((popupData) {
+                            return ScorePopup(
+                              key: ValueKey(popupData.id),
+                              points: popupData.points,
+                              multiplier: popupData.multiplier,
+                              position: popupData.position,
+                              color: popupData.color,
+                              onComplete: () {
+                                setState(() {
+                                  _scorePopupManager.removePopup(popupData.id);
+                                });
+                              },
+                            );
+                          }),
+
+                          // Level-Up Celebration Overlay
+                          if (_showLevelUpCelebration)
+                            _buildLevelUpCelebration(theme),
+                        ],
                       ),
+                    ),
 
-                      // Pause Overlay
-                      if (gameState.status == GameStatus.paused)
-                        PauseOverlay(
-                          theme: theme,
-                          onResume: () => gameProvider.resumeGame(),
-                          onRestart: () {
-                            gameProvider.startGame();
-                          },
-                          onHome: () => Navigator.of(context).pop(),
-                        ),
-
-                      // Crash Feedback Overlay
-                      if (gameState.status == GameStatus.crashed &&
-                          gameState.crashReason != null &&
-                          gameState.showCrashModal)
-                        CrashFeedbackOverlay(
-                          crashReason: gameState.crashReason!,
-                          theme: theme,
-                          onSkip: () => gameProvider.skipCrashFeedback(),
-                          duration: const Duration(
-                            seconds: 3,
-                          ), // Reduced from 5 to 3 seconds
-                        ),
-                    ],
-                  ),
+                    // Crash Feedback Overlay - OUTSIDE SwipeDetector so taps work
+                    if (gameState.status == GameStatus.crashed &&
+                        gameState.crashReason != null &&
+                        gameState.showCrashModal)
+                      CrashFeedbackOverlay(
+                        crashReason: gameState.crashReason!,
+                        theme: theme,
+                        onSkip: () => gameProvider.skipCrashFeedback(),
+                        duration: gameProvider.crashFeedbackDuration,
+                      ),
+                  ],
                 ),
               ),
             ), // Close Scaffold
@@ -411,8 +795,8 @@ class _GameScreenState extends State<GameScreen>
           ),
           _buildCompactInfoCard(
             'Speed',
-            '${((400 - gameState.gameSpeed) / 3).round()}%',
-            Icons.speed,
+            _getSpeedLabel(gameState.gameSpeed),
+            _getSpeedIcon(gameState.gameSpeed),
             theme,
             isSmallScreen,
           ),
@@ -467,115 +851,7 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _buildCompactInstructions(GameTheme theme, bool isSmallScreen) {
-    // Always return a container with consistent spacing to prevent layout shifts
-    return Container(
-      margin: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: isSmallScreen ? 6 : 8,
-        bottom: isSmallScreen ? 4 : 6,
-      ),
-      constraints: BoxConstraints(
-        minHeight: isSmallScreen ? 24 : 50, // Minimum height for layout stability
-        maxHeight: isSmallScreen ? 32 : 90, // Allow more height to prevent overflow
-      ),
-      child: isSmallScreen
-          ? // Simple hint for small screens - guaranteed to fit
-            Center(
-              child: Text(
-                'Swipe to control • Tap to pause • Collect food to grow',
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            )
-          : // Optimized instructions for larger screens
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.accentColor.withValues(alpha: 0.08),
-                    theme.foodColor.withValues(alpha: 0.05),
-                  ],
-                ),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.accentColor.withValues(alpha: 0.1),
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: IntrinsicHeight(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Compact title
-                    Text(
-                      'COLLECT FOOD',
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.8),
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Compact food types row
-                    Flexible(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildCompactInstruction('🍎', '10', theme),
-                          _buildCompactInstruction('✨', '25', theme),
-                          _buildCompactInstruction('⭐', '50', theme),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-    );
-  }
-
-  Widget _buildCompactInstruction(String emoji, String points, GameTheme theme) {
-    return Flexible(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            emoji, 
-            style: const TextStyle(fontSize: 14),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            points,
-            style: TextStyle(
-              color: theme.foodColor.withValues(alpha: 0.9),
-              fontSize: 8,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // NOTE: Instructions moved to pause_overlay.dart - _buildGameGuideSection()
 
   Widget _buildStaticGameRow(GameTheme theme, bool isSmallScreen) {
     return Container(

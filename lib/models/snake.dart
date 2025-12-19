@@ -5,10 +5,17 @@ class Snake {
   List<Position> body;
   Direction currentDirection;
 
+  // Track the direction that was committed at the last move
+  // This prevents false self-collision from rapid direction changes
+  Direction _lastCommittedDirection;
+
+  // Flag to track if a direction change has been queued this tick
+  bool _hasQueuedDirection = false;
+
   Snake({
     required this.body,
     this.currentDirection = Direction.right,
-  });
+  }) : _lastCommittedDirection = Direction.right;
 
   Position get head => body.first;
   Position get tail => body.last;
@@ -26,30 +33,36 @@ class Snake {
   }
 
   void move({required bool ateFood, int? boardWidth, int? boardHeight, bool wrapAround = false}) {
+    // Commit the current direction for the next tick's validation
+    _lastCommittedDirection = currentDirection;
+
+    // Reset the flag to allow one direction change next tick
+    _hasQueuedDirection = false;
+
     Position newHead = head.move(currentDirection);
-    
+
     // Handle wrap-around for Zen mode
     if (wrapAround && boardWidth != null && boardHeight != null) {
       int x = newHead.x;
       int y = newHead.y;
-      
+
       // Wrap horizontally
       if (x < 0) {
         x = boardWidth - 1;
       } else if (x >= boardWidth) {
         x = 0;
       }
-      
-      // Wrap vertically  
+
+      // Wrap vertically
       if (y < 0) {
         y = boardHeight - 1;
       } else if (y >= boardHeight) {
         y = 0;
       }
-      
+
       newHead = Position(x, y);
     }
-    
+
     body.insert(0, newHead);
 
     if (!ateFood) {
@@ -58,8 +71,17 @@ class Snake {
   }
 
   void changeDirection(Direction newDirection) {
-    if (newDirection != currentDirection.opposite) {
+    // Only allow ONE direction change per game tick
+    // This prevents rapid inputs like RIGHT → DOWN → LEFT from causing self-collision
+    if (_hasQueuedDirection) {
+      return;
+    }
+
+    // Validate against the LAST COMMITTED direction (not the pending currentDirection)
+    // This ensures we can't reverse through a sequence of perpendicular moves
+    if (newDirection != _lastCommittedDirection.opposite) {
       currentDirection = newDirection;
+      _hasQueuedDirection = true;
     }
   }
 
@@ -86,9 +108,13 @@ class Snake {
   }
 
   Snake copy() {
-    return Snake(
+    final copied = Snake(
       body: List<Position>.from(body),
       currentDirection: currentDirection,
     );
+    // Preserve direction tracking state
+    copied._lastCommittedDirection = _lastCommittedDirection;
+    copied._hasQueuedDirection = _hasQueuedDirection;
+    return copied;
   }
 }
