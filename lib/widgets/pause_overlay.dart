@@ -93,8 +93,13 @@ class PauseOverlay extends StatelessWidget {
                 ],
               ).animate().fadeIn(delay: 250.ms),
               
-              const SizedBox(height: 24),
-              
+              const SizedBox(height: 16),
+
+              // Game Guide Section (moved from game screen)
+              _buildGameGuideSection(),
+
+              const SizedBox(height: 16),
+
               // Main Action Buttons
               Column(
                 children: [
@@ -136,6 +141,88 @@ class PauseOverlay extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildGameGuideSection() {
+    return Container(
+      width: 220,
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Theme(
+        data: ThemeData(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.help_outline,
+                color: theme.accentColor.withValues(alpha: 0.8),
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'GAME GUIDE',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.9),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+          iconColor: theme.accentColor,
+          collapsedIconColor: theme.accentColor.withValues(alpha: 0.6),
+          children: [
+            // Food types
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildFoodItem('🍎', '10 pts'),
+                _buildFoodItem('✨', '25 pts'),
+                _buildFoodItem('⭐', '50 pts'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Control hints
+            Text(
+              'Swipe or tap D-pad to move\nAvoid walls & yourself',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.7),
+                fontSize: 10,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 280.ms);
+  }
+
+  Widget _buildFoodItem(String emoji, String points) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 20)),
+        const SizedBox(height: 2),
+        Text(
+          points,
+          style: TextStyle(
+            color: theme.foodColor,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 

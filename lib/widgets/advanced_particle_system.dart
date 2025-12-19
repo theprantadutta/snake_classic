@@ -77,70 +77,62 @@ class ParticleConfig {
     friction: 0.94, // Reduced for longer travel
   );
 
-  // New enhanced food explosion configurations for different food types
+  // Food explosion configurations - reduced for better snake visibility
   static const ParticleConfig appleFoodExplosion = ParticleConfig(
     type: ParticleType.food,
-    count: 20,
-    lifetime: Duration(milliseconds: 1000),
-    minSize: 3.0,
-    maxSize: 10.0,
-    minSpeed: 90.0,
-    maxSpeed: 220.0,
+    count: 8, // Reduced from 20
+    lifetime: Duration(milliseconds: 600), // Shorter
+    minSize: 2.0,
+    maxSize: 5.0, // Smaller particles
+    minSpeed: 60.0,
+    maxSpeed: 140.0,
     colors: [
       Color(0xFFDC143C), // Crimson red
-      Color(0xFF228B22), // Forest green (leaf)
       Color(0xFFFFD700), // Gold sparkle
       Color(0xFFFFA500), // Orange
     ],
     blendMode: ParticleBlendMode.additive,
-    gravity: 200.0,
-    friction: 0.95,
+    gravity: 250.0, // Higher gravity = faster fall
+    friction: 0.96,
   );
 
   static const ParticleConfig bonusFoodExplosion = ParticleConfig(
     type: ParticleType.food,
-    count: 35, // More particles for bonus food
-    lifetime: Duration(milliseconds: 1500), // Longer duration
-    minSize: 5.0,
-    maxSize: 15.0,
-    minSpeed: 120.0,
-    maxSpeed: 300.0,
+    count: 12, // Reduced from 35
+    lifetime: Duration(milliseconds: 800), // Shorter
+    minSize: 2.5,
+    maxSize: 7.0, // Smaller
+    minSpeed: 80.0,
+    maxSpeed: 180.0,
     colors: [
       Color(0xFFFFD700), // Gold
       Color(0xFFFF1493), // Deep pink
-      Color(0xFF00FFFF), // Cyan
-      Color(0xFFFF69B4), // Hot pink
       Color(0xFFFFFF00), // Yellow
-      Color(0xFF00FF00), // Bright green
     ],
     blendMode: ParticleBlendMode.additive,
-    gravity: 150.0,
-    friction: 0.92, // Less friction for more dramatic spread
-    hasTrail: true, // Add trails to bonus food particles
+    gravity: 200.0,
+    friction: 0.94,
+    hasTrail: false, // Removed trails
   );
 
   static const ParticleConfig specialFoodExplosion = ParticleConfig(
     type: ParticleType.food,
-    count: 50, // Maximum particles for special food
-    lifetime: Duration(milliseconds: 2000), // Longest duration
-    minSize: 6.0,
-    maxSize: 20.0,
-    minSpeed: 150.0,
-    maxSpeed: 400.0,
+    count: 18, // Reduced from 50
+    lifetime: Duration(milliseconds: 1000), // Shorter
+    minSize: 3.0,
+    maxSize: 9.0, // Much smaller
+    minSpeed: 100.0,
+    maxSpeed: 220.0,
     colors: [
       Color(0xFFFFD700), // Gold
       Color(0xFFFF1493), // Deep pink
       Color(0xFF00FFFF), // Cyan
-      Color(0xFFFF69B4), // Hot pink
-      Color(0xFFFFFF00), // Yellow
       Color(0xFF9370DB), // Medium orchid
-      Color(0xFF00FF7F), // Spring green
-      Color(0xFFFF4500), // Orange red
     ],
     blendMode: ParticleBlendMode.additive,
-    gravity: 100.0, // Reduced gravity for more floating effect
-    friction: 0.90, // Even less friction for maximum spread
-    hasTrail: true,
+    gravity: 150.0,
+    friction: 0.93,
+    hasTrail: false, // Removed trails for clarity
   );
 
   static const ParticleConfig scorePopup = ParticleConfig(

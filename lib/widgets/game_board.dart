@@ -18,11 +18,13 @@ import 'package:snake_classic/widgets/shader_effects.dart';
 class GameBoard extends StatefulWidget {
   final GameState gameState;
   final double cellSize;
+  final bool isTournamentMode;
 
   const GameBoard({
     super.key,
     required this.gameState,
     this.cellSize = GameConstants.cellSize,
+    this.isTournamentMode = false,
   });
 
   @override
@@ -59,6 +61,7 @@ class _GameBoardState extends State<GameBoard>
   @override
   void dispose() {
     _animationController.dispose();
+    _particleManager.clear(); // Clean up particle emissions to prevent memory leaks
     super.dispose();
   }
 
@@ -95,43 +98,76 @@ class _GameBoardState extends State<GameBoard>
                 ],
                 stops: const [0.0, 0.4, 0.8, 1.0],
               ),
-              // Enhanced border with premium glow effect
+              // Enhanced border with premium glow effect (tournament mode uses purple/gold)
               border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.5),
-                width: 3.0,
+                color: widget.isTournamentMode
+                    ? Colors.purple.withValues(alpha: 0.7)
+                    : theme.accentColor.withValues(alpha: 0.5),
+                width: widget.isTournamentMode ? 4.0 : 3.0,
               ),
               borderRadius: BorderRadius.circular(0),
-              // Premium multi-layer shadow system matching home screen
-              boxShadow: [
-                // Primary glow effect
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  spreadRadius: -1,
-                  offset: const Offset(0, 0),
-                ),
-                // Depth shadow
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 24,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 12),
-                ),
-                // Inner highlight
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  spreadRadius: -4,
-                  offset: const Offset(0, -4),
-                ),
-                // Ambient outer glow
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.15),
-                  blurRadius: 48,
-                  spreadRadius: -8,
-                  offset: const Offset(0, 0),
-                ),
-              ],
+              // Premium multi-layer shadow system (tournament mode uses purple/gold glow)
+              boxShadow: widget.isTournamentMode
+                  ? [
+                      // Primary purple glow effect
+                      BoxShadow(
+                        color: Colors.purple.withValues(alpha: 0.35),
+                        blurRadius: 20,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 0),
+                      ),
+                      // Gold accent glow
+                      BoxShadow(
+                        color: Colors.amber.withValues(alpha: 0.25),
+                        blurRadius: 28,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 0),
+                      ),
+                      // Depth shadow
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 24,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 12),
+                      ),
+                      // Pulsing outer glow
+                      BoxShadow(
+                        color: Colors.purple.withValues(alpha: 0.2),
+                        blurRadius: 48,
+                        spreadRadius: -4,
+                        offset: const Offset(0, 0),
+                      ),
+                    ]
+                  : [
+                      // Primary glow effect
+                      BoxShadow(
+                        color: theme.accentColor.withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        spreadRadius: -1,
+                        offset: const Offset(0, 0),
+                      ),
+                      // Depth shadow
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 24,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 12),
+                      ),
+                      // Inner highlight
+                      BoxShadow(
+                        color: theme.accentColor.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        spreadRadius: -4,
+                        offset: const Offset(0, -4),
+                      ),
+                      // Ambient outer glow
+                      BoxShadow(
+                        color: theme.accentColor.withValues(alpha: 0.15),
+                        blurRadius: 48,
+                        spreadRadius: -8,
+                        offset: const Offset(0, 0),
+                      ),
+                    ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(0),
@@ -174,6 +210,8 @@ class _GameBoardState extends State<GameBoard>
                               moveProgress: gameProvider.moveProgress,
                               previousGameState: gameProvider.previousGameState,
                               premiumProvider: premiumProvider,
+                              // Pass time once per frame to avoid DateTime.now() in paint loop
+                              animationTimeMs: DateTime.now().millisecondsSinceEpoch,
                             ),
                             size: Size.infinite,
                             // Performance: Only repaint when needed
@@ -372,6 +410,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final double moveProgress;
   final GameState? previousGameState;
   final PremiumProvider premiumProvider;
+  final int animationTimeMs; // Passed once per frame to avoid DateTime.now() in paint
 
   // Cache paint objects to avoid recreation
   late final Paint _snakeHeadPaint;
@@ -388,6 +427,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     this.moveProgress = 0.0,
     this.previousGameState,
     required this.premiumProvider,
+    this.animationTimeMs = 0,
   }) : super(repaint: pulseAnimation) {
     _initializePaints();
   }
@@ -419,6 +459,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
     // Draw in optimal order (back to front)
     _drawGrid(canvas, size, cellWidth, cellHeight);
+
+    // Draw wall warning if snake is near edges (visual safety indicator)
+    if (gameState.status == GameStatus.playing) {
+      _drawWallWarning(canvas, size, cellWidth, cellHeight);
+    }
+
     _drawFood(canvas, cellWidth, cellHeight);
     _drawPowerUp(canvas, cellWidth, cellHeight);
     _drawSnake(canvas, cellWidth, cellHeight);
@@ -428,6 +474,99 @@ class OptimizedGameBoardPainter extends CustomPainter {
         gameState.crashPosition != null) {
       _drawCrashIndicators(canvas, cellWidth, cellHeight);
     }
+  }
+
+  // Draw warning glow when snake head approaches walls
+  void _drawWallWarning(Canvas canvas, Size size, double cellWidth, double cellHeight) {
+    final headPosition = gameState.snake.head;
+
+    // Calculate distances to each wall
+    final distanceLeft = headPosition.x;
+    final distanceRight = gameState.boardWidth - 1 - headPosition.x;
+    final distanceTop = headPosition.y;
+    final distanceBottom = gameState.boardHeight - 1 - headPosition.y;
+
+    // Warning threshold from constants
+    const threshold = GameConstants.wallWarningThreshold;
+
+    // Calculate intensity for each edge (0.0 = safe, 1.0 = danger)
+    final leftIntensity = _calculateWarningIntensity(distanceLeft, threshold);
+    final rightIntensity = _calculateWarningIntensity(distanceRight, threshold);
+    final topIntensity = _calculateWarningIntensity(distanceTop, threshold);
+    final bottomIntensity = _calculateWarningIntensity(distanceBottom, threshold);
+
+    // Draw warning glows where needed
+    if (leftIntensity > 0) {
+      _drawEdgeGlow(canvas, size, 'left', leftIntensity);
+    }
+    if (rightIntensity > 0) {
+      _drawEdgeGlow(canvas, size, 'right', rightIntensity);
+    }
+    if (topIntensity > 0) {
+      _drawEdgeGlow(canvas, size, 'top', topIntensity);
+    }
+    if (bottomIntensity > 0) {
+      _drawEdgeGlow(canvas, size, 'bottom', bottomIntensity);
+    }
+  }
+
+  double _calculateWarningIntensity(int distance, int threshold) {
+    if (distance > threshold) return 0.0;
+    if (distance <= 0) return GameConstants.wallWarningMaxIntensity;
+    return GameConstants.wallWarningMaxIntensity * (1.0 - (distance / threshold));
+  }
+
+  void _drawEdgeGlow(Canvas canvas, Size size, String edge, double intensity) {
+    // Warning color blends orange to red based on intensity
+    final warningColor = Color.lerp(
+      Colors.orange.withValues(alpha: intensity * 0.4),
+      Colors.red.withValues(alpha: intensity * 0.6),
+      intensity,
+    )!;
+
+    // Glow width based on intensity
+    final glowWidth = 20.0 + (intensity * 15.0);
+
+    Rect glowRect;
+    Alignment gradientStart;
+    Alignment gradientEnd;
+
+    switch (edge) {
+      case 'left':
+        glowRect = Rect.fromLTWH(0, 0, glowWidth, size.height);
+        gradientStart = Alignment.centerLeft;
+        gradientEnd = Alignment.centerRight;
+        break;
+      case 'right':
+        glowRect = Rect.fromLTWH(size.width - glowWidth, 0, glowWidth, size.height);
+        gradientStart = Alignment.centerRight;
+        gradientEnd = Alignment.centerLeft;
+        break;
+      case 'top':
+        glowRect = Rect.fromLTWH(0, 0, size.width, glowWidth);
+        gradientStart = Alignment.topCenter;
+        gradientEnd = Alignment.bottomCenter;
+        break;
+      case 'bottom':
+        glowRect = Rect.fromLTWH(0, size.height - glowWidth, size.width, glowWidth);
+        gradientStart = Alignment.bottomCenter;
+        gradientEnd = Alignment.topCenter;
+        break;
+      default:
+        return;
+    }
+
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: gradientStart,
+        end: gradientEnd,
+        colors: [
+          warningColor,
+          warningColor.withValues(alpha: 0),
+        ],
+      ).createShader(glowRect);
+
+    canvas.drawRect(glowRect, paint);
   }
 
   void _drawGrid(
@@ -738,8 +877,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
       if (skinColors.length == 1) {
         return skinColors[0].withValues(alpha: opacity);
       } else {
-        // For multi-color skins, cycle through colors - could be enhanced with animation
-        final colorIndex = (DateTime.now().millisecondsSinceEpoch ~/ 500) % skinColors.length;
+        // For multi-color skins, cycle through colors using passed animation time
+        final colorIndex = (animationTimeMs ~/ GameConstants.colorCycleIntervalMs) % skinColors.length;
         return skinColors[colorIndex].withValues(alpha: opacity);
       }
     }
@@ -991,6 +1130,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
       height: powerUpSize,
     );
 
+    // Draw expiration warning ring if power-up is about to expire
+    if (powerUp.isExpiringSoon) {
+      _drawExpirationWarning(canvas, rect, powerUp.warningIntensity);
+    }
+
     switch (powerUp.type) {
       case PowerUpType.speedBoost:
         _drawSpeedBoostPowerUp(canvas, rect, powerUp);
@@ -1004,6 +1148,46 @@ class OptimizedGameBoardPainter extends CustomPainter {
       case PowerUpType.slowMotion:
         _drawSlowMotionPowerUp(canvas, rect, powerUp);
         break;
+    }
+  }
+
+  // Draw flashing warning ring around power-up about to expire
+  void _drawExpirationWarning(Canvas canvas, Rect rect, double intensity) {
+    // Rapid flashing effect using animation time
+    final flashPhase = (animationTimeMs ~/ 200) % 2;
+    final flashAlpha = flashPhase == 0 ? intensity : intensity * 0.3;
+
+    // Warning color blends from orange to red
+    final warningColor = Color.lerp(
+      Colors.orange,
+      Colors.red,
+      intensity,
+    )!.withValues(alpha: flashAlpha * 0.8);
+
+    // Draw expanding ring
+    final expandedRect = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * (1.3 + intensity * 0.2),
+      height: rect.height * (1.3 + intensity * 0.2),
+    );
+
+    final warningPaint = Paint()
+      ..color = warningColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0 + intensity * 2.0
+      ..isAntiAlias = true;
+
+    // Draw warning ring
+    canvas.drawOval(expandedRect, warningPaint);
+
+    // Draw inner glow for high intensity
+    if (intensity > 0.5) {
+      final glowPaint = Paint()
+        ..color = warningColor.withValues(alpha: (intensity - 0.5) * 0.4)
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
+
+      canvas.drawOval(expandedRect, glowPaint);
     }
   }
 
@@ -1696,10 +1880,9 @@ class OptimizedGameBoardPainter extends CustomPainter {
       ..isAntiAlias = true;
 
     final sparkleSize = rect.width * 0.1;
-    final now = DateTime.now().millisecondsSinceEpoch;
 
     for (int i = 0; i < count; i++) {
-      final angle = (i * 60.0 + now * 0.01) * (3.14159 / 180);
+      final angle = (i * 60.0 + animationTimeMs * 0.01) * (3.14159 / 180);
       final radius = rect.width * (0.3 + 0.2 * (i % 2));
       final sparkleCenter = Offset(
         rect.center.dx + radius * math.cos(angle),
