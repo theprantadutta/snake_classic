@@ -110,15 +110,10 @@ class AchievementService extends ChangeNotifier {
       }
 
       if (_apiService.isAuthenticated) {
-        // Sync with backend - update each changed achievement
-        for (final achievement in _achievements) {
-          if (achievement.currentProgress > 0) {
-            await _apiService.updateAchievementProgress(
-              achievementId: achievement.id,
-              progressIncrement: 0, // Backend tracks absolute progress
-            );
-          }
-        }
+        // Note: Backend syncs on specific achievement events (score, games, etc.)
+        // We only save locally here; progress is sent when achievements are checked
+        // This avoids sending invalid progressIncrement values
+        await _storageService.saveAchievements(jsonEncode(progressData));
       } else {
         // Save locally for guest users
         await _storageService.saveAchievements(jsonEncode(progressData));

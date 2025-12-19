@@ -158,7 +158,24 @@ class PowerUp {
     // Power-ups expire after 20 seconds if not collected
     return DateTime.now().difference(createdAt).inSeconds > 20;
   }
-  
+
+  // Time remaining before expiration
+  int get secondsRemaining {
+    final elapsed = DateTime.now().difference(createdAt).inSeconds;
+    return (20 - elapsed).clamp(0, 20);
+  }
+
+  // Returns true if power-up is about to expire (last 5 seconds)
+  bool get isExpiringSoon {
+    return secondsRemaining <= 5 && secondsRemaining > 0;
+  }
+
+  // Warning intensity from 0.0 (5 seconds left) to 1.0 (0 seconds left)
+  double get warningIntensity {
+    if (!isExpiringSoon) return 0.0;
+    return 1.0 - (secondsRemaining / 5.0);
+  }
+
   double get pulsePhase {
     // Create a pulsing animation effect
     final secondsSinceCreated = DateTime.now().difference(createdAt).inMilliseconds / 1000.0;

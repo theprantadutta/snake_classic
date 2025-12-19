@@ -451,6 +451,12 @@ class ApiService {
     required String achievementId,
     int progressIncrement = 1,
   }) async {
+    // Validate: API requires progress_increment >= 1
+    if (progressIncrement < 1) {
+      AppLogger.warning('Skipping achievement update: progressIncrement must be >= 1, got $progressIncrement');
+      return null;
+    }
+
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/achievements/progress'),

@@ -62,10 +62,10 @@ class _GameOverScreenState extends State<GameOverScreen>
   }
 
   Future<void> _loadAchievements() async {
+    // Use cached achievements immediately - don't re-initialize (which makes slow API calls)
+    // The achievement service is a singleton and should already have data from gameplay
     try {
-      await _achievementService.initialize();
-
-      // Get recent unlocks from the service
+      // Get recent unlocks from the service (already in memory)
       _recentAchievements = _achievementService.recentUnlocks;
 
       // Get some in-progress achievements to show progress
@@ -78,9 +78,9 @@ class _GameOverScreenState extends State<GameOverScreen>
         _achievementsLoaded = true;
       });
 
-      // Start achievement animation if we have content to show
+      // Start achievement animation immediately if we have content to show
       if (_recentAchievements.isNotEmpty || _progressAchievements.isNotEmpty) {
-        Future.delayed(const Duration(milliseconds: 800), () {
+        Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
             _achievementController.forward();
           }

@@ -146,21 +146,21 @@ class Achievement {
 
   static List<Achievement> getDefaultAchievements() {
     return [
-      // Score Achievements
+      // Score Achievements (IDs match backend)
       const Achievement(
-        id: 'first_score',
+        id: 'first_bite',  // Backend: first_bite
         title: 'First Bite',
-        description: 'Score your first 10 points',
+        description: 'Score your first point',
         icon: Icons.star,
         type: AchievementType.score,
         rarity: AchievementRarity.common,
-        targetValue: 10,
+        targetValue: 1,
         points: 10,
       ),
       const Achievement(
-        id: 'score_100',
-        title: 'Century Club',
-        description: 'Reach 100 points in a single game',
+        id: 'getting_started',  // Backend: getting_started
+        title: 'Getting Started',
+        description: 'Score 100 points',
         icon: Icons.emoji_events,
         type: AchievementType.score,
         rarity: AchievementRarity.common,
@@ -168,9 +168,9 @@ class Achievement {
         points: 25,
       ),
       const Achievement(
-        id: 'score_500',
-        title: 'High Roller',
-        description: 'Reach 500 points in a single game',
+        id: 'high_scorer',  // Backend: high_scorer
+        title: 'High Scorer',
+        description: 'Score 500 points in a single game',
         icon: Icons.trending_up,
         type: AchievementType.score,
         rarity: AchievementRarity.rare,
@@ -178,9 +178,9 @@ class Achievement {
         points: 50,
       ),
       const Achievement(
-        id: 'score_1000',
-        title: 'Snake Master',
-        description: 'Reach 1000 points in a single game',
+        id: 'master_scorer',  // Backend: master_scorer
+        title: 'Master Scorer',
+        description: 'Score 1000 points in a single game',
         icon: Icons.military_tech,
         type: AchievementType.score,
         rarity: AchievementRarity.epic,
@@ -188,40 +188,40 @@ class Achievement {
         points: 100,
       ),
       const Achievement(
-        id: 'score_2000',
-        title: 'Legendary Serpent',
-        description: 'Reach 2000 points in a single game',
+        id: 'legendary_scorer',  // Backend: legendary_scorer
+        title: 'Legendary Scorer',
+        description: 'Score 2000 points in a single game',
         icon: Icons.diamond,
         type: AchievementType.score,
         rarity: AchievementRarity.legendary,
         targetValue: 2000,
-        points: 250,
+        points: 200,
       ),
 
-      // Games Played Achievements
+      // Games Played Achievements (IDs match backend)
       const Achievement(
-        id: 'games_1',
-        title: 'Getting Started',
+        id: 'first_game',  // Backend: first_game
+        title: 'First Game',
         description: 'Play your first game',
         icon: Icons.play_arrow,
         type: AchievementType.games,
         rarity: AchievementRarity.common,
         targetValue: 1,
-        points: 5,
+        points: 10,
       ),
       const Achievement(
-        id: 'games_10',
-        title: 'Persistent Player',
+        id: 'regular_player',  // Backend: regular_player
+        title: 'Regular Player',
         description: 'Play 10 games',
         icon: Icons.videogame_asset,
         type: AchievementType.games,
         rarity: AchievementRarity.common,
         targetValue: 10,
-        points: 15,
+        points: 25,
       ),
       const Achievement(
-        id: 'games_50',
-        title: 'Dedicated Gamer',
+        id: 'dedicated_player',  // Backend: dedicated_player
+        title: 'Dedicated Player',
         description: 'Play 50 games',
         icon: Icons.sports_esports,
         type: AchievementType.games,
@@ -230,8 +230,8 @@ class Achievement {
         points: 50,
       ),
       const Achievement(
-        id: 'games_100',
-        title: 'Snake Addict',
+        id: 'snake_enthusiast',  // Backend: snake_enthusiast
+        title: 'Snake Enthusiast',
         description: 'Play 100 games',
         icon: Icons.gamepad,
         type: AchievementType.games,
@@ -239,30 +239,50 @@ class Achievement {
         targetValue: 100,
         points: 100,
       ),
-
-      // Survival Achievements
       const Achievement(
-        id: 'survive_60',
+        id: 'snake_addict',  // Backend: snake_addict
+        title: 'Snake Addict',
+        description: 'Play 500 games',
+        icon: Icons.sports_esports,
+        type: AchievementType.games,
+        rarity: AchievementRarity.legendary,
+        targetValue: 500,
+        points: 250,
+      ),
+
+      // Survival Achievements (IDs match backend)
+      const Achievement(
+        id: 'survivor',  // Backend: survivor
         title: 'Survivor',
         description: 'Survive for 60 seconds',
         icon: Icons.timer,
         type: AchievementType.survival,
         rarity: AchievementRarity.common,
         targetValue: 60,
-        points: 20,
+        points: 15,
       ),
       const Achievement(
-        id: 'survive_300',
-        title: 'Endurance Master',
-        description: 'Survive for 5 minutes',
+        id: 'endurance',  // Backend: endurance
+        title: 'Endurance',
+        description: 'Survive for 2 minutes',
         icon: Icons.schedule,
         type: AchievementType.survival,
         rarity: AchievementRarity.rare,
-        targetValue: 300,
+        targetValue: 120,  // 2 minutes = 120 seconds
+        points: 30,
+      ),
+      const Achievement(
+        id: 'marathon',  // Backend: marathon
+        title: 'Marathon',
+        description: 'Survive for 5 minutes',
+        icon: Icons.hourglass_full,
+        type: AchievementType.survival,
+        rarity: AchievementRarity.epic,
+        targetValue: 300,  // 5 minutes = 300 seconds
         points: 75,
       ),
 
-      // Special Achievements
+      // Special Achievements (local only - not synced with backend)
       const Achievement(
         id: 'no_walls',
         title: 'Wall Avoider',
