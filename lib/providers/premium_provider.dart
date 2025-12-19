@@ -25,6 +25,7 @@ class PremiumContent {
     GameTheme.space,
     GameTheme.ocean,
     GameTheme.desert,
+    GameTheme.forest,
   };
 
   // Premium Power-ups
@@ -327,6 +328,7 @@ class PremiumProvider extends ChangeNotifier {
       ProductIds.spaceTheme,
       ProductIds.oceanTheme,
       ProductIds.desertTheme,
+      ProductIds.forestTheme,
     ];
     
     for (final productId in themeProducts) {
@@ -401,8 +403,11 @@ class PremiumProvider extends ChangeNotifier {
       case ProductIds.desertTheme:
         theme = GameTheme.desert;
         break;
+      case ProductIds.forestTheme:
+        theme = GameTheme.forest;
+        break;
     }
-    
+
     if (theme != null) {
       await unlockTheme(theme);
     }
@@ -810,28 +815,107 @@ class PremiumProvider extends ChangeNotifier {
 
   Map<String, dynamic> _getProductInfo(String productId) {
     switch (productId) {
+      // Subscriptions
       case ProductIds.snakeClassicProMonthly:
-        return {'type': 'subscription', 'name': 'Snake Classic Pro Monthly', 'price': 399, 'currency': 'USD'};
+        return {'type': 'subscription', 'name': 'Snake Classic Pro Monthly', 'price': 499, 'currency': 'USD'};
       case ProductIds.snakeClassicProYearly:
-        return {'type': 'subscription', 'name': 'Snake Classic Pro Yearly', 'price': 2999, 'currency': 'USD'};
+        return {'type': 'subscription', 'name': 'Snake Classic Pro Yearly', 'price': 3999, 'currency': 'USD'};
       case ProductIds.battlePass:
         return {'type': 'battlepass', 'name': 'Battle Pass', 'price': 999, 'currency': 'USD'};
+
+      // Theme bundles and individual themes
       case ProductIds.themesBundle:
-        return {'type': 'bundle', 'name': 'All Premium Themes Bundle', 'price': 699, 'currency': 'USD'};
-      case ProductIds.premiumPowerupsBundle:
-        return {'type': 'bundle', 'name': 'Premium Power-ups Bundle', 'price': 499, 'currency': 'USD'};
-      case ProductIds.ultimateCosmetics:
-        return {'type': 'bundle', 'name': 'Ultimate Cosmetics Bundle', 'price': 899, 'currency': 'USD'};
+        return {'type': 'bundle', 'name': 'Premium Themes Bundle', 'price': 999, 'currency': 'USD'};
       case ProductIds.crystalTheme:
-        return {'type': 'theme', 'name': 'Crystal Theme', 'price': 199, 'currency': 'USD'};
+        return {'type': 'theme', 'name': 'Crystal Theme', 'price': 299, 'currency': 'USD'};
       case ProductIds.cyberpunkTheme:
-        return {'type': 'theme', 'name': 'Cyberpunk Theme', 'price': 199, 'currency': 'USD'};
+        return {'type': 'theme', 'name': 'Cyberpunk Theme', 'price': 299, 'currency': 'USD'};
       case ProductIds.spaceTheme:
         return {'type': 'theme', 'name': 'Space Theme', 'price': 199, 'currency': 'USD'};
       case ProductIds.oceanTheme:
         return {'type': 'theme', 'name': 'Ocean Theme', 'price': 199, 'currency': 'USD'};
       case ProductIds.desertTheme:
         return {'type': 'theme', 'name': 'Desert Theme', 'price': 199, 'currency': 'USD'};
+      case ProductIds.forestTheme:
+        return {'type': 'theme', 'name': 'Forest Theme', 'price': 199, 'currency': 'USD'};
+
+      // Power-up bundles
+      case ProductIds.premiumPowerupsBundle:
+        return {'type': 'bundle', 'name': 'Premium Power-ups Bundle', 'price': 699, 'currency': 'USD'};
+      case ProductIds.megaPowerupsPack:
+        return {'type': 'bundle', 'name': 'Mega Power-ups Pack', 'price': 299, 'currency': 'USD'};
+      case ProductIds.exclusivePowerupsPack:
+        return {'type': 'bundle', 'name': 'Exclusive Power-ups Pack', 'price': 499, 'currency': 'USD'};
+
+      // Individual snake skins
+      case ProductIds.goldenSnake:
+        return {'type': 'skin', 'name': 'Golden Snake', 'price': 199, 'currency': 'USD'};
+      case ProductIds.rainbowSnake:
+        return {'type': 'skin', 'name': 'Rainbow Snake', 'price': 299, 'currency': 'USD'};
+      case ProductIds.galaxySnake:
+        return {'type': 'skin', 'name': 'Galaxy Snake', 'price': 399, 'currency': 'USD'};
+      case ProductIds.dragonSnake:
+        return {'type': 'skin', 'name': 'Dragon Snake', 'price': 499, 'currency': 'USD'};
+      case ProductIds.electricSnake:
+        return {'type': 'skin', 'name': 'Electric Snake', 'price': 199, 'currency': 'USD'};
+      case ProductIds.fireSnake:
+        return {'type': 'skin', 'name': 'Fire Snake', 'price': 199, 'currency': 'USD'};
+      case ProductIds.iceSnake:
+        return {'type': 'skin', 'name': 'Ice Snake', 'price': 199, 'currency': 'USD'};
+      case ProductIds.shadowSnake:
+        return {'type': 'skin', 'name': 'Shadow Snake', 'price': 299, 'currency': 'USD'};
+      case ProductIds.neonSnake:
+        return {'type': 'skin', 'name': 'Neon Snake', 'price': 299, 'currency': 'USD'};
+      case ProductIds.crystalSnake:
+        return {'type': 'skin', 'name': 'Crystal Snake', 'price': 399, 'currency': 'USD'};
+      case ProductIds.cosmicSnake:
+        return {'type': 'skin', 'name': 'Cosmic Snake', 'price': 399, 'currency': 'USD'};
+
+      // Individual trail effects
+      case ProductIds.particleTrail:
+        return {'type': 'trail', 'name': 'Particle Trail', 'price': 99, 'currency': 'USD'};
+      case ProductIds.glowTrail:
+        return {'type': 'trail', 'name': 'Glow Trail', 'price': 99, 'currency': 'USD'};
+      case ProductIds.rainbowTrail:
+        return {'type': 'trail', 'name': 'Rainbow Trail', 'price': 199, 'currency': 'USD'};
+      case ProductIds.fireTrail:
+        return {'type': 'trail', 'name': 'Fire Trail', 'price': 299, 'currency': 'USD'};
+      case ProductIds.electricTrail:
+        return {'type': 'trail', 'name': 'Electric Trail', 'price': 299, 'currency': 'USD'};
+      case ProductIds.starTrail:
+        return {'type': 'trail', 'name': 'Star Trail', 'price': 299, 'currency': 'USD'};
+      case ProductIds.cosmicTrail:
+        return {'type': 'trail', 'name': 'Cosmic Trail', 'price': 399, 'currency': 'USD'};
+      case ProductIds.neonTrail:
+        return {'type': 'trail', 'name': 'Neon Trail', 'price': 199, 'currency': 'USD'};
+      case ProductIds.shadowTrail:
+        return {'type': 'trail', 'name': 'Shadow Trail', 'price': 199, 'currency': 'USD'};
+      case ProductIds.crystalTrail:
+        return {'type': 'trail', 'name': 'Crystal Trail', 'price': 399, 'currency': 'USD'};
+      case ProductIds.dragonTrail:
+        return {'type': 'trail', 'name': 'Dragon Trail', 'price': 399, 'currency': 'USD'};
+
+      // Cosmetic bundles
+      case ProductIds.ultimateCosmetics:
+        return {'type': 'bundle', 'name': 'Ultimate Collection', 'price': 2999, 'currency': 'USD'};
+      case ProductIds.starterCosmetics:
+        return {'type': 'bundle', 'name': 'Starter Pack', 'price': 399, 'currency': 'USD'};
+      case ProductIds.elementalCosmetics:
+        return {'type': 'bundle', 'name': 'Elemental Pack', 'price': 799, 'currency': 'USD'};
+      case ProductIds.cosmicCosmetics:
+        return {'type': 'bundle', 'name': 'Cosmic Collection', 'price': 1499, 'currency': 'USD'};
+
+      // Coin packs
+      case ProductIds.coinPackSmall:
+        return {'type': 'coins', 'name': 'Starter Coin Pack', 'price': 99, 'currency': 'USD'};
+      case ProductIds.coinPackMedium:
+        return {'type': 'coins', 'name': 'Value Coin Pack', 'price': 499, 'currency': 'USD'};
+      case ProductIds.coinPackLarge:
+        return {'type': 'coins', 'name': 'Premium Coin Pack', 'price': 999, 'currency': 'USD'};
+      case ProductIds.coinPackMega:
+        return {'type': 'coins', 'name': 'Ultimate Coin Pack', 'price': 1999, 'currency': 'USD'};
+
+      // Tournament entries
       case ProductIds.tournamentBronze:
         return {'type': 'tournament', 'name': 'Bronze Tournament Entry', 'price': 99, 'currency': 'USD'};
       case ProductIds.tournamentSilver:
@@ -840,6 +924,9 @@ class PremiumProvider extends ChangeNotifier {
         return {'type': 'tournament', 'name': 'Gold Tournament Entry', 'price': 299, 'currency': 'USD'};
       case ProductIds.championshipEntry:
         return {'type': 'tournament', 'name': 'Championship Entry', 'price': 499, 'currency': 'USD'};
+      case ProductIds.tournamentVipEntry:
+        return {'type': 'tournament', 'name': 'VIP Tournament Entry', 'price': 999, 'currency': 'USD'};
+
       default:
         return {'type': 'unknown', 'name': 'Unknown Product', 'price': 0, 'currency': 'USD'};
     }
@@ -848,11 +935,12 @@ class PremiumProvider extends ChangeNotifier {
   // Public method to handle purchase completion
   Future<void> handlePurchaseCompletion(String productId) async {
     AppLogger.info('Handling purchase completion for: $productId');
-    
+
     // Record the purchase in history
     await _recordProductPurchase(productId);
-    
+
     switch (productId) {
+      // Subscriptions
       case ProductIds.snakeClassicProMonthly:
       case ProductIds.snakeClassicProYearly:
         await _activatePremium(PremiumTier.pro);
@@ -860,22 +948,147 @@ class PremiumProvider extends ChangeNotifier {
       case ProductIds.battlePass:
         await _activateBattlePass();
         break;
+
+      // Theme bundles and individual themes
       case ProductIds.themesBundle:
         await _unlockAllPremiumThemes();
-        break;
-      case ProductIds.premiumPowerupsBundle:
-        await _unlockAllPremiumPowerUps();
-        break;
-      case ProductIds.ultimateCosmetics:
-        await _unlockAllPremiumCosmetics();
         break;
       case ProductIds.crystalTheme:
       case ProductIds.cyberpunkTheme:
       case ProductIds.spaceTheme:
       case ProductIds.oceanTheme:
       case ProductIds.desertTheme:
+      case ProductIds.forestTheme:
         await _unlockThemeFromProduct(productId);
         break;
+
+      // Power-up bundles and packs
+      case ProductIds.premiumPowerupsBundle:
+        await _unlockAllPremiumPowerUps();
+        break;
+      case ProductIds.megaPowerupsPack:
+        await unlockPowerUp('mega_speed_boost');
+        await unlockPowerUp('mega_invincibility');
+        await unlockPowerUp('mega_score_multiplier');
+        await unlockPowerUp('mega_slow_motion');
+        break;
+      case ProductIds.exclusivePowerupsPack:
+        await unlockPowerUp('teleport');
+        await unlockPowerUp('size_reducer');
+        await unlockPowerUp('score_shield');
+        break;
+
+      // Individual snake skins
+      case ProductIds.goldenSnake:
+        await unlockSkin('golden');
+        break;
+      case ProductIds.rainbowSnake:
+        await unlockSkin('rainbow');
+        break;
+      case ProductIds.galaxySnake:
+        await unlockSkin('galaxy');
+        break;
+      case ProductIds.dragonSnake:
+        await unlockSkin('dragon');
+        break;
+      case ProductIds.electricSnake:
+        await unlockSkin('electric');
+        break;
+      case ProductIds.fireSnake:
+        await unlockSkin('fire');
+        break;
+      case ProductIds.iceSnake:
+        await unlockSkin('ice');
+        break;
+      case ProductIds.shadowSnake:
+        await unlockSkin('shadow');
+        break;
+      case ProductIds.neonSnake:
+        await unlockSkin('neon');
+        break;
+      case ProductIds.crystalSnake:
+        await unlockSkin('crystal');
+        break;
+      case ProductIds.cosmicSnake:
+        await unlockSkin('cosmic');
+        break;
+
+      // Individual trail effects (product ID has trail_ prefix, internal ID doesn't)
+      case ProductIds.particleTrail:
+        await unlockTrail('particle');
+        break;
+      case ProductIds.glowTrail:
+        await unlockTrail('glow');
+        break;
+      case ProductIds.rainbowTrail:
+        await unlockTrail('rainbow');
+        break;
+      case ProductIds.fireTrail:
+        await unlockTrail('fire');
+        break;
+      case ProductIds.electricTrail:
+        await unlockTrail('electric');
+        break;
+      case ProductIds.starTrail:
+        await unlockTrail('star');
+        break;
+      case ProductIds.cosmicTrail:
+        await unlockTrail('cosmic');
+        break;
+      case ProductIds.neonTrail:
+        await unlockTrail('neon');
+        break;
+      case ProductIds.shadowTrail:
+        await unlockTrail('shadow');
+        break;
+      case ProductIds.crystalTrail:
+        await unlockTrail('crystal');
+        break;
+      case ProductIds.dragonTrail:
+        await unlockTrail('dragon');
+        break;
+
+      // Cosmetic bundles
+      case ProductIds.ultimateCosmetics:
+        await _unlockAllPremiumCosmetics();
+        break;
+      case ProductIds.starterCosmetics:
+        await unlockSkin('golden');
+        await unlockSkin('fire');
+        await unlockTrail('particle');
+        await unlockTrail('glow');
+        break;
+      case ProductIds.elementalCosmetics:
+        await unlockSkin('fire');
+        await unlockSkin('ice');
+        await unlockSkin('electric');
+        await unlockTrail('fire');
+        await unlockTrail('electric');
+        break;
+      case ProductIds.cosmicCosmetics:
+        await unlockSkin('galaxy');
+        await unlockSkin('cosmic');
+        await unlockSkin('crystal');
+        await unlockTrail('cosmic');
+        await unlockTrail('star');
+        await unlockTrail('crystal');
+        break;
+
+      // Coin packs (handled by CoinsProvider)
+      case ProductIds.coinPackSmall:
+        await _awardCoins(100);
+        break;
+      case ProductIds.coinPackMedium:
+        await _awardCoins(550); // 500 + 50 bonus
+        break;
+      case ProductIds.coinPackLarge:
+        await _awardCoins(1400); // 1200 + 200 bonus
+        break;
+      case ProductIds.coinPackMega:
+        await _awardCoins(3000); // 2500 + 500 bonus
+        break;
+
+      // Tournament entries
       case ProductIds.tournamentBronze:
         await addTournamentEntry('bronze');
         break;
@@ -888,6 +1101,12 @@ class PremiumProvider extends ChangeNotifier {
       case ProductIds.championshipEntry:
         await addTournamentEntry('championship');
         break;
+      case ProductIds.tournamentVipEntry:
+        await addTournamentEntry('championship'); // VIP uses championship tier
+        break;
+
+      default:
+        AppLogger.warning('Unknown product ID: $productId');
     }
   }
 

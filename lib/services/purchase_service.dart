@@ -39,18 +39,18 @@ class ProductIds {
   static const String crystalSnake = 'crystal';
   static const String cosmicSnake = 'cosmic';
 
-  // Trail Effects
-  static const String particleTrail = 'particle';
-  static const String glowTrail = 'glow';
-  static const String rainbowTrail = 'rainbow';
-  static const String fireTrail = 'fire';
-  static const String electricTrail = 'electric';
-  static const String starTrail = 'star';
-  static const String cosmicTrail = 'cosmic';
-  static const String neonTrail = 'neon';
-  static const String shadowTrail = 'shadow';
-  static const String crystalTrail = 'crystal';
-  static const String dragonTrail = 'dragon';
+  // Trail Effects (prefixed to avoid duplicate IDs with skins)
+  static const String particleTrail = 'trail_particle';
+  static const String glowTrail = 'trail_glow';
+  static const String rainbowTrail = 'trail_rainbow';
+  static const String fireTrail = 'trail_fire';
+  static const String electricTrail = 'trail_electric';
+  static const String starTrail = 'trail_star';
+  static const String cosmicTrail = 'trail_cosmic';
+  static const String neonTrail = 'trail_neon';
+  static const String shadowTrail = 'trail_shadow';
+  static const String crystalTrail = 'trail_crystal';
+  static const String dragonTrail = 'trail_dragon';
 
   // Cosmetic Bundles
   static const String starterCosmetics = 'starter_pack';
@@ -375,18 +375,27 @@ class PurchaseService {
         case ProductIds.spaceTheme:
         case ProductIds.oceanTheme:
         case ProductIds.desertTheme:
+        case ProductIds.forestTheme:
         case ProductIds.themesBundle:
           await _unlockPremiumTheme(purchaseDetails.productID);
           break;
-          
+
+        // Coins (Consumable)
+        case ProductIds.coinPackSmall:
+        case ProductIds.coinPackMedium:
+        case ProductIds.coinPackLarge:
+        case ProductIds.coinPackMega:
+          await _addCoins(purchaseDetails.productID);
+          break;
+
         // Power-ups
         case ProductIds.megaPowerupsPack:
         case ProductIds.exclusivePowerupsPack:
         case ProductIds.premiumPowerupsBundle:
           await _unlockPowerups(purchaseDetails.productID);
           break;
-          
-        // Cosmetics
+
+        // Snake Skins
         case ProductIds.goldenSnake:
         case ProductIds.rainbowSnake:
         case ProductIds.galaxySnake:
@@ -398,25 +407,45 @@ class PurchaseService {
         case ProductIds.neonSnake:
         case ProductIds.crystalSnake:
         case ProductIds.cosmicSnake:
+          await _unlockCosmetics(purchaseDetails.productID);
+          break;
+
+        // Trail Effects
+        case ProductIds.particleTrail:
+        case ProductIds.glowTrail:
+        case ProductIds.rainbowTrail:
+        case ProductIds.fireTrail:
+        case ProductIds.electricTrail:
+        case ProductIds.starTrail:
+        case ProductIds.cosmicTrail:
+        case ProductIds.neonTrail:
+        case ProductIds.shadowTrail:
+        case ProductIds.crystalTrail:
+        case ProductIds.dragonTrail:
+          await _unlockTrail(purchaseDetails.productID);
+          break;
+
+        // Cosmetic Bundles
         case ProductIds.starterCosmetics:
         case ProductIds.elementalCosmetics:
         case ProductIds.cosmicCosmetics:
         case ProductIds.ultimateCosmetics:
           await _unlockCosmetics(purchaseDetails.productID);
           break;
-          
+
         // Subscriptions
         case ProductIds.snakeClassicProMonthly:
         case ProductIds.snakeClassicProYearly:
         case ProductIds.battlePass:
           await _activateSubscription(purchaseDetails.productID);
           break;
-          
+
         // Tournament Entries
         case ProductIds.tournamentBronze:
         case ProductIds.tournamentSilver:
         case ProductIds.tournamentGold:
         case ProductIds.championshipEntry:
+        case ProductIds.tournamentVipEntry:
           await _addTournamentEntry(purchaseDetails.productID);
           break;
       }
@@ -436,6 +465,12 @@ class PurchaseService {
     // This method exists for future backend synchronization if needed
   }
 
+  Future<void> _addCoins(String productId) async {
+    AppLogger.info('Adding coins: $productId');
+    // The actual coin addition is handled by PremiumProvider via purchase completion event
+    // This method exists for future backend synchronization if needed
+  }
+
   Future<void> _unlockPowerups(String productId) async {
     AppLogger.info('Unlocking powerups: $productId');
     // The actual unlocking is handled by PremiumProvider via purchase completion event
@@ -444,6 +479,12 @@ class PurchaseService {
 
   Future<void> _unlockCosmetics(String productId) async {
     AppLogger.info('Unlocking cosmetics: $productId');
+    // The actual unlocking is handled by PremiumProvider via purchase completion event
+    // This method exists for future backend synchronization if needed
+  }
+
+  Future<void> _unlockTrail(String productId) async {
+    AppLogger.info('Unlocking trail effect: $productId');
     // The actual unlocking is handled by PremiumProvider via purchase completion event
     // This method exists for future backend synchronization if needed
   }

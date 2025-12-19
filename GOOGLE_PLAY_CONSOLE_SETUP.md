@@ -75,17 +75,17 @@ Create the following **Managed Products**:
 
 | Product ID | Name | Description | Price |
 |------------|------|-------------|-------|
-| `particle` | Particle Trail | Sparkling particle effects | $0.99 |
-| `glow` | Glow Trail | Glowing trail effect | $0.99 |
-| `rainbow` | Rainbow Trail | Colorful rainbow trail | $1.99 |
-| `fire` | Fire Trail | Blazing fire trail with embers | $2.99 |
-| `electric` | Electric Trail | Crackling lightning trail | $2.99 |
-| `star` | Star Trail | Twinkling star effects | $2.99 |
-| `cosmic` | Cosmic Trail | Nebula and cosmic dust | $3.99 |
-| `neon` | Neon Trail | Cyberpunk neon glow | $1.99 |
-| `shadow` | Shadow Trail | Dark smoky effects | $1.99 |
-| `crystal` | Crystal Trail | Crystalline shard effects | $3.99 |
-| `dragon` | Dragon Trail | Mystical dragon breath | $3.99 |
+| `trail_particle` | Particle Trail | Sparkling particle effects | $0.99 |
+| `trail_glow` | Glow Trail | Glowing trail effect | $0.99 |
+| `trail_rainbow` | Rainbow Trail | Colorful rainbow trail | $1.99 |
+| `trail_fire` | Fire Trail | Blazing fire trail with embers | $2.99 |
+| `trail_electric` | Electric Trail | Crackling lightning trail | $2.99 |
+| `trail_star` | Star Trail | Twinkling star effects | $2.99 |
+| `trail_cosmic` | Cosmic Trail | Nebula and cosmic dust | $3.99 |
+| `trail_neon` | Neon Trail | Cyberpunk neon glow | $1.99 |
+| `trail_shadow` | Shadow Trail | Dark smoky effects | $1.99 |
+| `trail_crystal` | Crystal Trail | Crystalline shard effects | $3.99 |
+| `trail_dragon` | Dragon Trail | Mystical dragon breath | $3.99 |
 
 ### 2.6 Cosmetic Bundles
 
