@@ -28,6 +28,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final StorageService _storageService = StorageService();
   bool _soundEnabled = true;
   bool _musicEnabled = true;
+  bool _dPadEnabled = false;
+  DPadPosition _dPadPosition = DPadPosition.bottomCenter;
   BoardSize _selectedBoardSize = GameConstants.availableBoardSizes[1]; // Default to Classic
   Duration _selectedCrashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration;
 
@@ -41,9 +43,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _audioService.initialize();
     final boardSize = await _storageService.getBoardSize();
     final crashFeedbackDuration = await _storageService.getCrashFeedbackDuration();
+    final dPadEnabled = await _storageService.isDPadEnabled();
+    final dPadPosition = await _storageService.getDPadPosition();
     setState(() {
       _soundEnabled = _audioService.isSoundEnabled;
       _musicEnabled = _audioService.isMusicEnabled;
+      _dPadEnabled = dPadEnabled;
+      _dPadPosition = dPadPosition;
       _selectedBoardSize = boardSize;
       _selectedCrashFeedbackDuration = crashFeedbackDuration;
     });
@@ -86,92 +92,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                    // Theme Section
+                    // 1. Controls Section (most frequently adjusted during gameplay)
                     _buildSection(
-                      'VISUAL THEME',
+                      'CONTROLS',
                       [
-                        _buildThemeSelector(themeProvider, theme),
+                        _buildAudioSwitch(
+                          'D-Pad Controls',
+                          _dPadEnabled,
+                          (value) async {
+                            setState(() {
+                              _dPadEnabled = value;
+                            });
+                            await gameProvider.updateDPadEnabled(value);
+                          },
+                          theme,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Show on-screen directional buttons during gameplay',
+                          style: TextStyle(
+                            color: theme.accentColor.withValues(alpha: 0.6),
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        // D-Pad Position Selector (only show when D-Pad is enabled)
+                        if (_dPadEnabled) ...[
+                          const SizedBox(height: 16),
+                          _buildDPadPositionSelector(gameProvider, theme),
+                        ],
+                        const SizedBox(height: 16),
+                        _buildControlInfo(theme),
                       ],
                       theme,
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
-                    // User Profile Section
+
+                    // 2. Gameplay Section (board size + crash feedback)
                     _buildSection(
-                      'USER PROFILE',
-                      [
-                        _buildUserProfileSettings(userProvider, theme),
-                      ],
-                      theme,
-                    ),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Board Size Section
-                    _buildSection(
-                      'BOARD SIZE',
+                      'GAMEPLAY',
                       [
                         _buildBoardSizeSelector(gameProvider, theme),
-                      ],
-                      theme,
-                    ),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Crash Feedback Duration Section
-                    _buildSection(
-                      'CRASH FEEDBACK',
-                      [
+                        const SizedBox(height: 24),
+                        const Divider(height: 1),
+                        const SizedBox(height: 24),
                         _buildCrashFeedbackDurationSelector(gameProvider, theme),
                       ],
                       theme,
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
-                    // Visual Effects Section  
+
+                    // 3. Audio Section
                     _buildSection(
-                      'VISUAL EFFECTS',
-                      [
-                        _buildAudioSwitch(
-                          'Snake Trail Effects',
-                          themeProvider.isTrailSystemEnabled,
-                          (value) async {
-                            await themeProvider.setTrailSystemEnabled(value);
-                          },
-                          theme,
-                        ),
-                      ],
-                      theme,
-                    ),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Premium Section
-                    if (premiumProvider.isInitialized)
-                      _buildSection(
-                        'PREMIUM FEATURES',
-                        [
-                          _buildPremiumStatusCard(premiumProvider, theme),
-                          if (!premiumProvider.hasPremium)
-                            _buildUpgradeButton(premiumProvider, theme),
-                          _buildRestorePurchasesButton(premiumProvider, theme),
-                          _buildPurchaseHistoryButton(premiumProvider, theme),
-                          if (premiumProvider.hasPremium || premiumProvider.ownedSkins.isNotEmpty)
-                            _buildCosmeticsButton(premiumProvider, theme),
-                          if (premiumProvider.hasBattlePass)
-                            _buildBattlePassButton(premiumProvider, theme),
-                        ],
-                        theme,
-                      ),
-                    
-                    if (premiumProvider.isInitialized)
-                      const SizedBox(height: 32),
-                    
-                    // Audio Section
-                    _buildSection(
-                      'AUDIO SETTINGS',
+                      'AUDIO',
                       [
                         _buildAudioSwitch(
                           'Sound Effects',
@@ -199,17 +174,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                       theme,
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
-                    // Controls Section
+
+                    // 4. Visual Section (theme + trail effects)
                     _buildSection(
-                      'CONTROLS',
+                      'VISUAL',
                       [
-                        _buildControlInfo(theme),
+                        _buildThemeSelector(themeProvider, theme),
+                        const SizedBox(height: 24),
+                        const Divider(height: 1),
+                        const SizedBox(height: 24),
+                        _buildAudioSwitch(
+                          'Snake Trail Effects',
+                          themeProvider.isTrailSystemEnabled,
+                          (value) async {
+                            await themeProvider.setTrailSystemEnabled(value);
+                          },
+                          theme,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Enable particle trails behind the snake',
+                          style: TextStyle(
+                            color: theme.accentColor.withValues(alpha: 0.6),
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
                       ],
                       theme,
                     ),
+
+                    const SizedBox(height: 32),
+
+                    // 5. User Profile Section
+                    _buildSection(
+                      'USER PROFILE',
+                      [
+                        _buildUserProfileSettings(userProvider, theme),
+                      ],
+                      theme,
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // 6. Premium Section (if available)
+                    if (premiumProvider.isInitialized)
+                      _buildSection(
+                        'PREMIUM FEATURES',
+                        [
+                          _buildPremiumStatusCard(premiumProvider, theme),
+                          if (!premiumProvider.hasPremium)
+                            _buildUpgradeButton(premiumProvider, theme),
+                          _buildRestorePurchasesButton(premiumProvider, theme),
+                          _buildPurchaseHistoryButton(premiumProvider, theme),
+                          if (premiumProvider.hasPremium || premiumProvider.ownedSkins.isNotEmpty)
+                            _buildCosmeticsButton(premiumProvider, theme),
+                          if (premiumProvider.hasBattlePass)
+                            _buildBattlePassButton(premiumProvider, theme),
+                        ],
+                        theme,
+                      ),
+
+                    if (premiumProvider.isInitialized)
+                      const SizedBox(height: 32),
                     
                     const SizedBox(height: 40),
                     
@@ -373,6 +402,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onChanged: onChanged,
           activeThumbColor: theme.accentColor,
           activeTrackColor: theme.accentColor.withValues(alpha: 0.3),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDPadPositionSelector(GameProvider gameProvider, GameTheme theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.gamepad,
+              color: theme.accentColor.withValues(alpha: 0.8),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'D-Pad Position',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.backgroundColor.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.accentColor.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: DPadPosition.values.map((position) {
+              final isSelected = _dPadPosition == position;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    setState(() {
+                      _dPadPosition = position;
+                    });
+                    await gameProvider.updateDPadPosition(position);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.accentColor.withValues(alpha: 0.2)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      border: isSelected
+                          ? Border.all(color: theme.accentColor, width: 1.5)
+                          : null,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          position.icon,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          position.displayName,
+                          style: TextStyle(
+                            color: isSelected
+                                ? theme.accentColor
+                                : theme.accentColor.withValues(alpha: 0.6),
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ],
     );
@@ -623,7 +735,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_selectedCrashFeedbackDuration.inSeconds} seconds',
+                    GameConstants.getCrashFeedbackLabel(_selectedCrashFeedbackDuration),
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 18,
@@ -699,7 +811,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${duration.inSeconds}s',
+                  GameConstants.getCrashFeedbackLabel(duration),
                   style: TextStyle(
                     color: isSelected ? theme.accentColor : Colors.white.withValues(alpha: 0.8),
                     fontSize: 14,

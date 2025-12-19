@@ -55,6 +55,11 @@ class GameState {
   final DateTime? lastMoveTime;
   final GameMode gameMode;
 
+  // Combo system
+  final int currentCombo; // Current streak count
+  final int maxCombo; // Best streak this game
+  final double comboMultiplier; // Score multiplier based on combo
+
   const GameState({
     required this.snake,
     this.food,
@@ -73,6 +78,9 @@ class GameState {
     this.boardHeight = 20,
     this.lastMoveTime,
     this.gameMode = GameMode.classic,
+    this.currentCombo = 0,
+    this.maxCombo = 0,
+    this.comboMultiplier = 1.0,
   });
 
   factory GameState.initial() {
@@ -85,7 +93,22 @@ class GameState {
       showCrashModal: false,
       powerUp: null,
       activePowerUps: const [],
+      currentCombo: 0,
+      maxCombo: 0,
+      comboMultiplier: 1.0,
     );
+  }
+
+  /// Calculates the combo multiplier based on the current combo count
+  /// - 1-4 foods: 1x multiplier
+  /// - 5-9 foods: 1.5x multiplier
+  /// - 10-19 foods: 2x multiplier
+  /// - 20+ foods: 3x multiplier
+  static double calculateComboMultiplier(int combo) {
+    if (combo >= 20) return 3.0;
+    if (combo >= 10) return 2.0;
+    if (combo >= 5) return 1.5;
+    return 1.0;
   }
 
   int get gameSpeed {
@@ -173,6 +196,9 @@ class GameState {
     int? boardHeight,
     DateTime? lastMoveTime,
     GameMode? gameMode,
+    int? currentCombo,
+    int? maxCombo,
+    double? comboMultiplier,
   }) {
     return GameState(
       snake: snake ?? this.snake,
@@ -192,6 +218,9 @@ class GameState {
       boardHeight: boardHeight ?? this.boardHeight,
       lastMoveTime: lastMoveTime ?? this.lastMoveTime,
       gameMode: gameMode ?? this.gameMode,
+      currentCombo: currentCombo ?? this.currentCombo,
+      maxCombo: maxCombo ?? this.maxCombo,
+      comboMultiplier: comboMultiplier ?? this.comboMultiplier,
     );
   }
 

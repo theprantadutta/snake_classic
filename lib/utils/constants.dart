@@ -1,5 +1,34 @@
 import 'package:flutter/material.dart';
 
+/// D-Pad position presets for user preference
+enum DPadPosition {
+  bottomLeft,
+  bottomCenter,
+  bottomRight;
+
+  String get displayName {
+    switch (this) {
+      case DPadPosition.bottomLeft:
+        return 'Left';
+      case DPadPosition.bottomCenter:
+        return 'Center';
+      case DPadPosition.bottomRight:
+        return 'Right';
+    }
+  }
+
+  String get icon {
+    switch (this) {
+      case DPadPosition.bottomLeft:
+        return '⬅️';
+      case DPadPosition.bottomCenter:
+        return '⬇️';
+      case DPadPosition.bottomRight:
+        return '➡️';
+    }
+  }
+}
+
 class BoardSize {
   final int width;
   final int height;
@@ -60,18 +89,58 @@ class GameConstants {
   static const int initialGameSpeed = 300; // milliseconds
   static const int minGameSpeed = 100;
   static const int maxGameSpeed = 500;
-  
-  // Crash feedback duration options
+
+  // === UI Layout Constants ===
+  static const double containerMargin = 8.0;
+  static const double smallScreenThreshold = 700.0;
+  static const double defaultHorizontalPadding = 12.0;
+  static const double smallScreenPadding = 8.0;
+  static const double largeScreenPadding = 16.0;
+  static const double gameBoardBorderWidth = 3.0;
+  static const double gestureIndicatorSize = 70.0;
+
+  // === Swipe Detection Constants ===
+  static const double swipeMinDelta = 2.0;
+  static const double swipeMinVelocity = 300.0;
+  static const int swipeSpamPreventionMs = 50;
+  static const int swipeSameDirectionThresholdMs = 150;
+
+  // === Animation Constants ===
+  static const double gridBackgroundSize = 30.0;
+  static const int colorCycleIntervalMs = 500;
+  static const int sparkleAnimationSpeedMs = 200;
+
+  // === Safe Zone Warning Constants ===
+  static const int wallWarningThreshold = 2; // cells from wall to start warning
+  static const double wallWarningMaxIntensity = 0.8;
+
+  // === Power-Up Constants ===
+  static const int powerUpExpirationWarningSeconds = 5;
+  static const int powerUpSpawnIntervalSeconds = 25;
+  static const int powerUpExpirationSeconds = 20;
+
+  // === Crash Feedback Special Modes ===
+  static const int crashFeedbackUntilTap = -1; // marker for "until I tap" mode
+  static const int crashFeedbackSkip = 0; // marker for "skip entirely" mode
+
+  // Crash feedback duration options (includes special modes)
+  // crashFeedbackSkip (0s) = skip entirely, crashFeedbackUntilTap (-1s) = wait for tap
   static const List<Duration> availableCrashFeedbackDurations = [
+    Duration(seconds: 0), // Skip entirely
+    Duration(seconds: 1),
     Duration(seconds: 2),
     Duration(seconds: 3),
-    Duration(seconds: 4),
     Duration(seconds: 5),
-    Duration(seconds: 6),
-    Duration(seconds: 8),
-    Duration(seconds: 10),
+    Duration(seconds: -1), // Until I tap (negative duration as marker)
   ];
-  static const Duration defaultCrashFeedbackDuration = Duration(seconds: 5);
+  static const Duration defaultCrashFeedbackDuration = Duration(seconds: 3);
+
+  /// Gets a user-friendly label for crash feedback duration
+  static String getCrashFeedbackLabel(Duration duration) {
+    if (duration.inSeconds == crashFeedbackSkip) return 'Skip';
+    if (duration.inSeconds == crashFeedbackUntilTap) return 'Until Tap';
+    return '${duration.inSeconds}s';
+  }
   
   // Scoring
   static const int baseScore = 10;

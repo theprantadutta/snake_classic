@@ -61,7 +61,15 @@ class GameProvider extends ChangeNotifier {
   bool get isPaused => _gameState.status == GameStatus.paused;
   bool get isGameOver => _gameState.status == GameStatus.gameOver;
   Duration get crashFeedbackDuration => _crashFeedbackDuration;
-  
+
+  // D-Pad controls preference
+  bool _dPadEnabled = false;
+  bool get dPadEnabled => _dPadEnabled;
+
+  // D-Pad position preference
+  DPadPosition _dPadPosition = DPadPosition.bottomCenter;
+  DPadPosition get dPadPosition => _dPadPosition;
+
   // Tournament mode getters
   String? get tournamentId => _tournamentId;
   TournamentGameMode? get tournamentMode => _tournamentMode;
@@ -103,6 +111,8 @@ class GameProvider extends ChangeNotifier {
     final highScore = await _storageService.getHighScore();
     final boardSize = await _storageService.getBoardSize();
     _crashFeedbackDuration = await _storageService.getCrashFeedbackDuration();
+    _dPadEnabled = await _storageService.isDPadEnabled();
+    _dPadPosition = await _storageService.getDPadPosition();
     _gameState = _gameState.copyWith(
       highScore: highScore,
       boardWidth: boardSize.width,
@@ -115,12 +125,27 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateDPadEnabled(bool enabled) async {
+    _dPadEnabled = enabled;
+    await _storageService.setDPadEnabled(enabled);
+    notifyListeners();
+  }
+
+  Future<void> updateDPadPosition(DPadPosition position) async {
+    _dPadPosition = position;
+    await _storageService.setDPadPosition(position);
+    notifyListeners();
+  }
+
   void startGame() {
     _gameState = GameState.initial().copyWith(
       highScore: _gameState.highScore,
       boardWidth: _gameState.boardWidth,
       boardHeight: _gameState.boardHeight,
       status: GameStatus.playing,
+      currentCombo: 0,
+      maxCombo: 0,
+      comboMultiplier: 1.0,
     );
     
     // Reset smooth movement state
@@ -341,13 +366,21 @@ class GameProvider extends ChangeNotifier {
 
   void _consumeFood(Food food) {
     final basePoints = food.type.points;
-    final multipliedPoints = basePoints * _gameState.scoreMultiplier;
+
+    // Update combo
+    final newCombo = _gameState.currentCombo + 1;
+    final newMaxCombo = max(_gameState.maxCombo, newCombo);
+    final newComboMultiplier = GameState.calculateComboMultiplier(newCombo);
+
+    // Apply combo multiplier to score (in addition to power-up multiplier)
+    final comboBonus = (basePoints * newComboMultiplier).round();
+    final multipliedPoints = comboBonus * _gameState.scoreMultiplier;
     final newScore = _gameState.score + multipliedPoints;
     int newLevel = _gameState.level;
 
     // Track food types for achievements
     _foodTypesEatenThisGame.add(food.type.name);
-    
+
     // Track food types for statistics
     _currentGameFoodTypes[food.type.name] = (_currentGameFoodTypes[food.type.name] ?? 0) + 1;
     _currentGameFoodPoints += multipliedPoints;
@@ -363,7 +396,7 @@ class GameProvider extends ChangeNotifier {
       // Enhanced spatial audio for food consumption
       final foodPos = _gameState.food?.position;
       if (foodPos != null) {
-        _enhancedAudioService.playSfx('eat', 
+        _enhancedAudioService.playSfx('eat',
           volume: 0.8,
           position: SpatialAudioPosition(
             x: foodPos.x / _gameState.boardWidth,
@@ -377,12 +410,19 @@ class GameProvider extends ChangeNotifier {
     _gameState = _gameState.copyWith(
       score: newScore,
       level: newLevel,
+      currentCombo: newCombo,
+      maxCombo: newMaxCombo,
+      comboMultiplier: newComboMultiplier,
     );
 
     // Award Battle Pass XP for eating food
     int xpEarned = food.type.points; // Base XP equals food points
     if (food.type == FoodType.special || food.type == FoodType.bonus) {
       xpEarned *= 2; // Double XP for special foods
+    }
+    // Bonus XP for combo streaks
+    if (newCombo >= 10) {
+      xpEarned += 5;
     }
     _awardBattlePassXP(xpEarned);
 
@@ -579,7 +619,34 @@ class GameProvider extends ChangeNotifier {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
-    
+
+    // Play crash sound and haptic feedback immediately
+    _audioService.playSound('game_over');
+    _enhancedAudioService.playSfx('game_over', volume: 1.0);
+    HapticFeedback.heavyImpact();
+
+    // Handle crash feedback based on user preference
+    final durationSeconds = _crashFeedbackDuration.inSeconds;
+
+    // Skip mode: go directly to game over
+    if (durationSeconds == GameConstants.crashFeedbackSkip) {
+      _gameState = _gameState.copyWith(
+        status: GameStatus.crashed,
+        crashReason: crashReason,
+        crashPosition: crashPosition,
+        collisionBodyPart: collisionBodyPart,
+        showCrashModal: false,
+      );
+      notifyListeners();
+      // Immediately transition to game over
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (_gameState.status == GameStatus.crashed) {
+          _gameOver();
+        }
+      });
+      return;
+    }
+
     // First show crash feedback with reason and position details (visual only)
     _gameState = _gameState.copyWith(
       status: GameStatus.crashed,
@@ -588,22 +655,24 @@ class GameProvider extends ChangeNotifier {
       collisionBodyPart: collisionBodyPart,
       showCrashModal: false, // Start with visual feedback only
     );
-    
-    // Play crash sound and haptic feedback immediately
-    _audioService.playSound('game_over');
-    _enhancedAudioService.playSfx('game_over', volume: 1.0);
-    HapticFeedback.heavyImpact();
     notifyListeners();
-    
+
     // Show visual crash feedback for 2 seconds, then show modal
     Future.delayed(const Duration(seconds: 2), () {
       if (_gameState.status == GameStatus.crashed) {
         // Now show the crash feedback modal
         _gameState = _gameState.copyWith(showCrashModal: true);
         notifyListeners();
-        
-        // After modal duration (3 seconds), proceed to game over screen
-        Future.delayed(const Duration(seconds: 3), () {
+
+        // Until Tap mode: don't auto-advance, wait for user to skip
+        if (durationSeconds == GameConstants.crashFeedbackUntilTap) {
+          // User must tap to continue - handled by skipCrashFeedback()
+          return;
+        }
+
+        // Normal mode: use configured duration
+        final modalDuration = Duration(seconds: durationSeconds.clamp(1, 10));
+        Future.delayed(modalDuration, () {
           if (_gameState.status == GameStatus.crashed) {
             _gameOver();
           }

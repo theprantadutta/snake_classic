@@ -110,6 +110,29 @@ class StorageService {
     await _prefs?.setBool(GameConstants.trailSystemEnabledKey, enabled);
   }
 
+  // D-Pad controls preference
+  Future<bool> isDPadEnabled() async {
+    await _initPrefs();
+    return _prefs?.getBool('dpad_enabled') ?? false; // Default to false
+  }
+
+  Future<void> setDPadEnabled(bool enabled) async {
+    await _initPrefs();
+    await _prefs?.setBool('dpad_enabled', enabled);
+  }
+
+  // D-Pad position preference
+  Future<DPadPosition> getDPadPosition() async {
+    await _initPrefs();
+    final positionIndex = _prefs?.getInt('dpad_position') ?? 1; // Default to center (1)
+    return DPadPosition.values[positionIndex.clamp(0, DPadPosition.values.length - 1)];
+  }
+
+  Future<void> setDPadPosition(DPadPosition position) async {
+    await _initPrefs();
+    await _prefs?.setInt('dpad_position', position.index);
+  }
+
   // Replay storage methods
   Future<void> saveReplay(String replayId, String replayJson) async {
     await _initPrefs();
