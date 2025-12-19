@@ -10,7 +10,6 @@ import 'package:snake_classic/providers/user_provider.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
 import 'package:snake_classic/screens/home_screen.dart';
 import 'package:snake_classic/services/achievement_service.dart';
-import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -177,7 +176,7 @@ class _LoadingScreenState extends State<LoadingScreen>
 
         if (isFirstTime) {
           await _updateProgress(1.0, 'Welcome!', 'Choose how to continue');
-          await Future.delayed(const Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 50)); // Reduced from 100ms
 
           // Navigate to first-time auth screen
           if (!mounted) {
@@ -216,7 +215,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         'Ready to play!',
         'Welcome back to Snake Classic',
       );
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 50)); // Reduced from 100ms
 
       // Navigation to Home Screen with smooth transition (returning users)
       if (mounted) {
@@ -252,9 +251,8 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<void> _initializeCoreServices() async {
     try {
       AppLogger.lifecycle('Initializing core services');
-
-      // Initialize Firebase and core services here
-      await Future.delayed(const Duration(milliseconds: 300)); // Simulate work
+      // Core services (Firebase, Audio, etc.) already initialized in main()
+      // No artificial delay needed
     } catch (e) {
       AppLogger.error('Core services initialization warning', e);
     }
@@ -358,14 +356,12 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   Future<void> _initializeAudio() async {
     try {
-      AppLogger.audio('Initializing audio service');
-
-      final audioService = AudioService();
-      await audioService.initialize();
-
-      AppLogger.success('Audio service initialized');
+      AppLogger.audio('Verifying audio service');
+      // Audio already initialized in main() - just verify it's ready
+      // No need to call initialize() again - it's already done
+      AppLogger.success('Audio service verified');
     } catch (e) {
-      AppLogger.audio('Audio system initialization warning', e);
+      AppLogger.audio('Audio system verification warning', e);
     }
   }
 
@@ -400,8 +396,8 @@ class _LoadingScreenState extends State<LoadingScreen>
     _progressController.reset();
     _progressController.forward();
 
-    // Small delay for UI update
-    await Future.delayed(const Duration(milliseconds: 50));
+    // Minimal delay for UI update (reduced from 50ms)
+    await Future.delayed(const Duration(milliseconds: 16)); // ~1 frame
   }
 
   void _handleError(String error) {

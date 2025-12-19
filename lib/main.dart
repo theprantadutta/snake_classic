@@ -56,20 +56,20 @@ void main() async {
       DeviceOrientation.portraitDown,
     ]);
 
-    // Initialize audio service
-    AppLogger.audio('Initializing audio service...');
-    await AudioService().initialize();
-    AppLogger.success('Audio service initialized');
-
-    // Initialize notification service
-    AppLogger.info('Initializing notification service...');
-    await NotificationService().initialize();
-    AppLogger.success('Notification service initialized');
-
-    // Initialize purchase service
-    AppLogger.info('Initializing purchase service...');
-    await PurchaseService().initialize();
-    AppLogger.success('Purchase service initialized');
+    // Initialize independent services in parallel for faster startup
+    AppLogger.info('Initializing services in parallel...');
+    await Future.wait([
+      AudioService().initialize().then((_) {
+        AppLogger.success('Audio service initialized');
+      }),
+      NotificationService().initialize().then((_) {
+        AppLogger.success('Notification service initialized');
+      }),
+      PurchaseService().initialize().then((_) {
+        AppLogger.success('Purchase service initialized');
+      }),
+    ]);
+    AppLogger.success('All services initialized');
 
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
