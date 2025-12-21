@@ -409,4 +409,65 @@ class StorageService {
     scores.removeWhere((score) => ids.contains(score['id']));
     await _prefs?.setString(_localScoresKey, json.encode(scores));
   }
+
+  // Unlocked bundles
+  Future<List<String>> getUnlockedBundles() async {
+    await _initPrefs();
+    return _prefs?.getStringList('unlocked_bundles') ?? [];
+  }
+
+  Future<void> setUnlockedBundles(List<String> bundles) async {
+    await _initPrefs();
+    await _prefs?.setStringList('unlocked_bundles', bundles);
+  }
+
+  // Trial data
+  Future<Map<String, dynamic>> getTrialData() async {
+    await _initPrefs();
+    final isOnTrial = _prefs?.getBool('trial_is_on') ?? false;
+    final trialStartStr = _prefs?.getString('trial_start_date');
+    final trialEndStr = _prefs?.getString('trial_end_date');
+
+    return {
+      'isOnTrial': isOnTrial,
+      'trialStartDate': trialStartStr,
+      'trialEndDate': trialEndStr,
+    };
+  }
+
+  Future<void> setTrialData({
+    required bool isOnTrial,
+    DateTime? trialStartDate,
+    DateTime? trialEndDate,
+  }) async {
+    await _initPrefs();
+    await _prefs?.setBool('trial_is_on', isOnTrial);
+    if (trialStartDate != null) {
+      await _prefs?.setString('trial_start_date', trialStartDate.toIso8601String());
+    }
+    if (trialEndDate != null) {
+      await _prefs?.setString('trial_end_date', trialEndDate.toIso8601String());
+    }
+  }
+
+  // Tournament entries
+  Future<Map<String, int>> getTournamentEntries() async {
+    await _initPrefs();
+    return {
+      'bronze': _prefs?.getInt('tournament_entries_bronze') ?? 0,
+      'silver': _prefs?.getInt('tournament_entries_silver') ?? 0,
+      'gold': _prefs?.getInt('tournament_entries_gold') ?? 0,
+    };
+  }
+
+  Future<void> setTournamentEntries({
+    required int bronze,
+    required int silver,
+    required int gold,
+  }) async {
+    await _initPrefs();
+    await _prefs?.setInt('tournament_entries_bronze', bronze);
+    await _prefs?.setInt('tournament_entries_silver', silver);
+    await _prefs?.setInt('tournament_entries_gold', gold);
+  }
 }

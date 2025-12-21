@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/achievement.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -41,8 +41,15 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = themeProvider.currentTheme;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
+        return _buildContent(context, theme);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, GameTheme theme) {
 
     return Scaffold(
       appBar: AppBar(

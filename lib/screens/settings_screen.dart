@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/game_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/cosmetics_screen.dart';
 import 'package:snake_classic/screens/battle_pass_screen.dart';
@@ -57,208 +58,220 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer4<ThemeProvider, GameProvider, UserProvider, PremiumProvider>(
-      builder: (context, themeProvider, gameProvider, userProvider, premiumProvider, child) {
-        final theme = themeProvider.currentTheme;
-        
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            title: Text(
-              'SETTINGS',
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-                shadows: [
-                  Shadow(
-                    offset: const Offset(0, 2),
-                    blurRadius: 4,
-                    color: Colors.black.withValues(alpha: 0.3),
-                  ),
-                ],
-              ),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            iconTheme: IconThemeData(color: theme.accentColor),
-          ),
-          body: AppBackground(
-            theme: theme,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                    // 1. Controls Section (most frequently adjusted during gameplay)
-                    _buildSection(
-                      'CONTROLS',
-                      [
-                        _buildAudioSwitch(
-                          'D-Pad Controls',
-                          _dPadEnabled,
-                          (value) async {
-                            setState(() {
-                              _dPadEnabled = value;
-                            });
-                            await gameProvider.updateDPadEnabled(value);
-                          },
-                          theme,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Show on-screen directional buttons during gameplay',
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        return BlocBuilder<GameCubit, GameCubitState>(
+          builder: (context, gameState) {
+            return BlocBuilder<AuthCubit, AuthState>(
+              builder: (context, authState) {
+                return BlocBuilder<PremiumCubit, PremiumState>(
+                  builder: (context, premiumState) {
+                    final theme = themeState.currentTheme;
+
+                    return Scaffold(
+                      extendBodyBehindAppBar: true,
+                      appBar: AppBar(
+                        title: Text(
+                          'SETTINGS',
                           style: TextStyle(
-                            color: theme.accentColor.withValues(alpha: 0.6),
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
+                            color: theme.accentColor,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                            shadows: [
+                              Shadow(
+                                offset: const Offset(0, 2),
+                                blurRadius: 4,
+                                color: Colors.black.withValues(alpha: 0.3),
+                              ),
+                            ],
                           ),
                         ),
-                        // D-Pad Position Selector (only show when D-Pad is enabled)
-                        if (_dPadEnabled) ...[
-                          const SizedBox(height: 16),
-                          _buildDPadPositionSelector(gameProvider, theme),
-                        ],
-                        const SizedBox(height: 16),
-                        _buildControlInfo(theme),
-                      ],
-                      theme,
-                    ),
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        iconTheme: IconThemeData(color: theme.accentColor),
+                      ),
+                      body: AppBackground(
+                        theme: theme,
+                        child: SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // 1. Controls Section (most frequently adjusted during gameplay)
+                                  _buildSection(
+                                    'CONTROLS',
+                                    [
+                                      _buildAudioSwitch(
+                                        'D-Pad Controls',
+                                        _dPadEnabled,
+                                        (value) async {
+                                          setState(() {
+                                            _dPadEnabled = value;
+                                          });
+                                          await context.read<GameSettingsCubit>().updateDPadEnabled(value);
+                                        },
+                                        theme,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Show on-screen directional buttons during gameplay',
+                                        style: TextStyle(
+                                          color: theme.accentColor.withValues(alpha: 0.6),
+                                          fontSize: 12,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                      // D-Pad Position Selector (only show when D-Pad is enabled)
+                                      if (_dPadEnabled) ...[
+                                        const SizedBox(height: 16),
+                                        _buildDPadPositionSelector(gameState, theme),
+                                      ],
+                                      const SizedBox(height: 16),
+                                      _buildControlInfo(theme),
+                                    ],
+                                    theme,
+                                  ),
 
-                    const SizedBox(height: 32),
+                                  const SizedBox(height: 32),
 
-                    // 2. Gameplay Section (board size + crash feedback)
-                    _buildSection(
-                      'GAMEPLAY',
-                      [
-                        _buildBoardSizeSelector(gameProvider, theme),
-                        const SizedBox(height: 24),
-                        const Divider(height: 1),
-                        const SizedBox(height: 24),
-                        _buildCrashFeedbackDurationSelector(gameProvider, theme),
-                      ],
-                      theme,
-                    ),
+                                  // 2. Gameplay Section (board size + crash feedback)
+                                  _buildSection(
+                                    'GAMEPLAY',
+                                    [
+                                      _buildBoardSizeSelector(gameState, theme),
+                                      const SizedBox(height: 24),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 24),
+                                      _buildCrashFeedbackDurationSelector(gameState, theme),
+                                    ],
+                                    theme,
+                                  ),
 
-                    const SizedBox(height: 32),
+                                  const SizedBox(height: 32),
 
-                    // 3. Audio Section
-                    _buildSection(
-                      'AUDIO',
-                      [
-                        _buildAudioSwitch(
-                          'Sound Effects',
-                          _soundEnabled,
-                          (value) async {
-                            setState(() {
-                              _soundEnabled = value;
-                            });
-                            await _audioService.setSoundEnabled(value);
-                          },
-                          theme,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildAudioSwitch(
-                          'Background Music',
-                          _musicEnabled,
-                          (value) async {
-                            setState(() {
-                              _musicEnabled = value;
-                            });
-                            await _audioService.setMusicEnabled(value);
-                          },
-                          theme,
-                        ),
-                      ],
-                      theme,
-                    ),
+                                  // 3. Audio Section
+                                  _buildSection(
+                                    'AUDIO',
+                                    [
+                                      _buildAudioSwitch(
+                                        'Sound Effects',
+                                        _soundEnabled,
+                                        (value) async {
+                                          setState(() {
+                                            _soundEnabled = value;
+                                          });
+                                          await _audioService.setSoundEnabled(value);
+                                        },
+                                        theme,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildAudioSwitch(
+                                        'Background Music',
+                                        _musicEnabled,
+                                        (value) async {
+                                          setState(() {
+                                            _musicEnabled = value;
+                                          });
+                                          await _audioService.setMusicEnabled(value);
+                                        },
+                                        theme,
+                                      ),
+                                    ],
+                                    theme,
+                                  ),
 
-                    const SizedBox(height: 32),
+                                  const SizedBox(height: 32),
 
-                    // 4. Visual Section (theme + trail effects)
-                    _buildSection(
-                      'VISUAL',
-                      [
-                        _buildThemeSelector(themeProvider, theme),
-                        const SizedBox(height: 24),
-                        const Divider(height: 1),
-                        const SizedBox(height: 24),
-                        _buildAudioSwitch(
-                          'Snake Trail Effects',
-                          themeProvider.isTrailSystemEnabled,
-                          (value) async {
-                            await themeProvider.setTrailSystemEnabled(value);
-                          },
-                          theme,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Enable particle trails behind the snake',
-                          style: TextStyle(
-                            color: theme.accentColor.withValues(alpha: 0.6),
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
+                                  // 4. Visual Section (theme + trail effects)
+                                  _buildSection(
+                                    'VISUAL',
+                                    [
+                                      _buildThemeSelector(themeState, theme),
+                                      const SizedBox(height: 24),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 24),
+                                      _buildAudioSwitch(
+                                        'Snake Trail Effects',
+                                        themeState.isTrailSystemEnabled,
+                                        (value) async {
+                                          await context.read<ThemeCubit>().setTrailSystemEnabled(value);
+                                        },
+                                        theme,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Enable particle trails behind the snake',
+                                        style: TextStyle(
+                                          color: theme.accentColor.withValues(alpha: 0.6),
+                                          fontSize: 12,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
+                                    theme,
+                                  ),
+
+                                  const SizedBox(height: 32),
+
+                                  // 5. User Profile Section
+                                  _buildSection(
+                                    'USER PROFILE',
+                                    [
+                                      _buildUserProfileSettings(authState, theme),
+                                    ],
+                                    theme,
+                                  ),
+
+                                  const SizedBox(height: 32),
+
+                                  // 6. Premium Section (if available)
+                                  if (premiumState.isInitialized)
+                                    _buildSection(
+                                      'PREMIUM FEATURES',
+                                      [
+                                        _buildPremiumStatusCard(premiumState, theme),
+                                        if (!premiumState.hasPremium)
+                                          _buildUpgradeButton(premiumState, theme),
+                                        _buildRestorePurchasesButton(premiumState, theme),
+                                        _buildPurchaseHistoryButton(premiumState, theme),
+                                        if (premiumState.hasPremium || premiumState.ownedSkins.isNotEmpty)
+                                          _buildCosmeticsButton(premiumState, theme),
+                                        if (premiumState.hasBattlePass)
+                                          _buildBattlePassButton(premiumState, theme),
+                                      ],
+                                      theme,
+                                    ),
+
+                                  if (premiumState.isInitialized)
+                                    const SizedBox(height: 32),
+
+                                  const SizedBox(height: 40),
+
+                                  // Back Button
+                                  Center(
+                                    child: GradientButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      text: 'BACK TO GAME',
+                                      primaryColor: theme.accentColor,
+                                      secondaryColor: theme.foodColor,
+                                      icon: Icons.arrow_back,
+                                      width: 200,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ],
-                      theme,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // 5. User Profile Section
-                    _buildSection(
-                      'USER PROFILE',
-                      [
-                        _buildUserProfileSettings(userProvider, theme),
-                      ],
-                      theme,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // 6. Premium Section (if available)
-                    if (premiumProvider.isInitialized)
-                      _buildSection(
-                        'PREMIUM FEATURES',
-                        [
-                          _buildPremiumStatusCard(premiumProvider, theme),
-                          if (!premiumProvider.hasPremium)
-                            _buildUpgradeButton(premiumProvider, theme),
-                          _buildRestorePurchasesButton(premiumProvider, theme),
-                          _buildPurchaseHistoryButton(premiumProvider, theme),
-                          if (premiumProvider.hasPremium || premiumProvider.ownedSkins.isNotEmpty)
-                            _buildCosmeticsButton(premiumProvider, theme),
-                          if (premiumProvider.hasBattlePass)
-                            _buildBattlePassButton(premiumProvider, theme),
-                        ],
-                        theme,
                       ),
-
-                    if (premiumProvider.isInitialized)
-                      const SizedBox(height: 32),
-                    
-                    const SizedBox(height: 40),
-                    
-                    // Back Button
-                    Center(
-                      child: GradientButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        text: 'BACK TO GAME',
-                        primaryColor: theme.accentColor,
-                        secondaryColor: theme.foodColor,
-                        icon: Icons.arrow_back,
-                        width: 200,
-                      ),
-                    ),
-                  ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+                    );
+                  },
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -294,7 +307,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeSelector(ThemeProvider themeProvider, GameTheme theme) {
+  Widget _buildThemeSelector(ThemeState themeState, GameTheme theme) {
     return Column(
       children: [
         Row(
@@ -407,7 +420,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDPadPositionSelector(GameProvider gameProvider, GameTheme theme) {
+  Widget _buildDPadPositionSelector(GameCubitState gameState, GameTheme theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -447,7 +460,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     setState(() {
                       _dPadPosition = position;
                     });
-                    await gameProvider.updateDPadPosition(position);
+                    await context.read<GameSettingsCubit>().updateDPadPosition(position);
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -585,7 +598,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildBoardSizeSelector(GameProvider gameProvider, GameTheme theme) {
+  Widget _buildBoardSizeSelector(GameCubitState gameState, GameTheme theme) {
     return Column(
       children: [
         Row(
@@ -621,7 +634,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            
+
             // Board size preview
             Container(
               width: 60,
@@ -640,9 +653,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         Text(
           _selectedBoardSize.description,
           style: TextStyle(
@@ -652,23 +665,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Board size selection buttons
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: GameConstants.availableBoardSizes.map((boardSize) {
             final isSelected = _selectedBoardSize == boardSize;
-            final isCurrentlyPlaying = gameProvider.isPlaying;
-            
+            final isCurrentlyPlaying = gameState.isPlaying;
+
             return GestureDetector(
               onTap: isCurrentlyPlaying ? null : () async {
                 setState(() {
                   _selectedBoardSize = boardSize;
                 });
-                await gameProvider.updateBoardSize(boardSize);
+                await context.read<GameSettingsCubit>().updateBoardSize(boardSize);
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -701,7 +714,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }).toList(),
         ),
         
-        if (gameProvider.isPlaying) ...[
+        if (gameState.isPlaying) ...[
           const SizedBox(height: 12),
           Text(
             'Complete current game to change board size',
@@ -717,7 +730,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCrashFeedbackDurationSelector(GameProvider gameProvider, GameTheme theme) {
+  Widget _buildCrashFeedbackDurationSelector(GameCubitState gameState, GameTheme theme) {
     return Column(
       children: [
         Row(
@@ -793,7 +806,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _selectedCrashFeedbackDuration = duration;
                 });
-                await gameProvider.updateCrashFeedbackDuration(duration);
+                await context.read<GameSettingsCubit>().updateCrashFeedbackDuration(duration);
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -826,7 +839,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildUserProfileSettings(UserProvider userProvider, GameTheme theme) {
+  Widget _buildUserProfileSettings(AuthState authState, GameTheme theme) {
     return Column(
       children: [
         // Current username display
@@ -847,14 +860,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Row(
                     children: [
                       Icon(
-                        userProvider.isGuestUser ? Icons.person_outline : Icons.verified_user,
-                        color: userProvider.isGuestUser ? Colors.orange : Colors.green,
+                        authState.isGuestUser ? Icons.person_outline : Icons.verified_user,
+                        color: authState.isGuestUser ? Colors.orange : Colors.green,
                         size: 16,
                       ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          userProvider.displayName,
+                          authState.displayName,
                           style: TextStyle(
                             color: theme.accentColor,
                             fontSize: 18,
@@ -867,7 +880,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    userProvider.isGuestUser ? 'Guest Account' : 'Authenticated Account',
+                    authState.isGuestUser ? 'Guest Account' : 'Authenticated Account',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
@@ -876,7 +889,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            
+
             // Profile type indicator
             Container(
               width: 50,
@@ -884,27 +897,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: theme.backgroundColor,
                 border: Border.all(
-                  color: (userProvider.isGuestUser ? Colors.orange : Colors.green).withValues(alpha: 0.5),
+                  color: (authState.isGuestUser ? Colors.orange : Colors.green).withValues(alpha: 0.5),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Icon(
-                userProvider.isGuestUser ? Icons.person_outline : Icons.account_circle,
-                color: userProvider.isGuestUser ? Colors.orange : Colors.green,
+                authState.isGuestUser ? Icons.person_outline : Icons.account_circle,
+                color: authState.isGuestUser ? Colors.orange : Colors.green,
                 size: 24,
               ),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Username actions
-        if (userProvider.isGuestUser) ...[
+        if (authState.isGuestUser) ...[
           // For guest users, allow username change
           GradientButton(
-            onPressed: () => _showUsernameDialog(userProvider, theme),
+            onPressed: () => _showUsernameDialog(authState, theme),
             text: 'CHANGE USERNAME',
             primaryColor: Colors.orange,
             secondaryColor: Colors.deepOrange,
@@ -925,7 +938,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ] else ...[
           // For authenticated users
           GradientButton(
-            onPressed: () => _showUsernameDialog(userProvider, theme),
+            onPressed: () => _showUsernameDialog(authState, theme),
             text: 'CHANGE USERNAME',
             primaryColor: theme.accentColor,
             secondaryColor: theme.primaryColor,
@@ -948,17 +961,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showUsernameDialog(UserProvider userProvider, GameTheme theme) {
+  void _showUsernameDialog(AuthState authState, GameTheme theme) {
     final TextEditingController usernameController = TextEditingController();
     final UsernameService usernameService = UsernameService();
     String? errorMessage;
     bool isLoading = false;
-    
+
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (dialogContext, setState) {
             return AlertDialog(
               backgroundColor: theme.backgroundColor,
               shape: RoundedRectangleBorder(
@@ -983,7 +996,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   TextField(
                     controller: usernameController,
                     decoration: InputDecoration(
@@ -1011,9 +1024,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(color: Colors.white),
                     maxLength: 20,
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   Text(
                     '• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only',
                     style: TextStyle(
@@ -1025,7 +1038,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                  onPressed: isLoading ? null : () => Navigator.of(dialogContext).pop(),
                   child: Text(
                     'Cancel',
                     style: TextStyle(
@@ -1037,16 +1050,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: isLoading ? null : () async {
                     final newUsername = usernameController.text.trim();
                     if (newUsername.isEmpty) return;
-                    
+
                     setState(() {
                       isLoading = true;
                       errorMessage = null;
                     });
-                    
+
                     bool success = false;
-                    
-                    if (userProvider.isGuestUser) {
-                      success = await userProvider.updateGuestUsername(newUsername);
+                    final authCubit = context.read<AuthCubit>();
+
+                    if (authState.isGuestUser) {
+                      success = await authCubit.updateGuestUsername(newUsername);
                       if (!success) {
                         final validation = usernameService.validateUsername(newUsername);
                         setState(() {
@@ -1055,7 +1069,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                     } else {
                       // For authenticated users
-                      success = await userProvider.updateAuthenticatedUsername(newUsername);
+                      success = await authCubit.updateAuthenticatedUsername(newUsername);
                       if (!success) {
                         final validation = await UsernameService().validateUsernameComplete(newUsername);
                         setState(() {
@@ -1063,9 +1077,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         });
                       }
                     }
-                    
-                    if (success && context.mounted) {
-                      Navigator.of(context).pop();
+
+                    if (success && dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Username updated to "$newUsername"'),
@@ -1073,7 +1087,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       );
                     }
-                    
+
                     setState(() {
                       isLoading = false;
                     });
@@ -1157,12 +1171,12 @@ class _BoardSizePainter extends CustomPainter {
 
 // Premium UI Components
 extension _SettingsPremium on _SettingsScreenState {
-  Widget _buildPremiumStatusCard(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildPremiumStatusCard(PremiumState premiumState, GameTheme theme) {
     return Container(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        gradient: premiumProvider.hasPremium
+        gradient: premiumState.hasPremium
             ? const LinearGradient(
                 colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
               )
@@ -1174,7 +1188,7 @@ extension _SettingsPremium on _SettingsScreenState {
               ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: premiumProvider.hasPremium
+          color: premiumState.hasPremium
               ? Colors.amber
               : theme.accentColor.withValues(alpha: 0.3),
         ),
@@ -1182,8 +1196,8 @@ extension _SettingsPremium on _SettingsScreenState {
       child: Row(
         children: [
           Icon(
-            premiumProvider.hasPremium ? Icons.diamond : Icons.lock,
-            color: premiumProvider.hasPremium ? Colors.black : theme.accentColor,
+            premiumState.hasPremium ? Icons.diamond : Icons.lock,
+            color: premiumState.hasPremium ? Colors.black : theme.accentColor,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -1192,27 +1206,27 @@ extension _SettingsPremium on _SettingsScreenState {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  premiumProvider.hasPremium ? 'Snake Classic Pro' : 'Premium Status',
+                  premiumState.hasPremium ? 'Snake Classic Pro' : 'Premium Status',
                   style: TextStyle(
-                    color: premiumProvider.hasPremium ? Colors.black : Colors.white,
+                    color: premiumState.hasPremium ? Colors.black : Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  premiumProvider.hasPremium
+                  premiumState.hasPremium
                       ? 'Active subscription'
                       : 'Unlock premium features',
                   style: TextStyle(
-                    color: premiumProvider.hasPremium 
+                    color: premiumState.hasPremium
                         ? Colors.black.withValues(alpha: 0.8)
                         : Colors.white.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
-                if (premiumProvider.hasPremium && premiumProvider.subscriptionExpiry != null)
+                if (premiumState.hasPremium && premiumState.subscriptionExpiry != null)
                   Text(
-                    'Renews ${premiumProvider.subscriptionExpiry!.day}/${premiumProvider.subscriptionExpiry!.month}',
+                    'Renews ${premiumState.subscriptionExpiry!.day}/${premiumState.subscriptionExpiry!.month}',
                     style: TextStyle(
                       color: Colors.black.withValues(alpha: 0.6),
                       fontSize: 12,
@@ -1221,7 +1235,7 @@ extension _SettingsPremium on _SettingsScreenState {
               ],
             ),
           ),
-          if (premiumProvider.hasPremium)
+          if (premiumState.hasPremium)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -1242,11 +1256,11 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  Widget _buildUpgradeButton(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildUpgradeButton(PremiumState premiumState, GameTheme theme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: GradientButton(
-        onPressed: () => _showPremiumDialog(premiumProvider),
+        onPressed: () => _showPremiumDialog(),
         text: 'Upgrade to Pro',
         primaryColor: const Color(0xFFFFD700),
         secondaryColor: const Color(0xFFFFA500),
@@ -1255,11 +1269,11 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  Widget _buildRestorePurchasesButton(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildRestorePurchasesButton(PremiumState premiumState, GameTheme theme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: TextButton(
-        onPressed: () => _restorePurchases(premiumProvider),
+        onPressed: () => _restorePurchases(),
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
           backgroundColor: theme.accentColor.withValues(alpha: 0.1),
@@ -1288,11 +1302,11 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  Widget _buildPurchaseHistoryButton(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildPurchaseHistoryButton(PremiumState premiumState, GameTheme theme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: TextButton(
-        onPressed: () => _showPurchaseHistory(premiumProvider),
+        onPressed: () => _showPurchaseHistory(),
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
           backgroundColor: theme.accentColor.withValues(alpha: 0.1),
@@ -1321,7 +1335,7 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  Widget _buildCosmeticsButton(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildCosmeticsButton(PremiumState premiumState, GameTheme theme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: TextButton(
@@ -1349,7 +1363,7 @@ extension _SettingsPremium on _SettingsScreenState {
               ),
             ),
             const SizedBox(width: 8),
-            if (premiumProvider.ownedSkins.isNotEmpty)
+            if (premiumState.ownedSkins.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -1357,7 +1371,7 @@ extension _SettingsPremium on _SettingsScreenState {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '${premiumProvider.ownedSkins.length}',
+                  '${premiumState.ownedSkins.length}',
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 12,
@@ -1371,7 +1385,7 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  Widget _buildBattlePassButton(PremiumProvider premiumProvider, GameTheme theme) {
+  Widget _buildBattlePassButton(PremiumState premiumState, GameTheme theme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -1414,7 +1428,7 @@ extension _SettingsPremium on _SettingsScreenState {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Tier ${premiumProvider.battlePassTier}',
+                  'Tier ${premiumState.battlePassTier}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -1429,7 +1443,7 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  void _showPremiumDialog(PremiumProvider premiumProvider) {
+  void _showPremiumDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1477,7 +1491,7 @@ extension _SettingsPremium on _SettingsScreenState {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _purchasePro(premiumProvider);
+              _purchasePro();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.amber,
@@ -1490,7 +1504,7 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  void _purchasePro(PremiumProvider premiumProvider) {
+  void _purchasePro() {
     final purchaseService = PurchaseService();
     final product = purchaseService.getProduct(ProductIds.snakeClassicProMonthly);
     
@@ -1512,7 +1526,7 @@ extension _SettingsPremium on _SettingsScreenState {
     }
   }
 
-  void _restorePurchases(PremiumProvider premiumProvider) async {
+  void _restorePurchases() async {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1544,9 +1558,10 @@ extension _SettingsPremium on _SettingsScreenState {
     }
   }
 
-  void _showPurchaseHistory(PremiumProvider premiumProvider) async {
+  void _showPurchaseHistory() async {
     try {
-      final history = await premiumProvider.getPurchaseHistory();
+      final premiumCubit = context.read<PremiumCubit>();
+      final history = await premiumCubit.getPurchaseHistory();
       
       if (!mounted) return;
 
@@ -1568,35 +1583,22 @@ extension _SettingsPremium on _SettingsScreenState {
                     itemCount: history.length,
                     itemBuilder: (context, index) {
                       final purchase = history[index];
-                      // Parse the JSON string to extract purchase details
+                      // Purchase is already a Map<String, dynamic>
                       try {
-                        // Simple parsing since we control the format
-                        final data = purchase.replaceAll('{', '').replaceAll('}', '');
-                        final parts = data.split(',');
-                        final Map<String, String> purchaseData = {};
-                        
-                        for (final part in parts) {
-                          final keyValue = part.split(':');
-                          if (keyValue.length == 2) {
-                            purchaseData[keyValue[0].replaceAll('"', '').trim()] = 
-                                keyValue[1].replaceAll('"', '').trim();
-                          }
-                        }
-                        
+                        final productId = purchase['productId']?.toString() ?? 'Unknown';
+                        final transactionDate = purchase['transactionDate']?.toString() ?? '';
+                        final status = purchase['status']?.toString() ?? 'Unknown';
+
                         return Card(
                           child: ListTile(
-                            leading: Icon(_getPurchaseIcon(purchaseData['type'] ?? 'unknown')),
-                            title: Text(purchaseData['itemName'] ?? 'Unknown Item'),
+                            leading: Icon(_getPurchaseIcon(_getTypeFromProductId(productId))),
+                            title: Text(_formatProductName(productId)),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Type: ${purchaseData['type'] ?? 'Unknown'}'),
-                                Text('Date: ${_formatDate(purchaseData['timestamp'] ?? '')}'),
+                                Text('Status: $status'),
+                                Text('Date: ${_formatDate(transactionDate)}'),
                               ],
-                            ),
-                            trailing: Text(
-                              '${purchaseData['currency'] == 'coins' ? '' : '\$'}${_formatPrice(purchaseData['price'] ?? '0', purchaseData['currency'] ?? 'USD')}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                         );
@@ -1670,6 +1672,37 @@ extension _SettingsPremium on _SettingsScreenState {
     } catch (e) {
       return 'Unknown date';
     }
+  }
+
+  String _getTypeFromProductId(String productId) {
+    if (productId.contains('pro_monthly') || productId.contains('pro_yearly')) {
+      return 'subscription';
+    } else if (productId.contains('theme')) {
+      return 'theme';
+    } else if (productId.contains('skin')) {
+      return 'skin';
+    } else if (productId.contains('trail')) {
+      return 'trail';
+    } else if (productId.contains('bundle')) {
+      return 'bundle';
+    } else if (productId.contains('battle_pass')) {
+      return 'battlepass';
+    } else if (productId.contains('tournament')) {
+      return 'tournament';
+    }
+    return 'unknown';
+  }
+
+  String _formatProductName(String productId) {
+    // Convert product ID to human-readable name
+    return productId
+        .replaceAll('snake_classic_', '')
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word.isNotEmpty
+            ? '${word[0].toUpperCase()}${word.substring(1)}'
+            : '')
+        .join(' ');
   }
 
   void _openCosmeticsSelector() {

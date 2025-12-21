@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/coins_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -39,19 +39,19 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
   }
 
   void _loadCurrentSelection() {
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    final premiumCubit = context.read<PremiumCubit>();
     setState(() {
-      _selectedSkin = _skinIdToType(premiumProvider.selectedSkinId);
-      _selectedTrail = _trailIdToType(premiumProvider.selectedTrailId);
+      _selectedSkin = _skinIdToType(premiumCubit.state.selectedSkinId);
+      _selectedTrail = _trailIdToType(premiumCubit.state.selectedTrailId);
     });
   }
 
   Future<void> _saveSelection() async {
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
-    
-    // Save selections to premium provider
-    await premiumProvider.selectSkin(_selectedSkin.id);
-    await premiumProvider.selectTrail(_selectedTrail.id);
+    final premiumCubit = context.read<PremiumCubit>();
+
+    // Save selections to premium cubit
+    await premiumCubit.selectSkin(_selectedSkin.id);
+    await premiumCubit.selectTrail(_selectedTrail.id);
     
     // Show confirmation
     if (mounted) {
@@ -80,40 +80,48 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<PremiumProvider, ThemeProvider, CoinsProvider>(
-      builder: (context, premiumProvider, themeProvider, coinsProvider, child) {
-        final theme = themeProvider.currentTheme;
-        
-        return Scaffold(
-          body: AppBackground(
-            theme: theme,
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Header
-                  _buildHeader(theme),
-                  
-                  // Coins display header
-                  _buildCoinsHeader(theme, coinsProvider),
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
-                  // Tab Bar
-                  _buildTabBar(theme),
+        return BlocBuilder<PremiumCubit, PremiumState>(
+          builder: (context, premiumState) {
+            return BlocBuilder<CoinsCubit, CoinsState>(
+              builder: (context, coinsState) {
+                return Scaffold(
+                  body: AppBackground(
+                    theme: theme,
+                    child: SafeArea(
+                      child: Column(
+                        children: [
+                          // Header
+                          _buildHeader(theme),
 
-                  // Tab content
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildSkinsTab(premiumProvider, coinsProvider, theme),
-                        _buildTrailsTab(premiumProvider, coinsProvider, theme),
-                        _buildBundlesTab(premiumProvider, coinsProvider, theme),
-                      ],
+                          // Coins display header
+                          _buildCoinsHeader(theme, coinsState),
+
+                          // Tab Bar
+                          _buildTabBar(theme),
+
+                          // Tab content
+                          Expanded(
+                            child: TabBarView(
+                              controller: _tabController,
+                              children: [
+                                _buildSkinsTab(premiumState, coinsState, theme),
+                                _buildTrailsTab(premiumState, coinsState, theme),
+                                _buildBundlesTab(premiumState, coinsState, theme),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -179,7 +187,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  Widget _buildCoinsHeader(GameTheme theme, CoinsProvider coinsProvider) {
+  Widget _buildCoinsHeader(GameTheme theme, CoinsState coinsState) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Container(
@@ -227,7 +235,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${coinsProvider.balance.total}',
+                  '${coinsState.balance.total}',
                   style: TextStyle(
                     color: Colors.amber.shade700,
                     fontSize: 24,
@@ -259,7 +267,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  Widget _buildSkinsTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
+  Widget _buildSkinsTab(PremiumState premiumState, CoinsState coinsState, GameTheme theme) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
@@ -276,7 +284,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
       itemCount: SnakeSkinType.values.length,
       itemBuilder: (context, index) {
         final skin = SnakeSkinType.values[index];
-        final isUnlocked = !skin.isPremium || premiumProvider.isSkinUnlocked(skin.id);
+        final isUnlocked = !skin.isPremium || premiumState.isSkinOwned(skin.id);
         final isSelected = skin == _selectedSkin;
 
         return _buildCosmeticCard(
@@ -305,7 +313,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  Widget _buildTrailsTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
+  Widget _buildTrailsTab(PremiumState premiumState, CoinsState coinsState, GameTheme theme) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
@@ -322,7 +330,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
       itemCount: TrailEffectType.values.length,
       itemBuilder: (context, index) {
         final trail = TrailEffectType.values[index];
-        final isUnlocked = !trail.isPremium || premiumProvider.isTrailUnlocked(trail.id);
+        final isUnlocked = !trail.isPremium || premiumState.isTrailOwned(trail.id);
         final isSelected = trail == _selectedTrail;
 
         return _buildCosmeticCard(
@@ -351,7 +359,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  Widget _buildBundlesTab(PremiumProvider premiumProvider, CoinsProvider coinsProvider, GameTheme theme) {
+  Widget _buildBundlesTab(PremiumState premiumState, CoinsState coinsState, GameTheme theme) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: LayoutBuilder(
@@ -369,7 +377,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             itemCount: CosmeticBundle.availableBundles.length,
             itemBuilder: (context, index) {
               final bundle = CosmeticBundle.availableBundles[index];
-              final isUnlocked = premiumProvider.isBundleOwned(bundle.id);
+              final isUnlocked = premiumState.isBundleOwned(bundle.id);
               
               return _buildBundleCard(
                 bundle: bundle,
@@ -712,7 +720,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
   }
 
   void _showPurchaseDialog({SnakeSkinType? skin, TrailEffectType? trail}) {
-    final theme = context.read<ThemeProvider>().currentTheme;
+    final theme = context.read<ThemeCubit>().state.currentTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -770,7 +778,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
 
   void _processPurchase({SnakeSkinType? skin, TrailEffectType? trail}) async {
     final purchaseService = PurchaseService();
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    final premiumCubit = context.read<PremiumCubit>();
     
     try {
       // Show processing indicator
@@ -800,11 +808,11 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
       if (skin != null) {
         productId = skin.id;
         await purchaseService.purchaseProduct(productId);
-        await premiumProvider.unlockSkin(productId);
+        await premiumCubit.unlockSkin(productId);
       } else if (trail != null) {
         productId = trail.id;
         await purchaseService.purchaseProduct(productId);
-        await premiumProvider.unlockTrail(productId);
+        await premiumCubit.unlockTrail(productId);
       }
 
       if (mounted) {
@@ -834,7 +842,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
 
   void _processBundlePurchase(CosmeticBundle bundle) async {
     final purchaseService = PurchaseService();
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
+    final premiumCubit = context.read<PremiumCubit>();
     
     try {
       // Show processing indicator
@@ -861,12 +869,12 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
       
       // Unlock all items in the bundle
       for (final skin in bundle.skins) {
-        await premiumProvider.unlockSkin(skin.id);
+        await premiumCubit.unlockSkin(skin.id);
       }
       for (final trail in bundle.trails) {
-        await premiumProvider.unlockTrail(trail.id);
+        await premiumCubit.unlockTrail(trail.id);
       }
-      await premiumProvider.unlockBundle(bundle.id);
+      await premiumCubit.unlockBundle(bundle.id);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -890,7 +898,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
   }
 
   void _showBundlePurchaseDialog(CosmeticBundle bundle) {
-    final theme = context.read<ThemeProvider>().currentTheme;
+    final theme = context.read<ThemeCubit>().state.currentTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

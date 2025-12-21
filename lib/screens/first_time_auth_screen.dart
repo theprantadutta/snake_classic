@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/screens/home_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -26,6 +27,22 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
   void initState() {
     super.initState();
     _loadPrivacyPolicy();
+    _checkPreviousPrivacyAcceptance();
+  }
+
+  Future<void> _checkPreviousPrivacyAcceptance() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final alreadyAccepted = prefs.getBool('privacy_policy_accepted') ?? false;
+      if (alreadyAccepted && mounted) {
+        setState(() {
+          _showPrivacyPolicy = false;
+          _privacyAccepted = true;
+        });
+      }
+    } catch (e) {
+      // If there's an error reading preferences, show the privacy policy
+    }
   }
 
   Future<void> _loadPrivacyPolicy() async {
@@ -75,9 +92,9 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final userProvider = Provider.of<UserProvider>(context);
-    final theme = themeProvider.currentTheme;
+    final themeState = context.watch<ThemeCubit>().state;
+    final authCubit = context.read<AuthCubit>();
+    final theme = themeState.currentTheme;
 
     return Scaffold(
       body: AnimatedAppBackground(
@@ -242,7 +259,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                         'Sign in with Google',
                         FontAwesomeIcons.google,
                         [Colors.red.shade600, Colors.red.shade700],
-                        () => _handleGoogleSignIn(userProvider),
+                        () => _handleGoogleSignIn(authCubit),
                       )
                           .animate(delay: 600.ms)
                           .slideX(
@@ -263,7 +280,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                           theme.primaryColor.withValues(alpha: 0.8),
                           theme.primaryColor
                         ],
-                        () => _handleGuestLogin(userProvider),
+                        () => _handleGuestLogin(authCubit),
                       )
                           .animate(delay: 800.ms)
                           .slideX(
@@ -275,48 +292,6 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                     ],
                   ),
 
-                SizedBox(height: isSmallScreen ? screenHeight * 0.02 : screenHeight * 0.03),
-
-                // Privacy note
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.green.withValues(alpha: 0.2),
-                        Colors.green.withValues(alpha: 0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.green.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.verified_user,
-                        color: Colors.green.shade300,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Privacy Policy Accepted ✓',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 12 : 14,
-                          color: Colors.green.shade200,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                )
-                    .animate(delay: 1000.ms)
-                    .fadeIn(duration: 800.ms),
-                    
                 // Bottom padding for small screens
                 SizedBox(height: isSmallScreen ? 20 : 40),
                       ],
@@ -461,10 +436,19 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                   scale: 1.2,
                   child: Checkbox(
                     value: _privacyAccepted,
-                    onChanged: (value) {
+                    onChanged: (value) async {
                       setState(() {
                         _privacyAccepted = value ?? false;
                       });
+                      // Save privacy acceptance immediately when checked
+                      if (_privacyAccepted) {
+                        try {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setBool('privacy_policy_accepted', true);
+                        } catch (e) {
+                          // Ignore errors - not critical
+                        }
+                      }
                     },
                     activeColor: theme.accentColor,
                     checkColor: Colors.white,
@@ -679,15 +663,15 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     );
   }
 
-  Future<void> _handleGoogleSignIn(UserProvider userProvider) async {
+  Future<void> _handleGoogleSignIn(AuthCubit authCubit) async {
     setState(() => _isLoading = true);
-    
+
     try {
-      final success = await userProvider.signInWithGoogle();
-      
+      final success = await authCubit.signInWithGoogle();
+
       if (success && mounted) {
         // Mark first-time setup as complete
-        await userProvider.markFirstTimeSetupComplete();
+        await authCubit.markFirstTimeSetupComplete();
         
         // Navigate directly to home screen
         if (mounted) {
@@ -729,14 +713,14 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     }
   }
 
-  Future<void> _handleGuestLogin(UserProvider userProvider) async {
+  Future<void> _handleGuestLogin(AuthCubit authCubit) async {
     setState(() => _isLoading = true);
-    
+
     try {
-      await userProvider.signInAnonymously();
-      
+      await authCubit.signInAnonymously();
+
       // Mark first-time setup as complete
-      await userProvider.markFirstTimeSetupComplete();
+      await authCubit.markFirstTimeSetupComplete();
       
       if (mounted) {
         Navigator.of(context).pushReplacement(

@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/game_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/battle_pass_screen.dart';
 import 'package:snake_classic/screens/cosmetics_screen.dart';
@@ -46,10 +46,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       vsync: this,
     );
 
-    // Initialize theme transitions
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ThemeProvider>().initializeTransitions(this);
-    });
+    // Theme transitions are handled by ThemeTransitionWidget directly
 
     // Start logo animation with a slight delay
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -67,20 +64,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<GameProvider, ThemeProvider, UserProvider>(
-      builder: (context, gameProvider, themeProvider, userProvider, child) {
-        final theme = themeProvider.currentTheme;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
-        return ThemeTransitionWidget(
-          controller:
-              themeProvider.transitionController ??
-              ThemeTransitionController(vsync: this),
-          currentTheme: theme,
-          child: Scaffold(
-            body: AppBackground(
-              theme: theme,
-              child: SafeArea(
-                child: LayoutBuilder(
+        return BlocBuilder<AuthCubit, AuthState>(
+          builder: (context, authState) {
+            return BlocBuilder<GameCubit, GameCubitState>(
+              builder: (context, gameState) {
+                return ThemeTransitionWidget(
+                  controller: ThemeTransitionController(vsync: this),
+                  currentTheme: theme,
+                  child: Scaffold(
+                    body: AppBackground(
+                      theme: theme,
+                      child: SafeArea(
+                        child: LayoutBuilder(
                   builder: (context, constraints) {
                     final screenWidth = constraints.maxWidth;
                     final screenHeight = constraints.maxHeight;
@@ -100,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           child: _buildTopNavigation(
                             context,
-                            userProvider,
+                            authState,
                             theme,
                             isVerySmallScreen,
                           ),
@@ -122,8 +121,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         ),
                                         child: _buildMainPlayArea(
                                           context,
-                                          gameProvider,
-                                          userProvider,
+                                          gameState,
+                                          authState,
                                           theme,
                                           screenHeight,
                                           screenWidth,
@@ -136,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         ),
                                         child: _buildBottomNavigation(
                                           context,
-                                          themeProvider,
+                                          themeState,
                                           theme,
                                           screenHeight,
                                           screenWidth,
@@ -154,8 +153,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     Expanded(
                                       child: _buildMainPlayArea(
                                         context,
-                                        gameProvider,
-                                        userProvider,
+                                        gameState,
+                                        authState,
                                         theme,
                                         screenHeight,
                                         screenWidth,
@@ -171,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       ),
                                       child: _buildBottomNavigation(
                                         context,
-                                        themeProvider,
+                                        themeState,
                                         theme,
                                         screenHeight,
                                         screenWidth,
@@ -204,13 +203,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 : null,
           ),
         );
+              },
+            );
+          },
+        );
       },
     );
   }
 
   Widget _buildTopNavigation(
     BuildContext context,
-    UserProvider userProvider,
+    AuthState authState,
     GameTheme theme,
     bool isSmallScreen,
   ) {
@@ -322,10 +325,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     width: 1,
                   ),
                 ),
-                child: userProvider.isSignedIn && userProvider.photoURL != null
+                child: authState.isSignedIn && authState.photoURL != null
                     ? CircleAvatar(
                         radius: isSmallScreen ? 12 : 16,
-                        backgroundImage: NetworkImage(userProvider.photoURL!),
+                        backgroundImage: NetworkImage(authState.photoURL!),
                       )
                     : Icon(
                         Icons.account_circle,
@@ -429,19 +432,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildMainPlayArea(
     BuildContext context,
-    GameProvider gameProvider,
-    UserProvider userProvider,
+    GameCubitState gameCubitState,
+    AuthState authState,
     GameTheme theme,
     double screenHeight,
     double screenWidth,
     double actualScreenHeight,
   ) {
     final isSmallScreen = screenHeight < 750;
-    final highScore = userProvider.isSignedIn
-        ? (userProvider.highScore > gameProvider.gameState.highScore
-              ? userProvider.highScore
-              : gameProvider.gameState.highScore)
-        : gameProvider.gameState.highScore;
+    final gameHighScore = gameCubitState.gameState?.highScore ?? 0;
+    final highScore = authState.isSignedIn
+        ? (authState.highScore > gameHighScore
+              ? authState.highScore
+              : gameHighScore)
+        : gameHighScore;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -481,7 +485,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     theme: theme,
                     screenWidth: screenWidth,
                     isSmallScreen: isSmallScreen,
-                    hasSync: userProvider.isSignedIn,
+                    hasSync: authState.isSignedIn,
                   ),
                 ),
               ),
@@ -977,7 +981,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildBottomNavigation(
     BuildContext context,
-    ThemeProvider themeProvider,
+    ThemeState themeState,
     GameTheme theme,
     double screenHeight,
     double screenWidth,

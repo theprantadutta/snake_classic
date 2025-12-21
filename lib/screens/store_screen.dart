@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/coins_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -34,79 +34,87 @@ class _StoreScreenState extends State<StoreScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<PremiumProvider, ThemeProvider, CoinsProvider>(
-      builder: (context, premiumProvider, themeProvider, coinsProvider, child) {
-        final theme = themeProvider.currentTheme;
-        
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            title: const Text(
-              'Snake Store',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          body: AppBackground(
-            theme: theme,
-            child: Column(
-              children: [
-                // Add top padding to account for AppBar
-                SizedBox(
-                  height: MediaQuery.of(context).padding.top + kToolbarHeight,
-                ),
+    return BlocBuilder<PremiumCubit, PremiumState>(
+      builder: (context, premiumState) {
+        return BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, themeState) {
+            return BlocBuilder<CoinsCubit, CoinsState>(
+              builder: (context, coinsState) {
+                final theme = themeState.currentTheme;
 
-                // Coins display header
-                _buildCoinsHeader(theme, coinsProvider),
-
-                // Tab Bar
-                Container(
-                  color: Colors.transparent,
-                  child: TabBar(
-                    controller: _tabController,
-                    indicatorColor: theme.accentColor,
-                    labelColor: theme.accentColor,
-                    unselectedLabelColor: theme.accentColor.withValues(alpha: 0.6),
-                    isScrollable: true,
-                    tabs: const [
-                      Tab(text: 'Premium', icon: Icon(Icons.diamond, size: 16)),
-                      Tab(text: 'Coins', icon: Icon(Icons.monetization_on, size: 16)),
-                      Tab(text: 'Skins', icon: Icon(Icons.palette, size: 16)),
-                      Tab(text: 'Power-ups', icon: Icon(Icons.flash_on, size: 16)),
-                      Tab(text: 'Modes', icon: Icon(Icons.games, size: 16)),
-                      Tab(text: 'Boards', icon: Icon(Icons.grid_on, size: 16)),
-                    ],
+                return Scaffold(
+                  extendBodyBehindAppBar: true,
+                  appBar: AppBar(
+                    title: const Text(
+                      'Snake Store',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                    ),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: Icon(Icons.arrow_back, color: theme.primaryColor),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ),
-                ),
+                  body: AppBackground(
+                    theme: theme,
+                    child: Column(
+                      children: [
+                        // Add top padding to account for AppBar
+                        SizedBox(
+                          height: MediaQuery.of(context).padding.top + kToolbarHeight,
+                        ),
 
-                // Tab content
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildPremiumTab(theme, premiumProvider),
-                      _buildCoinsTab(theme, coinsProvider),
-                      _buildSkinsTab(theme, premiumProvider, coinsProvider),
-                      _buildPowerUpsTab(theme, premiumProvider, coinsProvider),
-                      _buildGameModesTab(theme, premiumProvider),
-                      _buildBoardsTab(theme, premiumProvider),
-                    ],
+                        // Coins display header
+                        _buildCoinsHeader(theme, coinsState),
+
+                        // Tab Bar
+                        Container(
+                          color: Colors.transparent,
+                          child: TabBar(
+                            controller: _tabController,
+                            indicatorColor: theme.accentColor,
+                            labelColor: theme.accentColor,
+                            unselectedLabelColor: theme.accentColor.withValues(alpha: 0.6),
+                            isScrollable: true,
+                            tabs: const [
+                              Tab(text: 'Premium', icon: Icon(Icons.diamond, size: 16)),
+                              Tab(text: 'Coins', icon: Icon(Icons.monetization_on, size: 16)),
+                              Tab(text: 'Skins', icon: Icon(Icons.palette, size: 16)),
+                              Tab(text: 'Power-ups', icon: Icon(Icons.flash_on, size: 16)),
+                              Tab(text: 'Modes', icon: Icon(Icons.games, size: 16)),
+                              Tab(text: 'Boards', icon: Icon(Icons.grid_on, size: 16)),
+                            ],
+                          ),
+                        ),
+
+                        // Tab content
+                        Expanded(
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _buildPremiumTab(theme, premiumState),
+                              _buildCoinsTab(theme, coinsState),
+                              _buildSkinsTab(theme, premiumState, coinsState),
+                              _buildPowerUpsTab(theme, premiumState, coinsState),
+                              _buildGameModesTab(theme, premiumState),
+                              _buildBoardsTab(theme, premiumState),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                );
+              },
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildCoinsHeader(GameTheme theme, CoinsProvider coinsProvider) {
+  Widget _buildCoinsHeader(GameTheme theme, CoinsState coinsState) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Container(
@@ -168,7 +176,7 @@ class _StoreScreenState extends State<StoreScreen>
                     ),
                   ),
                   Text(
-                    '${coinsProvider.balance.total}',
+                    '${coinsState.balance.total}',
                     style: TextStyle(
                       color: Colors.amber,
                       fontSize: 24,
@@ -178,7 +186,7 @@ class _StoreScreenState extends State<StoreScreen>
                 ],
               ),
             ),
-            if (coinsProvider.hasPremiumBonus)
+            if (coinsState.hasPremiumBonus)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -186,7 +194,7 @@ class _StoreScreenState extends State<StoreScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${coinsProvider.earningMultiplier}x BONUS',
+                  '${coinsState.earningMultiplier}x BONUS',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -200,8 +208,8 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildPremiumTab(GameTheme theme, PremiumProvider premiumProvider) {
-    if (premiumProvider.hasPremium) {
+  Widget _buildPremiumTab(GameTheme theme, PremiumState premiumState) {
+    if (premiumState.hasPremium) {
       return Center(
         child: Container(
           margin: const EdgeInsets.all(20),
@@ -450,7 +458,7 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildCoinsTab(GameTheme theme, CoinsProvider coinsProvider) {
+  Widget _buildCoinsTab(GameTheme theme, CoinsState coinsState) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -646,7 +654,7 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildSkinsTab(GameTheme theme, PremiumProvider premiumProvider, CoinsProvider coinsProvider) {
+  Widget _buildSkinsTab(GameTheme theme, PremiumState premiumState, CoinsState coinsState) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -760,7 +768,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
 
-  Widget _buildPowerUpsTab(GameTheme theme, PremiumProvider premiumProvider, CoinsProvider coinsProvider) {
+  Widget _buildPowerUpsTab(GameTheme theme, PremiumState premiumState, CoinsState coinsState) {
     final powerUps = [
       _PowerUpItem('Speed Boost', 'Enhanced speed with trail effects', Icons.speed, '50 coins'),
       _PowerUpItem('Invincibility', 'Temporary invincibility shield', Icons.shield, '75 coins'),
@@ -803,8 +811,8 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 16),
-          ...PowerUpBundle.availableBundles.map((bundle) => 
-            _buildBundleCard(bundle, theme, premiumProvider, coinsProvider)),
+          ...PowerUpBundle.availableBundles.map((bundle) =>
+            _buildBundleCard(bundle, theme, premiumState, coinsState)),
         ],
       ),
     );
@@ -874,9 +882,9 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildBundleCard(PowerUpBundle bundle, GameTheme theme, PremiumProvider premiumProvider, CoinsProvider coinsProvider) {
-    final isOwned = premiumProvider.isBundleOwned(bundle.id);
-    final canAfford = coinsProvider.balance.total >= bundle.bundlePrice;
+  Widget _buildBundleCard(PowerUpBundle bundle, GameTheme theme, PremiumState premiumState, CoinsState coinsState) {
+    final isOwned = premiumState.isBundleOwned(bundle.id);
+    final canAfford = coinsState.balance.total >= bundle.bundlePrice;
     
     return Container(
       width: double.infinity,
@@ -1013,7 +1021,7 @@ class _StoreScreenState extends State<StoreScreen>
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: isOwned ? null : (canAfford ? () => _purchaseBundle(bundle, coinsProvider, premiumProvider) : null),
+                onPressed: isOwned ? null : (canAfford ? () => _purchaseBundle(bundle) : null),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isOwned ? Colors.green : (canAfford ? Colors.purple : Colors.grey),
                   foregroundColor: Colors.white,
@@ -1037,10 +1045,10 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  void _purchaseBundle(PowerUpBundle bundle, CoinsProvider coinsProvider, PremiumProvider premiumProvider) {
+  void _purchaseBundle(PowerUpBundle bundle) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Purchase ${bundle.name}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1059,25 +1067,28 @@ class _StoreScreenState extends State<StoreScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              final navigator = Navigator.of(context);
+              final navigator = Navigator.of(dialogContext);
               final scaffoldMessenger = ScaffoldMessenger.of(context);
               navigator.pop();
-              
+
+              final coinsCubit = context.read<CoinsCubit>();
+              final premiumCubit = context.read<PremiumCubit>();
+
               // Deduct coins and unlock bundle
-              final success = await coinsProvider.spendCoins(
-                bundle.bundlePrice.toInt(), 
+              final success = await coinsCubit.spendCoins(
+                bundle.bundlePrice.toInt(),
                 CoinSpendingCategory.powerUps,
                 itemName: bundle.name,
               );
-              
+
               if (success) {
-                await premiumProvider.unlockBundle(bundle.id);
-                
+                await premiumCubit.unlockBundle(bundle.id);
+
                 // Show success message
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
@@ -1106,7 +1117,7 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildGameModesTab(GameTheme theme, PremiumProvider premiumProvider) {
+  Widget _buildGameModesTab(GameTheme theme, PremiumState premiumState) {
     final gameModes = [
       _GameModeItem('Classic', 'Traditional snake gameplay', Icons.straighten, true, false),
       _GameModeItem('Zen Mode', 'No walls, peaceful gameplay', Icons.spa, false, true),
@@ -1224,7 +1235,7 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildBoardsTab(GameTheme theme, PremiumProvider premiumProvider) {
+  Widget _buildBoardsTab(GameTheme theme, PremiumState premiumState) {
     final boards = [
       _BoardItem('Small', '15x15', 'Perfect for quick games', Icons.smartphone, true),
       _BoardItem('Medium', '20x20', 'Balanced gameplay', Icons.tablet, true),

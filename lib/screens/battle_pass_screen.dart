@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -35,42 +35,47 @@ class _BattlePassScreenState extends State<BattlePassScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<PremiumProvider, ThemeProvider>(
-      builder: (context, premiumProvider, themeProvider, child) {
-        final theme = themeProvider.currentTheme;
-        final hasBattlePass = premiumProvider.hasBattlePass;
-        final currentLevel = premiumProvider.battlePassTier;
-        final currentXp = premiumProvider.battlePassXP;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
-        return Scaffold(
-          body: AppBackground(
-            theme: theme,
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Header
-                  _buildHeader(theme, hasBattlePass),
+        return BlocBuilder<BattlePassCubit, BattlePassState>(
+          builder: (context, battlePassState) {
+            final hasBattlePass = battlePassState.isActive;
+            final currentLevel = battlePassState.currentTier;
+            final currentXp = battlePassState.currentXP;
 
-                  // Season info header
-                  _buildSeasonInfoHeader(theme, hasBattlePass),
+            return Scaffold(
+              body: AppBackground(
+                theme: theme,
+                child: SafeArea(
+                  child: Column(
+                    children: [
+                      // Header
+                      _buildHeader(theme, hasBattlePass),
 
-                  // Progress bar
-                  _buildProgressSection(theme, currentLevel, currentXp),
+                      // Season info header
+                      _buildSeasonInfoHeader(theme, hasBattlePass),
 
-                  // Reward track
-                  Expanded(
-                    child: _buildRewardTrackList(
-                      theme,
-                      premiumProvider,
-                      hasBattlePass,
-                      currentLevel,
-                    ),
+                      // Progress bar
+                      _buildProgressSection(theme, currentLevel, currentXp),
+
+                      // Reward track
+                      Expanded(
+                        child: _buildRewardTrackList(
+                          theme,
+                          battlePassState,
+                          hasBattlePass,
+                          currentLevel,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-          bottomNavigationBar: !hasBattlePass ? _buildPurchaseBar(theme) : null,
+              bottomNavigationBar: !hasBattlePass ? _buildPurchaseBar(theme) : null,
+            );
+          },
         );
       },
     );
@@ -380,7 +385,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
 
   Widget _buildRewardTrackList(
     GameTheme theme,
-    PremiumProvider premiumProvider,
+    BattlePassState battlePassState,
     bool hasBattlePass,
     int currentLevel,
   ) {
@@ -442,7 +447,6 @@ class _BattlePassScreenState extends State<BattlePassScreen>
             isUnlocked,
             isNextLevel,
             hasBattlePass || _showPremiumPreview,
-            premiumProvider,
             level,
           ),
         );
@@ -456,7 +460,6 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     bool isUnlocked,
     bool isNextLevel,
     bool showPremiumRewards,
-    PremiumProvider premiumProvider,
     int level,
   ) {
     return Row(
@@ -527,7 +530,6 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                     levelData.freeReward!,
                     isUnlocked,
                     BattlePassTier.free,
-                    premiumProvider,
                     level,
                   ),
                 ),
@@ -542,7 +544,6 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                     levelData.premiumReward!,
                     isUnlocked && showPremiumRewards,
                     BattlePassTier.premium,
-                    premiumProvider,
                     level,
                     showLocked: !showPremiumRewards,
                   ),
@@ -584,7 +585,6 @@ class _BattlePassScreenState extends State<BattlePassScreen>
     BattlePassReward reward,
     bool isUnlocked,
     BattlePassTier tier,
-    PremiumProvider premiumProvider,
     int level, {
     bool showLocked = false,
   }) {
@@ -689,12 +689,12 @@ class _BattlePassScreenState extends State<BattlePassScreen>
           // Claim button for unlocked, unclaimed rewards
           if (isUnlocked &&
               !showLocked &&
-              _canClaimReward(premiumProvider, reward, level, tier))
+              _canClaimReward(reward, level, tier))
             Positioned(
               right: 4,
               top: 4,
               child: GestureDetector(
-                onTap: () => _claimReward(premiumProvider, reward, level, tier),
+                onTap: () => _claimReward(reward, level, tier),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -873,8 +873,8 @@ class _BattlePassScreenState extends State<BattlePassScreen>
 
   void _handleBattlePassPurchase() async {
     final purchaseService = PurchaseService();
-    final premiumProvider = Provider.of<PremiumProvider>(context, listen: false);
-    
+    final battlePassCubit = context.read<BattlePassCubit>();
+
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -895,7 +895,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
       );
 
       await purchaseService.purchaseProduct(ProductIds.battlePass);
-      await premiumProvider.unlockBattlePass();
+      await battlePassCubit.activate();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -919,36 +919,32 @@ class _BattlePassScreenState extends State<BattlePassScreen>
   }
 
   bool _canClaimReward(
-    PremiumProvider premiumProvider,
     BattlePassReward reward,
     int level,
     BattlePassTier tier,
   ) {
-    // Check if reward is already claimed
-    // This would need to be implemented in PremiumProvider to check claimed rewards
-    // For now, assume all unlocked rewards can be claimed
-    return true; // For demo - in production would check claimed status
+    final battlePassState = context.read<BattlePassCubit>().state;
+    if (tier == BattlePassTier.free) {
+      return !battlePassState.isFreeTierClaimed(level);
+    } else {
+      return !battlePassState.isPremiumTierClaimed(level);
+    }
   }
 
   Future<void> _claimReward(
-    PremiumProvider premiumProvider,
     BattlePassReward reward,
     int level,
     BattlePassTier tier,
   ) async {
     try {
-      final rewardData = {
-        'type': reward.type.name,
-        'itemId': reward.itemId,
-        'quantity': reward.quantity,
-        'tier': tier.name,
-        'level': level,
-      };
+      final battlePassCubit = context.read<BattlePassCubit>();
 
-      final success = await premiumProvider.claimBattlePassReward(
-        reward.id,
-        rewardData,
-      );
+      bool success;
+      if (tier == BattlePassTier.free) {
+        success = await battlePassCubit.claimFreeReward(level);
+      } else {
+        success = await battlePassCubit.claimPremiumReward(level);
+      }
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

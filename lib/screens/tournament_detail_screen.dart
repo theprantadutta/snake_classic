@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/game_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
@@ -68,9 +68,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        final theme = themeProvider.currentTheme;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
         return Scaffold(
           body: Container(
@@ -981,10 +981,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
   }
 
   void _playTournament() {
-    final gameProvider = Provider.of<GameProvider>(context, listen: false);
+    final gameCubit = context.read<GameCubit>();
     
-    // Set tournament mode in game provider
-    gameProvider.setTournamentMode(_tournament.id, _tournament.gameMode);
+    // Set tournament mode in game cubit
+    gameCubit.setTournamentMode(_tournament.id, _tournament.gameMode);
     
     Navigator.of(context).push(
       MaterialPageRoute(

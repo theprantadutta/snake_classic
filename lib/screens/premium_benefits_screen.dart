@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -32,62 +32,66 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<PremiumProvider, ThemeProvider>(
-      builder: (context, premiumProvider, themeProvider, child) {
-        final theme = themeProvider.currentTheme;
-        
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            title: const Text(
-              'Snake Classic Pro',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          body: AppBackground(
-            theme: theme,
-            child: Column(
-              children: [
-                // Add top padding to account for AppBar
-                SizedBox(
-                  height: MediaQuery.of(context).padding.top + kToolbarHeight,
-                ),
+    return BlocBuilder<PremiumCubit, PremiumState>(
+      builder: (context, premiumState) {
+        return BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, themeState) {
+            final theme = themeState.currentTheme;
 
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        if (premiumProvider.hasPremium) ...[
-                          _buildPremiumActiveCard(theme),
-                        ] else ...[
-                          _buildPremiumHeaderCard(theme),
-                          const SizedBox(height: 20),
-                          _buildPricingToggle(theme),
-                          const SizedBox(height: 16),
-                          _buildPricingCards(theme),
-                          const SizedBox(height: 20),
-                          _buildFeaturesList(theme),
-                          const SizedBox(height: 20),
-                          _buildTrialInfo(theme),
-                          const SizedBox(height: 100), // Space for bottom button
-                        ],
-                      ],
-                    ),
-                  ),
+            return Scaffold(
+              extendBodyBehindAppBar: true,
+              appBar: AppBar(
+                title: const Text(
+                  'Snake Classic Pro',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
                 ),
-              ],
-            ),
-          ),
-          bottomNavigationBar: premiumProvider.hasPremium 
-              ? null 
-              : _buildBottomButton(theme, premiumProvider),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  icon: Icon(Icons.arrow_back, color: theme.primaryColor),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              body: AppBackground(
+                theme: theme,
+                child: Column(
+                  children: [
+                    // Add top padding to account for AppBar
+                    SizedBox(
+                      height: MediaQuery.of(context).padding.top + kToolbarHeight,
+                    ),
+
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            if (premiumState.hasPremium) ...[
+                              _buildPremiumActiveCard(theme),
+                            ] else ...[
+                              _buildPremiumHeaderCard(theme),
+                              const SizedBox(height: 20),
+                              _buildPricingToggle(theme),
+                              const SizedBox(height: 16),
+                              _buildPricingCards(theme),
+                              const SizedBox(height: 20),
+                              _buildFeaturesList(theme),
+                              const SizedBox(height: 20),
+                              _buildTrialInfo(theme),
+                              const SizedBox(height: 100), // Space for bottom button
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              bottomNavigationBar: premiumState.hasPremium
+                  ? null
+                  : _buildBottomButton(theme, premiumState),
+            );
+          },
         );
       },
     );
@@ -562,7 +566,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     );
   }
 
-  Widget _buildBottomButton(GameTheme theme, PremiumProvider premiumProvider) {
+  Widget _buildBottomButton(GameTheme theme, PremiumState premiumState) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

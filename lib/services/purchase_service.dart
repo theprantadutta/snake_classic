@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../utils/logger.dart';
 import 'backend_service.dart';
-import '../providers/user_provider.dart';
 
 // Product IDs for different categories
 class ProductIds {
@@ -116,7 +115,7 @@ class PurchaseService {
   final List<PurchaseDetails> _purchases = [];
   bool _purchasePending = false;
   String? _queryProductError;
-  UserProvider? _userProvider;
+  String? Function()? _getUserId;
 
   // Getters
   bool get isAvailable => _isAvailable;
@@ -134,9 +133,9 @@ class PurchaseService {
   Stream<List<ProductDetails>> get productsStream => _productsController.stream;
   Stream<String> get purchaseStatusStream => _purchaseStatusController.stream;
 
-  // Set user provider for accessing current user information
-  void setUserProvider(UserProvider userProvider) {
-    _userProvider = userProvider;
+  // Set user ID getter for accessing current user information
+  void setUserIdGetter(String? Function() getUserId) {
+    _getUserId = getUserId;
   }
 
   Future<void> initialize() async {
@@ -305,8 +304,8 @@ class PurchaseService {
         purchaseToken = purchaseDetails.purchaseID;
       }
       
-      // Get current user ID from UserProvider
-      String userId = _userProvider?.currentUser?.uid ?? 'anonymous_user';
+      // Get current user ID
+      String userId = _getUserId?.call() ?? 'anonymous_user';
       
       final verificationResult = await backendService.verifyPurchase(
         platform: platform,
@@ -345,15 +344,13 @@ class PurchaseService {
       AppLogger.info('Unlocking premium content: ${contentList.join(', ')}');
       
       // Trigger a premium content sync with the backend
-      if (_userProvider != null) {
-        final userId = _userProvider!.currentUser?.uid;
-        if (userId != null) {
-          final backendService = BackendService();
-          await backendService.syncPremiumStatus(userId: userId);
-        }
+      final userId = _getUserId?.call();
+      if (userId != null) {
+        final backendService = BackendService();
+        await backendService.syncPremiumStatus(userId: userId);
       }
       
-      // Content will be applied when PremiumProvider syncs with backend
+      // Content will be applied when PremiumCubit syncs with backend
       AppLogger.info('Premium content unlock initiated');
     } catch (e) {
       AppLogger.error('Error unlocking premium content', e);
@@ -364,7 +361,7 @@ class PurchaseService {
     try {
       AppLogger.info('Delivering product: ${purchaseDetails.productID}');
       
-      // Get PremiumProvider from the context if available
+      // Get PremiumCubit from the context if available
       // This would normally be passed through dependency injection
       // For now, we'll handle the logic here and the provider will sync later
       
@@ -450,7 +447,7 @@ class PurchaseService {
           break;
       }
       
-      // Broadcast purchase completion event for PremiumProvider to handle
+      // Broadcast purchase completion event for PremiumCubit to handle
       _purchaseStatusController.add('purchase_completed:${purchaseDetails.productID}');
       
       AppLogger.info('Product delivered successfully');
@@ -461,43 +458,43 @@ class PurchaseService {
 
   Future<void> _unlockPremiumTheme(String productId) async {
     AppLogger.info('Unlocking premium theme: $productId');
-    // The actual unlocking is handled by PremiumProvider via purchase completion event
+    // The actual unlocking is handled by PremiumCubit via purchase completion event
     // This method exists for future backend synchronization if needed
   }
 
   Future<void> _addCoins(String productId) async {
     AppLogger.info('Adding coins: $productId');
-    // The actual coin addition is handled by PremiumProvider via purchase completion event
+    // The actual coin addition is handled by PremiumCubit via purchase completion event
     // This method exists for future backend synchronization if needed
   }
 
   Future<void> _unlockPowerups(String productId) async {
     AppLogger.info('Unlocking powerups: $productId');
-    // The actual unlocking is handled by PremiumProvider via purchase completion event
+    // The actual unlocking is handled by PremiumCubit via purchase completion event
     // This method exists for future backend synchronization if needed
   }
 
   Future<void> _unlockCosmetics(String productId) async {
     AppLogger.info('Unlocking cosmetics: $productId');
-    // The actual unlocking is handled by PremiumProvider via purchase completion event
+    // The actual unlocking is handled by PremiumCubit via purchase completion event
     // This method exists for future backend synchronization if needed
   }
 
   Future<void> _unlockTrail(String productId) async {
     AppLogger.info('Unlocking trail effect: $productId');
-    // The actual unlocking is handled by PremiumProvider via purchase completion event
+    // The actual unlocking is handled by PremiumCubit via purchase completion event
     // This method exists for future backend synchronization if needed
   }
 
   Future<void> _activateSubscription(String productId) async {
     AppLogger.info('Activating subscription: $productId');
-    // The actual activation is handled by PremiumProvider via purchase completion event
+    // The actual activation is handled by PremiumCubit via purchase completion event
     // This method exists for future backend synchronization if needed
   }
 
   Future<void> _addTournamentEntry(String productId) async {
     AppLogger.info('Adding tournament entry: $productId');
-    // The actual entry addition is handled by PremiumProvider via purchase completion event
+    // The actual entry addition is handled by PremiumCubit via purchase completion event
     // This method exists for future backend synchronization if needed
   }
 
@@ -509,14 +506,12 @@ class PurchaseService {
       await _inAppPurchase.restorePurchases();
       
       // Then sync with backend to ensure premium status is up to date
-      if (_userProvider != null) {
-        final userId = _userProvider!.currentUser?.uid;
-        if (userId != null) {
-          final backendService = BackendService();
-          final syncSuccess = await backendService.syncPremiumStatus(userId: userId);
-          if (syncSuccess) {
-            AppLogger.info('Premium status synced with backend during restore');
-          }
+      final userId = _getUserId?.call();
+      if (userId != null) {
+        final backendService = BackendService();
+        final syncSuccess = await backendService.syncPremiumStatus(userId: userId);
+        if (syncSuccess) {
+          AppLogger.info('Premium status synced with backend during restore');
         }
       }
       

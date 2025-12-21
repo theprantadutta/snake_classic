@@ -38,13 +38,22 @@ class BoardSize {
   final String icon;
 
   const BoardSize(
-    this.width, 
-    this.height, 
-    this.name, 
+    this.width,
+    this.height,
+    this.name,
     this.description, {
     this.isPremium = false,
     this.icon = '📐',
   });
+
+  // Static getters for common board sizes
+  static const BoardSize small = BoardSize(15, 15, 'Small', 'Quick games, tight spaces', icon: '🎯');
+  static const BoardSize classic = BoardSize(20, 20, 'Classic', 'The original Snake experience', icon: '🐍');
+  static const BoardSize large = BoardSize(25, 25, 'Large', 'More room to grow', icon: '📏');
+  static const BoardSize huge = BoardSize(30, 30, 'Huge', 'Maximum challenge and space', icon: '🏟️');
+
+  // All board sizes list
+  static const List<BoardSize> all = [small, classic, large, huge];
 
   @override
   bool operator ==(Object other) =>

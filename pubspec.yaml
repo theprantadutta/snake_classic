@@ -18,6 +18,15 @@ dependencies:
   
   # State management
   provider: ^6.1.2
+  flutter_bloc: ^9.0.0
+  bloc: ^9.0.0
+  equatable: ^2.0.5
+
+  # Dependency injection
+  get_it: ^8.0.2
+
+  # Functional programming helpers
+  dartz: ^0.10.1
   
   # Audio system
   audioplayers: ^6.0.0

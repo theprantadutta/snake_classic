@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
-import 'package:snake_classic/providers/multiplayer_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/multiplayer_game_screen.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -36,7 +36,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     if (widget.gameId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_connectivityService.isOnline) {
-          context.read<MultiplayerProvider>().joinGame(widget.gameId!);
+          context.read<MultiplayerCubit>().joinGame(widget.gameId!);
         } else {
           _showOfflineMessage();
         }
@@ -89,30 +89,38 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<MultiplayerProvider, ThemeProvider, UserProvider>(
-      builder: (context, multiplayerProvider, themeProvider, userProvider, child) {
-        final theme = themeProvider.currentTheme;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
-        // Navigate to game screen when game starts
-        if (multiplayerProvider.isGameActive) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const MultiplayerGameScreen(),
-              ),
+        return BlocBuilder<MultiplayerCubit, MultiplayerState>(
+          builder: (context, multiplayerState) {
+            return BlocBuilder<AuthCubit, AuthState>(
+              builder: (context, authState) {
+                // Navigate to game screen when game starts
+                if (multiplayerState.isGameActive) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => const MultiplayerGameScreen(),
+                      ),
+                    );
+                  });
+                }
+
+                return Scaffold(
+                  body: AppBackground(
+                    theme: theme,
+                    child: SafeArea(
+                      child: multiplayerState.isInGame
+                          ? _buildGameLobby(context, multiplayerState, theme, authState)
+                          : _buildMainLobby(context, multiplayerState, theme, authState),
+                    ),
+                  ),
+                );
+              },
             );
-          });
-        }
-
-        return Scaffold(
-          body: AppBackground(
-            theme: theme,
-            child: SafeArea(
-              child: multiplayerProvider.isInGame
-                  ? _buildGameLobby(context, multiplayerProvider, theme, userProvider)
-                  : _buildMainLobby(context, multiplayerProvider, theme, userProvider),
-            ),
-          ),
+          },
         );
       },
     );
@@ -120,9 +128,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildMainLobby(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
+    MultiplayerState multiplayerState,
     GameTheme theme,
-    UserProvider userProvider,
+    AuthState authState,
   ) {
     return Column(
       children: [
@@ -136,21 +144,21 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             child: Column(
               children: [
                 // Quick Match Section
-                _buildQuickMatchSection(context, multiplayerProvider, theme),
-                
+                _buildQuickMatchSection(context, multiplayerState, theme),
+
                 const SizedBox(height: 32),
-                
+
                 // Join Game Section
-                _buildJoinGameSection(context, multiplayerProvider, theme),
-                
+                _buildJoinGameSection(context, multiplayerState, theme),
+
                 const SizedBox(height: 32),
-                
+
                 // Create Game Section
-                _buildCreateGameSection(context, multiplayerProvider, theme),
-                
-                if (multiplayerProvider.availableGames.isNotEmpty) ...[
+                _buildCreateGameSection(context, multiplayerState, theme),
+
+                if (multiplayerState.availableGames.isNotEmpty) ...[
                   const SizedBox(height: 32),
-                  _buildAvailableGamesSection(context, multiplayerProvider, theme),
+                  _buildAvailableGamesSection(context, multiplayerState, theme),
                 ],
               ],
             ),
@@ -162,11 +170,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildGameLobby(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
+    MultiplayerState multiplayerState,
     GameTheme theme,
-    UserProvider userProvider,
+    AuthState authState,
   ) {
-    final game = multiplayerProvider.currentGame!;
+    final game = multiplayerState.currentGame!;
     
     return Column(
       children: [
@@ -185,12 +193,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 const SizedBox(height: 24),
                 
                 // Players list
-                _buildPlayersSection(theme, game, userProvider),
-                
+                _buildPlayersSection(theme, game, authState),
+
                 const Spacer(),
-                
+
                 // Ready/Leave buttons
-                _buildLobbyActions(context, multiplayerProvider, theme, game, userProvider),
+                _buildLobbyActions(context, multiplayerState, theme, game, authState),
                 
                 const SizedBox(height: 16),
               ],
@@ -251,7 +259,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         children: [
           IconButton(
             onPressed: () {
-              context.read<MultiplayerProvider>().leaveGame();
+              context.read<MultiplayerCubit>().leaveGame();
               Navigator.of(context).pop();
             },
             icon: Icon(
@@ -335,7 +343,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildQuickMatchSection(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
+    MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
     return Container(
@@ -386,10 +394,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           const SizedBox(height: 20),
           
           GradientButton(
-            onPressed: multiplayerProvider.isLoading ? null : () {
-              multiplayerProvider.quickMatch(MultiplayerGameMode.classic);
+            onPressed: multiplayerState.isLoading ? null : () {
+              context.read<MultiplayerCubit>().quickMatch(MultiplayerGameMode.classic);
             },
-            text: multiplayerProvider.isLoading ? 'FINDING...' : 'PLAY NOW',
+            text: multiplayerState.isLoading ? 'FINDING...' : 'PLAY NOW',
             primaryColor: Colors.green,
             secondaryColor: Colors.green.withValues(alpha: 0.8),
             icon: Icons.play_arrow,
@@ -401,7 +409,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildJoinGameSection(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
+    MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
     return Container(
@@ -488,10 +496,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           const SizedBox(height: 16),
           
           GradientButton(
-            onPressed: multiplayerProvider.isLoading || _roomCodeController.text.isEmpty 
-                ? null 
+            onPressed: multiplayerState.isLoading || _roomCodeController.text.isEmpty
+                ? null
                 : () {
-                    multiplayerProvider.joinGame(_roomCodeController.text.trim());
+                    context.read<MultiplayerCubit>().joinGame(_roomCodeController.text.trim());
                   },
             text: 'JOIN ROOM',
             primaryColor: Colors.blue,
@@ -505,7 +513,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildCreateGameSection(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
+    MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
     return Container(
@@ -559,8 +567,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             children: [
               Expanded(
                 child: GradientButton(
-                  onPressed: multiplayerProvider.isLoading ? null : () {
-                    _showCreateGameDialog(context, multiplayerProvider, theme, false);
+                  onPressed: multiplayerState.isLoading ? null : () {
+                    _showCreateGameDialog(context, theme, false);
                   },
                   text: 'PUBLIC',
                   primaryColor: Colors.purple,
@@ -568,13 +576,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   icon: Icons.public,
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               Expanded(
                 child: GradientButton(
-                  onPressed: multiplayerProvider.isLoading ? null : () {
-                    _showCreateGameDialog(context, multiplayerProvider, theme, true);
+                  onPressed: multiplayerState.isLoading ? null : () {
+                    _showCreateGameDialog(context, theme, true);
                   },
                   text: 'PRIVATE',
                   primaryColor: Colors.purple,
@@ -591,7 +599,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildAvailableGamesSection(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
+    MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
     return Column(
@@ -609,8 +617,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         
         const SizedBox(height: 16),
         
-        ...multiplayerProvider.availableGames.map((game) =>
-          _buildGameCard(context, multiplayerProvider, theme, game)
+        ...multiplayerState.availableGames.map((game) =>
+          _buildGameCard(context, theme, game)
         ),
       ],
     );
@@ -618,7 +626,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildGameCard(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
     GameTheme theme,
     MultiplayerGame game,
   ) {
@@ -676,7 +683,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           
           GradientButton(
             onPressed: () {
-              multiplayerProvider.joinGame(game.id);
+              context.read<MultiplayerCubit>().joinGame(game.id);
             },
             text: 'JOIN',
             primaryColor: theme.accentColor,
@@ -752,7 +759,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  Widget _buildPlayersSection(GameTheme theme, MultiplayerGame game, UserProvider userProvider) {
+  Widget _buildPlayersSection(GameTheme theme, MultiplayerGame game, AuthState authState) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -778,7 +785,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           
           const SizedBox(height: 16),
           
-          ...game.players.map((player) => _buildPlayerItem(theme, player, userProvider)),
+          ...game.players.map((player) => _buildPlayerItem(theme, player, authState)),
           
           if (!game.isFull)
             _buildWaitingSlot(theme),
@@ -787,8 +794,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  Widget _buildPlayerItem(GameTheme theme, MultiplayerPlayer player, UserProvider userProvider) {
-    final currentUserId = userProvider.currentUserId;
+  Widget _buildPlayerItem(GameTheme theme, MultiplayerPlayer player, AuthState authState) {
+    final currentUserId = authState.userId;
     final isCurrentUser = currentUserId == player.userId;
     
     return Container(
@@ -926,12 +933,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildLobbyActions(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
+    MultiplayerState multiplayerState,
     GameTheme theme,
     MultiplayerGame game,
-    UserProvider userProvider,
+    AuthState authState,
   ) {
-    final currentUserId = userProvider.currentUserId;
+    final currentUserId = authState.userId;
     final currentPlayer = game.getPlayer(currentUserId ?? '');
     final isReady = currentPlayer?.status == PlayerStatus.ready;
     
@@ -940,7 +947,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         Expanded(
           child: GradientButton(
             onPressed: () {
-              multiplayerProvider.leaveGame();
+              context.read<MultiplayerCubit>().leaveGame();
               Navigator.of(context).pop();
             },
             text: 'LEAVE',
@@ -950,15 +957,15 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             outlined: true,
           ),
         ),
-        
+
         const SizedBox(width: 16),
-        
+
         Expanded(
           child: GradientButton(
-            onPressed: multiplayerProvider.isLoading || isReady 
+            onPressed: multiplayerState.isLoading || isReady
                 ? null
                 : () {
-                    multiplayerProvider.markPlayerReady();
+                    context.read<MultiplayerCubit>().markPlayerReady();
                   },
             text: isReady ? 'READY!' : 'READY',
             primaryColor: isReady ? Colors.green : theme.accentColor,
@@ -972,7 +979,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   void _showCreateGameDialog(
     BuildContext context,
-    MultiplayerProvider multiplayerProvider,
     GameTheme theme,
     bool isPrivate,
   ) {
@@ -1056,7 +1062,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             GradientButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                multiplayerProvider.createGame(
+                context.read<MultiplayerCubit>().createGame(
                   mode: selectedMode,
                   isPrivate: isPrivate,
                 );

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/game_state.dart';
-import 'package:snake_classic/providers/game_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -104,322 +104,355 @@ class _GameOverScreenState extends State<GameOverScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<GameProvider, ThemeProvider>(
-      builder: (context, gameProvider, themeProvider, child) {
-        final gameState = gameProvider.gameState;
-        final theme = themeProvider.currentTheme;
-        final isHighScore =
-            gameState.score == gameState.highScore && gameState.score > 0;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
-        return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.center,
-                radius: 1.5,
-                colors: [
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                  Colors.black.withValues(alpha: 0.9),
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Stack(
-                children: [
-                  // Particle effects
-                  if (isHighScore)
-                    ParticleEffect(
-                      controller: _explosionController,
-                      color: Colors.amber,
+        return BlocBuilder<GameCubit, GameCubitState>(
+          builder: (context, gameCubitState) {
+            final gameState = gameCubitState.gameState;
+            if (gameState == null) {
+              return Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.accentColor,
                     ),
+                  ),
+                ),
+              );
+            }
 
-                  // Main content - constrained to screen height
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      return SizedBox(
-                        height: constraints.maxHeight,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0,
-                            vertical: 16.0,
-                          ),
-                          child: Column(
-                            children: [
-                              // Top section - Game Over title and badges
-                              Column(
+            final isHighScore =
+                gameState.score == gameState.highScore && gameState.score > 0;
+
+            return Scaffold(
+              body: Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 1.5,
+                    colors: [
+                      theme.backgroundColor,
+                      theme.backgroundColor.withValues(alpha: 0.8),
+                      Colors.black.withValues(alpha: 0.9),
+                    ],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Stack(
+                    children: [
+                      // Particle effects
+                      if (isHighScore)
+                        ParticleEffect(
+                          controller: _explosionController,
+                          color: Colors.amber,
+                        ),
+
+                      // Main content - constrained to screen height
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SizedBox(
+                            height: constraints.maxHeight,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20.0,
+                                vertical: 16.0,
+                              ),
+                              child: Column(
                                 children: [
-                                  // Game Over Title
-                                  Text(
-                                    'GAME OVER',
-                                    style: TextStyle(
-                                      fontSize: constraints.maxHeight < 600
-                                          ? 36
-                                          : 48,
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.foodColor,
-                                      letterSpacing: 4,
-                                      shadows: [
-                                        Shadow(
-                                          offset: const Offset(2, 2),
-                                          blurRadius: 4,
-                                          color: Colors.black.withValues(
-                                            alpha: 0.5,
-                                          ),
+                                  // Top section - Game Over title and badges
+                                  Column(
+                                    children: [
+                                      // Game Over Title
+                                      Text(
+                                        'GAME OVER',
+                                        style: TextStyle(
+                                          fontSize: constraints.maxHeight < 600
+                                              ? 36
+                                              : 48,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.foodColor,
+                                          letterSpacing: 4,
+                                          shadows: [
+                                            Shadow(
+                                              offset: const Offset(2, 2),
+                                              blurRadius: 4,
+                                              color: Colors.black.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ).animate().fadeIn().slideY(begin: -1),
+
+                                      SizedBox(
+                                        height: constraints.maxHeight < 600
+                                            ? 16
+                                            : 24,
+                                      ),
+
+                                      // High Score Badge
+                                      if (isHighScore) ...[
+                                        Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal:
+                                                    constraints.maxHeight < 600
+                                                    ? 16
+                                                    : 20,
+                                                vertical:
+                                                    constraints.maxHeight < 600
+                                                    ? 8
+                                                    : 12,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Colors.amber,
+                                                    Colors.orange,
+                                                  ],
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(25),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.amber
+                                                        .withValues(alpha: 0.5),
+                                                    blurRadius: 10,
+                                                    spreadRadius: 2,
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.emoji_events,
+                                                    color: Colors.white,
+                                                    size: 20,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    'NEW HIGH SCORE!',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize:
+                                                          constraints
+                                                                  .maxHeight <
+                                                              600
+                                                          ? 12
+                                                          : 14,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                            .animate()
+                                            .scale(delay: 500.ms)
+                                            .shimmer(delay: 1000.ms),
+
+                                        SizedBox(
+                                          height: constraints.maxHeight < 600
+                                              ? 16
+                                              : 20,
                                         ),
                                       ],
-                                    ),
-                                  ).animate().fadeIn().slideY(begin: -1),
+
+                                      // Tournament Result Badge
+                                      if (gameCubitState.isTournamentMode &&
+                                          gameCubitState.tournamentMode !=
+                                              null) ...[
+                                        Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal:
+                                                    constraints.maxHeight < 600
+                                                    ? 12
+                                                    : 16,
+                                                vertical:
+                                                    constraints.maxHeight < 600
+                                                    ? 8
+                                                    : 10,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Colors.purple,
+                                                    Colors.deepPurple,
+                                                  ],
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.purple
+                                                        .withValues(alpha: 0.4),
+                                                    blurRadius: 8,
+                                                    spreadRadius: 1,
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    gameCubitState
+                                                        .tournamentMode!
+                                                        .emoji,
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    'TOURNAMENT SCORE SUBMITTED!',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize:
+                                                          constraints
+                                                                  .maxHeight <
+                                                              600
+                                                          ? 10
+                                                          : 12,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                            .animate()
+                                            .scale(delay: 700.ms)
+                                            .shimmer(delay: 1200.ms),
+
+                                        SizedBox(
+                                          height: constraints.maxHeight < 600
+                                              ? 12
+                                              : 16,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+
+                                  // Score Display - always visible
+                                  _buildScoreCard(
+                                    gameState,
+                                    theme,
+                                    constraints,
+                                  ),
 
                                   SizedBox(
                                     height: constraints.maxHeight < 600
-                                        ? 16
-                                        : 24,
+                                        ? 8
+                                        : 12,
                                   ),
 
-                                  // High Score Badge
-                                  if (isHighScore) ...[
-                                    Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal:
-                                                constraints.maxHeight < 600
-                                                ? 16
-                                                : 20,
-                                            vertical:
-                                                constraints.maxHeight < 600
-                                                ? 8
-                                                : 12,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Colors.amber,
-                                                Colors.orange,
-                                              ],
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              25,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.amber.withValues(
-                                                  alpha: 0.5,
-                                                ),
-                                                blurRadius: 10,
-                                                spreadRadius: 2,
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                Icons.emoji_events,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'NEW HIGH SCORE!',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize:
-                                                      constraints.maxHeight <
-                                                          600
-                                                      ? 12
-                                                      : 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                        .animate()
-                                        .scale(delay: 500.ms)
-                                        .shimmer(delay: 1000.ms),
-
-                                    SizedBox(
-                                      height: constraints.maxHeight < 600
-                                          ? 16
-                                          : 20,
-                                    ),
-                                  ],
-
-                                  // Tournament Result Badge
-                                  if (gameProvider.isTournamentMode &&
-                                      gameProvider.tournamentMode != null) ...[
-                                    Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal:
-                                                constraints.maxHeight < 600
-                                                ? 12
-                                                : 16,
-                                            vertical:
-                                                constraints.maxHeight < 600
-                                                ? 8
-                                                : 10,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Colors.purple,
-                                                Colors.deepPurple,
-                                              ],
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.purple.withValues(
-                                                  alpha: 0.4,
-                                                ),
-                                                blurRadius: 8,
-                                                spreadRadius: 1,
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                gameProvider
-                                                    .tournamentMode!
-                                                    .emoji,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'TOURNAMENT SCORE SUBMITTED!',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize:
-                                                      constraints.maxHeight <
-                                                          600
-                                                      ? 10
-                                                      : 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                        .animate()
-                                        .scale(delay: 700.ms)
-                                        .shimmer(delay: 1200.ms),
-
-                                    SizedBox(
-                                      height: constraints.maxHeight < 600
-                                          ? 12
-                                          : 16,
-                                    ),
-                                  ],
-                                ],
-                              ),
-
-                              // Score Display - always visible
-                              _buildScoreCard(gameState, theme, constraints),
-
-                              SizedBox(
-                                height: constraints.maxHeight < 600 ? 8 : 12,
-                              ),
-
-                              // Dynamic content area - achievements or spacer
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    // Achievement Display - always visible if available
-                                    if (_achievementsLoaded &&
-                                        (_recentAchievements.isNotEmpty ||
-                                            _progressAchievements.isNotEmpty))
-                                      Flexible(
-                                        child: _buildAchievementSection(
-                                          theme,
-                                          constraints,
-                                        ),
-                                      )
-                                    else
-                                      // Spacer when no achievements
-                                      const Expanded(child: SizedBox()),
-                                  ],
-                                ),
-                              ),
-
-                              SizedBox(
-                                height: constraints.maxHeight < 600 ? 8 : 12,
-                              ),
-
-                              // Bottom section - Action Buttons - always at bottom
-                              Row(
-                                children: [
+                                  // Dynamic content area - achievements or spacer
                                   Expanded(
-                                    child:
-                                        GradientButton(
-                                          onPressed: () async {
-                                            gameProvider.resetGame();
-                                            await Future.delayed(
-                                              const Duration(milliseconds: 50),
-                                            );
-                                            gameProvider.startGame();
-
-                                            if (context.mounted) {
-                                              Navigator.of(
-                                                context,
-                                              ).pushReplacement(
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const GameScreen(),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          text: 'PLAY AGAIN',
-                                          primaryColor: theme.accentColor,
-                                          secondaryColor: theme.foodColor,
-                                          icon: Icons.refresh,
-                                        ).animate().slideX(
-                                          begin: -1,
-                                          delay: 1200.ms,
-                                        ),
+                                    child: Column(
+                                      children: [
+                                        // Achievement Display - always visible if available
+                                        if (_achievementsLoaded &&
+                                            (_recentAchievements.isNotEmpty ||
+                                                _progressAchievements
+                                                    .isNotEmpty))
+                                          Flexible(
+                                            child: _buildAchievementSection(
+                                              theme,
+                                              constraints,
+                                            ),
+                                          )
+                                        else
+                                          // Spacer when no achievements
+                                          const Expanded(child: SizedBox()),
+                                      ],
+                                    ),
                                   ),
 
-                                  const SizedBox(width: 12),
+                                  SizedBox(
+                                    height: constraints.maxHeight < 600
+                                        ? 8
+                                        : 12,
+                                  ),
 
-                                  Expanded(
-                                    child:
-                                        GradientButton(
-                                          onPressed: () {
-                                            gameProvider.backToMenu();
-                                            Navigator.of(context).popUntil(
-                                              (route) => route.isFirst,
-                                            );
-                                          },
-                                          text: 'MENU',
-                                          primaryColor: theme.snakeColor
-                                              .withValues(alpha: 0.8),
-                                          secondaryColor: theme.snakeColor
-                                              .withValues(alpha: 0.6),
-                                          icon: Icons.home,
-                                          outlined: true,
-                                        ).animate().slideX(
-                                          begin: 1,
-                                          delay: 1400.ms,
-                                        ),
+                                  // Bottom section - Action Buttons - always at bottom
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child:
+                                            GradientButton(
+                                              onPressed: () async {
+                                                final gameCubit = context
+                                                    .read<GameCubit>();
+                                                gameCubit.resetGame();
+                                                await Future.delayed(
+                                                  const Duration(
+                                                    milliseconds: 50,
+                                                  ),
+                                                );
+                                                gameCubit.startGame();
+
+                                                if (context.mounted) {
+                                                  Navigator.of(
+                                                    context,
+                                                  ).pushReplacement(
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          const GameScreen(),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              text: 'PLAY AGAIN',
+                                              primaryColor: theme.accentColor,
+                                              secondaryColor: theme.foodColor,
+                                              icon: Icons.refresh,
+                                            ).animate().slideX(
+                                              begin: -1,
+                                              delay: 1200.ms,
+                                            ),
+                                      ),
+
+                                      const SizedBox(width: 12),
+
+                                      Expanded(
+                                        child:
+                                            GradientButton(
+                                              onPressed: () {
+                                                context
+                                                    .read<GameCubit>()
+                                                    .backToMenu();
+                                                Navigator.of(context).popUntil(
+                                                  (route) => route.isFirst,
+                                                );
+                                              },
+                                              text: 'MENU',
+                                              primaryColor: theme.snakeColor
+                                                  .withValues(alpha: 0.8),
+                                              secondaryColor: theme.snakeColor
+                                                  .withValues(alpha: 0.6),
+                                              icon: Icons.home,
+                                              outlined: true,
+                                            ).animate().slideX(
+                                              begin: 1,
+                                              delay: 1400.ms,
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );

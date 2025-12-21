@@ -2,11 +2,11 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
 import 'package:snake_classic/screens/home_screen.dart';
 import 'package:snake_classic/services/achievement_service.dart';
@@ -172,8 +172,8 @@ class _LoadingScreenState extends State<LoadingScreen>
       await _updateProgress(0.98, 'Checking setup status...', 'Almost ready!');
 
       if (mounted) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final isFirstTime = await userProvider.isFirstTimeUser();
+        final authCubit = context.read<AuthCubit>();
+        final isFirstTime = authCubit.state.isFirstTimeUser;
 
         if (isFirstTime) {
           await _updateProgress(1.0, 'Welcome!', 'Choose how to continue');
@@ -277,26 +277,9 @@ class _LoadingScreenState extends State<LoadingScreen>
       await unifiedUserService.initialize();
       AppLogger.success('UnifiedUserService initialized');
 
-      // Initialize UserProvider if we can get it safely
-      if (mounted) {
-        try {
-          final userProvider = Provider.of<UserProvider>(
-            context,
-            listen: false,
-          );
-          if (mounted) {
-            userProvider.initialize(context);
-            AppLogger.success('UserProvider initialized');
-
-            // Connect UserProvider to PurchaseService for purchase verification
-            final purchaseService = PurchaseService();
-            purchaseService.setUserProvider(userProvider);
-            AppLogger.info('PurchaseService connected to UserProvider');
-          }
-        } catch (e) {
-          AppLogger.warning('UserProvider initialization warning: $e');
-        }
-      }
+      // AuthCubit is already initialized via MultiBlocProvider in main.dart
+      // PurchaseService is already initialized in main.dart
+      AppLogger.info('PurchaseService ready');
 
       AppLogger.success('User system initialization complete');
     } catch (e) {
@@ -307,14 +290,9 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<void> _initializePreferences() async {
     try {
       if (!mounted) return;
-      
+
       // Cache context before async operations
       final currentContext = context;
-      final themeProvider = Provider.of<ThemeProvider>(currentContext, listen: false);
-      final premiumProvider = Provider.of<PremiumProvider>(
-        currentContext,
-        listen: false,
-      );
       final preferencesService = Provider.of<PreferencesService>(
         currentContext,
         listen: false,
@@ -322,13 +300,8 @@ class _LoadingScreenState extends State<LoadingScreen>
 
       await preferencesService.initialize();
 
-      if (mounted) {
-        // ignore: use_build_context_synchronously
-        await themeProvider.initialize(currentContext);
-        // ignore: use_build_context_synchronously
-        await premiumProvider.initialize(currentContext);
-        AppLogger.info('Premium provider initialized successfully');
-      }
+      // ThemeCubit and PremiumCubit are already initialized via MultiBlocProvider in main.dart
+      AppLogger.info('Preferences and Cubits initialized successfully');
     } catch (e) {
       AppLogger.prefs('Preferences initialization warning', e);
     }
@@ -447,9 +420,9 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        final theme = themeProvider.currentTheme;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
         return Scaffold(
           body: Container(

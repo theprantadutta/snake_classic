@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
-import 'package:snake_classic/providers/multiplayer_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
@@ -75,16 +75,16 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   void _initializeGame() {
-    final multiplayerProvider = context.read<MultiplayerProvider>();
-    final game = multiplayerProvider.currentGame;
-    
+    final multiplayerCubit = context.read<MultiplayerCubit>();
+    final game = multiplayerCubit.state.currentGame;
+
     if (game != null) {
       _boardSize = game.gameSettings['boardSize'] ?? 20;
       _gameSpeed = game.gameSettings['initialSpeed'] ?? 200;
-      
+
       // Get current user's snake
-      final userProvider = context.read<UserProvider>();
-      final currentUserId = userProvider.currentUserId;
+      final authState = context.read<AuthCubit>().state;
+      final currentUserId = authState.userId;
       if (currentUserId != null) {
         final myPlayer = game.getPlayer(currentUserId);
         if (myPlayer != null) {
@@ -147,11 +147,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     }
 
     // Check collision with other players
-    final multiplayerProvider = context.read<MultiplayerProvider>();
-    final game = multiplayerProvider.currentGame;
+    final multiplayerCubit = context.read<MultiplayerCubit>();
+    final game = multiplayerCubit.state.currentGame;
     if (game != null) {
       for (final player in game.players) {
-        if (player.userId != context.read<UserProvider>().currentUserId) {
+        if (player.userId != context.read<AuthCubit>().state.userId) {
           if (player.snake.contains(newHead)) {
             _handleCrash();
             return;
@@ -171,7 +171,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       pointsEarned = 10;
       _myScore += pointsEarned;
       // Generate new food position
-      multiplayerProvider.generateNewFood();
+      multiplayerCubit.generateNewFood();
     } else if (game?.bonusFoodPosition == newHead) {
       ateFood = true;
       pointsEarned = 25;
@@ -181,10 +181,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       pointsEarned = 50;
       _myScore += pointsEarned;
     }
-    
+
     // Handle food consumption with integrated services
     if (ateFood) {
-      multiplayerProvider.onFoodEaten(pointsEarned);
+      multiplayerCubit.onFoodEaten(pointsEarned);
     }
 
     if (!ateFood) {
@@ -193,18 +193,18 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
     // Update multiplayer state
     _updateMultiplayerState();
-    
+
     // Check if game should end
     if (_myStatus == PlayerStatus.crashed) {
-      multiplayerProvider.checkGameEnd();
+      multiplayerCubit.checkGameEnd();
     }
     
     setState(() {});
   }
 
   void _updateMultiplayerState() {
-    final multiplayerProvider = context.read<MultiplayerProvider>();
-    multiplayerProvider.updateGameState(
+    final multiplayerCubit = context.read<MultiplayerCubit>();
+    multiplayerCubit.updateGameState(
       snake: _mySnake,
       score: _myScore,
       status: _myStatus,
@@ -215,33 +215,34 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     _myStatus = PlayerStatus.crashed;
     _gameTimer?.cancel();
     _updateMultiplayerState();
-    
-    final multiplayerProvider = context.read<MultiplayerProvider>();
-    
+
+    final multiplayerCubit = context.read<MultiplayerCubit>();
+
     // Handle crash with integrated services
-    multiplayerProvider.onPlayerCrash();
-    
+    multiplayerCubit.onPlayerCrash();
+
     // Check if game should end
-    multiplayerProvider.checkGameEnd();
-    
+    multiplayerCubit.checkGameEnd();
+
     // Show crash feedback
     _showCrashDialog();
   }
 
   void _showCrashDialog() {
-    final theme = context.read<ThemeProvider>().currentTheme;
-    final multiplayerProvider = context.read<MultiplayerProvider>();
-    
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    final multiplayerCubit = context.read<MultiplayerCubit>();
+    final multiplayerState = multiplayerCubit.state;
+
     // Check if this player won or lost
-    final isWinner = multiplayerProvider.currentGame?.winnerId == context.read<UserProvider>().currentUserId;
-    final gameFinished = multiplayerProvider.isGameFinished;
-    
+    final isWinner = multiplayerState.currentGame?.winnerId == context.read<AuthCubit>().state.userId;
+    final gameFinished = multiplayerState.isGameFinished;
+
     // Handle game outcome
     if (gameFinished) {
       if (isWinner) {
-        multiplayerProvider.onGameWon(_myScore);
+        multiplayerCubit.onGameWon(_myScore);
       } else {
-        multiplayerProvider.onGameLost(_myScore);
+        multiplayerCubit.onGameLost(_myScore);
       }
     }
     
@@ -342,9 +343,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     if (_currentDirection == Direction.right && direction == Direction.left) return;
 
     _nextDirection = direction;
-    
+
     // Send direction change to other players
-    context.read<MultiplayerProvider>().changeDirection(direction);
+    context.read<MultiplayerCubit>().changeDirection(direction);
   }
 
   void _handleKeyPress(KeyEvent event) {
@@ -380,11 +381,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   void _showExitDialog() {
-    final theme = context.read<ThemeProvider>().currentTheme;
-    
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.backgroundColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -402,7 +403,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               'Cancel',
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
@@ -410,8 +411,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              context.read<MultiplayerProvider>().leaveGame();
+              Navigator.of(dialogContext).pop();
+              context.read<MultiplayerCubit>().leaveGame();
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => const MultiplayerLobbyScreen(),
@@ -430,64 +431,73 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<MultiplayerProvider, ThemeProvider, UserProvider>(
-      builder: (context, multiplayerProvider, themeProvider, userProvider, child) {
-        final theme = themeProvider.currentTheme;
-        final game = multiplayerProvider.currentGame;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
-        if (game == null || !multiplayerProvider.isGameActive) {
-          return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
-              ),
-            ),
-          );
-        }
+        return BlocBuilder<MultiplayerCubit, MultiplayerState>(
+          builder: (context, multiplayerState) {
+            return BlocBuilder<AuthCubit, AuthState>(
+              builder: (context, authState) {
+                final game = multiplayerState.currentGame;
 
-        return KeyboardListener(
-          focusNode: FocusNode()..requestFocus(),
-          onKeyEvent: _handleKeyPress,
-          child: Scaffold(
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.topRight,
-                  radius: 1.5,
-                  colors: [
-                    theme.accentColor.withValues(alpha: 0.15),
-                    theme.backgroundColor,
-                    theme.backgroundColor.withValues(alpha: 0.9),
-                    Colors.black.withValues(alpha: 0.1),
-                  ],
-                  stops: const [0.0, 0.4, 0.8, 1.0],
-                ),
-              ),
-              child: SafeArea(
-                child: SwipeDetector(
-                  onSwipe: _handleSwipe,
-                  showFeedback: false,
-                  child: Column(
-                    children: [
-                      // Game HUD
-                      _buildMultiplayerHUD(theme, game, userProvider),
-                      
-                      // Game Board
-                      Expanded(
-                        child: _buildGameBoard(theme, game, userProvider),
+                if (game == null || !multiplayerState.isGameActive) {
+                  return Scaffold(
+                    body: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
                       ),
-                    ],
+                    ),
+                  );
+                }
+
+                return KeyboardListener(
+                  focusNode: FocusNode()..requestFocus(),
+                  onKeyEvent: _handleKeyPress,
+                  child: Scaffold(
+                    body: Container(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment.topRight,
+                          radius: 1.5,
+                          colors: [
+                            theme.accentColor.withValues(alpha: 0.15),
+                            theme.backgroundColor,
+                            theme.backgroundColor.withValues(alpha: 0.9),
+                            Colors.black.withValues(alpha: 0.1),
+                          ],
+                          stops: const [0.0, 0.4, 0.8, 1.0],
+                        ),
+                      ),
+                      child: SafeArea(
+                        child: SwipeDetector(
+                          onSwipe: _handleSwipe,
+                          showFeedback: false,
+                          child: Column(
+                            children: [
+                              // Game HUD
+                              _buildMultiplayerHUD(theme, game, authState),
+
+                              // Game Board
+                              Expanded(
+                                child: _buildGameBoard(theme, game, authState),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-          ),
+                );
+              },
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildMultiplayerHUD(GameTheme theme, MultiplayerGame game, UserProvider userProvider) {
+  Widget _buildMultiplayerHUD(GameTheme theme, MultiplayerGame game, AuthState authState) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -501,16 +511,16 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               size: 24,
             ),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           // Current player info
           Expanded(
-            child: _buildPlayerInfo(theme, game, userProvider.currentUserId ?? '', true),
+            child: _buildPlayerInfo(theme, game, authState.userId ?? '', true),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           // VS indicator
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -527,12 +537,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               ),
             ),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           // Opponent info
           Expanded(
-            child: _buildOpponentInfo(theme, game, userProvider.currentUserId ?? ''),
+            child: _buildOpponentInfo(theme, game, authState.userId ?? ''),
           ),
         ],
       ),
@@ -676,7 +686,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     return _buildPlayerInfo(theme, game, opponent.userId, false);
   }
 
-  Widget _buildGameBoard(GameTheme theme, MultiplayerGame game, UserProvider userProvider) {
+  Widget _buildGameBoard(GameTheme theme, MultiplayerGame game, AuthState authState) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final boardDimension = math.min(constraints.maxWidth, constraints.maxHeight) - 32;
@@ -700,7 +710,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   theme: theme,
                   boardSize: _boardSize,
                   mySnake: _mySnake,
-                  opponentSnakes: _getOpponentSnakes(game, userProvider.currentUserId ?? ''),
+                  opponentSnakes: _getOpponentSnakes(game, authState.userId ?? ''),
                   foodPosition: game.foodPosition,
                   bonusFoodPosition: game.bonusFoodPosition,
                   specialFoodPosition: game.specialFoodPosition,

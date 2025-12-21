@@ -107,28 +107,31 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Score label with food type indicator and combo
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'SCORE',
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.8),
-                        fontSize: isSmallScreen ? 10 : 12,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'SCORE',
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.8),
+                          fontSize: isSmallScreen ? 10 : 12,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 1,
+                        ),
                       ),
-                    ),
-                    if (gameState.food != null) ...[
-                      SizedBox(width: isSmallScreen ? 4 : 6),
-                      _buildFoodTypeIndicator(gameState.food!),
+                      if (gameState.food != null) ...[
+                        SizedBox(width: isSmallScreen ? 4 : 6),
+                        _buildFoodTypeIndicator(gameState.food!),
+                      ],
+                      // Combo indicator (show when combo >= 3)
+                      if (gameState.currentCombo >= 3) ...[
+                        SizedBox(width: isSmallScreen ? 4 : 6),
+                        _buildComboIndicator(),
+                      ],
                     ],
-                    // Combo indicator (show when combo >= 3)
-                    if (gameState.currentCombo >= 3) ...[
-                      SizedBox(width: isSmallScreen ? 4 : 6),
-                      _buildComboIndicator(),
-                    ],
-                  ],
+                  ),
                 ),
               SizedBox(height: isSmallScreen ? 2 : 4),
               // Animated score counter

@@ -166,6 +166,9 @@ class UnifiedUserService extends ChangeNotifier {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final ApiService _apiService = ApiService();
 
+  // Storage keys for offline session persistence
+  static const String _cachedUserKey = 'cached_unified_user';
+
   UnifiedUserService._internal() {
     // Initialize Google Sign-In with client ID
     _googleSignIn.initialize(
@@ -226,9 +229,23 @@ class UnifiedUserService extends ChangeNotifier {
         AppLogger.user('Found existing user: ${currentFirebaseUser.uid}');
         await _loadOrCreateUser(currentFirebaseUser);
       } else {
-        AppLogger.user('No existing user, signing in anonymously...');
-        // No user signed in, create anonymous user
-        await _signInAnonymously();
+        // No Firebase user - try cached session first
+        final cachedUser = await _loadCachedUserSession();
+        if (cachedUser != null) {
+          AppLogger.user('Using cached user session (no Firebase auth)');
+          _currentUser = cachedUser;
+          notifyListeners();
+
+          // Try anonymous sign-in in background (if we come online later)
+          _signInAnonymously().catchError((_) {
+            // Ignore errors - we have a cached user
+            return false;
+          });
+        } else {
+          AppLogger.user('No existing user or cache, signing in anonymously...');
+          // No user signed in and no cache, create anonymous user
+          await _signInAnonymously();
+        }
       }
 
       _isInitialized = true;
@@ -241,6 +258,19 @@ class UnifiedUserService extends ChangeNotifier {
         e,
         stackTrace,
       );
+
+      // Last resort: try cached user
+      try {
+        final cachedUser = await _loadCachedUserSession();
+        if (cachedUser != null) {
+          _currentUser = cachedUser;
+          _isInitialized = true;
+          AppLogger.warning('Recovered with cached user after init failure');
+          notifyListeners();
+          return;
+        }
+      } catch (_) {}
+
       rethrow;
     }
   }
@@ -275,9 +305,17 @@ class UnifiedUserService extends ChangeNotifier {
     try {
       AppLogger.user('Loading/creating user for UID: ${firebaseUser.uid}');
 
-      // Authenticate with backend using Firebase token
-      final idToken = await firebaseUser.getIdToken();
+      // Try to get ID token - may fail if offline with expired token
+      String? idToken;
+      try {
+        idToken = await firebaseUser.getIdToken();
+      } catch (tokenError) {
+        AppLogger.warning('Failed to get ID token (may be offline): $tokenError');
+        // Continue without token - we'll try cached data
+      }
+
       if (idToken != null) {
+        // Online path - authenticate with backend
         final authResult = await _apiService.authenticateWithFirebase(idToken);
 
         if (authResult != null) {
@@ -287,18 +325,30 @@ class UnifiedUserService extends ChangeNotifier {
           final userProfile = await _apiService.getCurrentUser();
           if (userProfile != null) {
             _currentUser = UnifiedUser.fromJson(userProfile);
+            // Cache the session for offline use
+            await _cacheUserSession(_currentUser!);
             AppLogger.success('User loaded from backend: ${_currentUser?.username}');
           } else {
             // Create local user object from Firebase data
             _currentUser = await _createUserFromFirebase(firebaseUser);
+            await _cacheUserSession(_currentUser!);
           }
         } else {
           // Backend auth failed, create local user
           _currentUser = await _createUserFromFirebase(firebaseUser);
+          await _cacheUserSession(_currentUser!);
         }
       } else {
-        // No token, create local user
-        _currentUser = await _createUserFromFirebase(firebaseUser);
+        // Offline path - try to load cached session
+        final cachedUser = await _loadCachedUserSession();
+        if (cachedUser != null && cachedUser.uid == firebaseUser.uid) {
+          _currentUser = cachedUser;
+          AppLogger.success('Restored user from cache (offline): ${_currentUser?.username}');
+        } else {
+          // No matching cache, create minimal local user
+          _currentUser = await _createUserFromFirebase(firebaseUser);
+          await _cacheUserSession(_currentUser!);
+        }
       }
 
       notifyListeners();
@@ -307,6 +357,14 @@ class UnifiedUserService extends ChangeNotifier {
       _initializeNotificationIntegration();
     } catch (e, stackTrace) {
       AppLogger.user('Error loading/creating user', e, stackTrace);
+
+      // Fallback: try to restore from cache
+      final cachedUser = await _loadCachedUserSession();
+      if (cachedUser != null) {
+        _currentUser = cachedUser;
+        AppLogger.warning('Restored user from cache after error');
+        notifyListeners();
+      }
     } finally {
       _isLoadingUser = false;
       _loadingUserId = null;
@@ -410,6 +468,65 @@ class UnifiedUserService extends ChangeNotifier {
     await _prefs!.remove('has_initialized_guest');
   }
 
+  /// Save user session to local storage for offline access
+  Future<void> _cacheUserSession(UnifiedUser user) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!.setString(_cachedUserKey, jsonEncode(user.toJson()));
+      AppLogger.user('Cached user session for offline use');
+    } catch (e) {
+      AppLogger.error('Failed to cache user session', e);
+    }
+  }
+
+  /// Load cached user session from local storage
+  Future<UnifiedUser?> _loadCachedUserSession() async {
+    if (_prefs == null) return null;
+    try {
+      final cachedJson = _prefs!.getString(_cachedUserKey);
+      if (cachedJson != null) {
+        final userData = jsonDecode(cachedJson) as Map<String, dynamic>;
+        AppLogger.user('Loaded cached user session');
+        return UnifiedUser.fromJson(userData);
+      }
+    } catch (e) {
+      AppLogger.error('Failed to load cached user session', e);
+    }
+    return null;
+  }
+
+  /// Clear cached user session
+  Future<void> _clearCachedUserSession() async {
+    if (_prefs == null) return;
+    await _prefs!.remove(_cachedUserKey);
+  }
+
+  /// Create a purely offline guest user (no Firebase auth required)
+  Future<UnifiedUser> _createOfflineGuestUser() async {
+    AppLogger.user('Creating offline guest user...');
+
+    // Generate a local ID for offline guest
+    final offlineId = 'offline_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(99999)}';
+    final username = await _generateUniqueUsername();
+
+    // Try to get data from local guest data if available
+    final guestData = await _getLocalGuestData();
+
+    return UnifiedUser(
+      uid: offlineId,
+      userType: UserType.guest,
+      username: username,
+      displayName: username,
+      createdAt: DateTime.now(),
+      lastSeen: DateTime.now(),
+      highScore: guestData['highScore'] ?? 0,
+      totalGamesPlayed: guestData['totalGamesPlayed'] ?? 0,
+      totalScore: guestData['totalScore'] ?? 0,
+      level: guestData['level'] ?? 1,
+      preferences: await _getDefaultPreferences(),
+    );
+  }
+
   // Public methods
 
   Future<bool> _signInAnonymously() async {
@@ -423,7 +540,23 @@ class UnifiedUserService extends ChangeNotifier {
       return true;
     } catch (e, stackTrace) {
       AppLogger.firebase('Error signing in anonymously', e, stackTrace);
-      return false;
+
+      // If we can't sign in anonymously (likely offline),
+      // try to restore a cached session or create an offline guest
+      final cachedUser = await _loadCachedUserSession();
+      if (cachedUser != null) {
+        _currentUser = cachedUser;
+        AppLogger.warning('Restored cached user after anonymous sign-in failed');
+        notifyListeners();
+        return true;
+      }
+
+      // Create a purely offline guest user
+      _currentUser = await _createOfflineGuestUser();
+      await _cacheUserSession(_currentUser!);
+      AppLogger.warning('Created offline guest user');
+      notifyListeners();
+      return true;
     }
   }
 
@@ -478,6 +611,11 @@ class UnifiedUserService extends ChangeNotifier {
     }
   }
 
+  /// Public wrapper for anonymous sign-in
+  Future<bool> signInAnonymously() async {
+    return _signInAnonymously();
+  }
+
   Future<bool> updateUsername(String newUsername) async {
     if (_currentUser == null) return false;
 
@@ -495,6 +633,38 @@ class UnifiedUserService extends ChangeNotifier {
       AppLogger.user('Error updating username', e, stackTrace);
       return false;
     }
+  }
+
+  /// Update username for guest users (local only)
+  Future<bool> updateGuestUsername(String newUsername) async {
+    if (_currentUser == null) return false;
+    if (_currentUser!.userType != UserType.guest &&
+        _currentUser!.userType != UserType.anonymous) {
+      return false;
+    }
+
+    try {
+      _currentUser = _currentUser!.copyWith(
+        username: newUsername,
+        displayName: newUsername,
+      );
+      await _cacheUserSession(_currentUser!);
+      notifyListeners();
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.user('Error updating guest username', e, stackTrace);
+      return false;
+    }
+  }
+
+  /// Update username for authenticated users (via backend)
+  Future<bool> updateAuthenticatedUsername(String newUsername) async {
+    if (_currentUser == null) return false;
+    if (_currentUser!.userType != UserType.google) {
+      return false;
+    }
+
+    return updateUsername(newUsername);
   }
 
   Future<void> updateGameStats({
@@ -562,6 +732,9 @@ class UnifiedUserService extends ChangeNotifier {
       await _googleSignIn.signOut();
       await _auth.signOut();
       _currentUser = null;
+
+      // Clear cached session
+      await _clearCachedUserSession();
 
       // Create new anonymous user
       await _signInAnonymously();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -53,9 +53,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        final theme = themeProvider.currentTheme;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, state) {
+        final theme = state.currentTheme;
 
         return Scaffold(
           body: Container(

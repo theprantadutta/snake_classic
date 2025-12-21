@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -12,9 +12,9 @@ class ThemeSelectorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final premiumProvider = Provider.of<PremiumProvider>(context);
-    final currentTheme = themeProvider.currentTheme;
+    final themeState = context.watch<ThemeCubit>().state;
+    final premiumState = context.watch<PremiumCubit>().state;
+    final currentTheme = themeState.currentTheme;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -85,14 +85,14 @@ class ThemeSelectorScreen extends StatelessWidget {
                     itemCount: GameTheme.values.length,
                     itemBuilder: (context, index) {
                       final theme = GameTheme.values[index];
-                      final isSelected = themeProvider.currentTheme == theme;
-                      
+                      final isSelected = themeState.currentTheme == theme;
+
                       return _buildThemeCard(
                         context,
                         theme,
                         isSelected,
-                        themeProvider,
-                        premiumProvider,
+                        themeState,
+                        premiumState,
                         index,
                       );
                     },
@@ -110,19 +110,19 @@ class ThemeSelectorScreen extends StatelessWidget {
     BuildContext context,
     GameTheme theme,
     bool isSelected,
-    ThemeProvider themeProvider,
-    PremiumProvider premiumProvider,
+    ThemeState themeState,
+    PremiumState premiumState,
     int index,
   ) {
-    final isLocked = !premiumProvider.isThemeUnlocked(theme);
+    final isLocked = !premiumState.isThemeUnlocked(theme);
     final isPremiumTheme = PremiumContent.premiumThemes.contains(theme);
-    
+
     return GestureDetector(
       onTap: () async {
         if (isLocked) {
-          _showPremiumThemeDialog(context, theme, premiumProvider);
+          _showPremiumThemeDialog(context, theme, premiumState);
         } else {
-          themeProvider.setTheme(theme);
+          context.read<ThemeCubit>().setTheme(theme);
         }
       },
       child: Stack(
@@ -406,7 +406,7 @@ class ThemeSelectorScreen extends StatelessWidget {
     }
   }
 
-  void _showPremiumThemeDialog(BuildContext context, GameTheme theme, PremiumProvider premiumProvider) {
+  void _showPremiumThemeDialog(BuildContext context, GameTheme theme, PremiumState premiumState) {
     final themePrice = _getThemePrice(theme);
     
     showDialog(

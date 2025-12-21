@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:snake_classic/models/achievement.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
@@ -64,9 +64,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = themeProvider.currentTheme;
+    final authState = context.watch<AuthCubit>().state;
+    final themeState = context.watch<ThemeCubit>().state;
+    final theme = themeState.currentTheme;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -106,9 +106,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: userProvider.isSignedIn
-                ? _buildProfileContent(context, userProvider, themeProvider)
-                : _buildSignInContent(context, userProvider, themeProvider),
+            child: authState.isSignedIn
+                ? _buildProfileContent(context, authState, themeState)
+                : _buildSignInContent(context, authState, themeState),
           ),
         ),
       ),
@@ -117,10 +117,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildSignInContent(
     BuildContext context,
-    UserProvider userProvider,
-    ThemeProvider themeProvider,
+    AuthState authState,
+    ThemeState themeState,
   ) {
-    final theme = themeProvider.currentTheme;
+    final theme = themeState.currentTheme;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -204,7 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 40),
 
         // Enhanced buttons with loading state
-        if (userProvider.isLoading)
+        if (authState.isLoading)
           Container(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -232,7 +232,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             theme.accentColor,
             theme.primaryColor,
             () async {
-              final success = await userProvider.signInWithGoogle();
+              final authCubit = context.read<AuthCubit>();
+              final success = await authCubit.signInWithGoogle();
               if (success && context.mounted) {
                 _showStyledSnackBar(
                   context,
@@ -259,7 +260,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             theme.primaryColor,
             theme.accentColor,
             () async {
-              await userProvider.signInAnonymously();
+              final authCubit = context.read<AuthCubit>();
+              await authCubit.signInAnonymously();
               if (context.mounted) {
                 _showStyledSnackBar(
                   context,
@@ -277,10 +279,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileContent(
     BuildContext context,
-    UserProvider userProvider,
-    ThemeProvider themeProvider,
+    AuthState authState,
+    ThemeState themeState,
   ) {
-    final theme = themeProvider.currentTheme;
+    final theme = themeState.currentTheme;
 
     return SingleChildScrollView(
       child: Column(
@@ -339,11 +341,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: theme.primaryColor,
                     child: CircleAvatar(
                       radius: 56,
-                      backgroundImage: userProvider.photoURL != null
-                          ? NetworkImage(userProvider.photoURL!)
+                      backgroundImage: authState.photoURL != null
+                          ? NetworkImage(authState.photoURL!)
                           : null,
                       backgroundColor: theme.backgroundColor,
-                      child: userProvider.photoURL == null
+                      child: authState.photoURL == null
                           ? Icon(
                               Icons.person_rounded,
                               size: 60,
@@ -361,7 +363,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     colors: [theme.primaryColor, theme.accentColor],
                   ).createShader(bounds),
                   child: Text(
-                    userProvider.displayName,
+                    authState.displayName,
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -380,7 +382,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: userProvider.isAnonymous
+                      colors: authState.isAnonymous
                           ? [Colors.orange, Colors.deepOrange]
                           : [Colors.green, Colors.teal],
                     ),
@@ -388,7 +390,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     boxShadow: [
                       BoxShadow(
                         color:
-                            (userProvider.isAnonymous
+                            (authState.isAnonymous
                                     ? Colors.orange
                                     : Colors.green)
                                 .withValues(alpha: 0.3),
@@ -401,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        userProvider.isAnonymous
+                        authState.isAnonymous
                             ? Icons.person
                             : Icons.verified_user,
                         color: Colors.white,
@@ -409,7 +411,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        userProvider.isAnonymous
+                        authState.isAnonymous
                             ? 'Guest Player'
                             : 'Verified Account',
                         style: const TextStyle(
@@ -573,7 +575,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'High Score',
                           _displayStats['highScore']?.toString() ?? '0',
                           Icons.emoji_events,
-                          themeProvider,
+                          themeState,
                           isCompact: true,
                         ),
                       ),
@@ -582,7 +584,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Games Played',
                           _displayStats['totalGames']?.toString() ?? '0',
                           Icons.games,
-                          themeProvider,
+                          themeState,
                           isCompact: true,
                         ),
                       ),
@@ -596,7 +598,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Play Time',
                           '${_displayStats['totalPlayTime']}h',
                           Icons.access_time,
-                          themeProvider,
+                          themeState,
                           isCompact: true,
                         ),
                       ),
@@ -605,7 +607,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Average Score',
                           _displayStats['averageScore']?.toString() ?? '0',
                           Icons.trending_up,
-                          themeProvider,
+                          themeState,
                           isCompact: true,
                         ),
                       ),
@@ -619,7 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Food Consumed',
                           _displayStats['totalFood']?.toString() ?? '0',
                           Icons.fastfood,
-                          themeProvider,
+                          themeState,
                           isCompact: true,
                         ),
                       ),
@@ -628,7 +630,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Power-ups',
                           _displayStats['totalPowerUps']?.toString() ?? '0',
                           Icons.flash_on,
-                          themeProvider,
+                          themeState,
                           isCompact: true,
                         ),
                       ),
@@ -747,7 +749,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (_recentAchievements.isNotEmpty) const SizedBox(height: 24),
 
           // Google Sign-In Upgrade Section (for guest users only)
-          if (userProvider.isAnonymous && !userProvider.isGoogleUser)
+          if (authState.isAnonymous && !authState.isGoogleUser)
             Container(
               padding: const EdgeInsets.all(24),
               margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -853,13 +855,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     FontAwesomeIcons.google,
                     Colors.blue,
                     Colors.blue.shade700,
-                    () => _handleGoogleUpgrade(context, userProvider, theme),
+                    () => _handleGoogleUpgrade(context, theme),
                   ),
                 ],
               ),
             ),
 
-          if (userProvider.isAnonymous && !userProvider.isGoogleUser)
+          if (authState.isAnonymous && !authState.isGoogleUser)
             const SizedBox(height: 24),
 
           // Recent Replays Section
@@ -1017,7 +1019,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 32),
 
           // Enhanced Sign Out Section
-          if (!userProvider.isLoading)
+          if (!authState.isLoading)
             Container(
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -1049,7 +1051,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icons.logout_rounded,
                     Colors.red,
                     Colors.red.shade700,
-                    () => _showSignOutDialog(context, userProvider, theme),
+                    () => _showSignOutDialog(context, theme),
                   ),
                 ],
               ),
@@ -1065,7 +1067,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String label,
     String value,
     IconData icon,
-    ThemeProvider themeProvider, {
+    ThemeState themeState, {
     bool isCompact = false,
   }) {
     if (isCompact) {
@@ -1075,7 +1077,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(
               icon,
-              color: themeProvider.currentTheme.primaryColor,
+              color: themeState.currentTheme.primaryColor,
               size: 20,
             ),
             const SizedBox(height: 4),
@@ -1104,7 +1106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: themeProvider.currentTheme.primaryColor, size: 24),
+          Icon(icon, color: themeState.currentTheme.primaryColor, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -1411,11 +1413,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _handleGoogleUpgrade(
     BuildContext context,
-    UserProvider userProvider,
     GameTheme theme,
   ) async {
     try {
-      final success = await userProvider.signInWithGoogle();
+      final authCubit = context.read<AuthCubit>();
+      final success = await authCubit.signInWithGoogle();
 
       if (success && context.mounted) {
         _showStyledSnackBar(
@@ -1446,12 +1448,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showSignOutDialog(
     BuildContext context,
-    UserProvider userProvider,
     GameTheme theme,
   ) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.backgroundColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -1470,7 +1471,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               'Cancel',
               style: TextStyle(
@@ -1487,8 +1488,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             onPressed: () async {
-              Navigator.of(context).pop();
-              await userProvider.signOut();
+              Navigator.of(dialogContext).pop();
+              final authCubit = context.read<AuthCubit>();
+              await authCubit.signOut();
               if (context.mounted) {
                 _showStyledSnackBar(
                   context,

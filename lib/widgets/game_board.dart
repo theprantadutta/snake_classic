@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
-import 'package:snake_classic/providers/game_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
+import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
@@ -67,21 +67,23 @@ class _GameBoardState extends State<GameBoard>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ThemeProvider, PremiumProvider>(
-      builder: (context, themeProvider, premiumProvider, child) {
-        final theme = themeProvider.currentTheme;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        return BlocBuilder<PremiumCubit, PremiumState>(
+          builder: (context, premiumState) {
+            final theme = themeState.currentTheme;
 
-        // Performance optimization: Only rebuild if gameState actually changed
-        final shouldRebuild =
-            _cachedGameState != widget.gameState || _cachedTheme != theme;
+            // Performance optimization: Only rebuild if gameState actually changed
+            final shouldRebuild =
+                _cachedGameState != widget.gameState || _cachedTheme != theme;
 
-        if (shouldRebuild) {
-          _checkForGameEvents(_cachedGameState, widget.gameState, theme);
-          _cachedGameState = widget.gameState;
-          _cachedTheme = theme;
-        }
+            if (shouldRebuild) {
+              _checkForGameEvents(_cachedGameState, widget.gameState, theme);
+              _cachedGameState = widget.gameState;
+              _cachedTheme = theme;
+            }
 
-        return RepaintBoundary(
+            return RepaintBoundary(
           // Isolate repaints to this widget
           child: Container(
             margin: const EdgeInsets.all(8.0),
@@ -199,17 +201,17 @@ class _GameBoardState extends State<GameBoard>
                       aspectRatio:
                           widget.gameState.boardWidth /
                           widget.gameState.boardHeight,
-                      child: Consumer<GameProvider>(
-                        builder: (context, gameProvider, child) {
+                      child: BlocBuilder<GameCubit, GameCubitState>(
+                        builder: (context, gameState) {
                           return CustomPaint(
                             painter: OptimizedGameBoardPainter(
                               gameState: widget.gameState,
                               theme: theme,
                               pulseAnimation: _pulseAnimation,
                               // Smooth movement properties
-                              moveProgress: gameProvider.moveProgress,
-                              previousGameState: gameProvider.previousGameState,
-                              premiumProvider: premiumProvider,
+                              moveProgress: gameState.moveProgress,
+                              previousGameState: gameState.previousGameState,
+                              premiumState: premiumState,
                               // Pass time once per frame to avoid DateTime.now() in paint loop
                               animationTimeMs: DateTime.now().millisecondsSinceEpoch,
                             ),
@@ -221,19 +223,26 @@ class _GameBoardState extends State<GameBoard>
                         },
                       ),
                     ),
-                    // Snake trail system (conditionally shown)
-                    if (themeProvider.isTrailSystemEnabled)
-                      Positioned.fill(
-                        child: SnakeTrailSystem(
-                          snakeBody: widget.gameState.snake.body,
-                          trailType: _getTrailTypeForTheme(theme),
-                          theme: theme,
-                          cellWidth: widget.cellSize,
-                          cellHeight: widget.cellSize,
-                          isPlaying:
-                              widget.gameState.status == GameStatus.playing,
-                        ),
-                      ),
+                    // Snake trail system (shown when cosmetic trail selected OR theme trail enabled)
+                    Builder(
+                      builder: (context) {
+                        final effectiveTrailType = _getEffectiveTrailType(premiumState, themeState, theme);
+                        if (effectiveTrailType == TrailType.none) {
+                          return const SizedBox.shrink();
+                        }
+                        return Positioned.fill(
+                          child: SnakeTrailSystem(
+                            snakeBody: widget.gameState.snake.body,
+                            trailType: effectiveTrailType,
+                            theme: theme,
+                            cellWidth: widget.cellSize,
+                            cellHeight: widget.cellSize,
+                            isPlaying:
+                                widget.gameState.status == GameStatus.playing,
+                          ),
+                        );
+                      },
+                    ),
                     // Advanced particle system
                     Positioned.fill(
                       child: AdvancedParticleSystem(
@@ -255,6 +264,8 @@ class _GameBoardState extends State<GameBoard>
               ),
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -283,6 +294,57 @@ class _GameBoardState extends State<GameBoard>
       case GameTheme.crystal:
         return TrailType.ice;
     }
+  }
+
+  /// Convert cosmetic TrailEffectType to rendering TrailType
+  TrailType _getTrailTypeFromCosmetic(String trailId) {
+    final trailEffect = TrailEffectType.values.firstWhere(
+      (t) => t.id == trailId,
+      orElse: () => TrailEffectType.none,
+    );
+
+    switch (trailEffect) {
+      case TrailEffectType.none:
+        return TrailType.none;
+      case TrailEffectType.particle:
+        return TrailType.particles;
+      case TrailEffectType.glow:
+        return TrailType.glow;
+      case TrailEffectType.rainbow:
+        return TrailType.rainbow;
+      case TrailEffectType.fire:
+        return TrailType.fire;
+      case TrailEffectType.electric:
+        return TrailType.lightning;
+      case TrailEffectType.star:
+        return TrailType.particles;
+      case TrailEffectType.cosmic:
+        return TrailType.glow;
+      case TrailEffectType.neon:
+        return TrailType.glow;
+      case TrailEffectType.shadow:
+        return TrailType.basic;
+      case TrailEffectType.crystal:
+        return TrailType.ice;
+      case TrailEffectType.dragon:
+        return TrailType.fire;
+    }
+  }
+
+  /// Get the effective trail type considering both cosmetics and theme settings
+  TrailType _getEffectiveTrailType(PremiumState premiumState, ThemeState themeState, GameTheme theme) {
+    // If user has a premium trail selected (not 'none'), use that
+    if (premiumState.selectedTrailId != 'none' &&
+        premiumState.isTrailOwned(premiumState.selectedTrailId)) {
+      return _getTrailTypeFromCosmetic(premiumState.selectedTrailId);
+    }
+
+    // Otherwise, use theme-based trail if enabled
+    if (themeState.isTrailSystemEnabled) {
+      return _getTrailTypeForTheme(theme);
+    }
+
+    return TrailType.none;
   }
 
   void _addFoodParticleEffect(Offset position, GameTheme theme, FoodType foodType) {
@@ -409,7 +471,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final Animation<double> pulseAnimation;
   final double moveProgress;
   final GameState? previousGameState;
-  final PremiumProvider premiumProvider;
+  final PremiumState premiumState;
   final int animationTimeMs; // Passed once per frame to avoid DateTime.now() in paint
 
   // Cache paint objects to avoid recreation
@@ -426,7 +488,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     required this.pulseAnimation,
     this.moveProgress = 0.0,
     this.previousGameState,
-    required this.premiumProvider,
+    required this.premiumState,
     this.animationTimeMs = 0,
   }) : super(repaint: pulseAnimation) {
     _initializePaints();
@@ -704,7 +766,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Use selected skin colors if available, otherwise fall back to theme colors
     final skinColors = _getSelectedSkinColors();
     
-    if (skinColors.isNotEmpty && premiumProvider.selectedSkinId != 'classic') {
+    if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic') {
       // Use skin colors for premium skins
       if (skinColors.length == 1) {
         return [
@@ -872,7 +934,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Use selected skin colors if available, otherwise fall back to theme colors
     final skinColors = _getSelectedSkinColors();
     
-    if (skinColors.isNotEmpty && premiumProvider.selectedSkinId != 'classic') {
+    if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic') {
       // For single color skins, use the color with opacity
       if (skinColors.length == 1) {
         return skinColors[0].withValues(alpha: opacity);
@@ -2069,7 +2131,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
   // Get the selected skin colors
   List<Color> _getSelectedSkinColors() {
     final selectedSkinType = SnakeSkinType.values.firstWhere(
-      (type) => type.id == premiumProvider.selectedSkinId,
+      (type) => type.id == premiumState.selectedSkinId,
       orElse: () => SnakeSkinType.classic,
     );
     return selectedSkinType.colors;
@@ -2083,8 +2145,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
         oldDelegate.pulseAnimation.value != pulseAnimation.value ||
         oldDelegate.moveProgress != moveProgress ||
         oldDelegate.previousGameState != previousGameState ||
-        oldDelegate.premiumProvider.selectedSkinId != premiumProvider.selectedSkinId ||
-        oldDelegate.premiumProvider.selectedTrailId != premiumProvider.selectedTrailId;
+        oldDelegate.premiumState.selectedSkinId != premiumState.selectedSkinId ||
+        oldDelegate.premiumState.selectedTrailId != premiumState.selectedTrailId;
   }
 }
 

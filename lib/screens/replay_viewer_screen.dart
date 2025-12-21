@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/game_replay.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 import '../widgets/app_background.dart';
@@ -38,8 +38,8 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = themeProvider.currentTheme;
+    final themeState = context.watch<ThemeCubit>().state;
+    final theme = themeState.currentTheme;
 
     return Scaffold(
       appBar: AppBar(

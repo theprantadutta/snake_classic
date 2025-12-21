@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -83,9 +83,9 @@ class _FriendsScreenState extends State<FriendsScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        final theme = themeProvider.currentTheme;
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final theme = themeState.currentTheme;
 
         return Scaffold(
           body: AppBackground(
@@ -863,7 +863,7 @@ class _FriendsScreenState extends State<FriendsScreen> with SingleTickerProvider
   }
 
   void _showUserProfile(UserProfile friend) {
-    final theme = context.read<ThemeProvider>().currentTheme;
+    final theme = context.read<ThemeCubit>().state.currentTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -920,7 +920,7 @@ class _FriendsScreenState extends State<FriendsScreen> with SingleTickerProvider
   }
 
   void _showRemoveFriendDialog(UserProfile friend) {
-    final theme = context.read<ThemeProvider>().currentTheme;
+    final theme = context.read<ThemeCubit>().state.currentTheme;
     
     showDialog(
       context: context,

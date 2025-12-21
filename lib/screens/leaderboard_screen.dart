@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/services/leaderboard_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -51,11 +51,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   void _calculateUserRank() {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    if (!userProvider.isSignedIn || userProvider.user == null) return;
+    final authState = context.read<AuthCubit>().state;
+    if (!authState.isSignedIn || authState.userId == null) return;
     if (_globalLeaderboard.isEmpty) return;
 
-    final userId = userProvider.user!.uid;
+    final userId = authState.userId!;
     for (int i = 0; i < _globalLeaderboard.length; i++) {
       if (_globalLeaderboard[i]['uid'] == userId) {
         if (mounted) {
@@ -125,9 +125,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final userProvider = Provider.of<UserProvider>(context);
-    final theme = themeProvider.currentTheme;
+    final themeState = context.watch<ThemeCubit>().state;
+    final authState = context.watch<AuthCubit>().state;
+    final theme = themeState.currentTheme;
 
     return Scaffold(
       body: AppBackground(
@@ -137,21 +137,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             children: [
               // Header
               _buildHeader(theme),
-              
+
               // Tab Bar
               _buildTabBar(theme),
 
               // User Rank Card
-              if (userProvider.isSignedIn && _userRank != null)
-                _buildUserRankCard(userProvider, theme),
+              if (authState.isSignedIn && _userRank != null)
+                _buildUserRankCard(authState, theme),
 
               // Leaderboard Content
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildGlobalLeaderboard(theme, userProvider),
-                    _buildWeeklyLeaderboard(theme, userProvider),
+                    _buildGlobalLeaderboard(theme, authState),
+                    _buildWeeklyLeaderboard(theme, authState),
                   ],
                 ),
               ),
@@ -212,7 +212,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildUserRankCard(UserProvider userProvider, GameTheme theme) {
+  Widget _buildUserRankCard(AuthState authState, GameTheme theme) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -225,11 +225,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         children: [
           CircleAvatar(
             radius: 25,
-            backgroundImage: userProvider.photoURL != null
-                ? NetworkImage(userProvider.photoURL!)
+            backgroundImage: authState.photoURL != null
+                ? NetworkImage(authState.photoURL!)
                 : null,
             backgroundColor: theme.primaryColor,
-            child: userProvider.photoURL == null
+            child: authState.photoURL == null
                 ? Icon(Icons.person, color: theme.backgroundColor)
                 : null,
           ),
@@ -240,7 +240,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userProvider.displayName,
+                  authState.displayName ?? 'Guest',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -248,7 +248,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   ),
                 ),
                 Text(
-                  'Score: ${userProvider.highScore}',
+                  'Score: ${authState.highScore}',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -290,7 +290,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildGlobalLeaderboard(GameTheme theme, UserProvider userProvider) {
+  Widget _buildGlobalLeaderboard(GameTheme theme, AuthState authState) {
     if (_isLoadingGlobal) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -363,9 +363,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         itemBuilder: (context, index) {
           final player = _globalLeaderboard[index];
           final isCurrentUser =
-              userProvider.isSignedIn &&
-              userProvider.user != null &&
-              player['uid'] == userProvider.user!.uid;
+              authState.isSignedIn &&
+              authState.userId != null &&
+              player['uid'] == authState.userId;
 
           return _buildLeaderboardItem(
             index + 1,
@@ -378,7 +378,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildWeeklyLeaderboard(GameTheme theme, UserProvider userProvider) {
+  Widget _buildWeeklyLeaderboard(GameTheme theme, AuthState authState) {
     if (_isLoadingWeekly) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -451,9 +451,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         itemBuilder: (context, index) {
           final player = _weeklyLeaderboard[index];
           final isCurrentUser =
-              userProvider.isSignedIn &&
-              userProvider.user != null &&
-              player['uid'] == userProvider.user!.uid;
+              authState.isSignedIn &&
+              authState.userId != null &&
+              player['uid'] == authState.userId;
 
           return _buildLeaderboardItem(
             index + 1,

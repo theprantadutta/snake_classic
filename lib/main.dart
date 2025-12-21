@@ -3,15 +3,18 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
-import 'package:snake_classic/providers/coins_provider.dart';
-import 'package:snake_classic/providers/game_provider.dart';
-import 'package:snake_classic/providers/multiplayer_provider.dart';
-import 'package:snake_classic/providers/premium_provider.dart';
-import 'package:snake_classic/providers/theme_provider.dart';
-import 'package:snake_classic/providers/user_provider.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/loading_screen.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -55,6 +58,11 @@ void main() async {
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+
+    // Initialize dependency injection
+    AppLogger.info('Configuring dependencies...');
+    await configureDependencies();
+    AppLogger.success('Dependencies configured');
 
     // Initialize independent services in parallel for faster startup
     AppLogger.info('Initializing services in parallel...');
@@ -102,49 +110,73 @@ class SnakeClassicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    // MultiBlocProvider for all Cubit-based state management
+    return MultiBlocProvider(
       providers: [
-        // Core services
-        ChangeNotifierProvider(
-          create: (_) => UnifiedUserService(),
-          lazy: false,
+        // Auth & User
+        BlocProvider<AuthCubit>(
+          create: (_) => getIt<AuthCubit>()..initialize(),
         ),
-        ChangeNotifierProvider(create: (_) => DataSyncService(), lazy: false),
-        ChangeNotifierProvider(
-          create: (_) => PreferencesService(),
-          lazy: false,
+        // Theme
+        BlocProvider<ThemeCubit>(
+          create: (_) => getIt<ThemeCubit>()..initialize(),
         ),
-
-        // UI Providers
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => GameProvider()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => MultiplayerProvider()),
-        ChangeNotifierProvider(create: (_) => CoinsProvider()),
-        ChangeNotifierProvider(
-          create: (_) => PremiumProvider(PurchaseService()),
+        // Game Settings & Game
+        BlocProvider<GameSettingsCubit>(
+          create: (_) => getIt<GameSettingsCubit>()..initialize(),
+        ),
+        BlocProvider<GameCubit>(
+          create: (_) => getIt<GameCubit>()..initialize(),
+        ),
+        // Coins
+        BlocProvider<CoinsCubit>(
+          create: (_) => getIt<CoinsCubit>()..initialize(),
+        ),
+        // Multiplayer
+        BlocProvider<MultiplayerCubit>(
+          create: (_) => getIt<MultiplayerCubit>(),
+        ),
+        // Premium & Battle Pass
+        BlocProvider<PremiumCubit>(
+          create: (_) => getIt<PremiumCubit>()..initialize(),
+        ),
+        BlocProvider<BattlePassCubit>(
+          create: (_) => getIt<BattlePassCubit>()..initialize(),
         ),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp(
-            title: 'Snake Classic',
-            debugShowCheckedModeBanner: false,
-            navigatorKey: NavigationService.navigatorKey,
-            navigatorObservers: [
-              if (kDebugMode) TalkerRouteObserver(AppLogger.instance),
-            ],
-            theme: ThemeData(
-              brightness: Brightness.dark,
-              scaffoldBackgroundColor:
-                  themeProvider.currentTheme.backgroundColor,
-              visualDensity: VisualDensity.adaptivePlatformDensity,
-              useMaterial3: false,
-              fontFamily: 'monospace',
-            ),
-            home: const LoadingScreen(),
-          );
-        },
+      // MultiProvider for core services that are not Cubits
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => UnifiedUserService(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(create: (_) => DataSyncService(), lazy: false),
+          ChangeNotifierProvider(
+            create: (_) => PreferencesService(),
+            lazy: false,
+          ),
+        ],
+        child: BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, themeState) {
+            return MaterialApp(
+              title: 'Snake Classic',
+              debugShowCheckedModeBanner: false,
+              navigatorKey: NavigationService.navigatorKey,
+              navigatorObservers: [
+                if (kDebugMode) TalkerRouteObserver(AppLogger.instance),
+              ],
+              theme: ThemeData(
+                brightness: Brightness.dark,
+                scaffoldBackgroundColor: themeState.currentTheme.backgroundColor,
+                visualDensity: VisualDensity.adaptivePlatformDensity,
+                useMaterial3: false,
+                fontFamily: 'monospace',
+              ),
+              home: const LoadingScreen(),
+            );
+          },
+        ),
       ),
     );
   }
