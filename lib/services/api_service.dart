@@ -760,7 +760,14 @@ class ApiService {
     }
   }
 
-  /// Get WebSocket URL for multiplayer
+  /// Get SignalR Hub URL for multiplayer
+  String getSignalRHubUrl() {
+    final hubUrl = baseUrl.replaceFirst('/api/v1', '');
+    return '$hubUrl/hubs/game';
+  }
+
+  /// Get WebSocket URL for multiplayer (deprecated, use SignalR)
+  @Deprecated('Use getSignalRHubUrl() instead')
   String getMultiplayerWebSocketUrl(String gameId) {
     final wsUrl = baseUrl.replaceFirst('http', 'ws').replaceFirst('/api/v1', '');
     return '$wsUrl/api/v1/multiplayer/ws/$gameId?token=$_accessToken';

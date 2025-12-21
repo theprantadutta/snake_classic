@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/food.dart';
@@ -15,6 +16,7 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/utils/logger.dart';
 
 import 'game_state.dart';
 import 'game_settings_cubit.dart';
@@ -90,7 +92,10 @@ class GameCubit extends Cubit<GameCubitState> {
 
   /// Start a new game
   void startGame() {
+    debugPrint('🎮 [GameCubit] startGame() called');
+
     final settings = _settingsCubit.state;
+    debugPrint('🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, highScore=${settings.highScore}');
 
     final gameState = model.GameState.initial().copyWith(
       highScore: settings.highScore,
@@ -111,6 +116,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _currentGameFoodTypes.clear();
     _currentGameFoodPoints = 0;
     _lastGameUpdate = DateTime.now();
+    _updateCount = 0;
 
     // Generate initial food
     final food = Food.generateRandom(
@@ -121,12 +127,16 @@ class GameCubit extends Cubit<GameCubitState> {
 
     _gameRecorder.startRecording();
 
-    emit(state.copyWith(
+    final newState = state.copyWith(
       status: GamePlayStatus.playing,
       gameState: gameState.copyWith(food: food),
       moveProgress: 0.0,
       previousGameState: null,
-    ));
+    );
+
+    debugPrint('🎮 [GameCubit] Emitting new state: status=${newState.status}, gameState.snake.length=${newState.gameState?.snake.length}');
+    emit(newState);
+    debugPrint('🎮 [GameCubit] State emitted. Current state.status=${state.status}');
 
     _startGameLoop();
     _startSmoothAnimation();
@@ -134,6 +144,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
     _audioService.playSound('game_start');
     _enhancedAudioService.playSfx('game_start', volume: 0.8);
+    debugPrint('🎮 [GameCubit] startGame() completed');
   }
 
   /// Set tournament mode
@@ -200,11 +211,22 @@ class GameCubit extends Cubit<GameCubitState> {
   void _startGameLoop() {
     _gameTimer?.cancel();
     final speed = state.gameState?.gameSpeed ?? 150;
-    print('[GameCubit] Starting game loop with speed: $speed ms');
+    debugPrint('🎮 [GameCubit] Starting game loop with speed: $speed ms');
+
     _gameTimer = Timer.periodic(
       Duration(milliseconds: speed),
-      (_) => _updateGame(),
+      (_) {
+        debugPrint('🎮 [GameCubit] Timer tick!');
+        try {
+          _updateGame();
+        } catch (e, stackTrace) {
+          debugPrint('🎮 [GameCubit] ERROR in game update loop: $e');
+          AppLogger.error('Error in game update loop', e, stackTrace);
+        }
+      },
     );
+
+    debugPrint('🎮 [GameCubit] Game timer created: ${_gameTimer != null ? "SUCCESS" : "FAILED"}, isActive: ${_gameTimer?.isActive}');
   }
 
   void _startSmoothAnimation() {
@@ -236,14 +258,25 @@ class GameCubit extends Cubit<GameCubitState> {
     }
   }
 
+  // Track update count for debugging
+  int _updateCount = 0;
+
   void _updateGame() {
+    _updateCount++;
+
     if (state.status != GamePlayStatus.playing) {
-      print('[GameCubit] _updateGame skipped: status=${state.status}');
+      if (_updateCount <= 5) {
+        debugPrint('🎮 [GameCubit] _updateGame #$_updateCount skipped: status=${state.status}');
+      }
       return;
     }
     if (state.gameState == null) {
-      print('[GameCubit] _updateGame skipped: gameState is null');
+      debugPrint('🎮 [GameCubit] _updateGame #$_updateCount skipped: gameState is null');
       return;
+    }
+
+    if (_updateCount <= 5 || _updateCount % 50 == 0) {
+      debugPrint('🎮 [GameCubit] _updateGame #$_updateCount running, snake at ${state.gameState!.snake.head}');
     }
 
     final previousState = state.gameState!;
@@ -362,11 +395,17 @@ class GameCubit extends Cubit<GameCubitState> {
       lastMoveTime: DateTime.now(),
     );
 
-    emit(state.copyWith(
+    final newCubitState = state.copyWith(
       gameState: newGameState,
       previousGameState: previousState,
       moveProgress: 0.0,
-    ));
+    );
+
+    if (_updateCount <= 5) {
+      debugPrint('🎮 [GameCubit] _updateGame #$_updateCount emitting: snake moved to ${snake.head}');
+    }
+
+    emit(newCubitState);
 
     _lastGameUpdate = DateTime.now();
 

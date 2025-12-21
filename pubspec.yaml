@@ -23,7 +23,7 @@ dependencies:
   equatable: ^2.0.5
 
   # Dependency injection
-  get_it: ^8.0.2
+  get_it: ^9.2.0
 
   # Functional programming helpers
   dartz: ^0.10.1
@@ -67,8 +67,8 @@ dependencies:
   # HTTP client for backend communication
   http: ^1.2.2
 
-  # WebSocket for real-time multiplayer
-  web_socket_channel: ^3.0.1
+  # SignalR for real-time multiplayer (replaces WebSocket)
+  signalr_netcore: ^1.3.7
   
   # In-app purchases for monetization
   in_app_purchase: ^3.2.3

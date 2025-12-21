@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:signalr_netcore/signalr_client.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/services/api_service.dart';
@@ -11,13 +10,14 @@ class MultiplayerService {
   static MultiplayerService? _instance;
   final ApiService _apiService = ApiService();
 
-  // WebSocket connection
-  WebSocketChannel? _channel;
-  StreamSubscription? _wsSubscription;
+  // SignalR connection
+  HubConnection? _hubConnection;
+  bool _isConnected = false;
 
   // Current game state
   MultiplayerGame? _currentGame;
   String? _currentGameId;
+  String? _currentRoomCode;
 
   // Stream controllers for game events
   final _gameStreamController = StreamController<MultiplayerGame?>.broadcast();
@@ -33,7 +33,9 @@ class MultiplayerService {
   // Current game getters
   MultiplayerGame? get currentGame => _currentGame;
   String? get currentGameId => _currentGameId;
+  String? get currentRoomCode => _currentRoomCode;
   bool get isInGame => _currentGame != null;
+  bool get isConnected => _isConnected;
 
   /// Create a new multiplayer game
   Future<String?> createGame({
@@ -52,9 +54,18 @@ class MultiplayerService {
       if (response == null) return null;
 
       final gameId = response['game_id'] ?? response['id'];
+      final roomCode = response['room_code'];
+
       if (gameId != null) {
         _currentGameId = gameId.toString();
-        await _connectWebSocket(_currentGameId!);
+        _currentRoomCode = roomCode?.toString();
+
+        // Connect to SignalR and join the room
+        await _connectSignalR();
+        if (_currentRoomCode != null) {
+          await _joinRoom(_currentRoomCode!);
+        }
+
         return _currentGameId;
       }
 
@@ -75,9 +86,16 @@ class MultiplayerService {
       if (response == null) return false;
 
       final gameId = response['game_id'] ?? response['id'];
+      final roomCode = response['room_code'] ?? gameIdOrRoomCode;
+
       if (gameId != null) {
         _currentGameId = gameId.toString();
-        await _connectWebSocket(_currentGameId!);
+        _currentRoomCode = roomCode.toString();
+
+        // Connect to SignalR and join the room
+        await _connectSignalR();
+        await _joinRoom(_currentRoomCode!);
+
         return true;
       }
 
@@ -93,23 +111,28 @@ class MultiplayerService {
   /// Leave the current game
   Future<void> leaveGame() async {
     try {
-      _sendWebSocketMessage({'action': 'leave'});
+      if (_currentRoomCode != null) {
+        await _hubConnection?.invoke('LeaveRoom', args: [_currentRoomCode]);
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Error leaving game: $e');
       }
     } finally {
-      _disconnectWebSocket();
+      await _disconnectSignalR();
       _currentGame = null;
       _currentGameId = null;
+      _currentRoomCode = null;
       _gameStreamController.add(null);
     }
   }
 
   /// Mark player as ready
-  Future<bool> markPlayerReady() async {
+  Future<bool> markPlayerReady({bool isReady = true}) async {
     try {
-      _sendWebSocketMessage({'action': 'ready'});
+      if (_currentRoomCode == null) return false;
+
+      await _hubConnection?.invoke('SetReady', args: [_currentRoomCode, isReady]);
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -119,14 +142,33 @@ class MultiplayerService {
     }
   }
 
+  /// Start the game (host only)
+  Future<bool> startGame() async {
+    try {
+      if (_currentRoomCode == null) return false;
+
+      await _hubConnection?.invoke('StartGame', args: [_currentRoomCode]);
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error starting game: $e');
+      }
+      return false;
+    }
+  }
+
   /// Send player action (direction change, game update)
   Future<void> sendPlayerAction(MultiplayerGameAction action) async {
     try {
-      _sendWebSocketMessage({
-        'action': action.actionType,
-        'data': action.data,
-        'timestamp': action.timestamp.toIso8601String(),
-      });
+      if (_currentRoomCode == null) return;
+
+      final moveData = {
+        'direction': action.data['direction'],
+        'snake_positions': action.data['snake'],
+        'score': action.data['score'] ?? 0,
+      };
+
+      await _hubConnection?.invoke('SendMove', args: [_currentRoomCode, moveData]);
     } catch (e) {
       if (kDebugMode) {
         print('Error sending player action: $e');
@@ -141,15 +183,66 @@ class MultiplayerService {
     required PlayerStatus status,
   }) async {
     try {
-      _sendWebSocketMessage({
-        'action': 'update_state',
-        'snake': snake.map((p) => p.toJson()).toList(),
+      if (_currentRoomCode == null) return;
+
+      final moveData = {
+        'direction': 'right', // Will be updated by the actual direction
+        'snake_positions': snake.map((p) => {'x': p.x, 'y': p.y}).toList(),
         'score': score,
-        'status': status.name,
-      });
+      };
+
+      await _hubConnection?.invoke('SendMove', args: [_currentRoomCode, moveData]);
     } catch (e) {
       if (kDebugMode) {
         print('Error updating player game state: $e');
+      }
+    }
+  }
+
+  /// Notify that player died
+  Future<void> notifyPlayerDied() async {
+    try {
+      if (_currentRoomCode == null) return;
+
+      await _hubConnection?.invoke('PlayerDied', args: [_currentRoomCode]);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error notifying player died: $e');
+      }
+    }
+  }
+
+  /// Notify game over with final score
+  Future<void> notifyGameOver(int finalScore) async {
+    try {
+      if (_currentRoomCode == null) return;
+
+      await _hubConnection?.invoke('GameOver', args: [_currentRoomCode, finalScore]);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error notifying game over: $e');
+      }
+    }
+  }
+
+  /// Update game state (host only - food positions, power-ups)
+  Future<void> updateGameState({
+    List<Position>? foodPositions,
+    List<Map<String, dynamic>>? powerUps,
+  }) async {
+    try {
+      if (_currentRoomCode == null) return;
+
+      final update = {
+        if (foodPositions != null)
+          'food_positions': foodPositions.map((p) => {'x': p.x, 'y': p.y}).toList(),
+        if (powerUps != null) 'power_ups': powerUps,
+      };
+
+      await _hubConnection?.invoke('UpdateGameState', args: [_currentRoomCode, update]);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating game state: $e');
       }
     }
   }
@@ -174,113 +267,361 @@ class MultiplayerService {
   /// Stream of game actions for real-time updates
   Stream<MultiplayerGameAction> get gameActionsStream => _gameActionsController.stream;
 
-  // WebSocket management
+  // SignalR management
 
-  Future<void> _connectWebSocket(String gameId) async {
+  Future<void> _connectSignalR() async {
     try {
-      final wsUrl = _apiService.getMultiplayerWebSocketUrl(gameId);
+      if (_isConnected) return;
 
-      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      final hubUrl = _apiService.getSignalRHubUrl();
+      final accessToken = _apiService.accessToken;
 
-      _wsSubscription = _channel!.stream.listen(
-        _handleWebSocketMessage,
-        onError: _handleWebSocketError,
-        onDone: _handleWebSocketDone,
+      _hubConnection = HubConnectionBuilder()
+          .withUrl(
+            hubUrl,
+            options: HttpConnectionOptions(
+              accessTokenFactory: () async => accessToken ?? '',
+              logging: (level, message) {
+                if (kDebugMode) {
+                  print('SignalR [$level]: $message');
+                }
+              },
+            ),
+          )
+          .withAutomaticReconnect()
+          .build();
+
+      // Register event handlers
+      _registerEventHandlers();
+
+      await _hubConnection!.start();
+      _isConnected = true;
+
+      if (kDebugMode) {
+        print('Connected to SignalR hub: $hubUrl');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error connecting to SignalR: $e');
+      }
+      _isConnected = false;
+    }
+  }
+
+  Future<void> _disconnectSignalR() async {
+    try {
+      await _hubConnection?.stop();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error disconnecting from SignalR: $e');
+      }
+    } finally {
+      _hubConnection = null;
+      _isConnected = false;
+    }
+  }
+
+  Future<void> _joinRoom(String roomCode) async {
+    try {
+      await _hubConnection?.invoke('JoinRoom', args: [roomCode]);
+      if (kDebugMode) {
+        print('Joined SignalR room: $roomCode');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error joining room: $e');
+      }
+    }
+  }
+
+  void _registerEventHandlers() {
+    // Player joined the room
+    _hubConnection?.on('PlayerJoined', (arguments) {
+      if (kDebugMode) {
+        print('PlayerJoined: $arguments');
+      }
+      _handlePlayerJoined(arguments);
+    });
+
+    // Player left the room
+    _hubConnection?.on('PlayerLeft', (arguments) {
+      if (kDebugMode) {
+        print('PlayerLeft: $arguments');
+      }
+      _handlePlayerLeft(arguments);
+    });
+
+    // Player ready status changed
+    _hubConnection?.on('PlayerReady', (arguments) {
+      if (kDebugMode) {
+        print('PlayerReady: $arguments');
+      }
+      _handlePlayerReady(arguments);
+    });
+
+    // Game is starting (countdown)
+    _hubConnection?.on('GameStarting', (arguments) {
+      if (kDebugMode) {
+        print('GameStarting: $arguments');
+      }
+      _handleGameStarting(arguments);
+    });
+
+    // Game has started
+    _hubConnection?.on('GameStarted', (arguments) {
+      if (kDebugMode) {
+        print('GameStarted: $arguments');
+      }
+      _handleGameStarted(arguments);
+    });
+
+    // Player moved
+    _hubConnection?.on('PlayerMoved', (arguments) {
+      _handlePlayerMoved(arguments);
+    });
+
+    // Game state updated (food, power-ups)
+    _hubConnection?.on('GameStateUpdated', (arguments) {
+      if (kDebugMode) {
+        print('GameStateUpdated: $arguments');
+      }
+      _handleGameStateUpdated(arguments);
+    });
+
+    // Player died
+    _hubConnection?.on('PlayerDied', (arguments) {
+      if (kDebugMode) {
+        print('PlayerDied: $arguments');
+      }
+      _handlePlayerDied(arguments);
+    });
+
+    // Game ended
+    _hubConnection?.on('GameEnded', (arguments) {
+      if (kDebugMode) {
+        print('GameEnded: $arguments');
+      }
+      _handleGameEnded(arguments);
+    });
+
+    // Error from server
+    _hubConnection?.on('Error', (arguments) {
+      if (kDebugMode) {
+        print('SignalR Error: $arguments');
+      }
+    });
+  }
+
+  void _handlePlayerJoined(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      // Update current game with new player
+      // For now, just notify listeners
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'player_joined',
+        playerId: data['user_id']?.toString() ?? '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling PlayerJoined: $e');
+      }
+    }
+  }
+
+  void _handlePlayerLeft(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'player_left',
+        playerId: data['user_id']?.toString() ?? '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling PlayerLeft: $e');
+      }
+    }
+  }
+
+  void _handlePlayerReady(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'player_ready',
+        playerId: data['user_id']?.toString() ?? '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling PlayerReady: $e');
+      }
+    }
+  }
+
+  void _handleGameStarting(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _currentGame = _currentGame?.copyWith(
+        status: MultiplayerGameStatus.countdown,
       );
+      _gameStreamController.add(_currentGame);
 
-      if (kDebugMode) {
-        print('Connected to multiplayer WebSocket: $wsUrl');
-      }
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'game_starting',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
     } catch (e) {
       if (kDebugMode) {
-        print('Error connecting to WebSocket: $e');
+        print('Error handling GameStarting: $e');
       }
     }
   }
 
-  void _disconnectWebSocket() {
-    _wsSubscription?.cancel();
-    _wsSubscription = null;
-    _channel?.sink.close();
-    _channel = null;
-  }
+  void _handleGameStarted(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
 
-  void _sendWebSocketMessage(Map<String, dynamic> message) {
-    if (_channel != null) {
-      _channel!.sink.add(jsonEncode(message));
-    }
-  }
-
-  void _handleWebSocketMessage(dynamic message) {
     try {
-      final data = jsonDecode(message.toString());
-      final type = data['type'] as String?;
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
 
-      switch (type) {
-        case 'game_state':
-          _currentGame = MultiplayerGame.fromJson(data['game']);
-          _gameStreamController.add(_currentGame);
-          break;
+      _currentGame = _currentGame?.copyWith(
+        status: MultiplayerGameStatus.playing,
+      );
+      _gameStreamController.add(_currentGame);
 
-        case 'player_action':
-          final action = MultiplayerGameAction.fromJson(data);
-          _gameActionsController.add(action);
-          break;
-
-        case 'game_started':
-          _currentGame = _currentGame?.copyWith(
-            status: MultiplayerGameStatus.playing,
-          );
-          _gameStreamController.add(_currentGame);
-          break;
-
-        case 'game_ended':
-          _currentGame = _currentGame?.copyWith(
-            status: MultiplayerGameStatus.finished,
-            winnerId: data['winner_id'],
-          );
-          _gameStreamController.add(_currentGame);
-          break;
-
-        case 'player_joined':
-        case 'player_left':
-        case 'player_ready':
-          // Update game state with new player info
-          if (data['game'] != null) {
-            _currentGame = MultiplayerGame.fromJson(data['game']);
-            _gameStreamController.add(_currentGame);
-          }
-          break;
-
-        case 'food_eaten':
-          // Handle food position update
-          if (data['new_food_position'] != null) {
-            final newFood = Position.fromJson(data['new_food_position']);
-            _currentGame = _currentGame?.copyWith(foodPosition: newFood);
-            _gameStreamController.add(_currentGame);
-          }
-          break;
-      }
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'game_started',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
     } catch (e) {
       if (kDebugMode) {
-        print('Error handling WebSocket message: $e');
+        print('Error handling GameStarted: $e');
       }
     }
   }
 
-  void _handleWebSocketError(dynamic error) {
-    if (kDebugMode) {
-      print('WebSocket error: $error');
+  void _handlePlayerMoved(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'player_moved',
+        playerId: data['user_id']?.toString() ?? '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling PlayerMoved: $e');
+      }
     }
   }
 
-  void _handleWebSocketDone() {
-    if (kDebugMode) {
-      print('WebSocket connection closed');
+  void _handleGameStateUpdated(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      // Update food position if provided
+      if (data['food_positions'] != null) {
+        final foodPositions = (data['food_positions'] as List)
+            .map((f) => Position(f['x'] as int, f['y'] as int))
+            .toList();
+
+        if (foodPositions.isNotEmpty) {
+          _currentGame = _currentGame?.copyWith(
+            foodPosition: foodPositions.first,
+          );
+          _gameStreamController.add(_currentGame);
+        }
+      }
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'game_state_updated',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling GameStateUpdated: $e');
+      }
     }
-    _currentGame = null;
-    _currentGameId = null;
-    _gameStreamController.add(null);
+  }
+
+  void _handlePlayerDied(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'player_died',
+        playerId: data['user_id']?.toString() ?? '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling PlayerDied: $e');
+      }
+    }
+  }
+
+  void _handleGameEnded(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _currentGame = _currentGame?.copyWith(
+        status: MultiplayerGameStatus.finished,
+        winnerId: data['winner_id']?.toString(),
+      );
+      _gameStreamController.add(_currentGame);
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'game_ended',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling GameEnded: $e');
+      }
+    }
   }
 
   // Helper methods
@@ -340,7 +681,12 @@ class MultiplayerService {
   /// Generate new food position when eaten
   Future<void> generateNewFood() async {
     try {
-      _sendWebSocketMessage({'action': 'food_eaten'});
+      if (_currentGame != null && _currentRoomCode != null) {
+        final boardSize = _currentGame!.boardSize;
+        final newFood = generateFoodPosition(boardSize, _currentGame!.players);
+
+        await updateGameState(foodPositions: [newFood]);
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Error generating new food: $e');
@@ -361,10 +707,10 @@ class MultiplayerService {
           winnerId = alivePlayers.first.userId;
         }
 
-        _sendWebSocketMessage({
-          'action': 'game_over',
-          'winner_id': winnerId,
-        });
+        // The server will handle game end notification
+        if (kDebugMode) {
+          print('Game should end, winner: $winnerId');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -375,7 +721,7 @@ class MultiplayerService {
 
   /// Dispose the service
   void dispose() {
-    _disconnectWebSocket();
+    _disconnectSignalR();
     _gameStreamController.close();
     _gameActionsController.close();
   }

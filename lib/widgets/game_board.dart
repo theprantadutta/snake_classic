@@ -202,15 +202,21 @@ class _GameBoardState extends State<GameBoard>
                           widget.gameState.boardWidth /
                           widget.gameState.boardHeight,
                       child: BlocBuilder<GameCubit, GameCubitState>(
-                        builder: (context, gameState) {
+                        builder: (context, cubitState) {
+                          // Use the gameState from cubit, not from widget!
+                          // This ensures we always have the latest state
+                          final currentGameState = cubitState.gameState ?? widget.gameState;
+
+                          debugPrint('🎮 [GameBoard] BlocBuilder rebuild: snake at ${currentGameState.snake.head}');
+
                           return CustomPaint(
                             painter: OptimizedGameBoardPainter(
-                              gameState: widget.gameState,
+                              gameState: currentGameState,
                               theme: theme,
                               pulseAnimation: _pulseAnimation,
                               // Smooth movement properties
-                              moveProgress: gameState.moveProgress,
-                              previousGameState: gameState.previousGameState,
+                              moveProgress: cubitState.moveProgress,
+                              previousGameState: cubitState.previousGameState,
                               premiumState: premiumState,
                               // Pass time once per frame to avoid DateTime.now() in paint loop
                               animationTimeMs: DateTime.now().millisecondsSinceEpoch,
@@ -2138,15 +2144,26 @@ class OptimizedGameBoardPainter extends CustomPainter {
   }
 
 
+  // Debug counter for shouldRepaint
+  static int _repaintCheckCount = 0;
+
   @override
   bool shouldRepaint(covariant OptimizedGameBoardPainter oldDelegate) {
-    return oldDelegate.gameState != gameState ||
+    final shouldRepaint = oldDelegate.gameState != gameState ||
         oldDelegate.theme != theme ||
         oldDelegate.pulseAnimation.value != pulseAnimation.value ||
         oldDelegate.moveProgress != moveProgress ||
         oldDelegate.previousGameState != previousGameState ||
         oldDelegate.premiumState.selectedSkinId != premiumState.selectedSkinId ||
         oldDelegate.premiumState.selectedTrailId != premiumState.selectedTrailId;
+
+    _repaintCheckCount++;
+    if (_repaintCheckCount <= 10 || _repaintCheckCount % 100 == 0) {
+      final gameStateChanged = oldDelegate.gameState != gameState;
+      debugPrint('[GameBoard] shouldRepaint #$_repaintCheckCount: $shouldRepaint (gameStateChanged: $gameStateChanged, snake: ${gameState.snake.head})');
+    }
+
+    return shouldRepaint;
   }
 }
 

@@ -81,9 +81,14 @@ class _GameScreenState extends State<GameScreen>
     // Start the game when screen loads (only if not already playing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gameCubit = context.read<GameCubit>();
+      debugPrint('[GameScreen] initState callback - cubit status: ${gameCubit.state.status}');
       if (gameCubit.state.status == GamePlayStatus.ready ||
           gameCubit.state.status == GamePlayStatus.initial) {
+        debugPrint('[GameScreen] Starting game...');
         gameCubit.startGame();
+        debugPrint('[GameScreen] startGame() called, new status: ${gameCubit.state.status}');
+      } else {
+        debugPrint('[GameScreen] Game already in status: ${gameCubit.state.status}, not starting');
       }
       // Request keyboard focus
       _keyboardFocusNode.requestFocus();
@@ -101,8 +106,14 @@ class _GameScreenState extends State<GameScreen>
   }
 
   // Listener for game state changes - handles navigation and events
+  static int _stateChangeCount = 0;
   void _onGameStateChanged(GameCubitState state) {
     if (!mounted) return;
+
+    _stateChangeCount++;
+    if (_stateChangeCount <= 10 || _stateChangeCount % 100 == 0) {
+      debugPrint('[GameScreen] State change #$_stateChangeCount: status=${state.status}, snake at ${state.gameState?.snake.head}');
+    }
 
     final gameState = state.gameState;
     if (gameState == null) return;
