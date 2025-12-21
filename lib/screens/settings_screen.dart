@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
-import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/screens/theme_selector_screen.dart';
@@ -1649,19 +1648,6 @@ extension _SettingsPremium on _SettingsScreenState {
         return Icons.sports_esports;
       default:
         return Icons.shopping_cart;
-    }
-  }
-
-  String _formatPrice(String price, String currency) {
-    try {
-      final amount = int.parse(price);
-      if (currency == 'coins') {
-        return '$amount coins';
-      } else {
-        return (amount / 100).toStringAsFixed(2);
-      }
-    } catch (e) {
-      return price;
     }
   }
 

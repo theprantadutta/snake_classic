@@ -23,7 +23,7 @@ class AuthState extends Equatable {
     this.user,
     this.errorMessage,
     this.isLoading = false,
-    this.isFirstTimeUser = false,
+    this.isFirstTimeUser = true, // Default to true - assume first time until checked
   });
 
   /// Initial state

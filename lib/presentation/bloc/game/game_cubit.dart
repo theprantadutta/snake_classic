@@ -351,7 +351,7 @@ class GameCubit extends Cubit<GameCubitState> {
     var newMaxCombo = previousState.maxCombo;
     var newComboMultiplier = previousState.comboMultiplier;
 
-    if (willEatFood && currentFood != null) {
+    if (willEatFood) {
       _foodTypesEatenThisGame.add(currentFood.type.name);
       _currentGameFoodTypes[currentFood.type.name] =
           (_currentGameFoodTypes[currentFood.type.name] ?? 0) + 1;
@@ -387,7 +387,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
     // Handle power-up collection
     var activePowerUps = previousState.removeExpiredPowerUps().activePowerUps;
-    if (willCollectPowerUp && currentPowerUp != null) {
+    if (willCollectPowerUp) {
       _hapticService.powerUpCollected();
       _powerUpsCollectedThisGame++;
       activePowerUps = [...activePowerUps, ActivePowerUp(type: currentPowerUp.type)];

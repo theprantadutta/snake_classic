@@ -54,28 +54,6 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
     }
   }
 
-  void _showOfflineMessage(String action) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.cloud_off, color: Colors.white, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'You\'re offline. $action when connected.',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.grey.shade700,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     

@@ -13,7 +13,6 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
-import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -173,6 +172,26 @@ class _LoadingScreenState extends State<LoadingScreen>
 
       if (mounted) {
         final authCubit = context.read<AuthCubit>();
+
+        // Wait for AuthCubit to finish initializing if still in initial/loading state
+        // This ensures isFirstTimeUser has been properly checked from SharedPreferences
+        if (authCubit.state.status == AuthStatus.initial ||
+            authCubit.state.status == AuthStatus.loading) {
+          AppLogger.info('Waiting for AuthCubit to finish initializing...');
+
+          // Wait up to 3 seconds for auth to finish
+          int waitTime = 0;
+          while ((authCubit.state.status == AuthStatus.initial ||
+                  authCubit.state.status == AuthStatus.loading) &&
+                 waitTime < 3000 &&
+                 mounted) {
+            await Future.delayed(const Duration(milliseconds: 100));
+            waitTime += 100;
+          }
+
+          AppLogger.info('AuthCubit status: ${authCubit.state.status}, isFirstTimeUser: ${authCubit.state.isFirstTimeUser}');
+        }
+
         final isFirstTime = authCubit.state.isFirstTimeUser;
 
         if (isFirstTime) {

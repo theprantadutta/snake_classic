@@ -5,10 +5,13 @@ import 'package:snake_classic/services/storage_service.dart';
 
 class AudioService {
   static AudioService? _instance;
-  final Map<String, AudioPlayer> _soundPlayers = {};
   AudioPlayer? _musicPlayer;
   final StorageService _storageService = StorageService();
-  
+
+  // Pool of players for concurrent sound effects
+  final List<AudioPlayer> _playerPool = [];
+  static const int _maxPoolSize = 5;
+
   bool _soundEnabled = true;
   bool _musicEnabled = true;
   bool _initialized = false;
@@ -22,114 +25,117 @@ class AudioService {
 
   Future<void> initialize() async {
     if (_initialized) return;
-    
+
     _soundEnabled = await _storageService.isSoundEnabled();
     _musicEnabled = await _storageService.isMusicEnabled();
-    
-    // Pre-load sound effects
-    await _preloadSounds();
-    
-    _initialized = true;
-  }
 
-  Future<void> _preloadSounds() async {
-    final soundEffects = [
-      'eat',
-      'game_over', 
-      'game_start',
-      'level_up',
-      'high_score',
-      'button_click',
-      'power_up',
-    ];
-
-    for (final sound in soundEffects) {
+    // Pre-create player pool
+    for (int i = 0; i < _maxPoolSize; i++) {
       final player = AudioPlayer();
-      _soundPlayers[sound] = player;
-      
-      try {
-        // Try to preload the asset - all files are now .wav
-        await player.setSource(AssetSource('audio/$sound.wav'));
-        await player.setVolume(0.7); // Set reasonable volume
-        debugPrint('Successfully loaded: $sound.wav');
-      } catch (e) {
-        // If audio file doesn't exist, we'll use system sounds as fallback
-        debugPrint('Audio file not found: $sound.wav - will use system sound fallback: $e');
-      }
+      await player.setReleaseMode(ReleaseMode.stop);
+      _playerPool.add(player);
     }
+
+    _initialized = true;
+    debugPrint('AudioService initialized with $_maxPoolSize players');
   }
 
-  Future<void> playSound(String soundName) async {
+  /// Get an available player from the pool
+  AudioPlayer? _getAvailablePlayer() {
+    for (final player in _playerPool) {
+      if (player.state == PlayerState.stopped ||
+          player.state == PlayerState.completed) {
+        return player;
+      }
+    }
+    // If all players are busy, return the first one (will interrupt it)
+    return _playerPool.isNotEmpty ? _playerPool.first : null;
+  }
+
+  /// Play a sound effect - fire and forget, non-blocking
+  void playSound(String soundName) {
     if (!_initialized || !_soundEnabled) return;
-    
-    final player = _soundPlayers[soundName];
-    if (player != null) {
-      try {
-        await player.stop(); // Stop any current playback
-        await player.seek(Duration.zero); // Reset to beginning
-        await player.resume(); // Start playing
-        debugPrint('Playing sound: $soundName.wav');
-      } catch (e) {
-        // Fallback to system sounds if audio files aren't available
-        await _playSystemSound(soundName);
-        debugPrint('Audio error for $soundName, using system sound fallback: $e');
+
+    // Fire and forget - don't block game loop
+    _playSoundAsync(soundName);
+  }
+
+  Future<void> _playSoundAsync(String soundName) async {
+    try {
+      final player = _getAvailablePlayer();
+      if (player == null) {
+        _playSystemSoundSync(soundName);
+        return;
       }
-    } else {
-      await _playSystemSound(soundName);
-      debugPrint('No player found for: $soundName, using system sound');
+
+      // Use play() directly with source - simpler and more reliable
+      await player.setVolume(0.7);
+      await player.play(
+        AssetSource('audio/$soundName.wav'),
+      ).timeout(
+        const Duration(milliseconds: 500),
+        onTimeout: () {
+          debugPrint('Audio play timeout for $soundName, using system sound');
+          _playSystemSoundSync(soundName);
+        },
+      );
+    } catch (e) {
+      debugPrint('Audio error for $soundName: $e');
+      _playSystemSoundSync(soundName);
     }
   }
 
-  Future<void> _playSystemSound(String soundName) async {
-    // Fallback system sounds for different game events
+  void _playSystemSoundSync(String soundName) {
+    // Fire and forget system sounds
     switch (soundName) {
       case 'eat':
       case 'button_click':
-        await SystemSound.play(SystemSoundType.click);
+        SystemSound.play(SystemSoundType.click);
         break;
       case 'game_over':
-        await SystemSound.play(SystemSoundType.alert);
+        SystemSound.play(SystemSoundType.alert);
         break;
       case 'level_up':
       case 'high_score':
       case 'game_start':
       case 'power_up':
-        // Use click for positive feedback sounds
-        await SystemSound.play(SystemSoundType.click);
+        SystemSound.play(SystemSoundType.click);
         break;
     }
   }
 
   Future<void> playBackgroundMusic() async {
     if (!_initialized || !_musicEnabled) return;
-    
+
     _musicPlayer ??= AudioPlayer();
-    
+
     try {
-      await _musicPlayer!.setSource(AssetSource('audio/background_music.mp3'));
       await _musicPlayer!.setReleaseMode(ReleaseMode.loop);
-      await _musicPlayer!.setVolume(0.4); // Lower volume for background music
-      await _musicPlayer!.resume();
+      await _musicPlayer!.setVolume(0.4);
+      await _musicPlayer!.play(AssetSource('audio/background_music.mp3'));
     } catch (e) {
       debugPrint('Background music not available: $e');
-      // Continue without background music - game still playable
     }
   }
 
   Future<void> stopBackgroundMusic() async {
-    if (_musicPlayer != null) {
-      await _musicPlayer!.stop();
+    try {
+      await _musicPlayer?.stop();
+    } catch (e) {
+      debugPrint('Error stopping music: $e');
     }
   }
 
   Future<void> setSoundEnabled(bool enabled) async {
     _soundEnabled = enabled;
     await _storageService.setSoundEnabled(enabled);
-    
-    // Stop all current sounds if disabling
+
     if (!enabled) {
-      for (final player in _soundPlayers.values) {
-        await player.stop();
+      // Stop all pool players
+      for (final player in _playerPool) {
+        try {
+          await player.stop();
+        } catch (_) {}
       }
     }
   }
@@ -137,7 +143,7 @@ class AudioService {
   Future<void> setMusicEnabled(bool enabled) async {
     _musicEnabled = enabled;
     await _storageService.setMusicEnabled(enabled);
-    
+
     if (enabled) {
       await playBackgroundMusic();
     } else {
@@ -149,11 +155,11 @@ class AudioService {
   bool get isMusicEnabled => _musicEnabled;
 
   void dispose() {
-    for (final player in _soundPlayers.values) {
+    for (final player in _playerPool) {
       player.dispose();
     }
+    _playerPool.clear();
     _musicPlayer?.dispose();
-    _soundPlayers.clear();
     _musicPlayer = null;
     _initialized = false;
   }

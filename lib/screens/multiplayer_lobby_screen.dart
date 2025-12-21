@@ -24,12 +24,10 @@ class MultiplayerLobbyScreen extends StatefulWidget {
 class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
   final ConnectivityService _connectivityService = ConnectivityService();
-  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
-    _isOffline = !_connectivityService.isOnline;
     _connectivityService.addListener(_onConnectivityChanged);
 
     // If gameId is provided, join that game
@@ -52,9 +50,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   }
 
   void _onConnectivityChanged() {
-    setState(() {
-      _isOffline = !_connectivityService.isOnline;
-    });
+    // Trigger rebuild when connectivity changes
+    if (mounted) setState(() {});
   }
 
   void _showOfflineMessage() {
@@ -77,14 +74,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         duration: const Duration(seconds: 3),
       ),
     );
-  }
-
-  bool _checkConnectivity() {
-    if (_isOffline) {
-      _showOfflineMessage();
-      return false;
-    }
-    return true;
   }
 
   @override

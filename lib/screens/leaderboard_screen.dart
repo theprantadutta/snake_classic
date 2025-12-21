@@ -240,7 +240,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  authState.displayName ?? 'Guest',
+                  authState.displayName,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

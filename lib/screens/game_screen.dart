@@ -586,10 +586,17 @@ class _GameScreenState extends State<GameScreen>
                 );
               }
 
-              return KeyboardListener(
-                focusNode: _keyboardFocusNode,
-                onKeyEvent: _handleKeyPress,
-                child: GameJuiceWidget(
+              return PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, result) {
+                  if (!didPop) {
+                    _showExitConfirmation(context);
+                  }
+                },
+                child: KeyboardListener(
+                  focusNode: _keyboardFocusNode,
+                  onKeyEvent: _handleKeyPress,
+                  child: GameJuiceWidget(
                   controller: _juiceController,
                   applyShake: true,
                   applyScale: false, // Don't apply scale to the entire screen
@@ -737,7 +744,7 @@ class _GameScreenState extends State<GameScreen>
                                     onRestart: () {
                                       context.read<GameCubit>().startGame();
                                     },
-                                    onHome: () => Navigator.of(context).pop(),
+                                    onHome: () => _showExitConfirmation(context),
                                   ),
 
                                 // D-Pad Controls Overlay (optional, user preference)
@@ -783,7 +790,8 @@ class _GameScreenState extends State<GameScreen>
                     ),
                   ), // Close Scaffold
                 ), // Close GameJuiceWidget
-              ); // Close KeyboardListener
+              ), // Close KeyboardListener
+              ); // Close PopScope
             },
           );
         },

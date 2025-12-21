@@ -37,8 +37,11 @@ void main() async {
   AppLogger.lifecycle('Snake Classic starting up...');
 
   try {
-    // Initialize system UI mode
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    // Initialize system UI mode - immersiveSticky hides UI but allows swipe to reveal
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: [],
+    );
 
     // Load environment variables
     AppLogger.info('Loading environment variables...');
@@ -105,8 +108,50 @@ void main() async {
   runApp(const SnakeClassicApp()); // .withPerformanceMonitoring() temporarily disabled
 }
 
-class SnakeClassicApp extends StatelessWidget {
+class SnakeClassicApp extends StatefulWidget {
   const SnakeClassicApp({super.key});
+
+  @override
+  State<SnakeClassicApp> createState() => _SnakeClassicAppState();
+}
+
+class _SnakeClassicAppState extends State<SnakeClassicApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _setImmersiveMode();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-apply immersive mode when app resumes
+    if (state == AppLifecycleState.resumed) {
+      _setImmersiveMode();
+    }
+  }
+
+  void _setImmersiveMode() {
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: [], // Hide all overlays
+    );
+    // Make system bars transparent when they appear on swipe
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

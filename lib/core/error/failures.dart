@@ -11,7 +11,7 @@ abstract class Failure {
 
 /// Server-related failures (API errors, 500s, etc.)
 class ServerFailure extends Failure {
-  const ServerFailure([String message = 'Server error occurred']) : super(message);
+  const ServerFailure([super.message = 'Server error occurred']);
 
   factory ServerFailure.fromStatusCode(int statusCode, [String? customMessage]) {
     final message = customMessage ?? switch (statusCode) {
@@ -32,17 +32,17 @@ class ServerFailure extends Failure {
 
 /// Cache-related failures
 class CacheFailure extends Failure {
-  const CacheFailure([String message = 'Cache error occurred']) : super(message);
+  const CacheFailure([super.message = 'Cache error occurred']);
 }
 
 /// Network-related failures (no internet, timeout, etc.)
 class NetworkFailure extends Failure {
-  const NetworkFailure([String message = 'No network connection']) : super(message);
+  const NetworkFailure([super.message = 'No network connection']);
 }
 
 /// Authentication-related failures
 class AuthFailure extends Failure {
-  const AuthFailure([String message = 'Authentication failed']) : super(message);
+  const AuthFailure([super.message = 'Authentication failed']);
 }
 
 /// Validation failures (invalid input, etc.)
@@ -50,28 +50,28 @@ class ValidationFailure extends Failure {
   final Map<String, List<String>>? fieldErrors;
 
   const ValidationFailure(
-    String message, {
+    super.message, {
     this.fieldErrors,
-  }) : super(message);
+  });
 }
 
 /// Feature-specific failures
 class GameFailure extends Failure {
-  const GameFailure(String message) : super(message);
+  const GameFailure(super.message);
 }
 
 class PremiumFailure extends Failure {
-  const PremiumFailure(String message) : super(message);
+  const PremiumFailure(super.message);
 }
 
 class LeaderboardFailure extends Failure {
-  const LeaderboardFailure(String message) : super(message);
+  const LeaderboardFailure(super.message);
 }
 
 class SocialFailure extends Failure {
-  const SocialFailure(String message) : super(message);
+  const SocialFailure(super.message);
 }
 
 class MultiplayerFailure extends Failure {
-  const MultiplayerFailure(String message) : super(message);
+  const MultiplayerFailure(super.message);
 }

@@ -46,7 +46,6 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
   @override
   void didUpdateWidget(GameHUD oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Check if any power-up is urgent (< 3 seconds)
     final hasUrgentPowerUp = widget.gameState.activePowerUps.any(
       (p) => !p.isExpired && p.remainingTime.inSeconds <= 3,
     );
@@ -64,7 +63,6 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  // Getters for cleaner code
   GameState get gameState => widget.gameState;
   GameTheme get theme => widget.theme;
   bool get isSmallScreen => widget.isSmallScreen;
@@ -74,148 +72,272 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: isSmallScreen ? 8 : 12,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Main HUD Row
+          Row(
+            children: [
+              // Left: Home button
+              _buildIconButton(
+                icon: Icons.home_rounded,
+                onTap: widget.onHome,
+                color: theme.accentColor.withValues(alpha: 0.7),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Center: Score display (expanded)
+              Expanded(
+                child: _buildScoreSection(),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Right: Pause button
+              _buildIconButton(
+                icon: gameState.status == GameStatus.playing
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                onTap: widget.onPause,
+                color: theme.accentColor,
+                isPrimary: true,
+              ),
+            ],
+          ),
+
+          // Secondary row: Level progress + Power-ups + Food indicator
+          const SizedBox(height: 8),
+          _buildSecondaryRow(),
+
+          // Tournament indicator if active
+          if (tournamentId != null && tournamentMode != null) ...[
+            const SizedBox(height: 8),
+            _buildTournamentBanner(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required Color color,
+    bool isPrimary = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: isSmallScreen ? 36 : 42,
+        height: isSmallScreen ? 36 : 42,
+        decoration: BoxDecoration(
+          color: isPrimary
+              ? color.withValues(alpha: 0.15)
+              : theme.backgroundColor.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withValues(alpha: isPrimary ? 0.4 : 0.2),
+            width: 1.5,
+          ),
+          boxShadow: isPrimary
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: isSmallScreen ? 18 : 22,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreSection() {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 16 : 24,
+        vertical: isSmallScreen ? 8 : 10,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
           colors: [
-            theme.backgroundColor,
-            theme.backgroundColor.withValues(alpha: 0.8),
+            theme.accentColor.withValues(alpha: 0.08),
+            theme.snakeColor.withValues(alpha: 0.05),
           ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.2),
+          width: 1,
         ),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Home button
-          IconButton(
-            onPressed: widget.onHome,
-            icon: Icon(
-              Icons.home,
-              color: theme.accentColor,
-              size: isSmallScreen ? 20 : 24,
-            ),
-            padding: EdgeInsets.all(isSmallScreen ? 4 : 8),
-            constraints: const BoxConstraints(),
-          ),
-
-          const Spacer(),
-
-          // Score section with progress bar, food indicator, and combo
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Score label with food type indicator and combo
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'SCORE',
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.8),
-                          fontSize: isSmallScreen ? 10 : 12,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      if (gameState.food != null) ...[
-                        SizedBox(width: isSmallScreen ? 4 : 6),
-                        _buildFoodTypeIndicator(gameState.food!),
-                      ],
-                      // Combo indicator (show when combo >= 3)
-                      if (gameState.currentCombo >= 3) ...[
-                        SizedBox(width: isSmallScreen ? 4 : 6),
-                        _buildComboIndicator(),
-                      ],
-                    ],
-                  ),
+          // Score
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'SCORE',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.6),
+                  fontSize: isSmallScreen ? 9 : 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.5,
                 ),
-              SizedBox(height: isSmallScreen ? 2 : 4),
-              // Animated score counter
+              ),
+              const SizedBox(height: 2),
               TweenAnimationBuilder<int>(
                 tween: IntTween(begin: _displayedScore, end: gameState.score),
                 duration: const Duration(milliseconds: 300),
-                onEnd: () {
-                  _displayedScore = gameState.score;
-                },
+                onEnd: () => _displayedScore = gameState.score,
                 builder: (context, value, child) {
                   return Text(
                     '$value',
                     style: TextStyle(
                       color: theme.accentColor,
-                      fontSize: isSmallScreen ? 20 : 24,
-                      fontWeight: FontWeight.bold,
+                      fontSize: isSmallScreen ? 26 : 32,
+                      fontWeight: FontWeight.w900,
+                      height: 1.0,
                     ),
                   );
                 },
               ),
-              SizedBox(height: isSmallScreen ? 4 : 6),
-                // Level progress bar
-                _buildLevelProgressBar(),
-              ],
-            ),
+            ],
           ),
 
-          // Enhanced Tournament indicator
-          if (tournamentId != null && tournamentMode != null) ...[
-            SizedBox(width: isSmallScreen ? 8 : 12),
-            _buildTournamentIndicator(isSmallScreen),
+          // Combo indicator (if active)
+          if (gameState.currentCombo >= 3) ...[
+            const SizedBox(width: 16),
+            _buildComboChip(),
           ],
+        ],
+      ),
+    );
+  }
 
-          const Spacer(),
+  Widget _buildSecondaryRow() {
+    return Row(
+      children: [
+        // Level progress
+        Expanded(
+          flex: 2,
+          child: _buildLevelCard(),
+        ),
 
-          // Active power-ups display
-          if (gameState.activePowerUps.isNotEmpty)
-            Flexible(
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 6 : 10,
-                  vertical: isSmallScreen ? 3 : 5,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 14),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: gameState.activePowerUps
-                      .where((powerUp) => !powerUp.isExpired)
-                      .map((powerUp) => _buildPowerUpIndicator(powerUp, isSmallScreen))
-                      .toList(),
-                ),
+        const SizedBox(width: 8),
+
+        // Food indicator
+        if (gameState.food != null) ...[
+          _buildFoodChip(gameState.food!),
+          const SizedBox(width: 8),
+        ],
+
+        // Power-ups
+        if (gameState.activePowerUps.isNotEmpty)
+          Expanded(
+            flex: 2,
+            child: _buildPowerUpsCard(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildLevelCard() {
+    final previousLevelTarget = (gameState.level - 1) * 100;
+    final currentLevelTarget = gameState.level * 100;
+    final levelRange = currentLevelTarget - previousLevelTarget;
+    final scoreInLevel = gameState.score - previousLevelTarget;
+    final progress = (scoreInLevel / levelRange).clamp(0.0, 1.0);
+    final isNearLevelUp = progress >= 0.8;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 10 : 12,
+        vertical: isSmallScreen ? 6 : 8,
+      ),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isNearLevelUp
+              ? Colors.amber.withValues(alpha: 0.5)
+              : theme.accentColor.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Level badge
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 6 : 8,
+              vertical: isSmallScreen ? 2 : 3,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isNearLevelUp
+                    ? [Colors.amber, Colors.orange]
+                    : [theme.snakeColor, theme.accentColor],
+              ),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              'LV${gameState.level}',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 10 : 11,
+                fontWeight: FontWeight.w800,
               ),
             ),
-
-          if (gameState.activePowerUps.isNotEmpty)
-            SizedBox(width: isSmallScreen ? 6 : 10),
-
-          // Pause button
-          IconButton(
-            onPressed: widget.onPause,
-            icon: Icon(
-              gameState.status == GameStatus.playing
-                ? Icons.pause
-                : Icons.play_arrow,
-              color: theme.accentColor,
-              size: isSmallScreen ? 20 : 24,
+          ),
+          const SizedBox(width: 8),
+          // Progress bar
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: theme.accentColor.withValues(alpha: 0.15),
+                    valueColor: AlwaysStoppedAnimation(
+                      isNearLevelUp ? Colors.amber : theme.snakeColor,
+                    ),
+                    minHeight: isSmallScreen ? 4 : 5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${gameState.score}/$currentLevelTarget',
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.5),
+                    fontSize: isSmallScreen ? 8 : 9,
+                  ),
+                ),
+              ],
             ),
-            padding: EdgeInsets.all(isSmallScreen ? 4 : 8),
-            constraints: const BoxConstraints(),
           ),
         ],
       ),
     );
   }
 
-  /// Builds a small food type indicator showing current food on board
-  Widget _buildFoodTypeIndicator(Food food) {
+  Widget _buildFoodChip(Food food) {
     final emoji = switch (food.type) {
       FoodType.normal => '🍎',
       FoodType.bonus => '⭐',
@@ -229,38 +351,28 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 4 : 6,
-        vertical: isSmallScreen ? 1 : 2,
+        horizontal: isSmallScreen ? 8 : 10,
+        vertical: isSmallScreen ? 6 : 8,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: color.withValues(alpha: 0.4),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.2),
-            blurRadius: 4,
-            spreadRadius: 0,
-          ),
-        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            emoji,
-            style: TextStyle(fontSize: isSmallScreen ? 10 : 12),
-          ),
-          SizedBox(width: isSmallScreen ? 2 : 3),
+          Text(emoji, style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
+          const SizedBox(width: 4),
           Text(
             '+${food.type.points}',
             style: TextStyle(
               color: color,
-              fontSize: isSmallScreen ? 9 : 10,
-              fontWeight: FontWeight.w600,
+              fontSize: isSmallScreen ? 11 : 12,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -268,12 +380,9 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
     );
   }
 
-  /// Builds a combo indicator showing current streak and multiplier
-  Widget _buildComboIndicator() {
+  Widget _buildComboChip() {
     final combo = gameState.currentCombo;
     final multiplier = gameState.comboMultiplier;
-
-    // Color intensity based on combo level
     final color = combo >= 20
         ? Colors.red
         : combo >= 10
@@ -282,281 +391,132 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
                 ? Colors.amber
                 : Colors.green;
 
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 1.0, end: 1.15),
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.elasticOut,
-      builder: (context, scale, child) {
-        return Transform.scale(
-          scale: scale,
-          child: child,
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 6 : 8,
-          vertical: isSmallScreen ? 2 : 3,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.withValues(alpha: 0.3),
-              color.withValues(alpha: 0.15),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
-          border: Border.all(
-            color: color.withValues(alpha: 0.6),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.3),
-              blurRadius: 6,
-              spreadRadius: 1,
-            ),
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 8 : 10,
+        vertical: isSmallScreen ? 4 : 6,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.25),
+            color.withValues(alpha: 0.1),
           ],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '🔥',
-              style: TextStyle(fontSize: isSmallScreen ? 10 : 12),
-            ),
-            SizedBox(width: isSmallScreen ? 2 : 3),
-            Text(
-              'x$combo',
-              style: TextStyle(
-                color: color,
-                fontSize: isSmallScreen ? 10 : 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (multiplier > 1.0) ...[
-              SizedBox(width: isSmallScreen ? 3 : 4),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 3 : 4,
-                  vertical: isSmallScreen ? 1 : 2,
-                ),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '${multiplier.toStringAsFixed(1)}X',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: isSmallScreen ? 8 : 9,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: 0.5),
+          width: 1.5,
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('🔥', style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
+          const SizedBox(width: 4),
+          Text(
+            '${multiplier.toStringAsFixed(1)}x',
+            style: TextStyle(
+              color: color,
+              fontSize: isSmallScreen ? 12 : 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  /// Builds a progress bar showing progress to next level
-  Widget _buildLevelProgressBar() {
-    // Calculate progress within current level
-    final previousLevelTarget = (gameState.level - 1) * 100;
-    final currentLevelTarget = gameState.level * 100;
-    final levelRange = currentLevelTarget - previousLevelTarget;
-    final scoreInLevel = gameState.score - previousLevelTarget;
-    final progress = (scoreInLevel / levelRange).clamp(0.0, 1.0);
-    final isNearLevelUp = progress >= 0.8;
+  Widget _buildPowerUpsCard() {
+    final activePowerUps = gameState.activePowerUps
+        .where((powerUp) => !powerUp.isExpired)
+        .toList();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Progress bar
-        Container(
-          width: isSmallScreen ? 80 : 100,
-          height: isSmallScreen ? 4 : 5,
-          decoration: BoxDecoration(
-            color: theme.accentColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(isSmallScreen ? 2 : 3),
-          ),
-          child: Stack(
-            children: [
-              // Progress fill with gradient
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: (isSmallScreen ? 80 : 100) * progress,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isNearLevelUp
-                        ? [theme.accentColor, Colors.amber, Colors.orange]
-                        : [theme.snakeColor, theme.accentColor],
-                  ),
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 2 : 3),
-                  boxShadow: isNearLevelUp
-                      ? [
-                          BoxShadow(
-                            color: Colors.amber.withValues(alpha: 0.5),
-                            blurRadius: 6,
-                            spreadRadius: 1,
-                          ),
-                        ]
-                      : null,
-                ),
-              ),
-            ],
-          ),
+    if (activePowerUps.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 8 : 10,
+        vertical: isSmallScreen ? 4 : 6,
+      ),
+      decoration: BoxDecoration(
+        color: theme.accentColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.2),
+          width: 1,
         ),
-        SizedBox(height: isSmallScreen ? 2 : 3),
-        // Level indicator
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'LVL ${gameState.level}',
-              style: TextStyle(
-                color: isNearLevelUp
-                    ? Colors.amber
-                    : theme.accentColor.withValues(alpha: 0.7),
-                fontSize: isSmallScreen ? 8 : 9,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-            if (gameState.level < 10) ...[
-              Text(
-                ' → $currentLevelTarget',
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.5),
-                  fontSize: isSmallScreen ? 7 : 8,
-                ),
-              ),
-            ] else ...[
-              Text(
-                ' MAX',
-                style: TextStyle(
-                  color: Colors.amber,
-                  fontSize: isSmallScreen ? 7 : 8,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: activePowerUps
+            .map((powerUp) => _buildPowerUpIndicator(powerUp))
+            .toList(),
+      ),
     );
   }
-  
-  Widget _buildPowerUpIndicator(ActivePowerUp powerUp, bool isSmallScreen) {
-    final size = isSmallScreen ? 24.0 : 30.0;
-    final progress = 1.0 - powerUp.progress; // Reverse progress for countdown
-    final remainingTime = powerUp.remainingTime;
-    final isUrgent = remainingTime.inSeconds <= 3; // Last 3 seconds
-    final isLow = progress < 0.25; // Last 25% of duration
 
-    // Build the indicator with optional pulse animation
+  Widget _buildPowerUpIndicator(ActivePowerUp powerUp) {
+    final size = isSmallScreen ? 28.0 : 34.0;
+    final progress = 1.0 - powerUp.progress;
+    final remainingTime = powerUp.remainingTime;
+    final isUrgent = remainingTime.inSeconds <= 3;
+
     Widget indicator = Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 3),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Simple glow effect for active power-ups
-          if (powerUp.type == PowerUpType.invincibility ||
-              powerUp.type == PowerUpType.speedBoost ||
-              isLow)
-            Container(
-              width: size * 1.2,
-              height: size * 1.2,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: powerUp.type.color.withValues(alpha: isUrgent ? 0.5 : 0.2),
-                    blurRadius: isUrgent ? 12 : 8,
-                    spreadRadius: isUrgent ? 3 : 2,
-                  ),
-                ],
-              ),
-            ),
-
-          // Circular progress background
+          // Progress ring
           SizedBox(
             width: size,
             height: size,
             child: CircularProgressIndicator(
               value: progress,
-              strokeWidth: isSmallScreen ? 2.5 : 3.5,
+              strokeWidth: 2.5,
               strokeCap: StrokeCap.round,
               backgroundColor: powerUp.type.color.withValues(alpha: 0.15),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isUrgent
-                    ? Colors.red
-                    : isLow
-                        ? Color.lerp(powerUp.type.color, Colors.orange, 0.3)!
-                        : powerUp.type.color,
+              valueColor: AlwaysStoppedAnimation(
+                isUrgent ? Colors.red : powerUp.type.color,
               ),
             ),
           ),
-
-          // Power-up icon container
+          // Icon
           Container(
             width: size * 0.65,
             height: size * 0.65,
             decoration: BoxDecoration(
               color: isUrgent
                   ? Colors.red.withValues(alpha: 0.9)
-                  : powerUp.type.color.withValues(alpha: 0.9),
+                  : powerUp.type.color.withValues(alpha: 0.85),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: (isUrgent ? Colors.red : powerUp.type.color)
-                      .withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  spreadRadius: 1,
-                ),
-              ],
-              border: isUrgent
-                  ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      width: 1.5,
-                    )
-                  : null,
             ),
             child: Center(
               child: Text(
                 powerUp.type.icon,
                 style: TextStyle(
-                  fontSize: isSmallScreen
-                      ? (isUrgent ? 11 : 10)
-                      : (isUrgent ? 14 : 12),
+                  fontSize: isSmallScreen ? 10 : 12,
                   fontWeight: FontWeight.bold,
-                  color: isUrgent ? Colors.white : Colors.black87,
                 ),
               ),
             ),
           ),
-
-          // Time remaining indicator - always show countdown
+          // Time badge
           Positioned(
-            bottom: size * 0.85,
+            bottom: 0,
             child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 3 : 4,
-                vertical: isSmallScreen ? 1 : 2,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(
-                color: isUrgent ? Colors.red.shade800 : Colors.black87,
-                borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
-                border:
-                    isUrgent ? Border.all(color: Colors.white, width: 0.5) : null,
+                color: isUrgent ? Colors.red : Colors.black87,
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '${remainingTime.inSeconds}s${isUrgent ? '!' : ''}',
+                '${remainingTime.inSeconds}s',
                 style: TextStyle(
-                  color: isUrgent ? Colors.white : Colors.white70,
-                  fontSize: isSmallScreen ? 8 : 9,
-                  fontWeight: isUrgent ? FontWeight.w700 : FontWeight.w500,
+                  color: Colors.white,
+                  fontSize: isSmallScreen ? 7 : 8,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -565,13 +525,12 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
       ),
     );
 
-    // Wrap with pulsing animation if urgent
     if (isUrgent) {
       return AnimatedBuilder(
         animation: _pulseController,
         builder: (context, child) {
           return Transform.scale(
-            scale: 1.0 + (_pulseController.value * 0.15),
+            scale: 1.0 + (_pulseController.value * 0.12),
             child: child,
           );
         },
@@ -582,12 +541,11 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
     return indicator;
   }
 
-  /// Enhanced tournament indicator with gradient border, mode, and visual flair
-  Widget _buildTournamentIndicator(bool isSmallScreen) {
+  Widget _buildTournamentBanner() {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 8 : 12,
-        vertical: isSmallScreen ? 4 : 6,
+        horizontal: isSmallScreen ? 12 : 16,
+        vertical: isSmallScreen ? 6 : 8,
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -595,46 +553,27 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
             Colors.purple.withValues(alpha: 0.15),
             Colors.amber.withValues(alpha: 0.1),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.purple.withValues(alpha: 0.5),
+          color: Colors.purple.withValues(alpha: 0.4),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.purple.withValues(alpha: 0.2),
-            blurRadius: 8,
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: Colors.amber.withValues(alpha: 0.1),
-            blurRadius: 12,
-            spreadRadius: 2,
-          ),
-        ],
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Trophy icon with glow
           Container(
-            width: isSmallScreen ? 20 : 24,
-            height: isSmallScreen ? 20 : 24,
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
               gradient: const LinearGradient(
                 colors: [Colors.amber, Colors.orange],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
               ),
+              shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
                   color: Colors.amber.withValues(alpha: 0.4),
                   blurRadius: 6,
-                  spreadRadius: 1,
                 ),
               ],
             ),
@@ -644,42 +583,34 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
               size: isSmallScreen ? 12 : 14,
             ),
           ),
-          SizedBox(width: isSmallScreen ? 6 : 8),
-          // Tournament info column
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    tournamentMode!.emoji,
-                    style: TextStyle(fontSize: isSmallScreen ? 10 : 12),
-                  ),
-                  SizedBox(width: isSmallScreen ? 2 : 4),
-                  Text(
-                    tournamentMode!.displayName.toUpperCase(),
-                    style: TextStyle(
-                      color: Colors.purple,
-                      fontSize: isSmallScreen ? 9 : 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
+          const SizedBox(width: 8),
+          Text(
+            '${tournamentMode!.emoji} ${tournamentMode!.displayName.toUpperCase()}',
+            style: TextStyle(
+              color: Colors.purple,
+              fontSize: isSmallScreen ? 11 : 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 6 : 8,
+              vertical: 2,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.purple.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              'TOURNAMENT',
+              style: TextStyle(
+                color: Colors.purple.withValues(alpha: 0.8),
+                fontSize: isSmallScreen ? 8 : 9,
+                fontWeight: FontWeight.w600,
               ),
-              SizedBox(height: isSmallScreen ? 1 : 2),
-              Text(
-                'TOURNAMENT MODE',
-                style: TextStyle(
-                  color: Colors.purple.withValues(alpha: 0.7),
-                  fontSize: isSmallScreen ? 7 : 8,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

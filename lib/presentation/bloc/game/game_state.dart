@@ -3,7 +3,6 @@ import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart' as model;
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/position.dart';
-import 'package:snake_classic/models/snake.dart';
 import 'package:snake_classic/models/tournament.dart';
 
 /// Game play status
