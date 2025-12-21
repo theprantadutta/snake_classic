@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
@@ -20,9 +22,11 @@ import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/store_screen.dart';
 import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 import 'package:talker_flutter/talker_flutter.dart';
@@ -36,6 +40,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _logoController;
+  bool _dailyBonusChecked = false;
 
   @override
   void initState() {
@@ -54,6 +59,58 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _logoController.forward();
       }
     });
+
+    // Check for daily bonus after a short delay
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        _checkDailyBonus();
+      }
+    });
+  }
+
+  /// Check and show daily bonus popup if available
+  Future<void> _checkDailyBonus() async {
+    if (_dailyBonusChecked) return;
+    _dailyBonusChecked = true;
+
+    try {
+      final apiService = ApiService();
+      final response = await apiService.getDailyBonusStatus();
+
+      if (response == null || !mounted) return;
+
+      final status = DailyBonusStatus.fromJson(response);
+
+      if (status.canClaim && mounted) {
+        final theme = context.read<ThemeCubit>().state.currentTheme;
+
+        await DailyBonusPopup.show(
+          context: context,
+          theme: theme,
+          status: status,
+          onClaim: () async {
+            final claimResponse = await apiService.claimDailyBonus();
+            if (claimResponse != null && claimResponse['success'] == true) {
+              // Update local coin balance
+              if (mounted) {
+                final reward = status.todayReward;
+                if (reward != null) {
+                  context.read<CoinsCubit>().earnCoins(
+                    CoinEarningSource.dailyLogin,
+                    customAmount: reward.coins,
+                    itemName: 'Day ${reward.day} Bonus',
+                  );
+                }
+              }
+              return true;
+            }
+            return false;
+          },
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error checking daily bonus', e);
+    }
   }
 
   @override
@@ -344,89 +401,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildGameTitle(GameTheme theme, double screenHeight) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate responsive logo size based on available space and screen dimensions
-        final maxWidth =
-            constraints.maxWidth * 0.6; // Max 60% of available width
-        final maxHeight = screenHeight * 0.15; // Max 15% of screen height
-        final logoSize =
-            (screenHeight < 650
-                    ? 120.0
-                    : screenHeight < 750
-                    ? 150.0
-                    : 180.0)
-                .clamp(80.0, maxWidth.clamp(100.0, 200.0));
+    // Smaller logo size
+    final logoSize = screenHeight < 650
+        ? 100.0
+        : screenHeight < 750
+            ? 120.0
+            : 140.0;
 
-        return Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            vertical: screenHeight < 650 ? 8 : 12,
-            horizontal: 16,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Simplified logo container
-              Container(
-                width: logoSize,
-                height: (logoSize * 0.6).clamp(60.0, maxHeight),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.accentColor.withValues(alpha: 0.1),
-                      blurRadius: 15,
-                      spreadRadius: 3,
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    'assets/images/snake_classic_logo.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback to text if image fails
-                      return Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [theme.accentColor, theme.foodColor],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.games,
-                              size: (logoSize * 0.25).clamp(20.0, 40.0),
-                              color: Colors.white,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'SNAKE\nCLASSIC',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: (logoSize * 0.06).clamp(8.0, 16.0),
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        vertical: screenHeight < 650 ? 4 : 8,
+        horizontal: 16,
+      ),
+      child: Center(
+        child: Image.asset(
+          'assets/images/snake_classic_transparent.png',
+          width: logoSize,
+          height: logoSize,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.games,
+              size: logoSize * 0.5,
+              color: theme.accentColor,
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -513,9 +515,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               SizedBox(height: spacing),
 
-              // Action buttons row - Store and Premium
+              // Action buttons row - Store and Premium (compact)
               Container(
-                constraints: BoxConstraints(maxHeight: 80, minHeight: 56),
+                constraints: const BoxConstraints(maxHeight: 52, minHeight: 40),
                 child: _buildActionButtonsRow(
                   context: context,
                   theme: theme,
@@ -523,11 +525,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   isSmallScreen: isSmallScreen,
                 ),
               ),
-
-              SizedBox(height: spacing * 0.5),
-
-              // Game hint
-              _buildGameHint(theme, isSmallScreen),
             ],
           ),
         );
@@ -859,19 +856,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Reduced button height
         final buttonHeight = constraints.maxHeight > 0
-            ? (constraints.maxHeight * 0.85).clamp(48.0, 72.0)
-            : (isSmallScreen ? 48.0 : 60.0);
+            ? (constraints.maxHeight * 0.9).clamp(36.0, 48.0)
+            : 42.0;
 
         return GestureDetector(
           onTap: onTap,
           child: Container(
             height: buttonHeight,
             constraints: BoxConstraints(
-              minWidth: 120,
+              minWidth: 100,
               maxWidth: constraints.maxWidth,
             ),
-            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -881,16 +879,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   gradient[1].withValues(alpha: 0.1),
                 ],
               ),
-              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: gradient[0].withValues(alpha: 0.4),
-                width: 1.5,
+                width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: gradient[0].withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
+                  color: gradient[0].withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -899,37 +897,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: EdgeInsets.all(
-                    (buttonHeight < 56 ? 6 : 8).toDouble(),
-                  ),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(colors: gradient),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: gradient[0].withValues(alpha: 0.4),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+                        color: gradient[0].withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
                   child: Icon(
                     icon,
                     color: Colors.white,
-                    size: (buttonHeight < 56 ? 16 : 20).toDouble(),
+                    size: 14,
                   ),
                 ),
-                SizedBox(width: isSmallScreen ? 8 : 10),
+                const SizedBox(width: 8),
                 Flexible(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       label,
                       style: TextStyle(
-                        fontSize: (buttonHeight < 56 ? 12 : 14).toDouble(),
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         color: gradient[0],
-                        letterSpacing: 1.0,
+                        letterSpacing: 0.8,
                       ),
                     ),
                   ),
@@ -942,42 +938,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildGameHint(GameTheme theme, bool isSmallScreen) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 16 : 20,
-        vertical: isSmallScreen ? 10 : 12,
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(isSmallScreen ? 18 : 22),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.swipe,
-            color: theme.accentColor.withValues(alpha: 0.7),
-            size: isSmallScreen ? 16 : 18,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Swipe to move • Tap to pause',
-            style: TextStyle(
-              fontSize: isSmallScreen ? 12 : 14,
-              color: theme.accentColor.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildBottomNavigation(
     BuildContext context,

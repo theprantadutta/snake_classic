@@ -899,6 +899,39 @@ class ApiService {
     }
   }
 
+  // ==================== Daily Bonus ====================
+
+  /// Get daily bonus status
+  Future<Map<String, dynamic>?> getDailyBonusStatus() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/daily-bonus/status'),
+        headers: _authHeaders,
+      ).timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error getting daily bonus status', e);
+      return null;
+    }
+  }
+
+  /// Claim daily bonus
+  Future<Map<String, dynamic>?> claimDailyBonus() async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/daily-bonus/claim'),
+        headers: _authHeaders,
+        body: jsonEncode({}),
+      ).timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error claiming daily bonus', e);
+      return null;
+    }
+  }
+
   // ==================== Notifications ====================
 
   /// Register FCM token
