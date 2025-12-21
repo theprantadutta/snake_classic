@@ -374,6 +374,78 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     return getPlayerDisplayName(state.currentGame!.winnerId!);
   }
 
+  /// Check if game is ready to start (all players ready)
+  bool get isReadyToStart => state.currentGame?.canStart ?? false;
+
+  /// Check if game is actively playing
+  bool get isGameActive =>
+      state.currentGame?.status == MultiplayerGameStatus.playing;
+
+  /// Check if game is finished
+  bool get isGameFinished => state.currentGame?.isFinished ?? false;
+
+  /// Get formatted room code for display (XXX-XXX format)
+  String? get formattedRoomCode {
+    final code = _multiplayerService.currentRoomCode;
+    if (code == null) return null;
+
+    // Format as XXX-XXX
+    if (code.length == 6) {
+      return '${code.substring(0, 3)}-${code.substring(3)}';
+    }
+    return code;
+  }
+
+  /// Get raw room code
+  String? get roomCode => _multiplayerService.currentRoomCode;
+
+  /// Get game duration since start
+  Duration? get gameDuration {
+    if (state.currentGame?.startedAt == null) return null;
+    return DateTime.now().difference(state.currentGame!.startedAt!);
+  }
+
+  /// Start the game (host only)
+  Future<bool> startGame() async {
+    if (!isHost) return false;
+
+    try {
+      _audioService.playSound('game_start');
+      _hapticService.mediumImpact();
+
+      final success = await _multiplayerService.startGame();
+      if (!success) {
+        emit(state.copyWith(errorMessage: 'Failed to start game'));
+      }
+      return success;
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Error starting game: $e'));
+      return false;
+    }
+  }
+
+  /// Notify that current player died
+  Future<void> notifyPlayerDied() async {
+    try {
+      await _multiplayerService.notifyPlayerDied();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error notifying player died: $e');
+      }
+    }
+  }
+
+  /// Notify game over with final score
+  Future<void> notifyGameOver(int finalScore) async {
+    try {
+      await _multiplayerService.notifyGameOver(finalScore);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error notifying game over: $e');
+      }
+    }
+  }
+
   /// Clear error message
   void clearError() {
     emit(state.copyWith(clearError: true));
