@@ -112,7 +112,7 @@ class MultiplayerService {
   Future<void> leaveGame() async {
     try {
       if (_currentRoomCode != null) {
-        await _hubConnection?.invoke('LeaveRoom', args: [_currentRoomCode]);
+        await _hubConnection?.invoke('LeaveRoom', args: [_currentRoomCode!]);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -132,7 +132,7 @@ class MultiplayerService {
     try {
       if (_currentRoomCode == null) return false;
 
-      await _hubConnection?.invoke('SetReady', args: [_currentRoomCode, isReady]);
+      await _hubConnection?.invoke('SetReady', args: [_currentRoomCode!, isReady]);
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -147,7 +147,7 @@ class MultiplayerService {
     try {
       if (_currentRoomCode == null) return false;
 
-      await _hubConnection?.invoke('StartGame', args: [_currentRoomCode]);
+      await _hubConnection?.invoke('StartGame', args: [_currentRoomCode!]);
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -168,7 +168,7 @@ class MultiplayerService {
         'score': action.data['score'] ?? 0,
       };
 
-      await _hubConnection?.invoke('SendMove', args: [_currentRoomCode, moveData]);
+      await _hubConnection?.invoke('SendMove', args: [_currentRoomCode!, moveData]);
     } catch (e) {
       if (kDebugMode) {
         print('Error sending player action: $e');
@@ -191,7 +191,7 @@ class MultiplayerService {
         'score': score,
       };
 
-      await _hubConnection?.invoke('SendMove', args: [_currentRoomCode, moveData]);
+      await _hubConnection?.invoke('SendMove', args: [_currentRoomCode!, moveData]);
     } catch (e) {
       if (kDebugMode) {
         print('Error updating player game state: $e');
@@ -204,7 +204,7 @@ class MultiplayerService {
     try {
       if (_currentRoomCode == null) return;
 
-      await _hubConnection?.invoke('PlayerDied', args: [_currentRoomCode]);
+      await _hubConnection?.invoke('PlayerDied', args: [_currentRoomCode!]);
     } catch (e) {
       if (kDebugMode) {
         print('Error notifying player died: $e');
@@ -217,7 +217,7 @@ class MultiplayerService {
     try {
       if (_currentRoomCode == null) return;
 
-      await _hubConnection?.invoke('GameOver', args: [_currentRoomCode, finalScore]);
+      await _hubConnection?.invoke('GameOver', args: [_currentRoomCode!, finalScore]);
     } catch (e) {
       if (kDebugMode) {
         print('Error notifying game over: $e');
@@ -239,7 +239,7 @@ class MultiplayerService {
         if (powerUps != null) 'power_ups': powerUps,
       };
 
-      await _hubConnection?.invoke('UpdateGameState', args: [_currentRoomCode, update]);
+      await _hubConnection?.invoke('UpdateGameState', args: [_currentRoomCode!, update]);
     } catch (e) {
       if (kDebugMode) {
         print('Error updating game state: $e');
@@ -281,11 +281,6 @@ class MultiplayerService {
             hubUrl,
             options: HttpConnectionOptions(
               accessTokenFactory: () async => accessToken ?? '',
-              logging: (level, message) {
-                if (kDebugMode) {
-                  print('SignalR [$level]: $message');
-                }
-              },
             ),
           )
           .withAutomaticReconnect()
@@ -482,7 +477,7 @@ class MultiplayerService {
       if (data == null) return;
 
       _currentGame = _currentGame?.copyWith(
-        status: MultiplayerGameStatus.countdown,
+        status: MultiplayerGameStatus.starting,
       );
       _gameStreamController.add(_currentGame);
 
@@ -682,7 +677,7 @@ class MultiplayerService {
   Future<void> generateNewFood() async {
     try {
       if (_currentGame != null && _currentRoomCode != null) {
-        final boardSize = _currentGame!.boardSize;
+        final boardSize = (_currentGame!.gameSettings['boardSize'] as int?) ?? 20;
         final newFood = generateFoodPosition(boardSize, _currentGame!.players);
 
         await updateGameState(foodPositions: [newFood]);

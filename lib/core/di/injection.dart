@@ -152,6 +152,7 @@ Future<void> configureDependencies() async {
       hapticService: getIt<HapticService>(),
       achievementService: getIt<AchievementService>(),
       statisticsService: getIt<StatisticsService>(),
+      storageService: getIt<StorageService>(),
       settingsCubit: getIt<GameSettingsCubit>(),
     ),
   );

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart' as model;
+import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/snake.dart';
 import 'package:snake_classic/models/game_replay.dart' show GameRecorder;
@@ -15,8 +16,10 @@ import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/utils/constants.dart';
 
 import 'game_state.dart';
 import 'game_settings_cubit.dart';
@@ -32,6 +35,7 @@ class GameCubit extends Cubit<GameCubitState> {
   final HapticService _hapticService;
   final AchievementService _achievementService;
   final StatisticsService _statisticsService;
+  final StorageService _storageService;
   final GameSettingsCubit _settingsCubit;
 
   Timer? _gameTimer;
@@ -49,10 +53,13 @@ class GameCubit extends Cubit<GameCubitState> {
   bool _hitWallThisGame = false;
   bool _hitSelfThisGame = false;
   int _powerUpsCollectedThisGame = 0;
+  int _consecutiveGamesWithoutWallHits = 0;
 
   // Statistics tracking
   final Map<String, int> _currentGameFoodTypes = {};
   int _currentGameFoodPoints = 0;
+  final Map<String, int> _currentGamePowerUpTypes = {};
+  int _currentGamePowerUpTime = 0;
 
   GameCubit({
     required AudioService audioService,
@@ -60,12 +67,14 @@ class GameCubit extends Cubit<GameCubitState> {
     required HapticService hapticService,
     required AchievementService achievementService,
     required StatisticsService statisticsService,
+    required StorageService storageService,
     required GameSettingsCubit settingsCubit,
   })  : _audioService = audioService,
         _enhancedAudioService = enhancedAudioService,
         _hapticService = hapticService,
         _achievementService = achievementService,
         _statisticsService = statisticsService,
+        _storageService = storageService,
         _settingsCubit = settingsCubit,
         super(GameCubitState.initial());
 
@@ -321,13 +330,17 @@ class GameCubit extends Cubit<GameCubitState> {
     final selfCollision = !hasImmunity && snake.checkSelfCollision();
 
     if (wallCollision || selfCollision) {
-      if (wallCollision) _hitWallThisGame = true;
-      if (selfCollision) _hitSelfThisGame = true;
-
       final crashReason = wallCollision
           ? model.CrashReason.wallCollision
           : model.CrashReason.selfCollision;
-      _handleCrash(crashReason, snake.head);
+
+      // Get collision body part for self-collision feedback
+      Position? collisionBodyPart;
+      if (selfCollision) {
+        collisionBodyPart = snake.getSelfCollisionBodyPart();
+      }
+
+      _handleCrash(crashReason, snake.head, collisionBodyPart: collisionBodyPart);
       return;
     }
 
@@ -471,38 +484,163 @@ class GameCubit extends Cubit<GameCubitState> {
     }
   }
 
-  void _handleCrash(model.CrashReason reason, dynamic crashPosition) {
+  void _handleCrash(model.CrashReason reason, Position? crashPosition, {Position? collisionBodyPart}) {
+    debugPrint('🎮 [GameCubit] _handleCrash called: reason=$reason, crashPosition=$crashPosition');
+
+    // Track what type of crash for achievements
+    if (reason == model.CrashReason.wallCollision) {
+      _hitWallThisGame = true;
+      _hapticService.wallHit();
+    } else if (reason == model.CrashReason.selfCollision) {
+      _hitSelfThisGame = true;
+      _hapticService.selfCollision();
+    }
+
+    // Cancel all timers
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
 
-    _gameRecorder.stopRecording();
+    // Play crash sound and haptic feedback immediately
+    _audioService.playSound('game_over');
+    _enhancedAudioService.playSfx('game_over', volume: 1.0);
+    HapticFeedback.heavyImpact();
 
-    final finalGameState = state.gameState?.copyWith(
-      status: model.GameStatus.gameOver,
+    // Get crash feedback duration from settings
+    final crashFeedbackDuration = _settingsCubit.state.crashFeedbackDuration;
+    final durationSeconds = crashFeedbackDuration.inSeconds;
+
+    // Skip mode: go directly to game over with minimal feedback
+    if (durationSeconds == GameConstants.crashFeedbackSkip) {
+      final crashedGameState = state.gameState?.copyWith(
+        status: model.GameStatus.crashed,
+        crashReason: reason,
+        crashPosition: crashPosition,
+        collisionBodyPart: collisionBodyPart,
+        showCrashModal: false,
+      );
+
+      emit(state.copyWith(
+        status: GamePlayStatus.crashed,
+        gameState: crashedGameState,
+      ));
+
+      // Immediately transition to game over after short delay
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (state.status == GamePlayStatus.crashed) {
+          _gameOver();
+        }
+      });
+      return;
+    }
+
+    // First show crash feedback with reason and position details (visual only)
+    final crashedGameState = state.gameState?.copyWith(
+      status: model.GameStatus.crashed,
       crashReason: reason,
       crashPosition: crashPosition,
+      collisionBodyPart: collisionBodyPart,
+      showCrashModal: false, // Start with visual feedback only
     );
 
     emit(state.copyWith(
-      status: GamePlayStatus.gameOver,
-      gameState: finalGameState,
+      status: GamePlayStatus.crashed,
+      gameState: crashedGameState,
     ));
 
-    _audioService.playSound('game_over');
-    _hapticService.gameOver();
+    // Show visual crash feedback for 2 seconds, then show modal
+    Future.delayed(const Duration(seconds: 2), () {
+      if (state.status == GamePlayStatus.crashed) {
+        // Now show the crash feedback modal
+        emit(state.copyWith(
+          gameState: state.gameState?.copyWith(showCrashModal: true),
+        ));
 
-    // Update high score
-    final score = state.gameState?.score ?? 0;
-    _settingsCubit.updateHighScore(score);
+        // Until Tap mode: don't auto-advance, wait for user to skip
+        if (durationSeconds == GameConstants.crashFeedbackUntilTap) {
+          // User must tap to continue - handled by skipCrashFeedback()
+          return;
+        }
 
-    // Track statistics
-    _trackGameEnd();
+        // Normal mode: use configured duration
+        final modalDuration = Duration(seconds: durationSeconds.clamp(1, 10));
+        Future.delayed(modalDuration, () {
+          if (state.status == GamePlayStatus.crashed) {
+            _gameOver();
+          }
+        });
+      }
+    });
   }
 
-  void _trackGameEnd() {
-    // Statistics tracking - the statistics service handles internal tracking
-    // This method is a placeholder for any additional end-game tracking
+  Future<void> _trackGameEnd() async {
+    // Calculate game duration
+    final gameDurationSeconds = _gameStartTime != null
+        ? DateTime.now().difference(_gameStartTime!).inSeconds
+        : 0;
+
+    // Track consecutive games without wall hits
+    if (_hitWallThisGame) {
+      _consecutiveGamesWithoutWallHits = 0;
+    } else {
+      _consecutiveGamesWithoutWallHits++;
+    }
+
+    final gameState = state.gameState;
+    if (gameState == null) return;
+
+    // Check achievements
+    _achievementService.checkScoreAchievements(gameState.score);
+    _achievementService.checkSurvivalAchievements(gameDurationSeconds);
+    _achievementService.checkSpecialAchievements(
+      level: gameState.level,
+      hitWall: _hitWallThisGame,
+      hitSelf: _hitSelfThisGame,
+      foodTypesEaten: _foodTypesEatenThisGame,
+      noWallGames: _consecutiveGamesWithoutWallHits,
+    );
+
+    // Calculate power-up time
+    _currentGamePowerUpTime = gameState.activePowerUps
+        .map((p) => p.duration.inSeconds - p.remainingTime.inSeconds)
+        .fold(0, (sum, time) => sum + time);
+
+    // Record game statistics
+    await _statisticsService.recordGameResult(
+      score: gameState.score,
+      gameTime: gameDurationSeconds,
+      level: gameState.level,
+      foodConsumed: _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+      foodTypes: _currentGameFoodTypes,
+      foodPoints: _currentGameFoodPoints,
+      powerUpsCollected: _powerUpsCollectedThisGame,
+      powerUpTypes: _currentGamePowerUpTypes,
+      powerUpTime: _currentGamePowerUpTime,
+      hitWall: _hitWallThisGame,
+      hitSelf: _hitSelfThisGame,
+      isPerfectGame: !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
+      unlockedAchievements: [],
+    );
+
+    // Finish game recording
+    final crashReasonStr = _hitWallThisGame ? 'wall' : _hitSelfThisGame ? 'self' : null;
+    _gameRecorder.finishRecording(
+      playerName: 'Player',
+      finalScore: gameState.score,
+      gameMode: 'classic',
+      gameSettings: {
+        'boardWidth': gameState.boardWidth,
+        'boardHeight': gameState.boardHeight,
+        'gameSpeed': gameState.gameSpeed,
+      },
+      crashReason: crashReasonStr,
+      gameStats: {
+        'level': gameState.level,
+        'foodConsumed': _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+        'powerUpsCollected': _powerUpsCollectedThisGame,
+        'gameDurationSeconds': gameDurationSeconds,
+      },
+    );
   }
 
   /// Get game recording data (simplified)
@@ -563,18 +701,45 @@ class GameCubit extends Cubit<GameCubitState> {
     }
   }
 
-  /// Finalize game over after crash feedback
-  void _finalizeGameOver() {
-    final score = state.gameState?.score ?? 0;
-    _settingsCubit.updateHighScore(score);
-    _trackGameEnd();
+  /// Finalize game over after crash feedback - transitions from crashed to gameOver
+  void _gameOver() async {
+    debugPrint('🎮 [GameCubit] _gameOver called');
 
+    _hapticService.gameOver();
+
+    final gameState = state.gameState;
+    if (gameState == null) return;
+
+    // Update high score if necessary
+    int highScore = gameState.highScore;
+    bool isNewHighScore = gameState.score > highScore;
+
+    if (isNewHighScore) {
+      highScore = gameState.score;
+      await _storageService.saveHighScore(highScore);
+      _audioService.playSound('high_score');
+      _enhancedAudioService.playSfx('high_score', volume: 1.0);
+    }
+
+    // Track game end statistics and achievements
+    await _trackGameEnd();
+
+    // Stop recording
+    _gameRecorder.stopRecording();
+
+    // Emit game over state
     emit(state.copyWith(
       status: GamePlayStatus.gameOver,
-      gameState: state.gameState?.copyWith(status: model.GameStatus.gameOver),
+      gameState: gameState.copyWith(
+        status: model.GameStatus.gameOver,
+        highScore: highScore,
+      ),
     ));
+  }
 
-    _audioService.playSound('game_over');
+  /// Alias for _gameOver - kept for compatibility with skipCrashFeedback
+  void _finalizeGameOver() {
+    _gameOver();
   }
 
   @override
