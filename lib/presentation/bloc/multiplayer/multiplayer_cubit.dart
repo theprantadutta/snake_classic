@@ -26,6 +26,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   StreamSubscription? _actionsSubscription;
   StreamSubscription? _matchmakingSubscription;
 
+  // Matchmaking timer
+  Timer? _matchmakingTimer;
+  static const int matchmakingTimeoutSeconds = 60;
+
   MultiplayerCubit({
     required MultiplayerService multiplayerService,
     required UnifiedUserService userService,
@@ -44,10 +48,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _matchmakingSubscription = _multiplayerService.matchmakingStream.listen(
       (status) {
         if (status.matchFound && status.gameId != null) {
-          // Match found! Transition to lobby
+          // Match found! Stop timer and transition to lobby
+          _stopMatchmakingTimer();
           _audioService.playSound('high_score');
           _hapticService.mediumImpact();
 
+          // First emit the status change with clear matchmaking
+          // Don't set currentGame here - let the stream listener handle it
           emit(state.copyWith(
             status: MultiplayerStatus.inLobby,
             clearMatchmaking: true,
@@ -56,6 +63,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           // Start listening to game updates
           _startListening();
         } else if (status.error != null) {
+          _stopMatchmakingTimer();
           _audioService.playSound('game_over');
           emit(state.copyWith(
             status: MultiplayerStatus.error,
@@ -74,6 +82,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         }
       },
       onError: (error) {
+        _stopMatchmakingTimer();
         emit(state.copyWith(
           errorMessage: 'Matchmaking error: $error',
           clearMatchmaking: true,
@@ -298,7 +307,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   /// Quick match using matchmaking system
   Future<bool> quickMatch(MultiplayerGameMode mode, {int playerCount = 2}) async {
-    emit(state.copyWith(isLoading: true, clearError: true));
+    emit(state.copyWith(isLoading: true, clearError: true, clearMatchmaking: true));
 
     try {
       _audioService.playSound('button_click');
@@ -312,7 +321,12 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         isMatchmaking: true,
         matchmakingMode: mode,
         matchmakingPlayerCount: playerCount,
+        matchmakingElapsedSeconds: 0,
+        matchmakingTimedOut: false,
       ));
+
+      // Start the matchmaking timer
+      _startMatchmakingTimer();
 
       return true;
     } catch (e) {
@@ -324,8 +338,57 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     }
   }
 
+  /// Start matchmaking countdown timer
+  void _startMatchmakingTimer() {
+    _stopMatchmakingTimer();
+
+    _matchmakingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final elapsed = timer.tick;
+
+      if (elapsed >= matchmakingTimeoutSeconds) {
+        // Timeout reached
+        _onMatchmakingTimeout();
+      } else {
+        // Update elapsed time
+        emit(state.copyWith(matchmakingElapsedSeconds: elapsed));
+      }
+    });
+  }
+
+  /// Stop matchmaking timer
+  void _stopMatchmakingTimer() {
+    _matchmakingTimer?.cancel();
+    _matchmakingTimer = null;
+  }
+
+  /// Handle matchmaking timeout
+  Future<void> _onMatchmakingTimeout() async {
+    _stopMatchmakingTimer();
+
+    _audioService.playSound('game_over');
+    _hapticService.mediumImpact();
+
+    // Cancel matchmaking on the server
+    try {
+      await _multiplayerService.leaveMatchmaking();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error leaving matchmaking after timeout: $e');
+      }
+    }
+
+    emit(state.copyWith(
+      status: MultiplayerStatus.idle,
+      isMatchmaking: false,
+      matchmakingTimedOut: true,
+      matchmakingElapsedSeconds: matchmakingTimeoutSeconds,
+    ));
+  }
+
   /// Cancel matchmaking
   Future<void> cancelMatchmaking() async {
+    _stopMatchmakingTimer();
+
     try {
       _audioService.playSound('button_click');
       await _multiplayerService.leaveMatchmaking();
@@ -337,6 +400,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     } catch (e) {
       emit(state.copyWith(errorMessage: 'Error canceling matchmaking: $e'));
     }
+  }
+
+  /// Clear matchmaking timeout state (to dismiss the timeout message)
+  void clearMatchmakingTimeout() {
+    emit(state.copyWith(
+      matchmakingTimedOut: false,
+      clearMatchmaking: true,
+    ));
   }
 
   /// Attempt to reconnect to a game after disconnect
@@ -592,6 +663,24 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         }
       },
     );
+
+    // Immediately emit the current game state (since broadcast streams don't replay)
+    final currentGame = _multiplayerService.currentGame;
+    if (currentGame != null) {
+      MultiplayerStatus newStatus = state.status;
+      if (currentGame.status == MultiplayerGameStatus.playing) {
+        newStatus = MultiplayerStatus.playing;
+      } else if (currentGame.isFinished) {
+        newStatus = MultiplayerStatus.finished;
+      } else if (currentGame.status == MultiplayerGameStatus.waiting) {
+        newStatus = MultiplayerStatus.inLobby;
+      }
+
+      emit(state.copyWith(
+        status: newStatus,
+        currentGame: currentGame,
+      ));
+    }
   }
 
   void _stopListening() {
@@ -617,6 +706,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   Future<void> close() {
     _stopListening();
     _stopMatchmakingListener();
+    _stopMatchmakingTimer();
     _multiplayerService.dispose();
     return super.close();
   }

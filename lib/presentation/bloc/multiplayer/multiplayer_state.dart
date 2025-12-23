@@ -28,6 +28,8 @@ class MultiplayerState extends Equatable {
   final int matchmakingEstimatedWait;
   final MultiplayerGameMode? matchmakingMode;
   final int? matchmakingPlayerCount;
+  final int matchmakingElapsedSeconds;
+  final bool matchmakingTimedOut;
 
   const MultiplayerState({
     this.status = MultiplayerStatus.initial,
@@ -40,6 +42,8 @@ class MultiplayerState extends Equatable {
     this.matchmakingEstimatedWait = 0,
     this.matchmakingMode,
     this.matchmakingPlayerCount,
+    this.matchmakingElapsedSeconds = 0,
+    this.matchmakingTimedOut = false,
   });
 
   /// Initial state
@@ -59,6 +63,8 @@ class MultiplayerState extends Equatable {
     int? matchmakingEstimatedWait,
     MultiplayerGameMode? matchmakingMode,
     int? matchmakingPlayerCount,
+    int? matchmakingElapsedSeconds,
+    bool? matchmakingTimedOut,
     bool clearMatchmaking = false,
   }) {
     return MultiplayerState(
@@ -72,6 +78,8 @@ class MultiplayerState extends Equatable {
       matchmakingEstimatedWait: clearMatchmaking ? 0 : (matchmakingEstimatedWait ?? this.matchmakingEstimatedWait),
       matchmakingMode: clearMatchmaking ? null : (matchmakingMode ?? this.matchmakingMode),
       matchmakingPlayerCount: clearMatchmaking ? null : (matchmakingPlayerCount ?? this.matchmakingPlayerCount),
+      matchmakingElapsedSeconds: clearMatchmaking ? 0 : (matchmakingElapsedSeconds ?? this.matchmakingElapsedSeconds),
+      matchmakingTimedOut: clearMatchmaking ? false : (matchmakingTimedOut ?? this.matchmakingTimedOut),
     );
   }
 
@@ -126,5 +134,7 @@ class MultiplayerState extends Equatable {
         matchmakingEstimatedWait,
         matchmakingMode,
         matchmakingPlayerCount,
+        matchmakingElapsedSeconds,
+        matchmakingTimedOut,
       ];
 }

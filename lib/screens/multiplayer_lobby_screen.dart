@@ -107,11 +107,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   body: AppBackground(
                     theme: theme,
                     child: SafeArea(
-                      child: multiplayerState.status == MultiplayerStatus.inMatchmaking
-                          ? _buildMatchmakingUI(context, multiplayerState, theme)
-                          : multiplayerState.isInGame
-                              ? _buildGameLobby(context, multiplayerState, theme, authState)
-                              : _buildMainLobby(context, multiplayerState, theme, authState),
+                      child: multiplayerState.matchmakingTimedOut
+                          ? _buildMatchmakingTimeoutUI(context, multiplayerState, theme)
+                          : multiplayerState.status == MultiplayerStatus.inMatchmaking
+                              ? _buildMatchmakingUI(context, multiplayerState, theme)
+                              : multiplayerState.isInGame
+                                  ? _buildGameLobby(context, multiplayerState, theme, authState)
+                                  : _buildMainLobby(context, multiplayerState, theme, authState),
                     ),
                   ),
                 );
@@ -462,6 +464,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
+    final elapsed = multiplayerState.matchmakingElapsedSeconds;
+    final remaining = 60 - elapsed;
+    final progress = elapsed / 60.0;
+
     return Column(
       children: [
         _buildHeader(theme),
@@ -486,14 +492,43 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Animated search indicator
-                  SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 4,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                    ),
+                  // Animated search indicator with timer
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        height: 100,
+                        child: CircularProgressIndicator(
+                          value: 1 - progress,
+                          strokeWidth: 6,
+                          backgroundColor: Colors.grey.withValues(alpha: 0.3),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            remaining <= 10 ? Colors.orange : Colors.green,
+                          ),
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$remaining',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: remaining <= 10 ? Colors.orange : Colors.green,
+                            ),
+                          ),
+                          Text(
+                            'sec',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.accentColor.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 32),
@@ -529,17 +564,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     ),
                   ],
 
-                  if (multiplayerState.matchmakingEstimatedWait > 0) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Estimated wait: ~${multiplayerState.matchmakingEstimatedWait}s',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.accentColor.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ],
-
                   const SizedBox(height: 32),
 
                   GradientButton(
@@ -551,6 +575,117 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     secondaryColor: Colors.red.withValues(alpha: 0.8),
                     icon: Icons.close,
                     outlined: true,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMatchmakingTimeoutUI(
+    BuildContext context,
+    MultiplayerState multiplayerState,
+    GameTheme theme,
+  ) {
+    return Column(
+      children: [
+        _buildHeader(theme),
+
+        Expanded(
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.orange.withValues(alpha: 0.15),
+                    Colors.orange.withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.orange.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Timeout icon
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.hourglass_empty,
+                      size: 40,
+                      color: Colors.orange,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  Text(
+                    'NO PLAYERS FOUND',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: theme.accentColor,
+                      letterSpacing: 1,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'Sorry, we couldn\'t find any opponents.\nTry again or create your own room!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      height: 1.5,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GradientButton(
+                          onPressed: () {
+                            context.read<MultiplayerCubit>().clearMatchmakingTimeout();
+                          },
+                          text: 'GO BACK',
+                          primaryColor: Colors.grey,
+                          secondaryColor: Colors.grey.withValues(alpha: 0.8),
+                          icon: Icons.arrow_back,
+                          outlined: true,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GradientButton(
+                          onPressed: () {
+                            context.read<MultiplayerCubit>().clearMatchmakingTimeout();
+                            context.read<MultiplayerCubit>().quickMatch(
+                              multiplayerState.matchmakingMode ?? MultiplayerGameMode.classic,
+                              playerCount: multiplayerState.matchmakingPlayerCount ?? 2,
+                            );
+                          },
+                          text: 'TRY AGAIN',
+                          primaryColor: Colors.green,
+                          secondaryColor: Colors.green.withValues(alpha: 0.8),
+                          icon: Icons.refresh,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1095,37 +1230,96 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     final currentUserId = authState.userId;
     final currentPlayer = game.getPlayer(currentUserId ?? '');
     final isReady = currentPlayer?.status == PlayerStatus.ready;
-    
-    return Row(
+    final isHost = currentPlayer?.rank == 0; // PlayerIndex 0 is host
+    final allPlayersReady = game.players.isNotEmpty &&
+        game.players.every((p) => p.status == PlayerStatus.ready);
+    final canStartGame = isHost && allPlayersReady && game.players.length >= 2;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: GradientButton(
-            onPressed: () {
-              context.read<MultiplayerCubit>().leaveGame();
-              Navigator.of(context).pop();
-            },
-            text: 'LEAVE',
-            primaryColor: Colors.red,
-            secondaryColor: Colors.red.withValues(alpha: 0.8),
-            icon: Icons.exit_to_app,
-            outlined: true,
-          ),
-        ),
-
-        const SizedBox(width: 16),
-
-        Expanded(
-          child: GradientButton(
-            onPressed: multiplayerState.isLoading || isReady
+        // Show Start Game button for host when all players are ready
+        if (canStartGame) ...[
+          GradientButton(
+            onPressed: multiplayerState.isLoading
                 ? null
                 : () {
-                    context.read<MultiplayerCubit>().markPlayerReady();
+                    context.read<MultiplayerCubit>().startGame();
                   },
-            text: isReady ? 'READY!' : 'READY',
-            primaryColor: isReady ? Colors.green : theme.accentColor,
-            secondaryColor: isReady ? Colors.green.withValues(alpha: 0.8) : theme.foodColor,
-            icon: isReady ? Icons.check : Icons.check_circle,
+            text: 'START GAME',
+            primaryColor: Colors.green,
+            secondaryColor: Colors.green.shade700,
+            icon: Icons.play_arrow,
           ),
+          const SizedBox(height: 12),
+        ],
+
+        // Show waiting message for non-host when all ready
+        if (!isHost && allPlayersReady && game.players.length >= 2) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Waiting for host to start...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        Row(
+          children: [
+            Expanded(
+              child: GradientButton(
+                onPressed: () {
+                  context.read<MultiplayerCubit>().leaveGame();
+                  Navigator.of(context).pop();
+                },
+                text: 'LEAVE',
+                primaryColor: Colors.red,
+                secondaryColor: Colors.red.withValues(alpha: 0.8),
+                icon: Icons.exit_to_app,
+                outlined: true,
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            Expanded(
+              child: GradientButton(
+                onPressed: multiplayerState.isLoading || isReady
+                    ? null
+                    : () {
+                        context.read<MultiplayerCubit>().markPlayerReady();
+                      },
+                text: isReady ? 'READY!' : 'READY',
+                primaryColor: isReady ? Colors.green : theme.accentColor,
+                secondaryColor: isReady ? Colors.green.withValues(alpha: 0.8) : theme.foodColor,
+                icon: isReady ? Icons.check : Icons.check_circle,
+              ),
+            ),
+          ],
         ),
       ],
     );

@@ -708,11 +708,43 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
+      final userId = data['user_id']?.toString() ?? '';
+      final username = data['username']?.toString() ?? 'Player';
+      final playerIndex = data['player_index'] ?? 0;
+      final isReady = data['is_ready'] ?? false;
+
+      // Create player object
+      final newPlayer = MultiplayerPlayer(
+        userId: userId,
+        displayName: username,
+        status: isReady ? PlayerStatus.ready : PlayerStatus.waiting,
+        score: 0,
+        rank: playerIndex,
+      );
+
       // Update current game with new player
-      // For now, just notify listeners
+      if (_currentGame != null) {
+        // Check if player already exists
+        final existingPlayerIndex = _currentGame!.players.indexWhere((p) => p.userId == userId);
+
+        List<MultiplayerPlayer> updatedPlayers;
+        if (existingPlayerIndex >= 0) {
+          // Update existing player
+          updatedPlayers = List.from(_currentGame!.players);
+          updatedPlayers[existingPlayerIndex] = newPlayer;
+        } else {
+          // Add new player
+          updatedPlayers = [..._currentGame!.players, newPlayer];
+        }
+
+        _currentGame = _currentGame!.copyWith(players: updatedPlayers);
+        _gameStreamController.add(_currentGame);
+      }
+
+      // Notify listeners
       _gameActionsController.add(MultiplayerGameAction(
         actionType: 'player_joined',
-        playerId: data['user_id']?.toString() ?? '',
+        playerId: userId,
         timestamp: DateTime.now(),
         data: data,
       ));
@@ -730,9 +762,18 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
+      final userId = data['user_id']?.toString() ?? '';
+
+      // Remove player from current game
+      if (_currentGame != null) {
+        final updatedPlayers = _currentGame!.players.where((p) => p.userId != userId).toList();
+        _currentGame = _currentGame!.copyWith(players: updatedPlayers);
+        _gameStreamController.add(_currentGame);
+      }
+
       _gameActionsController.add(MultiplayerGameAction(
         actionType: 'player_left',
-        playerId: data['user_id']?.toString() ?? '',
+        playerId: userId,
         timestamp: DateTime.now(),
         data: data,
       ));
@@ -750,9 +791,25 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
+      final userId = data['user_id']?.toString() ?? '';
+      final isReady = data['is_ready'] ?? true;
+
+      // Update player ready status in current game
+      if (_currentGame != null) {
+        final playerIndex = _currentGame!.players.indexWhere((p) => p.userId == userId);
+        if (playerIndex >= 0) {
+          final updatedPlayers = List<MultiplayerPlayer>.from(_currentGame!.players);
+          updatedPlayers[playerIndex] = updatedPlayers[playerIndex].copyWith(
+            status: isReady ? PlayerStatus.ready : PlayerStatus.waiting,
+          );
+          _currentGame = _currentGame!.copyWith(players: updatedPlayers);
+          _gameStreamController.add(_currentGame);
+        }
+      }
+
       _gameActionsController.add(MultiplayerGameAction(
         actionType: 'player_ready',
-        playerId: data['user_id']?.toString() ?? '',
+        playerId: userId,
         timestamp: DateTime.now(),
         data: data,
       ));
@@ -950,6 +1007,28 @@ class MultiplayerService {
       _currentGameId = data['game_id']?.toString();
       _currentRoomCode = data['room_code']?.toString();
 
+      // Parse game mode
+      final modeStr = data['mode']?.toString().toLowerCase() ?? 'classic';
+      final mode = MultiplayerGameMode.values.firstWhere(
+        (m) => m.name.toLowerCase() == modeStr,
+        orElse: () => MultiplayerGameMode.classic,
+      );
+
+      // Create initial game object
+      _currentGame = MultiplayerGame(
+        id: _currentGameId ?? '',
+        mode: mode,
+        status: MultiplayerGameStatus.waiting,
+        players: [],
+        roomCode: _currentRoomCode,
+        maxPlayers: data['player_count'] ?? 2,
+        createdAt: DateTime.now(),
+        gameSettings: mode.defaultSettings,
+      );
+
+      // Emit game to stream
+      _gameStreamController.add(_currentGame);
+
       // Notify matchmaking stream that match was found
       _matchmakingStreamController.add(MatchmakingStatus(
         isSearching: false,
@@ -957,6 +1036,8 @@ class MultiplayerService {
         gameId: _currentGameId,
         roomCode: _currentRoomCode,
         playerIndex: data['player_index'],
+        mode: mode,
+        playerCount: data['player_count'],
       ));
 
       // Notify game actions
