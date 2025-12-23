@@ -498,55 +498,216 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   Widget _buildMultiplayerHUD(GameTheme theme, MultiplayerGame game, AuthState authState) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // Back button
-          IconButton(
-            onPressed: _showExitDialog,
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
-          ),
+    final playerCount = game.players.length;
+    final currentUserId = authState.userId ?? '';
 
-          const SizedBox(width: 16),
-
-          // Current player info
-          Expanded(
-            child: _buildPlayerInfo(theme, game, authState.userId ?? '', true),
-          ),
-
-          const SizedBox(width: 16),
-
-          // VS indicator
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'VS',
-              style: TextStyle(
-                color: Colors.orange,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+    // For 2 players, use the VS layout
+    if (playerCount <= 2) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Back button
+            IconButton(
+              onPressed: _showExitDialog,
+              icon: Icon(
+                Icons.arrow_back,
+                color: theme.accentColor,
+                size: 24,
               ),
             ),
+
+            const SizedBox(width: 16),
+
+            // Current player info
+            Expanded(
+              child: _buildPlayerInfo(theme, game, currentUserId, true),
+            ),
+
+            const SizedBox(width: 16),
+
+            // VS indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'VS',
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Opponent info
+            Expanded(
+              child: _buildOpponentInfo(theme, game, currentUserId),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // For 4+ players, use a compact list layout
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: _showExitDialog,
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: theme.accentColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'BATTLE ROYALE',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  letterSpacing: 1,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${game.players.where((p) => p.isAlive).length}/${playerCount} Alive',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 8),
+          // Player list
+          SizedBox(
+            height: 60,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: game.players.length,
+              itemBuilder: (context, index) {
+                final player = game.players[index];
+                final isCurrentPlayer = player.userId == currentUserId;
+                final playerColor = _getPlayerColor(index);
 
-          const SizedBox(width: 16),
-
-          // Opponent info
-          Expanded(
-            child: _buildOpponentInfo(theme, game, authState.userId ?? ''),
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isCurrentPlayer
+                        ? playerColor.withValues(alpha: 0.2)
+                        : theme.backgroundColor.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: player.isAlive
+                          ? playerColor.withValues(alpha: 0.5)
+                          : Colors.grey.withValues(alpha: 0.3),
+                      width: isCurrentPlayer ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Player color indicator
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: player.isAlive ? playerColor : Colors.grey,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                player.displayName.length > 8
+                                    ? '${player.displayName.substring(0, 8)}...'
+                                    : player.displayName,
+                                style: TextStyle(
+                                  color: player.isAlive
+                                      ? theme.accentColor
+                                      : Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                  decoration: player.isAlive
+                                      ? null
+                                      : TextDecoration.lineThrough,
+                                ),
+                              ),
+                              if (isCurrentPlayer) ...[
+                                const SizedBox(width: 4),
+                                Text(
+                                  '(You)',
+                                  style: TextStyle(
+                                    color: playerColor,
+                                    fontSize: 9,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          Text(
+                            player.isAlive
+                                ? (isCurrentPlayer ? '$_myScore pts' : '${player.score} pts')
+                                : '#${player.eliminationRank ?? "?"}',
+                            style: TextStyle(
+                              color: player.isAlive
+                                  ? theme.accentColor.withValues(alpha: 0.7)
+                                  : Colors.grey,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Color _getPlayerColor(int index) {
+    const playerColors = [
+      Color(0xFF4CAF50), // Green
+      Color(0xFFF44336), // Red
+      Color(0xFF2196F3), // Blue
+      Color(0xFFFF9800), // Orange
+      Color(0xFF9C27B0), // Purple
+      Color(0xFF00BCD4), // Cyan
+      Color(0xFFFFEB3B), // Yellow
+      Color(0xFFE91E63), // Pink
+    ];
+    return playerColors[index % playerColors.length];
   }
 
   Widget _buildPlayerInfo(GameTheme theme, MultiplayerGame game, String userId, bool isCurrentUser) {
@@ -687,6 +848,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   Widget _buildGameBoard(GameTheme theme, MultiplayerGame game, AuthState authState) {
+    final currentUserId = authState.userId ?? '';
+    final myPlayerIndex = _getMyPlayerIndex(game, currentUserId);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final boardDimension = math.min(constraints.maxWidth, constraints.maxHeight) - 32;
@@ -710,7 +874,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   theme: theme,
                   boardSize: _boardSize,
                   mySnake: _mySnake,
-                  opponentSnakes: _getOpponentSnakes(game, authState.userId ?? ''),
+                  myPlayerIndex: myPlayerIndex,
+                  opponentSnakes: _getOpponentSnakes(game, currentUserId),
                   foodPosition: game.foodPosition,
                   bonusFoodPosition: game.bonusFoodPosition,
                   specialFoodPosition: game.specialFoodPosition,
@@ -724,11 +889,24 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
-  List<List<Position>> _getOpponentSnakes(MultiplayerGame game, String currentUserId) {
-    return game.players
-        .where((player) => player.userId != currentUserId && player.isAlive)
-        .map((player) => player.snake)
-        .toList();
+  List<({List<Position> snake, int playerIndex})> _getOpponentSnakes(MultiplayerGame game, String currentUserId) {
+    final result = <({List<Position> snake, int playerIndex})>[];
+    for (int i = 0; i < game.players.length; i++) {
+      final player = game.players[i];
+      if (player.userId != currentUserId && player.isAlive) {
+        result.add((snake: player.snake, playerIndex: i));
+      }
+    }
+    return result;
+  }
+
+  int _getMyPlayerIndex(MultiplayerGame game, String currentUserId) {
+    for (int i = 0; i < game.players.length; i++) {
+      if (game.players[i].userId == currentUserId) {
+        return i;
+      }
+    }
+    return 0;
   }
 
   Color _getPlayerStatusColor(PlayerStatus status) {
@@ -766,20 +944,37 @@ class _MultiplayerGameBoardPainter extends CustomPainter {
   final GameTheme theme;
   final int boardSize;
   final List<Position> mySnake;
-  final List<List<Position>> opponentSnakes;
+  final int myPlayerIndex;
+  final List<({List<Position> snake, int playerIndex})> opponentSnakes;
   final Position? foodPosition;
   final Position? bonusFoodPosition;
   final Position? specialFoodPosition;
+
+  static const playerColors = [
+    Color(0xFF4CAF50), // Green
+    Color(0xFFF44336), // Red
+    Color(0xFF2196F3), // Blue
+    Color(0xFFFF9800), // Orange
+    Color(0xFF9C27B0), // Purple
+    Color(0xFF00BCD4), // Cyan
+    Color(0xFFFFEB3B), // Yellow
+    Color(0xFFE91E63), // Pink
+  ];
 
   _MultiplayerGameBoardPainter({
     required this.theme,
     required this.boardSize,
     required this.mySnake,
+    required this.myPlayerIndex,
     required this.opponentSnakes,
     this.foodPosition,
     this.bonusFoodPosition,
     this.specialFoodPosition,
   });
+
+  Color _getPlayerColor(int index) {
+    return playerColors[index % playerColors.length];
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -817,14 +1012,14 @@ class _MultiplayerGameBoardPainter extends CustomPainter {
       _drawSpecialFood(canvas, specialFoodPosition!, cellSize);
     }
 
-    // Draw my snake
-    _drawSnake(canvas, mySnake, cellSize, theme.snakeColor, theme.accentColor);
+    // Draw my snake with player color
+    final myColor = _getPlayerColor(myPlayerIndex);
+    _drawSnake(canvas, mySnake, cellSize, myColor, myColor.withValues(alpha: 0.8));
 
-    // Draw opponent snakes
-    final opponentColors = [Colors.red, Colors.purple, Colors.orange];
-    for (int i = 0; i < opponentSnakes.length; i++) {
-      final color = opponentColors[i % opponentColors.length];
-      _drawSnake(canvas, opponentSnakes[i], cellSize, color, color.withValues(alpha: 0.7));
+    // Draw opponent snakes with their respective colors
+    for (final opponent in opponentSnakes) {
+      final color = _getPlayerColor(opponent.playerIndex);
+      _drawSnake(canvas, opponent.snake, cellSize, color, color.withValues(alpha: 0.8));
     }
   }
 
@@ -928,10 +1123,10 @@ class _MultiplayerGameBoardPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return oldDelegate is! _MultiplayerGameBoardPainter ||
-        oldDelegate.mySnake != mySnake ||
-        oldDelegate.opponentSnakes != opponentSnakes ||
+  bool shouldRepaint(covariant _MultiplayerGameBoardPainter oldDelegate) {
+    return oldDelegate.mySnake != mySnake ||
+        oldDelegate.myPlayerIndex != myPlayerIndex ||
+        oldDelegate.opponentSnakes.length != opponentSnakes.length ||
         oldDelegate.foodPosition != foodPosition ||
         oldDelegate.bonusFoodPosition != bonusFoodPosition ||
         oldDelegate.specialFoodPosition != specialFoodPosition;

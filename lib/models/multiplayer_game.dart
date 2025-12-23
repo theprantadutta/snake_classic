@@ -256,6 +256,14 @@ class MultiplayerPlayer {
   final DateTime? lastUpdate;
   final List<String> activePowerUps;
 
+  // Reconnection support
+  final String? connectionId;
+  final DateTime? disconnectedAt;
+
+  // Elimination tracking
+  final int? eliminationRank;
+  final DateTime? eliminatedAt;
+
   const MultiplayerPlayer({
     required this.userId,
     required this.displayName,
@@ -267,28 +275,36 @@ class MultiplayerPlayer {
     this.rank = 0,
     this.lastUpdate,
     this.activePowerUps = const [],
+    this.connectionId,
+    this.disconnectedAt,
+    this.eliminationRank,
+    this.eliminatedAt,
   });
 
   factory MultiplayerPlayer.fromJson(Map<String, dynamic> json) {
     return MultiplayerPlayer(
-      userId: json['userId'] ?? '',
-      displayName: json['displayName'] ?? 'Unknown Player',
-      photoUrl: json['photoUrl'],
+      userId: json['userId'] ?? json['user_id'] ?? '',
+      displayName: json['displayName'] ?? json['display_name'] ?? 'Unknown Player',
+      photoUrl: json['photoUrl'] ?? json['photo_url'],
       status: PlayerStatus.values.firstWhere(
         (status) => status.name == json['status'],
         orElse: () => PlayerStatus.waiting,
       ),
-      snake: (json['snake'] as List? ?? [])
+      snake: (json['snake'] as List? ?? json['snake_positions'] as List? ?? [])
           .map((pos) => Position.fromJson(pos))
           .toList(),
       currentDirection: Direction.values.firstWhere(
-        (direction) => direction.name == json['currentDirection'],
+        (direction) => direction.name == (json['currentDirection'] ?? json['direction']),
         orElse: () => Direction.right,
       ),
       score: json['score'] ?? 0,
       rank: json['rank'] ?? 0,
-      lastUpdate: _parseDateTime(json['lastUpdate']),
-      activePowerUps: List<String>.from(json['activePowerUps'] ?? []),
+      lastUpdate: _parseDateTime(json['lastUpdate'] ?? json['last_update_at']),
+      activePowerUps: List<String>.from(json['activePowerUps'] ?? json['active_power_ups'] ?? []),
+      connectionId: json['connectionId'] ?? json['connection_id'],
+      disconnectedAt: _parseDateTime(json['disconnectedAt'] ?? json['disconnected_at']),
+      eliminationRank: json['eliminationRank'] ?? json['elimination_rank'],
+      eliminatedAt: _parseDateTime(json['eliminatedAt'] ?? json['eliminated_at']),
     );
   }
 
@@ -304,6 +320,10 @@ class MultiplayerPlayer {
       'rank': rank,
       'lastUpdate': _dateTimeToJson(lastUpdate),
       'activePowerUps': activePowerUps,
+      'connectionId': connectionId,
+      'disconnectedAt': _dateTimeToJson(disconnectedAt),
+      'eliminationRank': eliminationRank,
+      'eliminatedAt': _dateTimeToJson(eliminatedAt),
     };
   }
 
@@ -318,6 +338,10 @@ class MultiplayerPlayer {
     int? rank,
     DateTime? lastUpdate,
     List<String>? activePowerUps,
+    String? connectionId,
+    DateTime? disconnectedAt,
+    int? eliminationRank,
+    DateTime? eliminatedAt,
   }) {
     return MultiplayerPlayer(
       userId: userId ?? this.userId,
@@ -330,8 +354,17 @@ class MultiplayerPlayer {
       rank: rank ?? this.rank,
       lastUpdate: lastUpdate ?? this.lastUpdate,
       activePowerUps: activePowerUps ?? this.activePowerUps,
+      connectionId: connectionId ?? this.connectionId,
+      disconnectedAt: disconnectedAt ?? this.disconnectedAt,
+      eliminationRank: eliminationRank ?? this.eliminationRank,
+      eliminatedAt: eliminatedAt ?? this.eliminatedAt,
     );
   }
+
+  /// Check if player can reconnect (within 60 second window)
+  bool get canReconnect =>
+      disconnectedAt != null &&
+      DateTime.now().difference(disconnectedAt!).inSeconds < 60;
 
   Position get head {
     if (snake.isEmpty) return const Position(10, 10);

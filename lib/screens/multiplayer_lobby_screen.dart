@@ -24,22 +24,28 @@ class MultiplayerLobbyScreen extends StatefulWidget {
 class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
   final ConnectivityService _connectivityService = ConnectivityService();
+  int _selectedPlayerCount = 2;
 
   @override
   void initState() {
     super.initState();
     _connectivityService.addListener(_onConnectivityChanged);
 
-    // If gameId is provided, join that game
-    if (widget.gameId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Load available games on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_connectivityService.isOnline) {
+        context.read<MultiplayerCubit>().loadAvailableGames();
+      }
+
+      // If gameId is provided, join that game
+      if (widget.gameId != null) {
         if (_connectivityService.isOnline) {
           context.read<MultiplayerCubit>().joinGame(widget.gameId!);
         } else {
           _showOfflineMessage();
         }
-      });
-    }
+      }
+    });
   }
 
   @override
@@ -101,9 +107,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   body: AppBackground(
                     theme: theme,
                     child: SafeArea(
-                      child: multiplayerState.isInGame
-                          ? _buildGameLobby(context, multiplayerState, theme, authState)
-                          : _buildMainLobby(context, multiplayerState, theme, authState),
+                      child: multiplayerState.status == MultiplayerStatus.inMatchmaking
+                          ? _buildMatchmakingUI(context, multiplayerState, theme)
+                          : multiplayerState.isInGame
+                              ? _buildGameLobby(context, multiplayerState, theme, authState)
+                              : _buildMainLobby(context, multiplayerState, theme, authState),
                     ),
                   ),
                 );
@@ -357,9 +365,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             size: 40,
             color: Colors.green,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           Text(
             'QUICK MATCH',
             style: TextStyle(
@@ -369,31 +377,188 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               letterSpacing: 1,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
-            'Jump into a game instantly',
+            'Find opponents automatically',
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.7),
             ),
           ),
-          
+
+          const SizedBox(height: 16),
+
+          // Player count selector
+          Text(
+            'Players:',
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.accentColor.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [2, 4, 6, 8].map((count) {
+              final isSelected = _selectedPlayerCount == count;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedPlayerCount = count),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.green.withValues(alpha: 0.3)
+                          : theme.backgroundColor.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.green
+                            : theme.accentColor.withValues(alpha: 0.3),
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.green : theme.accentColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
           const SizedBox(height: 20),
-          
+
           GradientButton(
             onPressed: multiplayerState.isLoading ? null : () {
-              context.read<MultiplayerCubit>().quickMatch(MultiplayerGameMode.classic);
+              context.read<MultiplayerCubit>().quickMatch(
+                MultiplayerGameMode.classic,
+                playerCount: _selectedPlayerCount,
+              );
             },
-            text: multiplayerState.isLoading ? 'FINDING...' : 'PLAY NOW',
+            text: multiplayerState.isLoading ? 'FINDING...' : 'FIND MATCH',
             primaryColor: Colors.green,
             secondaryColor: Colors.green.withValues(alpha: 0.8),
-            icon: Icons.play_arrow,
+            icon: Icons.search,
           ),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3);
+  }
+
+  Widget _buildMatchmakingUI(
+    BuildContext context,
+    MultiplayerState multiplayerState,
+    GameTheme theme,
+  ) {
+    return Column(
+      children: [
+        _buildHeader(theme),
+
+        Expanded(
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.green.withValues(alpha: 0.15),
+                    Colors.green.withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.green.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Animated search indicator
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 4,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  Text(
+                    'SEARCHING FOR PLAYERS...',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.accentColor,
+                      letterSpacing: 1,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    '${multiplayerState.matchmakingMode?.modeDisplayName ?? 'Classic'} • ${multiplayerState.matchmakingPlayerCount ?? 2} Players',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+
+                  if (multiplayerState.matchmakingQueuePosition > 0) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Queue Position: ${multiplayerState.matchmakingQueuePosition}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.accentColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+
+                  if (multiplayerState.matchmakingEstimatedWait > 0) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Estimated wait: ~${multiplayerState.matchmakingEstimatedWait}s',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.accentColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 32),
+
+                  GradientButton(
+                    onPressed: () {
+                      context.read<MultiplayerCubit>().cancelMatchmaking();
+                    },
+                    text: 'CANCEL',
+                    primaryColor: Colors.red,
+                    secondaryColor: Colors.red.withValues(alpha: 0.8),
+                    icon: Icons.close,
+                    outlined: true,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildJoinGameSection(

@@ -24,6 +24,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   // Stream subscriptions
   StreamSubscription? _gameSubscription;
   StreamSubscription? _actionsSubscription;
+  StreamSubscription? _matchmakingSubscription;
 
   MultiplayerCubit({
     required MultiplayerService multiplayerService,
@@ -34,7 +35,52 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         _userService = userService,
         _audioService = audioService,
         _hapticService = hapticService,
-        super(MultiplayerState.initial());
+        super(MultiplayerState.initial()) {
+    // Start listening to matchmaking stream
+    _startMatchmakingListener();
+  }
+
+  void _startMatchmakingListener() {
+    _matchmakingSubscription = _multiplayerService.matchmakingStream.listen(
+      (status) {
+        if (status.matchFound && status.gameId != null) {
+          // Match found! Transition to lobby
+          _audioService.playSound('high_score');
+          _hapticService.mediumImpact();
+
+          emit(state.copyWith(
+            status: MultiplayerStatus.inLobby,
+            clearMatchmaking: true,
+          ));
+
+          // Start listening to game updates
+          _startListening();
+        } else if (status.error != null) {
+          _audioService.playSound('game_over');
+          emit(state.copyWith(
+            status: MultiplayerStatus.error,
+            errorMessage: status.error,
+            clearMatchmaking: true,
+          ));
+        } else if (status.isSearching) {
+          emit(state.copyWith(
+            status: MultiplayerStatus.inMatchmaking,
+            isMatchmaking: true,
+            matchmakingQueuePosition: status.queuePosition,
+            matchmakingEstimatedWait: status.estimatedWaitSeconds,
+            matchmakingMode: status.mode,
+            matchmakingPlayerCount: status.playerCount,
+          ));
+        }
+      },
+      onError: (error) {
+        emit(state.copyWith(
+          errorMessage: 'Matchmaking error: $error',
+          clearMatchmaking: true,
+        ));
+      },
+    );
+  }
 
   /// Get current player from the game
   MultiplayerPlayer? get currentPlayer {
@@ -250,28 +296,84 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     }
   }
 
-  /// Quick match - find and join a random available game
-  Future<bool> quickMatch(MultiplayerGameMode mode) async {
+  /// Quick match using matchmaking system
+  Future<bool> quickMatch(MultiplayerGameMode mode, {int playerCount = 2}) async {
     emit(state.copyWith(isLoading: true, clearError: true));
 
     try {
-      await loadAvailableGames();
+      _audioService.playSound('button_click');
+      _hapticService.lightImpact();
 
-      // Find a game with the same mode
-      final availableGame = state.availableGames
-          .where((game) => game.mode == mode && !game.isFull)
-          .toList()
-        ..shuffle();
+      await _multiplayerService.joinMatchmaking(mode: mode, playerCount: playerCount);
 
-      if (availableGame.isNotEmpty) {
-        return await joinGame(availableGame.first.id);
-      } else {
-        return await createGame(mode: mode, isPrivate: false);
-      }
+      emit(state.copyWith(
+        status: MultiplayerStatus.inMatchmaking,
+        isLoading: false,
+        isMatchmaking: true,
+        matchmakingMode: mode,
+        matchmakingPlayerCount: playerCount,
+      ));
+
+      return true;
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
-        errorMessage: 'Error in quick match: $e',
+        errorMessage: 'Error starting matchmaking: $e',
+      ));
+      return false;
+    }
+  }
+
+  /// Cancel matchmaking
+  Future<void> cancelMatchmaking() async {
+    try {
+      _audioService.playSound('button_click');
+      await _multiplayerService.leaveMatchmaking();
+
+      emit(state.copyWith(
+        status: MultiplayerStatus.idle,
+        clearMatchmaking: true,
+      ));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Error canceling matchmaking: $e'));
+    }
+  }
+
+  /// Attempt to reconnect to a game after disconnect
+  Future<bool> attemptReconnect() async {
+    emit(state.copyWith(
+      status: MultiplayerStatus.reconnecting,
+      isLoading: true,
+    ));
+
+    try {
+      final success = await _multiplayerService.attemptReconnect();
+
+      if (success) {
+        _audioService.playSound('high_score');
+        _hapticService.mediumImpact();
+
+        await _startListening();
+
+        emit(state.copyWith(
+          status: MultiplayerStatus.playing,
+          isLoading: false,
+        ));
+        return true;
+      } else {
+        _audioService.playSound('game_over');
+        emit(state.copyWith(
+          status: MultiplayerStatus.idle,
+          isLoading: false,
+          errorMessage: 'Could not reconnect to game',
+        ));
+        return false;
+      }
+    } catch (e) {
+      emit(state.copyWith(
+        status: MultiplayerStatus.idle,
+        isLoading: false,
+        errorMessage: 'Reconnection failed: $e',
       ));
       return false;
     }
@@ -499,6 +601,11 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _actionsSubscription = null;
   }
 
+  void _stopMatchmakingListener() {
+    _matchmakingSubscription?.cancel();
+    _matchmakingSubscription = null;
+  }
+
   void _handleGameAction(MultiplayerGameAction action) {
     if (kDebugMode) {
       print('Received action: ${action.actionType} from ${action.playerId}');
@@ -509,6 +616,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   @override
   Future<void> close() {
     _stopListening();
+    _stopMatchmakingListener();
     _multiplayerService.dispose();
     return super.close();
   }
