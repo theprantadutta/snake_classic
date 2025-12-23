@@ -19,9 +19,22 @@ class MultiplayerService {
   String? _currentGameId;
   String? _currentRoomCode;
 
+  // Matchmaking state
+  bool _isInMatchmaking = false;
+  int _matchmakingQueuePosition = 0;
+  int _matchmakingEstimatedWait = 0;
+
+  // Heartbeat timer
+  Timer? _heartbeatTimer;
+  static const int _heartbeatIntervalSeconds = 10;
+
+  // Reconnection state
+  bool _isReconnecting = false;
+
   // Stream controllers for game events
   final _gameStreamController = StreamController<MultiplayerGame?>.broadcast();
   final _gameActionsController = StreamController<MultiplayerGameAction>.broadcast();
+  final _matchmakingStreamController = StreamController<MatchmakingStatus>.broadcast();
 
   MultiplayerService._internal();
 
@@ -36,6 +49,11 @@ class MultiplayerService {
   String? get currentRoomCode => _currentRoomCode;
   bool get isInGame => _currentGame != null;
   bool get isConnected => _isConnected;
+
+  // Matchmaking getters
+  bool get isInMatchmaking => _isInMatchmaking;
+  int get matchmakingQueuePosition => _matchmakingQueuePosition;
+  int get matchmakingEstimatedWait => _matchmakingEstimatedWait;
 
   /// Create a new multiplayer game
   Future<String?> createGame({
@@ -250,14 +268,186 @@ class MultiplayerService {
   /// Get available games to join
   Future<List<MultiplayerGame>> getAvailableGames() async {
     try {
-      // For now, we don't have a list endpoint, so return empty
-      // The backend would need a /multiplayer/available endpoint
-      return [];
+      final response = await _apiService.getAvailableGames();
+      if (response == null) return [];
+
+      return response.map((game) {
+        return MultiplayerGame(
+          id: game['id']?.toString() ?? game['game_id']?.toString() ?? '',
+          mode: MultiplayerGameMode.values.firstWhere(
+            (m) => m.name.toLowerCase() == (game['mode'] ?? 'classic').toString().toLowerCase(),
+            orElse: () => MultiplayerGameMode.classic,
+          ),
+          status: MultiplayerGameStatus.waiting,
+          roomCode: game['room_code']?.toString(),
+          players: [],
+          maxPlayers: game['max_players'] ?? 2,
+          gameSettings: Map<String, dynamic>.from(game['game_settings'] ?? {}),
+          createdAt: DateTime.tryParse(game['created_at']?.toString() ?? '') ?? DateTime.now(),
+        );
+      }).toList();
     } catch (e) {
       if (kDebugMode) {
         print('Error getting available games: $e');
       }
       return [];
+    }
+  }
+
+  // =============================================
+  // MATCHMAKING
+  // =============================================
+
+  /// Join matchmaking queue
+  Future<bool> joinMatchmaking({
+    required MultiplayerGameMode mode,
+    required int playerCount,
+  }) async {
+    try {
+      // Connect to SignalR if not connected
+      await _connectSignalR();
+
+      if (!_isConnected) {
+        return false;
+      }
+
+      await _hubConnection?.invoke('JoinMatchmaking', args: [mode.name, playerCount]);
+
+      _isInMatchmaking = true;
+      _matchmakingStreamController.add(MatchmakingStatus(
+        isSearching: true,
+        queuePosition: 0,
+        estimatedWaitSeconds: 0,
+        mode: mode,
+        playerCount: playerCount,
+      ));
+
+      if (kDebugMode) {
+        print('Joined matchmaking for ${mode.name} ${playerCount}p');
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error joining matchmaking: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Leave matchmaking queue
+  Future<void> leaveMatchmaking() async {
+    try {
+      if (_isConnected) {
+        await _hubConnection?.invoke('LeaveMatchmaking');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error leaving matchmaking: $e');
+      }
+    } finally {
+      _isInMatchmaking = false;
+      _matchmakingQueuePosition = 0;
+      _matchmakingEstimatedWait = 0;
+      _matchmakingStreamController.add(MatchmakingStatus(
+        isSearching: false,
+        queuePosition: 0,
+        estimatedWaitSeconds: 0,
+      ));
+    }
+  }
+
+  /// Stream of matchmaking status updates
+  Stream<MatchmakingStatus> get matchmakingStream => _matchmakingStreamController.stream;
+
+  // =============================================
+  // RECONNECTION
+  // =============================================
+
+  /// Attempt to reconnect to a game after disconnect
+  Future<bool> attemptReconnect() async {
+    if (_currentRoomCode == null) {
+      return false;
+    }
+
+    try {
+      _isReconnecting = true;
+
+      // Reconnect to SignalR
+      await _connectSignalR();
+
+      if (!_isConnected) {
+        _isReconnecting = false;
+        return false;
+      }
+
+      // Request reconnection
+      await _hubConnection?.invoke('Reconnect', args: [_currentRoomCode!]);
+
+      if (kDebugMode) {
+        print('Attempting to reconnect to room: $_currentRoomCode');
+      }
+
+      // The result will come via ReconnectSuccess or ReconnectFailed event
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error attempting reconnect: $e');
+      }
+      _isReconnecting = false;
+      return false;
+    }
+  }
+
+  // =============================================
+  // HEARTBEAT
+  // =============================================
+
+  void _startHeartbeat() {
+    _stopHeartbeat();
+    _heartbeatTimer = Timer.periodic(
+      Duration(seconds: _heartbeatIntervalSeconds),
+      (_) => _sendPing(),
+    );
+  }
+
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+  }
+
+  Future<void> _sendPing() async {
+    try {
+      if (_isConnected && _hubConnection != null) {
+        await _hubConnection!.invoke('Ping');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error sending ping: $e');
+      }
+      // Connection might be lost, attempt to handle disconnect
+      _handleConnectionLost();
+    }
+  }
+
+  void _handleConnectionLost() {
+    if (kDebugMode) {
+      print('Connection lost, attempting to handle...');
+    }
+
+    _isConnected = false;
+
+    // Notify listeners
+    _gameActionsController.add(MultiplayerGameAction(
+      actionType: 'connection_lost',
+      playerId: '',
+      timestamp: DateTime.now(),
+      data: {},
+    ));
+
+    // Attempt reconnection if we have a game
+    if (_currentRoomCode != null && !_isReconnecting) {
+      attemptReconnect();
     }
   }
 
@@ -292,6 +482,9 @@ class MultiplayerService {
       await _hubConnection!.start();
       _isConnected = true;
 
+      // Start heartbeat
+      _startHeartbeat();
+
       if (kDebugMode) {
         print('Connected to SignalR hub: $hubUrl');
       }
@@ -305,6 +498,7 @@ class MultiplayerService {
 
   Future<void> _disconnectSignalR() async {
     try {
+      _stopHeartbeat();
       await _hubConnection?.stop();
     } catch (e) {
       if (kDebugMode) {
@@ -404,6 +598,106 @@ class MultiplayerService {
       if (kDebugMode) {
         print('SignalR Error: $arguments');
       }
+    });
+
+    // =============================================
+    // MATCHMAKING EVENTS
+    // =============================================
+
+    // Matchmaking joined confirmation
+    _hubConnection?.on('MatchmakingJoined', (arguments) {
+      if (kDebugMode) {
+        print('MatchmakingJoined: $arguments');
+      }
+      _handleMatchmakingJoined(arguments);
+    });
+
+    // Match found!
+    _hubConnection?.on('MatchFound', (arguments) {
+      if (kDebugMode) {
+        print('MatchFound: $arguments');
+      }
+      _handleMatchFound(arguments);
+    });
+
+    // Matchmaking error
+    _hubConnection?.on('MatchmakingError', (arguments) {
+      if (kDebugMode) {
+        print('MatchmakingError: $arguments');
+      }
+      _handleMatchmakingError(arguments);
+    });
+
+    // Matchmaking left confirmation
+    _hubConnection?.on('MatchmakingLeft', (arguments) {
+      if (kDebugMode) {
+        print('MatchmakingLeft: $arguments');
+      }
+    });
+
+    // =============================================
+    // RECONNECTION EVENTS
+    // =============================================
+
+    // Player temporarily disconnected
+    _hubConnection?.on('PlayerDisconnected', (arguments) {
+      if (kDebugMode) {
+        print('PlayerDisconnected: $arguments');
+      }
+      _handlePlayerDisconnected(arguments);
+    });
+
+    // Player reconnected
+    _hubConnection?.on('PlayerReconnected', (arguments) {
+      if (kDebugMode) {
+        print('PlayerReconnected: $arguments');
+      }
+      _handlePlayerReconnected(arguments);
+    });
+
+    // Reconnection success
+    _hubConnection?.on('ReconnectSuccess', (arguments) {
+      if (kDebugMode) {
+        print('ReconnectSuccess: $arguments');
+      }
+      _handleReconnectSuccess(arguments);
+    });
+
+    // Reconnection failed
+    _hubConnection?.on('ReconnectFailed', (arguments) {
+      if (kDebugMode) {
+        print('ReconnectFailed: $arguments');
+      }
+      _handleReconnectFailed(arguments);
+    });
+
+    // =============================================
+    // MULTI-PLAYER EVENTS
+    // =============================================
+
+    // Player eliminated (for multi-player games)
+    _hubConnection?.on('PlayerEliminated', (arguments) {
+      if (kDebugMode) {
+        print('PlayerEliminated: $arguments');
+      }
+      _handlePlayerEliminated(arguments);
+    });
+
+    // Game cancelled (by cleanup job)
+    _hubConnection?.on('GameCancelled', (arguments) {
+      if (kDebugMode) {
+        print('GameCancelled: $arguments');
+      }
+      _handleGameCancelled(arguments);
+    });
+
+    // =============================================
+    // HEARTBEAT
+    // =============================================
+
+    // Pong response
+    _hubConnection?.on('Pong', (arguments) {
+      // Heartbeat response - connection is alive
     });
   }
 
@@ -619,6 +913,238 @@ class MultiplayerService {
     }
   }
 
+  // =============================================
+  // NEW HANDLER IMPLEMENTATIONS
+  // =============================================
+
+  void _handleMatchmakingJoined(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _matchmakingQueuePosition = data['queue_position'] ?? 0;
+      _matchmakingEstimatedWait = data['estimated_wait_seconds'] ?? 0;
+
+      _matchmakingStreamController.add(MatchmakingStatus(
+        isSearching: true,
+        queuePosition: _matchmakingQueuePosition,
+        estimatedWaitSeconds: _matchmakingEstimatedWait,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling MatchmakingJoined: $e');
+      }
+    }
+  }
+
+  void _handleMatchFound(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _isInMatchmaking = false;
+      _currentGameId = data['game_id']?.toString();
+      _currentRoomCode = data['room_code']?.toString();
+
+      // Notify matchmaking stream that match was found
+      _matchmakingStreamController.add(MatchmakingStatus(
+        isSearching: false,
+        matchFound: true,
+        gameId: _currentGameId,
+        roomCode: _currentRoomCode,
+        playerIndex: data['player_index'],
+      ));
+
+      // Notify game actions
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'match_found',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+
+      // Auto-join the room
+      if (_currentRoomCode != null) {
+        _joinRoom(_currentRoomCode!);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling MatchFound: $e');
+      }
+    }
+  }
+
+  void _handleMatchmakingError(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _isInMatchmaking = false;
+
+      _matchmakingStreamController.add(MatchmakingStatus(
+        isSearching: false,
+        error: data['error']?.toString(),
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling MatchmakingError: $e');
+      }
+    }
+  }
+
+  void _handlePlayerDisconnected(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'player_disconnected',
+        playerId: data['user_id']?.toString() ?? '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling PlayerDisconnected: $e');
+      }
+    }
+  }
+
+  void _handlePlayerReconnected(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'player_reconnected',
+        playerId: data['user_id']?.toString() ?? '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling PlayerReconnected: $e');
+      }
+    }
+  }
+
+  void _handleReconnectSuccess(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _isReconnecting = false;
+
+      // Restore game state from server data
+      _currentGameId = data['game_id']?.toString();
+      _currentRoomCode = data['room_code']?.toString();
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'reconnect_success',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+
+      if (kDebugMode) {
+        print('Successfully reconnected to game $_currentGameId');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling ReconnectSuccess: $e');
+      }
+    }
+  }
+
+  void _handleReconnectFailed(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _isReconnecting = false;
+
+      // Clear game state
+      _currentGame = null;
+      _currentGameId = null;
+      _currentRoomCode = null;
+      _gameStreamController.add(null);
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'reconnect_failed',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+
+      if (kDebugMode) {
+        print('Reconnection failed: ${data['error']}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling ReconnectFailed: $e');
+      }
+    }
+  }
+
+  void _handlePlayerEliminated(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'player_eliminated',
+        playerId: data['user_id']?.toString() ?? '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling PlayerEliminated: $e');
+      }
+    }
+  }
+
+  void _handleGameCancelled(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments[0] as Map<String, dynamic>?;
+      if (data == null) return;
+
+      _currentGame = _currentGame?.copyWith(
+        status: MultiplayerGameStatus.finished,
+      );
+      _gameStreamController.add(_currentGame);
+
+      _gameActionsController.add(MultiplayerGameAction(
+        actionType: 'game_cancelled',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: data,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling GameCancelled: $e');
+      }
+    }
+  }
+
   // Helper methods
 
   List<Position> generateInitialSnakePosition(int playerIndex, int boardSize) {
@@ -716,8 +1242,37 @@ class MultiplayerService {
 
   /// Dispose the service
   void dispose() {
+    _stopHeartbeat();
     _disconnectSignalR();
     _gameStreamController.close();
     _gameActionsController.close();
+    _matchmakingStreamController.close();
   }
+}
+
+/// Matchmaking status for stream updates
+class MatchmakingStatus {
+  final bool isSearching;
+  final int queuePosition;
+  final int estimatedWaitSeconds;
+  final bool matchFound;
+  final String? gameId;
+  final String? roomCode;
+  final int? playerIndex;
+  final String? error;
+  final MultiplayerGameMode? mode;
+  final int? playerCount;
+
+  MatchmakingStatus({
+    this.isSearching = false,
+    this.queuePosition = 0,
+    this.estimatedWaitSeconds = 0,
+    this.matchFound = false,
+    this.gameId,
+    this.roomCode,
+    this.playerIndex,
+    this.error,
+    this.mode,
+    this.playerCount,
+  });
 }

@@ -760,6 +760,24 @@ class ApiService {
     }
   }
 
+  /// Get available multiplayer games (public, waiting for players)
+  Future<List<dynamic>?> getAvailableGames() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/multiplayer/available'),
+        headers: _authHeaders,
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      }
+      return null;
+    } catch (e) {
+      AppLogger.error('Error getting available games', e);
+      return null;
+    }
+  }
+
   /// Get SignalR Hub URL for multiplayer
   String getSignalRHubUrl() {
     final hubUrl = baseUrl.replaceFirst('/api/v1', '');
