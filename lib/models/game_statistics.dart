@@ -280,6 +280,45 @@ class GameStatistics {
     );
   }
 
+  // Create a copy with updated high score (for sync purposes)
+  GameStatistics withHighScore(int newHighScore) {
+    return GameStatistics(
+      totalGamesPlayed: totalGamesPlayed,
+      totalScore: totalScore,
+      highScore: newHighScore,
+      totalGameTime: totalGameTime,
+      averageGameTime: averageGameTime,
+      totalFoodConsumed: totalFoodConsumed,
+      foodTypeCount: foodTypeCount,
+      totalFoodPoints: totalFoodPoints,
+      totalPowerUpsCollected: totalPowerUpsCollected,
+      powerUpTypeCount: powerUpTypeCount,
+      totalPowerUpTime: totalPowerUpTime,
+      longestSurvivalTime: longestSurvivalTime,
+      highestLevel: highestLevel,
+      totalLevelsGained: totalLevelsGained,
+      averageScore: averageScore,
+      survivalRate: survivalRate,
+      wallCollisions: wallCollisions,
+      selfCollisions: selfCollisions,
+      totalCollisions: totalCollisions,
+      collisionRate: collisionRate,
+      currentWinStreak: currentWinStreak,
+      longestWinStreak: longestWinStreak,
+      gamesWithoutWallHit: gamesWithoutWallHit,
+      perfectGames: perfectGames,
+      totalSessions: totalSessions,
+      averageGamesPerSession: averageGamesPerSession,
+      lastPlayedDate: lastPlayedDate,
+      firstPlayedDate: firstPlayedDate,
+      recentScores: recentScores,
+      dailyPlayTime: dailyPlayTime,
+      achievementsUnlocked: achievementsUnlocked,
+      totalAchievements: totalAchievements,
+      achievementProgress: achievementProgress,
+    );
+  }
+
   // JSON serialization
   Map<String, dynamic> toJson() {
     return {

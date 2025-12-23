@@ -4,12 +4,14 @@ import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/offline_cache_service.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
 
 class SocialService {
   static SocialService? _instance;
   final ApiService _apiService = ApiService();
   final ConnectivityService _connectivityService = ConnectivityService();
   final OfflineCacheService _cacheService = OfflineCacheService();
+  final DataSyncService _dataSyncService = DataSyncService();
 
   SocialService._internal();
 
@@ -43,91 +45,73 @@ class SocialService {
     }
   }
 
-  /// Send friend request (requires online)
+  /// Send friend request (offline-first: queues for background sync)
   Future<bool> sendFriendRequest(String toUserId) async {
-    if (!_connectivityService.isOnline) {
-      return false;
-    }
+    // Queue for background sync - returns immediately
+    _dataSyncService.queueSync(
+      'friend_request_send',
+      {
+        'userId': toUserId,
+        'sent_at': DateTime.now().toIso8601String(),
+      },
+      priority: SyncPriority.normal,
+    );
 
-    try {
-      final result = await _apiService.sendFriendRequest(userId: toUserId);
-      if (result != null && result['success'] == true) {
-        // Invalidate friend requests cache
-        await _cacheService.invalidateCache(_friendRequestsKey);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error sending friend request: $e');
-      }
-      return false;
-    }
+    // Invalidate friend requests cache so next fetch gets fresh data
+    await _cacheService.invalidateCache(_friendRequestsKey);
+    return true;
   }
 
-  /// Accept friend request (requires online)
+  /// Accept friend request (offline-first: queues for background sync)
   Future<bool> acceptFriendRequest(String fromUserId) async {
-    if (!_connectivityService.isOnline) {
-      return false;
-    }
+    // Queue for background sync - returns immediately
+    _dataSyncService.queueSync(
+      'friend_request_accept',
+      {
+        'requestId': fromUserId,
+        'accepted_at': DateTime.now().toIso8601String(),
+      },
+      priority: SyncPriority.normal,
+    );
 
-    try {
-      final result = await _apiService.acceptFriendRequest(fromUserId);
-      if (result != null && result['success'] == true) {
-        // Invalidate caches
-        await _cacheService.invalidateCache(_friendsListKey);
-        await _cacheService.invalidateCache(_friendRequestsKey);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error accepting friend request: $e');
-      }
-      return false;
-    }
+    // Invalidate caches so next fetch gets fresh data
+    await _cacheService.invalidateCache(_friendsListKey);
+    await _cacheService.invalidateCache(_friendRequestsKey);
+    return true;
   }
 
-  /// Reject friend request (requires online)
+  /// Reject friend request (offline-first: queues for background sync)
   Future<bool> rejectFriendRequest(String fromUserId) async {
-    if (!_connectivityService.isOnline) {
-      return false;
-    }
+    // Queue for background sync - returns immediately
+    _dataSyncService.queueSync(
+      'friend_request_reject',
+      {
+        'requestId': fromUserId,
+        'rejected_at': DateTime.now().toIso8601String(),
+      },
+      priority: SyncPriority.normal,
+    );
 
-    try {
-      final result = await _apiService.rejectFriendRequest(fromUserId);
-      if (result != null && result['success'] == true) {
-        await _cacheService.invalidateCache(_friendRequestsKey);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error rejecting friend request: $e');
-      }
-      return false;
-    }
+    // Invalidate cache so next fetch gets fresh data
+    await _cacheService.invalidateCache(_friendRequestsKey);
+    return true;
   }
 
-  /// Remove friend (requires online)
+  /// Remove friend (offline-first: queues for background sync)
   Future<bool> removeFriend(String friendUserId) async {
-    if (!_connectivityService.isOnline) {
-      return false;
-    }
+    // Queue for background sync - returns immediately
+    _dataSyncService.queueSync(
+      'friend_remove',
+      {
+        'friendId': friendUserId,
+        'removed_at': DateTime.now().toIso8601String(),
+      },
+      priority: SyncPriority.normal,
+    );
 
-    try {
-      final result = await _apiService.removeFriend(friendUserId);
-      if (result != null && result['success'] == true) {
-        await _cacheService.invalidateCache(_friendsListKey);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error removing friend: $e');
-      }
-      return false;
-    }
+    // Invalidate cache so next fetch gets fresh data
+    await _cacheService.invalidateCache(_friendsListKey);
+    return true;
   }
 
   /// Get user profile with caching

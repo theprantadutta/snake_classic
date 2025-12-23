@@ -17,6 +17,7 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -37,6 +38,7 @@ class GameCubit extends Cubit<GameCubitState> {
   final StatisticsService _statisticsService;
   final StorageService _storageService;
   final GameSettingsCubit _settingsCubit;
+  final DataSyncService _dataSyncService = DataSyncService();
 
   Timer? _gameTimer;
   Timer? _animationTimer;
@@ -44,8 +46,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
   final GameRecorder _gameRecorder = GameRecorder();
 
-  // Smooth movement
-  DateTime? _lastGameUpdate;
+  // Note: Smooth movement animation is now handled locally in GameBoard widget
 
   // Achievement tracking
   DateTime? _gameStartTime;
@@ -124,7 +125,6 @@ class GameCubit extends Cubit<GameCubitState> {
     _powerUpsCollectedThisGame = 0;
     _currentGameFoodTypes.clear();
     _currentGameFoodPoints = 0;
-    _lastGameUpdate = DateTime.now();
     _updateCount = 0;
 
     // Generate initial food
@@ -187,8 +187,6 @@ class GameCubit extends Cubit<GameCubitState> {
   void resumeGame() {
     if (state.status != GamePlayStatus.paused) return;
 
-    _lastGameUpdate = DateTime.now();
-
     emit(state.copyWith(
       status: GamePlayStatus.playing,
       gameState: state.gameState?.copyWith(status: model.GameStatus.playing),
@@ -219,31 +217,44 @@ class GameCubit extends Cubit<GameCubitState> {
 
   void _startGameLoop() {
     _gameTimer?.cancel();
+    _scheduleNextGameTick();
+  }
+
+  /// Schedules the next game tick using the current game speed.
+  /// This pattern allows speed changes to take effect immediately
+  /// without causing a pause when the timer is restarted.
+  void _scheduleNextGameTick() {
     final speed = state.gameState?.gameSpeed ?? 150;
-    debugPrint('🎮 [GameCubit] Starting game loop with speed: $speed ms');
+    final level = state.gameState?.level ?? 1;
+    if (_updateCount <= 5 || _updateCount % 100 == 0) {
+      debugPrint('🎮 [GameCubit] Scheduling next tick: speed=${speed}ms, level=$level');
+    }
 
-    _gameTimer = Timer.periodic(
-      Duration(milliseconds: speed),
-      (_) {
-        debugPrint('🎮 [GameCubit] Timer tick!');
-        try {
-          _updateGame();
-        } catch (e, stackTrace) {
-          debugPrint('🎮 [GameCubit] ERROR in game update loop: $e');
-          AppLogger.error('Error in game update loop', e, stackTrace);
-        }
-      },
-    );
+    _gameTimer = Timer(Duration(milliseconds: speed), () {
+      try {
+        _updateGame();
+      } catch (e, stackTrace) {
+        debugPrint('🎮 [GameCubit] ERROR in game update loop: $e');
+        AppLogger.error('Error in game update loop', e, stackTrace);
+      }
 
-    debugPrint('🎮 [GameCubit] Game timer created: ${_gameTimer != null ? "SUCCESS" : "FAILED"}, isActive: ${_gameTimer?.isActive}');
+      // Schedule next tick only if game is still active (playing or paused)
+      // Speed is read fresh each time, so level-up speed changes apply immediately
+      final currentStatus = state.status;
+      if (currentStatus == GamePlayStatus.playing) {
+        _scheduleNextGameTick();
+      } else if (currentStatus == GamePlayStatus.paused) {
+        // Game is paused - don't schedule. resumeGame() will restart the loop.
+      }
+      // For crashed/gameOver/ready - don't schedule, game has ended
+    });
   }
 
   void _startSmoothAnimation() {
-    _animationTimer?.cancel();
-    _animationTimer = Timer.periodic(
-      const Duration(milliseconds: 16), // ~60fps
-      (_) => _updateAnimation(),
-    );
+    // DISABLED: Animation is now handled locally in GameBoard widget
+    // using AnimatedBuilder + local Ticker. This avoids Bloc state updates
+    // entirely for animation, giving better performance.
+    // The widget calculates moveProgress based on time since last game state change.
   }
 
   void _startPowerUpTimer() {
@@ -254,24 +265,24 @@ class GameCubit extends Cubit<GameCubitState> {
     );
   }
 
-  void _updateAnimation() {
-    if (state.status != GamePlayStatus.playing) return;
-    if (_lastGameUpdate == null) return;
+  // Note: _updateAnimation removed - animation is now handled locally in GameBoard widget
 
-    final elapsed = DateTime.now().difference(_lastGameUpdate!).inMilliseconds;
-    final speed = state.gameState?.gameSpeed ?? 150;
-    final progress = (elapsed / speed).clamp(0.0, 1.0);
-
-    if ((state.moveProgress - progress).abs() > 0.01) {
-      emit(state.copyWith(moveProgress: progress));
-    }
-  }
-
-  // Track update count for debugging
+  // Track update count for debugging (disabled in production)
   int _updateCount = 0;
+  DateTime? _lastTickTime;
 
   void _updateGame() {
     _updateCount++;
+    final now = DateTime.now();
+    if (_lastTickTime != null) {
+      final timeSinceLastTick = now.difference(_lastTickTime!).inMilliseconds;
+      final expectedSpeed = state.gameState?.gameSpeed ?? 150;
+      // Warn if tick took much longer than expected (more than 50% over)
+      if (timeSinceLastTick > expectedSpeed * 1.5) {
+        debugPrint('🎮 [GameCubit] WARNING: ${timeSinceLastTick}ms since last tick (expected ~${expectedSpeed}ms)');
+      }
+    }
+    _lastTickTime = now;
 
     if (state.status != GamePlayStatus.playing) {
       if (_updateCount <= 5) {
@@ -369,8 +380,8 @@ class GameCubit extends Cubit<GameCubitState> {
       // Level up
       if (newScore >= previousState.targetScore && newLevel < 10) {
         newLevel++;
+        debugPrint('🎮 [GameCubit] LEVEL UP! Now level $newLevel, new speed will be calculated on next tick');
         _audioService.playSound('level_up');
-        _enhancedAudioService.playSfx('level_up', volume: 1.0);
         HapticFeedback.mediumImpact();
       } else {
         _audioService.playSound('eat');
@@ -420,12 +431,9 @@ class GameCubit extends Cubit<GameCubitState> {
 
     emit(newCubitState);
 
-    _lastGameUpdate = DateTime.now();
-
-    // Restart loop if speed changed
-    if (newLevel > previousState.level) {
-      _startGameLoop();
-    }
+    // Note: No need to restart game loop on level-up anymore.
+    // The new timer pattern (_scheduleNextGameTick) reads speed fresh each tick,
+    // so speed changes from level-ups apply immediately without a pause.
 
     _recordFrame(snake, currentFood, currentPowerUp, newGameState, willEatFood, willCollectPowerUp);
   }
@@ -720,6 +728,26 @@ class GameCubit extends Cubit<GameCubitState> {
       _audioService.playSound('high_score');
       _enhancedAudioService.playSfx('high_score', volume: 1.0);
     }
+
+    // Queue score for background sync (offline-first: non-blocking)
+    final gameDurationSeconds = _gameStartTime != null
+        ? DateTime.now().difference(_gameStartTime!).inSeconds
+        : 0;
+    final foodEaten = _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count);
+
+    _dataSyncService.queueSync(
+      'score',
+      {
+        'score': gameState.score,
+        'gameDuration': gameDurationSeconds,
+        'foodsEaten': foodEaten,
+        'gameMode': state.isTournamentMode ? 'tournament' : 'classic',
+        'difficulty': 'normal',
+        'playedAt': DateTime.now().toIso8601String(),
+        'idempotencyKey': '${DateTime.now().millisecondsSinceEpoch}_${gameState.score}',
+      },
+      priority: SyncPriority.high,
+    );
 
     // Track game end statistics and achievements
     await _trackGameEnd();

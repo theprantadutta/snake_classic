@@ -39,10 +39,11 @@ class _GameScreenState extends State<GameScreen>
   Size? _boardSize;
   Offset? _boardOffset;
 
-  // Level-up celebration
-  bool _showLevelUpCelebration = false;
-  int _celebratingLevel = 0;
-  late AnimationController _levelUpController;
+  // Level-up corner popup
+  bool _showLevelUpPopup = false;
+  int _levelUpPopupLevel = 1;
+  late AnimationController _levelUpPopupController;
+
   @override
   void initState() {
     super.initState();
@@ -57,21 +58,15 @@ class _GameScreenState extends State<GameScreen>
       vsync: this,
     );
 
-    // Initialize level-up celebration controller
-    _levelUpController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+    // Initialize level-up corner popup controller
+    _levelUpPopupController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    _levelUpController.addStatusListener((status) {
+    _levelUpPopupController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        setState(() {
-          _showLevelUpCelebration = false;
-        });
-        _levelUpController.reset();
-        // Auto-resume after celebration ends
-        if (mounted) {
-          context.read<GameCubit>().resumeGame();
-        }
+        setState(() => _showLevelUpPopup = false);
+        _levelUpPopupController.reset();
       }
     });
 
@@ -100,27 +95,25 @@ class _GameScreenState extends State<GameScreen>
     WidgetsBinding.instance.removeObserver(this);
     _keyboardFocusNode.dispose();
     _gestureIndicatorController.dispose();
-    _levelUpController.dispose();
+    _levelUpPopupController.dispose();
     _juiceController.dispose();
     super.dispose();
   }
 
   // Listener for game state changes - handles navigation and events
-  static int _stateChangeCount = 0;
   void _onGameStateChanged(GameCubitState state) {
     if (!mounted) return;
-
-    _stateChangeCount++;
-    if (_stateChangeCount <= 10 || _stateChangeCount % 100 == 0) {
-      debugPrint('[GameScreen] State change #$_stateChangeCount: status=${state.status}, snake at ${state.gameState?.snake.head}');
-    }
 
     final gameState = state.gameState;
     if (gameState == null) return;
 
-    // Check for game events (moved from build method)
-    _checkForGameEvents(_previousGameState, gameState);
-    _previousGameState = gameState;
+    // Only check for game events when the actual game state object changes
+    // (not on animation frame updates which only change moveProgress)
+    // This reduces overhead from ~60 calls/sec to ~3-5 calls/sec
+    if (!identical(_previousGameState, gameState)) {
+      _checkForGameEvents(_previousGameState, gameState);
+      _previousGameState = gameState;
+    }
 
     // Handle game over navigation
     if (state.status == GamePlayStatus.gameOver && !_hasNavigatedToGameOver) {
@@ -309,10 +302,12 @@ class _GameScreenState extends State<GameScreen>
       }
     }
 
-    // Level up effects with celebration
+    // Level up effects (HUD pulse + corner popup - no pause)
     if (current.level > previous.level) {
       _juiceController.levelUp();
-      _triggerLevelUpCelebration(current.level);
+      _showLevelUpCornerPopup(current.level);
+      // Note: HUD also shows a pulse animation on the level badge
+      // Game continues without interruption
     }
 
     // Game over effects
@@ -352,17 +347,137 @@ class _GameScreenState extends State<GameScreen>
     });
   }
 
-  /// Triggers the level-up celebration overlay with brief pause
-  void _triggerLevelUpCelebration(int newLevel) {
-    // Pause the game so player can enjoy the celebration safely
-    context.read<GameCubit>().pauseGame();
 
+  /// Shows the level-up corner popup
+  void _showLevelUpCornerPopup(int newLevel) {
     setState(() {
-      _showLevelUpCelebration = true;
-      _celebratingLevel = newLevel;
+      _showLevelUpPopup = true;
+      _levelUpPopupLevel = newLevel;
     });
-    _levelUpController.forward();
-    // Game will auto-resume when animation completes (see initState listener)
+    _levelUpPopupController.forward();
+  }
+
+  /// Builds the level-up corner popup widget
+  Widget _buildLevelUpCornerPopup(GameTheme theme) {
+    return AnimatedBuilder(
+      animation: _levelUpPopupController,
+      builder: (context, child) {
+        final progress = _levelUpPopupController.value;
+
+        // Animation phases:
+        // 0.0-0.15: Slide in + scale up
+        // 0.15-0.85: Hold
+        // 0.85-1.0: Fade out + slide up
+        double opacity;
+        double slideY;
+        double scale;
+
+        if (progress < 0.15) {
+          // Slide in phase
+          final phase = progress / 0.15;
+          final curved = Curves.easeOut.transform(phase);
+          opacity = curved;
+          slideY = 20 * (1 - curved);
+          scale = 0.8 + (0.2 * curved);
+        } else if (progress < 0.85) {
+          // Hold phase
+          opacity = 1.0;
+          slideY = 0;
+          scale = 1.0;
+        } else {
+          // Fade out phase
+          final phase = (progress - 0.85) / 0.15;
+          final curved = Curves.easeIn.transform(phase);
+          opacity = 1.0 - curved;
+          slideY = -15 * curved;
+          scale = 1.0 - (0.1 * curved);
+        }
+
+        return Positioned(
+          top: 120 + slideY,
+          right: 16,
+          child: Opacity(
+            opacity: opacity,
+            child: Transform.scale(
+              scale: scale,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withValues(alpha: 0.5),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('⬆️', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 8),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'LEVEL UP!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black45,
+                                offset: Offset(1, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          'Level $_levelUpPopupLevel',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black38,
+                                offset: Offset(1, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('⬆️', style: TextStyle(fontSize: 18)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   /// Builds the D-Pad control positioned according to user preference
@@ -407,158 +522,6 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  /// Builds the level-up celebration overlay
-  Widget _buildLevelUpCelebration(GameTheme theme) {
-    return AnimatedBuilder(
-      animation: _levelUpController,
-      builder: (context, child) {
-        // Animation phases:
-        // 0.0-0.3: Scale in with flash
-        // 0.3-0.7: Hold with glow pulse
-        // 0.7-1.0: Fade out
-        final progress = _levelUpController.value;
-
-        double opacity;
-        double scale;
-        double flashOpacity;
-
-        if (progress < 0.3) {
-          // Scale in phase
-          final phase = progress / 0.3;
-          scale = 0.5 + (0.7 * Curves.elasticOut.transform(phase));
-          opacity = phase;
-          flashOpacity = (1 - phase) * 0.3;
-        } else if (progress < 0.7) {
-          // Hold phase
-          scale = 1.2;
-          opacity = 1.0;
-          flashOpacity = 0;
-        } else {
-          // Fade out phase
-          final phase = (progress - 0.7) / 0.3;
-          scale = 1.2 - (0.2 * phase);
-          opacity = 1.0 - phase;
-          flashOpacity = 0;
-        }
-
-        return Stack(
-          children: [
-            // Screen flash
-            if (flashOpacity > 0)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.white.withValues(alpha: flashOpacity),
-                ),
-              ),
-            // Level up text
-            Positioned.fill(
-              child: Center(
-                child: Opacity(
-                  opacity: opacity,
-                  child: Transform.scale(
-                    scale: scale,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.amber.withValues(alpha: 0.9),
-                            Colors.orange.withValues(alpha: 0.9),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.amber.withValues(alpha: 0.6),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                          BoxShadow(
-                            color: Colors.orange.withValues(alpha: 0.4),
-                            blurRadius: 40,
-                            spreadRadius: 10,
-                          ),
-                        ],
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.5),
-                          width: 2,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                '⬆️',
-                                style: TextStyle(fontSize: 24),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'LEVEL UP!',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withValues(alpha: 0.5),
-                                      offset: const Offset(2, 2),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                '⬆️',
-                                style: TextStyle(fontSize: 24),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Level $_celebratingLevel',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    offset: const Offset(1, 1),
-                                    blurRadius: 2,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocListener<GameCubit, GameCubitState>(
@@ -573,6 +536,9 @@ class _GameScreenState extends State<GameScreen>
             builder: (context, gameCubitState) {
               final gameState = gameCubitState.gameState;
               final settingsState = context.watch<GameSettingsCubit>().state;
+
+              // Sync shake enabled state with controller to prevent background animation loops
+              _juiceController.shakeEnabled = settingsState.screenShakeEnabled;
 
               // Handle null gameState gracefully
               if (gameState == null) {
@@ -598,7 +564,7 @@ class _GameScreenState extends State<GameScreen>
                   onKeyEvent: _handleKeyPress,
                   child: GameJuiceWidget(
                   controller: _juiceController,
-                  applyShake: true,
+                  applyShake: settingsState.screenShakeEnabled,
                   applyScale: false, // Don't apply scale to the entire screen
                   child: Scaffold(
                     backgroundColor: theme.backgroundColor,
@@ -736,8 +702,8 @@ class _GameScreenState extends State<GameScreen>
                                   },
                                 ),
 
-                                // Pause Overlay (don't show during level-up celebration)
-                                if (gameState.status == GameStatus.paused && !_showLevelUpCelebration)
+                                // Pause Overlay
+                                if (gameState.status == GameStatus.paused)
                                   PauseOverlay(
                                     theme: theme,
                                     onResume: () => context.read<GameCubit>().resumeGame(),
@@ -768,9 +734,9 @@ class _GameScreenState extends State<GameScreen>
                                   );
                                 }),
 
-                                // Level-Up Celebration Overlay
-                                if (_showLevelUpCelebration)
-                                  _buildLevelUpCelebration(theme),
+                                // Level-Up Corner Popup
+                                if (_showLevelUpPopup)
+                                  _buildLevelUpCornerPopup(theme),
                               ],
                             ),
                           ),

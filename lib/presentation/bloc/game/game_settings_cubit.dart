@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 import 'game_settings_state.dart';
@@ -9,6 +10,7 @@ export 'game_settings_state.dart';
 /// Cubit for managing game settings (D-pad, board size, etc.)
 class GameSettingsCubit extends Cubit<GameSettingsState> {
   final StorageService _storageService;
+  final StatisticsService _statisticsService = StatisticsService();
 
   GameSettingsCubit(this._storageService) : super(GameSettingsState.initial());
 
@@ -19,12 +21,17 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
     emit(state.copyWith(status: GameSettingsStatus.loading));
 
     try {
-      // Load saved settings
+      // Initialize StatisticsService first to sync high scores between
+      // the statistics object and the separate highScore key
+      await _statisticsService.initialize();
+
+      // Load saved settings (now synced)
       final highScore = await _storageService.getHighScore();
       final savedBoardSize = await _storageService.getBoardSize();
       final crashFeedbackDuration = await _storageService.getCrashFeedbackDuration();
       final dPadEnabled = await _storageService.isDPadEnabled();
       final dPadPosition = await _storageService.getDPadPosition();
+      final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
 
       // Convert saved board size to BoardSize object
       final boardSize = _convertToBoardSize(savedBoardSize);
@@ -36,6 +43,7 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
         crashFeedbackDuration: crashFeedbackDuration,
         dPadEnabled: dPadEnabled,
         dPadPosition: dPadPosition,
+        screenShakeEnabled: screenShakeEnabled,
       ));
 
       AppLogger.info('GameSettingsCubit initialized. High score: $highScore');
@@ -128,5 +136,18 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
   Future<void> resetHighScore() async {
     emit(state.copyWith(highScore: 0));
     await _storageService.saveHighScore(0);
+  }
+
+  /// Update screen shake setting
+  Future<void> setScreenShakeEnabled(bool enabled) async {
+    if (state.screenShakeEnabled == enabled) return;
+
+    emit(state.copyWith(screenShakeEnabled: enabled));
+    await _storageService.setScreenShakeEnabled(enabled);
+  }
+
+  /// Toggle screen shake
+  Future<void> toggleScreenShake() async {
+    await setScreenShakeEnabled(!state.screenShakeEnabled);
   }
 }

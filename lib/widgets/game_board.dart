@@ -32,9 +32,15 @@ class GameBoard extends StatefulWidget {
 }
 
 class _GameBoardState extends State<GameBoard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _pulseAnimation;
+
+  // Smooth movement animation - runs at 60fps locally
+  late AnimationController _moveAnimationController;
+  DateTime _lastGameStateChangeTime = DateTime.now();
+  GameState? _lastGameStateForAnimation;
+
   GameState? _cachedGameState;
   GameTheme? _cachedTheme;
 
@@ -56,13 +62,26 @@ class _GameBoardState extends State<GameBoard>
     );
 
     _animationController.repeat(reverse: true);
+
+    // Smooth movement controller - drives 60fps animation for snake interpolation
+    _moveAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200), // Longer than game tick
+    )..repeat(); // Continuously animate
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _moveAnimationController.dispose();
     _particleManager.clear(); // Clean up particle emissions to prevent memory leaks
     super.dispose();
+  }
+
+  /// Calculate move progress locally based on time since last game state change
+  double _calculateMoveProgress(int gameSpeed) {
+    final elapsed = DateTime.now().difference(_lastGameStateChangeTime).inMilliseconds;
+    return (elapsed / gameSpeed).clamp(0.0, 1.0);
   }
 
   @override
@@ -202,29 +221,49 @@ class _GameBoardState extends State<GameBoard>
                           widget.gameState.boardWidth /
                           widget.gameState.boardHeight,
                       child: BlocBuilder<GameCubit, GameCubitState>(
+                        // CRITICAL: Only rebuild when actual game state changes
+                        // NOT on animation frame updates (moveProgress changes)
+                        // This reduces rebuilds from ~60/sec to ~3-5/sec
+                        buildWhen: (previous, current) =>
+                            !identical(previous.gameState, current.gameState) ||
+                            !identical(previous.previousGameState, current.previousGameState),
                         builder: (context, cubitState) {
                           // Use the gameState from cubit, not from widget!
                           // This ensures we always have the latest state
                           final currentGameState = cubitState.gameState ?? widget.gameState;
 
-                          debugPrint('🎮 [GameBoard] BlocBuilder rebuild: snake at ${currentGameState.snake.head}');
+                          // Track when game state changes for smooth animation
+                          if (!identical(_lastGameStateForAnimation, currentGameState)) {
+                            _lastGameStateChangeTime = DateTime.now();
+                            _lastGameStateForAnimation = currentGameState;
+                          }
 
-                          return CustomPaint(
-                            painter: OptimizedGameBoardPainter(
-                              gameState: currentGameState,
-                              theme: theme,
-                              pulseAnimation: _pulseAnimation,
-                              // Smooth movement properties
-                              moveProgress: cubitState.moveProgress,
-                              previousGameState: cubitState.previousGameState,
-                              premiumState: premiumState,
-                              // Pass time once per frame to avoid DateTime.now() in paint loop
-                              animationTimeMs: DateTime.now().millisecondsSinceEpoch,
-                            ),
-                            size: Size.infinite,
-                            // Performance: Only repaint when needed
-                            isComplex: false,
-                            willChange: true,
+                          // AnimatedBuilder drives 60fps repaints for smooth snake movement
+                          // without causing BlocBuilder rebuilds
+                          return AnimatedBuilder(
+                            animation: _moveAnimationController,
+                            builder: (context, child) {
+                              final gameSpeed = currentGameState.gameSpeed;
+                              final moveProgress = _calculateMoveProgress(gameSpeed);
+
+                              return CustomPaint(
+                                painter: OptimizedGameBoardPainter(
+                                  gameState: currentGameState,
+                                  theme: theme,
+                                  pulseAnimation: _pulseAnimation,
+                                  // Smooth movement calculated locally
+                                  moveProgress: moveProgress,
+                                  previousGameState: cubitState.previousGameState,
+                                  premiumState: premiumState,
+                                  // Pass time once per frame to avoid DateTime.now() in paint loop
+                                  animationTimeMs: DateTime.now().millisecondsSinceEpoch,
+                                ),
+                                size: Size.infinite,
+                                // Performance: Only repaint when needed
+                                isComplex: false,
+                                willChange: true,
+                              );
+                            },
                           );
                         },
                       ),

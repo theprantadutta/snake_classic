@@ -10,6 +10,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
 import 'package:snake_classic/screens/home_screen.dart';
 import 'package:snake_classic/services/achievement_service.dart';
+import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
@@ -355,9 +356,10 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<void> _initializeAudio() async {
     try {
       AppLogger.audio('Verifying audio service');
-      // Audio already initialized in main() - just verify it's ready
-      // No need to call initialize() again - it's already done
-      AppLogger.success('Audio service verified');
+      // Audio already initialized in main() with sounds pre-loaded
+      // Just access the singleton to verify it exists
+      AudioService();
+      AppLogger.success('Audio service verified - sounds pre-loaded and ready');
     } catch (e) {
       AppLogger.audio('Audio system verification warning', e);
     }

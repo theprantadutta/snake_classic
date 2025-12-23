@@ -52,6 +52,32 @@ class StatisticsService {
       } else {
         _currentStatistics = GameStatistics.initial();
       }
+
+      // Sync high score between statistics and the separate highScore key
+      // This ensures both sources stay in sync
+      final separateHighScore = await _storageService.getHighScore();
+      final statsHighScore = _currentStatistics.highScore;
+
+      if (separateHighScore != statsHighScore) {
+        // Take the maximum of both values
+        final syncedHighScore =
+            separateHighScore > statsHighScore ? separateHighScore : statsHighScore;
+
+        // Update statistics if separate key had higher value
+        if (separateHighScore > statsHighScore) {
+          _currentStatistics = _currentStatistics.withHighScore(syncedHighScore);
+          await _saveLocalStatistics();
+        }
+
+        // Update separate key if statistics had higher value
+        if (statsHighScore > separateHighScore) {
+          await _storageService.saveHighScore(syncedHighScore);
+        }
+
+        if (kDebugMode) {
+          print('High score synced: stats=$statsHighScore, separate=$separateHighScore -> $syncedHighScore');
+        }
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Error loading local statistics: $e');

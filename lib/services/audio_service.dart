@@ -1,6 +1,7 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:snake_classic/services/storage_service.dart';
 
 class AudioService {
@@ -8,9 +9,19 @@ class AudioService {
   AudioPlayer? _musicPlayer;
   final StorageService _storageService = StorageService();
 
-  // Pool of players for concurrent sound effects
-  final List<AudioPlayer> _playerPool = [];
-  static const int _maxPoolSize = 5;
+  // SoLoud for low-latency game sound effects
+  final SoLoud _soloud = SoLoud.instance;
+  final Map<String, AudioSource> _loadedSounds = {};
+
+  // List of sounds to pre-load
+  static const List<String> _soundsToPreload = [
+    'eat',
+    'level_up',
+    'game_over',
+    'game_start',
+    'power_up',
+    'button_click',
+  ];
 
   bool _soundEnabled = true;
   bool _musicEnabled = true;
@@ -29,64 +40,48 @@ class AudioService {
     _soundEnabled = await _storageService.isSoundEnabled();
     _musicEnabled = await _storageService.isMusicEnabled();
 
-    // Pre-create player pool
-    for (int i = 0; i < _maxPoolSize; i++) {
-      final player = AudioPlayer();
-      await player.setReleaseMode(ReleaseMode.stop);
-      _playerPool.add(player);
+    // Initialize SoLoud engine
+    try {
+      await _soloud.init();
+      debugPrint('SoLoud engine initialized');
+
+      // Pre-load all sounds
+      await _preloadSounds();
+    } catch (e) {
+      debugPrint('Failed to initialize SoLoud: $e');
     }
 
     _initialized = true;
-    debugPrint('AudioService initialized with $_maxPoolSize players');
+    debugPrint('AudioService initialized with SoLoud - ${_loadedSounds.length} sounds loaded');
   }
 
-  /// Get an available player from the pool
-  AudioPlayer? _getAvailablePlayer() {
-    for (final player in _playerPool) {
-      if (player.state == PlayerState.stopped ||
-          player.state == PlayerState.completed) {
-        return player;
+  /// Pre-load all sound effects into SoLoud
+  Future<void> _preloadSounds() async {
+    for (final soundName in _soundsToPreload) {
+      try {
+        final source = await _soloud.loadAsset('assets/audio/$soundName.wav');
+        _loadedSounds[soundName] = source;
+      } catch (e) {
+        debugPrint('Failed to preload sound $soundName: $e');
       }
     }
-    // If all players are busy, return the first one (will interrupt it)
-    return _playerPool.isNotEmpty ? _playerPool.first : null;
   }
 
-  /// Play a sound effect - fire and forget, non-blocking
+  /// Play a sound effect - instant, non-blocking
   void playSound(String soundName) {
     if (!_initialized || !_soundEnabled) return;
 
-    // Fire and forget - don't block game loop
-    _playSoundAsync(soundName);
-  }
-
-  Future<void> _playSoundAsync(String soundName) async {
-    try {
-      final player = _getAvailablePlayer();
-      if (player == null) {
-        _playSystemSoundSync(soundName);
-        return;
-      }
-
-      // Use play() directly with source - simpler and more reliable
-      await player.setVolume(0.7);
-      await player.play(
-        AssetSource('audio/$soundName.wav'),
-      ).timeout(
-        const Duration(milliseconds: 500),
-        onTimeout: () {
-          debugPrint('Audio play timeout for $soundName, using system sound');
-          _playSystemSoundSync(soundName);
-        },
-      );
-    } catch (e) {
-      debugPrint('Audio error for $soundName: $e');
-      _playSystemSoundSync(soundName);
+    final source = _loadedSounds[soundName];
+    if (source != null) {
+      // SoLoud.play() is non-blocking and low-latency
+      _soloud.play(source);
+    } else {
+      // Fallback to system sound if not pre-loaded
+      _playSystemSound(soundName);
     }
   }
 
-  void _playSystemSoundSync(String soundName) {
-    // Fire and forget system sounds
+  void _playSystemSound(String soundName) {
     switch (soundName) {
       case 'eat':
       case 'button_click':
@@ -129,15 +124,6 @@ class AudioService {
   Future<void> setSoundEnabled(bool enabled) async {
     _soundEnabled = enabled;
     await _storageService.setSoundEnabled(enabled);
-
-    if (!enabled) {
-      // Stop all pool players
-      for (final player in _playerPool) {
-        try {
-          await player.stop();
-        } catch (_) {}
-      }
-    }
   }
 
   Future<void> setMusicEnabled(bool enabled) async {
@@ -155,10 +141,13 @@ class AudioService {
   bool get isMusicEnabled => _musicEnabled;
 
   void dispose() {
-    for (final player in _playerPool) {
-      player.dispose();
+    // Dispose all loaded sounds
+    for (final source in _loadedSounds.values) {
+      _soloud.disposeSource(source);
     }
-    _playerPool.clear();
+    _loadedSounds.clear();
+
+    _soloud.deinit();
     _musicPlayer?.dispose();
     _musicPlayer = null;
     _initialized = false;

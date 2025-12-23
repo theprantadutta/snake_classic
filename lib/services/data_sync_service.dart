@@ -317,6 +317,57 @@ class DataSyncService extends ChangeNotifier {
           // Achievements are synced individually
           return true;
 
+        case 'daily_bonus_claim':
+          // Sync daily bonus claim with backend
+          final result = await _apiService.claimDailyBonus();
+          return result != null && result['success'] == true;
+
+        case 'tournament_score':
+          // Submit tournament score to backend
+          final tournamentResult = await _apiService.submitTournamentScore(
+            tournamentId: item.data['tournamentId'],
+            score: item.data['score'] ?? 0,
+            gameDuration: item.data['gameDuration'] ?? 0,
+            foodsEaten: item.data['foodsEaten'] ?? 0,
+          );
+          return tournamentResult != null && tournamentResult['success'] == true;
+
+        case 'battle_pass_claim':
+          // Claim battle pass reward on backend
+          final claimResult = await _apiService.claimBattlePassReward(
+            level: item.data['level'] ?? 0,
+            tier: item.data['tier'] ?? 'free',
+          );
+          return claimResult != null && claimResult['success'] == true;
+
+        case 'friend_request_send':
+          // Send friend request
+          final sendResult = await _apiService.sendFriendRequest(
+            userId: item.data['userId'],
+          );
+          return sendResult != null && sendResult['success'] == true;
+
+        case 'friend_request_accept':
+          // Accept friend request
+          final acceptResult = await _apiService.acceptFriendRequest(
+            item.data['requestId'],
+          );
+          return acceptResult != null && acceptResult['success'] == true;
+
+        case 'friend_request_reject':
+          // Reject friend request
+          final rejectResult = await _apiService.rejectFriendRequest(
+            item.data['requestId'],
+          );
+          return rejectResult != null && rejectResult['success'] == true;
+
+        case 'friend_remove':
+          // Remove friend
+          final removeResult = await _apiService.removeFriend(
+            item.data['friendId'],
+          );
+          return removeResult != null && removeResult['success'] == true;
+
         default:
           // Generic profile update
           final result = await _apiService.updateProfile({item.dataType: item.data});

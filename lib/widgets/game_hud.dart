@@ -29,9 +29,14 @@ class GameHUD extends StatefulWidget {
   State<GameHUD> createState() => _GameHUDState();
 }
 
-class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
+class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   late AnimationController _pulseController;
+  late AnimationController _levelUpController;
+  late Animation<double> _levelUpScale;
+  late Animation<double> _levelUpGlow;
   int _displayedScore = 0;
+  int _previousLevel = 1;
+  bool _showLevelUpEffect = false;
 
   @override
   void initState() {
@@ -40,12 +45,63 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+
+    // Level-up celebration animation (1.5 seconds total)
+    _levelUpController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    // Scale animation: 1.0 -> 1.4 -> 1.0
+    _levelUpScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.4).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.4, end: 1.15).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 20,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.15, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 50,
+      ),
+    ]).animate(_levelUpController);
+
+    // Glow animation: 0 -> 1 -> 0
+    _levelUpGlow = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 70,
+      ),
+    ]).animate(_levelUpController);
+
+    _levelUpController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() => _showLevelUpEffect = false);
+        _levelUpController.reset();
+      }
+    });
+
     _displayedScore = widget.gameState.score;
+    _previousLevel = widget.gameState.level;
   }
 
   @override
   void didUpdateWidget(GameHUD oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    // Check for level up
+    if (widget.gameState.level > _previousLevel) {
+      _triggerLevelUpEffect();
+      _previousLevel = widget.gameState.level;
+    }
+
+    // Power-up urgent pulse
     final hasUrgentPowerUp = widget.gameState.activePowerUps.any(
       (p) => !p.isExpired && p.remainingTime.inSeconds <= 3,
     );
@@ -57,9 +113,15 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
     }
   }
 
+  void _triggerLevelUpEffect() {
+    setState(() => _showLevelUpEffect = true);
+    _levelUpController.forward();
+  }
+
   @override
   void dispose() {
     _pulseController.dispose();
+    _levelUpController.dispose();
     super.dispose();
   }
 
@@ -280,28 +342,66 @@ class _GameHUDState extends State<GameHUD> with SingleTickerProviderStateMixin {
       ),
       child: Row(
         children: [
-          // Level badge
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isSmallScreen ? 6 : 8,
-              vertical: isSmallScreen ? 2 : 3,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isNearLevelUp
-                    ? [Colors.amber, Colors.orange]
-                    : [theme.snakeColor, theme.accentColor],
-              ),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              'LV${gameState.level}',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isSmallScreen ? 10 : 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+          // Level badge with animation
+          AnimatedBuilder(
+            animation: _levelUpController,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _showLevelUpEffect ? _levelUpScale.value : 1.0,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 6 : 8,
+                    vertical: isSmallScreen ? 2 : 3,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: _showLevelUpEffect
+                          ? [Colors.amber, Colors.orange]
+                          : isNearLevelUp
+                              ? [Colors.amber, Colors.orange]
+                              : [theme.snakeColor, theme.accentColor],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: _showLevelUpEffect
+                        ? [
+                            BoxShadow(
+                              color: Colors.amber.withValues(alpha: _levelUpGlow.value * 0.8),
+                              blurRadius: 12 * _levelUpGlow.value,
+                              spreadRadius: 4 * _levelUpGlow.value,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_showLevelUpEffect) ...[
+                        Text(
+                          '⬆️',
+                          style: TextStyle(fontSize: isSmallScreen ? 8 : 10),
+                        ),
+                        const SizedBox(width: 2),
+                      ],
+                      Text(
+                        'LV${gameState.level}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 10 : 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      if (_showLevelUpEffect) ...[
+                        const SizedBox(width: 2),
+                        Text(
+                          '⬆️',
+                          style: TextStyle(fontSize: isSmallScreen ? 8 : 10),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 8),
           // Progress bar

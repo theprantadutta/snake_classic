@@ -97,46 +97,30 @@ class DailyBonusPopup extends StatefulWidget {
   });
 
   /// Show the daily bonus popup as a dialog
+  /// [onClaim] is called when the user taps claim - it should handle the reward immediately
+  /// and queue any API calls for background sync (offline-first approach)
   static Future<void> show({
     required BuildContext context,
     required GameTheme theme,
     required DailyBonusStatus status,
     required Future<bool> Function() onClaim,
   }) async {
-    bool isLoading = false;
-    bool claimed = false;
-
     await showDialog(
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black.withValues(alpha: 0.85),
       builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return DailyBonusPopup(
-              theme: theme,
-              status: status,
-              isLoading: isLoading,
-              onClaim: () async {
-                if (isLoading || claimed) return;
-                setState(() => isLoading = true);
-
-                final success = await onClaim();
-
-                if (success) {
-                  claimed = true;
-                  // Wait a moment to show success then close
-                  await Future.delayed(const Duration(milliseconds: 800));
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                } else {
-                  setState(() => isLoading = false);
-                }
-              },
-              onClose: () => Navigator.of(dialogContext).pop(),
-            );
+        return DailyBonusPopup(
+          theme: theme,
+          status: status,
+          isLoading: false, // Never show loading - instant feedback
+          onClaim: () async {
+            // Close popup immediately for instant feedback
+            Navigator.of(dialogContext).pop();
+            // Call the claim handler (handles coins + background sync)
+            await onClaim();
           },
+          onClose: () => Navigator.of(dialogContext).pop(),
         );
       },
     );
@@ -395,13 +379,13 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
     if (isClaimed) {
       bgColor = Colors.green.withValues(alpha: 0.3);
       borderColor = Colors.green;
-      icon = const Icon(Icons.check, color: Colors.green, size: 18);
+      icon = const Icon(Icons.check, color: Colors.green, size: 16);
     } else if (isToday) {
       bgColor = Colors.amber.withValues(alpha: 0.3);
       borderColor = Colors.amber;
       icon = Text(
         '🎁',
-        style: TextStyle(fontSize: hasBonus ? 16 : 14),
+        style: TextStyle(fontSize: hasBonus ? 14 : 12),
       );
     } else {
       bgColor = widget.theme.backgroundColor.withValues(alpha: 0.5);
@@ -409,15 +393,15 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
       icon = Text(
         hasBonus ? '⭐' : '🪙',
         style: TextStyle(
-          fontSize: 14,
+          fontSize: 12,
           color: isFuture ? Colors.grey : null,
         ),
       );
     }
 
     Widget circle = Container(
-      width: 40,
-      height: 40,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,

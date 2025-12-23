@@ -135,7 +135,20 @@ class _ScreenShakeWidgetState extends State<ScreenShakeWidget> {
 class GameJuiceController extends ChangeNotifier {
   final ScreenShakeController shakeController = ScreenShakeController();
   final Map<String, AnimationController> _animationControllers = {};
-  
+
+  // Whether juice effects are enabled (controlled by settings)
+  bool _shakeEnabled = true;
+  bool get shakeEnabled => _shakeEnabled;
+  set shakeEnabled(bool value) {
+    _shakeEnabled = value;
+    if (!value) {
+      shakeController.stopShake(); // Stop any running shake
+      // Also reset scale punch to stop its animation loop
+      _scalePunchValue = 1.0;
+      _scalePunchStartTime = null;
+    }
+  }
+
   // Scale punch effect for UI elements
   double _scalePunchValue = 1.0;
   Duration _scalePunchDuration = Duration.zero;
@@ -156,6 +169,8 @@ class GameJuiceController extends ChangeNotifier {
     ShakeIntensity intensity = ShakeIntensity.medium,
     Duration duration = const Duration(milliseconds: 300),
   }) {
+    // Skip shake animation if disabled - prevents background animation loop
+    if (!_shakeEnabled) return;
     shakeController.shake(intensity: intensity, duration: duration);
   }
 
@@ -164,6 +179,8 @@ class GameJuiceController extends ChangeNotifier {
     double intensity = 0.1,
     Duration duration = const Duration(milliseconds: 150),
   }) {
+    // Skip scale punch animation if effects are disabled
+    if (!_shakeEnabled) return;
     _scalePunchValue = 1.0 + intensity;
     _scalePunchDuration = duration;
     _scalePunchStartTime = DateTime.now();

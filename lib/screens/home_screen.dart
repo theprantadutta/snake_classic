@@ -23,6 +23,7 @@ import 'package:snake_classic/screens/store_screen.dart';
 import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -69,6 +70,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   /// Check and show daily bonus popup if available
+  /// Uses offline-first approach - gives coins immediately, syncs API in background
   Future<void> _checkDailyBonus() async {
     if (_dailyBonusChecked) return;
     _dailyBonusChecked = true;
@@ -89,22 +91,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           theme: theme,
           status: status,
           onClaim: () async {
-            final claimResponse = await apiService.claimDailyBonus();
-            if (claimResponse != null && claimResponse['success'] == true) {
-              // Update local coin balance
-              if (mounted) {
-                final reward = status.todayReward;
-                if (reward != null) {
-                  context.read<CoinsCubit>().earnCoins(
-                    CoinEarningSource.dailyLogin,
-                    customAmount: reward.coins,
-                    itemName: 'Day ${reward.day} Bonus',
-                  );
-                }
+            // Offline-first: Give coins immediately, no waiting for API
+            if (mounted) {
+              final reward = status.todayReward;
+              if (reward != null) {
+                context.read<CoinsCubit>().earnCoins(
+                  CoinEarningSource.dailyLogin,
+                  customAmount: reward.coins,
+                  itemName: 'Day ${reward.day} Bonus',
+                );
               }
-              return true;
             }
-            return false;
+
+            // Queue the API call for background sync (fire and forget)
+            DataSyncService().queueSync(
+              'daily_bonus_claim',
+              {
+                'day': status.currentStreak,
+                'coins': status.todayReward?.coins ?? 0,
+                'claimed_at': DateTime.now().toIso8601String(),
+              },
+              priority: SyncPriority.high,
+            );
+
+            return true; // Always return true for instant feedback
           },
         );
       }
@@ -442,12 +452,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     double actualScreenHeight,
   ) {
     final isSmallScreen = screenHeight < 750;
-    final gameHighScore = gameCubitState.gameState?.highScore ?? 0;
+    // Read high score from GameSettingsCubit (synced source of truth)
+    final settingsHighScore = context.watch<GameSettingsCubit>().state.highScore;
+    // Take max of settings high score and auth high score (for signed-in users)
     final highScore = authState.isSignedIn
-        ? (authState.highScore > gameHighScore
+        ? (authState.highScore > settingsHighScore
               ? authState.highScore
-              : gameHighScore)
-        : gameHighScore;
+              : settingsHighScore)
+        : settingsHighScore;
 
     return LayoutBuilder(
       builder: (context, constraints) {

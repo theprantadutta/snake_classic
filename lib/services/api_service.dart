@@ -102,7 +102,7 @@ class ApiService {
       return jsonDecode(response.body);
     }
 
-    AppLogger.error('API error: ${response.statusCode}', response.body);
+    AppLogger.error('API error: ${response.statusCode} from ${response.request?.url}', response.body);
     return null;
   }
 
@@ -829,7 +829,7 @@ class ApiService {
   Future<Map<String, dynamic>?> getCurrentBattlePassSeason() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/battle-pass/current-season'),
+        Uri.parse('$baseUrl/BattlePass/current-season'),
         headers: _authHeaders,
       ).timeout(_timeout);
 
@@ -844,7 +844,7 @@ class ApiService {
   Future<Map<String, dynamic>?> getBattlePassProgress() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/battle-pass/progress'),
+        Uri.parse('$baseUrl/BattlePass/progress'),
         headers: _authHeaders,
       ).timeout(_timeout);
 
@@ -862,7 +862,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/battle-pass/add-xp'),
+        Uri.parse('$baseUrl/BattlePass/add-xp'),
         headers: _authHeaders,
         body: jsonEncode({
           'xp': xp,
@@ -884,7 +884,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/battle-pass/claim-reward'),
+        Uri.parse('$baseUrl/BattlePass/claim-reward'),
         headers: _authHeaders,
         body: jsonEncode({
           'level': level,
@@ -905,7 +905,7 @@ class ApiService {
   Future<Map<String, dynamic>?> getDailyBonusStatus() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/daily-bonus/status'),
+        Uri.parse('$baseUrl/DailyBonus/status'),
         headers: _authHeaders,
       ).timeout(_timeout);
 
@@ -920,7 +920,7 @@ class ApiService {
   Future<Map<String, dynamic>?> claimDailyBonus() async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/daily-bonus/claim'),
+        Uri.parse('$baseUrl/DailyBonus/claim'),
         headers: _authHeaders,
         body: jsonEncode({}),
       ).timeout(_timeout);

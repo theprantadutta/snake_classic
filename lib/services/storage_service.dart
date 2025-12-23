@@ -134,6 +134,17 @@ class StorageService {
     await _prefs?.setInt('dpad_position', position.index);
   }
 
+  // Screen shake preference
+  Future<bool> isScreenShakeEnabled() async {
+    await _initPrefs();
+    return _prefs?.getBool('screen_shake_enabled') ?? false; // Default to false
+  }
+
+  Future<void> setScreenShakeEnabled(bool enabled) async {
+    await _initPrefs();
+    await _prefs?.setBool('screen_shake_enabled', enabled);
+  }
+
   // Replay storage methods
   Future<void> saveReplay(String replayId, String replayJson) async {
     await _initPrefs();

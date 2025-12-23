@@ -29,6 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _soundEnabled = true;
   bool _musicEnabled = true;
   bool _dPadEnabled = false;
+  bool _screenShakeEnabled = false;
   DPadPosition _dPadPosition = DPadPosition.bottomCenter;
   BoardSize _selectedBoardSize = GameConstants.availableBoardSizes[1]; // Default to Classic
   Duration _selectedCrashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration;
@@ -44,11 +45,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final boardSize = await _storageService.getBoardSize();
     final crashFeedbackDuration = await _storageService.getCrashFeedbackDuration();
     final dPadEnabled = await _storageService.isDPadEnabled();
+    final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
     final dPadPosition = await _storageService.getDPadPosition();
     setState(() {
       _soundEnabled = _audioService.isSoundEnabled;
       _musicEnabled = _audioService.isMusicEnabled;
       _dPadEnabled = dPadEnabled;
+      _screenShakeEnabled = screenShakeEnabled;
       _dPadPosition = dPadPosition;
       _selectedBoardSize = boardSize;
       _selectedCrashFeedbackDuration = crashFeedbackDuration;
@@ -135,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                                   const SizedBox(height: 32),
 
-                                  // 2. Gameplay Section (board size + crash feedback)
+                                  // 2. Gameplay Section (board size + crash feedback + effects)
                                   _buildSection(
                                     'GAMEPLAY',
                                     [
@@ -144,6 +147,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       const Divider(height: 1),
                                       const SizedBox(height: 24),
                                       _buildCrashFeedbackDurationSelector(gameState, theme),
+                                      const SizedBox(height: 24),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 24),
+                                      _buildAudioSwitch(
+                                        'Screen Shake',
+                                        _screenShakeEnabled,
+                                        (value) async {
+                                          setState(() {
+                                            _screenShakeEnabled = value;
+                                          });
+                                          await context.read<GameSettingsCubit>().setScreenShakeEnabled(value);
+                                        },
+                                        theme,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Shake the screen on collisions and game events',
+                                        style: TextStyle(
+                                          color: theme.accentColor.withValues(alpha: 0.6),
+                                          fontSize: 12,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
                                     ],
                                     theme,
                                   ),

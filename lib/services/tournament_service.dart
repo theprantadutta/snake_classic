@@ -4,12 +4,14 @@ import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/offline_cache_service.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
 
 class TournamentService {
   static TournamentService? _instance;
   final ApiService _apiService = ApiService();
   final ConnectivityService _connectivityService = ConnectivityService();
   final OfflineCacheService _cacheService = OfflineCacheService();
+  final DataSyncService _dataSyncService = DataSyncService();
 
   TournamentService._internal();
 
@@ -243,35 +245,28 @@ class TournamentService {
     }
   }
 
-  /// Submit score to tournament (requires online)
+  /// Submit score to tournament (offline-first: queues for background sync)
   Future<bool> submitScore(String tournamentId, int score, Map<String, dynamic> gameStats) async {
-    if (!_connectivityService.isOnline) {
-      if (kDebugMode) {
-        print('Cannot submit tournament score while offline');
-      }
-      return false;
-    }
+    // Offline-first: Queue the score submission for background sync
+    // This allows the user to continue playing without waiting for the API
+    _dataSyncService.queueSync(
+      'tournament_score',
+      {
+        'tournamentId': tournamentId,
+        'score': score,
+        'gameDuration': gameStats['duration'] ?? 0,
+        'foodsEaten': gameStats['foodsEaten'] ?? 0,
+        'playedAt': DateTime.now().toIso8601String(),
+        'idempotencyKey': '${tournamentId}_${DateTime.now().millisecondsSinceEpoch}_$score',
+      },
+      priority: SyncPriority.critical, // Tournament scores are critical
+    );
 
-    try {
-      final result = await _apiService.submitTournamentScore(
-        tournamentId: tournamentId,
-        score: score,
-        gameDuration: gameStats['duration'] ?? 0,
-        foodsEaten: gameStats['foodsEaten'] ?? 0,
-      );
+    // Invalidate leaderboard cache so next fetch gets fresh data
+    await _cacheService.invalidateCache('tournament_leaderboard_$tournamentId');
 
-      if (result != null && result['success'] == true) {
-        // Invalidate leaderboard cache
-        await _cacheService.invalidateCache('tournament_leaderboard_$tournamentId');
-        return true;
-      }
-      return false;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error submitting tournament score: $e');
-      }
-      return false;
-    }
+    // Return true immediately - the score will be synced in the background
+    return true;
   }
 
   /// Get tournament leaderboard with caching

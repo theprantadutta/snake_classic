@@ -19,6 +19,7 @@ class GameSettingsState extends Equatable {
   final BoardSize boardSize;
   final Duration crashFeedbackDuration;
   final int highScore;
+  final bool screenShakeEnabled;
 
   const GameSettingsState({
     this.status = GameSettingsStatus.initial,
@@ -27,6 +28,7 @@ class GameSettingsState extends Equatable {
     this.boardSize = BoardSize.classic,
     this.crashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration,
     this.highScore = 0,
+    this.screenShakeEnabled = false, // Disabled by default
   });
 
   /// Initial state
@@ -40,6 +42,7 @@ class GameSettingsState extends Equatable {
     BoardSize? boardSize,
     Duration? crashFeedbackDuration,
     int? highScore,
+    bool? screenShakeEnabled,
   }) {
     return GameSettingsState(
       status: status ?? this.status,
@@ -48,6 +51,7 @@ class GameSettingsState extends Equatable {
       boardSize: boardSize ?? this.boardSize,
       crashFeedbackDuration: crashFeedbackDuration ?? this.crashFeedbackDuration,
       highScore: highScore ?? this.highScore,
+      screenShakeEnabled: screenShakeEnabled ?? this.screenShakeEnabled,
     );
   }
 
@@ -62,5 +66,6 @@ class GameSettingsState extends Equatable {
         boardSize,
         crashFeedbackDuration,
         highScore,
+        screenShakeEnabled,
       ];
 }

@@ -25,10 +25,14 @@ class _SwipeDetectorState extends State<SwipeDetector>
     with SingleTickerProviderStateMixin {
   late AnimationController _feedbackController;
   late Animation<double> _opacityAnimation;
-  
+
   Direction? _lastSwipeDirection;
   bool _isProcessingSwipe = false;
   DateTime? _lastSwipeTime;
+
+  // Cumulative tracking for better swipe detection
+  Offset _cumulativeDelta = Offset.zero;
+  bool _hasTriggeredThisGesture = false;
 
   @override
   void initState() {
@@ -108,55 +112,79 @@ class _SwipeDetectorState extends State<SwipeDetector>
     });
   }
 
+  /// Determines the swipe direction from cumulative delta with directional ratio check.
+  /// Returns null if the swipe is ambiguous (too diagonal).
+  Direction? _getSwipeDirection(Offset delta) {
+    final absX = delta.dx.abs();
+    final absY = delta.dy.abs();
+
+    // Minimum distance threshold (more generous than per-frame check)
+    const minDistance = 15.0;
+
+    // Directional ratio - primary axis must be at least 1.3x the secondary
+    // This prevents diagonal swipes from triggering wrong directions
+    const directionRatio = 1.3;
+
+    if (absX < minDistance && absY < minDistance) {
+      return null; // Not enough movement
+    }
+
+    if (absX > absY * directionRatio) {
+      // Clearly horizontal
+      return delta.dx > 0 ? Direction.right : Direction.left;
+    } else if (absY > absX * directionRatio) {
+      // Clearly vertical
+      return delta.dy > 0 ? Direction.down : Direction.up;
+    }
+
+    // Ambiguous diagonal - don't trigger
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
+      onPanStart: (details) {
+        // Reset tracking for new gesture
+        _cumulativeDelta = Offset.zero;
+        _hasTriggeredThisGesture = false;
+      },
       onPanUpdate: (details) {
-        // Detect swipes during pan for more responsive feeling
-        final delta = details.delta;
+        // Accumulate total movement from pan start
+        _cumulativeDelta += details.delta;
 
-        if (delta.dx.abs() > GameConstants.swipeMinDelta ||
-            delta.dy.abs() > GameConstants.swipeMinDelta) {
-          if (delta.dx.abs() > delta.dy.abs()) {
-            // Horizontal swipe
-            if (delta.dx > 0) {
-              _processSwipe(Direction.right);
-            } else {
-              _processSwipe(Direction.left);
-            }
-          } else {
-            // Vertical swipe
-            if (delta.dy > 0) {
-              _processSwipe(Direction.down);
-            } else {
-              _processSwipe(Direction.up);
-            }
+        // Only trigger once per gesture, using cumulative delta
+        if (!_hasTriggeredThisGesture) {
+          final direction = _getSwipeDirection(_cumulativeDelta);
+          if (direction != null) {
+            _hasTriggeredThisGesture = true;
+            _processSwipe(direction);
           }
         }
       },
       onPanEnd: (details) {
-        // Backup swipe detection with velocity for missed quick swipes
-        final velocity = details.velocity.pixelsPerSecond;
-        final absX = velocity.dx.abs();
-        final absY = velocity.dy.abs();
+        // Backup: Use velocity for quick flicks that might not accumulate enough distance
+        if (!_hasTriggeredThisGesture) {
+          final velocity = details.velocity.pixelsPerSecond;
+          final absX = velocity.dx.abs();
+          final absY = velocity.dy.abs();
 
-        if (absX > GameConstants.swipeMinVelocity ||
-            absY > GameConstants.swipeMinVelocity) {
-          if (absX > absY) {
-            if (velocity.dx > 0) {
-              _processSwipe(Direction.right);
-            } else {
-              _processSwipe(Direction.left);
-            }
-          } else {
-            if (velocity.dy > 0) {
-              _processSwipe(Direction.down);
-            } else {
-              _processSwipe(Direction.up);
-            }
+          // Check velocity with directional ratio
+          const velocityRatio = 1.3;
+
+          if (absX > GameConstants.swipeMinVelocity &&
+              absX > absY * velocityRatio) {
+            _processSwipe(velocity.dx > 0 ? Direction.right : Direction.left);
+          } else if (absY > GameConstants.swipeMinVelocity &&
+              absY > absX * velocityRatio) {
+            _processSwipe(velocity.dy > 0 ? Direction.down : Direction.up);
           }
         }
+
+        // Reset for next gesture
+        _cumulativeDelta = Offset.zero;
+        _hasTriggeredThisGesture = false;
       },
       onTap: () {
         HapticFeedback.selectionClick();

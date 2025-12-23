@@ -239,15 +239,27 @@ class EnhancedAudioService {
 
   // Core Audio Playback
 
-  Future<void> playSfx(
+  /// Play SFX - fire and forget, non-blocking
+  void playSfx(
+    String soundId, {
+    double? volume,
+    SpatialAudioPosition? position,
+    double? pitch,
+    bool loop = false,
+  }) {
+    if (!_sfxEnabled) return;
+
+    // Fire and forget - don't block game loop
+    _playSfxAsync(soundId, volume: volume, position: position, pitch: pitch, loop: loop);
+  }
+
+  Future<void> _playSfxAsync(
     String soundId, {
     double? volume,
     SpatialAudioPosition? position,
     double? pitch,
     bool loop = false,
   }) async {
-    if (!_sfxEnabled) return;
-
     try {
       final player = _getAvailablePlayer(_sfxPlayers);
       if (player == null) return;
@@ -259,17 +271,17 @@ class EnhancedAudioService {
       );
 
       await player.setVolume(effectiveVolume);
-      
+
       if (pitch != null) {
         await player.setPlaybackRate(pitch);
       }
 
       await player.play(AssetSource('audio/$soundId.wav'));
-      
+
       if (loop) {
         await player.setReleaseMode(ReleaseMode.loop);
       }
-      
+
     } catch (e) {
       if (kDebugMode) print('SFX playback error: $e');
     }
@@ -331,7 +343,12 @@ class EnhancedAudioService {
     }
   }
 
-  Future<void> playUi(String soundId, {double? volume}) async {
+  /// Play UI sound - fire and forget, non-blocking
+  void playUi(String soundId, {double? volume}) {
+    _playUiAsync(soundId, volume: volume);
+  }
+
+  Future<void> _playUiAsync(String soundId, {double? volume}) async {
     try {
       final player = _getAvailablePlayer(_uiPlayers);
       if (player == null) return;
@@ -339,7 +356,7 @@ class EnhancedAudioService {
       final effectiveVolume = (volume ?? 1.0) * _uiVolume * _masterVolume;
       await player.setVolume(effectiveVolume);
       await player.play(AssetSource('audio/$soundId.wav'));
-      
+
     } catch (e) {
       if (kDebugMode) print('UI audio playback error: $e');
     }
@@ -394,54 +411,54 @@ class EnhancedAudioService {
     }
   }
 
-  // Game-Specific Audio Methods
+  // Game-Specific Audio Methods - all fire and forget, non-blocking
 
-  Future<void> playFoodEaten({SpatialAudioPosition? position}) async {
-    await playSfx('food_eat', position: position);
+  void playFoodEaten({SpatialAudioPosition? position}) {
+    playSfx('food_eat', position: position);
   }
 
-  Future<void> playBonusFoodEaten({SpatialAudioPosition? position}) async {
-    await playSfx('bonus_food_eat', position: position, pitch: 1.2);
+  void playBonusFoodEaten({SpatialAudioPosition? position}) {
+    playSfx('bonus_food_eat', position: position, pitch: 1.2);
   }
 
-  Future<void> playSpecialFoodEaten({SpatialAudioPosition? position}) async {
-    await playSfx('special_food_eat', position: position, pitch: 1.4);
+  void playSpecialFoodEaten({SpatialAudioPosition? position}) {
+    playSfx('special_food_eat', position: position, pitch: 1.4);
   }
 
-  Future<void> playPowerUpCollected({SpatialAudioPosition? position}) async {
-    await playSfx('power_up_collect', position: position);
+  void playPowerUpCollected({SpatialAudioPosition? position}) {
+    playSfx('power_up_collect', position: position);
   }
 
-  Future<void> playLevelUp() async {
-    await playSfx('level_up', volume: 1.2);
+  void playLevelUp() {
+    playSfx('level_up', volume: 1.2);
   }
 
-  Future<void> playGameOver() async {
-    await playSfx('game_over', volume: 1.0);
+  void playGameOver() {
+    playSfx('game_over', volume: 1.0);
   }
 
-  Future<void> playWallHit({SpatialAudioPosition? position}) async {
-    await playSfx('wall_hit', position: position, pitch: 0.8);
+  void playWallHit({SpatialAudioPosition? position}) {
+    playSfx('wall_hit', position: position, pitch: 0.8);
   }
 
-  Future<void> playSelfCollision({SpatialAudioPosition? position}) async {
-    await playSfx('self_collision', position: position, pitch: 0.9);
+  void playSelfCollision({SpatialAudioPosition? position}) {
+    playSfx('self_collision', position: position, pitch: 0.9);
   }
 
-  Future<void> playAchievementUnlocked() async {
-    await playSfx('achievement_unlock', volume: 1.1);
+  void playAchievementUnlocked() {
+    playSfx('achievement_unlock', volume: 1.1);
   }
 
-  Future<void> playButtonClick() async {
-    await playUi('button_click');
+  void playButtonClick() {
+    playUi('button_click');
   }
 
-  Future<void> playMenuNavigation() async {
-    await playUi('menu_navigate');
+  void playMenuNavigation() {
+    playUi('menu_navigate');
   }
 
-  Future<void> playScoreMilestone() async {
-    await playSfx('score_milestone', volume: 1.1);
+  void playScoreMilestone() {
+    playSfx('score_milestone', volume: 1.1);
   }
 
   // Theme-Specific Audio
@@ -541,18 +558,18 @@ class EnhancedAudioService {
     Duration delay = const Duration(milliseconds: 200),
   }) async {
     for (final soundId in soundIds) {
-      await playSfx(soundId);
+      playSfx(soundId);  // Fire and forget
       await Future.delayed(delay);
     }
   }
 
-  Future<void> playRandomVariation(String baseSoundId, {
+  void playRandomVariation(String baseSoundId, {
     int variations = 3,
     SpatialAudioPosition? position,
-  }) async {
+  }) {
     final random = math.Random();
     final variation = random.nextInt(variations) + 1;
-    await playSfx('${baseSoundId}_$variation', position: position);
+    playSfx('${baseSoundId}_$variation', position: position);
   }
 
   Future<void> stopAll() async {

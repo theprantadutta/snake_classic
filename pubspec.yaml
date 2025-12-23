@@ -30,6 +30,7 @@ dependencies:
   
   # Audio system
   audioplayers: ^6.0.0
+  flutter_soloud: ^3.4.7
   
   # Persistent storage
   shared_preferences: ^2.2.3

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 import 'battle_pass_state.dart';
@@ -11,6 +12,7 @@ export 'battle_pass_state.dart';
 /// Cubit for managing battle pass progression
 class BattlePassCubit extends Cubit<BattlePassState> {
   final StorageService _storageService;
+  final DataSyncService _dataSyncService = DataSyncService();
 
   BattlePassCubit({
     required StorageService storageService,
@@ -111,28 +113,52 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     AppLogger.info('Added $xp XP. New tier: $newTier, XP: $newXP/$xpForNext');
   }
 
-  /// Claim free tier reward
+  /// Claim free tier reward (offline-first: updates locally, syncs in background)
   Future<bool> claimFreeReward(int tier) async {
     if (tier > state.currentTier) return false;
     if (state.claimedFreeTiers.contains(tier)) return false;
 
+    // Update local state immediately
     final updatedClaimed = {...state.claimedFreeTiers, tier};
     emit(state.copyWith(claimedFreeTiers: updatedClaimed));
     await _saveState();
+
+    // Queue for background sync
+    _dataSyncService.queueSync(
+      'battle_pass_claim',
+      {
+        'level': tier,
+        'tier': 'free',
+        'claimed_at': DateTime.now().toIso8601String(),
+      },
+      priority: SyncPriority.high,
+    );
 
     AppLogger.info('Claimed free reward for tier $tier');
     return true;
   }
 
-  /// Claim premium tier reward
+  /// Claim premium tier reward (offline-first: updates locally, syncs in background)
   Future<bool> claimPremiumReward(int tier) async {
     if (!state.isValid) return false;
     if (tier > state.currentTier) return false;
     if (state.claimedPremiumTiers.contains(tier)) return false;
 
+    // Update local state immediately
     final updatedClaimed = {...state.claimedPremiumTiers, tier};
     emit(state.copyWith(claimedPremiumTiers: updatedClaimed));
     await _saveState();
+
+    // Queue for background sync
+    _dataSyncService.queueSync(
+      'battle_pass_claim',
+      {
+        'level': tier,
+        'tier': 'premium',
+        'claimed_at': DateTime.now().toIso8601String(),
+      },
+      priority: SyncPriority.high,
+    );
 
     AppLogger.info('Claimed premium reward for tier $tier');
     return true;
