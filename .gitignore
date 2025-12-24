@@ -70,4 +70,4 @@ lib/generated/
 
 # Python FastAPI Backend
 notification_backend/
-.claude/
+.claude/.claude/
