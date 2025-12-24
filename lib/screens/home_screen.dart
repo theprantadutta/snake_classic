@@ -14,7 +14,6 @@ import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/screens/instructions_screen.dart';
 import 'package:snake_classic/screens/leaderboard_screen.dart';
-import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
 import 'package:snake_classic/screens/premium_benefits_screen.dart';
 import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/settings_screen.dart';
@@ -969,11 +968,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         );
       }),
       _NavItem(Icons.group_work, 'MULTI', Colors.green, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const MultiplayerLobbyScreen(),
-          ),
-        );
+        _showComingSoonDialog(context, theme, 'Multiplayer');
       }),
       _NavItem(Icons.emoji_events, 'EVENTS', Colors.purple, () {
         Navigator.of(context).push(
@@ -1346,6 +1341,129 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 'Close',
                 style: TextStyle(
                   color: theme.accentColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showComingSoonDialog(BuildContext context, GameTheme theme, String featureName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: theme.backgroundColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(
+              color: Colors.green.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.construction, color: Colors.amber, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Coming Soon',
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.green.withValues(alpha: 0.1),
+                      Colors.teal.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.green.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.group_work,
+                      size: 48,
+                      color: Colors.green,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      featureName,
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'We\'re working hard to bring you an amazing multiplayer experience!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.star, color: Colors.amber, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Stay tuned for updates!',
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.8),
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.green.withValues(alpha: 0.1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Colors.green.withValues(alpha: 0.3),
+                  ),
+                ),
+              ),
+              child: Text(
+                'Got it!',
+                style: TextStyle(
+                  color: Colors.green,
                   fontWeight: FontWeight.w600,
                 ),
               ),

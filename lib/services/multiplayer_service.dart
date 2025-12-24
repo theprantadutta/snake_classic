@@ -5,6 +5,7 @@ import 'package:signalr_netcore/signalr_client.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/utils/direction.dart';
 
 class MultiplayerService {
   static MultiplayerService? _instance;
@@ -35,6 +36,7 @@ class MultiplayerService {
   final _gameStreamController = StreamController<MultiplayerGame?>.broadcast();
   final _gameActionsController = StreamController<MultiplayerGameAction>.broadcast();
   final _matchmakingStreamController = StreamController<MatchmakingStatus>.broadcast();
+  final _errorController = StreamController<String>.broadcast();
 
   MultiplayerService._internal();
 
@@ -457,6 +459,45 @@ class MultiplayerService {
   /// Stream of game actions for real-time updates
   Stream<MultiplayerGameAction> get gameActionsStream => _gameActionsController.stream;
 
+  /// Stream of error messages for UI display
+  Stream<String> get errorStream => _errorController.stream;
+
+  /// Map backend error messages to user-friendly messages
+  String _mapErrorToUserFriendly(String error) {
+    final errorLower = error.toLowerCase();
+
+    if (errorLower.contains('not all players are ready')) {
+      return 'Waiting for all players to be ready';
+    }
+    if (errorLower.contains('only the host can start')) {
+      return 'Only the host can start the game';
+    }
+    if (errorLower.contains('game not found')) {
+      return 'Game session expired. Please create a new game';
+    }
+    if (errorLower.contains('game already in progress') ||
+        errorLower.contains('game cannot be started')) {
+      return 'This game has already started';
+    }
+    if (errorLower.contains('user not authenticated') ||
+        errorLower.contains('not authenticated')) {
+      return 'Please sign in to play multiplayer';
+    }
+    if (errorLower.contains('reconnection window expired') ||
+        errorLower.contains('reconnect')) {
+      return 'Reconnection time expired';
+    }
+    if (errorLower.contains('connection')) {
+      return 'Connection lost. Please check your internet';
+    }
+    if (errorLower.contains('must join the game via api first')) {
+      return 'Unable to join room. Please try again';
+    }
+
+    // Default: show generic message
+    return 'Something went wrong. Please try again';
+  }
+
   // SignalR management
 
   Future<void> _connectSignalR() async {
@@ -598,6 +639,29 @@ class MultiplayerService {
       if (kDebugMode) {
         print('SignalR Error: $arguments');
       }
+
+      // Extract error message and emit to stream
+      try {
+        final data = arguments?.firstOrNull;
+        String rawError;
+        if (data is String) {
+          rawError = data;
+        } else if (data is Map<String, dynamic>) {
+          rawError = data['message']?.toString() ??
+              data['error']?.toString() ??
+              'Unknown error';
+        } else {
+          rawError = 'Unknown error';
+        }
+
+        final userFriendlyError = _mapErrorToUserFriendly(rawError);
+        _errorController.add(userFriendlyError);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error parsing SignalR error: $e');
+        }
+        _errorController.add('Something went wrong. Please try again');
+      }
     });
 
     // =============================================
@@ -708,10 +772,36 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
-      final userId = data['user_id']?.toString() ?? '';
-      final username = data['username']?.toString() ?? 'Player';
-      final playerIndex = data['player_index'] ?? 0;
-      final isReady = data['is_ready'] ?? false;
+      final userId = (data['UserId'] ?? data['user_id'] ?? '').toString();
+      final username = data['Username'] ?? data['username'] ?? 'Player';
+      final playerIndex = data['PlayerIndex'] ?? data['player_index'] ?? 0;
+      final isReady = data['IsReady'] ?? data['is_ready'] ?? false;
+
+      // Parse snake positions if present (for matchmade games)
+      List<Position> snakePositions = [];
+      final snakeData = data['SnakePositions'] ?? data['snakePositions'] ?? data['snake_positions'];
+      if (snakeData != null && snakeData is List) {
+        snakePositions = snakeData.map((pos) {
+          if (pos is Map<String, dynamic>) {
+            return Position(
+              (pos['x'] ?? pos['X'] ?? 0) as int,
+              (pos['y'] ?? pos['Y'] ?? 0) as int,
+            );
+          }
+          return const Position(0, 0);
+        }).toList();
+      }
+
+      // Parse direction if present
+      final directionStr = data['Direction'] ?? data['direction'] ?? 'right';
+      final direction = Direction.values.firstWhere(
+        (d) => d.name.toLowerCase() == directionStr.toString().toLowerCase(),
+        orElse: () => Direction.right,
+      );
+
+      if (kDebugMode) {
+        print('PlayerJoined: $userId with ${snakePositions.length} snake positions');
+      }
 
       // Create player object
       final newPlayer = MultiplayerPlayer(
@@ -720,6 +810,8 @@ class MultiplayerService {
         status: isReady ? PlayerStatus.ready : PlayerStatus.waiting,
         score: 0,
         rank: playerIndex,
+        snake: snakePositions,
+        currentDirection: direction,
       );
 
       // Update current game with new player
@@ -852,8 +944,84 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
+      if (kDebugMode) {
+        print('GameStarted data: $data');
+      }
+
+      // Parse players with snake positions from the server
+      List<MultiplayerPlayer>? updatedPlayers;
+      if (data['Players'] != null || data['players'] != null) {
+        final playersData = (data['Players'] ?? data['players']) as List;
+        updatedPlayers = playersData.map((p) {
+          final playerMap = p as Map<String, dynamic>;
+
+          // Parse snake positions from server format
+          List<Position> snakePositions = [];
+          final snakeData = playerMap['SnakePositions'] ?? playerMap['snakePositions'] ?? playerMap['snake_positions'];
+          if (snakeData != null && snakeData is List) {
+            snakePositions = snakeData.map((pos) {
+              if (pos is Map<String, dynamic>) {
+                return Position(
+                  (pos['x'] ?? pos['X'] ?? 0) as int,
+                  (pos['y'] ?? pos['Y'] ?? 0) as int,
+                );
+              }
+              return const Position(0, 0);
+            }).toList();
+          }
+
+          // Parse direction
+          final directionStr = playerMap['Direction'] ?? playerMap['direction'] ?? 'right';
+          final direction = Direction.values.firstWhere(
+            (d) => d.name.toLowerCase() == directionStr.toString().toLowerCase(),
+            orElse: () => Direction.right,
+          );
+
+          return MultiplayerPlayer(
+            userId: (playerMap['UserId'] ?? playerMap['userId'] ?? playerMap['user_id'] ?? '').toString(),
+            displayName: playerMap['Username'] ?? playerMap['username'] ?? playerMap['displayName'] ?? 'Player',
+            status: PlayerStatus.playing,
+            snake: snakePositions,
+            currentDirection: direction,
+            score: playerMap['Score'] ?? playerMap['score'] ?? 0,
+            rank: playerMap['PlayerIndex'] ?? playerMap['playerIndex'] ?? playerMap['player_index'] ?? 0,
+          );
+        }).toList();
+
+        if (kDebugMode) {
+          print('Parsed ${updatedPlayers.length} players with snake positions');
+          for (var p in updatedPlayers) {
+            print('  Player ${p.userId}: ${p.snake.length} snake segments');
+          }
+        }
+      }
+
+      // Parse food position
+      Position? foodPosition;
+      final foodData = data['FoodPositions'] ?? data['foodPositions'] ?? data['food_positions'];
+      if (foodData != null && foodData is List && foodData.isNotEmpty) {
+        final firstFood = foodData.first;
+        if (firstFood is Map<String, dynamic>) {
+          foodPosition = Position(
+            (firstFood['x'] ?? firstFood['X'] ?? 0) as int,
+            (firstFood['y'] ?? firstFood['Y'] ?? 0) as int,
+          );
+        }
+      }
+
+      // Parse game settings
+      Map<String, dynamic>? gameSettings;
+      if (data['GameSettings'] != null || data['gameSettings'] != null) {
+        gameSettings = Map<String, dynamic>.from(data['GameSettings'] ?? data['gameSettings'] ?? {});
+      }
+      final boardSize = data['BoardSize'] ?? data['boardSize'] ?? gameSettings?['boardSize'] ?? 20;
+      gameSettings = {...?gameSettings, 'boardSize': boardSize};
+
       _currentGame = _currentGame?.copyWith(
         status: MultiplayerGameStatus.playing,
+        players: updatedPlayers ?? _currentGame?.players,
+        foodPosition: foodPosition,
+        gameSettings: gameSettings,
       );
       _gameStreamController.add(_currentGame);
 
@@ -1328,6 +1496,7 @@ class MultiplayerService {
     _gameStreamController.close();
     _gameActionsController.close();
     _matchmakingStreamController.close();
+    _errorController.close();
   }
 }
 

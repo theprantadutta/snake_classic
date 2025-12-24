@@ -32,6 +32,20 @@ class Snake {
     );
   }
 
+  /// Creates a Snake from a list of positions and direction
+  /// Used for converting multiplayer player data to single-player Snake model
+  factory Snake.fromPositions(List<Position> positions, Direction direction) {
+    if (positions.isEmpty) {
+      return Snake.initial();
+    }
+    final snake = Snake(
+      body: List<Position>.from(positions),
+      currentDirection: direction,
+    );
+    snake._lastCommittedDirection = direction;
+    return snake;
+  }
+
   void move({required bool ateFood, int? boardWidth, int? boardHeight, bool wrapAround = false}) {
     // Commit the current direction for the next tick's validation
     _lastCommittedDirection = currentDirection;

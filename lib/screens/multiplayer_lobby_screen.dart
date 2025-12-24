@@ -88,38 +88,72 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
 
-        return BlocBuilder<MultiplayerCubit, MultiplayerState>(
-          builder: (context, multiplayerState) {
-            return BlocBuilder<AuthCubit, AuthState>(
-              builder: (context, authState) {
-                // Navigate to game screen when game starts
-                if (multiplayerState.isGameActive) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const MultiplayerGameScreen(),
+        return BlocListener<MultiplayerCubit, MultiplayerState>(
+          listenWhen: (prev, curr) =>
+              prev.errorMessage != curr.errorMessage && curr.errorMessage != null,
+          listener: (context, state) {
+            // Show error snackbar
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        state.errorMessage!,
+                        style: const TextStyle(color: Colors.white),
                       ),
-                    );
-                  });
-                }
-
-                return Scaffold(
-                  body: AppBackground(
-                    theme: theme,
-                    child: SafeArea(
-                      child: multiplayerState.matchmakingTimedOut
-                          ? _buildMatchmakingTimeoutUI(context, multiplayerState, theme)
-                          : multiplayerState.status == MultiplayerStatus.inMatchmaking
-                              ? _buildMatchmakingUI(context, multiplayerState, theme)
-                              : multiplayerState.isInGame
-                                  ? _buildGameLobby(context, multiplayerState, theme, authState)
-                                  : _buildMainLobby(context, multiplayerState, theme, authState),
                     ),
-                  ),
-                );
-              },
+                  ],
+                ),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 4),
+                action: SnackBarAction(
+                  label: 'DISMISS',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
+                ),
+              ),
             );
+            context.read<MultiplayerCubit>().clearError();
           },
+          child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
+            builder: (context, multiplayerState) {
+              return BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, authState) {
+                  // Navigate to game screen when game starts
+                  if (multiplayerState.isGameActive) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) => const MultiplayerGameScreen(),
+                        ),
+                      );
+                    });
+                  }
+
+                  return Scaffold(
+                    body: AppBackground(
+                      theme: theme,
+                      child: SafeArea(
+                        child: multiplayerState.matchmakingTimedOut
+                            ? _buildMatchmakingTimeoutUI(context, multiplayerState, theme)
+                            : multiplayerState.status == MultiplayerStatus.inMatchmaking
+                                ? _buildMatchmakingUI(context, multiplayerState, theme)
+                                : multiplayerState.isInGame
+                                    ? _buildGameLobby(context, multiplayerState, theme, authState)
+                                    : _buildMainLobby(context, multiplayerState, theme, authState),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         );
       },
     );
@@ -174,37 +208,96 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     AuthState authState,
   ) {
     final game = multiplayerState.currentGame!;
-    
-    return Column(
+    final isStarting = game.status == MultiplayerGameStatus.starting;
+
+    return Stack(
       children: [
-        // Header with room info
-        _buildGameHeader(theme, game),
-        
-        // Game info and players
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+        Column(
+          children: [
+            // Header with room info
+            _buildGameHeader(theme, game),
+
+            // Game info and players
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Game mode info
+                    _buildGameModeCard(theme, game),
+
+                    const SizedBox(height: 24),
+
+                    // Players list
+                    _buildPlayersSection(theme, game, authState),
+
+                    const Spacer(),
+
+                    // Ready/Leave buttons
+                    _buildLobbyActions(context, multiplayerState, theme, game, authState),
+
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        // Countdown overlay
+        if (isStarting) _buildCountdownOverlay(theme),
+      ],
+    );
+  }
+
+  Widget _buildCountdownOverlay(GameTheme theme) {
+    return TweenAnimationBuilder<int>(
+      tween: IntTween(begin: 3, end: 0),
+      duration: const Duration(seconds: 3),
+      builder: (context, value, child) {
+        return Container(
+          color: Colors.black.withValues(alpha: 0.85),
+          child: Center(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Game mode info
-                _buildGameModeCard(theme, game),
-                
-                const SizedBox(height: 24),
-                
-                // Players list
-                _buildPlayersSection(theme, game, authState),
-
-                const Spacer(),
-
-                // Ready/Leave buttons
-                _buildLobbyActions(context, multiplayerState, theme, game, authState),
-                
-                const SizedBox(height: 16),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: Text(
+                    value > 0 ? '$value' : 'GO!',
+                    key: ValueKey<int>(value),
+                    style: TextStyle(
+                      fontSize: 120,
+                      fontWeight: FontWeight.bold,
+                      color: value > 0 ? Colors.white : Colors.green,
+                      shadows: [
+                        Shadow(
+                          color: value > 0 ? theme.accentColor : Colors.green,
+                          blurRadius: 30,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  value > 0 ? 'Get Ready!' : '',
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 

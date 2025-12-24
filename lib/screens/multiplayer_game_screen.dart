@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,9 +8,13 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
-import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/widgets/multiplayer_game_adapter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
+import 'package:snake_classic/widgets/screen_shake.dart';
+import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
+import 'package:snake_classic/models/game_state.dart';
+import 'package:snake_classic/utils/constants.dart';
 
 class MultiplayerGameScreen extends StatefulWidget {
   const MultiplayerGameScreen({super.key});
@@ -20,129 +23,139 @@ class MultiplayerGameScreen extends StatefulWidget {
   State<MultiplayerGameScreen> createState() => _MultiplayerGameScreenState();
 }
 
-class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> 
+class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     with WidgetsBindingObserver, TickerProviderStateMixin {
-  
   Timer? _gameTimer;
-  late AnimationController _countdownController;
-  late AnimationController _pulseController;
-  
-  // Game state
+  late FocusNode _keyboardFocusNode;
+
+  // Juice effects controller (like single-player)
+  late GameJuiceController _juiceController;
+
+  // Animation controllers for UI polish
+  late AnimationController _gestureIndicatorController;
+  Direction? _lastSwipeDirection;
+
+  // Local game state for smooth gameplay
   List<Position> _mySnake = [];
   Direction _currentDirection = Direction.right;
   Direction _nextDirection = Direction.right;
   int _myScore = 0;
-  PlayerStatus _myStatus = PlayerStatus.playing;
-  
+  bool _isAlive = true;
+
+  // Crash state
+  bool _showCrashOverlay = false;
+  CrashReason? _crashReason;
+
   // Game settings
   int _boardSize = 20;
   int _gameSpeed = 200;
-  
+
+  // Track initialization
+  bool _isGameInitialized = false;
+  String? _currentUserId;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
-    _countdownController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+    _keyboardFocusNode = FocusNode();
+
+    // Initialize juice controller for screen shake and effects
+    _juiceController = GameJuiceController();
+
+    // Gesture indicator animation
+    _gestureIndicatorController = AnimationController(
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    
-    _pulseController.repeat();
-    
-    _initializeGame();
+
+    // Initialize after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _keyboardFocusNode.requestFocus();
+      _tryInitializeGame();
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _gameTimer?.cancel();
-    _countdownController.dispose();
-    _pulseController.dispose();
+    _keyboardFocusNode.dispose();
+    _juiceController.dispose();
+    _gestureIndicatorController.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      _pauseGame();
+      // Don't cancel timer in multiplayer - game continues on server
     }
   }
 
-  void _initializeGame() {
+  void _tryInitializeGame() {
+    if (_isGameInitialized) return;
+
     final multiplayerCubit = context.read<MultiplayerCubit>();
     final game = multiplayerCubit.state.currentGame;
+    if (game == null) return;
 
-    if (game != null) {
-      _boardSize = game.gameSettings['boardSize'] ?? 20;
-      _gameSpeed = game.gameSettings['initialSpeed'] ?? 200;
+    // Wait for game to be in "playing" status
+    if (game.status != MultiplayerGameStatus.playing) return;
 
-      // Get current user's snake
-      final authState = context.read<AuthCubit>().state;
-      final currentUserId = authState.userId;
-      if (currentUserId != null) {
-        final myPlayer = game.getPlayer(currentUserId);
-        if (myPlayer != null) {
-          _mySnake = List.from(myPlayer.snake);
-          _currentDirection = myPlayer.currentDirection;
-          _nextDirection = myPlayer.currentDirection;
-          _myScore = myPlayer.score;
-          _myStatus = myPlayer.status;
-        }
-      }
-      
-      _startGameLoop();
-    }
+    final authState = context.read<AuthCubit>().state;
+    _currentUserId = authState.userId;
+    if (_currentUserId == null) return;
+
+    final myPlayer = game.getPlayer(_currentUserId!);
+    if (myPlayer == null || myPlayer.snake.isEmpty) return;
+
+    // Initialize local state from server data
+    _boardSize = game.gameSettings['boardSize'] ?? 20;
+    _gameSpeed = game.gameSettings['initialSpeed'] ?? 200;
+    _mySnake = List.from(myPlayer.snake);
+    _currentDirection = myPlayer.currentDirection;
+    _nextDirection = myPlayer.currentDirection;
+    _myScore = myPlayer.score;
+    _isAlive = myPlayer.status == PlayerStatus.playing;
+    _isGameInitialized = true;
+
+    debugPrint('[MultiplayerGameScreen] Game initialized! Snake: ${_mySnake.length} segments');
+    _startGameLoop();
+    setState(() {});
   }
 
   void _startGameLoop() {
-    _gameTimer = Timer.periodic(Duration(milliseconds: _gameSpeed), (timer) {
-      if (_myStatus == PlayerStatus.playing) {
+    _gameTimer?.cancel();
+    _gameTimer = Timer.periodic(Duration(milliseconds: _gameSpeed), (_) {
+      if (_isAlive && _isGameInitialized) {
         _updateGame();
       }
     });
   }
 
   void _updateGame() {
-    if (_mySnake.isEmpty) return;
+    if (_mySnake.isEmpty || !_isAlive) return;
 
     // Update direction
     _currentDirection = _nextDirection;
-    
+
     // Calculate new head position
     final head = _mySnake.first;
-    Position newHead;
-
-    switch (_currentDirection) {
-      case Direction.up:
-        newHead = Position(head.x, head.y - 1);
-        break;
-      case Direction.down:
-        newHead = Position(head.x, head.y + 1);
-        break;
-      case Direction.left:
-        newHead = Position(head.x - 1, head.y);
-        break;
-      case Direction.right:
-        newHead = Position(head.x + 1, head.y);
-        break;
-    }
+    final newHead = head.move(_currentDirection);
 
     // Check wall collision
-    if (newHead.x < 0 || newHead.x >= _boardSize || 
-        newHead.y < 0 || newHead.y >= _boardSize) {
-      _handleCrash();
+    if (newHead.x < 0 ||
+        newHead.x >= _boardSize ||
+        newHead.y < 0 ||
+        newHead.y >= _boardSize) {
+      _handleCrash(CrashReason.wallCollision);
       return;
     }
 
     // Check self collision
-    if (_mySnake.contains(newHead)) {
-      _handleCrash();
+    if (_mySnake.any((pos) => pos == newHead)) {
+      _handleCrash(CrashReason.selfCollision);
       return;
     }
 
@@ -151,9 +164,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     final game = multiplayerCubit.state.currentGame;
     if (game != null) {
       for (final player in game.players) {
-        if (player.userId != context.read<AuthCubit>().state.userId) {
-          if (player.snake.contains(newHead)) {
-            _handleCrash();
+        if (player.userId != _currentUserId && player.isAlive) {
+          if (player.snake.any((pos) => pos == newHead)) {
+            _handleCrash(CrashReason.selfCollision); // Player collision
             return;
           }
         }
@@ -165,193 +178,94 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
     // Check food collision
     bool ateFood = false;
-    int pointsEarned = 0;
     if (game?.foodPosition == newHead) {
       ateFood = true;
-      pointsEarned = 10;
-      _myScore += pointsEarned;
-      // Generate new food position
-      multiplayerCubit.generateNewFood();
+      _myScore += 10;
+      multiplayerCubit.onFoodEaten(10);
+      _juiceController.foodEaten(); // Trigger juice effect
     } else if (game?.bonusFoodPosition == newHead) {
       ateFood = true;
-      pointsEarned = 25;
-      _myScore += pointsEarned;
+      _myScore += 25;
+      multiplayerCubit.onFoodEaten(25);
+      _juiceController.bonusFoodEaten();
     } else if (game?.specialFoodPosition == newHead) {
       ateFood = true;
-      pointsEarned = 50;
-      _myScore += pointsEarned;
-    }
-
-    // Handle food consumption with integrated services
-    if (ateFood) {
-      multiplayerCubit.onFoodEaten(pointsEarned);
+      _myScore += 50;
+      multiplayerCubit.onFoodEaten(50);
+      _juiceController.specialFoodEaten();
     }
 
     if (!ateFood) {
       _mySnake.removeLast();
     }
 
-    // Update multiplayer state
-    _updateMultiplayerState();
-
-    // Check if game should end
-    if (_myStatus == PlayerStatus.crashed) {
-      multiplayerCubit.checkGameEnd();
-    }
-    
-    setState(() {});
-  }
-
-  void _updateMultiplayerState() {
-    final multiplayerCubit = context.read<MultiplayerCubit>();
+    // Send update to server
     multiplayerCubit.updateGameState(
       snake: _mySnake,
       score: _myScore,
-      status: _myStatus,
+      status: PlayerStatus.playing,
     );
+
+    setState(() {});
   }
 
-  void _handleCrash() {
-    _myStatus = PlayerStatus.crashed;
+  void _handleCrash(CrashReason reason) {
+    _isAlive = false;
     _gameTimer?.cancel();
-    _updateMultiplayerState();
+    _crashReason = reason;
+    _showCrashOverlay = true;
 
     final multiplayerCubit = context.read<MultiplayerCubit>();
-
-    // Handle crash with integrated services
     multiplayerCubit.onPlayerCrash();
-
-    // Check if game should end
     multiplayerCubit.checkGameEnd();
 
-    // Show crash feedback
-    _showCrashDialog();
-  }
-
-  void _showCrashDialog() {
-    final theme = context.read<ThemeCubit>().state.currentTheme;
-    final multiplayerCubit = context.read<MultiplayerCubit>();
-    final multiplayerState = multiplayerCubit.state;
-
-    // Check if this player won or lost
-    final isWinner = multiplayerState.currentGame?.winnerId == context.read<AuthCubit>().state.userId;
-    final gameFinished = multiplayerState.isGameFinished;
-
-    // Handle game outcome
-    if (gameFinished) {
-      if (isWinner) {
-        multiplayerCubit.onGameWon(_myScore);
-      } else {
-        multiplayerCubit.onGameLost(_myScore);
-      }
+    // Trigger crash juice effects
+    if (reason == CrashReason.wallCollision) {
+      _juiceController.wallHit();
+    } else {
+      _juiceController.selfCollision();
     }
-    
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning,
-              color: Colors.red,
-              size: 28,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Game Over!',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'You crashed!',
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Your Score',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    '$_myScore',
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const MultiplayerLobbyScreen(),
-                ),
-              );
-            },
-            child: Text(
-              'Leave Game',
-              style: TextStyle(color: theme.accentColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _pauseGame() {
-    _gameTimer?.cancel();
-  }
+    // Play crash haptic
+    HapticFeedback.heavyImpact();
 
+    setState(() {});
+
+    // Auto-dismiss crash overlay after delay
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _showCrashOverlay = false;
+        });
+        _showGameOverDialog();
+      }
+    });
+  }
 
   void _handleSwipe(Direction direction) {
     // Prevent 180-degree turns
-    if (_currentDirection == Direction.up && direction == Direction.down) return;
-    if (_currentDirection == Direction.down && direction == Direction.up) return;
-    if (_currentDirection == Direction.left && direction == Direction.right) return;
-    if (_currentDirection == Direction.right && direction == Direction.left) return;
+    if ((_currentDirection == Direction.up && direction == Direction.down) ||
+        (_currentDirection == Direction.down && direction == Direction.up) ||
+        (_currentDirection == Direction.left && direction == Direction.right) ||
+        (_currentDirection == Direction.right && direction == Direction.left)) {
+      return;
+    }
 
     _nextDirection = direction;
-
-    // Send direction change to other players
+    _lastSwipeDirection = direction;
     context.read<MultiplayerCubit>().changeDirection(direction);
+    HapticFeedback.selectionClick();
+
+    // Animate gesture indicator
+    _gestureIndicatorController.forward().then((_) {
+      _gestureIndicatorController.reverse();
+    });
   }
 
   void _handleKeyPress(KeyEvent event) {
     if (event is KeyDownEvent) {
       Direction? direction;
-      
+
       switch (event.logicalKey) {
         case LogicalKeyboardKey.arrowUp:
         case LogicalKeyboardKey.keyW:
@@ -378,6 +292,120 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         _handleSwipe(direction);
       }
     }
+  }
+
+  void _showGameOverDialog() {
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.5)),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.sports_score, color: theme.accentColor, size: 32),
+            const SizedBox(width: 12),
+            Text(
+              'Game Over',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'You finished the game!',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    theme.accentColor.withValues(alpha: 0.1),
+                    theme.accentColor.withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.accentColor.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Your Score',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$_myScore',
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Length: ${_mySnake.length}',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _navigateToLobby();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: theme.accentColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Back to Lobby',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToLobby() {
+    context.read<MultiplayerCubit>().leaveGame();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MultiplayerLobbyScreen()),
+    );
   }
 
   void _showExitDialog() {
@@ -412,14 +440,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              context.read<MultiplayerCubit>().leaveGame();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const MultiplayerLobbyScreen(),
-                ),
-              );
+              _navigateToLobby();
             },
-            child: Text(
+            child: const Text(
               'Leave',
               style: TextStyle(color: Colors.red),
             ),
@@ -435,700 +458,599 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
 
-        return BlocBuilder<MultiplayerCubit, MultiplayerState>(
-          builder: (context, multiplayerState) {
-            return BlocBuilder<AuthCubit, AuthState>(
-              builder: (context, authState) {
-                final game = multiplayerState.currentGame;
+        return BlocListener<MultiplayerCubit, MultiplayerState>(
+          listenWhen: (prev, curr) {
+            // Trigger when game starts playing or when player data arrives
+            if (!_isGameInitialized) {
+              final prevPlaying =
+                  prev.currentGame?.status == MultiplayerGameStatus.playing;
+              final currPlaying =
+                  curr.currentGame?.status == MultiplayerGameStatus.playing;
 
-                if (game == null || !multiplayerState.isGameActive) {
-                  return Scaffold(
-                    body: Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
-                      ),
-                    ),
-                  );
-                }
+              // Trigger when status changes to playing
+              if (!prevPlaying && currPlaying) return true;
 
-                return KeyboardListener(
-                  focusNode: FocusNode()..requestFocus(),
-                  onKeyEvent: _handleKeyPress,
-                  child: Scaffold(
-                    body: Container(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment.topRight,
-                          radius: 1.5,
-                          colors: [
-                            theme.accentColor.withValues(alpha: 0.15),
-                            theme.backgroundColor,
-                            theme.backgroundColor.withValues(alpha: 0.9),
-                            Colors.black.withValues(alpha: 0.1),
-                          ],
-                          stops: const [0.0, 0.4, 0.8, 1.0],
+              // Trigger when snakes appear
+              final hadSnakes =
+                  prev.currentGame?.players.any((p) => p.snake.isNotEmpty) ??
+                      false;
+              final hasSnakes =
+                  curr.currentGame?.players.any((p) => p.snake.isNotEmpty) ??
+                      false;
+              return !hadSnakes && hasSnakes;
+            }
+            return false;
+          },
+          listener: (context, state) {
+            _tryInitializeGame();
+          },
+          child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
+            builder: (context, multiplayerState) {
+              return BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, authState) {
+                  final game = multiplayerState.currentGame;
+
+                  // Loading state
+                  if (game == null || !multiplayerState.isGameActive) {
+                    return Scaffold(
+                      backgroundColor: theme.backgroundColor,
+                      body: Center(
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(theme.accentColor),
                         ),
                       ),
-                      child: SafeArea(
-                        child: SwipeDetector(
-                          onSwipe: _handleSwipe,
-                          showFeedback: false,
-                          child: Column(
-                            children: [
-                              // Game HUD
-                              _buildMultiplayerHUD(theme, game, authState),
+                    );
+                  }
 
-                              // Game Board
-                              Expanded(
-                                child: _buildGameBoard(theme, game, authState),
+                  // Waiting for snake data / game to start
+                  if (!_isGameInitialized) {
+                    return Scaffold(
+                      backgroundColor: theme.backgroundColor,
+                      body: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  theme.accentColor),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Starting game...',
+                              style: TextStyle(
+                                color: theme.accentColor,
+                                fontSize: 18,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  return PopScope(
+                    canPop: false,
+                    onPopInvokedWithResult: (didPop, result) {
+                      if (!didPop) {
+                        _showExitDialog();
+                      }
+                    },
+                    child: KeyboardListener(
+                      focusNode: _keyboardFocusNode,
+                      onKeyEvent: _handleKeyPress,
+                      child: GameJuiceWidget(
+                        controller: _juiceController,
+                        applyShake: true,
+                        applyScale: false,
+                        child: Scaffold(
+                          body: Container(
+                            decoration: BoxDecoration(
+                              // Use theme colors, matching single-player
+                              gradient: RadialGradient(
+                                center: Alignment.topRight,
+                                radius: 1.5,
+                                colors: [
+                                  theme.accentColor.withValues(alpha: 0.15),
+                                  theme.backgroundColor,
+                                  theme.backgroundColor.withValues(alpha: 0.9),
+                                  Colors.black.withValues(alpha: 0.1),
+                                ],
+                                stops: const [0.0, 0.4, 0.8, 1.0],
+                              ),
+                            ),
+                            child: SafeArea(
+                              child: Stack(
+                                children: [
+                                  // Background pattern
+                                  Positioned.fill(
+                                    child: CustomPaint(
+                                      painter: _GameBackgroundPainter(theme),
+                                    ),
+                                  ),
+
+                                  // Main game content
+                                  SwipeDetector(
+                                    onSwipe: _handleSwipe,
+                                    showFeedback: false,
+                                    child: Column(
+                                      children: [
+                                        // Multiplayer HUD
+                                        _buildMultiplayerHUD(
+                                            theme, game, authState),
+
+                                        // Game hint row
+                                        _buildGameHintRow(theme),
+
+                                        // Game Board using adapter
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: MultiplayerGameAdapter(
+                                              game: game,
+                                              currentUserId:
+                                                  _currentUserId ?? '',
+                                              localSnake: _mySnake,
+                                              localDirection: _currentDirection,
+                                              localScore: _myScore,
+                                              localIsAlive: _isAlive,
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Bottom info bar
+                                        _buildBottomInfoBar(theme, game),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Crash feedback overlay
+                                  if (_showCrashOverlay && _crashReason != null)
+                                    CrashFeedbackOverlay(
+                                      crashReason: _crashReason!,
+                                      theme: theme,
+                                      onSkip: () {
+                                        setState(() {
+                                          _showCrashOverlay = false;
+                                        });
+                                        _showGameOverDialog();
+                                      },
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            );
-          },
+                  );
+                },
+              );
+            },
+          ),
         );
       },
     );
   }
 
-  Widget _buildMultiplayerHUD(GameTheme theme, MultiplayerGame game, AuthState authState) {
-    final playerCount = game.players.length;
-    final currentUserId = authState.userId ?? '';
-
-    // For 2 players, use the VS layout
-    if (playerCount <= 2) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Back button
-            IconButton(
-              onPressed: _showExitDialog,
-              icon: Icon(
-                Icons.arrow_back,
-                color: theme.accentColor,
-                size: 24,
+  Widget _buildGameHintRow(GameTheme theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Game hint
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.backgroundColor.withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.foodColor.withValues(alpha: 0.3),
+                width: 1,
               ),
             ),
-
-            const SizedBox(width: 16),
-
-            // Current player info
-            Expanded(
-              child: _buildPlayerInfo(theme, game, currentUserId, true),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.lightbulb_outline,
+                  color: theme.foodColor.withValues(alpha: 0.7),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Avoid walls, yourself & others!',
+                  style: TextStyle(
+                    color: theme.foodColor.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            const SizedBox(width: 16),
+          // Gesture indicator
+          AnimatedBuilder(
+            animation: _gestureIndicatorController,
+            builder: (context, child) {
+              final isActive = _lastSwipeDirection != null &&
+                  _gestureIndicatorController.isAnimating;
 
-            // VS indicator
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: theme.backgroundColor.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.accentColor
+                        .withValues(alpha: isActive ? 0.7 : 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedRotation(
+                      turns: _getDirectionRotation(_lastSwipeDirection),
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      child: Icon(
+                        Icons.arrow_upward_rounded,
+                        color: theme.accentColor
+                            .withValues(alpha: isActive ? 1.0 : 0.6),
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Swipe',
+                      style: TextStyle(
+                        color: theme.accentColor
+                            .withValues(alpha: isActive ? 0.9 : 0.6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _getDirectionRotation(Direction? direction) {
+    if (direction == null) return 0.0;
+    switch (direction) {
+      case Direction.up:
+        return 0.0;
+      case Direction.right:
+        return 0.25;
+      case Direction.down:
+        return 0.5;
+      case Direction.left:
+        return 0.75;
+    }
+  }
+
+  Widget _buildMultiplayerHUD(
+      GameTheme theme, MultiplayerGame game, AuthState authState) {
+    final playerCount = game.players.length;
+    final alivePlayers = game.players.where((p) => p.isAlive).length;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          // Back button
+          IconButton(
+            onPressed: _showExitDialog,
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              color: theme.accentColor,
+              size: 22,
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Mode indicator with theme-based styling
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.purple.withValues(alpha: 0.3),
+                  Colors.amber.withValues(alpha: 0.2),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.purple.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.sports_esports, color: Colors.amber, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  playerCount == 2 ? 'VS' : 'BATTLE',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const Spacer(),
+
+          // Your score
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.star, color: Colors.amber, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  '$_myScore',
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // Alive count (for 4+ players)
+          if (playerCount > 2)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.orange.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'VS',
-                style: TextStyle(
+                '$alivePlayers/$playerCount',
+                style: const TextStyle(
                   color: Colors.orange,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
               ),
             ),
-
-            const SizedBox(width: 16),
-
-            // Opponent info
-            Expanded(
-              child: _buildOpponentInfo(theme, game, currentUserId),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // For 4+ players, use a compact list layout
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                onPressed: _showExitDialog,
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: theme.accentColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'BATTLE ROYALE',
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  letterSpacing: 1,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${game.players.where((p) => p.isAlive).length}/${playerCount} Alive',
-                  style: TextStyle(
-                    color: Colors.orange,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Player list
-          SizedBox(
-            height: 60,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: game.players.length,
-              itemBuilder: (context, index) {
-                final player = game.players[index];
-                final isCurrentPlayer = player.userId == currentUserId;
-                final playerColor = _getPlayerColor(index);
-
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isCurrentPlayer
-                        ? playerColor.withValues(alpha: 0.2)
-                        : theme.backgroundColor.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: player.isAlive
-                          ? playerColor.withValues(alpha: 0.5)
-                          : Colors.grey.withValues(alpha: 0.3),
-                      width: isCurrentPlayer ? 2 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Player color indicator
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: player.isAlive ? playerColor : Colors.grey,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                player.displayName.length > 8
-                                    ? '${player.displayName.substring(0, 8)}...'
-                                    : player.displayName,
-                                style: TextStyle(
-                                  color: player.isAlive
-                                      ? theme.accentColor
-                                      : Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                  decoration: player.isAlive
-                                      ? null
-                                      : TextDecoration.lineThrough,
-                                ),
-                              ),
-                              if (isCurrentPlayer) ...[
-                                const SizedBox(width: 4),
-                                Text(
-                                  '(You)',
-                                  style: TextStyle(
-                                    color: playerColor,
-                                    fontSize: 9,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          Text(
-                            player.isAlive
-                                ? (isCurrentPlayer ? '$_myScore pts' : '${player.score} pts')
-                                : '#${player.eliminationRank ?? "?"}',
-                            style: TextStyle(
-                              color: player.isAlive
-                                  ? theme.accentColor.withValues(alpha: 0.7)
-                                  : Colors.grey,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Color _getPlayerColor(int index) {
-    const playerColors = [
-      Color(0xFF4CAF50), // Green
-      Color(0xFFF44336), // Red
-      Color(0xFF2196F3), // Blue
-      Color(0xFFFF9800), // Orange
-      Color(0xFF9C27B0), // Purple
-      Color(0xFF00BCD4), // Cyan
-      Color(0xFFFFEB3B), // Yellow
-      Color(0xFFE91E63), // Pink
-    ];
-    return playerColors[index % playerColors.length];
-  }
-
-  Widget _buildPlayerInfo(GameTheme theme, MultiplayerGame game, String userId, bool isCurrentUser) {
-    final player = game.getPlayer(userId);
-    if (player == null) return const SizedBox.shrink();
+  Widget _buildBottomInfoBar(GameTheme theme, MultiplayerGame game) {
+    // Sort players by score (descending)
+    final sortedPlayers = List<MultiplayerPlayer>.from(game.players)
+      ..sort((a, b) => b.score.compareTo(a.score));
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isCurrentUser 
-            ? theme.accentColor.withValues(alpha: 0.1)
-            : Colors.grey.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCurrentUser 
-              ? theme.accentColor.withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.3),
+        color: theme.backgroundColor.withValues(alpha: 0.8),
+        border: Border(
+          top: BorderSide(
+            color: theme.accentColor.withValues(alpha: 0.2),
+          ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundImage: player.photoUrl != null 
-                    ? NetworkImage(player.photoUrl!)
-                    : null,
-                backgroundColor: theme.accentColor.withValues(alpha: 0.2),
-                child: player.photoUrl == null 
-                    ? Icon(
-                        Icons.person,
-                        color: theme.accentColor,
-                        size: 16,
-                      )
-                    : null,
-              ),
-              
-              const SizedBox(width: 8),
-              
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      player.displayName,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+          // Leaderboard
+          Expanded(
+            child: SizedBox(
+              height: 50,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: sortedPlayers.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final player = sortedPlayers[index];
+                  final isMe = player.userId == _currentUserId;
+                  final playerColor =
+                      multiplayerColors[player.rank % multiplayerColors.length];
+
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isMe
+                          ? playerColor.withValues(alpha: 0.2)
+                          : theme.backgroundColor.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: player.isAlive
+                            ? playerColor.withValues(alpha: 0.5)
+                            : Colors.grey.withValues(alpha: 0.3),
+                        width: isMe ? 2 : 1,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    
-                    Row(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Rank indicator
                         Container(
-                          width: 6,
-                          height: 6,
+                          width: 20,
+                          height: 20,
                           decoration: BoxDecoration(
-                            color: _getPlayerStatusColor(player.status),
+                            color: index == 0
+                                ? Colors.amber
+                                : index == 1
+                                    ? Colors.grey.shade400
+                                    : index == 2
+                                        ? Colors.brown.shade400
+                                        : Colors.transparent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: index < 3 ? Colors.white : playerColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Player color dot
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: player.isAlive ? playerColor : Colors.grey,
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _getPlayerStatusText(player.status),
-                          style: TextStyle(
-                            color: theme.accentColor.withValues(alpha: 0.7),
-                            fontSize: 10,
-                          ),
+                        const SizedBox(width: 6),
+                        // Name and score
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMe
+                                  ? 'You'
+                                  : (player.displayName.length > 8
+                                      ? '${player.displayName.substring(0, 8)}...'
+                                      : player.displayName),
+                              style: TextStyle(
+                                color: player.isAlive
+                                    ? theme.accentColor
+                                    : Colors.grey,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                decoration: player.isAlive
+                                    ? null
+                                    : TextDecoration.lineThrough,
+                              ),
+                            ),
+                            Text(
+                              '${isMe ? _myScore : player.score} pts',
+                              style: TextStyle(
+                                color: player.isAlive
+                                    ? theme.accentColor.withValues(alpha: 0.7)
+                                    : Colors.grey,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
-            ],
+            ),
           ),
-          
-          const SizedBox(height: 8),
-          
-          Text(
-            'Score: ${isCurrentUser ? _myScore : player.score}',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+
+          const SizedBox(width: 12),
+
+          // Snake length indicator
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.straighten,
+                  color: theme.accentColor.withValues(alpha: 0.7),
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${_mySnake.length}',
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildOpponentInfo(GameTheme theme, MultiplayerGame game, String currentUserId) {
-    final opponent = game.players
-        .where((p) => p.userId != currentUserId)
-        .toList()
-        .firstOrNull;
-        
-    if (opponent == null) {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.grey.withValues(alpha: 0.3),
-              child: Icon(
-                Icons.person_add,
-                color: Colors.grey,
-                size: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Waiting...',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return _buildPlayerInfo(theme, game, opponent.userId, false);
-  }
-
-  Widget _buildGameBoard(GameTheme theme, MultiplayerGame game, AuthState authState) {
-    final currentUserId = authState.userId ?? '';
-    final myPlayerIndex = _getMyPlayerIndex(game, currentUserId);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final boardDimension = math.min(constraints.maxWidth, constraints.maxHeight) - 32;
-
-        return Container(
-          margin: const EdgeInsets.all(16),
-          child: Center(
-            child: Container(
-              width: boardDimension,
-              height: boardDimension,
-              decoration: BoxDecoration(
-                color: theme.backgroundColor.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-              ),
-              child: CustomPaint(
-                painter: _MultiplayerGameBoardPainter(
-                  theme: theme,
-                  boardSize: _boardSize,
-                  mySnake: _mySnake,
-                  myPlayerIndex: myPlayerIndex,
-                  opponentSnakes: _getOpponentSnakes(game, currentUserId),
-                  foodPosition: game.foodPosition,
-                  bonusFoodPosition: game.bonusFoodPosition,
-                  specialFoodPosition: game.specialFoodPosition,
-                ),
-                size: Size(boardDimension, boardDimension),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  List<({List<Position> snake, int playerIndex})> _getOpponentSnakes(MultiplayerGame game, String currentUserId) {
-    final result = <({List<Position> snake, int playerIndex})>[];
-    for (int i = 0; i < game.players.length; i++) {
-      final player = game.players[i];
-      if (player.userId != currentUserId && player.isAlive) {
-        result.add((snake: player.snake, playerIndex: i));
-      }
-    }
-    return result;
-  }
-
-  int _getMyPlayerIndex(MultiplayerGame game, String currentUserId) {
-    for (int i = 0; i < game.players.length; i++) {
-      if (game.players[i].userId == currentUserId) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  Color _getPlayerStatusColor(PlayerStatus status) {
-    switch (status) {
-      case PlayerStatus.waiting:
-        return Colors.orange;
-      case PlayerStatus.ready:
-        return Colors.green;
-      case PlayerStatus.playing:
-        return Colors.blue;
-      case PlayerStatus.crashed:
-        return Colors.red;
-      case PlayerStatus.disconnected:
-        return Colors.grey;
-    }
-  }
-
-  String _getPlayerStatusText(PlayerStatus status) {
-    switch (status) {
-      case PlayerStatus.waiting:
-        return 'Waiting';
-      case PlayerStatus.ready:
-        return 'Ready';
-      case PlayerStatus.playing:
-        return 'Playing';
-      case PlayerStatus.crashed:
-        return 'Crashed';
-      case PlayerStatus.disconnected:
-        return 'Disconnected';
-    }
-  }
 }
 
-class _MultiplayerGameBoardPainter extends CustomPainter {
+/// Background pattern painter (matching single-player)
+class _GameBackgroundPainter extends CustomPainter {
   final GameTheme theme;
-  final int boardSize;
-  final List<Position> mySnake;
-  final int myPlayerIndex;
-  final List<({List<Position> snake, int playerIndex})> opponentSnakes;
-  final Position? foodPosition;
-  final Position? bonusFoodPosition;
-  final Position? specialFoodPosition;
 
-  static const playerColors = [
-    Color(0xFF4CAF50), // Green
-    Color(0xFFF44336), // Red
-    Color(0xFF2196F3), // Blue
-    Color(0xFFFF9800), // Orange
-    Color(0xFF9C27B0), // Purple
-    Color(0xFF00BCD4), // Cyan
-    Color(0xFFFFEB3B), // Yellow
-    Color(0xFFE91E63), // Pink
-  ];
-
-  _MultiplayerGameBoardPainter({
-    required this.theme,
-    required this.boardSize,
-    required this.mySnake,
-    required this.myPlayerIndex,
-    required this.opponentSnakes,
-    this.foodPosition,
-    this.bonusFoodPosition,
-    this.specialFoodPosition,
-  });
-
-  Color _getPlayerColor(int index) {
-    return playerColors[index % playerColors.length];
-  }
+  _GameBackgroundPainter(this.theme);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cellSize = size.width / boardSize;
-    
-    // Draw grid
-    final gridPaint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.1)
-      ..strokeWidth = 0.5;
-
-    for (int i = 0; i <= boardSize; i++) {
-      final offset = i * cellSize;
-      canvas.drawLine(
-        Offset(offset, 0),
-        Offset(offset, size.height),
-        gridPaint,
-      );
-      canvas.drawLine(
-        Offset(0, offset),
-        Offset(size.width, offset),
-        gridPaint,
-      );
-    }
-
-    // Draw food
-    if (foodPosition != null) {
-      _drawFood(canvas, foodPosition!, cellSize, theme.foodColor);
-    }
-    
-    if (bonusFoodPosition != null) {
-      _drawBonusFood(canvas, bonusFoodPosition!, cellSize);
-    }
-    
-    if (specialFoodPosition != null) {
-      _drawSpecialFood(canvas, specialFoodPosition!, cellSize);
-    }
-
-    // Draw my snake with player color
-    final myColor = _getPlayerColor(myPlayerIndex);
-    _drawSnake(canvas, mySnake, cellSize, myColor, myColor.withValues(alpha: 0.8));
-
-    // Draw opponent snakes with their respective colors
-    for (final opponent in opponentSnakes) {
-      final color = _getPlayerColor(opponent.playerIndex);
-      _drawSnake(canvas, opponent.snake, cellSize, color, color.withValues(alpha: 0.8));
-    }
-  }
-
-  void _drawSnake(Canvas canvas, List<Position> snake, double cellSize, Color bodyColor, Color headColor) {
-    if (snake.isEmpty) return;
-
-    final paint = Paint()..color = bodyColor;
-    final headPaint = Paint()..color = headColor;
-
-    // Draw body
-    for (int i = 1; i < snake.length; i++) {
-      final pos = snake[i];
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            pos.x * cellSize + 1,
-            pos.y * cellSize + 1,
-            cellSize - 2,
-            cellSize - 2,
-          ),
-          Radius.circular(cellSize * 0.2),
-        ),
-        paint,
-      );
-    }
-
-    // Draw head
-    if (snake.isNotEmpty) {
-      final head = snake.first;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            head.x * cellSize + 1,
-            head.y * cellSize + 1,
-            cellSize - 2,
-            cellSize - 2,
-          ),
-          Radius.circular(cellSize * 0.3),
-        ),
-        headPaint,
-      );
-    }
-  }
-
-  void _drawFood(Canvas canvas, Position pos, double cellSize, Color color) {
-    final paint = Paint()..color = color;
-    canvas.drawCircle(
-      Offset(
-        pos.x * cellSize + cellSize / 2,
-        pos.y * cellSize + cellSize / 2,
-      ),
-      cellSize * 0.3,
-      paint,
-    );
-  }
-
-  void _drawBonusFood(Canvas canvas, Position pos, double cellSize) {
     final paint = Paint()
-      ..color = Colors.amber
-      ..style = PaintingStyle.fill;
-    
-    canvas.drawCircle(
-      Offset(
-        pos.x * cellSize + cellSize / 2,
-        pos.y * cellSize + cellSize / 2,
-      ),
-      cellSize * 0.35,
-      paint,
-    );
-  }
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = theme.accentColor.withValues(alpha: 0.05);
 
-  void _drawSpecialFood(Canvas canvas, Position pos, double cellSize) {
-    final paint = Paint()
-      ..color = Colors.purple
-      ..style = PaintingStyle.fill;
-    
-    // Draw star shape
-    final center = Offset(
-      pos.x * cellSize + cellSize / 2,
-      pos.y * cellSize + cellSize / 2,
-    );
-    
-    final path = Path();
-    final radius = cellSize * 0.4;
-    
-    for (int i = 0; i < 8; i++) {
-      final angle = (i * math.pi * 2) / 8;
-      final r = (i % 2 == 0) ? radius : radius * 0.5;
-      final x = center.dx + math.cos(angle) * r;
-      final y = center.dy + math.sin(angle) * r;
-      
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
+    // Draw subtle grid pattern
+    const gridSize = 30.0;
+
+    for (double x = 0; x < size.width; x += gridSize) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-    path.close();
-    
-    canvas.drawPath(path, paint);
+
+    for (double y = 0; y < size.height; y += gridSize) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+
+    // Draw decorative shapes
+    final shapePaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = theme.foodColor.withValues(alpha: 0.02);
+
+    canvas.drawCircle(
+      Offset(size.width * 0.15, size.height * 0.25),
+      50,
+      shapePaint,
+    );
+
+    canvas.drawCircle(
+      Offset(size.width * 0.85, size.height * 0.75),
+      70,
+      shapePaint,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _MultiplayerGameBoardPainter oldDelegate) {
-    return oldDelegate.mySnake != mySnake ||
-        oldDelegate.myPlayerIndex != myPlayerIndex ||
-        oldDelegate.opponentSnakes.length != opponentSnakes.length ||
-        oldDelegate.foodPosition != foodPosition ||
-        oldDelegate.bonusFoodPosition != bonusFoodPosition ||
-        oldDelegate.specialFoodPosition != specialFoodPosition;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
   }
 }
