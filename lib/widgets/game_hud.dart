@@ -318,11 +318,10 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   }
 
   Widget _buildLevelCard() {
-    final previousLevelTarget = (gameState.level - 1) * 100;
-    final currentLevelTarget = gameState.level * 100;
-    final levelRange = currentLevelTarget - previousLevelTarget;
-    final scoreInLevel = gameState.score - previousLevelTarget;
-    final progress = (scoreInLevel / levelRange).clamp(0.0, 1.0);
+    // Use the new triangular progression getters from GameState
+    final progress = gameState.levelProgress;
+    final pointsInLevel = gameState.pointsInCurrentLevel;
+    final pointsNeeded = gameState.pointsForCurrentLevel;
     final isNearLevelUp = progress >= 0.8;
 
     return Container(
@@ -423,7 +422,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${gameState.score}/$currentLevelTarget',
+                  '$pointsInLevel/$pointsNeeded',
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.5),
                     fontSize: isSmallScreen ? 8 : 9,

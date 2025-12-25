@@ -10,6 +10,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/battle_pass_screen.dart';
 import 'package:snake_classic/screens/cosmetics_screen.dart';
+import 'package:snake_classic/screens/daily_challenges_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/screens/instructions_screen.dart';
@@ -19,8 +20,8 @@ import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/store_screen.dart';
-import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
+import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -967,9 +968,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
         );
       }),
-      _NavItem(Icons.group_work, 'MULTI', Colors.green, () {
-        _showComingSoonDialog(context, theme, 'Multiplayer');
-      }),
+      _NavItem(Icons.calendar_today, 'DAILY', Colors.cyan, () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const DailyChallengesScreen()),
+        );
+      }, badge: _getDailyChallengesBadge()),
       _NavItem(Icons.emoji_events, 'EVENTS', Colors.purple, () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (context) => const TournamentsScreen()),
@@ -1000,11 +1003,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           MaterialPageRoute(builder: (context) => const AchievementsScreen()),
         );
       }),
-      _NavItem(Icons.palette, 'THEME', theme.snakeColor, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const ThemeSelectorScreen()),
-        );
-      }),
     ];
 
     return Column(
@@ -1026,6 +1024,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   theme: theme,
                   isSmallScreen: isVerySmallScreen || isSmallScreen,
                   screenHeight: screenHeight,
+                  badge: item.badge,
                 )
                 .animate()
                 .fadeIn(delay: (900 + (index * 100)).ms)
@@ -1062,6 +1061,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       theme: theme,
                       isSmallScreen: isVerySmallScreen || isSmallScreen,
                       screenHeight: screenHeight,
+                      badge: item.badge,
                     )
                     .animate()
                     .fadeIn(delay: (900 + (index * 100)).ms)
@@ -1081,6 +1081,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required GameTheme theme,
     required bool isSmallScreen,
     required double screenHeight,
+    int? badge,
   }) {
     final buttonSize = _getResponsiveNavButtonSize(screenHeight);
     final iconSize = screenHeight < 600
@@ -1093,30 +1094,62 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       onTap: onTap,
       child: Column(
         children: [
-          Container(
-            width: buttonSize,
-            height: buttonSize,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  color.withValues(alpha: 0.15),
-                  color.withValues(alpha: 0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 18),
-              border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 2),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: buttonSize,
+                height: buttonSize,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      color.withValues(alpha: 0.15),
+                      color.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 18),
+                  border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Icon(icon, color: color, size: iconSize),
+                child: Icon(icon, color: color, size: iconSize),
+              ),
+              if (badge != null && badge > 0)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$badge',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
 
           SizedBox(height: isSmallScreen ? 4 : 6),
@@ -1526,6 +1559,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (screenHeight < 850) return 50.0;
     return 56.0;
   }
+
+  /// Get the badge count for daily challenges (unclaimed rewards)
+  int? _getDailyChallengesBadge() {
+    final service = DailyChallengeService();
+    final count = service.unclaimedRewardsCount;
+    return count > 0 ? count : null;
+  }
 }
 
 // Navigation item helper class
@@ -1534,6 +1574,7 @@ class _NavItem {
   final String label;
   final Color color;
   final VoidCallback onTap;
+  final int? badge;
 
-  _NavItem(this.icon, this.label, this.color, this.onTap);
+  _NavItem(this.icon, this.label, this.color, this.onTap, {this.badge});
 }

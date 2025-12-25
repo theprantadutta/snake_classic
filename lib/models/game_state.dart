@@ -132,7 +132,35 @@ class GameState {
     return speed.clamp(50, 600);
   }
 
-  int get targetScore => level * 100;
+  /// Get cumulative score needed to reach a specific level
+  /// Uses triangular progression: 100, 300, 600, 1000, 1500, 2100...
+  /// Each level requires 100 more points than the previous level
+  static int getTargetScoreForLevel(int lvl) {
+    if (lvl <= 1) return 0;
+    // Triangular formula: 50 * (lvl - 1) * lvl
+    // Level 2: 100, Level 3: 300, Level 4: 600, Level 5: 1000...
+    return 50 * (lvl - 1) * lvl;
+  }
+
+  /// Target score to reach the NEXT level
+  int get targetScore => getTargetScoreForLevel(level + 1);
+
+  /// Score at the START of current level
+  int get levelStartScore => getTargetScoreForLevel(level);
+
+  /// Points needed to complete current level (increases each level)
+  /// Level 1: 100, Level 2: 200, Level 3: 300, Level 4: 400...
+  int get pointsForCurrentLevel => targetScore - levelStartScore;
+
+  /// Progress within current level (0.0 to 1.0)
+  double get levelProgress {
+    if (pointsForCurrentLevel <= 0) return 0.0;
+    final pointsInLevel = score - levelStartScore;
+    return (pointsInLevel / pointsForCurrentLevel).clamp(0.0, 1.0);
+  }
+
+  /// Points earned within current level
+  int get pointsInCurrentLevel => (score - levelStartScore).clamp(0, pointsForCurrentLevel);
 
   bool get shouldLevelUp => score >= targetScore;
 

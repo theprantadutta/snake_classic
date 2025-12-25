@@ -471,8 +471,10 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
             children: [
               // Coins
               Container(
@@ -499,8 +501,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
               ),
 
               // Bonus item if any
-              if (reward.bonusItem != null) ...[
-                const SizedBox(width: 12),
+              if (reward.bonusItem != null)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
@@ -526,7 +527,6 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
                     ],
                   ),
                 ),
-              ],
             ],
           ),
         ],

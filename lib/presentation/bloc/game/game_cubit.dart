@@ -18,6 +18,8 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/daily_challenge_service.dart';
+import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -39,6 +41,7 @@ class GameCubit extends Cubit<GameCubitState> {
   final StorageService _storageService;
   final GameSettingsCubit _settingsCubit;
   final DataSyncService _dataSyncService = DataSyncService();
+  final DailyChallengeService _dailyChallengeService = DailyChallengeService();
 
   Timer? _gameTimer;
   Timer? _animationTimer;
@@ -377,10 +380,10 @@ class GameCubit extends Cubit<GameCubitState> {
       newScore += multipliedPoints;
       _currentGameFoodPoints += multipliedPoints;
 
-      // Level up
-      if (newScore >= previousState.targetScore && newLevel < 10) {
+      // Level up (unlimited levels with progressive difficulty)
+      if (newScore >= previousState.targetScore) {
         newLevel++;
-        debugPrint('🎮 [GameCubit] LEVEL UP! Now level $newLevel, new speed will be calculated on next tick');
+        debugPrint('🎮 [GameCubit] LEVEL UP! Now level $newLevel (target was ${previousState.targetScore}, next target: ${model.GameState.getTargetScoreForLevel(newLevel + 1)})');
         _audioService.playSound('level_up');
         HapticFeedback.mediumImpact();
       } else {
@@ -649,6 +652,65 @@ class GameCubit extends Cubit<GameCubitState> {
         'gameDurationSeconds': gameDurationSeconds,
       },
     );
+
+    // Update daily challenge progress
+    _updateDailyChallengeProgress(
+      score: gameState.score,
+      foodEaten: _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+      survivalSeconds: gameDurationSeconds,
+      gameMode: 'classic',
+    );
+  }
+
+  /// Update daily challenge progress after game ends
+  Future<void> _updateDailyChallengeProgress({
+    required int score,
+    required int foodEaten,
+    required int survivalSeconds,
+    required String gameMode,
+  }) async {
+    try {
+      // Update score challenge (takes max value)
+      if (score > 0) {
+        await _dailyChallengeService.updateProgress(
+          ChallengeType.score,
+          score,
+        );
+      }
+
+      // Update food eaten challenge (accumulates)
+      if (foodEaten > 0) {
+        await _dailyChallengeService.updateProgress(
+          ChallengeType.foodEaten,
+          foodEaten,
+        );
+      }
+
+      // Update survival challenge (takes max value)
+      if (survivalSeconds > 0) {
+        await _dailyChallengeService.updateProgress(
+          ChallengeType.survival,
+          survivalSeconds,
+        );
+      }
+
+      // Update games played (always increment by 1)
+      await _dailyChallengeService.updateProgress(
+        ChallengeType.gamesPlayed,
+        1,
+      );
+
+      // Update game mode specific challenge
+      await _dailyChallengeService.updateProgress(
+        ChallengeType.gameMode,
+        1,
+        gameMode: gameMode,
+      );
+
+      AppLogger.info('Daily challenge progress updated');
+    } catch (e) {
+      AppLogger.error('Error updating daily challenge progress', e);
+    }
   }
 
   /// Get game recording data (simplified)

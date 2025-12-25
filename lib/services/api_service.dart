@@ -950,6 +950,66 @@ class ApiService {
     }
   }
 
+  // ==================== Daily Challenges ====================
+
+  /// Get today's daily challenges with user progress
+  Future<Map<String, dynamic>?> getDailyChallenges() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/dailychallenges'),
+        headers: _authHeaders,
+      ).timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error getting daily challenges', e);
+      return null;
+    }
+  }
+
+  /// Update progress for daily challenges (called after each game)
+  Future<Map<String, dynamic>?> updateChallengeProgress({
+    required String type,
+    required int value,
+    String? gameMode,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'type': type,
+        'value': value,
+      };
+      if (gameMode != null) {
+        body['gameMode'] = gameMode;
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/dailychallenges/progress'),
+        headers: _authHeaders,
+        body: jsonEncode(body),
+      ).timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error updating challenge progress', e);
+      return null;
+    }
+  }
+
+  /// Claim reward for a completed challenge
+  Future<Map<String, dynamic>?> claimChallengeReward(String challengeId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/dailychallenges/claim/$challengeId'),
+        headers: _authHeaders,
+      ).timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error claiming challenge reward', e);
+      return null;
+    }
+  }
+
   // ==================== Notifications ====================
 
   /// Register FCM token
