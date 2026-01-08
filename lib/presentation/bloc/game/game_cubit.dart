@@ -11,6 +11,7 @@ import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/snake.dart';
 import 'package:snake_classic/models/game_replay.dart' show GameRecorder;
 import 'package:snake_classic/models/tournament.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
@@ -42,6 +43,7 @@ class GameCubit extends Cubit<GameCubitState> {
   final GameSettingsCubit _settingsCubit;
   final DataSyncService _dataSyncService = DataSyncService();
   final DailyChallengeService _dailyChallengeService = DailyChallengeService();
+  final ApiService _apiService = ApiService();
 
   Timer? _gameTimer;
   Timer? _animationTimer;
@@ -883,6 +885,13 @@ class GameCubit extends Cubit<GameCubitState> {
     // Track game end statistics and achievements
     await _trackGameEnd();
 
+    // Add battle pass XP based on game performance
+    await _addBattlePassXP(
+      score: gameState.score,
+      foodEaten: foodEaten,
+      survivalSeconds: gameDurationSeconds,
+    );
+
     // Stop recording
     _gameRecorder.stopRecording();
 
@@ -896,6 +905,32 @@ class GameCubit extends Cubit<GameCubitState> {
         ),
       ),
     );
+  }
+
+  /// Calculate and add XP to battle pass based on game performance
+  Future<void> _addBattlePassXP({
+    required int score,
+    required int foodEaten,
+    required int survivalSeconds,
+  }) async {
+    // Calculate XP earned from game
+    // Base XP from score (1 XP per 10 points)
+    int xp = score ~/ 10;
+    // Bonus from food (2 XP per food)
+    xp += foodEaten * 2;
+    // Bonus from survival time (1 XP per 30 seconds)
+    xp += survivalSeconds ~/ 30;
+    // Minimum XP of 1 for playing
+    xp = xp.clamp(1, 500);
+
+    if (xp > 0 && _apiService.isAuthenticated) {
+      try {
+        await _apiService.addBattlePassXP(xp: xp, source: 'gameplay');
+        AppLogger.info('Added $xp XP to battle pass');
+      } catch (e) {
+        AppLogger.error('Failed to add battle pass XP', e);
+      }
+    }
   }
 
   /// Alias for _gameOver - kept for compatibility with skipCrashFeedback

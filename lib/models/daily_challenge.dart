@@ -111,13 +111,17 @@ class DailyChallenge {
       description: json['description'] as String,
       type: ChallengeType.fromString(json['type'] as String),
       difficulty: ChallengeDifficulty.fromString(json['difficulty'] as String),
-      targetValue: json['targetValue'] as int,
-      currentProgress: json['currentProgress'] as int? ?? 0,
-      isCompleted: json['isCompleted'] as bool? ?? false,
-      coinReward: json['coinReward'] as int,
-      xpReward: json['xpReward'] as int,
-      requiredGameMode: json['requiredGameMode'] as String?,
-      claimedReward: json['claimedReward'] as bool? ?? false,
+      targetValue: (json['target_value'] ?? json['targetValue']) as int,
+      currentProgress:
+          (json['current_progress'] ?? json['currentProgress'] ?? 0) as int,
+      isCompleted:
+          (json['is_completed'] ?? json['isCompleted'] ?? false) as bool,
+      coinReward: (json['coin_reward'] ?? json['coinReward']) as int,
+      xpReward: (json['xp_reward'] ?? json['xpReward']) as int,
+      requiredGameMode:
+          (json['required_game_mode'] ?? json['requiredGameMode']) as String?,
+      claimedReward:
+          (json['claimed_reward'] ?? json['claimedReward'] ?? false) as bool,
     );
   }
 
@@ -189,10 +193,12 @@ class DailyChallengesResponse {
       challenges: (json['challenges'] as List<dynamic>)
           .map((c) => DailyChallenge.fromJson(c as Map<String, dynamic>))
           .toList(),
-      completedCount: json['completedCount'] as int,
-      totalCount: json['totalCount'] as int,
-      allCompleted: json['allCompleted'] as bool,
-      bonusCoins: json['bonusCoins'] as int,
+      completedCount:
+          (json['completed_count'] ?? json['completedCount'] ?? 0) as int,
+      totalCount: (json['total_count'] ?? json['totalCount'] ?? 0) as int,
+      allCompleted:
+          (json['all_completed'] ?? json['allCompleted'] ?? false) as bool,
+      bonusCoins: (json['bonus_coins'] ?? json['bonusCoins'] ?? 0) as int,
     );
   }
 

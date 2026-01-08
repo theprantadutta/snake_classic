@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/game_statistics.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
@@ -337,7 +338,15 @@ class StatisticsService {
     _currentStatistics = GameStatistics.initial();
     await _saveLocalStatistics();
 
+    // Reset high score in storage
+    await _storageService.saveHighScore(0);
+
     if (_userService.isSignedIn) {
+      // Reset on backend
+      final apiService = ApiService();
+      await apiService.resetUserStatistics();
+
+      // Also sync the empty local stats
       await _syncService.queueSync('statistics', _currentStatistics.toJson());
     }
   }

@@ -138,17 +138,25 @@ class UnifiedUser {
 
     // Otherwise, derive from auth_provider/is_anonymous (backend format)
     final authProvider = data['auth_provider'] ?? data['authProvider'];
-    final isAnonymous = data['is_anonymous'] ?? data['isAnonymous'] ?? false;
+    final isAnonymous = data['is_anonymous'] ?? data['isAnonymous'];
 
+    // If explicitly marked as anonymous
     if (isAnonymous == true) {
       return UserType.anonymous;
     }
 
+    // If auth provider is google
     if (authProvider == 'google') {
       return UserType.google;
     }
 
-    // Default to anonymous
+    // If explicitly marked as not anonymous (i.e. is_anonymous == false),
+    // the user is a Google user since that's the only non-anonymous option
+    if (isAnonymous == false) {
+      return UserType.google;
+    }
+
+    // Default to anonymous for unknown cases
     return UserType.anonymous;
   }
 

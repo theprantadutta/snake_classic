@@ -17,6 +17,7 @@ class BattlePassState extends Equatable {
   final Set<int> claimedFreeTiers;
   final Set<int> claimedPremiumTiers;
   final String? errorMessage;
+  final String seasonName;
 
   const BattlePassState({
     this.status = BattlePassStatus.initial,
@@ -28,6 +29,7 @@ class BattlePassState extends Equatable {
     this.claimedFreeTiers = const {},
     this.claimedPremiumTiers = const {},
     this.errorMessage,
+    this.seasonName = 'Season 1',
   });
 
   /// Initial state
@@ -45,6 +47,7 @@ class BattlePassState extends Equatable {
     Set<int>? claimedPremiumTiers,
     String? errorMessage,
     bool clearError = false,
+    String? seasonName,
   }) {
     return BattlePassState(
       status: status ?? this.status,
@@ -56,6 +59,7 @@ class BattlePassState extends Equatable {
       claimedFreeTiers: claimedFreeTiers ?? this.claimedFreeTiers,
       claimedPremiumTiers: claimedPremiumTiers ?? this.claimedPremiumTiers,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      seasonName: seasonName ?? this.seasonName,
     );
   }
 
@@ -100,5 +104,6 @@ class BattlePassState extends Equatable {
     claimedFreeTiers,
     claimedPremiumTiers,
     errorMessage,
+    seasonName,
   ];
 }

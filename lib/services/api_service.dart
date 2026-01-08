@@ -274,6 +274,23 @@ class ApiService {
     }
   }
 
+  /// Reset user statistics (scores, achievements, daily challenges)
+  Future<Map<String, dynamic>?> resetUserStatistics() async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/users/me/reset-statistics'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error resetting statistics', e);
+      return null;
+    }
+  }
+
   // ==================== Scores ====================
 
   /// Submit a score

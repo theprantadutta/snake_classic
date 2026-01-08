@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/screens/achievements_screen.dart';
+import 'package:snake_classic/screens/leaderboard_screen.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -709,8 +711,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: GradientButton(
-                      onPressed: () =>
-                          Navigator.of(context).pushNamed('/achievements'),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const AchievementsScreen(),
+                        ),
+                      ),
                       text: 'VIEW ACHIEVEMENTS',
                       primaryColor: Colors.amber,
                       secondaryColor: Colors.orange,
@@ -723,8 +728,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: GradientButton(
-                      onPressed: () =>
-                          Navigator.of(context).pushNamed('/leaderboard'),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const LeaderboardScreen(),
+                        ),
+                      ),
                       text: 'LEADERBOARD',
                       primaryColor: theme.accentColor,
                       secondaryColor: theme.foodColor,
@@ -738,8 +746,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               children: [
                 Expanded(
                   child: GradientButton(
-                    onPressed: () =>
-                        Navigator.of(context).pushNamed('/achievements'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AchievementsScreen(),
+                      ),
+                    ),
                     text: 'VIEW ACHIEVEMENTS',
                     primaryColor: Colors.amber,
                     secondaryColor: Colors.orange,
@@ -751,8 +762,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                 Expanded(
                   child: GradientButton(
-                    onPressed: () =>
-                        Navigator.of(context).pushNamed('/leaderboard'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const LeaderboardScreen(),
+                      ),
+                    ),
                     text: 'LEADERBOARD',
                     primaryColor: theme.accentColor,
                     secondaryColor: theme.foodColor,

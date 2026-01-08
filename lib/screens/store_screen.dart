@@ -8,9 +8,12 @@ import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/screens/cosmetics_screen.dart';
+import 'package:snake_classic/screens/premium_benefits_screen.dart';
 
 class StoreScreen extends StatefulWidget {
-  const StoreScreen({super.key});
+  final int initialTab;
+
+  const StoreScreen({super.key, this.initialTab = 0});
 
   @override
   State<StoreScreen> createState() => _StoreScreenState();
@@ -23,7 +26,11 @@ class _StoreScreenState extends State<StoreScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(
+      length: 6,
+      vsync: this,
+      initialIndex: widget.initialTab,
+    );
   }
 
   @override
@@ -444,7 +451,11 @@ class _StoreScreenState extends State<StoreScreen>
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
-        onPressed: () => Navigator.of(context).pushNamed('/premium'),
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const PremiumBenefitsScreen(),
+          ),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,

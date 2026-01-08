@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -1168,6 +1169,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _showCreditsDialog(BuildContext context, GameTheme theme) {
+    final currentYear = DateTime.now().year;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1180,175 +1183,191 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               width: 2,
             ),
           ),
-          title: Row(
-            children: [
-              Icon(Icons.emoji_events, color: Colors.amber, size: 28),
-              const SizedBox(width: 12),
-              Text(
-                'Snake Classic',
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-            ],
-          ),
           content: SizedBox(
             width: double.maxFinite,
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Version info
+                // App Icon
                 Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.code, color: theme.accentColor, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Version 2.0.0',
-                              style: TextStyle(
-                                color: theme.accentColor,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              'Built with Flutter & Firebase',
-                              style: TextStyle(
-                                color: theme.accentColor.withValues(alpha: 0.7),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Development credits
-                Text(
-                  'Development',
-                  style: TextStyle(
-                    color: theme.foodColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildCreditItem(
-                  icon: Icons.person,
-                  title: 'Game Design & Development',
-                  subtitle: 'Premium Snake Experience',
-                  theme: theme,
-                ),
-
-                const SizedBox(height: 16),
-
-                // Technology credits
-                Text(
-                  'Powered By',
-                  style: TextStyle(
-                    color: theme.foodColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildCreditItem(
-                  icon: Icons.flutter_dash,
-                  title: 'Flutter Framework',
-                  subtitle: 'Cross-platform UI toolkit',
-                  theme: theme,
-                ),
-                _buildCreditItem(
-                  icon: Icons.cloud,
-                  title: 'Firebase',
-                  subtitle: 'Backend & Authentication',
-                  theme: theme,
-                ),
-                _buildCreditItem(
-                  icon: Icons.leaderboard,
-                  title: 'Real-time Features',
-                  subtitle: 'Multiplayer & Leaderboards',
-                  theme: theme,
-                ),
-
-                const SizedBox(height: 16),
-
-                // Special features highlight
-                Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.amber.withValues(alpha: 0.1),
-                        Colors.orange.withValues(alpha: 0.05),
+                        theme.primaryColor.withValues(alpha: 0.2),
+                        theme.accentColor.withValues(alpha: 0.1),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.amber.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.videogame_asset,
+                    color: theme.accentColor,
+                    size: 48,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // App Name
+                Text(
+                  'Snake Classic',
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                // Tagline
+                SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    'The classic snake game, reimagined',
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
                     ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Version
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Version 2.0.0',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Description section
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.stars, color: Colors.amber, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Premium Features',
-                            style: TextStyle(
-                              color: Colors.amber,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
                       Text(
-                        '• 6 Premium Visual Themes\n• Real-time Multiplayer\n• Tournament System\n• 16 Achievements\n• Advanced Statistics\n• Game Replay System',
+                        'Relive the nostalgia of the iconic snake game with a modern twist. Challenge yourself across multiple game modes, unlock achievements, complete daily challenges, and climb the global leaderboard.',
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.8),
+                          fontSize: 13,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildFeatureChip('Multiple Modes', Icons.sports_esports, theme),
+                          _buildFeatureChip('Achievements', Icons.emoji_events, theme),
+                          _buildFeatureChip('Daily Challenges', Icons.today, theme),
+                          _buildFeatureChip('Leaderboards', Icons.leaderboard, theme),
+                          _buildFeatureChip('Customization', Icons.palette, theme),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Developer section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: theme.accentColor.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Developed by',
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.6),
                           fontSize: 12,
-                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () async {
+                          final url = Uri.parse('https://pranta.dev');
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Pranta Dutta',
+                              style: TextStyle(
+                                color: theme.accentColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.open_in_new,
+                              color: theme.accentColor.withValues(alpha: 0.7),
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'pranta.dev',
+                        style: TextStyle(
+                          color: theme.primaryColor,
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // Footer
-                Center(
-                  child: Text(
-                    'Thank you for playing! 🐍',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                    ),
+                // Copyright
+                Text(
+                  '$currentYear Pranta Dutta. All rights reserved.',
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.5),
+                    fontSize: 11,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -1380,6 +1399,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildFeatureChip(String label, IconData icon, GameTheme theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.accentColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: theme.accentColor.withValues(alpha: 0.8),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.9),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1501,52 +1552,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildCreditItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required GameTheme theme,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: theme.accentColor, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.6),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
