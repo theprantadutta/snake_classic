@@ -90,7 +90,7 @@ class ApiService {
   };
 
   /// Handle response - check for auth errors
-  dynamic _handleResponse(http.Response response) {
+  Map<String, dynamic>? _handleResponse(http.Response response) {
     if (response.statusCode == 401) {
       AppLogger.error('Unauthorized - token may be expired');
       clearToken();
@@ -100,7 +100,11 @@ class ApiService {
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) return {};
-      return jsonDecode(response.body);
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map) {
+        return Map<String, dynamic>.from(decoded);
+      }
+      return {'data': decoded};
     }
 
     AppLogger.error(
@@ -372,8 +376,8 @@ class ApiService {
           .timeout(_timeout);
 
       final data = _handleResponse(response);
-      if (data is List) {
-        return List<Map<String, dynamic>>.from(data);
+      if (data != null && data['data'] is List) {
+        return List<Map<String, dynamic>>.from(data['data']);
       }
       return null;
     } catch (e) {
@@ -504,8 +508,8 @@ class ApiService {
           .timeout(_timeout);
 
       final data = _handleResponse(response);
-      if (data is List) {
-        return List<Map<String, dynamic>>.from(data);
+      if (data != null && data['data'] is List) {
+        return List<Map<String, dynamic>>.from(data['data']);
       }
       return null;
     } catch (e) {
