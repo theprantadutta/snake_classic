@@ -147,7 +147,8 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
                   Column(
                     children: [
                       // "Until Tap" mode shows waiting message, others show countdown
-                      if (widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap) ...[
+                      if (widget.duration.inSeconds ==
+                          GameConstants.crashFeedbackUntilTap) ...[
                         // Until Tap mode - no countdown, just waiting
                         Text(
                           'Ready when you are...',
@@ -188,26 +189,48 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap
-                                    ? widget.theme.accentColor.withValues(alpha: 0.2)
+                                color:
+                                    widget.duration.inSeconds ==
+                                        GameConstants.crashFeedbackUntilTap
+                                    ? widget.theme.accentColor.withValues(
+                                        alpha: 0.2,
+                                      )
                                     : Colors.transparent,
                                 border: Border.all(
                                   color: widget.theme.accentColor.withValues(
-                                    alpha: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap ? 0.8 : 0.5,
+                                    alpha:
+                                        widget.duration.inSeconds ==
+                                            GameConstants.crashFeedbackUntilTap
+                                        ? 0.8
+                                        : 0.5,
                                   ),
-                                  width: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap ? 2 : 1,
+                                  width:
+                                      widget.duration.inSeconds ==
+                                          GameConstants.crashFeedbackUntilTap
+                                      ? 2
+                                      : 1,
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 'TAP TO CONTINUE',
                                 style: TextStyle(
-                                  fontSize: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap ? 14 : 12,
-                                  fontWeight: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap
+                                  fontSize:
+                                      widget.duration.inSeconds ==
+                                          GameConstants.crashFeedbackUntilTap
+                                      ? 14
+                                      : 12,
+                                  fontWeight:
+                                      widget.duration.inSeconds ==
+                                          GameConstants.crashFeedbackUntilTap
                                       ? FontWeight.bold
                                       : FontWeight.normal,
                                   color: widget.theme.accentColor.withValues(
-                                    alpha: widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap ? 1.0 : 0.8,
+                                    alpha:
+                                        widget.duration.inSeconds ==
+                                            GameConstants.crashFeedbackUntilTap
+                                        ? 1.0
+                                        : 0.8,
                                   ),
                                   letterSpacing: 1,
                                 ),

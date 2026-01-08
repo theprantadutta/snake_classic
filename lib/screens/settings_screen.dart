@@ -31,8 +31,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _dPadEnabled = false;
   bool _screenShakeEnabled = false;
   DPadPosition _dPadPosition = DPadPosition.bottomCenter;
-  BoardSize _selectedBoardSize = GameConstants.availableBoardSizes[1]; // Default to Classic
-  Duration _selectedCrashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration;
+  BoardSize _selectedBoardSize =
+      GameConstants.availableBoardSizes[1]; // Default to Classic
+  Duration _selectedCrashFeedbackDuration =
+      GameConstants.defaultCrashFeedbackDuration;
 
   @override
   void initState() {
@@ -43,7 +45,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     await _audioService.initialize();
     final boardSize = await _storageService.getBoardSize();
-    final crashFeedbackDuration = await _storageService.getCrashFeedbackDuration();
+    final crashFeedbackDuration = await _storageService
+        .getCrashFeedbackDuration();
     final dPadEnabled = await _storageService.isDPadEnabled();
     final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
     final dPadPosition = await _storageService.getDPadPosition();
@@ -102,172 +105,189 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // 1. Controls Section (most frequently adjusted during gameplay)
-                                  _buildSection(
-                                    'CONTROLS',
-                                    [
-                                      _buildAudioSwitch(
-                                        'D-Pad Controls',
-                                        _dPadEnabled,
-                                        (value) async {
-                                          setState(() {
-                                            _dPadEnabled = value;
-                                          });
-                                          await context.read<GameSettingsCubit>().updateDPadEnabled(value);
-                                        },
+                                  _buildSection('CONTROLS', [
+                                    _buildAudioSwitch(
+                                      'D-Pad Controls',
+                                      _dPadEnabled,
+                                      (value) async {
+                                        setState(() {
+                                          _dPadEnabled = value;
+                                        });
+                                        await context
+                                            .read<GameSettingsCubit>()
+                                            .updateDPadEnabled(value);
+                                      },
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Show on-screen directional buttons during gameplay',
+                                      style: TextStyle(
+                                        color: theme.accentColor.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        fontSize: 12,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                    // D-Pad Position Selector (only show when D-Pad is enabled)
+                                    if (_dPadEnabled) ...[
+                                      const SizedBox(height: 16),
+                                      _buildDPadPositionSelector(
+                                        gameState,
                                         theme,
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Show on-screen directional buttons during gameplay',
-                                        style: TextStyle(
-                                          color: theme.accentColor.withValues(alpha: 0.6),
-                                          fontSize: 12,
-                                          fontStyle: FontStyle.italic,
-                                        ),
-                                      ),
-                                      // D-Pad Position Selector (only show when D-Pad is enabled)
-                                      if (_dPadEnabled) ...[
-                                        const SizedBox(height: 16),
-                                        _buildDPadPositionSelector(gameState, theme),
-                                      ],
-                                      const SizedBox(height: 16),
-                                      _buildControlInfo(theme),
                                     ],
-                                    theme,
-                                  ),
+                                    const SizedBox(height: 16),
+                                    _buildControlInfo(theme),
+                                  ], theme),
 
                                   const SizedBox(height: 32),
 
                                   // 2. Gameplay Section (board size + crash feedback + effects)
-                                  _buildSection(
-                                    'GAMEPLAY',
-                                    [
-                                      _buildBoardSizeSelector(gameState, theme),
-                                      const SizedBox(height: 24),
-                                      const Divider(height: 1),
-                                      const SizedBox(height: 24),
-                                      _buildCrashFeedbackDurationSelector(gameState, theme),
-                                      const SizedBox(height: 24),
-                                      const Divider(height: 1),
-                                      const SizedBox(height: 24),
-                                      _buildAudioSwitch(
-                                        'Screen Shake',
-                                        _screenShakeEnabled,
-                                        (value) async {
-                                          setState(() {
-                                            _screenShakeEnabled = value;
-                                          });
-                                          await context.read<GameSettingsCubit>().setScreenShakeEnabled(value);
-                                        },
-                                        theme,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Shake the screen on collisions and game events',
-                                        style: TextStyle(
-                                          color: theme.accentColor.withValues(alpha: 0.6),
-                                          fontSize: 12,
-                                          fontStyle: FontStyle.italic,
+                                  _buildSection('GAMEPLAY', [
+                                    _buildBoardSizeSelector(gameState, theme),
+                                    const SizedBox(height: 24),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 24),
+                                    _buildCrashFeedbackDurationSelector(
+                                      gameState,
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 24),
+                                    _buildAudioSwitch(
+                                      'Screen Shake',
+                                      _screenShakeEnabled,
+                                      (value) async {
+                                        setState(() {
+                                          _screenShakeEnabled = value;
+                                        });
+                                        await context
+                                            .read<GameSettingsCubit>()
+                                            .setScreenShakeEnabled(value);
+                                      },
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Shake the screen on collisions and game events',
+                                      style: TextStyle(
+                                        color: theme.accentColor.withValues(
+                                          alpha: 0.6,
                                         ),
+                                        fontSize: 12,
+                                        fontStyle: FontStyle.italic,
                                       ),
-                                    ],
-                                    theme,
-                                  ),
+                                    ),
+                                  ], theme),
 
                                   const SizedBox(height: 32),
 
                                   // 3. Audio Section
-                                  _buildSection(
-                                    'AUDIO',
-                                    [
-                                      _buildAudioSwitch(
-                                        'Sound Effects',
-                                        _soundEnabled,
-                                        (value) async {
-                                          setState(() {
-                                            _soundEnabled = value;
-                                          });
-                                          await _audioService.setSoundEnabled(value);
-                                        },
-                                        theme,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      _buildAudioSwitch(
-                                        'Background Music',
-                                        _musicEnabled,
-                                        (value) async {
-                                          setState(() {
-                                            _musicEnabled = value;
-                                          });
-                                          await _audioService.setMusicEnabled(value);
-                                        },
-                                        theme,
-                                      ),
-                                    ],
-                                    theme,
-                                  ),
+                                  _buildSection('AUDIO', [
+                                    _buildAudioSwitch(
+                                      'Sound Effects',
+                                      _soundEnabled,
+                                      (value) async {
+                                        setState(() {
+                                          _soundEnabled = value;
+                                        });
+                                        await _audioService.setSoundEnabled(
+                                          value,
+                                        );
+                                      },
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildAudioSwitch(
+                                      'Background Music',
+                                      _musicEnabled,
+                                      (value) async {
+                                        setState(() {
+                                          _musicEnabled = value;
+                                        });
+                                        await _audioService.setMusicEnabled(
+                                          value,
+                                        );
+                                      },
+                                      theme,
+                                    ),
+                                  ], theme),
 
                                   const SizedBox(height: 32),
 
                                   // 4. Visual Section (theme + trail effects)
-                                  _buildSection(
-                                    'VISUAL',
-                                    [
-                                      _buildThemeSelector(themeState, theme),
-                                      const SizedBox(height: 24),
-                                      const Divider(height: 1),
-                                      const SizedBox(height: 24),
-                                      _buildAudioSwitch(
-                                        'Snake Trail Effects',
-                                        themeState.isTrailSystemEnabled,
-                                        (value) async {
-                                          await context.read<ThemeCubit>().setTrailSystemEnabled(value);
-                                        },
-                                        theme,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Enable particle trails behind the snake',
-                                        style: TextStyle(
-                                          color: theme.accentColor.withValues(alpha: 0.6),
-                                          fontSize: 12,
-                                          fontStyle: FontStyle.italic,
+                                  _buildSection('VISUAL', [
+                                    _buildThemeSelector(themeState, theme),
+                                    const SizedBox(height: 24),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 24),
+                                    _buildAudioSwitch(
+                                      'Snake Trail Effects',
+                                      themeState.isTrailSystemEnabled,
+                                      (value) async {
+                                        await context
+                                            .read<ThemeCubit>()
+                                            .setTrailSystemEnabled(value);
+                                      },
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Enable particle trails behind the snake',
+                                      style: TextStyle(
+                                        color: theme.accentColor.withValues(
+                                          alpha: 0.6,
                                         ),
+                                        fontSize: 12,
+                                        fontStyle: FontStyle.italic,
                                       ),
-                                    ],
-                                    theme,
-                                  ),
+                                    ),
+                                  ], theme),
 
                                   const SizedBox(height: 32),
 
                                   // 5. User Profile Section
-                                  _buildSection(
-                                    'USER PROFILE',
-                                    [
-                                      _buildUserProfileSettings(authState, theme),
-                                    ],
-                                    theme,
-                                  ),
+                                  _buildSection('USER PROFILE', [
+                                    _buildUserProfileSettings(authState, theme),
+                                  ], theme),
 
                                   const SizedBox(height: 32),
 
                                   // 6. Premium Section (if available)
                                   if (premiumState.isInitialized)
-                                    _buildSection(
-                                      'PREMIUM FEATURES',
-                                      [
-                                        _buildPremiumStatusCard(premiumState, theme),
-                                        if (!premiumState.hasPremium)
-                                          _buildUpgradeButton(premiumState, theme),
-                                        _buildRestorePurchasesButton(premiumState, theme),
-                                        _buildPurchaseHistoryButton(premiumState, theme),
-                                        if (premiumState.hasPremium || premiumState.ownedSkins.isNotEmpty)
-                                          _buildCosmeticsButton(premiumState, theme),
-                                        if (premiumState.hasBattlePass)
-                                          _buildBattlePassButton(premiumState, theme),
-                                      ],
-                                      theme,
-                                    ),
+                                    _buildSection('PREMIUM FEATURES', [
+                                      _buildPremiumStatusCard(
+                                        premiumState,
+                                        theme,
+                                      ),
+                                      if (!premiumState.hasPremium)
+                                        _buildUpgradeButton(
+                                          premiumState,
+                                          theme,
+                                        ),
+                                      _buildRestorePurchasesButton(
+                                        premiumState,
+                                        theme,
+                                      ),
+                                      _buildPurchaseHistoryButton(
+                                        premiumState,
+                                        theme,
+                                      ),
+                                      if (premiumState.hasPremium ||
+                                          premiumState.ownedSkins.isNotEmpty)
+                                        _buildCosmeticsButton(
+                                          premiumState,
+                                          theme,
+                                        ),
+                                      if (premiumState.hasBattlePass)
+                                        _buildBattlePassButton(
+                                          premiumState,
+                                          theme,
+                                        ),
+                                    ], theme),
 
                                   if (premiumState.isInitialized)
                                     const SizedBox(height: 32),
@@ -277,7 +297,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   // Back Button
                                   Center(
                                     child: GradientButton(
-                                      onPressed: () => Navigator.of(context).pop(),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
                                       text: 'BACK TO GAME',
                                       primaryColor: theme.accentColor,
                                       secondaryColor: theme.foodColor,
@@ -324,9 +345,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
@@ -360,7 +379,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            
+
             // Theme preview
             Container(
               width: 60,
@@ -397,9 +416,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         GradientButton(
           onPressed: () {
             Navigator.of(context).push(
@@ -472,9 +491,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           decoration: BoxDecoration(
             color: theme.backgroundColor.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: DPadPosition.values.map((position) {
@@ -485,10 +502,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     setState(() {
                       _dPadPosition = position;
                     });
-                    await context.read<GameSettingsCubit>().updateDPadPosition(position);
+                    await context.read<GameSettingsCubit>().updateDPadPosition(
+                      position,
+                    );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? theme.accentColor.withValues(alpha: 0.2)
@@ -512,8 +534,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ? theme.accentColor
                                 : theme.accentColor.withValues(alpha: 0.6),
                             fontSize: 12,
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                       ],
@@ -533,7 +556,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Platform-specific controls
-        if (kIsWeb || (!defaultTargetPlatform.toString().contains('android') && !defaultTargetPlatform.toString().contains('ios'))) ...[
+        if (kIsWeb ||
+            (!defaultTargetPlatform.toString().contains('android') &&
+                !defaultTargetPlatform.toString().contains('ios'))) ...[
           // Desktop/Web controls
           Text(
             'Desktop/Web Controls',
@@ -702,23 +727,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final isCurrentlyPlaying = gameState.isPlaying;
 
             return GestureDetector(
-              onTap: isCurrentlyPlaying ? null : () async {
-                setState(() {
-                  _selectedBoardSize = boardSize;
-                });
-                await context.read<GameSettingsCubit>().updateBoardSize(boardSize);
-              },
+              onTap: isCurrentlyPlaying
+                  ? null
+                  : () async {
+                      setState(() {
+                        _selectedBoardSize = boardSize;
+                      });
+                      await context.read<GameSettingsCubit>().updateBoardSize(
+                        boardSize,
+                      );
+                    },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                    ? theme.accentColor.withValues(alpha: 0.2)
-                    : Colors.transparent,
+                  color: isSelected
+                      ? theme.accentColor.withValues(alpha: 0.2)
+                      : Colors.transparent,
                   border: Border.all(
-                    color: isSelected 
-                      ? theme.accentColor
-                      : theme.accentColor.withValues(alpha: 0.3),
+                    color: isSelected
+                        ? theme.accentColor
+                        : theme.accentColor.withValues(alpha: 0.3),
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -728,17 +760,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: isCurrentlyPlaying
-                      ? theme.accentColor.withValues(alpha: 0.5)
-                      : (isSelected ? theme.accentColor : Colors.white.withValues(alpha: 0.8)),
+                        ? theme.accentColor.withValues(alpha: 0.5)
+                        : (isSelected
+                              ? theme.accentColor
+                              : Colors.white.withValues(alpha: 0.8)),
                     fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ),
             );
           }).toList(),
         ),
-        
+
         if (gameState.isPlaying) ...[
           const SizedBox(height: 12),
           Text(
@@ -755,7 +791,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCrashFeedbackDurationSelector(GameCubitState gameState, GameTheme theme) {
+  Widget _buildCrashFeedbackDurationSelector(
+    GameCubitState gameState,
+    GameTheme theme,
+  ) {
     return Column(
       children: [
         Row(
@@ -773,7 +812,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    GameConstants.getCrashFeedbackLabel(_selectedCrashFeedbackDuration),
+                    GameConstants.getCrashFeedbackLabel(
+                      _selectedCrashFeedbackDuration,
+                    ),
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 18,
@@ -783,7 +824,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            
+
             // Timer icon preview
             Container(
               width: 50,
@@ -796,17 +837,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 borderRadius: BorderRadius.circular(25),
               ),
-              child: Icon(
-                Icons.timer,
-                color: theme.accentColor,
-                size: 24,
-              ),
+              child: Icon(Icons.timer, color: theme.accentColor, size: 24),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         Text(
           'How long to show crash explanation',
           style: TextStyle(
@@ -816,34 +853,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Duration selection buttons
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: GameConstants.availableCrashFeedbackDurations.map((duration) {
+          children: GameConstants.availableCrashFeedbackDurations.map((
+            duration,
+          ) {
             final isSelected = _selectedCrashFeedbackDuration == duration;
-            
+
             return GestureDetector(
               onTap: () async {
                 setState(() {
                   _selectedCrashFeedbackDuration = duration;
                 });
-                await context.read<GameSettingsCubit>().updateCrashFeedbackDuration(duration);
+                await context
+                    .read<GameSettingsCubit>()
+                    .updateCrashFeedbackDuration(duration);
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                    ? theme.accentColor.withValues(alpha: 0.2)
-                    : Colors.transparent,
+                  color: isSelected
+                      ? theme.accentColor.withValues(alpha: 0.2)
+                      : Colors.transparent,
                   border: Border.all(
-                    color: isSelected 
-                      ? theme.accentColor
-                      : theme.accentColor.withValues(alpha: 0.3),
+                    color: isSelected
+                        ? theme.accentColor
+                        : theme.accentColor.withValues(alpha: 0.3),
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -851,9 +895,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Text(
                   GameConstants.getCrashFeedbackLabel(duration),
                   style: TextStyle(
-                    color: isSelected ? theme.accentColor : Colors.white.withValues(alpha: 0.8),
+                    color: isSelected
+                        ? theme.accentColor
+                        : Colors.white.withValues(alpha: 0.8),
                     fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ),
@@ -885,8 +933,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Row(
                     children: [
                       Icon(
-                        authState.isGuestUser ? Icons.person_outline : Icons.verified_user,
-                        color: authState.isGuestUser ? Colors.orange : Colors.green,
+                        authState.isGuestUser
+                            ? Icons.person_outline
+                            : Icons.verified_user,
+                        color: authState.isGuestUser
+                            ? Colors.orange
+                            : Colors.green,
                         size: 16,
                       ),
                       const SizedBox(width: 8),
@@ -905,7 +957,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    authState.isGuestUser ? 'Guest Account' : 'Authenticated Account',
+                    authState.isGuestUser
+                        ? 'Guest Account'
+                        : 'Authenticated Account',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
@@ -922,13 +976,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: theme.backgroundColor,
                 border: Border.all(
-                  color: (authState.isGuestUser ? Colors.orange : Colors.green).withValues(alpha: 0.5),
+                  color: (authState.isGuestUser ? Colors.orange : Colors.green)
+                      .withValues(alpha: 0.5),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Icon(
-                authState.isGuestUser ? Icons.person_outline : Icons.account_circle,
+                authState.isGuestUser
+                    ? Icons.person_outline
+                    : Icons.account_circle,
                 color: authState.isGuestUser ? Colors.orange : Colors.green,
                 size: 24,
               ),
@@ -1001,7 +1058,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               backgroundColor: theme.backgroundColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+                side: BorderSide(
+                  color: theme.accentColor.withValues(alpha: 0.3),
+                ),
               ),
               title: Text(
                 'Change Username',
@@ -1026,18 +1085,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: usernameController,
                     decoration: InputDecoration(
                       labelText: 'Username',
-                      labelStyle: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
+                      labelStyle: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                      ),
                       hintText: 'Enter new username',
-                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
                       filled: true,
                       fillColor: theme.backgroundColor.withValues(alpha: 0.3),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+                        borderSide: BorderSide(
+                          color: theme.accentColor.withValues(alpha: 0.3),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+                        borderSide: BorderSide(
+                          color: theme.accentColor.withValues(alpha: 0.3),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1063,7 +1130,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: isLoading ? null : () => Navigator.of(dialogContext).pop(),
+                  onPressed: isLoading
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
                   child: Text(
                     'Cancel',
                     style: TextStyle(
@@ -1072,51 +1141,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: isLoading ? null : () async {
-                    final newUsername = usernameController.text.trim();
-                    if (newUsername.isEmpty) return;
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          final newUsername = usernameController.text.trim();
+                          if (newUsername.isEmpty) return;
 
-                    setState(() {
-                      isLoading = true;
-                      errorMessage = null;
-                    });
+                          setState(() {
+                            isLoading = true;
+                            errorMessage = null;
+                          });
 
-                    bool success = false;
-                    final authCubit = context.read<AuthCubit>();
+                          bool success = false;
+                          final authCubit = context.read<AuthCubit>();
 
-                    if (authState.isGuestUser) {
-                      success = await authCubit.updateGuestUsername(newUsername);
-                      if (!success) {
-                        final validation = usernameService.validateUsername(newUsername);
-                        setState(() {
-                          errorMessage = validation.error ?? 'Failed to update username';
-                        });
-                      }
-                    } else {
-                      // For authenticated users
-                      success = await authCubit.updateAuthenticatedUsername(newUsername);
-                      if (!success) {
-                        final validation = await UsernameService().validateUsernameComplete(newUsername);
-                        setState(() {
-                          errorMessage = validation.error ?? 'Failed to update username';
-                        });
-                      }
-                    }
+                          if (authState.isGuestUser) {
+                            success = await authCubit.updateGuestUsername(
+                              newUsername,
+                            );
+                            if (!success) {
+                              final validation = usernameService
+                                  .validateUsername(newUsername);
+                              setState(() {
+                                errorMessage =
+                                    validation.error ??
+                                    'Failed to update username';
+                              });
+                            }
+                          } else {
+                            // For authenticated users
+                            success = await authCubit
+                                .updateAuthenticatedUsername(newUsername);
+                            if (!success) {
+                              final validation = await UsernameService()
+                                  .validateUsernameComplete(newUsername);
+                              setState(() {
+                                errorMessage =
+                                    validation.error ??
+                                    'Failed to update username';
+                              });
+                            }
+                          }
 
-                    if (success && dialogContext.mounted) {
-                      Navigator.of(dialogContext).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Username updated to "$newUsername"'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
+                          if (success && dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Username updated to "$newUsername"',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
 
-                    setState(() {
-                      isLoading = false;
-                    });
-                  },
+                          setState(() {
+                            isLoading = false;
+                          });
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.accentColor,
                     shape: RoundedRectangleBorder(
@@ -1124,18 +1206,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   child: isLoading
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        'Update',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text('Update', style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -1161,10 +1242,11 @@ class _BoardSizePainter extends CustomPainter {
 
     // Draw a grid representation
     final cellSize = size.width / boardSize.width.toDouble();
-    
+
     // Draw vertical lines
     for (int i = 0; i <= boardSize.width; i++) {
-      if (i % 5 == 0) { // Only draw every 5th line to avoid clutter
+      if (i % 5 == 0) {
+        // Only draw every 5th line to avoid clutter
         canvas.drawLine(
           Offset(i * cellSize, 0),
           Offset(i * cellSize, size.height),
@@ -1172,10 +1254,11 @@ class _BoardSizePainter extends CustomPainter {
         );
       }
     }
-    
-    // Draw horizontal lines  
+
+    // Draw horizontal lines
     for (int i = 0; i <= boardSize.height; i++) {
-      if (i % 5 == 0) { // Only draw every 5th line to avoid clutter
+      if (i % 5 == 0) {
+        // Only draw every 5th line to avoid clutter
         canvas.drawLine(
           Offset(0, i * cellSize),
           Offset(size.width, i * cellSize),
@@ -1183,7 +1266,7 @@ class _BoardSizePainter extends CustomPainter {
         );
       }
     }
-    
+
     // Draw a small snake representation
     final snakePaint = Paint()..color = theme.snakeColor;
     final center = Offset(size.width / 2, size.height / 2);
@@ -1231,9 +1314,13 @@ extension _SettingsPremium on _SettingsScreenState {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  premiumState.hasPremium ? 'Snake Classic Pro' : 'Premium Status',
+                  premiumState.hasPremium
+                      ? 'Snake Classic Pro'
+                      : 'Premium Status',
                   style: TextStyle(
-                    color: premiumState.hasPremium ? Colors.black : Colors.white,
+                    color: premiumState.hasPremium
+                        ? Colors.black
+                        : Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1249,7 +1336,8 @@ extension _SettingsPremium on _SettingsScreenState {
                     fontSize: 14,
                   ),
                 ),
-                if (premiumState.hasPremium && premiumState.subscriptionExpiry != null)
+                if (premiumState.hasPremium &&
+                    premiumState.subscriptionExpiry != null)
                   Text(
                     'Renews ${premiumState.subscriptionExpiry!.day}/${premiumState.subscriptionExpiry!.month}',
                     style: TextStyle(
@@ -1294,7 +1382,10 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  Widget _buildRestorePurchasesButton(PremiumState premiumState, GameTheme theme) {
+  Widget _buildRestorePurchasesButton(
+    PremiumState premiumState,
+    GameTheme theme,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: TextButton(
@@ -1304,9 +1395,7 @@ extension _SettingsPremium on _SettingsScreenState {
           backgroundColor: theme.accentColor.withValues(alpha: 0.1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: theme.accentColor.withValues(alpha: 0.3),
-            ),
+            side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
           ),
         ),
         child: Row(
@@ -1327,7 +1416,10 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  Widget _buildPurchaseHistoryButton(PremiumState premiumState, GameTheme theme) {
+  Widget _buildPurchaseHistoryButton(
+    PremiumState premiumState,
+    GameTheme theme,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: TextButton(
@@ -1337,9 +1429,7 @@ extension _SettingsPremium on _SettingsScreenState {
           backgroundColor: theme.accentColor.withValues(alpha: 0.1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: theme.accentColor.withValues(alpha: 0.3),
-            ),
+            side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
           ),
         ),
         child: Row(
@@ -1370,9 +1460,7 @@ extension _SettingsPremium on _SettingsScreenState {
           backgroundColor: theme.accentColor.withValues(alpha: 0.1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: theme.accentColor.withValues(alpha: 0.3),
-            ),
+            side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
           ),
         ),
         child: Row(
@@ -1490,9 +1578,15 @@ extension _SettingsPremium on _SettingsScreenState {
             ),
             SizedBox(height: 16),
             Text('✓ All premium themes', style: TextStyle(color: Colors.white)),
-            Text('✓ Exclusive snake skins', style: TextStyle(color: Colors.white)),
+            Text(
+              '✓ Exclusive snake skins',
+              style: TextStyle(color: Colors.white),
+            ),
             Text('✓ Premium power-ups', style: TextStyle(color: Colors.white)),
-            Text('✓ Battle Pass included', style: TextStyle(color: Colors.white)),
+            Text(
+              '✓ Battle Pass included',
+              style: TextStyle(color: Colors.white),
+            ),
             Text('✓ Priority support', style: TextStyle(color: Colors.white)),
             SizedBox(height: 16),
             Text(
@@ -1531,8 +1625,10 @@ extension _SettingsPremium on _SettingsScreenState {
 
   void _purchasePro() {
     final purchaseService = PurchaseService();
-    final product = purchaseService.getProduct(ProductIds.snakeClassicProMonthly);
-    
+    final product = purchaseService.getProduct(
+      ProductIds.snakeClassicProMonthly,
+    );
+
     if (product != null) {
       purchaseService.buyProduct(product);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1559,10 +1655,10 @@ extension _SettingsPremium on _SettingsScreenState {
           backgroundColor: Colors.blue,
         ),
       );
-      
+
       final purchaseService = PurchaseService();
       await purchaseService.restorePurchases();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1587,7 +1683,7 @@ extension _SettingsPremium on _SettingsScreenState {
     try {
       final premiumCubit = context.read<PremiumCubit>();
       final history = await premiumCubit.getPurchaseHistory();
-      
+
       if (!mounted) return;
 
       showDialog(
@@ -1610,13 +1706,20 @@ extension _SettingsPremium on _SettingsScreenState {
                       final purchase = history[index];
                       // Purchase is already a Map<String, dynamic>
                       try {
-                        final productId = purchase['productId']?.toString() ?? 'Unknown';
-                        final transactionDate = purchase['transactionDate']?.toString() ?? '';
-                        final status = purchase['status']?.toString() ?? 'Unknown';
+                        final productId =
+                            purchase['productId']?.toString() ?? 'Unknown';
+                        final transactionDate =
+                            purchase['transactionDate']?.toString() ?? '';
+                        final status =
+                            purchase['status']?.toString() ?? 'Unknown';
 
                         return Card(
                           child: ListTile(
-                            leading: Icon(_getPurchaseIcon(_getTypeFromProductId(productId))),
+                            leading: Icon(
+                              _getPurchaseIcon(
+                                _getTypeFromProductId(productId),
+                              ),
+                            ),
                             title: Text(_formatProductName(productId)),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1711,25 +1814,23 @@ extension _SettingsPremium on _SettingsScreenState {
         .replaceAll('snake_classic_', '')
         .replaceAll('_', ' ')
         .split(' ')
-        .map((word) => word.isNotEmpty
-            ? '${word[0].toUpperCase()}${word.substring(1)}'
-            : '')
+        .map(
+          (word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1)}'
+              : '',
+        )
         .join(' ');
   }
 
   void _openCosmeticsSelector() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const CosmeticsScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const CosmeticsScreen()));
   }
 
   void _openBattlePass() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const BattlePassScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const BattlePassScreen()));
   }
 }

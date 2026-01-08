@@ -1,14 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
-enum HapticIntensity {
-  light,
-  medium,
-  heavy,
-  success,
-  warning,
-  error,
-}
+enum HapticIntensity { light, medium, heavy, success, warning, error }
 
 class HapticService {
   static final HapticService _instance = HapticService._internal();
@@ -66,7 +59,7 @@ class HapticService {
   /// Custom haptic pattern with intensity
   Future<void> customHaptic(HapticIntensity intensity) async {
     if (!_isEnabled) return;
-    
+
     switch (intensity) {
       case HapticIntensity.light:
         await lightImpact();
@@ -90,7 +83,7 @@ class HapticService {
   }
 
   /// Game-specific haptic feedback methods
-  
+
   /// Feedback for snake movement/direction changes
   Future<void> snakeMove() async {
     await lightImpact();
@@ -253,8 +246,9 @@ class HapticService {
   /// Rapid fire pattern for chain events
   Future<void> chainEffect(int count) async {
     if (!_isEnabled || count <= 0) return;
-    
-    for (int i = 0; i < count && i < 5; i++) { // Max 5 in chain to avoid overload
+
+    for (int i = 0; i < count && i < 5; i++) {
+      // Max 5 in chain to avoid overload
       await lightImpact();
       if (i < count - 1) {
         await Future.delayed(const Duration(milliseconds: 80));
@@ -265,7 +259,7 @@ class HapticService {
   /// Crescendo pattern for building excitement
   Future<void> crescendo() async {
     if (!_isEnabled) return;
-    
+
     await lightImpact();
     await Future.delayed(const Duration(milliseconds: 200));
     await lightImpact();
@@ -280,7 +274,7 @@ class HapticService {
   /// Pulse pattern for ongoing effects
   Future<void> pulse() async {
     if (!_isEnabled) return;
-    
+
     await mediumImpact();
     await Future.delayed(const Duration(milliseconds: 100));
     await lightImpact();
@@ -289,7 +283,7 @@ class HapticService {
   }
 
   /// Theme-specific haptic patterns
-  
+
   Future<void> cyberpunkEffect() async {
     if (!_isEnabled) return;
     // Quick digital bursts
@@ -351,7 +345,7 @@ class HapticService {
   /// Test haptic functionality
   Future<void> testHaptics() async {
     if (!_isEnabled) return;
-    
+
     await lightImpact();
     await Future.delayed(const Duration(milliseconds: 500));
     await mediumImpact();

@@ -2,18 +2,10 @@ import 'package:equatable/equatable.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Premium subscription tier
-enum PremiumTier {
-  free,
-  pro,
-}
+enum PremiumTier { free, pro }
 
 /// Status of the premium cubit
-enum PremiumStatus {
-  initial,
-  loading,
-  ready,
-  error,
-}
+enum PremiumStatus { initial, loading, ready, error }
 
 /// Premium content definition
 class PremiumContent {
@@ -124,9 +116,12 @@ class PremiumState extends Equatable {
       selectedSkinId: selectedSkinId ?? this.selectedSkinId,
       selectedTrailId: selectedTrailId ?? this.selectedTrailId,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      bronzeTournamentEntries: bronzeTournamentEntries ?? this.bronzeTournamentEntries,
-      silverTournamentEntries: silverTournamentEntries ?? this.silverTournamentEntries,
-      goldTournamentEntries: goldTournamentEntries ?? this.goldTournamentEntries,
+      bronzeTournamentEntries:
+          bronzeTournamentEntries ?? this.bronzeTournamentEntries,
+      silverTournamentEntries:
+          silverTournamentEntries ?? this.silverTournamentEntries,
+      goldTournamentEntries:
+          goldTournamentEntries ?? this.goldTournamentEntries,
       hasBattlePass: hasBattlePass ?? this.hasBattlePass,
       battlePassTier: battlePassTier ?? this.battlePassTier,
     );
@@ -158,7 +153,8 @@ class PremiumState extends Equatable {
   bool isThemeOwned(GameTheme theme) => ownedThemes.contains(theme);
 
   /// Check if a theme is unlocked (alias for isThemeOwned, or true if premium)
-  bool isThemeUnlocked(GameTheme theme) => hasPremium || ownedThemes.contains(theme);
+  bool isThemeUnlocked(GameTheme theme) =>
+      hasPremium || ownedThemes.contains(theme);
 
   /// Check if a skin is owned
   bool isSkinOwned(String skinId) => ownedSkins.contains(skinId);
@@ -170,7 +166,8 @@ class PremiumState extends Equatable {
   bool isPowerUpUnlocked(String powerUpId) => ownedPowerUps.contains(powerUpId);
 
   /// Check if a board size is unlocked
-  bool isBoardSizeUnlocked(String boardSizeId) => ownedBoardSizes.contains(boardSizeId);
+  bool isBoardSizeUnlocked(String boardSizeId) =>
+      ownedBoardSizes.contains(boardSizeId);
 
   /// Check if a bundle is owned
   bool isBundleOwned(String bundleId) => ownedBundles.contains(bundleId);
@@ -215,25 +212,25 @@ class PremiumState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        tier,
-        subscriptionExpiry,
-        isOnTrial,
-        trialEndDate,
-        trialStartDate,
-        ownedThemes,
-        ownedSkins,
-        ownedTrails,
-        ownedPowerUps,
-        ownedBoardSizes,
-        ownedBundles,
-        selectedSkinId,
-        selectedTrailId,
-        errorMessage,
-        bronzeTournamentEntries,
-        silverTournamentEntries,
-        goldTournamentEntries,
-        hasBattlePass,
-        battlePassTier,
-      ];
+    status,
+    tier,
+    subscriptionExpiry,
+    isOnTrial,
+    trialEndDate,
+    trialStartDate,
+    ownedThemes,
+    ownedSkins,
+    ownedTrails,
+    ownedPowerUps,
+    ownedBoardSizes,
+    ownedBundles,
+    selectedSkinId,
+    selectedTrailId,
+    errorMessage,
+    bronzeTournamentEntries,
+    silverTournamentEntries,
+    goldTournamentEntries,
+    hasBattlePass,
+    battlePassTier,
+  ];
 }

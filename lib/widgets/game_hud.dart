@@ -55,15 +55,24 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     // Scale animation: 1.0 -> 1.4 -> 1.0
     _levelUpScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 1.4).chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 1.0,
+          end: 1.4,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.4, end: 1.15).chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween(
+          begin: 1.4,
+          end: 1.15,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 20,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.15, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween(
+          begin: 1.15,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 50,
       ),
     ]).animate(_levelUpController);
@@ -71,11 +80,17 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     // Glow animation: 0 -> 1 -> 0
     _levelUpGlow = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 70,
       ),
     ]).animate(_levelUpController);
@@ -154,9 +169,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
               const SizedBox(width: 12),
 
               // Center: Score display (expanded)
-              Expanded(
-                child: _buildScoreSection(),
-              ),
+              Expanded(child: _buildScoreSection()),
 
               const SizedBox(width: 12),
 
@@ -216,11 +229,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 ]
               : null,
         ),
-        child: Icon(
-          icon,
-          color: color,
-          size: isSmallScreen ? 18 : 22,
-        ),
+        child: Icon(icon, color: color, size: isSmallScreen ? 18 : 22),
       ),
     );
   }
@@ -294,10 +303,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     return Row(
       children: [
         // Level progress
-        Expanded(
-          flex: 2,
-          child: _buildLevelCard(),
-        ),
+        Expanded(flex: 2, child: _buildLevelCard()),
 
         const SizedBox(width: 8),
 
@@ -309,10 +315,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
 
         // Power-ups
         if (gameState.activePowerUps.isNotEmpty)
-          Expanded(
-            flex: 2,
-            child: _buildPowerUpsCard(),
-          ),
+          Expanded(flex: 2, child: _buildPowerUpsCard()),
       ],
     );
   }
@@ -357,14 +360,16 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                       colors: _showLevelUpEffect
                           ? [Colors.amber, Colors.orange]
                           : isNearLevelUp
-                              ? [Colors.amber, Colors.orange]
-                              : [theme.snakeColor, theme.accentColor],
+                          ? [Colors.amber, Colors.orange]
+                          : [theme.snakeColor, theme.accentColor],
                     ),
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: _showLevelUpEffect
                         ? [
                             BoxShadow(
-                              color: Colors.amber.withValues(alpha: _levelUpGlow.value * 0.8),
+                              color: Colors.amber.withValues(
+                                alpha: _levelUpGlow.value * 0.8,
+                              ),
                               blurRadius: 12 * _levelUpGlow.value,
                               spreadRadius: 4 * _levelUpGlow.value,
                             ),
@@ -456,10 +461,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -485,10 +487,10 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     final color = combo >= 20
         ? Colors.red
         : combo >= 10
-            ? Colors.orange
-            : combo >= 5
-                ? Colors.amber
-                : Colors.green;
+        ? Colors.orange
+        : combo >= 5
+        ? Colors.amber
+        : Colors.green;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -497,16 +499,10 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.25),
-            color.withValues(alpha: 0.1),
-          ],
+          colors: [color.withValues(alpha: 0.25), color.withValues(alpha: 0.1)],
         ),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withValues(alpha: 0.5),
-          width: 1.5,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

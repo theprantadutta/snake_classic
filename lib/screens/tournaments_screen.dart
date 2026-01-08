@@ -16,7 +16,8 @@ class TournamentsScreen extends StatefulWidget {
   State<TournamentsScreen> createState() => _TournamentsScreenState();
 }
 
-class _TournamentsScreenState extends State<TournamentsScreen> with SingleTickerProviderStateMixin {
+class _TournamentsScreenState extends State<TournamentsScreen>
+    with SingleTickerProviderStateMixin {
   final TournamentService _tournamentService = TournamentService();
   final ConnectivityService _connectivityService = ConnectivityService();
 
@@ -56,14 +57,14 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final results = await Future.wait([
         _tournamentService.getActiveTournaments(),
         _tournamentService.getTournamentHistory(),
         _tournamentService.getUserTournamentStats(),
       ]);
-      
+
       setState(() {
         _activeTournaments = results[0] as List<Tournament>;
         _historyTournaments = results[1] as List<Tournament>;
@@ -117,18 +118,10 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
           const SizedBox(width: 8),
-          Icon(
-            Icons.emoji_events,
-            color: theme.accentColor,
-            size: 28,
-          ),
+          Icon(Icons.emoji_events, color: theme.accentColor, size: 28),
           const SizedBox(width: 12),
           Text(
             'Tournaments',
@@ -273,7 +266,9 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: _getTournamentStatusColor(tournament.status).withValues(alpha: 0.3),
+          color: _getTournamentStatusColor(
+            tournament.status,
+          ).withValues(alpha: 0.3),
         ),
       ),
       child: InkWell(
@@ -290,7 +285,9 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: _getTournamentTypeColor(tournament.type).withValues(alpha: 0.2),
+                      color: _getTournamentTypeColor(
+                        tournament.type,
+                      ).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -324,9 +321,14 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getTournamentStatusColor(tournament.status).withValues(alpha: 0.2),
+                      color: _getTournamentStatusColor(
+                        tournament.status,
+                      ).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -340,9 +342,9 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Description
               Text(
                 tournament.description,
@@ -351,14 +353,17 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                   color: theme.accentColor.withValues(alpha: 0.8),
                 ),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Game mode and time info
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.blue.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
@@ -399,9 +404,9 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Participation info
               Row(
                 children: [
@@ -421,7 +426,10 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                   const Spacer(),
                   if (tournament.hasJoined) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -449,7 +457,7 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                   ],
                 ],
               ),
-              
+
               // Show rewards for active tournaments or results for history
               if (showResults && tournament.userReward != null) ...[
                 const SizedBox(height: 12),
@@ -458,15 +466,13 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                   decoration: BoxDecoration(
                     color: Colors.amber.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: Colors.amber.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.emoji_events,
-                        color: Colors.amber,
-                        size: 20,
-                      ),
+                      Icon(Icons.emoji_events, color: Colors.amber, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -501,7 +507,9 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
                   decoration: BoxDecoration(
                     color: theme.accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: theme.accentColor.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -629,15 +637,29 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
             ),
           ),
           const SizedBox(height: 16),
-          _buildDetailRow('Total Attempts', '${_userStats['totalAttempts'] ?? 0}', theme),
+          _buildDetailRow(
+            'Total Attempts',
+            '${_userStats['totalAttempts'] ?? 0}',
+            theme,
+          ),
           _buildDetailRow('Win Rate', '${_userStats['winRate'] ?? 0}%', theme),
-          _buildDetailRow('Average Performance', 'Top ${100 - (_userStats['winRate'] ?? 0)}%', theme),
+          _buildDetailRow(
+            'Average Performance',
+            'Top ${100 - (_userStats['winRate'] ?? 0)}%',
+            theme,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color, GameTheme theme) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    GameTheme theme,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -708,11 +730,7 @@ class _TournamentsScreenState extends State<TournamentsScreen> with SingleTicker
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 80,
-            color: theme.accentColor.withValues(alpha: 0.3),
-          ),
+          Icon(icon, size: 80, color: theme.accentColor.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(
             title,

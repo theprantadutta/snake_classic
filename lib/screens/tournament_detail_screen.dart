@@ -19,9 +19,10 @@ class TournamentDetailScreen extends StatefulWidget {
   State<TournamentDetailScreen> createState() => _TournamentDetailScreenState();
 }
 
-class _TournamentDetailScreenState extends State<TournamentDetailScreen> with SingleTickerProviderStateMixin {
+class _TournamentDetailScreenState extends State<TournamentDetailScreen>
+    with SingleTickerProviderStateMixin {
   final TournamentService _tournamentService = TournamentService();
-  
+
   late TabController _tabController;
   late Tournament _tournament;
   List<TournamentParticipant> _leaderboard = [];
@@ -44,9 +45,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
 
   Future<void> _loadLeaderboard() async {
     setState(() => _isLoading = true);
-    
+
     try {
-      final leaderboard = await _tournamentService.getTournamentLeaderboard(_tournament.id);
+      final leaderboard = await _tournamentService.getTournamentLeaderboard(
+        _tournament.id,
+      );
       setState(() {
         _leaderboard = leaderboard;
         _isLoading = false;
@@ -57,7 +60,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
   }
 
   Future<void> _refreshTournament() async {
-    final updatedTournament = await _tournamentService.getTournament(_tournament.id);
+    final updatedTournament = await _tournamentService.getTournament(
+      _tournament.id,
+    );
     if (updatedTournament != null && mounted) {
       setState(() {
         _tournament = updatedTournament;
@@ -101,7 +106,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
                       ],
                     ),
                   ),
-                  if (_tournament.status.canJoin || _tournament.status.canSubmitScore)
+                  if (_tournament.status.canJoin ||
+                      _tournament.status.canSubmitScore)
                     _buildActionButtons(theme),
                 ],
               ),
@@ -119,11 +125,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -170,7 +172,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         color: theme.backgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _getTournamentStatusColor(_tournament.status).withValues(alpha: 0.3),
+          color: _getTournamentStatusColor(
+            _tournament.status,
+          ).withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -180,7 +184,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _getTournamentTypeColor(_tournament.type).withValues(alpha: 0.2),
+                  color: _getTournamentTypeColor(
+                    _tournament.type,
+                  ).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -196,23 +202,33 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: _getTournamentStatusColor(_tournament.status).withValues(alpha: 0.2),
+                            color: _getTournamentStatusColor(
+                              _tournament.status,
+                            ).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             _tournament.status.displayName,
                             style: TextStyle(
                               fontSize: 12,
-                              color: _getTournamentStatusColor(_tournament.status),
+                              color: _getTournamentStatusColor(
+                                _tournament.status,
+                              ),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.blue.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
@@ -291,11 +307,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 20,
-                  ),
+                  Icon(Icons.check_circle, color: Colors.green, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -309,7 +321,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
                             color: Colors.green,
                           ),
                         ),
-                        if (_tournament.userBestScore != null && _tournament.userAttempts != null)
+                        if (_tournament.userBestScore != null &&
+                            _tournament.userAttempts != null)
                           Text(
                             'Best Score: ${_tournament.userBestScore} • Attempts: ${_tournament.userAttempts}',
                             style: TextStyle(
@@ -322,7 +335,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
                   ),
                   if (_tournament.userRank > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.amber.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -425,9 +441,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
       itemBuilder: (context, index) {
         final participant = _leaderboard[index];
         final rank = index + 1;
-        
-        return _buildLeaderboardItem(participant, rank, theme)
-            .animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1);
+
+        return _buildLeaderboardItem(
+          participant,
+          rank,
+          theme,
+        ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1);
       },
     );
   }
@@ -459,11 +478,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         children: [
           Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                color: theme.accentColor,
-                size: 20,
-              ),
+              Icon(Icons.info_outline, color: theme.accentColor, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Description',
@@ -522,11 +537,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         children: [
           Row(
             children: [
-              Icon(
-                Icons.emoji_events,
-                color: Colors.amber,
-                size: 20,
-              ),
+              Icon(Icons.emoji_events, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Rewards',
@@ -542,7 +553,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
           ..._tournament.rewards.entries.map((entry) {
             final rank = entry.key;
             final reward = entry.value;
-            
+
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -640,20 +651,24 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
     );
   }
 
-  Widget _buildLeaderboardItem(TournamentParticipant participant, int rank, GameTheme theme) {
+  Widget _buildLeaderboardItem(
+    TournamentParticipant participant,
+    int rank,
+    GameTheme theme,
+  ) {
     final authService = context.read<AuthService>();
     final isCurrentUser = participant.userId == authService.currentUser?.uid;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isCurrentUser 
+        color: isCurrentUser
             ? theme.accentColor.withValues(alpha: 0.1)
             : theme.backgroundColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCurrentUser 
+          color: isCurrentUser
               ? theme.accentColor.withValues(alpha: 0.3)
               : theme.accentColor.withValues(alpha: 0.1),
         ),
@@ -682,13 +697,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
           CircleAvatar(
             radius: 16,
             backgroundColor: theme.accentColor.withValues(alpha: 0.2),
-            backgroundImage: participant.photoUrl != null 
-                ? NetworkImage(participant.photoUrl!) 
+            backgroundImage: participant.photoUrl != null
+                ? NetworkImage(participant.photoUrl!)
                 : null,
             child: participant.photoUrl == null
                 ? Text(
-                    participant.displayName.isNotEmpty 
-                        ? participant.displayName[0].toUpperCase() 
+                    participant.displayName.isNotEmpty
+                        ? participant.displayName[0].toUpperCase()
                         : 'U',
                     style: TextStyle(
                       color: theme.accentColor,
@@ -747,11 +762,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         children: [
           Row(
             children: [
-              Icon(
-                Icons.rule,
-                color: theme.accentColor,
-                size: 20,
-              ),
+              Icon(Icons.rule, color: theme.accentColor, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Tournament Rules',
@@ -764,33 +775,35 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
             ],
           ),
           const SizedBox(height: 12),
-          ..._getTournamentRules().map((rule) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 4,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: 8, right: 8),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    rule,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: theme.accentColor.withValues(alpha: 0.8),
-                      height: 1.4,
+          ..._getTournamentRules().map(
+            (rule) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 8, right: 8),
+                    decoration: BoxDecoration(
+                      color: theme.accentColor.withValues(alpha: 0.6),
+                      shape: BoxShape.circle,
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: Text(
+                      rule,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: theme.accentColor.withValues(alpha: 0.8),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -809,11 +822,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         children: [
           Row(
             children: [
-              Icon(
-                Icons.calculate,
-                color: Colors.amber,
-                size: 20,
-              ),
+              Icon(Icons.calculate, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Scoring System',
@@ -846,9 +855,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         children: [
           if (!_tournament.hasJoined && _tournament.status.canJoin)
             GradientButton(
-              onPressed: _isJoining 
-                  ? null 
-                  : () => _joinTournament(),
+              onPressed: _isJoining ? null : () => _joinTournament(),
               text: _isJoining ? 'JOINING...' : 'JOIN TOURNAMENT',
               primaryColor: Colors.blue,
               secondaryColor: Colors.cyan,
@@ -862,7 +869,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
               secondaryColor: theme.foodColor,
               icon: Icons.play_arrow,
             ),
-          
+
           if (_tournament.status == TournamentStatus.upcoming) ...[
             const SizedBox(height: 8),
             Text(
@@ -896,7 +903,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         baseRules.add('Score is based on survival time, not food consumed');
         break;
       case TournamentGameMode.noWalls:
-        baseRules.add('Snake wraps around screen edges instead of hitting walls');
+        baseRules.add(
+          'Snake wraps around screen edges instead of hitting walls',
+        );
         break;
       case TournamentGameMode.powerUpMadness:
         baseRules.add('Power-ups spawn every 5 seconds');
@@ -953,10 +962,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
 
   Future<void> _joinTournament() async {
     setState(() => _isJoining = true);
-    
+
     try {
       final success = await _tournamentService.joinTournament(_tournament.id);
-      
+
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Successfully joined tournament!')),
@@ -974,7 +983,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
         );
       }
     }
-    
+
     if (mounted) {
       setState(() => _isJoining = false);
     }
@@ -982,17 +991,15 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen> with Si
 
   void _playTournament() {
     final gameCubit = context.read<GameCubit>();
-    
+
     // Set tournament mode in game cubit
     gameCubit.setTournamentMode(_tournament.id, _tournament.gameMode);
-    
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const GameScreen(),
-      ),
-    ).then((_) {
-      // Refresh tournament data when returning from game
-      _refreshTournament();
-    });
+
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => const GameScreen()))
+        .then((_) {
+          // Refresh tournament data when returning from game
+          _refreshTournament();
+        });
   }
 }

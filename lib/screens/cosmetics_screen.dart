@@ -25,7 +25,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
+
     // Load current cosmetics selection from preferences
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCurrentSelection();
@@ -52,7 +52,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     // Save selections to premium cubit
     await premiumCubit.selectSkin(_selectedSkin.id);
     await premiumCubit.selectTrail(_selectedTrail.id);
-    
+
     // Show confirmation
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,14 +63,14 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
       );
     }
   }
-  
+
   SnakeSkinType _skinIdToType(String skinId) {
     return SnakeSkinType.values.firstWhere(
       (type) => type.id == skinId,
       orElse: () => SnakeSkinType.classic,
     );
   }
-  
+
   TrailEffectType _trailIdToType(String trailId) {
     return TrailEffectType.values.firstWhere(
       (type) => type.id == trailId,
@@ -109,8 +109,16 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                               controller: _tabController,
                               children: [
                                 _buildSkinsTab(premiumState, coinsState, theme),
-                                _buildTrailsTab(premiumState, coinsState, theme),
-                                _buildBundlesTab(premiumState, coinsState, theme),
+                                _buildTrailsTab(
+                                  premiumState,
+                                  coinsState,
+                                  theme,
+                                ),
+                                _buildBundlesTab(
+                                  premiumState,
+                                  coinsState,
+                                  theme,
+                                ),
                               ],
                             ),
                           ),
@@ -134,18 +142,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
           const SizedBox(width: 8),
-          Icon(
-            Icons.palette,
-            color: theme.accentColor,
-            size: 28,
-          ),
+          Icon(Icons.palette, color: theme.accentColor, size: 28),
           const SizedBox(width: 12),
           Text(
             'Cosmetics',
@@ -158,11 +158,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
           const Spacer(),
           IconButton(
             onPressed: _saveSelection,
-            icon: Icon(
-              Icons.check,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.check, color: theme.accentColor, size: 24),
             tooltip: 'Apply Selection',
           ),
         ],
@@ -255,7 +251,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -267,12 +266,16 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     );
   }
 
-  Widget _buildSkinsTab(PremiumState premiumState, CoinsState coinsState, GameTheme theme) {
+  Widget _buildSkinsTab(
+    PremiumState premiumState,
+    CoinsState coinsState,
+    GameTheme theme,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
         final childAspectRatio = constraints.maxWidth > 600 ? 0.75 : 0.7;
-        
+
         return GridView.builder(
           padding: const EdgeInsets.all(16),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -281,44 +284,49 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
-      itemCount: SnakeSkinType.values.length,
-      itemBuilder: (context, index) {
-        final skin = SnakeSkinType.values[index];
-        final isUnlocked = !skin.isPremium || premiumState.isSkinOwned(skin.id);
-        final isSelected = skin == _selectedSkin;
+          itemCount: SnakeSkinType.values.length,
+          itemBuilder: (context, index) {
+            final skin = SnakeSkinType.values[index];
+            final isUnlocked =
+                !skin.isPremium || premiumState.isSkinOwned(skin.id);
+            final isSelected = skin == _selectedSkin;
 
-        return _buildCosmeticCard(
-          title: skin.displayName,
-          description: skin.description,
-          icon: skin.icon,
-          colors: skin.colors,
-          price: skin.price,
-          isUnlocked: isUnlocked,
-          isSelected: isSelected,
-          isPremium: skin.isPremium,
-          theme: theme,
-          onTap: () {
-            if (isUnlocked) {
-              setState(() {
-                _selectedSkin = skin;
-              });
-            } else {
-              _showPurchaseDialog(skin: skin);
-            }
+            return _buildCosmeticCard(
+              title: skin.displayName,
+              description: skin.description,
+              icon: skin.icon,
+              colors: skin.colors,
+              price: skin.price,
+              isUnlocked: isUnlocked,
+              isSelected: isSelected,
+              isPremium: skin.isPremium,
+              theme: theme,
+              onTap: () {
+                if (isUnlocked) {
+                  setState(() {
+                    _selectedSkin = skin;
+                  });
+                } else {
+                  _showPurchaseDialog(skin: skin);
+                }
+              },
+            );
           },
         );
       },
     );
-      },
-    );
   }
 
-  Widget _buildTrailsTab(PremiumState premiumState, CoinsState coinsState, GameTheme theme) {
+  Widget _buildTrailsTab(
+    PremiumState premiumState,
+    CoinsState coinsState,
+    GameTheme theme,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
         final childAspectRatio = constraints.maxWidth > 600 ? 0.75 : 0.7;
-        
+
         return GridView.builder(
           padding: const EdgeInsets.all(16),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -327,46 +335,51 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
-      itemCount: TrailEffectType.values.length,
-      itemBuilder: (context, index) {
-        final trail = TrailEffectType.values[index];
-        final isUnlocked = !trail.isPremium || premiumState.isTrailOwned(trail.id);
-        final isSelected = trail == _selectedTrail;
+          itemCount: TrailEffectType.values.length,
+          itemBuilder: (context, index) {
+            final trail = TrailEffectType.values[index];
+            final isUnlocked =
+                !trail.isPremium || premiumState.isTrailOwned(trail.id);
+            final isSelected = trail == _selectedTrail;
 
-        return _buildCosmeticCard(
-          title: trail.displayName,
-          description: trail.description,
-          icon: trail.icon,
-          colors: trail.colors,
-          price: trail.price,
-          isUnlocked: isUnlocked,
-          isSelected: isSelected,
-          isPremium: trail.isPremium,
-          theme: theme,
-          onTap: () {
-            if (isUnlocked) {
-              setState(() {
-                _selectedTrail = trail;
-              });
-            } else {
-              _showPurchaseDialog(trail: trail);
-            }
+            return _buildCosmeticCard(
+              title: trail.displayName,
+              description: trail.description,
+              icon: trail.icon,
+              colors: trail.colors,
+              price: trail.price,
+              isUnlocked: isUnlocked,
+              isSelected: isSelected,
+              isPremium: trail.isPremium,
+              theme: theme,
+              onTap: () {
+                if (isUnlocked) {
+                  setState(() {
+                    _selectedTrail = trail;
+                  });
+                } else {
+                  _showPurchaseDialog(trail: trail);
+                }
+              },
+            );
           },
         );
       },
     );
-      },
-    );
   }
 
-  Widget _buildBundlesTab(PremiumState premiumState, CoinsState coinsState, GameTheme theme) {
+  Widget _buildBundlesTab(
+    PremiumState premiumState,
+    CoinsState coinsState,
+    GameTheme theme,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
           final childAspectRatio = constraints.maxWidth > 600 ? 1.4 : 1.2;
-          
+
           return GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
@@ -378,7 +391,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             itemBuilder: (context, index) {
               final bundle = CosmeticBundle.availableBundles[index];
               final isUnlocked = premiumState.isBundleOwned(bundle.id);
-              
+
               return _buildBundleCard(
                 bundle: bundle,
                 isUnlocked: isUnlocked,
@@ -410,18 +423,20 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
           color: theme.accentColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isUnlocked 
+            color: isUnlocked
                 ? Colors.green.withValues(alpha: 0.4)
                 : theme.accentColor.withValues(alpha: 0.2),
             width: isUnlocked ? 2 : 1,
           ),
-          boxShadow: isUnlocked ? [
-            BoxShadow(
-              color: Colors.green.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow: isUnlocked
+              ? [
+                  BoxShadow(
+                    color: Colors.green.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -490,7 +505,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green,
                               borderRadius: BorderRadius.circular(8),
@@ -567,22 +585,24 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
           color: theme.accentColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected 
+            color: isSelected
                 ? theme.accentColor
-                : isUnlocked 
-                    ? Colors.green.withValues(alpha: 0.4)
-                    : isPremium
-                        ? Colors.purple.shade400.withValues(alpha: 0.4)
-                        : theme.accentColor.withValues(alpha: 0.2),
+                : isUnlocked
+                ? Colors.green.withValues(alpha: 0.4)
+                : isPremium
+                ? Colors.purple.shade400.withValues(alpha: 0.4)
+                : theme.accentColor.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: theme.accentColor.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: theme.accentColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -591,109 +611,114 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                // Icon container with color background
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isUnlocked
-                        ? (isSelected ? theme.accentColor : Colors.green.withValues(alpha: 0.2))
-                        : isPremium
+                    // Icon container with color background
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isUnlocked
+                            ? (isSelected
+                                  ? theme.accentColor
+                                  : Colors.green.withValues(alpha: 0.2))
+                            : isPremium
                             ? Colors.purple.shade400.withValues(alpha: 0.2)
                             : theme.accentColor.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    icon,
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: isUnlocked
-                          ? (isSelected ? Colors.white : Colors.green)
-                          : isPremium
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        icon,
+                        style: TextStyle(
+                          fontSize: 32,
+                          color: isUnlocked
+                              ? (isSelected ? Colors.white : Colors.green)
+                              : isPremium
                               ? Colors.purple.shade400
                               : theme.accentColor,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Title
-                Flexible(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+
+                    const SizedBox(height: 12),
+
+                    // Title
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                
-                const SizedBox(height: 4),
-                
-                // Description
-                Flexible(
-                  child: Text(
-                    description,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 12,
+
+                    const SizedBox(height: 4),
+
+                    // Description
+                    Flexible(
+                      child: Text(
+                        description,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Color gradient preview
-                if (colors.length > 1)
-                  Container(
-                    height: 6,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: colors),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                
-                if (colors.length > 1) const SizedBox(height: 12),
-                
-                // Status badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? theme.accentColor
-                        : isUnlocked
+
+                    const SizedBox(height: 12),
+
+                    // Color gradient preview
+                    if (colors.length > 1)
+                      Container(
+                        height: 6,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: colors),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+
+                    if (colors.length > 1) const SizedBox(height: 12),
+
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? theme.accentColor
+                            : isUnlocked
                             ? Colors.green
                             : isPremium
-                                ? Colors.purple.shade400
-                                : Colors.amber,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    isSelected 
-                        ? 'SELECTED'
-                        : isUnlocked 
-                            ? 'OWNED' 
-                            : price > 0 
-                                ? '${price.toInt()} coins'
-                                : 'FREE',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                            ? Colors.purple.shade400
+                            : Colors.amber,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isSelected
+                            ? 'SELECTED'
+                            : isUnlocked
+                            ? 'OWNED'
+                            : price > 0
+                            ? '${price.toInt()} coins'
+                            : 'FREE',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
                   ],
                 ),
-                
+
                 // Premium lock overlay
                 if (!isUnlocked && isPremium)
                   Positioned.fill(
@@ -703,11 +728,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Center(
-                        child: Icon(
-                          Icons.lock,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                        child: Icon(Icons.lock, color: Colors.white, size: 24),
                       ),
                     ),
                   ),
@@ -740,7 +761,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              skin != null 
+              skin != null
                   ? 'Unlock ${skin.displayName} for \$${skin.price.toStringAsFixed(2)}?'
                   : 'Unlock ${trail!.displayName} for \$${trail.price.toStringAsFixed(2)}?',
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
@@ -758,7 +779,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7))),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -779,7 +803,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
   void _processPurchase({SnakeSkinType? skin, TrailEffectType? trail}) async {
     final purchaseService = PurchaseService();
     final premiumCubit = context.read<PremiumCubit>();
-    
+
     try {
       // Show processing indicator
       ScaffoldMessenger.of(context).showSnackBar(
@@ -789,11 +813,14 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
               const SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
-                skin != null 
+                skin != null
                     ? 'Processing ${skin.displayName} purchase...'
                     : 'Processing ${trail!.displayName} purchase...',
               ),
@@ -819,9 +846,9 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              skin != null 
+              skin != null
                   ? '${skin.displayName} purchased successfully! ✓'
-                  : '${trail!.displayName} purchased successfully! ✓'
+                  : '${trail!.displayName} purchased successfully! ✓',
             ),
             backgroundColor: Colors.green,
           ),
@@ -843,7 +870,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
   void _processBundlePurchase(CosmeticBundle bundle) async {
     final purchaseService = PurchaseService();
     final premiumCubit = context.read<PremiumCubit>();
-    
+
     try {
       // Show processing indicator
       ScaffoldMessenger.of(context).showSnackBar(
@@ -853,7 +880,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
               const SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: 12),
               Text('Processing ${bundle.name} purchase...'),
@@ -866,7 +896,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
 
       // Purchase the bundle
       await purchaseService.purchaseProduct(bundle.id);
-      
+
       // Unlock all items in the bundle
       for (final skin in bundle.skins) {
         await premiumCubit.unlockSkin(skin.id);
@@ -879,7 +909,9 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${bundle.name} purchased successfully! All items unlocked! ✓'),
+            content: Text(
+              '${bundle.name} purchased successfully! All items unlocked! ✓',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -908,10 +940,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
           children: [
             Icon(Icons.card_giftcard, color: theme.accentColor),
             const SizedBox(width: 8),
-            Text(
-              bundle.name,
-              style: TextStyle(color: theme.accentColor),
-            ),
+            Text(bundle.name, style: TextStyle(color: theme.accentColor)),
           ],
         ),
         content: Column(
@@ -935,7 +964,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             if (bundle.savings > 0)
               Text(
                 'Save: \$${bundle.savings.toStringAsFixed(2)} (${bundle.savingsPercentage.toStringAsFixed(0)}%)',
-                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             Text(
               'This bundle includes multiple premium items with great savings!',
@@ -949,7 +981,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7))),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
+            ),
           ),
           ElevatedButton(
             onPressed: () {

@@ -5,7 +5,7 @@ enum TournamentType {
   weekly,
   monthly,
   special;
-  
+
   String get displayName {
     switch (this) {
       case TournamentType.daily:
@@ -18,7 +18,7 @@ enum TournamentType {
         return 'Special Event';
     }
   }
-  
+
   String get emoji {
     switch (this) {
       case TournamentType.daily:
@@ -31,7 +31,7 @@ enum TournamentType {
         return '⭐';
     }
   }
-  
+
   Duration get duration {
     switch (this) {
       case TournamentType.daily:
@@ -51,7 +51,7 @@ enum TournamentStatus {
   active,
   ended,
   cancelled;
-  
+
   String get displayName {
     switch (this) {
       case TournamentStatus.upcoming:
@@ -64,7 +64,7 @@ enum TournamentStatus {
         return 'Cancelled';
     }
   }
-  
+
   bool get canJoin => this == TournamentStatus.active;
   bool get canSubmitScore => this == TournamentStatus.active;
 }
@@ -76,7 +76,7 @@ enum TournamentGameMode {
   noWalls,
   powerUpMadness,
   perfectGame;
-  
+
   String get displayName {
     switch (this) {
       case TournamentGameMode.classic:
@@ -93,7 +93,7 @@ enum TournamentGameMode {
         return 'Perfect Game';
     }
   }
-  
+
   String get description {
     switch (this) {
       case TournamentGameMode.classic:
@@ -110,7 +110,7 @@ enum TournamentGameMode {
         return 'No mistakes allowed - one hit ends game';
     }
   }
-  
+
   String get emoji {
     switch (this) {
       case TournamentGameMode.classic:
@@ -214,8 +214,12 @@ class TournamentParticipant {
       photoUrl: json['photoUrl'],
       highScore: json['highScore'] ?? 0,
       attempts: json['attempts'] ?? 0,
-      lastScoreDate: DateTime.parse(json['lastScoreDate'] ?? DateTime.now().toIso8601String()),
-      joinedDate: DateTime.parse(json['joinedDate'] ?? DateTime.now().toIso8601String()),
+      lastScoreDate: DateTime.parse(
+        json['lastScoreDate'] ?? DateTime.now().toIso8601String(),
+      ),
+      joinedDate: DateTime.parse(
+        json['joinedDate'] ?? DateTime.now().toIso8601String(),
+      ),
       gameStats: Map<String, dynamic>.from(json['gameStats'] ?? {}),
     );
   }
@@ -281,7 +285,7 @@ class Tournament {
     if (duration.isNegative || duration == Duration.zero) {
       return status == TournamentStatus.upcoming ? 'Starting...' : 'Ended';
     }
-    
+
     if (duration.inDays > 0) {
       return '${duration.inDays}d ${duration.inHours % 24}h';
     } else if (duration.inHours > 0) {
@@ -293,7 +297,7 @@ class Tournament {
 
   int get userRank {
     if (userBestScore == null) return 0;
-    
+
     int rank = 1;
     for (final participant in leaderboard) {
       if (participant.highScore > userBestScore!) {
@@ -303,7 +307,8 @@ class Tournament {
     return rank;
   }
 
-  bool get hasJoined => userBestScore != null || (userAttempts != null && userAttempts! > 0);
+  bool get hasJoined =>
+      userBestScore != null || (userAttempts != null && userAttempts! > 0);
 
   TournamentReward? get userReward {
     if (!hasJoined || status != TournamentStatus.ended) return null;
@@ -313,8 +318,10 @@ class Tournament {
   String get formattedDateRange {
     final start = startDate;
     final end = endDate;
-    
-    if (start.year == end.year && start.month == end.month && start.day == end.day) {
+
+    if (start.year == end.year &&
+        start.month == end.month &&
+        start.day == end.day) {
       // Same day
       return '${start.month}/${start.day}/${start.year}';
     } else if (start.year == end.year && start.month == end.month) {
@@ -368,23 +375,32 @@ class Tournament {
         (mode) => mode.name == json['gameMode'],
         orElse: () => TournamentGameMode.classic,
       ),
-      startDate: DateTime.parse(json['startDate'] ?? DateTime.now().toIso8601String()),
-      endDate: DateTime.parse(json['endDate'] ?? DateTime.now().add(const Duration(days: 1)).toIso8601String()),
+      startDate: DateTime.parse(
+        json['startDate'] ?? DateTime.now().toIso8601String(),
+      ),
+      endDate: DateTime.parse(
+        json['endDate'] ??
+            DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+      ),
       maxParticipants: json['maxParticipants'] ?? 1000,
       currentParticipants: json['currentParticipants'] ?? 0,
-      rewards: (json['rewards'] as Map<String, dynamic>?)?.map(
-        (k, v) => MapEntry(int.parse(k), TournamentReward.fromJson(v)),
-      ) ?? {},
+      rewards:
+          (json['rewards'] as Map<String, dynamic>?)?.map(
+            (k, v) => MapEntry(int.parse(k), TournamentReward.fromJson(v)),
+          ) ??
+          {},
       gameSettings: Map<String, dynamic>.from(json['gameSettings'] ?? {}),
       rules: Map<String, dynamic>.from(json['rules'] ?? {}),
       imageUrl: json['imageUrl'],
       requiresEntry: json['requiresEntry'] ?? false,
       entryCost: json['entryCost'] ?? 0,
-      leaderboard: (json['leaderboard'] as List?)
-          ?.map((p) => TournamentParticipant.fromJson(p))
-          .toList() ?? [],
-      userLastAttempt: json['userLastAttempt'] != null 
-          ? DateTime.parse(json['userLastAttempt']) 
+      leaderboard:
+          (json['leaderboard'] as List?)
+              ?.map((p) => TournamentParticipant.fromJson(p))
+              .toList() ??
+          [],
+      userLastAttempt: json['userLastAttempt'] != null
+          ? DateTime.parse(json['userLastAttempt'])
           : null,
       userBestScore: json['userBestScore'],
       userAttempts: json['userAttempts'],

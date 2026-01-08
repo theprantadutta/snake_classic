@@ -6,10 +6,7 @@ import 'package:snake_classic/widgets/gradient_button.dart';
 class InstructionsDialog extends StatelessWidget {
   final GameTheme theme;
 
-  const InstructionsDialog({
-    super.key,
-    required this.theme,
-  });
+  const InstructionsDialog({super.key, required this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -59,17 +56,13 @@ class InstructionsDialog extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(
-                      Icons.close,
-                      color: theme.accentColor,
-                      size: 28,
-                    ),
+                    icon: Icon(Icons.close, color: theme.accentColor, size: 28),
                   ),
                 ],
               ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.3),
-              
+
               const SizedBox(height: 24),
-              
+
               Flexible(
                 child: SingleChildScrollView(
                   child: Column(
@@ -82,9 +75,9 @@ class InstructionsDialog extends StatelessWidget {
                         theme,
                         0,
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Controls Section
                       _buildSection(
                         'CONTROLS',
@@ -93,16 +86,36 @@ class InstructionsDialog extends StatelessWidget {
                         theme,
                         1,
                         children: [
-                          _buildControlItem('Swipe Up ↑', 'Move snake up', theme),
-                          _buildControlItem('Swipe Down ↓', 'Move snake down', theme),
-                          _buildControlItem('Swipe Left ←', 'Move snake left', theme),
-                          _buildControlItem('Swipe Right →', 'Move snake right', theme),
-                          _buildControlItem('Tap Screen', 'Pause/Resume game', theme),
+                          _buildControlItem(
+                            'Swipe Up ↑',
+                            'Move snake up',
+                            theme,
+                          ),
+                          _buildControlItem(
+                            'Swipe Down ↓',
+                            'Move snake down',
+                            theme,
+                          ),
+                          _buildControlItem(
+                            'Swipe Left ←',
+                            'Move snake left',
+                            theme,
+                          ),
+                          _buildControlItem(
+                            'Swipe Right →',
+                            'Move snake right',
+                            theme,
+                          ),
+                          _buildControlItem(
+                            'Tap Screen',
+                            'Pause/Resume game',
+                            theme,
+                          ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Food Types
                       _buildSection(
                         'FOOD TYPES',
@@ -111,14 +124,29 @@ class InstructionsDialog extends StatelessWidget {
                         theme,
                         2,
                         children: [
-                          _buildFoodItem('Normal Food', '10 points', theme.foodColor, theme),
-                          _buildFoodItem('Bonus Food', '25 points', Colors.orange, theme),
-                          _buildFoodItem('Special Food', '50 points + Level Up', const Color(0xFFFFD700), theme),
+                          _buildFoodItem(
+                            'Normal Food',
+                            '10 points',
+                            theme.foodColor,
+                            theme,
+                          ),
+                          _buildFoodItem(
+                            'Bonus Food',
+                            '25 points',
+                            Colors.orange,
+                            theme,
+                          ),
+                          _buildFoodItem(
+                            'Special Food',
+                            '50 points + Level Up',
+                            const Color(0xFFFFD700),
+                            theme,
+                          ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Rules
                       _buildSection(
                         'RULES',
@@ -127,16 +155,31 @@ class InstructionsDialog extends StatelessWidget {
                         theme,
                         3,
                         children: [
-                          _buildRuleItem('• Eat food to grow and increase score', theme),
-                          _buildRuleItem('• Snake speeds up as you level up', theme),
-                          _buildRuleItem('• Game ends if you hit walls or yourself', theme),
-                          _buildRuleItem('• Special food appears every 10 normal foods', theme),
-                          _buildRuleItem('• Bonus food expires after 15 seconds', theme),
+                          _buildRuleItem(
+                            '• Eat food to grow and increase score',
+                            theme,
+                          ),
+                          _buildRuleItem(
+                            '• Snake speeds up as you level up',
+                            theme,
+                          ),
+                          _buildRuleItem(
+                            '• Game ends if you hit walls or yourself',
+                            theme,
+                          ),
+                          _buildRuleItem(
+                            '• Special food appears every 10 normal foods',
+                            theme,
+                          ),
+                          _buildRuleItem(
+                            '• Bonus food expires after 15 seconds',
+                            theme,
+                          ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Tips
                       _buildSection(
                         'PRO TIPS',
@@ -146,27 +189,39 @@ class InstructionsDialog extends StatelessWidget {
                         4,
                         children: [
                           _buildTipItem('Plan your moves ahead of time', theme),
-                          _buildTipItem('Use edges to create safe spaces', theme),
-                          _buildTipItem('Watch for visual swipe feedback', theme),
-                          _buildTipItem('Practice different difficulty levels', theme),
+                          _buildTipItem(
+                            'Use edges to create safe spaces',
+                            theme,
+                          ),
+                          _buildTipItem(
+                            'Watch for visual swipe feedback',
+                            theme,
+                          ),
+                          _buildTipItem(
+                            'Practice different difficulty levels',
+                            theme,
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Close Button
               GradientButton(
-                onPressed: () => Navigator.of(context).pop(),
-                text: 'GOT IT!',
-                primaryColor: theme.accentColor,
-                secondaryColor: theme.foodColor,
-                icon: Icons.check,
-                width: 160,
-              ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.8, 0.8)),
+                    onPressed: () => Navigator.of(context).pop(),
+                    text: 'GOT IT!',
+                    primaryColor: theme.accentColor,
+                    secondaryColor: theme.foodColor,
+                    icon: Icons.check,
+                    width: 160,
+                  )
+                  .animate()
+                  .fadeIn(delay: 500.ms)
+                  .scale(begin: const Offset(0.8, 0.8)),
             ],
           ),
         ),
@@ -198,11 +253,7 @@ class InstructionsDialog extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: theme.accentColor,
-                size: 20,
-              ),
+              Icon(icon, color: theme.accentColor, size: 20),
               const SizedBox(width: 8),
               Text(
                 title,
@@ -226,10 +277,7 @@ class InstructionsDialog extends StatelessWidget {
               ),
             ),
           ],
-          if (children != null) ...[
-            const SizedBox(height: 12),
-            ...children,
-          ],
+          if (children != null) ...[const SizedBox(height: 12), ...children],
         ],
       ),
     ).animate().fadeIn(delay: (200 + index * 100).ms).slideY(begin: 0.3);
@@ -271,7 +319,12 @@ class InstructionsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildFoodItem(String name, String points, Color color, GameTheme theme) {
+  Widget _buildFoodItem(
+    String name,
+    String points,
+    Color color,
+    GameTheme theme,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -335,11 +388,7 @@ class InstructionsDialog extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.star,
-            color: theme.foodColor,
-            size: 14,
-          ),
+          Icon(Icons.star, color: theme.foodColor, size: 14),
           const SizedBox(width: 6),
           Expanded(
             child: Text(

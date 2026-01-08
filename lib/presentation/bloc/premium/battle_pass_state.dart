@@ -1,18 +1,10 @@
 import 'package:equatable/equatable.dart';
 
 /// Status of the battle pass cubit
-enum BattlePassStatus {
-  initial,
-  loading,
-  ready,
-  error,
-}
+enum BattlePassStatus { initial, loading, ready, error }
 
 /// Battle pass reward tier
-enum RewardTier {
-  free,
-  premium,
-}
+enum RewardTier { free, premium }
 
 /// State class for BattlePassCubit
 class BattlePassState extends Equatable {
@@ -99,14 +91,14 @@ class BattlePassState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        isActive,
-        currentTier,
-        currentXP,
-        xpForNextTier,
-        expiryDate,
-        claimedFreeTiers,
-        claimedPremiumTiers,
-        errorMessage,
-      ];
+    status,
+    isActive,
+    currentTier,
+    currentXP,
+    xpForNextTier,
+    expiryDate,
+    claimedFreeTiers,
+    claimedPremiumTiers,
+    errorMessage,
+  ];
 }

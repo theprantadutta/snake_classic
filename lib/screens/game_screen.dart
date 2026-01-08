@@ -76,14 +76,20 @@ class _GameScreenState extends State<GameScreen>
     // Start the game when screen loads (only if not already playing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gameCubit = context.read<GameCubit>();
-      debugPrint('[GameScreen] initState callback - cubit status: ${gameCubit.state.status}');
+      debugPrint(
+        '[GameScreen] initState callback - cubit status: ${gameCubit.state.status}',
+      );
       if (gameCubit.state.status == GamePlayStatus.ready ||
           gameCubit.state.status == GamePlayStatus.initial) {
         debugPrint('[GameScreen] Starting game...');
         gameCubit.startGame();
-        debugPrint('[GameScreen] startGame() called, new status: ${gameCubit.state.status}');
+        debugPrint(
+          '[GameScreen] startGame() called, new status: ${gameCubit.state.status}',
+        );
       } else {
-        debugPrint('[GameScreen] Game already in status: ${gameCubit.state.status}, not starting');
+        debugPrint(
+          '[GameScreen] Game already in status: ${gameCubit.state.status}, not starting',
+        );
       }
       // Request keyboard focus
       _keyboardFocusNode.requestFocus();
@@ -318,7 +324,13 @@ class _GameScreenState extends State<GameScreen>
   }
 
   /// Spawns a score popup at the food position
-  void _spawnScorePopup(Food food, int points, int boardWidth, int boardHeight, {double comboMultiplier = 1.0}) {
+  void _spawnScorePopup(
+    Food food,
+    int points,
+    int boardWidth,
+    int boardHeight, {
+    double comboMultiplier = 1.0,
+  }) {
     if (_boardSize == null || _boardOffset == null) return;
 
     // Calculate screen position from grid position
@@ -335,7 +347,9 @@ class _GameScreenState extends State<GameScreen>
     };
 
     // Show multiplier if combo is active (1.5x or higher)
-    final displayMultiplier = comboMultiplier >= 1.5 ? comboMultiplier.round() : 1;
+    final displayMultiplier = comboMultiplier >= 1.5
+        ? comboMultiplier.round()
+        : 1;
 
     setState(() {
       _scorePopupManager.addPopup(
@@ -346,7 +360,6 @@ class _GameScreenState extends State<GameScreen>
       );
     });
   }
-
 
   /// Shows the level-up corner popup
   void _showLevelUpCornerPopup(int newLevel) {
@@ -401,7 +414,10 @@ class _GameScreenState extends State<GameScreen>
             child: Transform.scale(
               scale: scale,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
@@ -546,7 +562,9 @@ class _GameScreenState extends State<GameScreen>
                   backgroundColor: theme.backgroundColor,
                   body: Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.accentColor,
+                      ),
                     ),
                   ),
                 );
@@ -563,200 +581,248 @@ class _GameScreenState extends State<GameScreen>
                   focusNode: _keyboardFocusNode,
                   onKeyEvent: _handleKeyPress,
                   child: GameJuiceWidget(
-                  controller: _juiceController,
-                  applyShake: settingsState.screenShakeEnabled,
-                  applyScale: false, // Don't apply scale to the entire screen
-                  child: Scaffold(
-                    backgroundColor: theme.backgroundColor,
-                    body: SafeArea(
-                      child: Stack(
-                        children: [
-                          // SwipeDetector only wraps the game content, not overlays
-                          SwipeDetector(
-                            onSwipe: _handleSwipe,
-                            onTap: () {
-                              // Only toggle pause when playing (not when crashed or game over)
-                              if (gameState.status == GameStatus.playing ||
-                                  gameState.status == GameStatus.paused) {
-                                context.read<GameCubit>().togglePause();
-                              }
-                            },
-                            showFeedback: false, // Disable animated feedback
-                            child: Stack(
-                              children: [
-                                // Background gradient - matching home screen
-                                Container(
-                                  decoration: BoxDecoration(
-                                    gradient: RadialGradient(
-                                      center: Alignment.topRight,
-                                      radius: 1.5,
-                                      colors: [
-                                        theme.accentColor.withValues(alpha: 0.15),
-                                        theme.backgroundColor,
-                                        theme.backgroundColor.withValues(alpha: 0.9),
-                                        Colors.black.withValues(alpha: 0.1),
-                                      ],
-                                      stops: const [0.0, 0.4, 0.8, 1.0],
+                    controller: _juiceController,
+                    applyShake: settingsState.screenShakeEnabled,
+                    applyScale: false, // Don't apply scale to the entire screen
+                    child: Scaffold(
+                      backgroundColor: theme.backgroundColor,
+                      body: SafeArea(
+                        child: Stack(
+                          children: [
+                            // SwipeDetector only wraps the game content, not overlays
+                            SwipeDetector(
+                              onSwipe: _handleSwipe,
+                              onTap: () {
+                                // Only toggle pause when playing (not when crashed or game over)
+                                if (gameState.status == GameStatus.playing ||
+                                    gameState.status == GameStatus.paused) {
+                                  context.read<GameCubit>().togglePause();
+                                }
+                              },
+                              showFeedback: false, // Disable animated feedback
+                              child: Stack(
+                                children: [
+                                  // Background gradient - matching home screen
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: RadialGradient(
+                                        center: Alignment.topRight,
+                                        radius: 1.5,
+                                        colors: [
+                                          theme.accentColor.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          theme.backgroundColor,
+                                          theme.backgroundColor.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          Colors.black.withValues(alpha: 0.1),
+                                        ],
+                                        stops: const [0.0, 0.4, 0.8, 1.0],
+                                      ),
                                     ),
                                   ),
-                                ),
 
-                                // Background pattern overlay - matching home screen
-                                Positioned.fill(
-                                  child: CustomPaint(
-                                    painter: _GameBackgroundPainter(theme),
+                                  // Background pattern overlay - matching home screen
+                                  Positioned.fill(
+                                    child: CustomPaint(
+                                      painter: _GameBackgroundPainter(theme),
+                                    ),
                                   ),
-                                ),
 
-                                // Main game content
-                                LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final screenHeight = constraints.maxHeight;
-                                    final isSmallScreen = screenHeight < 700;
+                                  // Main game content
+                                  LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final screenHeight =
+                                          constraints.maxHeight;
+                                      final isSmallScreen = screenHeight < 700;
 
-                                    return Column(
-                                      children: [
-                                        // HUD
-                                        GameHUD(
-                                          gameState: gameState,
-                                          theme: theme,
-                                          onPause: () => context.read<GameCubit>().togglePause(),
-                                          onHome: () => _showExitConfirmation(context),
-                                          isSmallScreen: isSmallScreen,
-                                          tournamentId: gameCubitState.tournamentId,
-                                          tournamentMode: gameCubitState.tournamentMode,
-                                        ),
+                                      return Column(
+                                        children: [
+                                          // HUD
+                                          GameHUD(
+                                            gameState: gameState,
+                                            theme: theme,
+                                            onPause: () => context
+                                                .read<GameCubit>()
+                                                .togglePause(),
+                                            onHome: () =>
+                                                _showExitConfirmation(context),
+                                            isSmallScreen: isSmallScreen,
+                                            tournamentId:
+                                                gameCubitState.tournamentId,
+                                            tournamentMode:
+                                                gameCubitState.tournamentMode,
+                                          ),
 
-                                        // Note: Instructions moved to pause menu for cleaner gameplay view
+                                          // Note: Instructions moved to pause menu for cleaner gameplay view
 
-                                        // Static row above game board - Game Hint and Gesture Indicator
-                                        _buildStaticGameRow(theme, isSmallScreen),
+                                          // Static row above game board - Game Hint and Gesture Indicator
+                                          _buildStaticGameRow(
+                                            theme,
+                                            isSmallScreen,
+                                          ),
 
-                                        // Game Board
-                                        Expanded(
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: isSmallScreen ? 8 : 12,
-                                            ),
-                                            child: LayoutBuilder(
-                                              builder: (context, boardConstraints) {
-                                                // Calculate optimal board size
-                                                final availableSize = math.min(
-                                                  boardConstraints.maxWidth,
-                                                  boardConstraints.maxHeight -
-                                                      (isSmallScreen
-                                                          ? 40
-                                                          : 60), // Reserve space for info
-                                                );
+                                          // Game Board
+                                          Expanded(
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: isSmallScreen
+                                                    ? 8
+                                                    : 12,
+                                              ),
+                                              child: LayoutBuilder(
+                                                builder: (context, boardConstraints) {
+                                                  // Calculate optimal board size
+                                                  final availableSize = math.min(
+                                                    boardConstraints.maxWidth,
+                                                    boardConstraints.maxHeight -
+                                                        (isSmallScreen
+                                                            ? 40
+                                                            : 60), // Reserve space for info
+                                                  );
 
-                                                // Track board size for score popups
-                                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                                  if (mounted) {
-                                                    _boardSize = Size(availableSize, availableSize);
-                                                  }
-                                                });
+                                                  // Track board size for score popups
+                                                  WidgetsBinding.instance
+                                                      .addPostFrameCallback((
+                                                        _,
+                                                      ) {
+                                                        if (mounted) {
+                                                          _boardSize = Size(
+                                                            availableSize,
+                                                            availableSize,
+                                                          );
+                                                        }
+                                                      });
 
-                                                return Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    // Game Board with GlobalKey for position tracking
-                                                    Builder(
-                                                      builder: (boardContext) {
-                                                        // Track board offset after layout
-                                                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                                                          if (mounted) {
-                                                            final box = boardContext.findRenderObject() as RenderBox?;
-                                                            if (box != null) {
-                                                              _boardOffset = box.localToGlobal(Offset.zero);
+                                                  return Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      // Game Board with GlobalKey for position tracking
+                                                      Builder(
+                                                        builder: (boardContext) {
+                                                          // Track board offset after layout
+                                                          WidgetsBinding.instance.addPostFrameCallback((
+                                                            _,
+                                                          ) {
+                                                            if (mounted) {
+                                                              final box =
+                                                                  boardContext
+                                                                          .findRenderObject()
+                                                                      as RenderBox?;
+                                                              if (box != null) {
+                                                                _boardOffset = box
+                                                                    .localToGlobal(
+                                                                      Offset
+                                                                          .zero,
+                                                                    );
+                                                              }
                                                             }
-                                                          }
-                                                        });
+                                                          });
 
-                                                        return SizedBox(
-                                                          width: availableSize,
-                                                          height: availableSize,
-                                                          child: GameBoard(
-                                                            gameState: gameState,
-                                                            isTournamentMode: gameCubitState.isTournamentMode,
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ],
-                                                );
-                                              },
+                                                          return SizedBox(
+                                                            width:
+                                                                availableSize,
+                                                            height:
+                                                                availableSize,
+                                                            child: GameBoard(
+                                                              gameState:
+                                                                  gameState,
+                                                              isTournamentMode:
+                                                                  gameCubitState
+                                                                      .isTournamentMode,
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              ),
                                             ),
                                           ),
-                                        ),
 
-                                        // Compact Game Info Footer
-                                        _buildCompactGameInfo(
-                                          gameState,
-                                          theme,
-                                          isSmallScreen,
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-
-                                // Pause Overlay
-                                if (gameState.status == GameStatus.paused)
-                                  PauseOverlay(
-                                    theme: theme,
-                                    onResume: () => context.read<GameCubit>().resumeGame(),
-                                    onRestart: () {
-                                      context.read<GameCubit>().startGame();
+                                          // Compact Game Info Footer
+                                          _buildCompactGameInfo(
+                                            gameState,
+                                            theme,
+                                            isSmallScreen,
+                                          ),
+                                        ],
+                                      );
                                     },
-                                    onHome: () => _showExitConfirmation(context),
                                   ),
 
-                                // D-Pad Controls Overlay (optional, user preference)
-                                if (settingsState.dPadEnabled &&
-                                    gameState.status == GameStatus.playing)
-                                  _buildPositionedDPad(settingsState.dPadPosition, theme),
+                                  // Pause Overlay
+                                  if (gameState.status == GameStatus.paused)
+                                    PauseOverlay(
+                                      theme: theme,
+                                      onResume: () => context
+                                          .read<GameCubit>()
+                                          .resumeGame(),
+                                      onRestart: () {
+                                        context.read<GameCubit>().startGame();
+                                      },
+                                      onHome: () =>
+                                          _showExitConfirmation(context),
+                                    ),
 
-                                // Score Popups Layer
-                                ..._scorePopupManager.activePopups.map((popupData) {
-                                  return ScorePopup(
-                                    key: ValueKey(popupData.id),
-                                    points: popupData.points,
-                                    multiplier: popupData.multiplier,
-                                    position: popupData.position,
-                                    color: popupData.color,
-                                    onComplete: () {
-                                      setState(() {
-                                        _scorePopupManager.removePopup(popupData.id);
-                                      });
-                                    },
-                                  );
-                                }),
+                                  // D-Pad Controls Overlay (optional, user preference)
+                                  if (settingsState.dPadEnabled &&
+                                      gameState.status == GameStatus.playing)
+                                    _buildPositionedDPad(
+                                      settingsState.dPadPosition,
+                                      theme,
+                                    ),
 
-                                // Level-Up Corner Popup
-                                if (_showLevelUpPopup)
-                                  _buildLevelUpCornerPopup(theme),
-                              ],
+                                  // Score Popups Layer
+                                  ..._scorePopupManager.activePopups.map((
+                                    popupData,
+                                  ) {
+                                    return ScorePopup(
+                                      key: ValueKey(popupData.id),
+                                      points: popupData.points,
+                                      multiplier: popupData.multiplier,
+                                      position: popupData.position,
+                                      color: popupData.color,
+                                      onComplete: () {
+                                        setState(() {
+                                          _scorePopupManager.removePopup(
+                                            popupData.id,
+                                          );
+                                        });
+                                      },
+                                    );
+                                  }),
+
+                                  // Level-Up Corner Popup
+                                  if (_showLevelUpPopup)
+                                    _buildLevelUpCornerPopup(theme),
+                                ],
+                              ),
                             ),
-                          ),
 
-                          // Crash Feedback Overlay - OUTSIDE SwipeDetector so taps work
-                          if (gameState.status == GameStatus.crashed &&
-                              gameState.crashReason != null &&
-                              gameState.showCrashModal)
-                            CrashFeedbackOverlay(
-                              crashReason: gameState.crashReason!,
-                              theme: theme,
-                              onSkip: () => context.read<GameCubit>().skipCrashFeedback(),
-                              duration: settingsState.crashFeedbackDuration,
-                            ),
-                        ],
+                            // Crash Feedback Overlay - OUTSIDE SwipeDetector so taps work
+                            if (gameState.status == GameStatus.crashed &&
+                                gameState.crashReason != null &&
+                                gameState.showCrashModal)
+                              CrashFeedbackOverlay(
+                                crashReason: gameState.crashReason!,
+                                theme: theme,
+                                onSkip: () => context
+                                    .read<GameCubit>()
+                                    .skipCrashFeedback(),
+                                duration: settingsState.crashFeedbackDuration,
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ), // Close Scaffold
-                ), // Close GameJuiceWidget
-              ), // Close KeyboardListener
+                    ), // Close Scaffold
+                  ), // Close GameJuiceWidget
+                ), // Close KeyboardListener
               ); // Close PopScope
             },
           );
@@ -914,7 +980,8 @@ class _GameScreenState extends State<GameScreen>
     return AnimatedBuilder(
       animation: _gestureIndicatorController,
       builder: (context, child) {
-        final isActive = _lastSwipeDirection != null &&
+        final isActive =
+            _lastSwipeDirection != null &&
             _gestureIndicatorController.isAnimating;
         final activeColor = isActive
             ? _getActiveSwipeColor(_lastSwipeDirection!, theme)
@@ -1001,7 +1068,6 @@ class _GameScreenState extends State<GameScreen>
         return const Color(0xFF9C27B0); // Purple
     }
   }
-
 }
 
 // Custom painter for game background pattern - matching home screen

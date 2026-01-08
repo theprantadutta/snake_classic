@@ -14,7 +14,8 @@ class ReplaysScreen extends StatefulWidget {
   State<ReplaysScreen> createState() => _ReplaysScreenState();
 }
 
-class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProviderStateMixin {
+class _ReplaysScreenState extends State<ReplaysScreen>
+    with SingleTickerProviderStateMixin {
   final StorageService _storageService = StorageService();
   List<GameReplay> _replays = [];
   bool _isLoading = true;
@@ -37,7 +38,7 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
     try {
       final replayKeys = await _storageService.getReplayKeys();
       final replays = <GameReplay>[];
-      
+
       for (final key in replayKeys) {
         final replayJson = await _storageService.getReplay(key);
         if (replayJson != null) {
@@ -49,9 +50,9 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
           }
         }
       }
-      
+
       replays.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       setState(() {
         _replays = replays;
         _isLoading = false;
@@ -64,14 +65,14 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
   }
 
   List<GameReplay> get _recentReplays => _replays.take(20).toList();
-  
+
   List<GameReplay> get _highScoreReplays {
     final sorted = [..._replays];
     sorted.sort((a, b) => b.finalScore.compareTo(a.finalScore));
     return sorted.take(20).toList();
   }
-  
-  List<GameReplay> get _crashReplays => 
+
+  List<GameReplay> get _crashReplays =>
       _replays.where((r) => r.crashReason != null).take(20).toList();
 
   @override
@@ -83,26 +84,17 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
       appBar: AppBar(
         title: const Text(
           'Game Replays',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: theme.primaryColor,
-          ),
+          icon: Icon(Icons.arrow_back, color: theme.primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.refresh,
-              color: theme.primaryColor,
-            ),
+            icon: Icon(Icons.refresh, color: theme.primaryColor),
             onPressed: _loadReplays,
           ),
         ],
@@ -126,7 +118,11 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
                 controller: _tabController,
                 children: [
                   _buildReplayList(_recentReplays, 'No recent replays', theme),
-                  _buildReplayList(_highScoreReplays, 'No high-score replays', theme),
+                  _buildReplayList(
+                    _highScoreReplays,
+                    'No high-score replays',
+                    theme,
+                  ),
                   _buildReplayList(_crashReplays, 'No crash replays', theme),
                 ],
               ),
@@ -134,7 +130,11 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildReplayList(List<GameReplay> replays, String emptyMessage, GameTheme theme) {
+  Widget _buildReplayList(
+    List<GameReplay> replays,
+    String emptyMessage,
+    GameTheme theme,
+  ) {
     if (replays.isEmpty) {
       return Center(
         child: Column(
@@ -178,15 +178,13 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
 
   Widget _buildReplayCard(GameReplay replay, GameTheme theme) {
     final summary = replay.getSummary();
-    
+
     return Card(
       color: theme.primaryColor.withValues(alpha: 0.1),
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: theme.primaryColor.withValues(alpha: 0.2),
-        ),
+        side: BorderSide(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
       child: InkWell(
         onTap: () {
@@ -228,9 +226,12 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: replay.crashReason != null 
+                      color: replay.crashReason != null
                           ? Colors.red.withValues(alpha: 0.2)
                           : Colors.green.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -238,7 +239,9 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
                     child: Text(
                       summary['outcome'],
                       style: TextStyle(
-                        color: replay.crashReason != null ? Colors.red : Colors.green,
+                        color: replay.crashReason != null
+                            ? Colors.red
+                            : Colors.green,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -246,9 +249,9 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Score and stats
               Row(
                 children: [
@@ -280,9 +283,9 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -313,9 +316,9 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Action buttons
               Row(
                 children: [
@@ -325,14 +328,17 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ReplayViewerScreen(replay: replay),
+                            builder: (context) =>
+                                ReplayViewerScreen(replay: replay),
                           ),
                         );
                       },
                       icon: const Icon(Icons.play_arrow, size: 16),
                       label: const Text('Watch'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.accentColor.withValues(alpha: 0.8),
+                        backgroundColor: theme.accentColor.withValues(
+                          alpha: 0.8,
+                        ),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
@@ -357,7 +363,12 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildStatChip(String label, String value, IconData icon, Color color) {
+  Widget _buildStatChip(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       decoration: BoxDecoration(
@@ -392,7 +403,7 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-    
+
     if (diff.inDays == 0) {
       if (diff.inHours == 0) {
         return '${diff.inMinutes}m ago';
@@ -432,9 +443,9 @@ class _ReplaysScreenState extends State<ReplaysScreen> with SingleTickerProvider
         await _storageService.deleteReplay(replay.id);
         await _loadReplays();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Replay deleted')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Replay deleted')));
         }
       } catch (e) {
         if (mounted) {

@@ -8,22 +8,22 @@ import 'package:snake_classic/utils/constants.dart';
 class VisualEffectsManager extends ChangeNotifier {
   final ParticleManager particleManager = ParticleManager();
   final GameJuiceController juiceController = GameJuiceController();
-  
+
   // Food consumption effects
   void playFoodEatenEffect(Offset position, GameTheme theme) {
     // Add particle explosion
     particleManager.emitAt(position, ParticleConfig.foodExplosion);
-    
+
     // Add screen juice
     juiceController.foodEaten();
-    
+
     // Add score popup particles
     final scorePosition = Offset(position.dx, position.dy - 30);
     particleManager.emitAt(scorePosition, ParticleConfig.scorePopup);
-    
+
     notifyListeners();
   }
-  
+
   void playBonusFoodEatenEffect(Offset position, GameTheme theme) {
     // Enhanced explosion for bonus food
     final bonusConfig = ParticleConfig(
@@ -43,16 +43,16 @@ class VisualEffectsManager extends ChangeNotifier {
       gravity: 150.0,
       friction: 0.93,
     );
-    
+
     particleManager.emitAt(position, bonusConfig);
     juiceController.bonusFoodEaten();
-    
+
     // Add sparkle ring effect
     _createSparkleRing(position, 8);
-    
+
     notifyListeners();
   }
-  
+
   void playSpecialFoodEatenEffect(Offset position, GameTheme theme) {
     // Massive explosion for special food
     final specialConfig = ParticleConfig(
@@ -73,29 +73,29 @@ class VisualEffectsManager extends ChangeNotifier {
       gravity: 100.0,
       friction: 0.94,
     );
-    
+
     particleManager.emitAt(position, specialConfig);
     juiceController.specialFoodEaten();
-    
+
     // Add multiple sparkle rings
     _createSparkleRing(position, 12);
     Future.delayed(const Duration(milliseconds: 200), () {
       _createSparkleRing(position, 8);
     });
-    
+
     notifyListeners();
   }
-  
+
   void playPowerUpCollectedEffect(Offset position, GameTheme theme) {
     particleManager.emitAt(position, ParticleConfig.powerUpGlow);
     juiceController.powerUpCollected();
-    
+
     // Add ascending sparkles
     _createAscendingSparkles(position);
-    
+
     notifyListeners();
   }
-  
+
   void playGameOverEffect(Offset crashPosition, GameTheme theme) {
     // Massive explosion at crash site
     final crashConfig = ParticleConfig(
@@ -116,13 +116,13 @@ class VisualEffectsManager extends ChangeNotifier {
       gravity: 200.0,
       friction: 0.92,
     );
-    
+
     particleManager.emitAt(crashPosition, crashConfig);
     juiceController.gameOver();
-    
+
     notifyListeners();
   }
-  
+
   void playLevelUpEffect(Offset centerPosition, GameTheme theme) {
     // Celebratory burst
     final levelUpConfig = ParticleConfig(
@@ -133,22 +133,18 @@ class VisualEffectsManager extends ChangeNotifier {
       maxSize: 10.0,
       minSpeed: 80.0,
       maxSpeed: 200.0,
-      colors: [
-        theme.accentColor,
-        theme.foodColor,
-        Colors.white,
-      ],
+      colors: [theme.accentColor, theme.foodColor, Colors.white],
       blendMode: ParticleBlendMode.additive,
       gravity: -50.0, // Float upward
       friction: 0.95,
     );
-    
+
     particleManager.emitAt(centerPosition, levelUpConfig);
     juiceController.levelUp();
-    
+
     notifyListeners();
   }
-  
+
   void _createSparkleRing(Offset center, int sparkleCount) {
     for (int i = 0; i < sparkleCount; i++) {
       final angle = (i / sparkleCount) * math.pi * 2;
@@ -157,11 +153,11 @@ class VisualEffectsManager extends ChangeNotifier {
         center.dx + math.cos(angle) * radius,
         center.dy + math.sin(angle) * radius,
       );
-      
+
       particleManager.emitAt(sparklePos, ParticleConfig.sparkle);
     }
   }
-  
+
   void _createAscendingSparkles(Offset position) {
     for (int i = 0; i < 5; i++) {
       Future.delayed(Duration(milliseconds: i * 100), () {
@@ -169,12 +165,12 @@ class VisualEffectsManager extends ChangeNotifier {
           position.dx + (math.Random().nextDouble() - 0.5) * 40,
           position.dy - i * 20,
         );
-        
+
         particleManager.emitAt(sparklePos, ParticleConfig.sparkle);
       });
     }
   }
-  
+
   @override
   void dispose() {
     particleManager.clear();
@@ -216,27 +212,27 @@ class _EnhancedButtonState extends State<EnhancedButton>
   late AnimationController _shimmerController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _shimmerAnimation;
-  
+
   bool _isPressed = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    
+
     _shimmerController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     )..repeat();
-    
+
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
-    
+
     _shimmerAnimation = Tween<double>(begin: -2.0, end: 2.0).animate(
       CurvedAnimation(parent: _shimmerController, curve: Curves.linear),
     );
@@ -251,10 +247,10 @@ class _EnhancedButtonState extends State<EnhancedButton>
 
   void _onTapDown(TapDownDetails details) {
     if (!widget.enabled) return;
-    
+
     setState(() => _isPressed = true);
     _scaleController.forward();
-    
+
     widget.effectsManager?.juiceController.buttonPress();
   }
 
@@ -268,10 +264,10 @@ class _EnhancedButtonState extends State<EnhancedButton>
 
   void _handleTapEnd() {
     if (!mounted) return;
-    
+
     setState(() => _isPressed = false);
     _scaleController.reverse();
-    
+
     if (widget.onPressed != null) {
       widget.onPressed!();
     }
@@ -289,23 +285,28 @@ class _EnhancedButtonState extends State<EnhancedButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              padding: widget.padding ?? const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
+              padding:
+                  widget.padding ??
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    (widget.backgroundColor ?? Colors.blue).withValues(alpha: 0.9),
-                    (widget.backgroundColor ?? Colors.blue).withValues(alpha: 0.7),
+                    (widget.backgroundColor ?? Colors.blue).withValues(
+                      alpha: 0.9,
+                    ),
+                    (widget.backgroundColor ?? Colors.blue).withValues(
+                      alpha: 0.7,
+                    ),
                   ],
                 ),
                 borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: (widget.backgroundColor ?? Colors.blue).withValues(alpha: 0.3),
+                    color: (widget.backgroundColor ?? Colors.blue).withValues(
+                      alpha: 0.3,
+                    ),
                     blurRadius: _isPressed ? 8 : 12,
                     spreadRadius: _isPressed ? 1 : 2,
                     offset: Offset(0, _isPressed ? 2 : 4),
@@ -318,7 +319,8 @@ class _EnhancedButtonState extends State<EnhancedButton>
                   // Shimmer effect overlay
                   Positioned.fill(
                     child: ClipRRect(
-                      borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+                      borderRadius:
+                          widget.borderRadius ?? BorderRadius.circular(12),
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -381,7 +383,7 @@ class _FloatingScoreAnimationState extends State<FloatingScoreAnimation>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -404,12 +406,7 @@ class _FloatingScoreAnimationState extends State<FloatingScoreAnimation>
     _positionAnimation = Tween<Offset>(
       begin: Offset.zero,
       end: const Offset(0, -80),
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward().then((_) {
       widget.onComplete?.call();
@@ -435,7 +432,10 @@ class _FloatingScoreAnimationState extends State<FloatingScoreAnimation>
             child: Opacity(
               opacity: _fadeAnimation.value,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: widget.color.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
@@ -501,9 +501,10 @@ class _RippleEffectState extends State<RippleEffect>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -563,7 +564,9 @@ class RipplePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final maxRadius = math.sqrt(size.width * size.width + size.height * size.height);
+    final maxRadius = math.sqrt(
+      size.width * size.width + size.height * size.height,
+    );
     final radius = maxRadius * progress;
     final opacity = 1.0 - progress;
 

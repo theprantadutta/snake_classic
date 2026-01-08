@@ -106,13 +106,21 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
               final screenWidth = constraints.maxWidth;
               final isSmallScreen = screenHeight < 600;
               final isNarrowScreen = screenWidth < 400;
-              
+
               if (_showPrivacyPolicy) {
-                return _buildPrivacyPolicyView(theme, screenHeight, screenWidth, isSmallScreen, isNarrowScreen);
+                return _buildPrivacyPolicyView(
+                  theme,
+                  screenHeight,
+                  screenWidth,
+                  isSmallScreen,
+                  isNarrowScreen,
+                );
               }
-              
+
               return SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: isNarrowScreen ? 16.0 : 24.0),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isNarrowScreen ? 16.0 : 24.0,
+                ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: screenHeight),
                   child: IntrinsicHeight(
@@ -121,179 +129,215 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                       children: [
                         // Add some top padding for small screens
                         SizedBox(height: isSmallScreen ? 20 : 40),
-                // Welcome Header
-                Container(
-                  padding: EdgeInsets.all(isSmallScreen ? 15 : 20),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        theme.accentColor.withValues(alpha: 0.3),
-                        theme.accentColor.withValues(alpha: 0.1),
-                        Colors.transparent,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.accentColor.withValues(alpha: 0.4),
-                        blurRadius: isSmallScreen ? 30 : 40,
-                        spreadRadius: isSmallScreen ? 5 : 10,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.videogame_asset_rounded,
-                    size: isSmallScreen ? screenHeight * 0.08 : screenHeight * 0.12,
-                    color: theme.primaryColor,
-                  ),
-                )
-                    .animate()
-                    .scale(
-                      duration: 600.ms,
-                      curve: Curves.elasticOut,
-                    )
-                    .fadeIn(),
-                
-                SizedBox(height: isSmallScreen ? screenHeight * 0.02 : screenHeight * 0.04),
+                        // Welcome Header
+                        Container(
+                              padding: EdgeInsets.all(isSmallScreen ? 15 : 20),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    theme.accentColor.withValues(alpha: 0.3),
+                                    theme.accentColor.withValues(alpha: 0.1),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: theme.accentColor.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                    blurRadius: isSmallScreen ? 30 : 40,
+                                    spreadRadius: isSmallScreen ? 5 : 10,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.videogame_asset_rounded,
+                                size: isSmallScreen
+                                    ? screenHeight * 0.08
+                                    : screenHeight * 0.12,
+                                color: theme.primaryColor,
+                              ),
+                            )
+                            .animate()
+                            .scale(duration: 600.ms, curve: Curves.elasticOut)
+                            .fadeIn(),
 
-                // Welcome Text Container
-                Container(
-                  padding: EdgeInsets.all(isSmallScreen ? screenHeight * 0.02 : screenHeight * 0.035),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        theme.backgroundColor.withValues(alpha: 0.4),
-                        theme.backgroundColor.withValues(alpha: 0.2),
-                        theme.accentColor.withValues(alpha: 0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.3),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Title with gradient effect
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [theme.primaryColor, theme.accentColor],
-                        ).createShader(bounds),
-                        child: Text(
-                          'Welcome to\nSnake Classic!',
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? screenHeight * 0.03 : screenHeight * 0.04,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.2,
-                          ),
-                          textAlign: TextAlign.center,
+                        SizedBox(
+                          height: isSmallScreen
+                              ? screenHeight * 0.02
+                              : screenHeight * 0.04,
                         ),
-                      ),
-                      SizedBox(height: isSmallScreen ? screenHeight * 0.015 : screenHeight * 0.025),
 
-                      // Feature highlights
-                      Text(
-                        'Choose how you\'d like to play:',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? screenHeight * 0.018 : screenHeight * 0.022,
-                          color: Colors.white.withValues(alpha: 0.9),
-                          height: 1.4,
+                        // Welcome Text Container
+                        Container(
+                              padding: EdgeInsets.all(
+                                isSmallScreen
+                                    ? screenHeight * 0.02
+                                    : screenHeight * 0.035,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    theme.backgroundColor.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                    theme.backgroundColor.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                    theme.accentColor.withValues(alpha: 0.1),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: theme.accentColor.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  // Title with gradient effect
+                                  ShaderMask(
+                                    shaderCallback: (bounds) => LinearGradient(
+                                      colors: [
+                                        theme.primaryColor,
+                                        theme.accentColor,
+                                      ],
+                                    ).createShader(bounds),
+                                    child: Text(
+                                      'Welcome to\nSnake Classic!',
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen
+                                            ? screenHeight * 0.03
+                                            : screenHeight * 0.04,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        height: 1.2,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: isSmallScreen
+                                        ? screenHeight * 0.015
+                                        : screenHeight * 0.025,
+                                  ),
+
+                                  // Feature highlights
+                                  Text(
+                                    'Choose how you\'d like to play:',
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen
+                                          ? screenHeight * 0.018
+                                          : screenHeight * 0.022,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                      height: 1.4,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  SizedBox(
+                                    height: isSmallScreen
+                                        ? screenHeight * 0.015
+                                        : screenHeight * 0.02,
+                                  ),
+
+                                  // Feature list
+                                  ..._buildFeatureList(theme, isSmallScreen),
+                                ],
+                              ),
+                            )
+                            .animate(delay: 300.ms)
+                            .slideY(
+                              begin: 0.3,
+                              duration: 600.ms,
+                              curve: Curves.easeOutBack,
+                            )
+                            .fadeIn(),
+
+                        SizedBox(
+                          height: isSmallScreen
+                              ? screenHeight * 0.03
+                              : screenHeight * 0.05,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: isSmallScreen ? screenHeight * 0.015 : screenHeight * 0.02),
 
-                      // Feature list
-                      ..._buildFeatureList(theme, isSmallScreen),
-                    ],
-                  ),
-                )
-                    .animate(delay: 300.ms)
-                    .slideY(
-                      begin: 0.3,
-                      duration: 600.ms,
-                      curve: Curves.easeOutBack,
-                    )
-                    .fadeIn(),
-
-                SizedBox(height: isSmallScreen ? screenHeight * 0.03 : screenHeight * 0.05),
-
-                // Auth buttons
-                if (_isLoading)
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        CircularProgressIndicator(
-                          color: theme.accentColor,
-                          strokeWidth: 3,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Signing you in...',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Column(
-                    children: [
-                      // Google Sign-In Button
-                      _buildAuthButton(
-                        context,
-                        'Sign in with Google',
-                        FontAwesomeIcons.google,
-                        [Colors.red.shade600, Colors.red.shade700],
-                        () => _handleGoogleSignIn(authCubit),
-                      )
-                          .animate(delay: 600.ms)
-                          .slideX(
-                            begin: -0.5,
-                            duration: 500.ms,
-                            curve: Curves.easeOut,
+                        // Auth buttons
+                        if (_isLoading)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                CircularProgressIndicator(
+                                  color: theme.accentColor,
+                                  strokeWidth: 3,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Signing you in...',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
                           )
-                          .fadeIn(),
+                        else
+                          Column(
+                            children: [
+                              // Google Sign-In Button
+                              _buildAuthButton(
+                                    context,
+                                    'Sign in with Google',
+                                    FontAwesomeIcons.google,
+                                    [Colors.red.shade600, Colors.red.shade700],
+                                    () => _handleGoogleSignIn(authCubit),
+                                  )
+                                  .animate(delay: 600.ms)
+                                  .slideX(
+                                    begin: -0.5,
+                                    duration: 500.ms,
+                                    curve: Curves.easeOut,
+                                  )
+                                  .fadeIn(),
 
-                      const SizedBox(height: 16),
+                              const SizedBox(height: 16),
 
-                      // Guest Button
-                      _buildAuthButton(
-                        context,
-                        'Continue as Guest',
-                        Icons.person_outline_rounded,
-                        [
-                          theme.primaryColor.withValues(alpha: 0.8),
-                          theme.primaryColor
-                        ],
-                        () => _handleGuestLogin(authCubit),
-                      )
-                          .animate(delay: 800.ms)
-                          .slideX(
-                            begin: 0.5,
-                            duration: 500.ms,
-                            curve: Curves.easeOut,
-                          )
-                          .fadeIn(),
-                    ],
-                  ),
+                              // Guest Button
+                              _buildAuthButton(
+                                    context,
+                                    'Continue as Guest',
+                                    Icons.person_outline_rounded,
+                                    [
+                                      theme.primaryColor.withValues(alpha: 0.8),
+                                      theme.primaryColor,
+                                    ],
+                                    () => _handleGuestLogin(authCubit),
+                                  )
+                                  .animate(delay: 800.ms)
+                                  .slideX(
+                                    begin: 0.5,
+                                    duration: 500.ms,
+                                    curve: Curves.easeOut,
+                                  )
+                                  .fadeIn(),
+                            ],
+                          ),
 
-                // Bottom padding for small screens
-                SizedBox(height: isSmallScreen ? 20 : 40),
+                        // Bottom padding for small screens
+                        SizedBox(height: isSmallScreen ? 20 : 40),
                       ],
                     ),
                   ),
@@ -306,260 +350,274 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     );
   }
 
-  Widget _buildPrivacyPolicyView(GameTheme theme, double screenHeight, double screenWidth, bool isSmallScreen, bool isNarrowScreen) {
+  Widget _buildPrivacyPolicyView(
+    GameTheme theme,
+    double screenHeight,
+    double screenWidth,
+    bool isSmallScreen,
+    bool isNarrowScreen,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: isNarrowScreen ? 16.0 : 24.0),
       child: Column(
         children: [
           // Header
           Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.2),
-                  theme.accentColor.withValues(alpha: 0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.privacy_tip_outlined,
-                    color: theme.accentColor,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Privacy Policy',
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: isSmallScreen ? 20 : 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Please review our privacy policy before continuing',
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                          fontSize: isSmallScreen ? 12 : 14,
-                        ),
-                      ),
+                width: double.infinity,
+                padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.accentColor.withValues(alpha: 0.2),
+                      theme.accentColor.withValues(alpha: 0.1),
                     ],
                   ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
                 ),
-              ],
-            ),
-          )
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: theme.accentColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.privacy_tip_outlined,
+                        color: theme.accentColor,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Privacy Policy',
+                            style: TextStyle(
+                              color: theme.accentColor,
+                              fontSize: isSmallScreen ? 20 : 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Please review our privacy policy before continuing',
+                            style: TextStyle(
+                              color: theme.accentColor.withValues(alpha: 0.7),
+                              fontSize: isSmallScreen ? 12 : 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
               .animate()
               .slideY(begin: -0.3, duration: 600.ms, curve: Curves.easeOutBack)
               .fadeIn(),
-          
+
           const SizedBox(height: 16),
-          
+
           // Privacy Policy Content
           Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    theme.backgroundColor.withValues(alpha: 0.4),
-                    theme.backgroundColor.withValues(alpha: 0.2),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: SingleChildScrollView(
-                child: Text(
-                  _privacyPolicyContent,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: isSmallScreen ? 12 : 14,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            )
-                .animate(delay: 300.ms)
-                .slideY(begin: 0.3, duration: 600.ms, curve: Curves.easeOut)
-                .fadeIn(),
+            child:
+                Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            theme.backgroundColor.withValues(alpha: 0.4),
+                            theme.backgroundColor.withValues(alpha: 0.2),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: theme.accentColor.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          _privacyPolicyContent,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: isSmallScreen ? 12 : 14,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    )
+                    .animate(delay: 300.ms)
+                    .slideY(begin: 0.3, duration: 600.ms, curve: Curves.easeOut)
+                    .fadeIn(),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Acceptance Checkbox
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.15),
-                  theme.accentColor.withValues(alpha: 0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Transform.scale(
-                  scale: 1.2,
-                  child: Checkbox(
-                    value: _privacyAccepted,
-                    onChanged: (value) async {
-                      setState(() {
-                        _privacyAccepted = value ?? false;
-                      });
-                      // Save privacy acceptance immediately when checked
-                      if (_privacyAccepted) {
-                        try {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setBool('privacy_policy_accepted', true);
-                        } catch (e) {
-                          // Ignore errors - not critical
-                        }
-                      }
-                    },
-                    activeColor: theme.accentColor,
-                    checkColor: Colors.white,
-                    side: BorderSide(
-                      color: theme.accentColor.withValues(alpha: 0.6),
-                      width: 2,
-                    ),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.accentColor.withValues(alpha: 0.15),
+                      theme.accentColor.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.3),
+                    width: 1,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'I have read and agree to the Privacy Policy and Terms of Service',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: isSmallScreen ? 14 : 16,
-                      fontWeight: FontWeight.w500,
+                child: Row(
+                  children: [
+                    Transform.scale(
+                      scale: 1.2,
+                      child: Checkbox(
+                        value: _privacyAccepted,
+                        onChanged: (value) async {
+                          setState(() {
+                            _privacyAccepted = value ?? false;
+                          });
+                          // Save privacy acceptance immediately when checked
+                          if (_privacyAccepted) {
+                            try {
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.setBool(
+                                'privacy_policy_accepted',
+                                true,
+                              );
+                            } catch (e) {
+                              // Ignore errors - not critical
+                            }
+                          }
+                        },
+                        activeColor: theme.accentColor,
+                        checkColor: Colors.white,
+                        side: BorderSide(
+                          color: theme.accentColor.withValues(alpha: 0.6),
+                          width: 2,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'I have read and agree to the Privacy Policy and Terms of Service',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: isSmallScreen ? 14 : 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )
+              )
               .animate(delay: 600.ms)
               .slideY(begin: 0.5, duration: 600.ms, curve: Curves.easeOut)
               .fadeIn(),
-          
+
           const SizedBox(height: 20),
-          
+
           // Continue Button
           Container(
-            width: double.infinity,
-            height: 60,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: _privacyAccepted
-                    ? [theme.primaryColor, theme.accentColor]
-                    : [Colors.grey.shade600, Colors.grey.shade700],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: _privacyAccepted
-                  ? [
-                      BoxShadow(
-                        color: theme.accentColor.withValues(alpha: 0.4),
-                        blurRadius: 15,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 6),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: _privacyAccepted
-                    ? () {
-                        setState(() {
-                          _showPrivacyPolicy = false;
-                        });
-                      }
-                    : null,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      color: _privacyAccepted
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.5),
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Continue to Sign In',
-                      style: TextStyle(
-                        color: _privacyAccepted
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                width: double.infinity,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: _privacyAccepted
+                        ? [theme.primaryColor, theme.accentColor]
+                        : [Colors.grey.shade600, Colors.grey.shade700],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: _privacyAccepted
+                      ? [
+                          BoxShadow(
+                            color: theme.accentColor.withValues(alpha: 0.4),
+                            blurRadius: 15,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 6),
+                          ),
+                        ]
+                      : null,
                 ),
-              ),
-            ),
-          )
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: _privacyAccepted
+                        ? () {
+                            setState(() {
+                              _showPrivacyPolicy = false;
+                            });
+                          }
+                        : null,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline,
+                          color: _privacyAccepted
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.5),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Continue to Sign In',
+                          style: TextStyle(
+                            color: _privacyAccepted
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.5),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
               .animate(delay: 800.ms)
               .slideY(begin: 0.5, duration: 600.ms, curve: Curves.easeOut)
               .fadeIn(),
-              
+
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  List<Widget> _buildFeatureList(GameTheme theme, [bool isSmallScreen = false]) {
+  List<Widget> _buildFeatureList(
+    GameTheme theme, [
+    bool isSmallScreen = false,
+  ]) {
     final features = [
       {
         'icon': Icons.cloud_sync_rounded,
         'title': 'Google Sign-In',
-        'subtitle': 'Save progress • Sync across devices • Global leaderboards'
+        'subtitle': 'Save progress • Sync across devices • Global leaderboards',
       },
       {
         'icon': Icons.person_rounded,
         'title': 'Guest Mode',
-        'subtitle': 'Play instantly • Local progress • Upgrade to Google later'
+        'subtitle': 'Play instantly • Local progress • Upgrade to Google later',
       },
     ];
 
@@ -672,7 +730,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
       if (success && mounted) {
         // Mark first-time setup as complete
         await authCubit.markFirstTimeSetupComplete();
-        
+
         // Navigate directly to home screen
         if (mounted) {
           Navigator.of(context).pushReplacement(
@@ -721,7 +779,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
       // Mark first-time setup as complete
       await authCubit.markFirstTimeSetupComplete();
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
@@ -760,7 +818,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
   void _showError(String message) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -768,10 +826,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
             const Icon(Icons.error_outline, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(fontSize: 16),
-              ),
+              child: Text(message, style: const TextStyle(fontSize: 16)),
             ),
           ],
         ),

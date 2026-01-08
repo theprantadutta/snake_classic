@@ -8,11 +8,7 @@ class CacheEntry<T> {
   final DateTime cachedAt;
   final Duration ttl;
 
-  CacheEntry({
-    required this.data,
-    required this.cachedAt,
-    required this.ttl,
-  });
+  CacheEntry({required this.data, required this.cachedAt, required this.ttl});
 
   bool get isExpired => DateTime.now().isAfter(cachedAt.add(ttl));
 
@@ -102,10 +98,7 @@ class OfflineCacheService extends ChangeNotifier {
   }
 
   /// Get cached data if available and not expired
-  Future<T?> getCached<T>(
-    String key,
-    T Function(Object) decoder,
-  ) async {
+  Future<T?> getCached<T>(String key, T Function(Object) decoder) async {
     await _ensureInitialized();
 
     final metaKey = '$_cacheMetaPrefix$key';
@@ -285,9 +278,9 @@ class OfflineCacheService extends ChangeNotifier {
     await _ensureInitialized();
 
     final keys = _prefs?.getKeys() ?? <String>{};
-    final keysToRemove = keys.where((k) =>
-      k.startsWith(_cachePrefix) && k.contains(pattern)
-    ).toList();
+    final keysToRemove = keys
+        .where((k) => k.startsWith(_cachePrefix) && k.contains(pattern))
+        .toList();
 
     for (final key in keysToRemove) {
       await _prefs?.remove(key);
@@ -297,7 +290,9 @@ class OfflineCacheService extends ChangeNotifier {
     }
 
     if (kDebugMode) {
-      print('Invalidated ${keysToRemove.length} cache entries matching: $pattern');
+      print(
+        'Invalidated ${keysToRemove.length} cache entries matching: $pattern',
+      );
     }
   }
 
@@ -306,9 +301,11 @@ class OfflineCacheService extends ChangeNotifier {
     await _ensureInitialized();
 
     final keys = _prefs?.getKeys() ?? <String>{};
-    final cacheKeys = keys.where((k) =>
-      k.startsWith(_cachePrefix) || k.startsWith(_cacheMetaPrefix)
-    ).toList();
+    final cacheKeys = keys
+        .where(
+          (k) => k.startsWith(_cachePrefix) || k.startsWith(_cacheMetaPrefix),
+        )
+        .toList();
 
     for (final key in cacheKeys) {
       await _prefs?.remove(key);
@@ -367,8 +364,12 @@ class OfflineCacheService extends ChangeNotifier {
     await _ensureInitialized();
 
     final keys = _prefs?.getKeys() ?? <String>{};
-    final cacheDataKeys = keys.where((k) => k.startsWith(_cachePrefix)).toList();
-    final cacheMetaKeys = keys.where((k) => k.startsWith(_cacheMetaPrefix)).toList();
+    final cacheDataKeys = keys
+        .where((k) => k.startsWith(_cachePrefix))
+        .toList();
+    final cacheMetaKeys = keys
+        .where((k) => k.startsWith(_cacheMetaPrefix))
+        .toList();
 
     int totalSize = 0;
     int freshCount = 0;

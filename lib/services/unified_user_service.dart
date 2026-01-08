@@ -111,11 +111,14 @@ class UnifiedUser {
       displayName: data['displayName'] ?? data['display_name'] ?? '',
       email: data['email'],
       photoURL: data['photoURL'] ?? data['photo_url'],
-      createdAt: _parseDateTime(data['createdAt'] ?? data['created_at'] ?? data['joined_date']),
+      createdAt: _parseDateTime(
+        data['createdAt'] ?? data['created_at'] ?? data['joined_date'],
+      ),
       lastSeen: _parseDateTime(data['lastSeen'] ?? data['last_seen']),
       isPublic: data['isPublic'] ?? data['is_public'] ?? true,
       highScore: data['highScore'] ?? data['high_score'] ?? 0,
-      totalGamesPlayed: data['totalGamesPlayed'] ?? data['total_games_played'] ?? 0,
+      totalGamesPlayed:
+          data['totalGamesPlayed'] ?? data['total_games_played'] ?? 0,
       totalScore: data['totalScore'] ?? data['total_score'] ?? 0,
       level: data['level'] ?? 1,
       preferences: Map<String, dynamic>.from(data['preferences'] ?? {}),
@@ -242,7 +245,9 @@ class UnifiedUserService extends ChangeNotifier {
             return false;
           });
         } else {
-          AppLogger.user('No existing user or cache, signing in anonymously...');
+          AppLogger.user(
+            'No existing user or cache, signing in anonymously...',
+          );
           // No user signed in and no cache, create anonymous user
           await _signInAnonymously();
         }
@@ -282,7 +287,9 @@ class UnifiedUserService extends ChangeNotifier {
         return;
       }
       if (_isLoadingUser && _loadingUserId == firebaseUser.uid) {
-        AppLogger.user('User ${firebaseUser.uid} is already being loaded, skipping duplicate');
+        AppLogger.user(
+          'User ${firebaseUser.uid} is already being loaded, skipping duplicate',
+        );
         return;
       }
       await _loadOrCreateUser(firebaseUser);
@@ -310,7 +317,9 @@ class UnifiedUserService extends ChangeNotifier {
       try {
         idToken = await firebaseUser.getIdToken();
       } catch (tokenError) {
-        AppLogger.warning('Failed to get ID token (may be offline): $tokenError');
+        AppLogger.warning(
+          'Failed to get ID token (may be offline): $tokenError',
+        );
         // Continue without token - we'll try cached data
       }
 
@@ -327,7 +336,9 @@ class UnifiedUserService extends ChangeNotifier {
             _currentUser = UnifiedUser.fromJson(userProfile);
             // Cache the session for offline use
             await _cacheUserSession(_currentUser!);
-            AppLogger.success('User loaded from backend: ${_currentUser?.username}');
+            AppLogger.success(
+              'User loaded from backend: ${_currentUser?.username}',
+            );
           } else {
             // Create local user object from Firebase data
             _currentUser = await _createUserFromFirebase(firebaseUser);
@@ -343,7 +354,9 @@ class UnifiedUserService extends ChangeNotifier {
         final cachedUser = await _loadCachedUserSession();
         if (cachedUser != null && cachedUser.uid == firebaseUser.uid) {
           _currentUser = cachedUser;
-          AppLogger.success('Restored user from cache (offline): ${_currentUser?.username}');
+          AppLogger.success(
+            'Restored user from cache (offline): ${_currentUser?.username}',
+          );
         } else {
           // No matching cache, create minimal local user
           _currentUser = await _createUserFromFirebase(firebaseUser);
@@ -408,17 +421,71 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<String> _generateUniqueUsername() async {
     final adjectives = [
-      'Swift', 'Quick', 'Fast', 'Sneaky', 'Sharp', 'Cool', 'Epic', 'Super',
-      'Mega', 'Ultra', 'Pro', 'Elite', 'Master', 'Ace', 'Clever', 'Smart',
-      'Brave', 'Bold', 'Wild', 'Fierce', 'Mighty', 'Strong', 'Agile', 'Smooth',
-      'Silent', 'Shadow', 'Golden', 'Silver', 'Diamond', 'Ruby', 'Fire', 'Ice',
+      'Swift',
+      'Quick',
+      'Fast',
+      'Sneaky',
+      'Sharp',
+      'Cool',
+      'Epic',
+      'Super',
+      'Mega',
+      'Ultra',
+      'Pro',
+      'Elite',
+      'Master',
+      'Ace',
+      'Clever',
+      'Smart',
+      'Brave',
+      'Bold',
+      'Wild',
+      'Fierce',
+      'Mighty',
+      'Strong',
+      'Agile',
+      'Smooth',
+      'Silent',
+      'Shadow',
+      'Golden',
+      'Silver',
+      'Diamond',
+      'Ruby',
+      'Fire',
+      'Ice',
     ];
 
     final nouns = [
-      'Snake', 'Viper', 'Python', 'Cobra', 'Serpent', 'Player', 'Gamer',
-      'Champion', 'Hunter', 'Racer', 'Striker', 'Warrior', 'Hero', 'Legend',
-      'Dragon', 'Phoenix', 'Eagle', 'Hawk', 'Wolf', 'Tiger', 'Lion', 'Bear',
-      'Fox', 'Shark', 'Panther', 'Falcon', 'Raven', 'Knight', 'Ninja', 'Samurai',
+      'Snake',
+      'Viper',
+      'Python',
+      'Cobra',
+      'Serpent',
+      'Player',
+      'Gamer',
+      'Champion',
+      'Hunter',
+      'Racer',
+      'Striker',
+      'Warrior',
+      'Hero',
+      'Legend',
+      'Dragon',
+      'Phoenix',
+      'Eagle',
+      'Hawk',
+      'Wolf',
+      'Tiger',
+      'Lion',
+      'Bear',
+      'Fox',
+      'Shark',
+      'Panther',
+      'Falcon',
+      'Raven',
+      'Knight',
+      'Ninja',
+      'Samurai',
     ];
 
     final random = Random();
@@ -506,7 +573,8 @@ class UnifiedUserService extends ChangeNotifier {
     AppLogger.user('Creating offline guest user...');
 
     // Generate a local ID for offline guest
-    final offlineId = 'offline_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(99999)}';
+    final offlineId =
+        'offline_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(99999)}';
     final username = await _generateUniqueUsername();
 
     // Try to get data from local guest data if available
@@ -546,7 +614,9 @@ class UnifiedUserService extends ChangeNotifier {
       final cachedUser = await _loadCachedUserSession();
       if (cachedUser != null) {
         _currentUser = cachedUser;
-        AppLogger.warning('Restored cached user after anonymous sign-in failed');
+        AppLogger.warning(
+          'Restored cached user after anonymous sign-in failed',
+        );
         notifyListeners();
         return true;
       }
@@ -567,7 +637,8 @@ class UnifiedUserService extends ChangeNotifier {
       // Check if authentication is supported on this platform
       if (_googleSignIn.supportsAuthenticate()) {
         // Use authenticate method for supported platforms
-        final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+        final GoogleSignInAccount googleUser = await _googleSignIn
+            .authenticate();
 
         AppLogger.user('Google user signed in: ${googleUser.email}');
 
@@ -587,7 +658,9 @@ class UnifiedUserService extends ChangeNotifier {
         AppLogger.user('Creating Firebase credential...');
 
         // Sign in to Firebase with the credential
-        final UserCredential result = await _auth.signInWithCredential(credential);
+        final UserCredential result = await _auth.signInWithCredential(
+          credential,
+        );
 
         if (result.user != null) {
           AppLogger.success('Firebase sign-in successful: ${result.user!.uid}');
@@ -599,11 +672,15 @@ class UnifiedUserService extends ChangeNotifier {
 
         return false;
       } else {
-        AppLogger.user('Google Sign-In authenticate not supported on this platform');
+        AppLogger.user(
+          'Google Sign-In authenticate not supported on this platform',
+        );
         return false;
       }
     } on FirebaseAuthException catch (e) {
-      AppLogger.user('Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}');
+      AppLogger.user(
+        'Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}',
+      );
       return false;
     } catch (e, stackTrace) {
       AppLogger.user('Error signing in with Google', e, stackTrace);
@@ -715,9 +792,7 @@ class UnifiedUserService extends ChangeNotifier {
 
     // Update via backend API
     if (_apiService.isAuthenticated) {
-      await _apiService.updateProfile({
-        'preferences': updatedPrefs,
-      });
+      await _apiService.updateProfile({'preferences': updatedPrefs});
     }
 
     notifyListeners();

@@ -2,14 +2,11 @@ import 'package:equatable/equatable.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 // Re-export DPadPosition and BoardSize from constants
-export 'package:snake_classic/utils/constants.dart' show DPadPosition, BoardSize;
+export 'package:snake_classic/utils/constants.dart'
+    show DPadPosition, BoardSize;
 
 /// Status of the game settings cubit
-enum GameSettingsStatus {
-  initial,
-  loading,
-  ready,
-}
+enum GameSettingsStatus { initial, loading, ready }
 
 /// State class for GameSettingsCubit
 class GameSettingsState extends Equatable {
@@ -49,7 +46,8 @@ class GameSettingsState extends Equatable {
       dPadEnabled: dPadEnabled ?? this.dPadEnabled,
       dPadPosition: dPadPosition ?? this.dPadPosition,
       boardSize: boardSize ?? this.boardSize,
-      crashFeedbackDuration: crashFeedbackDuration ?? this.crashFeedbackDuration,
+      crashFeedbackDuration:
+          crashFeedbackDuration ?? this.crashFeedbackDuration,
       highScore: highScore ?? this.highScore,
       screenShakeEnabled: screenShakeEnabled ?? this.screenShakeEnabled,
     );
@@ -60,12 +58,12 @@ class GameSettingsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        dPadEnabled,
-        dPadPosition,
-        boardSize,
-        crashFeedbackDuration,
-        highScore,
-        screenShakeEnabled,
-      ];
+    status,
+    dPadEnabled,
+    dPadPosition,
+    boardSize,
+    crashFeedbackDuration,
+    highScore,
+    screenShakeEnabled,
+  ];
 }

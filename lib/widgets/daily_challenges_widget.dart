@@ -55,106 +55,114 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
     final hasRewards = _challengeService.hasUnclaimedRewards;
 
     return GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              widget.theme.primaryColor.withValues(alpha: 0.3),
-              widget.theme.accentColor.withValues(alpha: 0.2),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: hasRewards
-                ? Colors.amber.withValues(alpha: 0.8)
-                : widget.theme.primaryColor.withValues(alpha: 0.3),
-            width: hasRewards ? 2 : 1,
-          ),
-          boxShadow: hasRewards
-              ? [
-                  BoxShadow(
-                    color: Colors.amber.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    spreadRadius: 2,
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  color: widget.theme.accentColor,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Daily Challenges',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                // Progress indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _challengeService.allCompleted
-                        ? Colors.green.withValues(alpha: 0.3)
-                        : widget.theme.primaryColor.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _challengeService.allCompleted
-                          ? Colors.green
-                          : widget.theme.primaryColor.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: Text(
-                    '${_challengeService.completedCount}/${_challengeService.totalCount}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: _challengeService.allCompleted
-                          ? Colors.green
-                          : widget.theme.accentColor,
-                    ),
-                  ),
-                ),
-                if (hasRewards) ...[
-                  const SizedBox(width: 8),
-                  _buildClaimBadge(),
+          onTap: widget.onTap,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  widget.theme.primaryColor.withValues(alpha: 0.3),
+                  widget.theme.accentColor.withValues(alpha: 0.2),
                 ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: hasRewards
+                    ? Colors.amber.withValues(alpha: 0.8)
+                    : widget.theme.primaryColor.withValues(alpha: 0.3),
+                width: hasRewards ? 2 : 1,
+              ),
+              boxShadow: hasRewards
+                  ? [
+                      BoxShadow(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      color: widget.theme.accentColor,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Daily Challenges',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    // Progress indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _challengeService.allCompleted
+                            ? Colors.green.withValues(alpha: 0.3)
+                            : widget.theme.primaryColor.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _challengeService.allCompleted
+                              ? Colors.green
+                              : widget.theme.primaryColor.withValues(
+                                  alpha: 0.5,
+                                ),
+                        ),
+                      ),
+                      child: Text(
+                        '${_challengeService.completedCount}/${_challengeService.totalCount}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: _challengeService.allCompleted
+                              ? Colors.green
+                              : widget.theme.accentColor,
+                        ),
+                      ),
+                    ),
+                    if (hasRewards) ...[
+                      const SizedBox(width: 8),
+                      _buildClaimBadge(),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Challenge list or loading/empty state
+                if (_challengeService.isLoading)
+                  _buildLoadingState()
+                else if (challenges.isEmpty)
+                  _buildEmptyState()
+                else
+                  ...challenges
+                      .take(3)
+                      .map((challenge) => _buildChallengeItem(challenge)),
+
+                // Bonus indicator
+                if (_challengeService.allCompleted &&
+                    _challengeService.bonusCoins > 0)
+                  _buildBonusIndicator(),
               ],
             ),
-            const SizedBox(height: 12),
-
-            // Challenge list or loading/empty state
-            if (_challengeService.isLoading)
-              _buildLoadingState()
-            else if (challenges.isEmpty)
-              _buildEmptyState()
-            else
-              ...challenges.take(3).map((challenge) => _buildChallengeItem(challenge)),
-
-            // Bonus indicator
-            if (_challengeService.allCompleted && _challengeService.bonusCoins > 0)
-              _buildBonusIndicator(),
-          ],
-        ),
-      ),
-    )
+          ),
+        )
         .animate()
         .fadeIn(duration: 400.ms)
         .slideY(begin: 0.1, end: 0, duration: 400.ms);
@@ -162,29 +170,33 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
 
   Widget _buildClaimBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.amber,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.star, color: Colors.white, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            '${_challengeService.unclaimedRewardsCount}',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.amber,
+            borderRadius: BorderRadius.circular(8),
           ),
-        ],
-      ),
-    )
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.star, color: Colors.white, size: 14),
+              const SizedBox(width: 4),
+              Text(
+                '${_challengeService.unclaimedRewardsCount}',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        )
         .animate(onPlay: (c) => c.repeat(reverse: true))
-        .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 800.ms);
+        .scale(
+          begin: const Offset(1, 1),
+          end: const Offset(1.1, 1.1),
+          duration: 800.ms,
+        );
   }
 
   Widget _buildLoadingState() {
@@ -299,37 +311,41 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
 
   Widget _buildClaimButton(DailyChallenge challenge) {
     return GestureDetector(
-      onTap: () async {
-        final success = await _challengeService.claimReward(challenge.id);
-        if (success && widget.onClaimReward != null) {
-          widget.onClaimReward!();
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.amber,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.monetization_on, color: Colors.white, size: 14),
-            const SizedBox(width: 4),
-            Text(
-              '+${challenge.coinReward}',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
+          onTap: () async {
+            final success = await _challengeService.claimReward(challenge.id);
+            if (success && widget.onClaimReward != null) {
+              widget.onClaimReward!();
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.amber,
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-      ),
-    )
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.monetization_on, color: Colors.white, size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  '+${challenge.coinReward}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
         .animate(onPlay: (c) => c.repeat(reverse: true))
-        .scale(begin: const Offset(1, 1), end: const Offset(1.05, 1.05), duration: 600.ms);
+        .scale(
+          begin: const Offset(1, 1),
+          end: const Offset(1.05, 1.05),
+          duration: 600.ms,
+        );
   }
 
   Widget _buildBonusIndicator() {
@@ -376,9 +392,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
           ),
         ],
       ),
-    )
-        .animate()
-        .shimmer(duration: 2000.ms, delay: 500.ms);
+    ).animate().shimmer(duration: 2000.ms, delay: 500.ms);
   }
 
   Widget _getChallengeTypeIcon(ChallengeType type) {

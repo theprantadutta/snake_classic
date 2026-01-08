@@ -14,7 +14,8 @@ class NavigationService {
   NavigationService._internal();
 
   // Global navigator key for programmatic navigation
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   /// Navigate to a screen based on route from notification
   Future<void> navigateFromNotification({
@@ -24,7 +25,7 @@ class NavigationService {
   }) async {
     try {
       AppLogger.info('🧭 Navigating from notification: $route');
-      
+
       final context = navigatorKey.currentContext;
       if (context == null) {
         AppLogger.warning('Navigation context not available');
@@ -32,40 +33,42 @@ class NavigationService {
       }
 
       Widget destination;
-      
+
       switch (route.toLowerCase()) {
         case 'home':
           destination = const HomeScreen();
           break;
-          
+
         case 'achievements':
           destination = const AchievementsScreen();
           break;
-          
+
         case 'tournament_detail':
         case 'tournaments':
           destination = const TournamentsScreen(); // Simplified for now
           break;
-          
+
         case 'friends_screen':
         case 'social':
           destination = const FriendsScreen();
           break;
-          
+
         case 'leaderboard':
           destination = const LeaderboardScreen();
           break;
-          
+
         case 'profile':
           destination = const ProfileScreen();
           break;
-          
+
         case 'settings':
           destination = const SettingsScreen();
           break;
-          
+
         default:
-          AppLogger.warning('Unknown navigation route: $route, falling back to home');
+          AppLogger.warning(
+            'Unknown navigation route: $route, falling back to home',
+          );
           destination = const HomeScreen();
       }
 
@@ -77,16 +80,15 @@ class NavigationService {
         );
       } else {
         // Push new screen
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => destination),
-        );
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => destination));
       }
-        
+
       AppLogger.info('✅ Navigation completed: $route');
-      
     } catch (e) {
       AppLogger.error('Failed to navigate from notification', e);
-      
+
       // Fallback to home screen
       final context = navigatorKey.currentContext;
       if (context != null && context.mounted) {
@@ -132,10 +134,7 @@ class NavigationService {
 
   /// Navigate to home screen (clear stack)
   Future<void> navigateToHome() async {
-    await navigateFromNotification(
-      route: 'home',
-      clearStack: true,
-    );
+    await navigateFromNotification(route: 'home', clearStack: true);
   }
 
   /// Pop current screen if possible
@@ -190,12 +189,14 @@ class NavigationService {
           return AlertDialog(
             title: Text(title),
             content: Text(message),
-            actions: actions ?? [
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
+            actions:
+                actions ??
+                [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
           );
         },
       );

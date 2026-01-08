@@ -73,7 +73,9 @@ class _BattlePassScreenState extends State<BattlePassScreen>
                   ),
                 ),
               ),
-              bottomNavigationBar: !hasBattlePass ? _buildPurchaseBar(theme) : null,
+              bottomNavigationBar: !hasBattlePass
+                  ? _buildPurchaseBar(theme)
+                  : null,
             );
           },
         );
@@ -687,9 +689,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
           ),
 
           // Claim button for unlocked, unclaimed rewards
-          if (isUnlocked &&
-              !showLocked &&
-              _canClaimReward(reward, level, tier))
+          if (isUnlocked && !showLocked && _canClaimReward(reward, level, tier))
             Positioned(
               right: 4,
               top: 4,
@@ -883,7 +883,10 @@ class _BattlePassScreenState extends State<BattlePassScreen>
               SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               ),
               SizedBox(width: 12),
               Text('Processing Battle Pass purchase...'),

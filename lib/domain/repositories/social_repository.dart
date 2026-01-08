@@ -36,14 +36,14 @@ class Friend {
   }
 
   Map<String, dynamic> toJson() => {
-        'user_id': userId,
-        'display_name': displayName,
-        'username': username,
-        'photo_url': photoUrl,
-        'high_score': highScore,
-        'is_online': isOnline,
-        'last_seen': lastSeen?.toIso8601String(),
-      };
+    'user_id': userId,
+    'display_name': displayName,
+    'username': username,
+    'photo_url': photoUrl,
+    'high_score': highScore,
+    'is_online': isOnline,
+    'last_seen': lastSeen?.toIso8601String(),
+  };
 }
 
 /// Friend request data model
@@ -66,19 +66,22 @@ class FriendRequest {
     return FriendRequest(
       requestId: json['request_id'] ?? json['requestId'] ?? json['id'] ?? '',
       fromUserId: json['from_user_id'] ?? json['fromUserId'] ?? '',
-      fromDisplayName: json['from_display_name'] ?? json['fromDisplayName'] ?? 'Unknown',
+      fromDisplayName:
+          json['from_display_name'] ?? json['fromDisplayName'] ?? 'Unknown',
       fromPhotoUrl: json['from_photo_url'] ?? json['fromPhotoUrl'],
-      sentAt: DateTime.tryParse(json['sent_at'] ?? json['sentAt'] ?? '') ?? DateTime.now(),
+      sentAt:
+          DateTime.tryParse(json['sent_at'] ?? json['sentAt'] ?? '') ??
+          DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'request_id': requestId,
-        'from_user_id': fromUserId,
-        'from_display_name': fromDisplayName,
-        'from_photo_url': fromPhotoUrl,
-        'sent_at': sentAt.toIso8601String(),
-      };
+    'request_id': requestId,
+    'from_user_id': fromUserId,
+    'from_display_name': fromDisplayName,
+    'from_photo_url': fromPhotoUrl,
+    'sent_at': sentAt.toIso8601String(),
+  };
 }
 
 /// Friends list data
@@ -86,23 +89,21 @@ class FriendsData {
   final List<Friend> friends;
   final int totalCount;
 
-  const FriendsData({
-    required this.friends,
-    required this.totalCount,
-  });
+  const FriendsData({required this.friends, required this.totalCount});
 
   factory FriendsData.fromJson(Map<String, dynamic> json) {
     final friendsJson = json['friends'] as List<dynamic>? ?? [];
     return FriendsData(
       friends: friendsJson.map((e) => Friend.fromJson(e)).toList(),
-      totalCount: json['total_count'] ?? json['totalCount'] ?? friendsJson.length,
+      totalCount:
+          json['total_count'] ?? json['totalCount'] ?? friendsJson.length,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'friends': friends.map((e) => e.toJson()).toList(),
-        'total_count': totalCount,
-      };
+    'friends': friends.map((e) => e.toJson()).toList(),
+    'total_count': totalCount,
+  };
 }
 
 /// Pending requests data
@@ -110,23 +111,21 @@ class PendingRequestsData {
   final List<FriendRequest> requests;
   final int totalCount;
 
-  const PendingRequestsData({
-    required this.requests,
-    required this.totalCount,
-  });
+  const PendingRequestsData({required this.requests, required this.totalCount});
 
   factory PendingRequestsData.fromJson(Map<String, dynamic> json) {
     final requestsJson = json['requests'] as List<dynamic>? ?? [];
     return PendingRequestsData(
       requests: requestsJson.map((e) => FriendRequest.fromJson(e)).toList(),
-      totalCount: json['total_count'] ?? json['totalCount'] ?? requestsJson.length,
+      totalCount:
+          json['total_count'] ?? json['totalCount'] ?? requestsJson.length,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'requests': requests.map((e) => e.toJson()).toList(),
-        'total_count': totalCount,
-      };
+    'requests': requests.map((e) => e.toJson()).toList(),
+    'total_count': totalCount,
+  };
 }
 
 /// Abstract repository for social operations
@@ -141,11 +140,17 @@ abstract class SocialRepository {
 
   /// Search users
   /// No caching - real-time search
-  Future<Either<Failure, List<Friend>>> searchUsers(String query, {int limit = 20});
+  Future<Either<Failure, List<Friend>>> searchUsers(
+    String query, {
+    int limit = 20,
+  });
 
   /// Send friend request
   /// No caching
-  Future<Either<Failure, void>> sendFriendRequest({String? username, String? userId});
+  Future<Either<Failure, void>> sendFriendRequest({
+    String? username,
+    String? userId,
+  });
 
   /// Accept friend request
   /// No caching

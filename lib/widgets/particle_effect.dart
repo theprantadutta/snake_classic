@@ -79,22 +79,21 @@ class ParticlePainter extends CustomPainter {
   final List<Particle> particles;
   final double animationValue;
 
-  ParticlePainter({
-    required this.particles,
-    required this.animationValue,
-  });
+  ParticlePainter({required this.particles, required this.animationValue});
 
   @override
   void paint(Canvas canvas, Size size) {
     for (final particle in particles) {
       final progress = animationValue;
       final opacity = (1.0 - progress).clamp(0.0, 1.0);
-      
+
       if (opacity <= 0) continue;
 
-      final x = particle.startX * size.width + 
+      final x =
+          particle.startX * size.width +
           particle.velocityX * size.width * progress;
-      final y = particle.startY * size.height + 
+      final y =
+          particle.startY * size.height +
           particle.velocityY * size.height * progress;
 
       final paint = Paint()

@@ -73,13 +73,27 @@ class MultiplayerState extends Equatable {
       availableGames: availableGames ?? this.availableGames,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isLoading: isLoading ?? this.isLoading,
-      isMatchmaking: clearMatchmaking ? false : (isMatchmaking ?? this.isMatchmaking),
-      matchmakingQueuePosition: clearMatchmaking ? 0 : (matchmakingQueuePosition ?? this.matchmakingQueuePosition),
-      matchmakingEstimatedWait: clearMatchmaking ? 0 : (matchmakingEstimatedWait ?? this.matchmakingEstimatedWait),
-      matchmakingMode: clearMatchmaking ? null : (matchmakingMode ?? this.matchmakingMode),
-      matchmakingPlayerCount: clearMatchmaking ? null : (matchmakingPlayerCount ?? this.matchmakingPlayerCount),
-      matchmakingElapsedSeconds: clearMatchmaking ? 0 : (matchmakingElapsedSeconds ?? this.matchmakingElapsedSeconds),
-      matchmakingTimedOut: clearMatchmaking ? false : (matchmakingTimedOut ?? this.matchmakingTimedOut),
+      isMatchmaking: clearMatchmaking
+          ? false
+          : (isMatchmaking ?? this.isMatchmaking),
+      matchmakingQueuePosition: clearMatchmaking
+          ? 0
+          : (matchmakingQueuePosition ?? this.matchmakingQueuePosition),
+      matchmakingEstimatedWait: clearMatchmaking
+          ? 0
+          : (matchmakingEstimatedWait ?? this.matchmakingEstimatedWait),
+      matchmakingMode: clearMatchmaking
+          ? null
+          : (matchmakingMode ?? this.matchmakingMode),
+      matchmakingPlayerCount: clearMatchmaking
+          ? null
+          : (matchmakingPlayerCount ?? this.matchmakingPlayerCount),
+      matchmakingElapsedSeconds: clearMatchmaking
+          ? 0
+          : (matchmakingElapsedSeconds ?? this.matchmakingElapsedSeconds),
+      matchmakingTimedOut: clearMatchmaking
+          ? false
+          : (matchmakingTimedOut ?? this.matchmakingTimedOut),
     );
   }
 
@@ -98,8 +112,7 @@ class MultiplayerState extends Equatable {
   bool get isReadyToStart => currentGame?.canStart ?? false;
 
   /// Whether game is actively playing
-  bool get isGameActive =>
-      currentGame?.status == MultiplayerGameStatus.playing;
+  bool get isGameActive => currentGame?.status == MultiplayerGameStatus.playing;
 
   /// Whether game is finished
   bool get isGameFinished => currentGame?.isFinished ?? false;
@@ -124,17 +137,17 @@ class MultiplayerState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        currentGame,
-        availableGames,
-        errorMessage,
-        isLoading,
-        isMatchmaking,
-        matchmakingQueuePosition,
-        matchmakingEstimatedWait,
-        matchmakingMode,
-        matchmakingPlayerCount,
-        matchmakingElapsedSeconds,
-        matchmakingTimedOut,
-      ];
+    status,
+    currentGame,
+    availableGames,
+    errorMessage,
+    isLoading,
+    isMatchmaking,
+    matchmakingQueuePosition,
+    matchmakingEstimatedWait,
+    matchmakingMode,
+    matchmakingPlayerCount,
+    matchmakingElapsedSeconds,
+    matchmakingTimedOut,
+  ];
 }

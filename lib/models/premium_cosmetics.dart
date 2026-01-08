@@ -15,7 +15,7 @@ enum SnakeSkinType {
   cosmic;
 
   String get id => name;
-  
+
   String get displayName {
     switch (this) {
       case SnakeSkinType.classic:
@@ -108,57 +108,81 @@ enum SnakeSkinType {
         return [const Color(0xFFFFD700), const Color(0xFFB8860B)];
       case SnakeSkinType.rainbow:
         return [
-          const Color(0xFFFF0000), const Color(0xFFFF8000),
-          const Color(0xFFFFFF00), const Color(0xFF80FF00),
-          const Color(0xFF00FF00), const Color(0xFF00FF80),
-          const Color(0xFF00FFFF), const Color(0xFF0080FF),
-          const Color(0xFF0000FF), const Color(0xFF8000FF),
-          const Color(0xFFFF00FF), const Color(0xFFFF0080),
+          const Color(0xFFFF0000),
+          const Color(0xFFFF8000),
+          const Color(0xFFFFFF00),
+          const Color(0xFF80FF00),
+          const Color(0xFF00FF00),
+          const Color(0xFF00FF80),
+          const Color(0xFF00FFFF),
+          const Color(0xFF0080FF),
+          const Color(0xFF0000FF),
+          const Color(0xFF8000FF),
+          const Color(0xFFFF00FF),
+          const Color(0xFFFF0080),
         ];
       case SnakeSkinType.galaxy:
         return [
-          const Color(0xFF1A0033), const Color(0xFF4B0082),
-          const Color(0xFF9932CC), const Color(0xFFBA55D3),
+          const Color(0xFF1A0033),
+          const Color(0xFF4B0082),
+          const Color(0xFF9932CC),
+          const Color(0xFFBA55D3),
         ];
       case SnakeSkinType.dragon:
         return [
-          const Color(0xFF8B0000), const Color(0xFFDC143C),
-          const Color(0xFFFF6347), const Color(0xFFFFD700),
+          const Color(0xFF8B0000),
+          const Color(0xFFDC143C),
+          const Color(0xFFFF6347),
+          const Color(0xFFFFD700),
         ];
       case SnakeSkinType.electric:
         return [
-          const Color(0xFF00FFFF), const Color(0xFF87CEEB),
-          const Color(0xFF4169E1), const Color(0xFF0000FF),
+          const Color(0xFF00FFFF),
+          const Color(0xFF87CEEB),
+          const Color(0xFF4169E1),
+          const Color(0xFF0000FF),
         ];
       case SnakeSkinType.fire:
         return [
-          const Color(0xFFFF4500), const Color(0xFFFF6347),
-          const Color(0xFFFF8C00), const Color(0xFFFFD700),
+          const Color(0xFFFF4500),
+          const Color(0xFFFF6347),
+          const Color(0xFFFF8C00),
+          const Color(0xFFFFD700),
         ];
       case SnakeSkinType.ice:
         return [
-          const Color(0xFFB0E0E6), const Color(0xFF87CEEB),
-          const Color(0xFF4682B4), const Color(0xFF1E90FF),
+          const Color(0xFFB0E0E6),
+          const Color(0xFF87CEEB),
+          const Color(0xFF4682B4),
+          const Color(0xFF1E90FF),
         ];
       case SnakeSkinType.shadow:
         return [
-          const Color(0xFF2F2F2F), const Color(0xFF404040),
-          const Color(0xFF696969), const Color(0xFF808080),
+          const Color(0xFF2F2F2F),
+          const Color(0xFF404040),
+          const Color(0xFF696969),
+          const Color(0xFF808080),
         ];
       case SnakeSkinType.neon:
         return [
-          const Color(0xFF00FFFF), const Color(0xFF39FF14),
-          const Color(0xFFFF1493), const Color(0xFFFFFF00),
+          const Color(0xFF00FFFF),
+          const Color(0xFF39FF14),
+          const Color(0xFFFF1493),
+          const Color(0xFFFFFF00),
         ];
       case SnakeSkinType.crystal:
         return [
-          const Color(0xFFE6E6FA), const Color(0xFFDDA0DD),
-          const Color(0xFFBA55D3), const Color(0xFF9370DB),
+          const Color(0xFFE6E6FA),
+          const Color(0xFFDDA0DD),
+          const Color(0xFFBA55D3),
+          const Color(0xFF9370DB),
         ];
       case SnakeSkinType.cosmic:
         return [
-          const Color(0xFF191970), const Color(0xFF4B0082),
-          const Color(0xFF8A2BE2), const Color(0xFFDA70D6),
+          const Color(0xFF191970),
+          const Color(0xFF4B0082),
+          const Color(0xFF8A2BE2),
+          const Color(0xFFDA70D6),
         ];
     }
   }
@@ -303,9 +327,12 @@ enum TrailEffectType {
         return [const Color(0xFF00FFFF), const Color(0xFF87CEEB)];
       case TrailEffectType.rainbow:
         return [
-          const Color(0xFFFF0000), const Color(0xFFFFFF00),
-          const Color(0xFF00FF00), const Color(0xFF00FFFF),
-          const Color(0xFF0000FF), const Color(0xFFFF00FF),
+          const Color(0xFFFF0000),
+          const Color(0xFFFFFF00),
+          const Color(0xFF00FF00),
+          const Color(0xFF00FFFF),
+          const Color(0xFF0000FF),
+          const Color(0xFFFF00FF),
         ];
       case TrailEffectType.fire:
         return [const Color(0xFFFF4500), const Color(0xFFFFD700)];
@@ -360,19 +387,10 @@ class SnakeCosmetics {
   final SnakeSkinType skin;
   final TrailEffectType trail;
 
-  const SnakeCosmetics({
-    required this.skin,
-    required this.trail,
-  });
+  const SnakeCosmetics({required this.skin, required this.trail});
 
-  SnakeCosmetics copyWith({
-    SnakeSkinType? skin,
-    TrailEffectType? trail,
-  }) {
-    return SnakeCosmetics(
-      skin: skin ?? this.skin,
-      trail: trail ?? this.trail,
-    );
+  SnakeCosmetics copyWith({SnakeSkinType? skin, TrailEffectType? trail}) {
+    return SnakeCosmetics(skin: skin ?? this.skin, trail: trail ?? this.trail);
   }
 
   bool get isPremium => skin.isPremium || trail.isPremium;
@@ -380,10 +398,7 @@ class SnakeCosmetics {
   double get totalPrice => skin.price + trail.price;
 
   Map<String, dynamic> toJson() {
-    return {
-      'skin': skin.id,
-      'trail': trail.id,
-    };
+    return {'skin': skin.id, 'trail': trail.id};
   }
 
   factory SnakeCosmetics.fromJson(Map<String, dynamic> json) {
@@ -454,8 +469,16 @@ class CosmeticBundle {
       id: 'cosmic_collection',
       name: 'Cosmic Collection',
       description: 'Explore the universe in style',
-      skins: [SnakeSkinType.galaxy, SnakeSkinType.cosmic, SnakeSkinType.crystal],
-      trails: [TrailEffectType.cosmic, TrailEffectType.star, TrailEffectType.crystal],
+      skins: [
+        SnakeSkinType.galaxy,
+        SnakeSkinType.cosmic,
+        SnakeSkinType.crystal,
+      ],
+      trails: [
+        TrailEffectType.cosmic,
+        TrailEffectType.star,
+        TrailEffectType.crystal,
+      ],
       originalPrice: 23.94, // $3.99 * 3 + $3.99 * 3
       bundlePrice: 14.99,
       icon: '🌌',
@@ -465,16 +488,30 @@ class CosmeticBundle {
       name: 'Ultimate Collection',
       description: 'Every premium cosmetic item',
       skins: [
-        SnakeSkinType.golden, SnakeSkinType.rainbow, SnakeSkinType.galaxy,
-        SnakeSkinType.dragon, SnakeSkinType.electric, SnakeSkinType.fire,
-        SnakeSkinType.ice, SnakeSkinType.shadow, SnakeSkinType.neon,
-        SnakeSkinType.crystal, SnakeSkinType.cosmic,
+        SnakeSkinType.golden,
+        SnakeSkinType.rainbow,
+        SnakeSkinType.galaxy,
+        SnakeSkinType.dragon,
+        SnakeSkinType.electric,
+        SnakeSkinType.fire,
+        SnakeSkinType.ice,
+        SnakeSkinType.shadow,
+        SnakeSkinType.neon,
+        SnakeSkinType.crystal,
+        SnakeSkinType.cosmic,
       ],
       trails: [
-        TrailEffectType.particle, TrailEffectType.glow, TrailEffectType.rainbow,
-        TrailEffectType.fire, TrailEffectType.electric, TrailEffectType.star,
-        TrailEffectType.cosmic, TrailEffectType.neon, TrailEffectType.shadow,
-        TrailEffectType.crystal, TrailEffectType.dragon,
+        TrailEffectType.particle,
+        TrailEffectType.glow,
+        TrailEffectType.rainbow,
+        TrailEffectType.fire,
+        TrailEffectType.electric,
+        TrailEffectType.star,
+        TrailEffectType.cosmic,
+        TrailEffectType.neon,
+        TrailEffectType.shadow,
+        TrailEffectType.crystal,
+        TrailEffectType.dragon,
       ],
       originalPrice: 71.89, // Sum of all individual prices
       bundlePrice: 29.99,

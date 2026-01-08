@@ -38,17 +38,19 @@ class _SwipeDetectorState extends State<SwipeDetector>
   void initState() {
     super.initState();
     _feedbackController = AnimationController(
-      duration: const Duration(milliseconds: 200), // Slightly slower for better visibility
+      duration: const Duration(
+        milliseconds: 200,
+      ), // Slightly slower for better visibility
       vsync: this,
     );
-    
-    _opacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.5, // More visible feedback
-    ).animate(CurvedAnimation(
-      parent: _feedbackController,
-      curve: Curves.easeOut,
-    ));
+
+    _opacityAnimation =
+        Tween<double>(
+          begin: 0.0,
+          end: 0.5, // More visible feedback
+        ).animate(
+          CurvedAnimation(parent: _feedbackController, curve: Curves.easeOut),
+        );
   }
 
   @override
@@ -59,21 +61,23 @@ class _SwipeDetectorState extends State<SwipeDetector>
 
   void _processSwipe(Direction direction) {
     final now = DateTime.now();
-    
+
     // Allow direction changes but prevent spam
     if (_isProcessingSwipe &&
         _lastSwipeTime != null &&
-        now.difference(_lastSwipeTime!).inMilliseconds < GameConstants.swipeSpamPreventionMs) {
+        now.difference(_lastSwipeTime!).inMilliseconds <
+            GameConstants.swipeSpamPreventionMs) {
       return;
     }
 
     // If same direction within short time, ignore
     if (_lastSwipeDirection == direction &&
         _lastSwipeTime != null &&
-        now.difference(_lastSwipeTime!).inMilliseconds < GameConstants.swipeSameDirectionThresholdMs) {
+        now.difference(_lastSwipeTime!).inMilliseconds <
+            GameConstants.swipeSameDirectionThresholdMs) {
       return;
     }
-    
+
     setState(() {
       _isProcessingSwipe = true;
       _lastSwipeDirection = direction;
@@ -82,7 +86,7 @@ class _SwipeDetectorState extends State<SwipeDetector>
 
     // Immediate haptic feedback
     HapticFeedback.lightImpact();
-    
+
     // Visual feedback with longer display time
     if (widget.showFeedback) {
       // Reset and start animation
@@ -199,43 +203,50 @@ class _SwipeDetectorState extends State<SwipeDetector>
               child: Align(
                 alignment: Alignment.center,
                 child: IgnorePointer(
-                child: AnimatedBuilder(
-                  animation: _feedbackController,
-                  builder: (context, child) {
-                    return Container(
-                      width: GameConstants.gestureIndicatorSize,
-                      height: GameConstants.gestureIndicatorSize,
-                      decoration: BoxDecoration(
-                        color: _getDirectionColor(_lastSwipeDirection!)
-                            .withValues(alpha: _opacityAnimation.value * 0.9),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: _opacityAnimation.value * 0.8),
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _getDirectionColor(_lastSwipeDirection!)
-                                .withValues(alpha: _opacityAnimation.value * 0.4),
-                            blurRadius: 15,
-                            spreadRadius: 3,
+                  child: AnimatedBuilder(
+                    animation: _feedbackController,
+                    builder: (context, child) {
+                      return Container(
+                        width: GameConstants.gestureIndicatorSize,
+                        height: GameConstants.gestureIndicatorSize,
+                        decoration: BoxDecoration(
+                          color: _getDirectionColor(
+                            _lastSwipeDirection!,
+                          ).withValues(alpha: _opacityAnimation.value * 0.9),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(
+                              alpha: _opacityAnimation.value * 0.8,
+                            ),
+                            width: 3,
                           ),
-                        ],
-                      ),
-                      child: Center(
-                        child: AnimatedScale(
-                          scale: _feedbackController.isAnimating ? 1.3 : 1.0,
-                          duration: const Duration(milliseconds: 150),
-                          child: Icon(
-                            _getDirectionIconData(_lastSwipeDirection!),
-                            size: 32,
-                            color: Colors.white.withValues(alpha: _opacityAnimation.value),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getDirectionColor(_lastSwipeDirection!)
+                                  .withValues(
+                                    alpha: _opacityAnimation.value * 0.4,
+                                  ),
+                              blurRadius: 15,
+                              spreadRadius: 3,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: AnimatedScale(
+                            scale: _feedbackController.isAnimating ? 1.3 : 1.0,
+                            duration: const Duration(milliseconds: 150),
+                            child: Icon(
+                              _getDirectionIconData(_lastSwipeDirection!),
+                              size: 32,
+                              color: Colors.white.withValues(
+                                alpha: _opacityAnimation.value,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

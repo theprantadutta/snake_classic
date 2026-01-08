@@ -31,10 +31,9 @@ class CoinsCubit extends Cubit<CoinsState> {
       AppLogger.info('CoinsCubit initialized. Balance: ${state.balance.total}');
     } catch (e) {
       AppLogger.error('Error initializing CoinsCubit', e);
-      emit(state.copyWith(
-        status: CoinsStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(status: CoinsStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -51,10 +50,11 @@ class CoinsCubit extends Cubit<CoinsState> {
 
       // Load transactions
       final transactionsJson = _prefs!.getStringList('coin_transactions') ?? [];
-      final transactions = transactionsJson
-          .map((jsonStr) => CoinTransaction.fromJson(json.decode(jsonStr)))
-          .toList()
-        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final transactions =
+          transactionsJson
+              .map((jsonStr) => CoinTransaction.fromJson(json.decode(jsonStr)))
+              .toList()
+            ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
       // Load daily bonuses
       final bonusesJson = _prefs!.getStringList('daily_bonuses') ?? [];
@@ -65,11 +65,13 @@ class CoinsCubit extends Cubit<CoinsState> {
             .toList();
       }
 
-      emit(state.copyWith(
-        balance: balance,
-        transactions: transactions,
-        dailyBonuses: dailyBonuses,
-      ));
+      emit(
+        state.copyWith(
+          balance: balance,
+          transactions: transactions,
+          dailyBonuses: dailyBonuses,
+        ),
+      );
 
       AppLogger.info('Coin data loaded successfully');
     } catch (e) {
@@ -82,17 +84,22 @@ class CoinsCubit extends Cubit<CoinsState> {
 
     try {
       // Save balance
-      await _prefs!.setString('coin_balance', json.encode(state.balance.toJson()));
+      await _prefs!.setString(
+        'coin_balance',
+        json.encode(state.balance.toJson()),
+      );
 
       // Save recent transactions (limit to last 200)
       final recentTransactions = state.transactions.take(200).toList();
-      final transactionsJson =
-          recentTransactions.map((t) => json.encode(t.toJson())).toList();
+      final transactionsJson = recentTransactions
+          .map((t) => json.encode(t.toJson()))
+          .toList();
       await _prefs!.setStringList('coin_transactions', transactionsJson);
 
       // Save daily bonuses
-      final bonusesJson =
-          state.dailyBonuses.map((b) => json.encode(b.toJson())).toList();
+      final bonusesJson = state.dailyBonuses
+          .map((b) => json.encode(b.toJson()))
+          .toList();
       await _prefs!.setStringList('daily_bonuses', bonusesJson);
     } catch (e) {
       AppLogger.error('Error saving coin data', e);
@@ -114,10 +121,12 @@ class CoinsCubit extends Cubit<CoinsState> {
       multiplier = 1.0; // Free tier
     }
 
-    emit(state.copyWith(
-      earningMultiplier: multiplier,
-      hasPremiumBonus: premiumBonus,
-    ));
+    emit(
+      state.copyWith(
+        earningMultiplier: multiplier,
+        hasPremiumBonus: premiumBonus,
+      ),
+    );
 
     AppLogger.info('Updated coin earning multiplier to ${multiplier}x');
   }
@@ -153,14 +162,15 @@ class CoinsCubit extends Cubit<CoinsState> {
         lastUpdated: DateTime.now(),
       );
 
-      emit(state.copyWith(
-        balance: newBalance,
-        transactions: limitedTransactions,
-      ));
+      emit(
+        state.copyWith(balance: newBalance, transactions: limitedTransactions),
+      );
 
       await _saveData();
 
-      AppLogger.info('Earned $multipliedAmount coins from ${source.displayName}');
+      AppLogger.info(
+        'Earned $multipliedAmount coins from ${source.displayName}',
+      );
       return true;
     } catch (e) {
       AppLogger.error('Error earning coins', e);
@@ -178,7 +188,8 @@ class CoinsCubit extends Cubit<CoinsState> {
     try {
       if (state.balance.total < amount) {
         AppLogger.warning(
-            'Insufficient coins: need $amount, have ${state.balance.total}');
+          'Insufficient coins: need $amount, have ${state.balance.total}',
+        );
         return false;
       }
 
@@ -201,15 +212,15 @@ class CoinsCubit extends Cubit<CoinsState> {
         lastUpdated: DateTime.now(),
       );
 
-      emit(state.copyWith(
-        balance: newBalance,
-        transactions: limitedTransactions,
-      ));
+      emit(
+        state.copyWith(balance: newBalance, transactions: limitedTransactions),
+      );
 
       await _saveData();
 
       AppLogger.info(
-          'Spent $amount coins on ${category.displayName}${itemName != null ? ': $itemName' : ''}');
+        'Spent $amount coins on ${category.displayName}${itemName != null ? ': $itemName' : ''}',
+      );
       return true;
     } catch (e) {
       AppLogger.error('Error spending coins', e);
@@ -218,7 +229,10 @@ class CoinsCubit extends Cubit<CoinsState> {
   }
 
   /// Purchase coins with real money
-  Future<bool> purchaseCoins(CoinPurchaseOption option, String transactionId) async {
+  Future<bool> purchaseCoins(
+    CoinPurchaseOption option,
+    String transactionId,
+  ) async {
     try {
       final totalCoins = option.totalCoins;
 
@@ -247,10 +261,9 @@ class CoinsCubit extends Cubit<CoinsState> {
         lastUpdated: DateTime.now(),
       );
 
-      emit(state.copyWith(
-        balance: newBalance,
-        transactions: limitedTransactions,
-      ));
+      emit(
+        state.copyWith(balance: newBalance, transactions: limitedTransactions),
+      );
 
       await _saveData();
 
@@ -276,10 +289,7 @@ class CoinsCubit extends Cubit<CoinsState> {
         CoinEarningSource.dailyLogin,
         customAmount: bonus.coins,
         itemName: 'Day ${bonus.day} Bonus',
-        metadata: {
-          'day': bonus.day,
-          'bonus_item': bonus.bonusItem,
-        },
+        metadata: {'day': bonus.day, 'bonus_item': bonus.bonusItem},
       );
 
       if (success) {
@@ -297,7 +307,8 @@ class CoinsCubit extends Cubit<CoinsState> {
         await _saveData();
 
         AppLogger.info(
-            'Collected daily bonus: Day ${bonus.day} - ${bonus.coins} coins');
+          'Collected daily bonus: Day ${bonus.day} - ${bonus.coins} coins',
+        );
         return true;
       }
 
@@ -314,10 +325,12 @@ class CoinsCubit extends Cubit<CoinsState> {
     final startOfDay = DateTime(today.year, today.month, today.day);
 
     return state.transactions
-        .where((t) =>
-            t.isEarned &&
-            t.earningSource == source &&
-            t.timestamp.isAfter(startOfDay))
+        .where(
+          (t) =>
+              t.isEarned &&
+              t.earningSource == source &&
+              t.timestamp.isAfter(startOfDay),
+        )
         .fold(0, (sum, t) => sum + t.amount);
   }
 
@@ -326,8 +339,9 @@ class CoinsCubit extends Cubit<CoinsState> {
     final now = DateTime.now();
     final weekAgo = now.subtract(const Duration(days: 7));
 
-    final weeklyTransactions =
-        state.transactions.where((t) => !t.isEarned && t.timestamp.isAfter(weekAgo));
+    final weeklyTransactions = state.transactions.where(
+      (t) => !t.isEarned && t.timestamp.isAfter(weekAgo),
+    );
 
     final spending = <CoinSpendingCategory, int>{};
 
@@ -344,9 +358,7 @@ class CoinsCubit extends Cubit<CoinsState> {
   /// Reset daily bonuses for a new week
   Future<void> resetDailyBonuses() async {
     try {
-      emit(state.copyWith(
-        dailyBonuses: DailyLoginBonus.getWeeklyBonuses(),
-      ));
+      emit(state.copyWith(dailyBonuses: DailyLoginBonus.getWeeklyBonuses()));
       await _saveData();
 
       AppLogger.info('Daily bonuses reset for new week');

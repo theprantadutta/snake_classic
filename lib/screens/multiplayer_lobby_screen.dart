@@ -90,14 +90,19 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
         return BlocListener<MultiplayerCubit, MultiplayerState>(
           listenWhen: (prev, curr) =>
-              prev.errorMessage != curr.errorMessage && curr.errorMessage != null,
+              prev.errorMessage != curr.errorMessage &&
+              curr.errorMessage != null,
           listener: (context, state) {
             // Show error snackbar
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -141,12 +146,31 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       theme: theme,
                       child: SafeArea(
                         child: multiplayerState.matchmakingTimedOut
-                            ? _buildMatchmakingTimeoutUI(context, multiplayerState, theme)
-                            : multiplayerState.status == MultiplayerStatus.inMatchmaking
-                                ? _buildMatchmakingUI(context, multiplayerState, theme)
-                                : multiplayerState.isInGame
-                                    ? _buildGameLobby(context, multiplayerState, theme, authState)
-                                    : _buildMainLobby(context, multiplayerState, theme, authState),
+                            ? _buildMatchmakingTimeoutUI(
+                                context,
+                                multiplayerState,
+                                theme,
+                              )
+                            : multiplayerState.status ==
+                                  MultiplayerStatus.inMatchmaking
+                            ? _buildMatchmakingUI(
+                                context,
+                                multiplayerState,
+                                theme,
+                              )
+                            : multiplayerState.isInGame
+                            ? _buildGameLobby(
+                                context,
+                                multiplayerState,
+                                theme,
+                                authState,
+                              )
+                            : _buildMainLobby(
+                                context,
+                                multiplayerState,
+                                theme,
+                                authState,
+                              ),
                       ),
                     ),
                   );
@@ -169,7 +193,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       children: [
         // Header
         _buildHeader(theme),
-        
+
         // Main content
         Expanded(
           child: SingleChildScrollView(
@@ -234,7 +258,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     const Spacer(),
 
                     // Ready/Leave buttons
-                    _buildLobbyActions(context, multiplayerState, theme, game, authState),
+                    _buildLobbyActions(
+                      context,
+                      multiplayerState,
+                      theme,
+                      game,
+                      authState,
+                    ),
 
                     const SizedBox(height: 16),
                   ],
@@ -262,12 +292,16 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               children: [
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return ScaleTransition(
-                      scale: animation,
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                        return ScaleTransition(
+                          scale: animation,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        );
+                      },
                   child: Text(
                     value > 0 ? '$value' : 'GO!',
                     key: ValueKey<int>(value),
@@ -308,15 +342,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -329,7 +359,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   letterSpacing: 2,
                 ),
               ).animate().fadeIn().slideX(begin: -0.3),
-              
+
               Text(
                 'Play with friends online',
                 style: TextStyle(
@@ -354,15 +384,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               context.read<MultiplayerCubit>().leaveGame();
               Navigator.of(context).pop();
             },
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,11 +401,14 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     color: theme.accentColor,
                   ),
                 ),
-                
+
                 if (game.roomCode != null)
                   Container(
                     margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: theme.foodColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -390,11 +419,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.key,
-                          size: 16,
-                          color: theme.foodColor,
-                        ),
+                        Icon(Icons.key, size: 16, color: theme.foodColor),
                         const SizedBox(width: 6),
                         Text(
                           'Room: ${game.roomCode}',
@@ -407,7 +432,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                         const SizedBox(width: 6),
                         GestureDetector(
                           onTap: () {
-                            Clipboard.setData(ClipboardData(text: game.roomCode!));
+                            Clipboard.setData(
+                              ClipboardData(text: game.roomCode!),
+                            );
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text('Room code copied!'),
@@ -449,17 +476,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.green.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.flash_on,
-            size: 40,
-            color: Colors.green,
-          ),
+          Icon(Icons.flash_on, size: 40, color: Colors.green),
 
           const SizedBox(height: 16),
 
@@ -536,12 +557,14 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           const SizedBox(height: 20),
 
           GradientButton(
-            onPressed: multiplayerState.isLoading ? null : () {
-              context.read<MultiplayerCubit>().quickMatch(
-                MultiplayerGameMode.classic,
-                playerCount: _selectedPlayerCount,
-              );
-            },
+            onPressed: multiplayerState.isLoading
+                ? null
+                : () {
+                    context.read<MultiplayerCubit>().quickMatch(
+                      MultiplayerGameMode.classic,
+                      playerCount: _selectedPlayerCount,
+                    );
+                  },
             text: multiplayerState.isLoading ? 'FINDING...' : 'FIND MATCH',
             primaryColor: Colors.green,
             secondaryColor: Colors.green.withValues(alpha: 0.8),
@@ -578,9 +601,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   ],
                 ),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.green.withValues(alpha: 0.3),
-                ),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -609,7 +630,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
-                              color: remaining <= 10 ? Colors.orange : Colors.green,
+                              color: remaining <= 10
+                                  ? Colors.orange
+                                  : Colors.green,
                             ),
                           ),
                           Text(
@@ -700,9 +723,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   ],
                 ),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.orange.withValues(alpha: 0.3),
-                ),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -753,7 +774,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       Expanded(
                         child: GradientButton(
                           onPressed: () {
-                            context.read<MultiplayerCubit>().clearMatchmakingTimeout();
+                            context
+                                .read<MultiplayerCubit>()
+                                .clearMatchmakingTimeout();
                           },
                           text: 'GO BACK',
                           primaryColor: Colors.grey,
@@ -766,10 +789,14 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       Expanded(
                         child: GradientButton(
                           onPressed: () {
-                            context.read<MultiplayerCubit>().clearMatchmakingTimeout();
+                            context
+                                .read<MultiplayerCubit>()
+                                .clearMatchmakingTimeout();
                             context.read<MultiplayerCubit>().quickMatch(
-                              multiplayerState.matchmakingMode ?? MultiplayerGameMode.classic,
-                              playerCount: multiplayerState.matchmakingPlayerCount ?? 2,
+                              multiplayerState.matchmakingMode ??
+                                  MultiplayerGameMode.classic,
+                              playerCount:
+                                  multiplayerState.matchmakingPlayerCount ?? 2,
                             );
                           },
                           text: 'TRY AGAIN',
@@ -805,20 +832,14 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.blue.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.meeting_room,
-            size: 40,
-            color: Colors.blue,
-          ),
-          
+          Icon(Icons.meeting_room, size: 40, color: Colors.blue),
+
           const SizedBox(height: 16),
-          
+
           Text(
             'JOIN ROOM',
             style: TextStyle(
@@ -828,9 +849,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               letterSpacing: 1,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             'Enter room code to join',
             style: TextStyle(
@@ -838,9 +859,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               color: theme.accentColor.withValues(alpha: 0.7),
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           TextField(
             controller: _roomCodeController,
             decoration: InputDecoration(
@@ -862,10 +883,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Colors.blue,
-                  width: 2,
-                ),
+                borderSide: BorderSide(color: Colors.blue, width: 2),
               ),
               filled: true,
               fillColor: theme.backgroundColor.withValues(alpha: 0.5),
@@ -874,14 +892,17 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             textAlign: TextAlign.center,
             textCapitalization: TextCapitalization.characters,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           GradientButton(
-            onPressed: multiplayerState.isLoading || _roomCodeController.text.isEmpty
+            onPressed:
+                multiplayerState.isLoading || _roomCodeController.text.isEmpty
                 ? null
                 : () {
-                    context.read<MultiplayerCubit>().joinGame(_roomCodeController.text.trim());
+                    context.read<MultiplayerCubit>().joinGame(
+                      _roomCodeController.text.trim(),
+                    );
                   },
             text: 'JOIN ROOM',
             primaryColor: Colors.blue,
@@ -909,20 +930,14 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.purple.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.add_circle,
-            size: 40,
-            color: Colors.purple,
-          ),
-          
+          Icon(Icons.add_circle, size: 40, color: Colors.purple),
+
           const SizedBox(height: 16),
-          
+
           Text(
             'CREATE ROOM',
             style: TextStyle(
@@ -932,9 +947,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               letterSpacing: 1,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             'Start your own game',
             style: TextStyle(
@@ -942,16 +957,18 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               color: theme.accentColor.withValues(alpha: 0.7),
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           Row(
             children: [
               Expanded(
                 child: GradientButton(
-                  onPressed: multiplayerState.isLoading ? null : () {
-                    _showCreateGameDialog(context, theme, false);
-                  },
+                  onPressed: multiplayerState.isLoading
+                      ? null
+                      : () {
+                          _showCreateGameDialog(context, theme, false);
+                        },
                   text: 'PUBLIC',
                   primaryColor: Colors.purple,
                   secondaryColor: Colors.purple.withValues(alpha: 0.8),
@@ -963,9 +980,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
               Expanded(
                 child: GradientButton(
-                  onPressed: multiplayerState.isLoading ? null : () {
-                    _showCreateGameDialog(context, theme, true);
-                  },
+                  onPressed: multiplayerState.isLoading
+                      ? null
+                      : () {
+                          _showCreateGameDialog(context, theme, true);
+                        },
                   text: 'PRIVATE',
                   primaryColor: Colors.purple,
                   secondaryColor: Colors.purple.withValues(alpha: 0.8),
@@ -996,11 +1015,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             letterSpacing: 1,
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
-        ...multiplayerState.availableGames.map((game) =>
-          _buildGameCard(context, theme, game)
+
+        ...multiplayerState.availableGames.map(
+          (game) => _buildGameCard(context, theme, game),
         ),
       ],
     );
@@ -1017,9 +1036,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -1031,15 +1048,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child: Text(
-                game.modeEmoji,
-                style: const TextStyle(fontSize: 24),
-              ),
+              child: Text(game.modeEmoji, style: const TextStyle(fontSize: 24)),
             ),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1062,7 +1076,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               ],
             ),
           ),
-          
+
           GradientButton(
             onPressed: () {
               context.read<MultiplayerCubit>().joinGame(game.id);
@@ -1090,9 +1104,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.orange.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1104,15 +1116,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
-              child: Text(
-                game.modeEmoji,
-                style: const TextStyle(fontSize: 32),
-              ),
+              child: Text(game.modeEmoji, style: const TextStyle(fontSize: 32)),
             ),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1141,16 +1150,18 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  Widget _buildPlayersSection(GameTheme theme, MultiplayerGame game, AuthState authState) {
+  Widget _buildPlayersSection(
+    GameTheme theme,
+    MultiplayerGame game,
+    AuthState authState,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1164,31 +1175,36 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               letterSpacing: 1,
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
-          ...game.players.map((player) => _buildPlayerItem(theme, player, authState)),
-          
-          if (!game.isFull)
-            _buildWaitingSlot(theme),
+
+          ...game.players.map(
+            (player) => _buildPlayerItem(theme, player, authState),
+          ),
+
+          if (!game.isFull) _buildWaitingSlot(theme),
         ],
       ),
     );
   }
 
-  Widget _buildPlayerItem(GameTheme theme, MultiplayerPlayer player, AuthState authState) {
+  Widget _buildPlayerItem(
+    GameTheme theme,
+    MultiplayerPlayer player,
+    AuthState authState,
+  ) {
     final currentUserId = authState.userId;
     final isCurrentUser = currentUserId == player.userId;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isCurrentUser 
+        color: isCurrentUser
             ? theme.accentColor.withValues(alpha: 0.1)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        border: isCurrentUser 
+        border: isCurrentUser
             ? Border.all(color: theme.accentColor.withValues(alpha: 0.3))
             : null,
       ),
@@ -1196,21 +1212,17 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundImage: player.photoUrl != null 
+            backgroundImage: player.photoUrl != null
                 ? NetworkImage(player.photoUrl!)
                 : null,
             backgroundColor: theme.accentColor.withValues(alpha: 0.2),
-            child: player.photoUrl == null 
-                ? Icon(
-                    Icons.person,
-                    color: theme.accentColor,
-                    size: 24,
-                  )
+            child: player.photoUrl == null
+                ? Icon(Icons.person, color: theme.accentColor, size: 24)
                 : null,
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1228,7 +1240,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     if (isCurrentUser) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: theme.accentColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
@@ -1245,7 +1260,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     ],
                   ],
                 ),
-                
+
                 Row(
                   children: [
                     Container(
@@ -1291,15 +1306,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           CircleAvatar(
             radius: 20,
             backgroundColor: Colors.grey.withValues(alpha: 0.3),
-            child: Icon(
-              Icons.person_add,
-              color: Colors.grey,
-              size: 24,
-            ),
+            child: Icon(Icons.person_add, color: Colors.grey, size: 24),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           Text(
             'Waiting for player...',
             style: TextStyle(
@@ -1324,7 +1335,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     final currentPlayer = game.getPlayer(currentUserId ?? '');
     final isReady = currentPlayer?.status == PlayerStatus.ready;
     final isHost = currentPlayer?.rank == 0; // PlayerIndex 0 is host
-    final allPlayersReady = game.players.isNotEmpty &&
+    final allPlayersReady =
+        game.players.isNotEmpty &&
         game.players.every((p) => p.status == PlayerStatus.ready);
     final canStartGame = isHost && allPlayersReady && game.players.length >= 2;
 
@@ -1370,10 +1382,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Waiting for host to start...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.green,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.green),
                 ),
               ],
             ),
@@ -1408,7 +1417,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       },
                 text: isReady ? 'READY!' : 'READY',
                 primaryColor: isReady ? Colors.green : theme.accentColor,
-                secondaryColor: isReady ? Colors.green.withValues(alpha: 0.8) : theme.foodColor,
+                secondaryColor: isReady
+                    ? Colors.green.withValues(alpha: 0.8)
+                    : theme.foodColor,
                 icon: isReady ? Icons.check : Icons.check_circle,
               ),
             ),
@@ -1424,7 +1435,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     bool isPrivate,
   ) {
     MultiplayerGameMode selectedMode = MultiplayerGameMode.classic;
-    
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -1449,26 +1460,28 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   color: theme.accentColor.withValues(alpha: 0.8),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
-              ...MultiplayerGameMode.values.map((mode) => 
-                Container(
+
+              ...MultiplayerGameMode.values.map(
+                (mode) => Container(
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   decoration: BoxDecoration(
-                    color: selectedMode == mode 
-                      ? theme.accentColor.withValues(alpha: 0.1)
-                      : Colors.transparent,
+                    color: selectedMode == mode
+                        ? theme.accentColor.withValues(alpha: 0.1)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
-                    border: selectedMode == mode 
-                      ? Border.all(color: theme.accentColor.withValues(alpha: 0.3))
-                      : null,
+                    border: selectedMode == mode
+                        ? Border.all(
+                            color: theme.accentColor.withValues(alpha: 0.3),
+                          )
+                        : null,
                   ),
                   child: ListTile(
                     leading: Icon(
-                      selectedMode == mode 
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
+                      selectedMode == mode
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
                       color: theme.accentColor,
                     ),
                     title: Text(
@@ -1497,7 +1510,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 'Cancel',
-                style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.7),
+                ),
               ),
             ),
             GradientButton(

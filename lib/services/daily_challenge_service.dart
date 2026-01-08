@@ -8,7 +8,8 @@ import 'package:snake_classic/services/offline_cache_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 class DailyChallengeService extends ChangeNotifier {
-  static final DailyChallengeService _instance = DailyChallengeService._internal();
+  static final DailyChallengeService _instance =
+      DailyChallengeService._internal();
   factory DailyChallengeService() => _instance;
   DailyChallengeService._internal();
 
@@ -52,10 +53,11 @@ class DailyChallengeService extends ChangeNotifier {
 
   Future<void> _loadFromCache() async {
     try {
-      final cached = await _cacheService.getCachedFallback<Map<String, dynamic>>(
-        _challengesKey,
-        (data) => Map<String, dynamic>.from(data as Map),
-      );
+      final cached = await _cacheService
+          .getCachedFallback<Map<String, dynamic>>(
+            _challengesKey,
+            (data) => Map<String, dynamic>.from(data as Map),
+          );
 
       if (cached != null) {
         _updateFromResponse(cached);
@@ -203,7 +205,9 @@ class DailyChallengeService extends ChangeNotifier {
           if (newlyCompleted != null && newlyCompleted.isNotEmpty) {
             _completedCount = _challenges.where((c) => c.isCompleted).length;
             _allCompleted = _completedCount == _totalCount && _totalCount > 0;
-            AppLogger.info('Daily challenges completed: ${newlyCompleted.length}');
+            AppLogger.info(
+              'Daily challenges completed: ${newlyCompleted.length}',
+            );
           }
 
           // Clear pending progress for synced type

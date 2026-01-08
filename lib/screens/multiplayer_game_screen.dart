@@ -120,7 +120,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     _isAlive = myPlayer.status == PlayerStatus.playing;
     _isGameInitialized = true;
 
-    debugPrint('[MultiplayerGameScreen] Game initialized! Snake: ${_mySnake.length} segments');
+    debugPrint(
+      '[MultiplayerGameScreen] Game initialized! Snake: ${_mySnake.length} segments',
+    );
     _startGameLoop();
     setState(() {});
   }
@@ -324,10 +326,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           children: [
             Text(
               'You finished the game!',
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: theme.accentColor, fontSize: 16),
             ),
             const SizedBox(height: 20),
             Container(
@@ -415,9 +414,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Leave Game?',
           style: TextStyle(
@@ -442,10 +439,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               Navigator.of(dialogContext).pop();
               _navigateToLobby();
             },
-            child: const Text(
-              'Leave',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Leave', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -473,10 +467,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               // Trigger when snakes appear
               final hadSnakes =
                   prev.currentGame?.players.any((p) => p.snake.isNotEmpty) ??
-                      false;
+                  false;
               final hasSnakes =
                   curr.currentGame?.players.any((p) => p.snake.isNotEmpty) ??
-                      false;
+                  false;
               return !hadSnakes && hasSnakes;
             }
             return false;
@@ -496,8 +490,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                       backgroundColor: theme.backgroundColor,
                       body: Center(
                         child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(theme.accentColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.accentColor,
+                          ),
                         ),
                       ),
                     );
@@ -513,7 +508,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                           children: [
                             CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                  theme.accentColor),
+                                theme.accentColor,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -577,7 +573,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                       children: [
                                         // Multiplayer HUD
                                         _buildMultiplayerHUD(
-                                            theme, game, authState),
+                                          theme,
+                                          game,
+                                          authState,
+                                        ),
 
                                         // Game hint row
                                         _buildGameHintRow(theme),
@@ -676,18 +675,22 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           AnimatedBuilder(
             animation: _gestureIndicatorController,
             builder: (context, child) {
-              final isActive = _lastSwipeDirection != null &&
+              final isActive =
+                  _lastSwipeDirection != null &&
                   _gestureIndicatorController.isAnimating;
 
               return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: theme.backgroundColor.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: theme.accentColor
-                        .withValues(alpha: isActive ? 0.7 : 0.3),
+                    color: theme.accentColor.withValues(
+                      alpha: isActive ? 0.7 : 0.3,
+                    ),
                     width: 1.5,
                   ),
                 ),
@@ -700,8 +703,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                       curve: Curves.easeOutCubic,
                       child: Icon(
                         Icons.arrow_upward_rounded,
-                        color: theme.accentColor
-                            .withValues(alpha: isActive ? 1.0 : 0.6),
+                        color: theme.accentColor.withValues(
+                          alpha: isActive ? 1.0 : 0.6,
+                        ),
                         size: 18,
                       ),
                     ),
@@ -709,8 +713,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     Text(
                       'Swipe',
                       style: TextStyle(
-                        color: theme.accentColor
-                            .withValues(alpha: isActive ? 0.9 : 0.6),
+                        color: theme.accentColor.withValues(
+                          alpha: isActive ? 0.9 : 0.6,
+                        ),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -740,7 +745,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   Widget _buildMultiplayerHUD(
-      GameTheme theme, MultiplayerGame game, AuthState authState) {
+    GameTheme theme,
+    MultiplayerGame game,
+    AuthState authState,
+  ) {
     final playerCount = game.players.length;
     final alivePlayers = game.players.where((p) => p.isAlive).length;
 
@@ -771,9 +779,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.purple.withValues(alpha: 0.5),
-              ),
+              border: Border.all(color: Colors.purple.withValues(alpha: 0.5)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -856,9 +862,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.8),
         border: Border(
-          top: BorderSide(
-            color: theme.accentColor.withValues(alpha: 0.2),
-          ),
+          top: BorderSide(color: theme.accentColor.withValues(alpha: 0.2)),
         ),
       ),
       child: Row(
@@ -878,8 +882,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                       multiplayerColors[player.rank % multiplayerColors.length];
 
                   return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isMe
                           ? playerColor.withValues(alpha: 0.2)
@@ -903,10 +909,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                             color: index == 0
                                 ? Colors.amber
                                 : index == 1
-                                    ? Colors.grey.shade400
-                                    : index == 2
-                                        ? Colors.brown.shade400
-                                        : Colors.transparent,
+                                ? Colors.grey.shade400
+                                : index == 2
+                                ? Colors.brown.shade400
+                                : Colors.transparent,
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -940,8 +946,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                               isMe
                                   ? 'You'
                                   : (player.displayName.length > 8
-                                      ? '${player.displayName.substring(0, 8)}...'
-                                      : player.displayName),
+                                        ? '${player.displayName.substring(0, 8)}...'
+                                        : player.displayName),
                               style: TextStyle(
                                 color: player.isAlive
                                     ? theme.accentColor

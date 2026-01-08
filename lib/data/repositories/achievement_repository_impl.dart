@@ -19,9 +19,9 @@ class AchievementRepositoryImpl implements AchievementRepository {
     required ApiDataSource remote,
     required CacheDataSource cache,
     required NetworkInfo network,
-  })  : _remote = remote,
-        _cache = cache,
-        _network = network;
+  }) : _remote = remote,
+       _cache = cache,
+       _network = network;
 
   @override
   Future<Either<Failure, List<Achievement>>> getAllAchievements() async {
@@ -29,13 +29,12 @@ class AchievementRepositoryImpl implements AchievementRepository {
 
     // 1. Check fresh cache
     if (await _cache.isCacheFresh(cacheKey)) {
-      final cached = await _cache.getCached<List<Achievement>>(
-        cacheKey,
-        (data) {
-          final List<dynamic> list = jsonDecode(data as String);
-          return list.map((e) => Achievement.fromJson(e)).toList();
-        },
-      );
+      final cached = await _cache.getCached<List<Achievement>>(cacheKey, (
+        data,
+      ) {
+        final List<dynamic> list = jsonDecode(data as String);
+        return list.map((e) => Achievement.fromJson(e)).toList();
+      });
       if (cached != null) {
         AppLogger.debug('Achievements metadata cache hit');
         return Right(cached);
@@ -65,13 +64,12 @@ class AchievementRepositoryImpl implements AchievementRepository {
     }
 
     // 3. Stale cache fallback
-    final stale = await _cache.getCachedFallback<List<Achievement>>(
-      cacheKey,
-      (data) {
-        final List<dynamic> list = jsonDecode(data as String);
-        return list.map((e) => Achievement.fromJson(e)).toList();
-      },
-    );
+    final stale = await _cache.getCachedFallback<List<Achievement>>(cacheKey, (
+      data,
+    ) {
+      final List<dynamic> list = jsonDecode(data as String);
+      return list.map((e) => Achievement.fromJson(e)).toList();
+    });
     if (stale != null) {
       AppLogger.debug('Using stale cache for achievements');
       return Right(stale);

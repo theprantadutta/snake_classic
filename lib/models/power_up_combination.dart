@@ -3,33 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/models/power_up.dart';
 
 enum CombinationType {
-  synergy,      // Two compatible power-ups enhance each other
-  fusion,       // Two power-ups merge into a new one
-  catalyst,     // One power-up triggers special effects with another
+  synergy, // Two compatible power-ups enhance each other
+  fusion, // Two power-ups merge into a new one
+  catalyst, // One power-up triggers special effects with another
   amplification, // One power-up amplifies another
   transformation, // Power-ups change into different effects
 }
 
 enum ComboEffect {
   // Speed-related combos
-  lightSpeed,        // Speed boost + Invincibility = Ultra-fast invincible movement
-  timeWarp,          // Slow motion + Speed boost = Controlled time manipulation
-  
+  lightSpeed, // Speed boost + Invincibility = Ultra-fast invincible movement
+  timeWarp, // Slow motion + Speed boost = Controlled time manipulation
   // Score-related combos
-  goldRush,          // Score multiplier + Speed boost = Higher speed = higher multiplier
-  treasureHunter,    // Score multiplier + Invincibility = Safe collection bonus
-  
+  goldRush, // Score multiplier + Speed boost = Higher speed = higher multiplier
+  treasureHunter, // Score multiplier + Invincibility = Safe collection bonus
   // Invincibility-related combos
-  ghostMode,         // Invincibility + Slow motion = Phase through everything
-  berserker,         // Invincibility + Speed boost = Aggressive mode
-  
+  ghostMode, // Invincibility + Slow motion = Phase through everything
+  berserker, // Invincibility + Speed boost = Aggressive mode
   // Triple combos
-  godMode,           // All three basic power-ups active = Ultimate power
-  
+  godMode, // All three basic power-ups active = Ultimate power
   // Special environmental combos
-  magnetField,       // Any power-up + specific conditions
-  chainReaction,     // Multiple same-type power-ups
-  evolution,         // Power-up duration extensions
+  magnetField, // Any power-up + specific conditions
+  chainReaction, // Multiple same-type power-ups
+  evolution, // Power-up duration extensions
 }
 
 class PowerUpCombo {
@@ -109,7 +105,10 @@ class PowerUpCombo {
 
     ComboEffect.treasureHunter: PowerUpCombo(
       effect: ComboEffect.treasureHunter,
-      requiredPowerUps: [PowerUpType.scoreMultiplier, PowerUpType.invincibility],
+      requiredPowerUps: [
+        PowerUpType.scoreMultiplier,
+        PowerUpType.invincibility,
+      ],
       type: CombinationType.synergy,
       duration: Duration(seconds: 15),
       name: 'Treasure Hunter',
@@ -130,7 +129,8 @@ class PowerUpCombo {
       type: CombinationType.transformation,
       duration: Duration(seconds: 12),
       name: 'Ghost Mode',
-      description: 'Phase through everything in slow motion with ethereal effects',
+      description:
+          'Phase through everything in slow motion with ethereal effects',
       color: Color(0xFF87CEEB),
       intensity: 1.4,
       properties: {
@@ -200,7 +200,9 @@ class PowerUpCombo {
   };
 
   bool canActivate(List<PowerUpType> activePowerUps) {
-    return requiredPowerUps.every((required) => activePowerUps.contains(required));
+    return requiredPowerUps.every(
+      (required) => activePowerUps.contains(required),
+    );
   }
 
   static ComboEffect? findAvailableCombo(List<PowerUpType> activePowerUps) {
@@ -212,7 +214,9 @@ class PowerUpCombo {
     return null;
   }
 
-  static List<ComboEffect> findAllAvailableCombos(List<PowerUpType> activePowerUps) {
+  static List<ComboEffect> findAllAvailableCombos(
+    List<PowerUpType> activePowerUps,
+  ) {
     return combos.values
         .where((combo) => combo.canActivate(activePowerUps))
         .map((combo) => combo.effect)
@@ -229,7 +233,8 @@ class PowerUpComboSystem {
 
   bool hasActiveCombo(ComboEffect combo) => _activeCombos.contains(combo);
 
-  double getComboIntensity(ComboEffect combo) => _comboIntensities[combo] ?? 0.0;
+  double getComboIntensity(ComboEffect combo) =>
+      _comboIntensities[combo] ?? 0.0;
 
   double getComboProgress(ComboEffect combo) {
     final startTime = _comboStartTimes[combo];
@@ -239,7 +244,10 @@ class PowerUpComboSystem {
     if (comboData == null) return 0.0;
 
     final elapsed = DateTime.now().difference(startTime);
-    return (elapsed.inMilliseconds / comboData.duration.inMilliseconds).clamp(0.0, 1.0);
+    return (elapsed.inMilliseconds / comboData.duration.inMilliseconds).clamp(
+      0.0,
+      1.0,
+    );
   }
 
   Duration getRemainingTime(ComboEffect combo) {
@@ -275,20 +283,22 @@ class PowerUpComboSystem {
     for (final combo in _activeCombos) {
       final startTime = _comboStartTimes[combo];
       final comboData = PowerUpCombo.combos[combo];
-      
+
       if (startTime != null && comboData != null) {
         final elapsed = now.difference(startTime);
         if (elapsed > comboData.duration) {
           expiredCombos.add(combo);
         } else {
           // Update intensity based on remaining time (fade out effect)
-          final progress = elapsed.inMilliseconds / comboData.duration.inMilliseconds;
+          final progress =
+              elapsed.inMilliseconds / comboData.duration.inMilliseconds;
           final fadeStart = 0.8; // Start fading at 80% completion
-          
+
           if (progress > fadeStart) {
             final fadeProgress = (progress - fadeStart) / (1.0 - fadeStart);
             final originalIntensity = comboData.intensity;
-            _comboIntensities[combo] = originalIntensity * (1.0 - fadeProgress * 0.3);
+            _comboIntensities[combo] =
+                originalIntensity * (1.0 - fadeProgress * 0.3);
           }
         }
       }
@@ -320,19 +330,23 @@ class PowerUpComboSystem {
     for (final combo in _activeCombos) {
       final comboData = PowerUpCombo.combos[combo];
       final intensity = _comboIntensities[combo] ?? 1.0;
-      
+
       switch (combo) {
         case ComboEffect.lightSpeed:
-          multiplier *= (comboData?.properties['speedMultiplier'] ?? 1.0) * intensity;
+          multiplier *=
+              (comboData?.properties['speedMultiplier'] ?? 1.0) * intensity;
           break;
         case ComboEffect.timeWarp:
-          multiplier *= (comboData?.properties['playerSpeedBoost'] ?? 1.0) * intensity;
+          multiplier *=
+              (comboData?.properties['playerSpeedBoost'] ?? 1.0) * intensity;
           break;
         case ComboEffect.berserker:
-          multiplier *= (comboData?.properties['speedBoost'] ?? 1.0) * intensity;
+          multiplier *=
+              (comboData?.properties['speedBoost'] ?? 1.0) * intensity;
           break;
         case ComboEffect.godMode:
-          multiplier *= (comboData?.properties['speedBoost'] ?? 1.0) * intensity;
+          multiplier *=
+              (comboData?.properties['speedBoost'] ?? 1.0) * intensity;
           break;
         default:
           break;
@@ -348,16 +362,28 @@ class PowerUpComboSystem {
     for (final combo in _activeCombos) {
       final comboData = PowerUpCombo.combos[combo];
       final intensity = _comboIntensities[combo] ?? 1.0;
-      
+
       switch (combo) {
         case ComboEffect.goldRush:
-          multiplier = (multiplier * (comboData?.properties['baseMultiplier'] ?? 1) * intensity).round();
+          multiplier =
+              (multiplier *
+                      (comboData?.properties['baseMultiplier'] ?? 1) *
+                      intensity)
+                  .round();
           break;
         case ComboEffect.treasureHunter:
-          multiplier = (multiplier * (comboData?.properties['scoreMultiplier'] ?? 1) * intensity).round();
+          multiplier =
+              (multiplier *
+                      (comboData?.properties['scoreMultiplier'] ?? 1) *
+                      intensity)
+                  .round();
           break;
         case ComboEffect.godMode:
-          multiplier = (multiplier * (comboData?.properties['scoreMultiplier'] ?? 1) * intensity).round();
+          multiplier =
+              (multiplier *
+                      (comboData?.properties['scoreMultiplier'] ?? 1) *
+                      intensity)
+                  .round();
           break;
         default:
           break;
@@ -373,13 +399,19 @@ class PowerUpComboSystem {
     for (final combo in _activeCombos) {
       final comboData = PowerUpCombo.combos[combo];
       final intensity = _comboIntensities[combo] ?? 1.0;
-      
+
       switch (combo) {
         case ComboEffect.timeWarp:
-          timeScale = math.min(timeScale, (comboData?.properties['timeScale'] ?? 1.0) * intensity);
+          timeScale = math.min(
+            timeScale,
+            (comboData?.properties['timeScale'] ?? 1.0) * intensity,
+          );
           break;
         case ComboEffect.ghostMode:
-          timeScale = math.min(timeScale, (comboData?.properties['slowMotionFactor'] ?? 1.0) * intensity);
+          timeScale = math.min(
+            timeScale,
+            (comboData?.properties['slowMotionFactor'] ?? 1.0) * intensity,
+          );
           break;
         default:
           break;
@@ -390,13 +422,15 @@ class PowerUpComboSystem {
   }
 
   bool hasInvincibility() {
-    return _activeCombos.any((combo) => [
-      ComboEffect.lightSpeed,
-      ComboEffect.treasureHunter,
-      ComboEffect.ghostMode,
-      ComboEffect.berserker,
-      ComboEffect.godMode,
-    ].contains(combo));
+    return _activeCombos.any(
+      (combo) => [
+        ComboEffect.lightSpeed,
+        ComboEffect.treasureHunter,
+        ComboEffect.ghostMode,
+        ComboEffect.berserker,
+        ComboEffect.godMode,
+      ].contains(combo),
+    );
   }
 
   bool hasPhaseThrough() {
@@ -432,9 +466,11 @@ class PowerUpComboSystem {
     for (final combo in _activeCombos) {
       final comboData = PowerUpCombo.combos[combo];
       final comboIntensity = _comboIntensities[combo] ?? 1.0;
-      
+
       if (combo == ComboEffect.berserker) {
-        final berserkerIntensity = (comboData?.properties['screenShakeIntensity'] ?? 1.0) * comboIntensity;
+        final berserkerIntensity =
+            (comboData?.properties['screenShakeIntensity'] ?? 1.0) *
+            comboIntensity;
         maxIntensity = math.max(maxIntensity, berserkerIntensity);
       }
     }

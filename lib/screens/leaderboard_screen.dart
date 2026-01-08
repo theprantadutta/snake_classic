@@ -42,10 +42,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   Future<void> _loadData() async {
     // Load both leaderboards in parallel first
-    await Future.wait([
-      _loadGlobalLeaderboard(),
-      _loadWeeklyLeaderboard(),
-    ]);
+    await Future.wait([_loadGlobalLeaderboard(), _loadWeeklyLeaderboard()]);
     // Then calculate user rank from already loaded data (no extra API call)
     _calculateUserRank();
   }
@@ -64,7 +61,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               'rank': i + 1,
               'totalPlayers': _globalLeaderboard.length,
               'userScore': _globalLeaderboard[i]['highScore'] ?? 0,
-              'percentile': ((_globalLeaderboard.length - i) / _globalLeaderboard.length * 100).round(),
+              'percentile':
+                  ((_globalLeaderboard.length - i) /
+                          _globalLeaderboard.length *
+                          100)
+                      .round(),
             };
           });
         }
@@ -169,18 +170,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.arrow_back,
-              color: theme.accentColor,
-              size: 24,
-            ),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
           const SizedBox(width: 8),
-          Icon(
-            Icons.leaderboard,
-            color: theme.accentColor,
-            size: 28,
-          ),
+          Icon(Icons.leaderboard, color: theme.accentColor, size: 28),
           const SizedBox(width: 12),
           Text(
             'Leaderboards',
@@ -367,12 +360,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               authState.userId != null &&
               player['uid'] == authState.userId;
 
-          return _buildLeaderboardItem(
-            index + 1,
-            player,
-            theme,
-            isCurrentUser,
-          );
+          return _buildLeaderboardItem(index + 1, player, theme, isCurrentUser);
         },
       ),
     );
@@ -455,12 +443,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               authState.userId != null &&
               player['uid'] == authState.userId;
 
-          return _buildLeaderboardItem(
-            index + 1,
-            player,
-            theme,
-            isCurrentUser,
-          );
+          return _buildLeaderboardItem(index + 1, player, theme, isCurrentUser);
         },
       ),
     );

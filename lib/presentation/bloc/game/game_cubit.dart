@@ -73,14 +73,14 @@ class GameCubit extends Cubit<GameCubitState> {
     required StatisticsService statisticsService,
     required StorageService storageService,
     required GameSettingsCubit settingsCubit,
-  })  : _audioService = audioService,
-        _enhancedAudioService = enhancedAudioService,
-        _hapticService = hapticService,
-        _achievementService = achievementService,
-        _statisticsService = statisticsService,
-        _storageService = storageService,
-        _settingsCubit = settingsCubit,
-        super(GameCubitState.initial());
+  }) : _audioService = audioService,
+       _enhancedAudioService = enhancedAudioService,
+       _hapticService = hapticService,
+       _achievementService = achievementService,
+       _statisticsService = statisticsService,
+       _storageService = storageService,
+       _settingsCubit = settingsCubit,
+       super(GameCubitState.initial());
 
   /// Initialize the game cubit
   Future<void> initialize() async {
@@ -97,10 +97,7 @@ class GameCubit extends Cubit<GameCubitState> {
       boardHeight: _settingsCubit.state.boardSize.height,
     );
 
-    emit(state.copyWith(
-      status: GamePlayStatus.ready,
-      gameState: gameState,
-    ));
+    emit(state.copyWith(status: GamePlayStatus.ready, gameState: gameState));
   }
 
   /// Start a new game
@@ -108,7 +105,9 @@ class GameCubit extends Cubit<GameCubitState> {
     debugPrint('🎮 [GameCubit] startGame() called');
 
     final settings = _settingsCubit.state;
-    debugPrint('🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, highScore=${settings.highScore}');
+    debugPrint(
+      '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, highScore=${settings.highScore}',
+    );
 
     final gameState = model.GameState.initial().copyWith(
       highScore: settings.highScore,
@@ -146,9 +145,13 @@ class GameCubit extends Cubit<GameCubitState> {
       previousGameState: null,
     );
 
-    debugPrint('🎮 [GameCubit] Emitting new state: status=${newState.status}, gameState.snake.length=${newState.gameState?.snake.length}');
+    debugPrint(
+      '🎮 [GameCubit] Emitting new state: status=${newState.status}, gameState.snake.length=${newState.gameState?.snake.length}',
+    );
     emit(newState);
-    debugPrint('🎮 [GameCubit] State emitted. Current state.status=${state.status}');
+    debugPrint(
+      '🎮 [GameCubit] State emitted. Current state.status=${state.status}',
+    );
 
     _startGameLoop();
     _startSmoothAnimation();
@@ -161,10 +164,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
   /// Set tournament mode
   void setTournamentMode(String tournamentId, TournamentGameMode gameMode) {
-    emit(state.copyWith(
-      tournamentId: tournamentId,
-      tournamentMode: gameMode,
-    ));
+    emit(state.copyWith(tournamentId: tournamentId, tournamentMode: gameMode));
   }
 
   /// Exit tournament mode
@@ -180,20 +180,24 @@ class GameCubit extends Cubit<GameCubitState> {
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
 
-    emit(state.copyWith(
-      status: GamePlayStatus.paused,
-      gameState: state.gameState?.copyWith(status: model.GameStatus.paused),
-    ));
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.paused,
+        gameState: state.gameState?.copyWith(status: model.GameStatus.paused),
+      ),
+    );
   }
 
   /// Resume the game
   void resumeGame() {
     if (state.status != GamePlayStatus.paused) return;
 
-    emit(state.copyWith(
-      status: GamePlayStatus.playing,
-      gameState: state.gameState?.copyWith(status: model.GameStatus.playing),
-    ));
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.playing,
+        gameState: state.gameState?.copyWith(status: model.GameStatus.playing),
+      ),
+    );
 
     _startGameLoop();
     _startSmoothAnimation();
@@ -230,7 +234,9 @@ class GameCubit extends Cubit<GameCubitState> {
     final speed = state.gameState?.gameSpeed ?? 150;
     final level = state.gameState?.level ?? 1;
     if (_updateCount <= 5 || _updateCount % 100 == 0) {
-      debugPrint('🎮 [GameCubit] Scheduling next tick: speed=${speed}ms, level=$level');
+      debugPrint(
+        '🎮 [GameCubit] Scheduling next tick: speed=${speed}ms, level=$level',
+      );
     }
 
     _gameTimer = Timer(Duration(milliseconds: speed), () {
@@ -282,24 +288,32 @@ class GameCubit extends Cubit<GameCubitState> {
       final expectedSpeed = state.gameState?.gameSpeed ?? 150;
       // Warn if tick took much longer than expected (more than 50% over)
       if (timeSinceLastTick > expectedSpeed * 1.5) {
-        debugPrint('🎮 [GameCubit] WARNING: ${timeSinceLastTick}ms since last tick (expected ~${expectedSpeed}ms)');
+        debugPrint(
+          '🎮 [GameCubit] WARNING: ${timeSinceLastTick}ms since last tick (expected ~${expectedSpeed}ms)',
+        );
       }
     }
     _lastTickTime = now;
 
     if (state.status != GamePlayStatus.playing) {
       if (_updateCount <= 5) {
-        debugPrint('🎮 [GameCubit] _updateGame #$_updateCount skipped: status=${state.status}');
+        debugPrint(
+          '🎮 [GameCubit] _updateGame #$_updateCount skipped: status=${state.status}',
+        );
       }
       return;
     }
     if (state.gameState == null) {
-      debugPrint('🎮 [GameCubit] _updateGame #$_updateCount skipped: gameState is null');
+      debugPrint(
+        '🎮 [GameCubit] _updateGame #$_updateCount skipped: gameState is null',
+      );
       return;
     }
 
     if (_updateCount <= 5 || _updateCount % 50 == 0) {
-      debugPrint('🎮 [GameCubit] _updateGame #$_updateCount running, snake at ${state.gameState!.snake.head}');
+      debugPrint(
+        '🎮 [GameCubit] _updateGame #$_updateCount running, snake at ${state.gameState!.snake.head}',
+      );
     }
 
     final previousState = state.gameState!;
@@ -322,9 +336,11 @@ class GameCubit extends Cubit<GameCubitState> {
     }
 
     // Check collisions before moving
-    final willEatFood = currentFood != null &&
+    final willEatFood =
+        currentFood != null &&
         snake.head.move(snake.currentDirection) == currentFood.position;
-    final willCollectPowerUp = currentPowerUp != null &&
+    final willCollectPowerUp =
+        currentPowerUp != null &&
         snake.head.move(snake.currentDirection) == currentPowerUp.position;
 
     // Move snake
@@ -338,9 +354,13 @@ class GameCubit extends Cubit<GameCubitState> {
     // Check collisions
     final hasImmunity =
         previousState.hasInvincibility || previousState.hasGhostMode;
-    final wallCollision = !hasImmunity &&
+    final wallCollision =
+        !hasImmunity &&
         previousState.gameMode.hasWalls &&
-        snake.checkWallCollision(previousState.boardWidth, previousState.boardHeight);
+        snake.checkWallCollision(
+          previousState.boardWidth,
+          previousState.boardHeight,
+        );
     final selfCollision = !hasImmunity && snake.checkSelfCollision();
 
     if (wallCollision || selfCollision) {
@@ -354,7 +374,11 @@ class GameCubit extends Cubit<GameCubitState> {
         collisionBodyPart = snake.getSelfCollisionBodyPart();
       }
 
-      _handleCrash(crashReason, snake.head, collisionBodyPart: collisionBodyPart);
+      _handleCrash(
+        crashReason,
+        snake.head,
+        collisionBodyPart: collisionBodyPart,
+      );
       return;
     }
 
@@ -383,7 +407,9 @@ class GameCubit extends Cubit<GameCubitState> {
       // Level up (unlimited levels with progressive difficulty)
       if (newScore >= previousState.targetScore) {
         newLevel++;
-        debugPrint('🎮 [GameCubit] LEVEL UP! Now level $newLevel (target was ${previousState.targetScore}, next target: ${model.GameState.getTargetScoreForLevel(newLevel + 1)})');
+        debugPrint(
+          '🎮 [GameCubit] LEVEL UP! Now level $newLevel (target was ${previousState.targetScore}, next target: ${model.GameState.getTargetScoreForLevel(newLevel + 1)})',
+        );
         _audioService.playSound('level_up');
         HapticFeedback.mediumImpact();
       } else {
@@ -404,7 +430,10 @@ class GameCubit extends Cubit<GameCubitState> {
     if (willCollectPowerUp) {
       _hapticService.powerUpCollected();
       _powerUpsCollectedThisGame++;
-      activePowerUps = [...activePowerUps, ActivePowerUp(type: currentPowerUp.type)];
+      activePowerUps = [
+        ...activePowerUps,
+        ActivePowerUp(type: currentPowerUp.type),
+      ];
       currentPowerUp = null;
       _audioService.playSound('power_up');
     }
@@ -429,7 +458,9 @@ class GameCubit extends Cubit<GameCubitState> {
     );
 
     if (_updateCount <= 5) {
-      debugPrint('🎮 [GameCubit] _updateGame #$_updateCount emitting: snake moved to ${snake.head}');
+      debugPrint(
+        '🎮 [GameCubit] _updateGame #$_updateCount emitting: snake moved to ${snake.head}',
+      );
     }
 
     emit(newCubitState);
@@ -438,7 +469,14 @@ class GameCubit extends Cubit<GameCubitState> {
     // The new timer pattern (_scheduleNextGameTick) reads speed fresh each tick,
     // so speed changes from level-ups apply immediately without a pause.
 
-    _recordFrame(snake, currentFood, currentPowerUp, newGameState, willEatFood, willCollectPowerUp);
+    _recordFrame(
+      snake,
+      currentFood,
+      currentPowerUp,
+      newGameState,
+      willEatFood,
+      willCollectPowerUp,
+    );
   }
 
   void _recordFrame(
@@ -463,8 +501,12 @@ class GameCubit extends Cubit<GameCubitState> {
 
     _gameRecorder.recordFrame(
       snakePositions: snakePositions,
-      foodPosition: food != null ? <int>[food.position.x, food.position.y] : null,
-      powerUpPosition: powerUp != null ? <int>[powerUp.position.x, powerUp.position.y] : null,
+      foodPosition: food != null
+          ? <int>[food.position.x, food.position.y]
+          : null,
+      powerUpPosition: powerUp != null
+          ? <int>[powerUp.position.x, powerUp.position.y]
+          : null,
       powerUpType: powerUp?.type.name,
       score: gameState.score,
       level: gameState.level,
@@ -488,15 +530,23 @@ class GameCubit extends Cubit<GameCubitState> {
       );
 
       if (powerUp != null) {
-        emit(state.copyWith(
-          gameState: state.gameState?.copyWith(powerUp: powerUp),
-        ));
+        emit(
+          state.copyWith(
+            gameState: state.gameState?.copyWith(powerUp: powerUp),
+          ),
+        );
       }
     }
   }
 
-  void _handleCrash(model.CrashReason reason, Position? crashPosition, {Position? collisionBodyPart}) {
-    debugPrint('🎮 [GameCubit] _handleCrash called: reason=$reason, crashPosition=$crashPosition');
+  void _handleCrash(
+    model.CrashReason reason,
+    Position? crashPosition, {
+    Position? collisionBodyPart,
+  }) {
+    debugPrint(
+      '🎮 [GameCubit] _handleCrash called: reason=$reason, crashPosition=$crashPosition',
+    );
 
     // Track what type of crash for achievements
     if (reason == model.CrashReason.wallCollision) {
@@ -531,10 +581,12 @@ class GameCubit extends Cubit<GameCubitState> {
         showCrashModal: false,
       );
 
-      emit(state.copyWith(
-        status: GamePlayStatus.crashed,
-        gameState: crashedGameState,
-      ));
+      emit(
+        state.copyWith(
+          status: GamePlayStatus.crashed,
+          gameState: crashedGameState,
+        ),
+      );
 
       // Immediately transition to game over after short delay
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -554,18 +606,22 @@ class GameCubit extends Cubit<GameCubitState> {
       showCrashModal: false, // Start with visual feedback only
     );
 
-    emit(state.copyWith(
-      status: GamePlayStatus.crashed,
-      gameState: crashedGameState,
-    ));
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.crashed,
+        gameState: crashedGameState,
+      ),
+    );
 
     // Show visual crash feedback for 2 seconds, then show modal
     Future.delayed(const Duration(seconds: 2), () {
       if (state.status == GamePlayStatus.crashed) {
         // Now show the crash feedback modal
-        emit(state.copyWith(
-          gameState: state.gameState?.copyWith(showCrashModal: true),
-        ));
+        emit(
+          state.copyWith(
+            gameState: state.gameState?.copyWith(showCrashModal: true),
+          ),
+        );
 
         // Until Tap mode: don't auto-advance, wait for user to skip
         if (durationSeconds == GameConstants.crashFeedbackUntilTap) {
@@ -621,7 +677,10 @@ class GameCubit extends Cubit<GameCubitState> {
       score: gameState.score,
       gameTime: gameDurationSeconds,
       level: gameState.level,
-      foodConsumed: _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+      foodConsumed: _currentGameFoodTypes.values.fold(
+        0,
+        (sum, count) => sum + count,
+      ),
       foodTypes: _currentGameFoodTypes,
       foodPoints: _currentGameFoodPoints,
       powerUpsCollected: _powerUpsCollectedThisGame,
@@ -629,12 +688,17 @@ class GameCubit extends Cubit<GameCubitState> {
       powerUpTime: _currentGamePowerUpTime,
       hitWall: _hitWallThisGame,
       hitSelf: _hitSelfThisGame,
-      isPerfectGame: !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
+      isPerfectGame:
+          !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
       unlockedAchievements: [],
     );
 
     // Finish game recording
-    final crashReasonStr = _hitWallThisGame ? 'wall' : _hitSelfThisGame ? 'self' : null;
+    final crashReasonStr = _hitWallThisGame
+        ? 'wall'
+        : _hitSelfThisGame
+        ? 'self'
+        : null;
     _gameRecorder.finishRecording(
       playerName: 'Player',
       finalScore: gameState.score,
@@ -647,7 +711,10 @@ class GameCubit extends Cubit<GameCubitState> {
       crashReason: crashReasonStr,
       gameStats: {
         'level': gameState.level,
-        'foodConsumed': _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+        'foodConsumed': _currentGameFoodTypes.values.fold(
+          0,
+          (sum, count) => sum + count,
+        ),
         'powerUpsCollected': _powerUpsCollectedThisGame,
         'gameDurationSeconds': gameDurationSeconds,
       },
@@ -656,7 +723,10 @@ class GameCubit extends Cubit<GameCubitState> {
     // Update daily challenge progress
     _updateDailyChallengeProgress(
       score: gameState.score,
-      foodEaten: _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count),
+      foodEaten: _currentGameFoodTypes.values.fold(
+        0,
+        (sum, count) => sum + count,
+      ),
       survivalSeconds: gameDurationSeconds,
       gameMode: 'classic',
     );
@@ -672,10 +742,7 @@ class GameCubit extends Cubit<GameCubitState> {
     try {
       // Update score challenge (takes max value)
       if (score > 0) {
-        await _dailyChallengeService.updateProgress(
-          ChallengeType.score,
-          score,
-        );
+        await _dailyChallengeService.updateProgress(ChallengeType.score, score);
       }
 
       // Update food eaten challenge (accumulates)
@@ -695,10 +762,7 @@ class GameCubit extends Cubit<GameCubitState> {
       }
 
       // Update games played (always increment by 1)
-      await _dailyChallengeService.updateProgress(
-        ChallengeType.gamesPlayed,
-        1,
-      );
+      await _dailyChallengeService.updateProgress(ChallengeType.gamesPlayed, 1);
 
       // Update game mode specific challenge
       await _dailyChallengeService.updateProgress(
@@ -735,19 +799,22 @@ class GameCubit extends Cubit<GameCubitState> {
     _powerUpTimer?.cancel();
     _gameRecorder.stopRecording();
 
-    final highScore = state.gameState?.highScore ?? _settingsCubit.state.highScore;
+    final highScore =
+        state.gameState?.highScore ?? _settingsCubit.state.highScore;
     final gameState = model.GameState.initial().copyWith(
       highScore: highScore,
       boardWidth: _settingsCubit.state.boardSize.width,
       boardHeight: _settingsCubit.state.boardSize.height,
     );
 
-    emit(state.copyWith(
-      status: GamePlayStatus.ready,
-      gameState: gameState,
-      previousGameState: null,
-      moveProgress: 0.0,
-    ));
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.ready,
+        gameState: gameState,
+        previousGameState: null,
+        moveProgress: 0.0,
+      ),
+    );
   }
 
   /// Return to menu state
@@ -757,11 +824,13 @@ class GameCubit extends Cubit<GameCubitState> {
     _powerUpTimer?.cancel();
     _gameRecorder.stopRecording();
 
-    emit(state.copyWith(
-      status: GamePlayStatus.ready,
-      previousGameState: null,
-      moveProgress: 0.0,
-    ));
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.ready,
+        previousGameState: null,
+        moveProgress: 0.0,
+      ),
+    );
   }
 
   /// Skip crash feedback and go directly to game over
@@ -795,21 +864,21 @@ class GameCubit extends Cubit<GameCubitState> {
     final gameDurationSeconds = _gameStartTime != null
         ? DateTime.now().difference(_gameStartTime!).inSeconds
         : 0;
-    final foodEaten = _currentGameFoodTypes.values.fold(0, (sum, count) => sum + count);
-
-    _dataSyncService.queueSync(
-      'score',
-      {
-        'score': gameState.score,
-        'gameDuration': gameDurationSeconds,
-        'foodsEaten': foodEaten,
-        'gameMode': state.isTournamentMode ? 'tournament' : 'classic',
-        'difficulty': 'normal',
-        'playedAt': DateTime.now().toIso8601String(),
-        'idempotencyKey': '${DateTime.now().millisecondsSinceEpoch}_${gameState.score}',
-      },
-      priority: SyncPriority.high,
+    final foodEaten = _currentGameFoodTypes.values.fold(
+      0,
+      (sum, count) => sum + count,
     );
+
+    _dataSyncService.queueSync('score', {
+      'score': gameState.score,
+      'gameDuration': gameDurationSeconds,
+      'foodsEaten': foodEaten,
+      'gameMode': state.isTournamentMode ? 'tournament' : 'classic',
+      'difficulty': 'normal',
+      'playedAt': DateTime.now().toIso8601String(),
+      'idempotencyKey':
+          '${DateTime.now().millisecondsSinceEpoch}_${gameState.score}',
+    }, priority: SyncPriority.high);
 
     // Track game end statistics and achievements
     await _trackGameEnd();
@@ -818,13 +887,15 @@ class GameCubit extends Cubit<GameCubitState> {
     _gameRecorder.stopRecording();
 
     // Emit game over state
-    emit(state.copyWith(
-      status: GamePlayStatus.gameOver,
-      gameState: gameState.copyWith(
-        status: model.GameStatus.gameOver,
-        highScore: highScore,
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.gameOver,
+        gameState: gameState.copyWith(
+          status: model.GameStatus.gameOver,
+          highScore: highScore,
+        ),
       ),
-    ));
+    );
   }
 
   /// Alias for _gameOver - kept for compatibility with skipCrashFeedback

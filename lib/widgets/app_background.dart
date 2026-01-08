@@ -36,11 +36,9 @@ class AppBackground extends StatelessWidget {
           // Background pattern overlay
           if (showPattern)
             Positioned.fill(
-              child: CustomPaint(
-                painter: _AppBackgroundPainter(theme),
-              ),
+              child: CustomPaint(painter: _AppBackgroundPainter(theme)),
             ),
-          
+
           // Child content
           child,
         ],
@@ -64,21 +62,13 @@ class _AppBackgroundPainter extends CustomPainter {
 
     // Draw subtle grid pattern
     const gridSize = 30.0;
-    
+
     for (double x = 0; x < size.width; x += gridSize) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-    
+
     for (double y = 0; y < size.height; y += gridSize) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
     // Draw decorative shapes
@@ -130,7 +120,7 @@ class _AnimatedAppBackgroundState extends State<AnimatedAppBackground>
   @override
   void initState() {
     super.initState();
-    
+
     _backgroundController = AnimationController(
       duration: const Duration(seconds: 20),
       vsync: this,
@@ -180,7 +170,7 @@ class _AnimatedAppBackgroundState extends State<AnimatedAppBackground>
                 },
               ),
             ),
-          
+
           // Child content
           widget.child,
         ],
@@ -205,21 +195,13 @@ class _AnimatedAppBackgroundPainter extends CustomPainter {
       ..color = theme.accentColor.withValues(alpha: 0.05);
 
     const gridSize = 30.0;
-    
+
     for (double x = 0; x < size.width; x += gridSize) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-    
+
     for (double y = 0; y < size.height; y += gridSize) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
     // Static decorative shapes
@@ -249,16 +231,12 @@ class _AnimatedAppBackgroundPainter extends CustomPainter {
       final progress = (animationValue + i * 0.15) % 1.0;
       final x = (i * 67 + progress * 30) % size.width;
       final y = (i * 89 + math.sin(progress * math.pi * 2) * 40) % size.height;
-      
+
       final opacity = (math.sin(progress * math.pi * 2) + 1) * 0.5;
       floatingPaint.color = theme.accentColor.withValues(alpha: 0.02 * opacity);
-      
-      final rect = Rect.fromCenter(
-        center: Offset(x, y),
-        width: 6,
-        height: 6,
-      );
-      
+
+      final rect = Rect.fromCenter(center: Offset(x, y), width: 6, height: 6);
+
       canvas.drawRRect(
         RRect.fromRectAndRadius(rect, const Radius.circular(1)),
         floatingPaint,

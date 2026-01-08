@@ -19,9 +19,9 @@ class PremiumCubit extends Cubit<PremiumState> {
   PremiumCubit({
     required PurchaseService purchaseService,
     required StorageService storageService,
-  })  : _purchaseService = purchaseService,
-        _storageService = storageService,
-        super(PremiumState.initial());
+  }) : _purchaseService = purchaseService,
+       _storageService = storageService,
+       super(PremiumState.initial());
 
   /// Initialize premium status
   Future<void> initialize() async {
@@ -35,8 +35,10 @@ class PremiumCubit extends Cubit<PremiumState> {
       // Load saved premium state
       final isPremiumActive = await _storageService.isPremiumActive();
       final expiryDateStr = await _storageService.getPremiumExpirationDate();
-      final selectedSkinId = await _storageService.getSelectedSkinId() ?? 'classic';
-      final selectedTrailId = await _storageService.getSelectedTrailId() ?? 'none';
+      final selectedSkinId =
+          await _storageService.getSelectedSkinId() ?? 'classic';
+      final selectedTrailId =
+          await _storageService.getSelectedTrailId() ?? 'none';
       final ownedThemes = await _storageService.getUnlockedThemes();
       final ownedSkins = await _storageService.getUnlockedSkins();
       final ownedTrails = await _storageService.getUnlockedTrails();
@@ -61,25 +63,27 @@ class PremiumCubit extends Cubit<PremiumState> {
         trialEndDate = DateTime.tryParse(trialData['trialEndDate']);
       }
 
-      emit(state.copyWith(
-        status: PremiumStatus.ready,
-        tier: isPremiumActive ? PremiumTier.pro : PremiumTier.free,
-        subscriptionExpiry: expiryDate,
-        selectedSkinId: selectedSkinId,
-        selectedTrailId: selectedTrailId,
-        ownedThemes: _parseThemes(ownedThemes),
-        ownedSkins: ownedSkins.toSet(),
-        ownedTrails: ownedTrails.toSet(),
-        ownedPowerUps: ownedPowerUps.toSet(),
-        ownedBoardSizes: ownedBoardSizes.toSet(),
-        ownedBundles: ownedBundles.toSet(),
-        isOnTrial: trialData['isOnTrial'] ?? false,
-        trialStartDate: trialStartDate,
-        trialEndDate: trialEndDate,
-        bronzeTournamentEntries: tournamentEntries['bronze'] ?? 0,
-        silverTournamentEntries: tournamentEntries['silver'] ?? 0,
-        goldTournamentEntries: tournamentEntries['gold'] ?? 0,
-      ));
+      emit(
+        state.copyWith(
+          status: PremiumStatus.ready,
+          tier: isPremiumActive ? PremiumTier.pro : PremiumTier.free,
+          subscriptionExpiry: expiryDate,
+          selectedSkinId: selectedSkinId,
+          selectedTrailId: selectedTrailId,
+          ownedThemes: _parseThemes(ownedThemes),
+          ownedSkins: ownedSkins.toSet(),
+          ownedTrails: ownedTrails.toSet(),
+          ownedPowerUps: ownedPowerUps.toSet(),
+          ownedBoardSizes: ownedBoardSizes.toSet(),
+          ownedBundles: ownedBundles.toSet(),
+          isOnTrial: trialData['isOnTrial'] ?? false,
+          trialStartDate: trialStartDate,
+          trialEndDate: trialEndDate,
+          bronzeTournamentEntries: tournamentEntries['bronze'] ?? 0,
+          silverTournamentEntries: tournamentEntries['silver'] ?? 0,
+          goldTournamentEntries: tournamentEntries['gold'] ?? 0,
+        ),
+      );
 
       // Listen to purchase updates
       _setupPurchaseListener();
@@ -87,10 +91,9 @@ class PremiumCubit extends Cubit<PremiumState> {
       AppLogger.info('PremiumCubit initialized. Premium: ${state.hasPremium}');
     } catch (e) {
       AppLogger.error('Error initializing PremiumCubit', e);
-      emit(state.copyWith(
-        status: PremiumStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(status: PremiumStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -108,21 +111,18 @@ class PremiumCubit extends Cubit<PremiumState> {
   }
 
   void _setupPurchaseListener() {
-    _purchaseStatusSubscription = _purchaseService.purchaseStatusStream.listen(
-      (status) {
-        if (status == 'premium_purchased' || status == 'premium_restored') {
-          _handlePremiumPurchased();
-        }
-      },
-    );
+    _purchaseStatusSubscription = _purchaseService.purchaseStatusStream.listen((
+      status,
+    ) {
+      if (status == 'premium_purchased' || status == 'premium_restored') {
+        _handlePremiumPurchased();
+      }
+    });
   }
 
   void _handlePremiumPurchased() {
     final expiry = DateTime.now().add(const Duration(days: 30));
-    emit(state.copyWith(
-      tier: PremiumTier.pro,
-      subscriptionExpiry: expiry,
-    ));
+    emit(state.copyWith(tier: PremiumTier.pro, subscriptionExpiry: expiry));
     _storageService.setPremiumActive(true);
     _storageService.setPremiumExpirationDate(expiry.toIso8601String());
   }
@@ -131,7 +131,9 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<bool> purchasePremium() async {
     try {
       // Purchase the monthly subscription product
-      final result = await _purchaseService.purchaseProduct('snake_classic_pro_monthly');
+      final result = await _purchaseService.purchaseProduct(
+        'snake_classic_pro_monthly',
+      );
       if (result) {
         _handlePremiumPurchased();
       }
@@ -172,7 +174,9 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> unlockTheme(GameTheme theme) async {
     final updatedThemes = {...state.ownedThemes, theme};
     emit(state.copyWith(ownedThemes: updatedThemes));
-    await _storageService.setUnlockedThemes(updatedThemes.map((t) => t.name).toList());
+    await _storageService.setUnlockedThemes(
+      updatedThemes.map((t) => t.name).toList(),
+    );
   }
 
   /// Unlock a skin
@@ -227,11 +231,13 @@ class PremiumCubit extends Cubit<PremiumState> {
     final now = DateTime.now();
     final trialEnd = now.add(trialDuration);
 
-    emit(state.copyWith(
-      isOnTrial: true,
-      trialStartDate: now,
-      trialEndDate: trialEnd,
-    ));
+    emit(
+      state.copyWith(
+        isOnTrial: true,
+        trialStartDate: now,
+        trialEndDate: trialEnd,
+      ),
+    );
 
     await _storageService.setTrialData(
       isOnTrial: true,
@@ -250,22 +256,31 @@ class PremiumCubit extends Cubit<PremiumState> {
   }
 
   /// Add tournament entry
-  Future<void> addTournamentEntry(String tournamentType, {int count = 1}) async {
+  Future<void> addTournamentEntry(
+    String tournamentType, {
+    int count = 1,
+  }) async {
     switch (tournamentType.toLowerCase()) {
       case 'bronze':
-        emit(state.copyWith(
-          bronzeTournamentEntries: state.bronzeTournamentEntries + count,
-        ));
+        emit(
+          state.copyWith(
+            bronzeTournamentEntries: state.bronzeTournamentEntries + count,
+          ),
+        );
         break;
       case 'silver':
-        emit(state.copyWith(
-          silverTournamentEntries: state.silverTournamentEntries + count,
-        ));
+        emit(
+          state.copyWith(
+            silverTournamentEntries: state.silverTournamentEntries + count,
+          ),
+        );
         break;
       case 'gold':
-        emit(state.copyWith(
-          goldTournamentEntries: state.goldTournamentEntries + count,
-        ));
+        emit(
+          state.copyWith(
+            goldTournamentEntries: state.goldTournamentEntries + count,
+          ),
+        );
         break;
     }
     await _saveTournamentEntries();
@@ -277,23 +292,29 @@ class PremiumCubit extends Cubit<PremiumState> {
     switch (tournamentType.toLowerCase()) {
       case 'bronze':
         if (state.bronzeTournamentEntries > 0) {
-          emit(state.copyWith(
-            bronzeTournamentEntries: state.bronzeTournamentEntries - 1,
-          ));
+          emit(
+            state.copyWith(
+              bronzeTournamentEntries: state.bronzeTournamentEntries - 1,
+            ),
+          );
         }
         break;
       case 'silver':
         if (state.silverTournamentEntries > 0) {
-          emit(state.copyWith(
-            silverTournamentEntries: state.silverTournamentEntries - 1,
-          ));
+          emit(
+            state.copyWith(
+              silverTournamentEntries: state.silverTournamentEntries - 1,
+            ),
+          );
         }
         break;
       case 'gold':
         if (state.goldTournamentEntries > 0) {
-          emit(state.copyWith(
-            goldTournamentEntries: state.goldTournamentEntries - 1,
-          ));
+          emit(
+            state.copyWith(
+              goldTournamentEntries: state.goldTournamentEntries - 1,
+            ),
+          );
         }
         break;
     }
@@ -346,8 +367,10 @@ class PremiumCubit extends Cubit<PremiumState> {
   bool isThemeUnlocked(GameTheme theme) => state.isThemeOwned(theme);
   bool isSkinUnlocked(String skinId) => state.isSkinOwned(skinId);
   bool isTrailUnlocked(String trailId) => state.isTrailOwned(trailId);
-  bool isPowerUpUnlocked(String powerUpId) => state.isPowerUpUnlocked(powerUpId);
-  bool isBoardSizeUnlocked(String boardSizeId) => state.isBoardSizeUnlocked(boardSizeId);
+  bool isPowerUpUnlocked(String powerUpId) =>
+      state.isPowerUpUnlocked(powerUpId);
+  bool isBoardSizeUnlocked(String boardSizeId) =>
+      state.isBoardSizeUnlocked(boardSizeId);
   bool isBundleOwned(String bundleId) => state.isBundleOwned(bundleId);
   bool hasTournamentEntry(String type) => state.hasTournamentEntry(type);
 
@@ -360,12 +383,16 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<List<Map<String, dynamic>>> getPurchaseHistory() async {
     // Return purchase history from storage or service
     final purchases = _purchaseService.purchases;
-    return purchases.map((p) => {
-      'productId': p.productID,
-      'purchaseId': p.purchaseID,
-      'transactionDate': p.transactionDate,
-      'status': p.status.toString(),
-    }).toList();
+    return purchases
+        .map(
+          (p) => {
+            'productId': p.productID,
+            'purchaseId': p.purchaseID,
+            'transactionDate': p.transactionDate,
+            'status': p.status.toString(),
+          },
+        )
+        .toList();
   }
 
   @override

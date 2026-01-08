@@ -60,7 +60,9 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<StorageService>(() => StorageService());
   getIt.registerLazySingleton<UnifiedUserService>(() => UnifiedUserService());
   getIt.registerLazySingleton<MultiplayerService>(() => MultiplayerService());
-  getIt.registerLazySingleton<EnhancedAudioService>(() => EnhancedAudioService());
+  getIt.registerLazySingleton<EnhancedAudioService>(
+    () => EnhancedAudioService(),
+  );
   getIt.registerLazySingleton<AchievementService>(() => AchievementService());
   getIt.registerLazySingleton<StatisticsService>(() => StatisticsService());
   getIt.registerLazySingleton<PurchaseService>(() => PurchaseService());
@@ -128,9 +130,7 @@ Future<void> configureDependencies() async {
     () => AuthCubit(getIt<UnifiedUserService>()),
   );
 
-  getIt.registerFactory<CoinsCubit>(
-    () => CoinsCubit(),
-  );
+  getIt.registerFactory<CoinsCubit>(() => CoinsCubit());
 
   getIt.registerFactory<MultiplayerCubit>(
     () => MultiplayerCubit(
@@ -165,9 +165,7 @@ Future<void> configureDependencies() async {
   );
 
   getIt.registerFactory<BattlePassCubit>(
-    () => BattlePassCubit(
-      storageService: getIt<StorageService>(),
-    ),
+    () => BattlePassCubit(storageService: getIt<StorageService>()),
   );
 }
 

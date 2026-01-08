@@ -105,7 +105,9 @@ void main() async {
     };
   }
 
-  runApp(const SnakeClassicApp()); // .withPerformanceMonitoring() temporarily disabled
+  runApp(
+    const SnakeClassicApp(),
+  ); // .withPerformanceMonitoring() temporarily disabled
 }
 
 class SnakeClassicApp extends StatefulWidget {
@@ -115,7 +117,8 @@ class SnakeClassicApp extends StatefulWidget {
   State<SnakeClassicApp> createState() => _SnakeClassicAppState();
 }
 
-class _SnakeClassicAppState extends State<SnakeClassicApp> with WidgetsBindingObserver {
+class _SnakeClassicAppState extends State<SnakeClassicApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -213,7 +216,8 @@ class _SnakeClassicAppState extends State<SnakeClassicApp> with WidgetsBindingOb
               ],
               theme: ThemeData(
                 brightness: Brightness.dark,
-                scaffoldBackgroundColor: themeState.currentTheme.backgroundColor,
+                scaffoldBackgroundColor:
+                    themeState.currentTheme.backgroundColor,
                 visualDensity: VisualDensity.adaptivePlatformDensity,
                 useMaterial3: false,
                 fontFamily: 'monospace',

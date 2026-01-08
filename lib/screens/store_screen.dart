@@ -47,7 +47,10 @@ class _StoreScreenState extends State<StoreScreen>
                   appBar: AppBar(
                     title: const Text(
                       'Snake Store',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
                     ),
                     backgroundColor: Colors.transparent,
                     elevation: 0,
@@ -62,7 +65,9 @@ class _StoreScreenState extends State<StoreScreen>
                       children: [
                         // Add top padding to account for AppBar
                         SizedBox(
-                          height: MediaQuery.of(context).padding.top + kToolbarHeight,
+                          height:
+                              MediaQuery.of(context).padding.top +
+                              kToolbarHeight,
                         ),
 
                         // Coins display header
@@ -75,15 +80,35 @@ class _StoreScreenState extends State<StoreScreen>
                             controller: _tabController,
                             indicatorColor: theme.accentColor,
                             labelColor: theme.accentColor,
-                            unselectedLabelColor: theme.accentColor.withValues(alpha: 0.6),
+                            unselectedLabelColor: theme.accentColor.withValues(
+                              alpha: 0.6,
+                            ),
                             isScrollable: true,
                             tabs: const [
-                              Tab(text: 'Premium', icon: Icon(Icons.diamond, size: 16)),
-                              Tab(text: 'Coins', icon: Icon(Icons.monetization_on, size: 16)),
-                              Tab(text: 'Skins', icon: Icon(Icons.palette, size: 16)),
-                              Tab(text: 'Power-ups', icon: Icon(Icons.flash_on, size: 16)),
-                              Tab(text: 'Modes', icon: Icon(Icons.games, size: 16)),
-                              Tab(text: 'Boards', icon: Icon(Icons.grid_on, size: 16)),
+                              Tab(
+                                text: 'Premium',
+                                icon: Icon(Icons.diamond, size: 16),
+                              ),
+                              Tab(
+                                text: 'Coins',
+                                icon: Icon(Icons.monetization_on, size: 16),
+                              ),
+                              Tab(
+                                text: 'Skins',
+                                icon: Icon(Icons.palette, size: 16),
+                              ),
+                              Tab(
+                                text: 'Power-ups',
+                                icon: Icon(Icons.flash_on, size: 16),
+                              ),
+                              Tab(
+                                text: 'Modes',
+                                icon: Icon(Icons.games, size: 16),
+                              ),
+                              Tab(
+                                text: 'Boards',
+                                icon: Icon(Icons.grid_on, size: 16),
+                              ),
                             ],
                           ),
                         ),
@@ -96,7 +121,11 @@ class _StoreScreenState extends State<StoreScreen>
                               _buildPremiumTab(theme, premiumState),
                               _buildCoinsTab(theme, coinsState),
                               _buildSkinsTab(theme, premiumState, coinsState),
-                              _buildPowerUpsTab(theme, premiumState, coinsState),
+                              _buildPowerUpsTab(
+                                theme,
+                                premiumState,
+                                coinsState,
+                              ),
                               _buildGameModesTab(theme, premiumState),
                               _buildBoardsTab(theme, premiumState),
                             ],
@@ -190,7 +219,9 @@ class _StoreScreenState extends State<StoreScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [Colors.purple.shade400, Colors.indigo.shade400]),
+                  gradient: LinearGradient(
+                    colors: [Colors.purple.shade400, Colors.indigo.shade400],
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -331,11 +362,7 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.diamond,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: const Icon(Icons.diamond, color: Colors.white, size: 32),
           ),
           const SizedBox(height: 16),
           Text(
@@ -363,7 +390,7 @@ class _StoreScreenState extends State<StoreScreen>
   Widget _buildQuickPremiumFeatures(GameTheme theme) {
     final features = [
       'All Premium Themes',
-      'Large Game Boards', 
+      'Large Game Boards',
       'Exclusive Game Modes',
       'Premium Power-ups',
       '2x Coin Rewards',
@@ -393,11 +420,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.check_circle,
-                color: theme.accentColor,
-                size: 16,
-              ),
+              Icon(Icons.check_circle, color: theme.accentColor, size: 16),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -448,10 +471,7 @@ class _StoreScreenState extends State<StoreScreen>
           alignment: Alignment.center,
           child: const Text(
             'Upgrade to Premium',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -473,8 +493,9 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 16),
-          ...CoinPurchaseOption.availableOptions.map((option) =>
-              _buildCoinPackCard(option, theme)),
+          ...CoinPurchaseOption.availableOptions.map(
+            (option) => _buildCoinPackCard(option, theme),
+          ),
           const SizedBox(height: 24),
           Text(
             'Earn Free Coins',
@@ -485,10 +506,30 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 16),
-          _buildEarnMethodCard('Play Games', '5 coins per game', Icons.games, theme),
-          _buildEarnMethodCard('Daily Login', '10-50 coins daily', Icons.calendar_today, theme),
-          _buildEarnMethodCard('Achievements', '25-100 coins', Icons.emoji_events, theme),
-          _buildEarnMethodCard('Tournaments', '100+ coins', Icons.leaderboard, theme),
+          _buildEarnMethodCard(
+            'Play Games',
+            '5 coins per game',
+            Icons.games,
+            theme,
+          ),
+          _buildEarnMethodCard(
+            'Daily Login',
+            '10-50 coins daily',
+            Icons.calendar_today,
+            theme,
+          ),
+          _buildEarnMethodCard(
+            'Achievements',
+            '25-100 coins',
+            Icons.emoji_events,
+            theme,
+          ),
+          _buildEarnMethodCard(
+            'Tournaments',
+            '100+ coins',
+            Icons.leaderboard,
+            theme,
+          ),
         ],
       ),
     );
@@ -510,7 +551,7 @@ class _StoreScreenState extends State<StoreScreen>
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: option.isPopular 
+          color: option.isPopular
               ? Colors.red.withValues(alpha: 0.4)
               : Colors.amber.withValues(alpha: 0.3),
           width: option.isPopular ? 2 : 1.5,
@@ -562,7 +603,10 @@ class _StoreScreenState extends State<StoreScreen>
                     if (option.isPopular) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(8),
@@ -603,7 +647,12 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildEarnMethodCard(String title, String reward, IconData icon, GameTheme theme) {
+  Widget _buildEarnMethodCard(
+    String title,
+    String reward,
+    IconData icon,
+    GameTheme theme,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -624,11 +673,7 @@ class _StoreScreenState extends State<StoreScreen>
               color: theme.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: theme.accentColor,
-              size: 20,
-            ),
+            child: Icon(icon, color: theme.accentColor, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -654,7 +699,11 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildSkinsTab(GameTheme theme, PremiumState premiumState, CoinsState coinsState) {
+  Widget _buildSkinsTab(
+    GameTheme theme,
+    PremiumState premiumState,
+    CoinsState coinsState,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -699,17 +748,11 @@ class _StoreScreenState extends State<StoreScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.palette,
-                    size: 20,
-                  ),
+                  Icon(Icons.palette, size: 20),
                   const SizedBox(width: 8),
                   const Text(
                     'Open Cosmetics Store',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -767,13 +810,36 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-
-  Widget _buildPowerUpsTab(GameTheme theme, PremiumState premiumState, CoinsState coinsState) {
+  Widget _buildPowerUpsTab(
+    GameTheme theme,
+    PremiumState premiumState,
+    CoinsState coinsState,
+  ) {
     final powerUps = [
-      _PowerUpItem('Speed Boost', 'Enhanced speed with trail effects', Icons.speed, '50 coins'),
-      _PowerUpItem('Invincibility', 'Temporary invincibility shield', Icons.shield, '75 coins'),
-      _PowerUpItem('Ghost Mode', 'Phase through walls and yourself', Icons.visibility_off, '100 coins'),
-      _PowerUpItem('Teleport', 'Instantly move to a safe location', Icons.my_location, '80 coins'),
+      _PowerUpItem(
+        'Speed Boost',
+        'Enhanced speed with trail effects',
+        Icons.speed,
+        '50 coins',
+      ),
+      _PowerUpItem(
+        'Invincibility',
+        'Temporary invincibility shield',
+        Icons.shield,
+        '75 coins',
+      ),
+      _PowerUpItem(
+        'Ghost Mode',
+        'Phase through walls and yourself',
+        Icons.visibility_off,
+        '100 coins',
+      ),
+      _PowerUpItem(
+        'Teleport',
+        'Instantly move to a safe location',
+        Icons.my_location,
+        '80 coins',
+      ),
     ];
 
     return SingleChildScrollView(
@@ -791,9 +857,9 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 16),
           ...powerUps.map((powerUp) => _buildPowerUpCard(powerUp, theme)),
-          
+
           const SizedBox(height: 24),
-          
+
           // Power-up Bundles Section
           Text(
             'Power-up Bundles',
@@ -811,8 +877,10 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 16),
-          ...PowerUpBundle.availableBundles.map((bundle) =>
-            _buildBundleCard(bundle, theme, premiumState, coinsState)),
+          ...PowerUpBundle.availableBundles.map(
+            (bundle) =>
+                _buildBundleCard(bundle, theme, premiumState, coinsState),
+          ),
         ],
       ),
     );
@@ -839,11 +907,7 @@ class _StoreScreenState extends State<StoreScreen>
               color: theme.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              powerUp.icon,
-              color: theme.accentColor,
-              size: 20,
-            ),
+            child: Icon(powerUp.icon, color: theme.accentColor, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -882,10 +946,15 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildBundleCard(PowerUpBundle bundle, GameTheme theme, PremiumState premiumState, CoinsState coinsState) {
+  Widget _buildBundleCard(
+    PowerUpBundle bundle,
+    GameTheme theme,
+    PremiumState premiumState,
+    CoinsState coinsState,
+  ) {
     final isOwned = premiumState.isBundleOwned(bundle.id);
     final canAfford = coinsState.balance.total >= bundle.bundlePrice;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -901,7 +970,9 @@ class _StoreScreenState extends State<StoreScreen>
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isOwned ? Colors.green.withValues(alpha: 0.4) : Colors.purple.withValues(alpha: 0.3),
+          color: isOwned
+              ? Colors.green.withValues(alpha: 0.4)
+              : Colors.purple.withValues(alpha: 0.3),
           width: isOwned ? 2 : 1,
         ),
       ),
@@ -918,10 +989,7 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  bundle.icon,
-                  style: const TextStyle(fontSize: 24),
-                ),
+                child: Text(bundle.icon, style: const TextStyle(fontSize: 24)),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -949,32 +1017,39 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Power-ups included
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: bundle.powerUps.map((powerUp) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.purple.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '${powerUp.icon} ${powerUp.displayName}',
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            )).toList(),
+            children: bundle.powerUps
+                .map(
+                  (powerUp) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${powerUp.icon} ${powerUp.displayName}',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           Row(
             children: [
               Column(
@@ -992,7 +1067,10 @@ class _StoreScreenState extends State<StoreScreen>
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(4),
@@ -1021,17 +1099,26 @@ class _StoreScreenState extends State<StoreScreen>
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: isOwned ? null : (canAfford ? () => _purchaseBundle(bundle) : null),
+                onPressed: isOwned
+                    ? null
+                    : (canAfford ? () => _purchaseBundle(bundle) : null),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isOwned ? Colors.green : (canAfford ? Colors.purple : Colors.grey),
+                  backgroundColor: isOwned
+                      ? Colors.green
+                      : (canAfford ? Colors.purple : Colors.grey),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: Text(
-                  isOwned ? 'OWNED' : (canAfford ? 'BUY NOW' : 'NOT ENOUGH COINS'),
+                  isOwned
+                      ? 'OWNED'
+                      : (canAfford ? 'BUY NOW' : 'NOT ENOUGH COINS'),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -1056,13 +1143,17 @@ class _StoreScreenState extends State<StoreScreen>
           children: [
             Text('You will get:'),
             const SizedBox(height: 8),
-            ...bundle.powerUps.map((powerUp) => Padding(
-              padding: const EdgeInsets.only(left: 16, bottom: 4),
-              child: Text('• ${powerUp.displayName}'),
-            )),
+            ...bundle.powerUps.map(
+              (powerUp) => Padding(
+                padding: const EdgeInsets.only(left: 16, bottom: 4),
+                child: Text('• ${powerUp.displayName}'),
+              ),
+            ),
             const SizedBox(height: 16),
             Text('Price: ${bundle.bundlePrice.toInt()} coins'),
-            Text('You save: \$${bundle.savings.toStringAsFixed(2)} (${bundle.savingsPercentage.toInt()}%)'),
+            Text(
+              'You save: \$${bundle.savings.toStringAsFixed(2)} (${bundle.savingsPercentage.toInt()}%)',
+            ),
           ],
         ),
         actions: [
@@ -1119,10 +1210,34 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildGameModesTab(GameTheme theme, PremiumState premiumState) {
     final gameModes = [
-      _GameModeItem('Classic', 'Traditional snake gameplay', Icons.straighten, true, false),
-      _GameModeItem('Zen Mode', 'No walls, peaceful gameplay', Icons.spa, false, true),
-      _GameModeItem('Speed Challenge', 'Fast-paced action mode', Icons.speed, false, true),
-      _GameModeItem('Multi-Food', 'Multiple food items at once', Icons.fastfood, false, true),
+      _GameModeItem(
+        'Classic',
+        'Traditional snake gameplay',
+        Icons.straighten,
+        true,
+        false,
+      ),
+      _GameModeItem(
+        'Zen Mode',
+        'No walls, peaceful gameplay',
+        Icons.spa,
+        false,
+        true,
+      ),
+      _GameModeItem(
+        'Speed Challenge',
+        'Fast-paced action mode',
+        Icons.speed,
+        false,
+        true,
+      ),
+      _GameModeItem(
+        'Multi-Food',
+        'Multiple food items at once',
+        Icons.fastfood,
+        false,
+        true,
+      ),
     ];
 
     return SingleChildScrollView(
@@ -1196,7 +1311,10 @@ class _StoreScreenState extends State<StoreScreen>
                     if (mode.isPremium) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.purple.shade400,
                           borderRadius: BorderRadius.circular(8),
@@ -1225,11 +1343,7 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           if (mode.isPremium)
-            Icon(
-              Icons.lock,
-              color: Colors.purple.shade400,
-              size: 20,
-            ),
+            Icon(Icons.lock, color: Colors.purple.shade400, size: 20),
         ],
       ),
     );
@@ -1237,11 +1351,23 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildBoardsTab(GameTheme theme, PremiumState premiumState) {
     final boards = [
-      _BoardItem('Small', '15x15', 'Perfect for quick games', Icons.smartphone, true),
+      _BoardItem(
+        'Small',
+        '15x15',
+        'Perfect for quick games',
+        Icons.smartphone,
+        true,
+      ),
       _BoardItem('Medium', '20x20', 'Balanced gameplay', Icons.tablet, true),
       _BoardItem('Large', '25x25', 'Extended gameplay', Icons.computer, true),
       _BoardItem('Huge', '35x35', 'Epic snake adventures', Icons.tv, false),
-      _BoardItem('Massive', '50x50', 'Ultimate challenge', Icons.desktop_windows, false),
+      _BoardItem(
+        'Massive',
+        '50x50',
+        'Ultimate challenge',
+        Icons.desktop_windows,
+        false,
+      ),
     ];
 
     return SingleChildScrollView(
@@ -1291,9 +1417,7 @@ class _StoreScreenState extends State<StoreScreen>
             ),
             child: Icon(
               board.icon,
-              color: !board.isFree
-                  ? Colors.purple.shade400
-                  : theme.accentColor,
+              color: !board.isFree ? Colors.purple.shade400 : theme.accentColor,
               size: 20,
             ),
           ),
@@ -1315,7 +1439,10 @@ class _StoreScreenState extends State<StoreScreen>
                     if (!board.isFree) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.purple.shade400,
                           borderRadius: BorderRadius.circular(8),
@@ -1344,17 +1471,12 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           if (!board.isFree)
-            Icon(
-              Icons.lock,
-              color: Colors.purple.shade400,
-              size: 20,
-            ),
+            Icon(Icons.lock, color: Colors.purple.shade400, size: 20),
         ],
       ),
     );
   }
 }
-
 
 class _PowerUpItem {
   final String name;
@@ -1372,7 +1494,13 @@ class _GameModeItem {
   final bool isFree;
   final bool isPremium;
 
-  _GameModeItem(this.name, this.description, this.icon, this.isFree, this.isPremium);
+  _GameModeItem(
+    this.name,
+    this.description,
+    this.icon,
+    this.isFree,
+    this.isPremium,
+  );
 }
 
 class _BoardItem {

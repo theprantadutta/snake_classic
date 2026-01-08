@@ -36,14 +36,14 @@ class LeaderboardEntry {
   }
 
   Map<String, dynamic> toJson() => {
-        'rank': rank,
-        'user_id': userId,
-        'display_name': displayName,
-        'photo_url': photoUrl,
-        'score': score,
-        'game_mode': gameMode,
-        'achieved_at': achievedAt?.toIso8601String(),
-      };
+    'rank': rank,
+    'user_id': userId,
+    'display_name': displayName,
+    'photo_url': photoUrl,
+    'score': score,
+    'game_mode': gameMode,
+    'achieved_at': achievedAt?.toIso8601String(),
+  };
 }
 
 /// Leaderboard data with pagination info
@@ -63,10 +63,14 @@ class LeaderboardData {
   });
 
   factory LeaderboardData.fromJson(Map<String, dynamic> json) {
-    final entriesJson = json['entries'] as List<dynamic>? ?? json['leaderboard'] as List<dynamic>? ?? [];
+    final entriesJson =
+        json['entries'] as List<dynamic>? ??
+        json['leaderboard'] as List<dynamic>? ??
+        [];
     return LeaderboardData(
       entries: entriesJson.map((e) => LeaderboardEntry.fromJson(e)).toList(),
-      totalCount: json['total_count'] ?? json['totalCount'] ?? entriesJson.length,
+      totalCount:
+          json['total_count'] ?? json['totalCount'] ?? entriesJson.length,
       page: json['page'] ?? 1,
       pageSize: json['page_size'] ?? json['pageSize'] ?? 50,
       userEntry: json['user_entry'] != null || json['userEntry'] != null
@@ -76,12 +80,12 @@ class LeaderboardData {
   }
 
   Map<String, dynamic> toJson() => {
-        'entries': entries.map((e) => e.toJson()).toList(),
-        'total_count': totalCount,
-        'page': page,
-        'page_size': pageSize,
-        'user_entry': userEntry?.toJson(),
-      };
+    'entries': entries.map((e) => e.toJson()).toList(),
+    'total_count': totalCount,
+    'page': page,
+    'page_size': pageSize,
+    'user_entry': userEntry?.toJson(),
+  };
 }
 
 /// Abstract repository for leaderboard operations

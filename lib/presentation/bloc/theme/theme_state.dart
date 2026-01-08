@@ -2,11 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Status of the theme cubit
-enum ThemeStatus {
-  initial,
-  loading,
-  ready,
-}
+enum ThemeStatus { initial, loading, ready }
 
 /// State class for ThemeCubit
 class ThemeState extends Equatable {

@@ -30,44 +30,41 @@ class ShaderEffectPainter extends CustomPainter {
     final paint = Paint()..shader = shader;
 
     // Draw full screen quad
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      paint,
-    );
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
   }
 
   void _setShaderUniforms(Size size) {
     if (shader == null) return;
 
     // Standard uniforms
-    shader!.setFloat(0, size.width);       // u_resolution.x
-    shader!.setFloat(1, size.height);      // u_resolution.y
-    shader!.setFloat(2, time);             // u_time
-    
+    shader!.setFloat(0, size.width); // u_resolution.x
+    shader!.setFloat(1, size.height); // u_resolution.y
+    shader!.setFloat(2, time); // u_time
+
     // Theme-specific color uniforms
     final bgColor = theme.backgroundColor;
     final accentColor = theme.accentColor;
     final snakeColor = theme.snakeColor;
     final foodColor = theme.foodColor;
 
-    shader!.setFloat(3, bgColor.r);      // u_bgColor.r
-    shader!.setFloat(4, bgColor.g);    // u_bgColor.g
-    shader!.setFloat(5, bgColor.b);     // u_bgColor.b
-    shader!.setFloat(6, bgColor.a);    // u_bgColor.a
+    shader!.setFloat(3, bgColor.r); // u_bgColor.r
+    shader!.setFloat(4, bgColor.g); // u_bgColor.g
+    shader!.setFloat(5, bgColor.b); // u_bgColor.b
+    shader!.setFloat(6, bgColor.a); // u_bgColor.a
 
-    shader!.setFloat(7, accentColor.r);  // u_accentColor.r
-    shader!.setFloat(8, accentColor.g);// u_accentColor.g
+    shader!.setFloat(7, accentColor.r); // u_accentColor.r
+    shader!.setFloat(8, accentColor.g); // u_accentColor.g
     shader!.setFloat(9, accentColor.b); // u_accentColor.b
-    shader!.setFloat(10, accentColor.a);// u_accentColor.a
+    shader!.setFloat(10, accentColor.a); // u_accentColor.a
 
-    shader!.setFloat(11, snakeColor.r);  // u_snakeColor.r
-    shader!.setFloat(12, snakeColor.g);// u_snakeColor.g
+    shader!.setFloat(11, snakeColor.r); // u_snakeColor.r
+    shader!.setFloat(12, snakeColor.g); // u_snakeColor.g
     shader!.setFloat(13, snakeColor.b); // u_snakeColor.b
-    shader!.setFloat(14, snakeColor.a);// u_snakeColor.a
+    shader!.setFloat(14, snakeColor.a); // u_snakeColor.a
 
-    shader!.setFloat(15, foodColor.r);   // u_foodColor.r
+    shader!.setFloat(15, foodColor.r); // u_foodColor.r
     shader!.setFloat(16, foodColor.g); // u_foodColor.g
-    shader!.setFloat(17, foodColor.b);  // u_foodColor.b
+    shader!.setFloat(17, foodColor.b); // u_foodColor.b
     shader!.setFloat(18, foodColor.a); // u_foodColor.a
 
     // Set additional custom uniforms
@@ -84,9 +81,9 @@ class ShaderEffectPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant ShaderEffectPainter oldDelegate) {
     return time != oldDelegate.time ||
-           theme != oldDelegate.theme ||
-           shader != oldDelegate.shader ||
-           uniforms != oldDelegate.uniforms;
+        theme != oldDelegate.theme ||
+        shader != oldDelegate.shader ||
+        uniforms != oldDelegate.uniforms;
   }
 }
 
@@ -321,7 +318,9 @@ class ShaderEffectSystem {
     try {
       // Note: Custom shader loading requires pre-compiled SPIR-V shaders in assets
       // For this implementation, we use Flutter's built-in rendering instead
-      debugPrint('Shader effects implemented using native Flutter rendering: $name');
+      debugPrint(
+        'Shader effects implemented using native Flutter rendering: $name',
+      );
       // Alternative: Use CustomPainter with gradients and animations for visual effects
       // This provides better performance and platform compatibility
     } catch (e) {
@@ -350,7 +349,8 @@ class ShaderEnhancedBackground extends StatefulWidget {
   });
 
   @override
-  State<ShaderEnhancedBackground> createState() => _ShaderEnhancedBackgroundState();
+  State<ShaderEnhancedBackground> createState() =>
+      _ShaderEnhancedBackgroundState();
 }
 
 class _ShaderEnhancedBackgroundState extends State<ShaderEnhancedBackground>
@@ -571,16 +571,14 @@ class RippleEffectPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  RippleEffectPainter({
-    required this.progress,
-    required this.color,
-  });
+  RippleEffectPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = math.sqrt(size.width * size.width + size.height * size.height) / 2;
-    
+    final maxRadius =
+        math.sqrt(size.width * size.width + size.height * size.height) / 2;
+
     for (int i = 0; i < 3; i++) {
       final rippleProgress = (progress - i * 0.3).clamp(0.0, 1.0);
       final radius = maxRadius * rippleProgress;

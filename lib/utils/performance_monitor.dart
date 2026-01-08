@@ -26,10 +26,10 @@ class PerformanceMetrics {
   @override
   String toString() {
     return 'PerformanceMetrics(fps: ${fps.toStringAsFixed(1)}, '
-           'frameTime: ${frameTime.toStringAsFixed(2)}ms, '
-           'memory: ${(memoryUsage / 1024 / 1024).toStringAsFixed(1)}MB, '
-           'renderTime: ${renderTime}ms, '
-           'cpuUsage: ${cpuUsage.toStringAsFixed(1)}%)';
+        'frameTime: ${frameTime.toStringAsFixed(2)}ms, '
+        'memory: ${(memoryUsage / 1024 / 1024).toStringAsFixed(1)}MB, '
+        'renderTime: ${renderTime}ms, '
+        'cpuUsage: ${cpuUsage.toStringAsFixed(1)}%)';
   }
 }
 
@@ -52,15 +52,16 @@ class PerformanceMonitor {
 
   static const int _maxSamples = 120; // 2 seconds at 60fps
   static const Duration _targetFrameTime = Duration(milliseconds: 16); // 60fps
-  
+
   final Queue<FrameInfo> _frameHistory = Queue<FrameInfo>();
-  final Queue<PerformanceMetrics> _performanceHistory = Queue<PerformanceMetrics>();
-  
+  final Queue<PerformanceMetrics> _performanceHistory =
+      Queue<PerformanceMetrics>();
+
   Timer? _performanceTimer;
   bool _isMonitoring = false;
   int _frameCount = 0;
   int _jankyFrameCount = 0;
-  
+
   // Performance thresholds
   static const double _lowFpsThreshold = 50.0;
   static const double _highFrameTimeThreshold = 20.0; // milliseconds
@@ -72,7 +73,8 @@ class PerformanceMonitor {
 
   bool get isMonitoring => _isMonitoring;
   List<FrameInfo> get frameHistory => _frameHistory.toList();
-  List<PerformanceMetrics> get performanceHistory => _performanceHistory.toList();
+  List<PerformanceMetrics> get performanceHistory =>
+      _performanceHistory.toList();
 
   void startMonitoring() {
     if (_isMonitoring) return;
@@ -112,16 +114,14 @@ class PerformanceMonitor {
     if (!_isMonitoring) return;
 
     final now = DateTime.now();
-    
+
     for (final timing in timings) {
       final frameTime = timing.totalSpan;
       final wasJanky = frameTime > _targetFrameTime * 1.5; // 50% over target
 
-      _frameHistory.add(FrameInfo(
-        frameTime: frameTime,
-        timestamp: now,
-        wasJanky: wasJanky,
-      ));
+      _frameHistory.add(
+        FrameInfo(frameTime: frameTime, timestamp: now, wasJanky: wasJanky),
+      );
 
       if (wasJanky) {
         _jankyFrameCount++;
@@ -159,7 +159,7 @@ class PerformanceMonitor {
     );
 
     _performanceHistory.add(metrics);
-    
+
     // Remove old metrics (keep last 60 seconds)
     while (_performanceHistory.length > 60) {
       _performanceHistory.removeFirst();
@@ -178,13 +178,13 @@ class PerformanceMonitor {
 
   double _calculateCurrentFPS() {
     if (_frameHistory.isEmpty) return 60.0;
-    
+
     final recentFrames = _frameHistory.where((frame) {
       return DateTime.now().difference(frame.timestamp).inSeconds < 1;
     }).toList();
 
     if (recentFrames.isEmpty) return 60.0;
-    
+
     return recentFrames.length.toDouble();
   }
 
@@ -225,24 +225,26 @@ class PerformanceMonitor {
 
     // Estimate render time as a portion of frame time
     final avgFrameTime = _calculateAverageFrameTime();
-    return (avgFrameTime * 0.5).round(); // Assume rendering takes ~50% of frame time
+    return (avgFrameTime * 0.5)
+        .round(); // Assume rendering takes ~50% of frame time
   }
 
   double _estimateCPUUsage() {
     // This is a simplified estimation based on frame performance
     final fps = _calculateCurrentFPS();
     final frameTime = _calculateAverageFrameTime();
-    
+
     // Estimate CPU usage based on how much we're deviating from target
     final targetFPS = 60.0;
     final targetFrameTime = 16.67;
-    
+
     final fpsRatio = fps / targetFPS;
     final frameTimeRatio = frameTime / targetFrameTime;
-    
+
     // Higher frame times and lower FPS indicate higher CPU usage
-    final estimatedUsage = ((2.0 - fpsRatio) + frameTimeRatio) * 25; // Scale to percentage
-    
+    final estimatedUsage =
+        ((2.0 - fpsRatio) + frameTimeRatio) * 25; // Scale to percentage
+
     return estimatedUsage.clamp(0.0, 100.0);
   }
 
@@ -258,7 +260,9 @@ class PerformanceMonitor {
     }
 
     if (metrics.memoryUsage > _highMemoryThreshold) {
-      alerts.add('High memory usage: ${(metrics.memoryUsage / 1024 / 1024).toStringAsFixed(1)}MB');
+      alerts.add(
+        'High memory usage: ${(metrics.memoryUsage / 1024 / 1024).toStringAsFixed(1)}MB',
+      );
     }
 
     final jankyPercent = (_jankyFrameCount / math.max(_frameCount, 1)) * 100;
@@ -277,27 +281,33 @@ class PerformanceMonitor {
   // Analysis methods
 
   double getAverageFPS({Duration? period}) {
-    final cutoff = period != null 
-        ? DateTime.now().subtract(period) 
+    final cutoff = period != null
+        ? DateTime.now().subtract(period)
         : DateTime.now().subtract(const Duration(seconds: 10));
 
-    final relevantMetrics = _performanceHistory.where((m) => m.timestamp.isAfter(cutoff));
-    
+    final relevantMetrics = _performanceHistory.where(
+      (m) => m.timestamp.isAfter(cutoff),
+    );
+
     if (relevantMetrics.isEmpty) return 60.0;
 
-    return relevantMetrics.map((m) => m.fps).reduce((a, b) => a + b) / relevantMetrics.length;
+    return relevantMetrics.map((m) => m.fps).reduce((a, b) => a + b) /
+        relevantMetrics.length;
   }
 
   double getAverageFrameTime({Duration? period}) {
-    final cutoff = period != null 
-        ? DateTime.now().subtract(period) 
+    final cutoff = period != null
+        ? DateTime.now().subtract(period)
         : DateTime.now().subtract(const Duration(seconds: 10));
 
-    final relevantMetrics = _performanceHistory.where((m) => m.timestamp.isAfter(cutoff));
-    
+    final relevantMetrics = _performanceHistory.where(
+      (m) => m.timestamp.isAfter(cutoff),
+    );
+
     if (relevantMetrics.isEmpty) return 16.67;
 
-    return relevantMetrics.map((m) => m.frameTime).reduce((a, b) => a + b) / relevantMetrics.length;
+    return relevantMetrics.map((m) => m.frameTime).reduce((a, b) => a + b) /
+        relevantMetrics.length;
   }
 
   double getJankyFramePercentage() {
@@ -320,12 +330,12 @@ class PerformanceMonitor {
   String _generateSummary() {
     final stats = getCurrentStats();
     return 'Performance Summary:\n'
-           '  Average FPS: ${stats['fps'].toStringAsFixed(1)}\n'
-           '  Average Frame Time: ${stats['avgFrameTime'].toStringAsFixed(2)}ms\n'
-           '  Memory Usage: ${(stats['memoryUsage'] / 1024 / 1024).toStringAsFixed(1)}MB\n'
-           '  Janky Frames: ${stats['jankyFramePercent'].toStringAsFixed(1)}%\n'
-           '  Total Frames: ${stats['totalFrames']}\n'
-           '  Janky Frames Count: ${stats['jankyFrames']}';
+        '  Average FPS: ${stats['fps'].toStringAsFixed(1)}\n'
+        '  Average Frame Time: ${stats['avgFrameTime'].toStringAsFixed(2)}ms\n'
+        '  Memory Usage: ${(stats['memoryUsage'] / 1024 / 1024).toStringAsFixed(1)}MB\n'
+        '  Janky Frames: ${stats['jankyFramePercent'].toStringAsFixed(1)}%\n'
+        '  Total Frames: ${stats['totalFrames']}\n'
+        '  Janky Frames Count: ${stats['jankyFrames']}';
   }
 
   // Performance optimization helpers
@@ -341,18 +351,18 @@ class PerformanceMonitor {
   int getRecommendedParticleCount() {
     final fps = getAverageFPS();
     if (fps >= 55) return 100; // Full particle count
-    if (fps >= 45) return 75;  // Reduced particles
-    if (fps >= 35) return 50;  // Half particles
-    if (fps >= 25) return 25;  // Quarter particles
+    if (fps >= 45) return 75; // Reduced particles
+    if (fps >= 35) return 50; // Half particles
+    if (fps >= 25) return 25; // Quarter particles
     return 10; // Minimal particles
   }
 
   double getRecommendedAnimationScale() {
     final fps = getAverageFPS();
-    if (fps >= 55) return 1.0;   // Full animations
-    if (fps >= 45) return 0.8;   // Slightly reduced
-    if (fps >= 35) return 0.6;   // Moderately reduced
-    if (fps >= 25) return 0.4;   // Heavily reduced
+    if (fps >= 55) return 1.0; // Full animations
+    if (fps >= 45) return 0.8; // Slightly reduced
+    if (fps >= 35) return 0.6; // Moderately reduced
+    if (fps >= 25) return 0.4; // Heavily reduced
     return 0.2; // Minimal animations
   }
 
@@ -379,19 +389,27 @@ class PerformanceMonitor {
   // Export data for analysis
   Map<String, dynamic> exportData() {
     return {
-      'frameHistory': _frameHistory.map((frame) => {
-        'frameTime': frame.frameTime.inMicroseconds,
-        'timestamp': frame.timestamp.millisecondsSinceEpoch,
-        'wasJanky': frame.wasJanky,
-      }).toList(),
-      'performanceHistory': _performanceHistory.map((metrics) => {
-        'fps': metrics.fps,
-        'frameTime': metrics.frameTime,
-        'memoryUsage': metrics.memoryUsage,
-        'renderTime': metrics.renderTime,
-        'cpuUsage': metrics.cpuUsage,
-        'timestamp': metrics.timestamp.millisecondsSinceEpoch,
-      }).toList(),
+      'frameHistory': _frameHistory
+          .map(
+            (frame) => {
+              'frameTime': frame.frameTime.inMicroseconds,
+              'timestamp': frame.timestamp.millisecondsSinceEpoch,
+              'wasJanky': frame.wasJanky,
+            },
+          )
+          .toList(),
+      'performanceHistory': _performanceHistory
+          .map(
+            (metrics) => {
+              'fps': metrics.fps,
+              'frameTime': metrics.frameTime,
+              'memoryUsage': metrics.memoryUsage,
+              'renderTime': metrics.renderTime,
+              'cpuUsage': metrics.cpuUsage,
+              'timestamp': metrics.timestamp.millisecondsSinceEpoch,
+            },
+          )
+          .toList(),
       'summary': getCurrentStats(),
     };
   }
@@ -421,7 +439,8 @@ class PerformanceAwareBuilder extends StatefulWidget {
   });
 
   @override
-  State<PerformanceAwareBuilder> createState() => _PerformanceAwareBuilderState();
+  State<PerformanceAwareBuilder> createState() =>
+      _PerformanceAwareBuilderState();
 }
 
 class _PerformanceAwareBuilderState extends State<PerformanceAwareBuilder> {

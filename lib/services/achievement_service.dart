@@ -35,8 +35,8 @@ class AchievementService extends ChangeNotifier {
       .fold(0, (total, a) => total + a.points);
 
   double get completionPercentage => _achievements.isEmpty
-    ? 0.0
-    : _achievements.where((a) => a.isUnlocked).length / _achievements.length;
+      ? 0.0
+      : _achievements.where((a) => a.isUnlocked).length / _achievements.length;
 
   Future<void> initialize() async {
     _achievements = Achievement.getDefaultAchievements();
@@ -83,7 +83,9 @@ class AchievementService extends ChangeNotifier {
       final response = await _apiService.getUserAchievements();
 
       if (response != null && response['achievements'] != null) {
-        final backendAchievements = List<Map<String, dynamic>>.from(response['achievements']);
+        final backendAchievements = List<Map<String, dynamic>>.from(
+          response['achievements'],
+        );
         _updateAchievementsFromBackend(backendAchievements);
 
         // Cache the synced data
@@ -124,22 +126,30 @@ class AchievementService extends ChangeNotifier {
     _pendingUnlocks.removeWhere((id) => synced.contains(id));
   }
 
-  void _updateAchievementsFromBackend(List<Map<String, dynamic>> backendAchievements) {
+  void _updateAchievementsFromBackend(
+    List<Map<String, dynamic>> backendAchievements,
+  ) {
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
 
       // Find matching backend achievement
       final backendData = backendAchievements.firstWhere(
-        (a) => a['achievement_id'] == achievement.id || a['achievementId'] == achievement.id,
+        (a) =>
+            a['achievement_id'] == achievement.id ||
+            a['achievementId'] == achievement.id,
         orElse: () => {},
       );
 
       if (backendData.isNotEmpty) {
-        final backendUnlocked = backendData['is_unlocked'] ?? backendData['isUnlocked'] ?? false;
-        final backendProgress = backendData['current_progress'] ?? backendData['currentProgress'] ?? 0;
+        final backendUnlocked =
+            backendData['is_unlocked'] ?? backendData['isUnlocked'] ?? false;
+        final backendProgress =
+            backendData['current_progress'] ??
+            backendData['currentProgress'] ??
+            0;
         final backendUnlockedAt = backendData['unlocked_at'] != null
-          ? DateTime.tryParse(backendData['unlocked_at'].toString())
-          : backendData['unlockedAt'] != null
+            ? DateTime.tryParse(backendData['unlocked_at'].toString())
+            : backendData['unlockedAt'] != null
             ? DateTime.tryParse(backendData['unlockedAt'].toString())
             : null;
 
@@ -167,8 +177,8 @@ class AchievementService extends ChangeNotifier {
           isUnlocked: savedData['isUnlocked'] ?? false,
           currentProgress: savedData['currentProgress'] ?? 0,
           unlockedAt: savedData['unlockedAt'] != null
-            ? DateTime.parse(savedData['unlockedAt'])
-            : null,
+              ? DateTime.parse(savedData['unlockedAt'])
+              : null,
         );
       }
     }
@@ -224,14 +234,10 @@ class AchievementService extends ChangeNotifier {
           _pendingUnlocks.add(achievement.id);
         }
         // Also queue in sync service
-        await _syncService.queueSync(
-          'achievement_${achievement.id}',
-          {
-            'achievementId': achievement.id,
-            'progress': achievement.targetValue,
-          },
-          priority: SyncPriority.high,
-        );
+        await _syncService.queueSync('achievement_${achievement.id}', {
+          'achievementId': achievement.id,
+          'progress': achievement.targetValue,
+        }, priority: SyncPriority.high);
       }
     } else {
       // Offline - queue for later sync
@@ -247,14 +253,13 @@ class AchievementService extends ChangeNotifier {
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
 
-      if (achievement.type == AchievementType.score && !achievement.isUnlocked) {
+      if (achievement.type == AchievementType.score &&
+          !achievement.isUnlocked) {
         if (score >= achievement.targetValue) {
           await _unlockAchievement(i, achievement);
           newUnlocks.add(_achievements[i]);
         } else {
-          _achievements[i] = achievement.copyWith(
-            currentProgress: score,
-          );
+          _achievements[i] = achievement.copyWith(currentProgress: score);
         }
       }
     }
@@ -274,14 +279,13 @@ class AchievementService extends ChangeNotifier {
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
 
-      if (achievement.type == AchievementType.games && !achievement.isUnlocked) {
+      if (achievement.type == AchievementType.games &&
+          !achievement.isUnlocked) {
         if (totalGames >= achievement.targetValue) {
           await _unlockAchievement(i, achievement);
           newUnlocks.add(_achievements[i]);
         } else {
-          _achievements[i] = achievement.copyWith(
-            currentProgress: totalGames,
-          );
+          _achievements[i] = achievement.copyWith(currentProgress: totalGames);
         }
       }
     }
@@ -301,7 +305,8 @@ class AchievementService extends ChangeNotifier {
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
 
-      if (achievement.type == AchievementType.survival && !achievement.isUnlocked) {
+      if (achievement.type == AchievementType.survival &&
+          !achievement.isUnlocked) {
         if (survivalTime >= achievement.targetValue) {
           await _unlockAchievement(i, achievement);
           newUnlocks.add(_achievements[i]);
@@ -334,7 +339,8 @@ class AchievementService extends ChangeNotifier {
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
 
-      if (achievement.type == AchievementType.special && !achievement.isUnlocked) {
+      if (achievement.type == AchievementType.special &&
+          !achievement.isUnlocked) {
         bool shouldUnlock = false;
         int newProgress = achievement.currentProgress;
 
@@ -376,9 +382,7 @@ class AchievementService extends ChangeNotifier {
           await _unlockAchievement(i, achievement);
           newUnlocks.add(_achievements[i]);
         } else if (newProgress != achievement.currentProgress) {
-          _achievements[i] = achievement.copyWith(
-            currentProgress: newProgress,
-          );
+          _achievements[i] = achievement.copyWith(currentProgress: newProgress);
         }
       }
     }

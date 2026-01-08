@@ -18,9 +18,9 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
     required ApiDataSource remote,
     required CacheDataSource cache,
     required NetworkInfo network,
-  })  : _remote = remote,
-        _cache = cache,
-        _network = network;
+  }) : _remote = remote,
+       _cache = cache,
+       _network = network;
 
   @override
   Future<Either<Failure, LeaderboardData>> getGlobalLeaderboard({

@@ -108,11 +108,17 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
     } else {
       // Online and synced
       icon = Icons.cloud_done_outlined;
-      color = widget.onlineColor ?? Colors.green.shade400.withValues(alpha: 0.7);
+      color =
+          widget.onlineColor ?? Colors.green.shade400.withValues(alpha: 0.7);
     }
 
     return Tooltip(
-      message: _getTooltipMessage(isOnline, syncStatus, pendingCount, failedCount),
+      message: _getTooltipMessage(
+        isOnline,
+        syncStatus,
+        pendingCount,
+        failedCount,
+      ),
       child: SizedBox(
         width: widget.size + 8,
         height: widget.size + 8,
@@ -122,24 +128,11 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
             if (syncStatus == SyncStatus.syncing)
               RotationTransition(
                 turns: _spinController,
-                child: Icon(
-                  icon,
-                  size: widget.size,
-                  color: color,
-                ),
+                child: Icon(icon, size: widget.size, color: color),
               )
             else
-              Icon(
-                icon,
-                size: widget.size,
-                color: color,
-              ),
-            if (badge != null)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: badge,
-              ),
+              Icon(icon, size: widget.size, color: color),
+            if (badge != null) Positioned(top: 0, right: 0, child: badge),
           ],
         ),
       ),
@@ -153,10 +146,7 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
         color: color,
         borderRadius: BorderRadius.circular(6),
       ),
-      constraints: const BoxConstraints(
-        minWidth: 12,
-        minHeight: 12,
-      ),
+      constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
       child: Text(
         count > 9 ? '9+' : count.toString(),
         style: const TextStyle(
@@ -198,10 +188,7 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
 class SyncStatusDot extends StatelessWidget {
   final double size;
 
-  const SyncStatusDot({
-    super.key,
-    this.size = 8,
-  });
+  const SyncStatusDot({super.key, this.size = 8});
 
   @override
   Widget build(BuildContext context) {
@@ -233,10 +220,7 @@ class SyncStatusDot extends StatelessWidget {
           child: Container(
             width: size,
             height: size,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
         );
       },
@@ -257,11 +241,7 @@ class SyncStatusText extends StatelessWidget {
   final TextStyle? style;
   final bool showWhenSynced;
 
-  const SyncStatusText({
-    super.key,
-    this.style,
-    this.showWhenSynced = false,
-  });
+  const SyncStatusText({super.key, this.style, this.showWhenSynced = false});
 
   @override
   Widget build(BuildContext context) {
@@ -292,11 +272,7 @@ class SyncStatusText extends StatelessWidget {
 
         return Text(
           text,
-          style: style ??
-              TextStyle(
-                fontSize: 10,
-                color: Colors.grey.shade400,
-              ),
+          style: style ?? TextStyle(fontSize: 10, color: Colors.grey.shade400),
         );
       },
     );

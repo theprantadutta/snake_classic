@@ -15,7 +15,10 @@ class CacheDataSource {
 
   /// Get cached data even if stale (for offline fallback)
   /// Returns expired data if fresh data unavailable
-  Future<T?> getCachedFallback<T>(String key, T Function(Object) decoder) async {
+  Future<T?> getCachedFallback<T>(
+    String key,
+    T Function(Object) decoder,
+  ) async {
     return await _cacheService.getCachedFallback<T>(key, decoder);
   }
 

@@ -11,7 +11,8 @@ class GameFrame {
   final int level;
   final String direction;
   final List<String> activePowerUps;
-  final Map<String, dynamic>? gameEvent; // collision, food consumed, power-up collected, etc.
+  final Map<String, dynamic>?
+  gameEvent; // collision, food consumed, power-up collected, etc.
 
   const GameFrame({
     required this.frameNumber,
@@ -47,9 +48,11 @@ class GameFrame {
     return GameFrame(
       frameNumber: json['frameNumber'] ?? 0,
       timestamp: json['timestamp'] ?? 0,
-      snakePositions: (json['snakePositions'] as List?)
-          ?.map((pos) => (pos as List).cast<int>())
-          .toList() ?? [],
+      snakePositions:
+          (json['snakePositions'] as List?)
+              ?.map((pos) => (pos as List).cast<int>())
+              .toList() ??
+          [],
       foodPosition: (json['foodPosition'] as List?)?.cast<int>(),
       powerUpPosition: (json['powerUpPosition'] as List?)?.cast<int>(),
       powerUpType: json['powerUpType'],
@@ -128,16 +131,20 @@ class GameReplay {
   factory GameReplay.fromJson(Map<String, dynamic> json) {
     return GameReplay(
       id: json['id'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
       playerName: json['playerName'] ?? 'Unknown',
       finalScore: json['finalScore'] ?? 0,
       gameTimeSeconds: json['gameTimeSeconds'] ?? 0,
       totalFrames: json['totalFrames'] ?? 0,
       gameMode: json['gameMode'] ?? 'classic',
       gameSettings: Map<String, dynamic>.from(json['gameSettings'] ?? {}),
-      frames: (json['frames'] as List?)
-          ?.map((frame) => GameFrame.fromJson(frame))
-          .toList() ?? [],
+      frames:
+          (json['frames'] as List?)
+              ?.map((frame) => GameFrame.fromJson(frame))
+              .toList() ??
+          [],
       crashReason: json['crashReason'],
       gameStats: Map<String, dynamic>.from(json['gameStats'] ?? {}),
     );
@@ -169,10 +176,16 @@ class GameReplay {
 
   // Get summary statistics for this replay
   Map<String, dynamic> getSummary() {
-    final totalFood = frames.where((f) => f.gameEvent?['type'] == 'food_consumed').length;
-    final totalPowerUps = frames.where((f) => f.gameEvent?['type'] == 'power_up_collected').length;
-    final maxSnakeLength = frames.map((f) => f.snakePositions.length).reduce((a, b) => a > b ? a : b);
-    
+    final totalFood = frames
+        .where((f) => f.gameEvent?['type'] == 'food_consumed')
+        .length;
+    final totalPowerUps = frames
+        .where((f) => f.gameEvent?['type'] == 'power_up_collected')
+        .length;
+    final maxSnakeLength = frames
+        .map((f) => f.snakePositions.length)
+        .reduce((a, b) => a > b ? a : b);
+
     return {
       'duration': formattedDuration,
       'outcome': gameOutcome,
@@ -212,8 +225,8 @@ class GameRecorder {
     if (!isRecording) return;
 
     final now = DateTime.now();
-    final timestamp = _gameStartTime != null 
-        ? now.difference(_gameStartTime!).inMilliseconds 
+    final timestamp = _gameStartTime != null
+        ? now.difference(_gameStartTime!).inMilliseconds
         : 0;
 
     final frame = GameFrame(
@@ -227,7 +240,9 @@ class GameRecorder {
       level: level,
       direction: direction,
       activePowerUps: [...activePowerUps],
-      gameEvent: gameEvent != null ? Map<String, dynamic>.from(gameEvent) : null,
+      gameEvent: gameEvent != null
+          ? Map<String, dynamic>.from(gameEvent)
+          : null,
     );
 
     _frames.add(frame);
@@ -243,8 +258,8 @@ class GameRecorder {
   }) {
     if (!isRecording || _frames.isEmpty) return null;
 
-    final gameTime = _gameStartTime != null 
-        ? DateTime.now().difference(_gameStartTime!).inSeconds 
+    final gameTime = _gameStartTime != null
+        ? DateTime.now().difference(_gameStartTime!).inSeconds
         : 0;
 
     final replay = GameReplay(

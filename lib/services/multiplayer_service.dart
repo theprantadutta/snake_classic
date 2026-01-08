@@ -34,8 +34,10 @@ class MultiplayerService {
 
   // Stream controllers for game events
   final _gameStreamController = StreamController<MultiplayerGame?>.broadcast();
-  final _gameActionsController = StreamController<MultiplayerGameAction>.broadcast();
-  final _matchmakingStreamController = StreamController<MatchmakingStatus>.broadcast();
+  final _gameActionsController =
+      StreamController<MultiplayerGameAction>.broadcast();
+  final _matchmakingStreamController =
+      StreamController<MatchmakingStatus>.broadcast();
   final _errorController = StreamController<String>.broadcast();
 
   MultiplayerService._internal();
@@ -152,7 +154,10 @@ class MultiplayerService {
     try {
       if (_currentRoomCode == null) return false;
 
-      await _hubConnection?.invoke('SetReady', args: [_currentRoomCode!, isReady]);
+      await _hubConnection?.invoke(
+        'SetReady',
+        args: [_currentRoomCode!, isReady],
+      );
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -188,7 +193,10 @@ class MultiplayerService {
         'score': action.data['score'] ?? 0,
       };
 
-      await _hubConnection?.invoke('SendMove', args: [_currentRoomCode!, moveData]);
+      await _hubConnection?.invoke(
+        'SendMove',
+        args: [_currentRoomCode!, moveData],
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error sending player action: $e');
@@ -211,7 +219,10 @@ class MultiplayerService {
         'score': score,
       };
 
-      await _hubConnection?.invoke('SendMove', args: [_currentRoomCode!, moveData]);
+      await _hubConnection?.invoke(
+        'SendMove',
+        args: [_currentRoomCode!, moveData],
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error updating player game state: $e');
@@ -237,7 +248,10 @@ class MultiplayerService {
     try {
       if (_currentRoomCode == null) return;
 
-      await _hubConnection?.invoke('GameOver', args: [_currentRoomCode!, finalScore]);
+      await _hubConnection?.invoke(
+        'GameOver',
+        args: [_currentRoomCode!, finalScore],
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error notifying game over: $e');
@@ -255,11 +269,16 @@ class MultiplayerService {
 
       final update = {
         if (foodPositions != null)
-          'food_positions': foodPositions.map((p) => {'x': p.x, 'y': p.y}).toList(),
+          'food_positions': foodPositions
+              .map((p) => {'x': p.x, 'y': p.y})
+              .toList(),
         if (powerUps != null) 'power_ups': powerUps,
       };
 
-      await _hubConnection?.invoke('UpdateGameState', args: [_currentRoomCode!, update]);
+      await _hubConnection?.invoke(
+        'UpdateGameState',
+        args: [_currentRoomCode!, update],
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error updating game state: $e');
@@ -277,7 +296,9 @@ class MultiplayerService {
         return MultiplayerGame(
           id: game['id']?.toString() ?? game['game_id']?.toString() ?? '',
           mode: MultiplayerGameMode.values.firstWhere(
-            (m) => m.name.toLowerCase() == (game['mode'] ?? 'classic').toString().toLowerCase(),
+            (m) =>
+                m.name.toLowerCase() ==
+                (game['mode'] ?? 'classic').toString().toLowerCase(),
             orElse: () => MultiplayerGameMode.classic,
           ),
           status: MultiplayerGameStatus.waiting,
@@ -285,7 +306,9 @@ class MultiplayerService {
           players: [],
           maxPlayers: game['max_players'] ?? 2,
           gameSettings: Map<String, dynamic>.from(game['game_settings'] ?? {}),
-          createdAt: DateTime.tryParse(game['created_at']?.toString() ?? '') ?? DateTime.now(),
+          createdAt:
+              DateTime.tryParse(game['created_at']?.toString() ?? '') ??
+              DateTime.now(),
         );
       }).toList();
     } catch (e) {
@@ -313,16 +336,21 @@ class MultiplayerService {
         return false;
       }
 
-      await _hubConnection?.invoke('JoinMatchmaking', args: [mode.name, playerCount]);
+      await _hubConnection?.invoke(
+        'JoinMatchmaking',
+        args: [mode.name, playerCount],
+      );
 
       _isInMatchmaking = true;
-      _matchmakingStreamController.add(MatchmakingStatus(
-        isSearching: true,
-        queuePosition: 0,
-        estimatedWaitSeconds: 0,
-        mode: mode,
-        playerCount: playerCount,
-      ));
+      _matchmakingStreamController.add(
+        MatchmakingStatus(
+          isSearching: true,
+          queuePosition: 0,
+          estimatedWaitSeconds: 0,
+          mode: mode,
+          playerCount: playerCount,
+        ),
+      );
 
       if (kDebugMode) {
         print('Joined matchmaking for ${mode.name} ${playerCount}p');
@@ -351,16 +379,19 @@ class MultiplayerService {
       _isInMatchmaking = false;
       _matchmakingQueuePosition = 0;
       _matchmakingEstimatedWait = 0;
-      _matchmakingStreamController.add(MatchmakingStatus(
-        isSearching: false,
-        queuePosition: 0,
-        estimatedWaitSeconds: 0,
-      ));
+      _matchmakingStreamController.add(
+        MatchmakingStatus(
+          isSearching: false,
+          queuePosition: 0,
+          estimatedWaitSeconds: 0,
+        ),
+      );
     }
   }
 
   /// Stream of matchmaking status updates
-  Stream<MatchmakingStatus> get matchmakingStream => _matchmakingStreamController.stream;
+  Stream<MatchmakingStatus> get matchmakingStream =>
+      _matchmakingStreamController.stream;
 
   // =============================================
   // RECONNECTION
@@ -440,12 +471,14 @@ class MultiplayerService {
     _isConnected = false;
 
     // Notify listeners
-    _gameActionsController.add(MultiplayerGameAction(
-      actionType: 'connection_lost',
-      playerId: '',
-      timestamp: DateTime.now(),
-      data: {},
-    ));
+    _gameActionsController.add(
+      MultiplayerGameAction(
+        actionType: 'connection_lost',
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: {},
+      ),
+    );
 
     // Attempt reconnection if we have a game
     if (_currentRoomCode != null && !_isReconnecting) {
@@ -457,7 +490,8 @@ class MultiplayerService {
   Stream<MultiplayerGame?> get gameStream => _gameStreamController.stream;
 
   /// Stream of game actions for real-time updates
-  Stream<MultiplayerGameAction> get gameActionsStream => _gameActionsController.stream;
+  Stream<MultiplayerGameAction> get gameActionsStream =>
+      _gameActionsController.stream;
 
   /// Stream of error messages for UI display
   Stream<String> get errorStream => _errorController.stream;
@@ -647,7 +681,8 @@ class MultiplayerService {
         if (data is String) {
           rawError = data;
         } else if (data is Map<String, dynamic>) {
-          rawError = data['message']?.toString() ??
+          rawError =
+              data['message']?.toString() ??
               data['error']?.toString() ??
               'Unknown error';
         } else {
@@ -779,7 +814,10 @@ class MultiplayerService {
 
       // Parse snake positions if present (for matchmade games)
       List<Position> snakePositions = [];
-      final snakeData = data['SnakePositions'] ?? data['snakePositions'] ?? data['snake_positions'];
+      final snakeData =
+          data['SnakePositions'] ??
+          data['snakePositions'] ??
+          data['snake_positions'];
       if (snakeData != null && snakeData is List) {
         snakePositions = snakeData.map((pos) {
           if (pos is Map<String, dynamic>) {
@@ -800,7 +838,9 @@ class MultiplayerService {
       );
 
       if (kDebugMode) {
-        print('PlayerJoined: $userId with ${snakePositions.length} snake positions');
+        print(
+          'PlayerJoined: $userId with ${snakePositions.length} snake positions',
+        );
       }
 
       // Create player object
@@ -817,7 +857,9 @@ class MultiplayerService {
       // Update current game with new player
       if (_currentGame != null) {
         // Check if player already exists
-        final existingPlayerIndex = _currentGame!.players.indexWhere((p) => p.userId == userId);
+        final existingPlayerIndex = _currentGame!.players.indexWhere(
+          (p) => p.userId == userId,
+        );
 
         List<MultiplayerPlayer> updatedPlayers;
         if (existingPlayerIndex >= 0) {
@@ -834,12 +876,14 @@ class MultiplayerService {
       }
 
       // Notify listeners
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'player_joined',
-        playerId: userId,
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'player_joined',
+          playerId: userId,
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling PlayerJoined: $e');
@@ -858,17 +902,21 @@ class MultiplayerService {
 
       // Remove player from current game
       if (_currentGame != null) {
-        final updatedPlayers = _currentGame!.players.where((p) => p.userId != userId).toList();
+        final updatedPlayers = _currentGame!.players
+            .where((p) => p.userId != userId)
+            .toList();
         _currentGame = _currentGame!.copyWith(players: updatedPlayers);
         _gameStreamController.add(_currentGame);
       }
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'player_left',
-        playerId: userId,
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'player_left',
+          playerId: userId,
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling PlayerLeft: $e');
@@ -888,9 +936,13 @@ class MultiplayerService {
 
       // Update player ready status in current game
       if (_currentGame != null) {
-        final playerIndex = _currentGame!.players.indexWhere((p) => p.userId == userId);
+        final playerIndex = _currentGame!.players.indexWhere(
+          (p) => p.userId == userId,
+        );
         if (playerIndex >= 0) {
-          final updatedPlayers = List<MultiplayerPlayer>.from(_currentGame!.players);
+          final updatedPlayers = List<MultiplayerPlayer>.from(
+            _currentGame!.players,
+          );
           updatedPlayers[playerIndex] = updatedPlayers[playerIndex].copyWith(
             status: isReady ? PlayerStatus.ready : PlayerStatus.waiting,
           );
@@ -899,12 +951,14 @@ class MultiplayerService {
         }
       }
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'player_ready',
-        playerId: userId,
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'player_ready',
+          playerId: userId,
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling PlayerReady: $e');
@@ -924,12 +978,14 @@ class MultiplayerService {
       );
       _gameStreamController.add(_currentGame);
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'game_starting',
-        playerId: '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'game_starting',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling GameStarting: $e');
@@ -957,7 +1013,10 @@ class MultiplayerService {
 
           // Parse snake positions from server format
           List<Position> snakePositions = [];
-          final snakeData = playerMap['SnakePositions'] ?? playerMap['snakePositions'] ?? playerMap['snake_positions'];
+          final snakeData =
+              playerMap['SnakePositions'] ??
+              playerMap['snakePositions'] ??
+              playerMap['snake_positions'];
           if (snakeData != null && snakeData is List) {
             snakePositions = snakeData.map((pos) {
               if (pos is Map<String, dynamic>) {
@@ -971,20 +1030,35 @@ class MultiplayerService {
           }
 
           // Parse direction
-          final directionStr = playerMap['Direction'] ?? playerMap['direction'] ?? 'right';
+          final directionStr =
+              playerMap['Direction'] ?? playerMap['direction'] ?? 'right';
           final direction = Direction.values.firstWhere(
-            (d) => d.name.toLowerCase() == directionStr.toString().toLowerCase(),
+            (d) =>
+                d.name.toLowerCase() == directionStr.toString().toLowerCase(),
             orElse: () => Direction.right,
           );
 
           return MultiplayerPlayer(
-            userId: (playerMap['UserId'] ?? playerMap['userId'] ?? playerMap['user_id'] ?? '').toString(),
-            displayName: playerMap['Username'] ?? playerMap['username'] ?? playerMap['displayName'] ?? 'Player',
+            userId:
+                (playerMap['UserId'] ??
+                        playerMap['userId'] ??
+                        playerMap['user_id'] ??
+                        '')
+                    .toString(),
+            displayName:
+                playerMap['Username'] ??
+                playerMap['username'] ??
+                playerMap['displayName'] ??
+                'Player',
             status: PlayerStatus.playing,
             snake: snakePositions,
             currentDirection: direction,
             score: playerMap['Score'] ?? playerMap['score'] ?? 0,
-            rank: playerMap['PlayerIndex'] ?? playerMap['playerIndex'] ?? playerMap['player_index'] ?? 0,
+            rank:
+                playerMap['PlayerIndex'] ??
+                playerMap['playerIndex'] ??
+                playerMap['player_index'] ??
+                0,
           );
         }).toList();
 
@@ -998,7 +1072,10 @@ class MultiplayerService {
 
       // Parse food position
       Position? foodPosition;
-      final foodData = data['FoodPositions'] ?? data['foodPositions'] ?? data['food_positions'];
+      final foodData =
+          data['FoodPositions'] ??
+          data['foodPositions'] ??
+          data['food_positions'];
       if (foodData != null && foodData is List && foodData.isNotEmpty) {
         final firstFood = foodData.first;
         if (firstFood is Map<String, dynamic>) {
@@ -1012,9 +1089,15 @@ class MultiplayerService {
       // Parse game settings
       Map<String, dynamic>? gameSettings;
       if (data['GameSettings'] != null || data['gameSettings'] != null) {
-        gameSettings = Map<String, dynamic>.from(data['GameSettings'] ?? data['gameSettings'] ?? {});
+        gameSettings = Map<String, dynamic>.from(
+          data['GameSettings'] ?? data['gameSettings'] ?? {},
+        );
       }
-      final boardSize = data['BoardSize'] ?? data['boardSize'] ?? gameSettings?['boardSize'] ?? 20;
+      final boardSize =
+          data['BoardSize'] ??
+          data['boardSize'] ??
+          gameSettings?['boardSize'] ??
+          20;
       gameSettings = {...?gameSettings, 'boardSize': boardSize};
 
       _currentGame = _currentGame?.copyWith(
@@ -1025,12 +1108,14 @@ class MultiplayerService {
       );
       _gameStreamController.add(_currentGame);
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'game_started',
-        playerId: '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'game_started',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling GameStarted: $e');
@@ -1045,12 +1130,14 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'player_moved',
-        playerId: data['user_id']?.toString() ?? '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'player_moved',
+          playerId: data['user_id']?.toString() ?? '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling PlayerMoved: $e');
@@ -1079,12 +1166,14 @@ class MultiplayerService {
         }
       }
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'game_state_updated',
-        playerId: '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'game_state_updated',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling GameStateUpdated: $e');
@@ -1099,12 +1188,14 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'player_died',
-        playerId: data['user_id']?.toString() ?? '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'player_died',
+          playerId: data['user_id']?.toString() ?? '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling PlayerDied: $e');
@@ -1125,12 +1216,14 @@ class MultiplayerService {
       );
       _gameStreamController.add(_currentGame);
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'game_ended',
-        playerId: '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'game_ended',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling GameEnded: $e');
@@ -1152,11 +1245,13 @@ class MultiplayerService {
       _matchmakingQueuePosition = data['queue_position'] ?? 0;
       _matchmakingEstimatedWait = data['estimated_wait_seconds'] ?? 0;
 
-      _matchmakingStreamController.add(MatchmakingStatus(
-        isSearching: true,
-        queuePosition: _matchmakingQueuePosition,
-        estimatedWaitSeconds: _matchmakingEstimatedWait,
-      ));
+      _matchmakingStreamController.add(
+        MatchmakingStatus(
+          isSearching: true,
+          queuePosition: _matchmakingQueuePosition,
+          estimatedWaitSeconds: _matchmakingEstimatedWait,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling MatchmakingJoined: $e');
@@ -1198,23 +1293,27 @@ class MultiplayerService {
       _gameStreamController.add(_currentGame);
 
       // Notify matchmaking stream that match was found
-      _matchmakingStreamController.add(MatchmakingStatus(
-        isSearching: false,
-        matchFound: true,
-        gameId: _currentGameId,
-        roomCode: _currentRoomCode,
-        playerIndex: data['player_index'],
-        mode: mode,
-        playerCount: data['player_count'],
-      ));
+      _matchmakingStreamController.add(
+        MatchmakingStatus(
+          isSearching: false,
+          matchFound: true,
+          gameId: _currentGameId,
+          roomCode: _currentRoomCode,
+          playerIndex: data['player_index'],
+          mode: mode,
+          playerCount: data['player_count'],
+        ),
+      );
 
       // Notify game actions
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'match_found',
-        playerId: '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'match_found',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
 
       // Auto-join the room
       if (_currentRoomCode != null) {
@@ -1236,10 +1335,9 @@ class MultiplayerService {
 
       _isInMatchmaking = false;
 
-      _matchmakingStreamController.add(MatchmakingStatus(
-        isSearching: false,
-        error: data['error']?.toString(),
-      ));
+      _matchmakingStreamController.add(
+        MatchmakingStatus(isSearching: false, error: data['error']?.toString()),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling MatchmakingError: $e');
@@ -1254,12 +1352,14 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'player_disconnected',
-        playerId: data['user_id']?.toString() ?? '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'player_disconnected',
+          playerId: data['user_id']?.toString() ?? '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling PlayerDisconnected: $e');
@@ -1274,12 +1374,14 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'player_reconnected',
-        playerId: data['user_id']?.toString() ?? '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'player_reconnected',
+          playerId: data['user_id']?.toString() ?? '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling PlayerReconnected: $e');
@@ -1300,12 +1402,14 @@ class MultiplayerService {
       _currentGameId = data['game_id']?.toString();
       _currentRoomCode = data['room_code']?.toString();
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'reconnect_success',
-        playerId: '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'reconnect_success',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
 
       if (kDebugMode) {
         print('Successfully reconnected to game $_currentGameId');
@@ -1332,12 +1436,14 @@ class MultiplayerService {
       _currentRoomCode = null;
       _gameStreamController.add(null);
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'reconnect_failed',
-        playerId: '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'reconnect_failed',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
 
       if (kDebugMode) {
         print('Reconnection failed: ${data['error']}');
@@ -1356,12 +1462,14 @@ class MultiplayerService {
       final data = arguments[0] as Map<String, dynamic>?;
       if (data == null) return;
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'player_eliminated',
-        playerId: data['user_id']?.toString() ?? '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'player_eliminated',
+          playerId: data['user_id']?.toString() ?? '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling PlayerEliminated: $e');
@@ -1381,12 +1489,14 @@ class MultiplayerService {
       );
       _gameStreamController.add(_currentGame);
 
-      _gameActionsController.add(MultiplayerGameAction(
-        actionType: 'game_cancelled',
-        playerId: '',
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'game_cancelled',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error handling GameCancelled: $e');
@@ -1425,15 +1535,15 @@ class MultiplayerService {
     }
   }
 
-  Position generateFoodPosition(int boardSize, List<MultiplayerPlayer> players) {
+  Position generateFoodPosition(
+    int boardSize,
+    List<MultiplayerPlayer> players,
+  ) {
     final random = Random();
     Position foodPos;
 
     do {
-      foodPos = Position(
-        random.nextInt(boardSize),
-        random.nextInt(boardSize),
-      );
+      foodPos = Position(random.nextInt(boardSize), random.nextInt(boardSize));
     } while (_isFoodOnSnake(foodPos, players));
 
     return foodPos;
@@ -1452,7 +1562,8 @@ class MultiplayerService {
   Future<void> generateNewFood() async {
     try {
       if (_currentGame != null && _currentRoomCode != null) {
-        final boardSize = (_currentGame!.gameSettings['boardSize'] as int?) ?? 20;
+        final boardSize =
+            (_currentGame!.gameSettings['boardSize'] as int?) ?? 20;
         final newFood = generateFoodPosition(boardSize, _currentGame!.players);
 
         await updateGameState(foodPositions: [newFood]);

@@ -6,14 +6,7 @@ import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/tournament.dart';
 
 /// Game play status
-enum GamePlayStatus {
-  initial,
-  ready,
-  playing,
-  paused,
-  crashed,
-  gameOver,
-}
+enum GamePlayStatus { initial, ready, playing, paused, crashed, gameOver }
 
 /// State class for GameCubit
 /// This is a simplified view of the game state for UI consumption
@@ -50,8 +43,12 @@ class GameCubitState extends Equatable {
     return GameCubitState(
       status: status ?? this.status,
       gameState: gameState ?? this.gameState,
-      tournamentId: clearTournament ? null : (tournamentId ?? this.tournamentId),
-      tournamentMode: clearTournament ? null : (tournamentMode ?? this.tournamentMode),
+      tournamentId: clearTournament
+          ? null
+          : (tournamentId ?? this.tournamentId),
+      tournamentMode: clearTournament
+          ? null
+          : (tournamentMode ?? this.tournamentMode),
       moveProgress: moveProgress ?? this.moveProgress,
       previousGameState: previousGameState ?? this.previousGameState,
     );
@@ -116,11 +113,11 @@ class GameCubitState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        gameState,
-        tournamentId,
-        tournamentMode,
-        moveProgress,
-        previousGameState,
-      ];
+    status,
+    gameState,
+    tournamentId,
+    tournamentMode,
+    moveProgress,
+    previousGameState,
+  ];
 }

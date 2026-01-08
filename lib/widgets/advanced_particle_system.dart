@@ -12,12 +12,7 @@ enum ParticleType {
   glow,
 }
 
-enum ParticleBlendMode {
-  normal,
-  additive,
-  multiply,
-  screen,
-}
+enum ParticleBlendMode { normal, additive, multiply, screen }
 
 class ParticleConfig {
   final ParticleType type;
@@ -335,11 +330,11 @@ class ParticleData {
     this.life = 1.0,
     double? rotation,
     double? rotationSpeed,
-  })  : initialSize = size,
-        initialColor = color,
-        rotation = rotation ?? 0.0,
-        rotationSpeed = rotationSpeed ?? 0.0,
-        trail = config.hasTrail ? <Offset>[] : <Offset>[];
+  }) : initialSize = size,
+       initialColor = color,
+       rotation = rotation ?? 0.0,
+       rotationSpeed = rotationSpeed ?? 0.0,
+       trail = config.hasTrail ? <Offset>[] : <Offset>[];
 
   void update(double deltaTime) {
     // Update position
@@ -422,7 +417,9 @@ class _AdvancedParticleSystemState extends State<AdvancedParticleSystem>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(seconds: 10), // Long duration for continuous animation
+      duration: const Duration(
+        seconds: 10,
+      ), // Long duration for continuous animation
       vsync: this,
     )..repeat();
 
@@ -437,8 +434,8 @@ class _AdvancedParticleSystemState extends State<AdvancedParticleSystem>
 
   void _updateParticles() {
     final now = DateTime.now();
-    final deltaTime = _lastUpdate != null 
-        ? now.difference(_lastUpdate!).inMilliseconds / 1000.0 
+    final deltaTime = _lastUpdate != null
+        ? now.difference(_lastUpdate!).inMilliseconds / 1000.0
         : 0.016; // ~60fps fallback
     _lastUpdate = now;
 
@@ -467,40 +464,50 @@ class _AdvancedParticleSystemState extends State<AdvancedParticleSystem>
   void _addParticlesFromEmission(ParticleEmission emission) {
     final random = math.Random();
     final config = emission.config;
-    
+
     for (int i = 0; i < config.count; i++) {
       // Determine particle direction
       double angle;
       if (config.useRandomDirections) {
-        angle = random.nextDouble() * config.emissionAngleRange - (config.emissionAngleRange / 2);
+        angle =
+            random.nextDouble() * config.emissionAngleRange -
+            (config.emissionAngleRange / 2);
       } else {
-        angle = (i / config.count) * config.emissionAngleRange - (config.emissionAngleRange / 2);
+        angle =
+            (i / config.count) * config.emissionAngleRange -
+            (config.emissionAngleRange / 2);
       }
 
       // Calculate speed and direction
-      final speed = config.minSpeed + random.nextDouble() * (config.maxSpeed - config.minSpeed);
+      final speed =
+          config.minSpeed +
+          random.nextDouble() * (config.maxSpeed - config.minSpeed);
       final vx = math.cos(angle) * speed;
       final vy = math.sin(angle) * speed;
 
       // Random size and color
-      final size = config.minSize + random.nextDouble() * (config.maxSize - config.minSize);
+      final size =
+          config.minSize +
+          random.nextDouble() * (config.maxSize - config.minSize);
       final color = config.colors[random.nextInt(config.colors.length)];
 
       // Random rotation
       final rotation = random.nextDouble() * math.pi * 2;
       final rotationSpeed = (random.nextDouble() - 0.5) * 4.0;
 
-      _particles.add(ParticleData(
-        config: config,
-        x: emission.position.dx,
-        y: emission.position.dy,
-        vx: vx,
-        vy: vy,
-        size: size,
-        color: color,
-        rotation: rotation,
-        rotationSpeed: rotationSpeed,
-      ));
+      _particles.add(
+        ParticleData(
+          config: config,
+          x: emission.position.dx,
+          y: emission.position.dy,
+          vx: vx,
+          vy: vy,
+          size: size,
+          color: color,
+          rotation: rotation,
+          rotationSpeed: rotationSpeed,
+        ),
+      );
     }
   }
 
@@ -570,7 +577,7 @@ class AdvancedParticlePainter extends CustomPainter {
 
   void _drawCircleParticle(Canvas canvas, ParticleData particle, Paint paint) {
     // Add subtle glow effect for certain particle types
-    if (particle.config.type == ParticleType.powerUp || 
+    if (particle.config.type == ParticleType.powerUp ||
         particle.config.type == ParticleType.explosion) {
       final glowPaint = Paint()
         ..color = particle.color.withValues(alpha: particle.color.a * 0.3)
@@ -584,11 +591,7 @@ class AdvancedParticlePainter extends CustomPainter {
       );
     }
 
-    canvas.drawCircle(
-      Offset(particle.x, particle.y),
-      particle.size,
-      paint,
-    );
+    canvas.drawCircle(Offset(particle.x, particle.y), particle.size, paint);
 
     // Add inner highlight for certain particles
     if (particle.config.type == ParticleType.food ||
@@ -611,19 +614,19 @@ class AdvancedParticlePainter extends CustomPainter {
 
     // Draw cross-shaped sparkle
     final path = Path();
-    
+
     // Vertical line
     path.moveTo(center.dx, center.dy - size);
     path.lineTo(center.dx, center.dy + size);
-    
+
     // Horizontal line
     path.moveTo(center.dx - size, center.dy);
     path.lineTo(center.dx + size, center.dy);
-    
+
     // Diagonal lines for 8-pointed star
     path.moveTo(center.dx - size * 0.7, center.dy - size * 0.7);
     path.lineTo(center.dx + size * 0.7, center.dy + size * 0.7);
-    
+
     path.moveTo(center.dx + size * 0.7, center.dy - size * 0.7);
     path.lineTo(center.dx - size * 0.7, center.dy + size * 0.7);
 
@@ -654,7 +657,7 @@ class AdvancedParticlePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant AdvancedParticlePainter oldDelegate) {
     return particles.length != oldDelegate.particles.length ||
-           particles.any((p) => p.life > 0);
+        particles.any((p) => p.life > 0);
   }
 }
 
@@ -669,11 +672,9 @@ class ParticleManager {
   }
 
   void emitAt(Offset position, ParticleConfig config, {Duration? duration}) {
-    addEmission(ParticleEmission(
-      config: config,
-      position: position,
-      duration: duration,
-    ));
+    addEmission(
+      ParticleEmission(config: config, position: position, duration: duration),
+    );
   }
 
   void clear() {

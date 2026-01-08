@@ -58,7 +58,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                   children: [
                     // Add top padding to account for AppBar
                     SizedBox(
-                      height: MediaQuery.of(context).padding.top + kToolbarHeight,
+                      height:
+                          MediaQuery.of(context).padding.top + kToolbarHeight,
                     ),
 
                     Expanded(
@@ -78,7 +79,9 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                               _buildFeaturesList(theme),
                               const SizedBox(height: 20),
                               _buildTrialInfo(theme),
-                              const SizedBox(height: 100), // Space for bottom button
+                              const SizedBox(
+                                height: 100,
+                              ), // Space for bottom button
                             ],
                           ],
                         ),
@@ -131,11 +134,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.verified,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: const Icon(Icons.verified, color: Colors.white, size: 32),
           ),
           const SizedBox(height: 16),
           Text(
@@ -203,11 +202,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.diamond,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: const Icon(Icons.diamond, color: Colors.white, size: 32),
           ),
           const SizedBox(height: 16),
           Text(
@@ -245,12 +240,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _buildToggleOption('Monthly', false, theme),
-          ),
-          Expanded(
-            child: _buildToggleOption('Yearly', true, theme),
-          ),
+          Expanded(child: _buildToggleOption('Monthly', false, theme)),
+          Expanded(child: _buildToggleOption('Yearly', true, theme)),
         ],
       ),
     );
@@ -258,7 +249,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
 
   Widget _buildToggleOption(String label, bool isYearly, GameTheme theme) {
     final isSelected = _isYearly == isYearly;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -268,20 +259,24 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected 
-            ? theme.accentColor.withValues(alpha: 0.1)
-            : Colors.transparent,
+          color: isSelected
+              ? theme.accentColor.withValues(alpha: 0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: isSelected ? Border.all(
-            color: theme.accentColor.withValues(alpha: 0.3),
-            width: 1,
-          ) : null,
+          border: isSelected
+              ? Border.all(
+                  color: theme.accentColor.withValues(alpha: 0.3),
+                  width: 1,
+                )
+              : null,
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected ? theme.accentColor : theme.accentColor.withValues(alpha: 0.6),
+            color: isSelected
+                ? theme.accentColor
+                : theme.accentColor.withValues(alpha: 0.6),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 16,
           ),
@@ -424,12 +419,36 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
 
   Widget _buildFeaturesList(GameTheme theme) {
     final features = [
-      _FeatureItem(Icons.palette, 'All Premium Themes', 'Access to 6 stunning visual themes'),
-      _FeatureItem(Icons.grid_on, 'Large Game Boards', 'Play on massive 35x35, 40x40 & 50x50 boards'),
-      _FeatureItem(Icons.games, 'Exclusive Game Modes', 'Zen mode, Speed Challenge & more'),
-      _FeatureItem(Icons.flash_on, 'Premium Power-ups', 'Teleport, Ghost Mode & other abilities'),
-      _FeatureItem(Icons.monetization_on, '2x Coin Rewards', 'Double Snake Coins from all activities'),
-      _FeatureItem(Icons.emoji_events, 'VIP Tournaments', 'Access exclusive premium tournaments'),
+      _FeatureItem(
+        Icons.palette,
+        'All Premium Themes',
+        'Access to 6 stunning visual themes',
+      ),
+      _FeatureItem(
+        Icons.grid_on,
+        'Large Game Boards',
+        'Play on massive 35x35, 40x40 & 50x50 boards',
+      ),
+      _FeatureItem(
+        Icons.games,
+        'Exclusive Game Modes',
+        'Zen mode, Speed Challenge & more',
+      ),
+      _FeatureItem(
+        Icons.flash_on,
+        'Premium Power-ups',
+        'Teleport, Ghost Mode & other abilities',
+      ),
+      _FeatureItem(
+        Icons.monetization_on,
+        '2x Coin Rewards',
+        'Double Snake Coins from all activities',
+      ),
+      _FeatureItem(
+        Icons.emoji_events,
+        'VIP Tournaments',
+        'Access exclusive premium tournaments',
+      ),
     ];
 
     return Column(
@@ -470,11 +489,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               color: theme.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              feature.icon,
-              color: theme.accentColor,
-              size: 20,
-            ),
+            child: Icon(feature.icon, color: theme.accentColor, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -613,10 +628,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                   alignment: Alignment.center,
                   child: const Text(
                     'Start 3-Day Free Trial',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -638,11 +650,11 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
 
   void _startFreeTrial() {
     final purchaseService = PurchaseService();
-    final productId = _isYearly 
-        ? ProductIds.snakeClassicProYearly 
+    final productId = _isYearly
+        ? ProductIds.snakeClassicProYearly
         : ProductIds.snakeClassicProMonthly;
     final product = purchaseService.getProduct(productId);
-    
+
     if (product != null) {
       purchaseService.buyProduct(product);
     } else {

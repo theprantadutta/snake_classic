@@ -18,9 +18,9 @@ class SocialRepositoryImpl implements SocialRepository {
     required ApiDataSource remote,
     required CacheDataSource cache,
     required NetworkInfo network,
-  })  : _remote = remote,
-        _cache = cache,
-        _network = network;
+  }) : _remote = remote,
+       _cache = cache,
+       _network = network;
 
   @override
   Future<Either<Failure, FriendsData>> getFriends() async {
@@ -123,7 +123,10 @@ class SocialRepositoryImpl implements SocialRepository {
   }
 
   @override
-  Future<Either<Failure, List<Friend>>> searchUsers(String query, {int limit = 20}) async {
+  Future<Either<Failure, List<Friend>>> searchUsers(
+    String query, {
+    int limit = 20,
+  }) async {
     // No caching for search - always real-time
     if (!await _network.isConnected) {
       return Left(NetworkFailure('No internet connection'));
@@ -140,7 +143,10 @@ class SocialRepositoryImpl implements SocialRepository {
   }
 
   @override
-  Future<Either<Failure, void>> sendFriendRequest({String? username, String? userId}) async {
+  Future<Either<Failure, void>> sendFriendRequest({
+    String? username,
+    String? userId,
+  }) async {
     if (!await _network.isConnected) {
       return Left(NetworkFailure('No internet connection'));
     }

@@ -94,8 +94,9 @@ class ConnectivityService extends ChangeNotifier {
 
     try {
       // Try to lookup a reliable hostname
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 5));
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 5));
 
       _hasInternetAccess = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
 
@@ -128,15 +129,14 @@ class ConnectivityService extends ChangeNotifier {
 
   void _startInternetCheckTimer() {
     _internetCheckTimer?.cancel();
-    _internetCheckTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) async {
-        // Only check if we have network connection
-        if (_hasNetworkConnection) {
-          await _checkInternetAccess();
-        }
-      },
-    );
+    _internetCheckTimer = Timer.periodic(const Duration(seconds: 30), (
+      _,
+    ) async {
+      // Only check if we have network connection
+      if (_hasNetworkConnection) {
+        await _checkInternetAccess();
+      }
+    });
   }
 
   /// Force an immediate internet access check

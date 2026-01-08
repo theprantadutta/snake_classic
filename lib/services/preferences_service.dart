@@ -12,15 +12,15 @@ class PreferencesService extends ChangeNotifier {
 
   final DataSyncService _syncService = DataSyncService();
   final UnifiedUserService _userService = UnifiedUserService();
-  
+
   SharedPreferences? _prefs;
   Map<String, dynamic> _preferences = {};
   bool _isInitialized = false;
-  
+
   // Getters
   bool get isInitialized => _isInitialized;
   Map<String, dynamic> get preferences => Map.from(_preferences);
-  
+
   // Specific preference getters
   GameTheme get selectedTheme {
     final themeName = _preferences['theme'] as String? ?? 'classic';
@@ -29,11 +29,12 @@ class PreferencesService extends ChangeNotifier {
       orElse: () => GameTheme.classic,
     );
   }
-  
+
   bool get soundEnabled => _preferences['soundEnabled'] as bool? ?? true;
   bool get musicEnabled => _preferences['musicEnabled'] as bool? ?? true;
-  bool get trailSystemEnabled => _preferences['trailSystemEnabled'] as bool? ?? false;
-  
+  bool get trailSystemEnabled =>
+      _preferences['trailSystemEnabled'] as bool? ?? false;
+
   BoardSize get boardSize {
     final sizeData = _preferences['boardSize'] as Map<String, dynamic>?;
     if (sizeData != null) {
@@ -46,47 +47,50 @@ class PreferencesService extends ChangeNotifier {
     }
     return GameConstants.availableBoardSizes[1]; // Default to Classic
   }
-  
+
   Duration get crashFeedbackDuration {
-    final seconds = _preferences['crashFeedbackDurationSeconds'] as int? ?? 
+    final seconds =
+        _preferences['crashFeedbackDurationSeconds'] as int? ??
         GameConstants.defaultCrashFeedbackDuration.inSeconds;
     return Duration(seconds: seconds);
   }
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     _prefs = await SharedPreferences.getInstance();
-    
+
     // Load local preferences first
     await _loadLocalPreferences();
-    
+
     // If user is signed in, try to sync with cloud preferences
     if (_userService.isSignedIn) {
       await _syncWithCloud();
     }
-    
+
     _isInitialized = true;
-    
+
     if (kDebugMode) {
       print('PreferencesService initialized');
     }
-    
+
     notifyListeners();
   }
 
   Future<void> _loadLocalPreferences() async {
     if (_prefs == null) return;
-    
+
     try {
       // Load individual preferences from SharedPreferences
       _preferences = {
         'theme': _getLocalTheme(),
         'soundEnabled': _prefs!.getBool(GameConstants.soundEnabledKey) ?? true,
         'musicEnabled': _prefs!.getBool('music_enabled') ?? true,
-        'trailSystemEnabled': _prefs!.getBool(GameConstants.trailSystemEnabledKey) ?? false,
+        'trailSystemEnabled':
+            _prefs!.getBool(GameConstants.trailSystemEnabledKey) ?? false,
         'boardSize': await _getLocalBoardSize(),
-        'crashFeedbackDurationSeconds': _prefs!.getInt(GameConstants.crashFeedbackDurationKey) ?? 
+        'crashFeedbackDurationSeconds':
+            _prefs!.getInt(GameConstants.crashFeedbackDurationKey) ??
             GameConstants.defaultCrashFeedbackDuration.inSeconds,
       };
     } catch (e) {
@@ -105,9 +109,12 @@ class PreferencesService extends ChangeNotifier {
 
   Future<Map<String, dynamic>> _getLocalBoardSize() async {
     final boardSizeIndex = _prefs!.getInt(GameConstants.boardSizeKey) ?? 1;
-    final clampedIndex = boardSizeIndex.clamp(0, GameConstants.availableBoardSizes.length - 1);
+    final clampedIndex = boardSizeIndex.clamp(
+      0,
+      GameConstants.availableBoardSizes.length - 1,
+    );
     final boardSize = GameConstants.availableBoardSizes[clampedIndex];
-    
+
     return {
       'width': boardSize.width,
       'height': boardSize.height,
@@ -128,7 +135,8 @@ class PreferencesService extends ChangeNotifier {
         'name': 'Classic',
         'description': 'Classic 20x20 grid',
       },
-      'crashFeedbackDurationSeconds': GameConstants.defaultCrashFeedbackDuration.inSeconds,
+      'crashFeedbackDurationSeconds':
+          GameConstants.defaultCrashFeedbackDuration.inSeconds,
     };
   }
 
@@ -136,12 +144,12 @@ class PreferencesService extends ChangeNotifier {
     try {
       // Get cloud preferences
       final cloudPrefs = await _syncService.getData('preferences');
-      
+
       if (cloudPrefs != null) {
         // Merge with local preferences (cloud wins for newer data)
         final mergedPrefs = _syncService.mergeData(_preferences, cloudPrefs);
         _preferences = mergedPrefs;
-        
+
         // Save merged preferences locally
         await _saveLocalPreferences();
       } else {
@@ -158,30 +166,36 @@ class PreferencesService extends ChangeNotifier {
   Future<void> _uploadPreferencesToCloud() async {
     final preferencesWithTimestamp = Map<String, dynamic>.from(_preferences);
     preferencesWithTimestamp['lastUpdated'] = DateTime.now().toIso8601String();
-    
+
     await _syncService.queueSync('preferences', preferencesWithTimestamp);
   }
 
   Future<void> _saveLocalPreferences() async {
     if (_prefs == null) return;
-    
+
     try {
       // Save individual preferences to SharedPreferences for backward compatibility
       await _prefs!.setInt(
-        GameConstants.selectedThemeKey, 
+        GameConstants.selectedThemeKey,
         GameTheme.values.indexWhere((t) => t.name == _preferences['theme']),
       );
-      
+
       await _prefs!.setBool(GameConstants.soundEnabledKey, soundEnabled);
       await _prefs!.setBool('music_enabled', musicEnabled);
-      await _prefs!.setBool(GameConstants.trailSystemEnabledKey, trailSystemEnabled);
-      
+      await _prefs!.setBool(
+        GameConstants.trailSystemEnabledKey,
+        trailSystemEnabled,
+      );
+
       final boardSizeData = _preferences['boardSize'] as Map<String, dynamic>;
       final boardSizeIndex = GameConstants.availableBoardSizes.indexWhere(
         (size) => size.name == boardSizeData['name'],
       );
-      await _prefs!.setInt(GameConstants.boardSizeKey, boardSizeIndex.clamp(0, GameConstants.availableBoardSizes.length - 1));
-      
+      await _prefs!.setInt(
+        GameConstants.boardSizeKey,
+        boardSizeIndex.clamp(0, GameConstants.availableBoardSizes.length - 1),
+      );
+
       await _prefs!.setInt(
         GameConstants.crashFeedbackDurationKey,
         crashFeedbackDuration.inSeconds,
@@ -228,17 +242,17 @@ class PreferencesService extends ChangeNotifier {
     if (!_isInitialized) {
       await initialize();
     }
-    
+
     _preferences[key] = value;
-    
+
     // Save locally
     await _saveLocalPreferences();
-    
+
     // Sync to cloud if signed in
     if (_userService.isSignedIn) {
       await _uploadPreferencesToCloud();
     }
-    
+
     notifyListeners();
   }
 
@@ -247,37 +261,37 @@ class PreferencesService extends ChangeNotifier {
     if (!_isInitialized) {
       await initialize();
     }
-    
+
     _preferences.addAll(newPreferences);
-    
+
     // Save locally
     await _saveLocalPreferences();
-    
+
     // Sync to cloud if signed in
     if (_userService.isSignedIn) {
       await _uploadPreferencesToCloud();
     }
-    
+
     notifyListeners();
   }
 
   // Reset all preferences to defaults
   Future<void> resetToDefaults() async {
     _preferences = _getDefaultPreferences();
-    
+
     await _saveLocalPreferences();
-    
+
     if (_userService.isSignedIn) {
       await _uploadPreferencesToCloud();
     }
-    
+
     notifyListeners();
   }
 
   // Force sync with cloud (for manual sync)
   Future<bool> forceSyncWithCloud() async {
     if (!_userService.isSignedIn) return false;
-    
+
     try {
       await _syncWithCloud();
       return true;

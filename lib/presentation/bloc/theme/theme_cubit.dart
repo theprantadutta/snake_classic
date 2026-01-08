@@ -25,11 +25,13 @@ class ThemeCubit extends Cubit<ThemeState> {
       final savedTheme = _preferencesService.selectedTheme;
       final trailEnabled = _preferencesService.trailSystemEnabled;
 
-      emit(state.copyWith(
-        status: ThemeStatus.ready,
-        currentTheme: savedTheme,
-        trailSystemEnabled: trailEnabled,
-      ));
+      emit(
+        state.copyWith(
+          status: ThemeStatus.ready,
+          currentTheme: savedTheme,
+          trailSystemEnabled: trailEnabled,
+        ),
+      );
     } catch (e) {
       // On error, use defaults and mark as ready
       emit(state.copyWith(status: ThemeStatus.ready));

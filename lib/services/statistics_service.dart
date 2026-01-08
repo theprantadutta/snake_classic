@@ -9,7 +9,7 @@ class StatisticsService {
   final StorageService _storageService = StorageService();
   final DataSyncService _syncService = DataSyncService();
   final UnifiedUserService _userService = UnifiedUserService();
-  
+
   GameStatistics _currentStatistics = GameStatistics.initial();
   bool _initialized = false;
 
@@ -24,16 +24,16 @@ class StatisticsService {
 
   Future<void> initialize() async {
     if (_initialized) return;
-    
+
     try {
       // Load local statistics first
       await _loadLocalStatistics();
-      
+
       // If user is signed in, sync with cloud
       if (_userService.isSignedIn) {
         await _syncWithCloud();
       }
-      
+
       _initialized = true;
     } catch (e) {
       if (kDebugMode) {
@@ -60,12 +60,15 @@ class StatisticsService {
 
       if (separateHighScore != statsHighScore) {
         // Take the maximum of both values
-        final syncedHighScore =
-            separateHighScore > statsHighScore ? separateHighScore : statsHighScore;
+        final syncedHighScore = separateHighScore > statsHighScore
+            ? separateHighScore
+            : statsHighScore;
 
         // Update statistics if separate key had higher value
         if (separateHighScore > statsHighScore) {
-          _currentStatistics = _currentStatistics.withHighScore(syncedHighScore);
+          _currentStatistics = _currentStatistics.withHighScore(
+            syncedHighScore,
+          );
           await _saveLocalStatistics();
         }
 
@@ -75,7 +78,9 @@ class StatisticsService {
         }
 
         if (kDebugMode) {
-          print('High score synced: stats=$statsHighScore, separate=$separateHighScore -> $syncedHighScore');
+          print(
+            'High score synced: stats=$statsHighScore, separate=$separateHighScore -> $syncedHighScore',
+          );
         }
       }
     } catch (e) {
@@ -88,25 +93,27 @@ class StatisticsService {
 
   Future<void> _syncWithCloud() async {
     if (!_userService.isSignedIn) return;
-    
+
     try {
       // Get cloud statistics
       final cloudStats = await _syncService.getData('statistics');
-      
+
       if (cloudStats != null) {
         // Merge local and cloud statistics (keep the most recent data)
         final localStatsWithTimestamp = {
           ..._currentStatistics.toJson(),
           'lastUpdated': DateTime.now().toIso8601String(),
         };
-        
-        final mergedData = _syncService.mergeData(localStatsWithTimestamp, cloudStats);
+
+        final mergedData = _syncService.mergeData(
+          localStatsWithTimestamp,
+          cloudStats,
+        );
         _currentStatistics = GameStatistics.fromJson(mergedData);
       }
-      
+
       // Upload current statistics to cloud
       await _uploadToCloud();
-      
     } catch (e) {
       if (kDebugMode) {
         print('Error syncing with cloud: $e');
@@ -117,13 +124,13 @@ class StatisticsService {
 
   Future<void> _uploadToCloud() async {
     if (!_userService.isSignedIn) return;
-    
+
     try {
       final statisticsWithTimestamp = {
         ..._currentStatistics.toJson(),
         'lastUpdated': DateTime.now().toIso8601String(),
       };
-      
+
       await _syncService.queueSync('statistics', statisticsWithTimestamp);
     } catch (e) {
       if (kDebugMode) {
@@ -131,7 +138,6 @@ class StatisticsService {
       }
     }
   }
-
 
   Future<void> recordGameResult({
     required int score,
@@ -151,7 +157,7 @@ class StatisticsService {
     if (!_initialized) {
       await initialize();
     }
-    
+
     // Update statistics with new game data
     _currentStatistics = _currentStatistics.updateWithGameResult(
       score: score,
@@ -168,10 +174,10 @@ class StatisticsService {
       isPerfectGame: isPerfectGame,
       unlockedAchievements: unlockedAchievements,
     );
-    
+
     // Save locally
     await _saveLocalStatistics();
-    
+
     // Upload to cloud if signed in
     if (_userService.isSignedIn) {
       await _uploadToCloud();
@@ -192,10 +198,10 @@ class StatisticsService {
     if (!_initialized) {
       await initialize();
     }
-    
+
     _currentStatistics = _currentStatistics.startNewSession();
     await _saveLocalStatistics();
-    
+
     if (_userService.isSignedIn) {
       await _uploadToCloud();
     }
@@ -210,7 +216,9 @@ class StatisticsService {
       'averageScore': _currentStatistics.averageScore.round(),
       'totalFood': _currentStatistics.totalFoodConsumed,
       'totalPowerUps': _currentStatistics.totalPowerUpsCollected,
-      'longestSurvival': _formatDuration(_currentStatistics.longestSurvivalTime),
+      'longestSurvival': _formatDuration(
+        _currentStatistics.longestSurvivalTime,
+      ),
       'highestLevel': _currentStatistics.highestLevel,
       'winStreak': _currentStatistics.currentWinStreak,
       'longestStreak': _currentStatistics.longestWinStreak,
@@ -218,7 +226,8 @@ class StatisticsService {
       'perfectGames': _currentStatistics.perfectGames,
       'favoriteFood': _currentStatistics.favoriteFood,
       'favoritePowerUp': _currentStatistics.favoritePowerUp,
-      'achievementProgress': '${(_currentStatistics.achievementProgress * 100).round()}%',
+      'achievementProgress':
+          '${(_currentStatistics.achievementProgress * 100).round()}%',
       'recentScores': _currentStatistics.recentScores,
       'foodBreakdown': _currentStatistics.foodTypeCount,
       'powerUpBreakdown': _currentStatistics.powerUpTypeCount,
@@ -234,29 +243,35 @@ class StatisticsService {
   Map<String, dynamic> getPerformanceTrends() {
     final recentScores = _currentStatistics.recentScores;
     final trend = _calculateTrend(recentScores);
-    
+
     return {
       'recentScores': recentScores,
       'trend': trend, // 'improving', 'declining', 'stable'
-      'averageRecentScore': recentScores.isNotEmpty 
+      'averageRecentScore': recentScores.isNotEmpty
           ? (recentScores.reduce((a, b) => a + b) / recentScores.length).round()
           : 0,
-      'bestRecentScore': recentScores.isNotEmpty ? recentScores.reduce((a, b) => a > b ? a : b) : 0,
-      'worstRecentScore': recentScores.isNotEmpty ? recentScores.reduce((a, b) => a < b ? a : b) : 0,
+      'bestRecentScore': recentScores.isNotEmpty
+          ? recentScores.reduce((a, b) => a > b ? a : b)
+          : 0,
+      'worstRecentScore': recentScores.isNotEmpty
+          ? recentScores.reduce((a, b) => a < b ? a : b)
+          : 0,
     };
   }
 
   String _calculateTrend(List<int> scores) {
     if (scores.length < 3) return 'stable';
-    
+
     final recent = scores.sublist(scores.length - 3);
-    final older = scores.length >= 6 ? scores.sublist(scores.length - 6, scores.length - 3) : scores.sublist(0, scores.length - 3);
-    
+    final older = scores.length >= 6
+        ? scores.sublist(scores.length - 6, scores.length - 3)
+        : scores.sublist(0, scores.length - 3);
+
     final recentAvg = recent.reduce((a, b) => a + b) / recent.length;
     final olderAvg = older.reduce((a, b) => a + b) / older.length;
-    
+
     const threshold = 0.1; // 10% change threshold
-    
+
     if ((recentAvg - olderAvg) / olderAvg > threshold) {
       return 'improving';
     } else if ((olderAvg - recentAvg) / olderAvg > threshold) {
@@ -283,21 +298,22 @@ class StatisticsService {
   // Get daily/weekly play patterns for charts
   Map<String, dynamic> getPlayPatterns() {
     final dailyPlayTime = _currentStatistics.dailyPlayTime;
-    
+
     // Get last 7 days
     final now = DateTime.now();
     final last7Days = <String, int>{};
-    
+
     for (int i = 6; i >= 0; i--) {
       final date = now.subtract(Duration(days: i));
       final key = '${date.year}-${date.month}-${date.day}';
       last7Days[_formatDateForChart(date)] = dailyPlayTime[key] ?? 0;
     }
-    
+
     return {
       'dailyPlayTime': last7Days,
       'totalWeeklyTime': last7Days.values.reduce((a, b) => a + b),
-      'averageDailyTime': (last7Days.values.reduce((a, b) => a + b) / 7).round(),
+      'averageDailyTime': (last7Days.values.reduce((a, b) => a + b) / 7)
+          .round(),
       'mostActiveDay': _getMostActiveDay(last7Days),
     };
   }
@@ -309,10 +325,10 @@ class StatisticsService {
 
   String _getMostActiveDay(Map<String, int> dailyData) {
     if (dailyData.isEmpty) return 'None';
-    
+
     final sortedDays = dailyData.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
+
     return sortedDays.first.key;
   }
 
@@ -320,7 +336,7 @@ class StatisticsService {
   Future<void> resetStatistics() async {
     _currentStatistics = GameStatistics.initial();
     await _saveLocalStatistics();
-    
+
     if (_userService.isSignedIn) {
       await _syncService.queueSync('statistics', _currentStatistics.toJson());
     }
@@ -329,7 +345,7 @@ class StatisticsService {
   // Force sync with cloud (for manual sync)
   Future<bool> forceSync() async {
     if (!_userService.isSignedIn) return false;
-    
+
     try {
       await _uploadToCloud();
       await _syncService.forceSyncNow();

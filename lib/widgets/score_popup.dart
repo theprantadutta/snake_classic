@@ -39,38 +39,39 @@ class _ScorePopupState extends State<ScorePopup>
     // Scale: quick bounce in, then settle
     _scale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.5, end: 1.3)
-            .chain(CurveTween(curve: Curves.easeOutBack)),
+        tween: Tween<double>(
+          begin: 0.5,
+          end: 1.3,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.3, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween<double>(
+          begin: 1.3,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 20,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 50,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 50),
     ]).animate(_controller);
 
     // Opacity: stay visible, then fade out at the end
     _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 70),
       TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 70,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 30,
       ),
     ]).animate(_controller);
 
     // Rise: smooth upward movement (reduced distance for smaller popup)
-    _rise = Tween<double>(begin: 0, end: 45)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(_controller);
+    _rise = Tween<double>(
+      begin: 0,
+      end: 45,
+    ).chain(CurveTween(curve: Curves.easeOutCubic)).animate(_controller);
 
     _controller.forward().then((_) {
       widget.onComplete();
@@ -97,10 +98,7 @@ class _ScorePopupState extends State<ScorePopup>
           top: widget.position.dy - _rise.value,
           child: Opacity(
             opacity: _opacity.value,
-            child: Transform.scale(
-              scale: _scale.value,
-              child: child,
-            ),
+            child: Transform.scale(scale: _scale.value, child: child),
           ),
         );
       },
@@ -156,13 +154,15 @@ class ScorePopupManager {
     int multiplier = 1,
   }) {
     final id = _nextId++;
-    _activePopups.add(ScorePopupData(
-      id: id,
-      points: points,
-      position: position,
-      color: color,
-      multiplier: multiplier,
-    ));
+    _activePopups.add(
+      ScorePopupData(
+        id: id,
+        points: points,
+        position: position,
+        color: color,
+        multiplier: multiplier,
+      ),
+    );
     return id;
   }
 

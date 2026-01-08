@@ -11,7 +11,7 @@ import 'navigation_service.dart';
 
 enum NotificationType {
   tournament('tournament', 'Tournament Update'),
-  social('social', 'Social Notification'), 
+  social('social', 'Social Notification'),
   achievement('achievement', 'Achievement Unlocked'),
   dailyReminder('daily_reminder', 'Daily Challenge'),
   specialEvent('special_event', 'Special Event');
@@ -28,14 +28,15 @@ class NotificationService {
 
   static const String _channelId = 'snake_classic_notifications';
   static const String _channelName = 'Snake Classic Notifications';
-  static const String _channelDescription = 'Notifications for Snake Classic game events';
+  static const String _channelDescription =
+      'Notifications for Snake Classic game events';
 
   late FlutterLocalNotificationsPlugin _localNotifications;
   late FirebaseMessaging _firebaseMessaging;
-  
+
   String? _fcmToken;
   bool _initialized = false;
-  
+
   // Notification preferences - stored in SharedPreferences via PreferencesService
   final Map<NotificationType, bool> _notificationPreferences = {
     NotificationType.tournament: true,
@@ -51,14 +52,14 @@ class NotificationService {
   Future<void> initialize() async {
     try {
       AppLogger.info('🔔 Initializing notification service');
-      
+
       _firebaseMessaging = FirebaseMessaging.instance;
       _localNotifications = FlutterLocalNotificationsPlugin();
-      
+
       await _initializeLocalNotifications();
       await _initializeFirebaseMessaging();
       await _loadNotificationPreferences();
-      
+
       _initialized = true;
       AppLogger.success('Notification service initialized successfully');
     } catch (e) {
@@ -70,7 +71,7 @@ class NotificationService {
   Future<void> _initializeLocalNotifications() async {
     // Android initialization settings
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    
+
     // iOS initialization settings
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -100,7 +101,9 @@ class NotificationService {
       );
 
       await _localNotifications
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(channel);
     }
   }
@@ -117,15 +120,16 @@ class NotificationService {
       sound: true,
     );
 
-    AppLogger.info('🔔 Notification permission: ${settings.authorizationStatus}');
+    AppLogger.info(
+      '🔔 Notification permission: ${settings.authorizationStatus}',
+    );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional) {
-      
       // Get FCM token
       _fcmToken = await _firebaseMessaging.getToken();
       AppLogger.info('🎫 FCM Token: $_fcmToken');
-      
+
       // Development-only: Print FCM token for Firebase Console testing
       if (kDebugMode && _fcmToken != null) {
         debugPrint('');
@@ -141,7 +145,7 @@ class NotificationService {
       _firebaseMessaging.onTokenRefresh.listen((token) {
         _fcmToken = token;
         AppLogger.info('🔄 FCM Token refreshed: $token');
-        
+
         // Development-only: Print refreshed token
         if (kDebugMode) {
           debugPrint('');
@@ -150,7 +154,7 @@ class NotificationService {
           debugPrint('🔄 ===================================');
           debugPrint('');
         }
-        
+
         _onTokenRefresh(token);
       });
 
@@ -161,7 +165,8 @@ class NotificationService {
       FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
       // Handle initial message when app is opened from terminated state
-      RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
+      RemoteMessage? initialMessage = await _firebaseMessaging
+          .getInitialMessage();
       if (initialMessage != null) {
         _handleMessageOpenedApp(initialMessage);
       }
@@ -170,7 +175,7 @@ class NotificationService {
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     AppLogger.info('📨 Received foreground message: ${message.messageId}');
-    
+
     // Show local notification for foreground messages
     await _showLocalNotification(
       title: message.notification?.title ?? 'Snake Classic',
@@ -181,7 +186,7 @@ class NotificationService {
 
   Future<void> _handleMessageOpenedApp(RemoteMessage message) async {
     AppLogger.info('👆 App opened from notification: ${message.messageId}');
-    
+
     // Handle deep linking based on notification data
     final data = message.data;
     if (data.containsKey('route')) {
@@ -196,7 +201,7 @@ class NotificationService {
 
   void _onNotificationTapped(NotificationResponse response) {
     AppLogger.info('👆 Local notification tapped: ${response.id}');
-    
+
     if (response.payload != null) {
       try {
         final data = jsonDecode(response.payload!);
@@ -211,13 +216,10 @@ class NotificationService {
 
   void _navigateToScreen(String route, Map<String, dynamic> data) {
     AppLogger.info('🧭 Navigating to: $route with data: $data');
-    
+
     try {
       // Use the navigation service to handle deep linking
-      NavigationService().navigateFromNotification(
-        route: route,
-        params: data,
-      );
+      NavigationService().navigateFromNotification(route: route, params: data);
     } catch (e) {
       AppLogger.error('Navigation failed', e);
       // Fallback to home screen
@@ -233,7 +235,9 @@ class NotificationService {
   }) async {
     // Check if notifications are enabled for this type
     if (type != null && !(_notificationPreferences[type] ?? true)) {
-      AppLogger.info('🔕 Notification blocked by user preferences: ${type.key}');
+      AppLogger.info(
+        '🔕 Notification blocked by user preferences: ${type.key}',
+      );
       return;
     }
 
@@ -293,10 +297,15 @@ class NotificationService {
     return _notificationPreferences[type] ?? true;
   }
 
-  Future<void> setNotificationEnabled(NotificationType type, bool enabled) async {
+  Future<void> setNotificationEnabled(
+    NotificationType type,
+    bool enabled,
+  ) async {
     _notificationPreferences[type] = enabled;
-    AppLogger.info('⚙️ ${type.key} notifications ${enabled ? 'enabled' : 'disabled'}');
-    
+    AppLogger.info(
+      '⚙️ ${type.key} notifications ${enabled ? 'enabled' : 'disabled'}',
+    );
+
     // Save to preferences
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -306,7 +315,8 @@ class NotificationService {
     }
   }
 
-  Map<NotificationType, bool> get notificationPreferences => Map.from(_notificationPreferences);
+  Map<NotificationType, bool> get notificationPreferences =>
+      Map.from(_notificationPreferences);
 
   // Game-specific notification methods
   Future<void> showAchievementNotification(String achievementName) async {
@@ -314,11 +324,18 @@ class NotificationService {
       title: '🏆 Achievement Unlocked!',
       body: achievementName,
       type: NotificationType.achievement,
-      payload: jsonEncode({'route': 'achievements', 'achievement': achievementName}),
+      payload: jsonEncode({
+        'route': 'achievements',
+        'achievement': achievementName,
+      }),
     );
   }
 
-  Future<void> showTournamentNotification(String title, String body, {String? tournamentId}) async {
+  Future<void> showTournamentNotification(
+    String title,
+    String body, {
+    String? tournamentId,
+  }) async {
     await _showLocalNotification(
       title: '🏆 $title',
       body: body,
@@ -330,15 +347,16 @@ class NotificationService {
     );
   }
 
-  Future<void> showSocialNotification(String title, String body, {String? userId}) async {
+  Future<void> showSocialNotification(
+    String title,
+    String body, {
+    String? userId,
+  }) async {
     await _showLocalNotification(
       title: '👥 $title',
       body: body,
       type: NotificationType.social,
-      payload: jsonEncode({
-        'route': 'friends_screen',
-        'user_id': userId,
-      }),
+      payload: jsonEncode({'route': 'friends_screen', 'user_id': userId}),
     );
   }
 
@@ -364,7 +382,10 @@ class NotificationService {
     );
 
     const iosDetails = DarwinNotificationDetails();
-    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
 
     await _localNotifications.periodicallyShow(
       0, // notification id
@@ -394,7 +415,9 @@ class NotificationService {
 
       // Only register if authenticated with backend
       if (!apiService.isAuthenticated) {
-        AppLogger.warning('Cannot register FCM token: Not authenticated with backend');
+        AppLogger.warning(
+          'Cannot register FCM token: Not authenticated with backend',
+        );
         return;
       }
 
@@ -420,11 +443,16 @@ class NotificationService {
 
       // Get recommended topics based on user preferences
       final topics = BackendService().getRecommendedTopics(
-        tournamentsEnabled: _notificationPreferences[NotificationType.tournament] ?? true,
-        socialEnabled: _notificationPreferences[NotificationType.social] ?? true,
-        achievementsEnabled: _notificationPreferences[NotificationType.achievement] ?? true,
-        dailyRemindersEnabled: _notificationPreferences[NotificationType.dailyReminder] ?? true,
-        specialEventsEnabled: _notificationPreferences[NotificationType.specialEvent] ?? true,
+        tournamentsEnabled:
+            _notificationPreferences[NotificationType.tournament] ?? true,
+        socialEnabled:
+            _notificationPreferences[NotificationType.social] ?? true,
+        achievementsEnabled:
+            _notificationPreferences[NotificationType.achievement] ?? true,
+        dailyRemindersEnabled:
+            _notificationPreferences[NotificationType.dailyReminder] ?? true,
+        specialEventsEnabled:
+            _notificationPreferences[NotificationType.specialEvent] ?? true,
       );
 
       // Use authenticated ApiService for topic subscriptions
@@ -443,13 +471,17 @@ class NotificationService {
   Future<void> initializeBackendIntegration() async {
     try {
       if (_fcmToken == null) {
-        AppLogger.warning('Cannot initialize backend integration: No FCM token available');
+        AppLogger.warning(
+          'Cannot initialize backend integration: No FCM token available',
+        );
         return;
       }
 
       final apiService = ApiService();
       if (!apiService.isAuthenticated) {
-        AppLogger.warning('Cannot initialize backend integration: Not authenticated');
+        AppLogger.warning(
+          'Cannot initialize backend integration: Not authenticated',
+        );
         return;
       }
 
@@ -476,7 +508,10 @@ class NotificationService {
   }
 
   /// Send achievement notification via backend
-  Future<void> triggerAchievementNotification(String achievementName, String achievementId) async {
+  Future<void> triggerAchievementNotification(
+    String achievementName,
+    String achievementId,
+  ) async {
     if (_fcmToken == null) {
       AppLogger.warning('Cannot send achievement notification: No FCM token');
       return;
@@ -488,8 +523,10 @@ class NotificationService {
         achievementName: achievementName,
         achievementId: achievementId,
       );
-      
-      AppLogger.info('🏆 Achievement notification sent via backend: $achievementName');
+
+      AppLogger.info(
+        '🏆 Achievement notification sent via backend: $achievementName',
+      );
     } catch (e) {
       AppLogger.error('Failed to send achievement notification via backend', e);
       // Fallback to local notification
@@ -510,10 +547,13 @@ class NotificationService {
         senderName: senderName,
         senderId: senderId,
       );
-      
+
       AppLogger.info('👥 Friend request notification sent via backend');
     } catch (e) {
-      AppLogger.error('Failed to send friend request notification via backend', e);
+      AppLogger.error(
+        'Failed to send friend request notification via backend',
+        e,
+      );
     }
   }
 
@@ -531,7 +571,7 @@ class NotificationService {
         body: 'This notification was sent from the Snake Classic backend!',
         route: 'home',
       );
-      
+
       if (success) {
         AppLogger.info('✅ Test notification sent via backend');
       } else {
@@ -543,14 +583,19 @@ class NotificationService {
   }
 
   /// Update notification preferences and sync with backend
-  Future<void> updateNotificationEnabled(NotificationType type, bool enabled) async {
+  Future<void> updateNotificationEnabled(
+    NotificationType type,
+    bool enabled,
+  ) async {
     _notificationPreferences[type] = enabled;
-    AppLogger.info('⚙️ ${type.key} notifications ${enabled ? 'enabled' : 'disabled'}');
-    
+    AppLogger.info(
+      '⚙️ ${type.key} notifications ${enabled ? 'enabled' : 'disabled'}',
+    );
+
     // Save to preferences using shared preferences directly
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notification_${type.key}', enabled);
-    
+
     // Sync with backend if token is available
     if (_fcmToken != null) {
       await _syncTopicSubscriptions(_fcmToken!);
@@ -561,13 +606,13 @@ class NotificationService {
   Future<void> _loadNotificationPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       for (final type in NotificationType.values) {
         final key = 'notification_${type.key}';
         final enabled = prefs.getBool(key) ?? true;
         _notificationPreferences[type] = enabled;
       }
-      
+
       AppLogger.info('📱 Notification preferences loaded');
     } catch (e) {
       AppLogger.error('Error loading notification preferences', e);
@@ -603,7 +648,7 @@ class NotificationService {
 // Background message handler - must be top-level function
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   AppLogger.info('📨 Background message received: ${message.messageId}');
-  
+
   // Handle background message
   // Note: Limited functionality in background mode
 }

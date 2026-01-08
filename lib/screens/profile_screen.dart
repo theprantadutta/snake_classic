@@ -1075,11 +1075,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: themeState.currentTheme.primaryColor,
-              size: 20,
-            ),
+            Icon(icon, color: themeState.currentTheme.primaryColor, size: 20),
             const SizedBox(height: 4),
             Text(
               value,
@@ -1446,10 +1442,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _showSignOutDialog(
-    BuildContext context,
-    GameTheme theme,
-  ) {
+  void _showSignOutDialog(BuildContext context, GameTheme theme) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(

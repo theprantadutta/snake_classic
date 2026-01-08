@@ -20,18 +20,19 @@ class TournamentsData {
     final tournamentsJson = json['tournaments'] as List<dynamic>? ?? [];
     return TournamentsData(
       tournaments: tournamentsJson.map((e) => Tournament.fromJson(e)).toList(),
-      totalCount: json['total_count'] ?? json['totalCount'] ?? tournamentsJson.length,
+      totalCount:
+          json['total_count'] ?? json['totalCount'] ?? tournamentsJson.length,
       offset: json['offset'] ?? 0,
       limit: json['limit'] ?? 50,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'tournaments': tournaments.map((e) => e.toJson()).toList(),
-        'total_count': totalCount,
-        'offset': offset,
-        'limit': limit,
-      };
+    'tournaments': tournaments.map((e) => e.toJson()).toList(),
+    'total_count': totalCount,
+    'offset': offset,
+    'limit': limit,
+  };
 }
 
 /// Tournament leaderboard data
@@ -49,23 +50,33 @@ class TournamentLeaderboardData {
   });
 
   factory TournamentLeaderboardData.fromJson(Map<String, dynamic> json) {
-    final participantsJson = json['participants'] as List<dynamic>? ?? json['leaderboard'] as List<dynamic>? ?? [];
+    final participantsJson =
+        json['participants'] as List<dynamic>? ??
+        json['leaderboard'] as List<dynamic>? ??
+        [];
     return TournamentLeaderboardData(
       tournamentId: json['tournament_id'] ?? json['tournamentId'] ?? '',
-      participants: participantsJson.map((e) => TournamentParticipant.fromJson(e)).toList(),
-      totalParticipants: json['total_participants'] ?? json['totalParticipants'] ?? participantsJson.length,
+      participants: participantsJson
+          .map((e) => TournamentParticipant.fromJson(e))
+          .toList(),
+      totalParticipants:
+          json['total_participants'] ??
+          json['totalParticipants'] ??
+          participantsJson.length,
       userEntry: json['user_entry'] != null || json['userEntry'] != null
-          ? TournamentParticipant.fromJson(json['user_entry'] ?? json['userEntry'])
+          ? TournamentParticipant.fromJson(
+              json['user_entry'] ?? json['userEntry'],
+            )
           : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'tournament_id': tournamentId,
-        'participants': participants.map((e) => e.toJson()).toList(),
-        'total_participants': totalParticipants,
-        'user_entry': userEntry?.toJson(),
-      };
+    'tournament_id': tournamentId,
+    'participants': participants.map((e) => e.toJson()).toList(),
+    'total_participants': totalParticipants,
+    'user_entry': userEntry?.toJson(),
+  };
 }
 
 /// Abstract repository for tournament operations

@@ -50,23 +50,16 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   }
 
   Widget _buildContent(BuildContext context, GameTheme theme) {
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Achievements',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: theme.primaryColor,
-          ),
+          icon: Icon(Icons.arrow_back, color: theme.primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: TabBar(
@@ -87,15 +80,24 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           children: [
             // Progress Summary
             _buildProgressSummary(theme),
-            
+
             // Achievements List
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildAchievementsList(_achievementService.achievements, theme),
-                  _buildAchievementsList(_achievementService.getUnlockedAchievements(), theme),
-                  _buildAchievementsList(_achievementService.getLockedAchievements(), theme),
+                  _buildAchievementsList(
+                    _achievementService.achievements,
+                    theme,
+                  ),
+                  _buildAchievementsList(
+                    _achievementService.getUnlockedAchievements(),
+                    theme,
+                  ),
+                  _buildAchievementsList(
+                    _achievementService.getLockedAchievements(),
+                    theme,
+                  ),
                 ],
               ),
             ),
@@ -107,7 +109,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
   Widget _buildProgressSummary(GameTheme theme) {
     final totalAchievements = _achievementService.achievements.length;
-    final unlockedAchievements = _achievementService.getUnlockedAchievements().length;
+    final unlockedAchievements = _achievementService
+        .getUnlockedAchievements()
+        .length;
     final completionPercentage = _achievementService.completionPercentage;
     final totalPoints = _achievementService.totalAchievementPoints;
 
@@ -117,21 +121,15 @@ class _AchievementsScreenState extends State<AchievementsScreen>
       decoration: BoxDecoration(
         color: theme.primaryColor.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: theme.primaryColor.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Icon(
-                Icons.emoji_events,
-                color: Colors.amber,
-                size: 32,
-              ),
+              Icon(Icons.emoji_events, color: Colors.amber, size: 32),
               const SizedBox(width: 12),
-              
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,7 +152,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                   ],
                 ),
               ),
-              
+
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -177,9 +175,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 15),
-          
+
           // Progress Bar
           Container(
             height: 8,
@@ -205,7 +203,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.2, duration: 400.ms);
   }
 
-  Widget _buildAchievementsList(List<Achievement> achievements, GameTheme theme) {
+  Widget _buildAchievementsList(
+    List<Achievement> achievements,
+    GameTheme theme,
+  ) {
     if (achievements.isEmpty) {
       return Center(
         child: Column(
@@ -234,7 +235,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
       itemCount: achievements.length,
       itemBuilder: (context, index) {
         final achievement = achievements[index];
-        
+
         return _buildAchievementCard(achievement, theme)
             .animate(delay: (index * 50).ms)
             .fadeIn(duration: 300.ms)
@@ -250,14 +251,14 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isUnlocked 
-          ? achievement.rarityColor.withValues(alpha: 0.2)
-          : theme.primaryColor.withValues(alpha: 0.1),
+        color: isUnlocked
+            ? achievement.rarityColor.withValues(alpha: 0.2)
+            : theme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isUnlocked 
-            ? achievement.rarityColor.withValues(alpha: 0.5)
-            : theme.primaryColor.withValues(alpha: 0.3),
+          color: isUnlocked
+              ? achievement.rarityColor.withValues(alpha: 0.5)
+              : theme.primaryColor.withValues(alpha: 0.3),
         ),
       ),
       child: Padding(
@@ -271,20 +272,16 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isUnlocked 
-                      ? achievement.rarityColor
-                      : Colors.grey.withValues(alpha: 0.5),
+                    color: isUnlocked
+                        ? achievement.rarityColor
+                        : Colors.grey.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    achievement.icon,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  child: Icon(achievement.icon, color: Colors.white, size: 24),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // Achievement Info
                 Expanded(
                   child: Column(
@@ -298,16 +295,23 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: isUnlocked ? Colors.white : Colors.white.withValues(alpha: 0.7),
+                                color: isUnlocked
+                                    ? Colors.white
+                                    : Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
                           ),
-                          
+
                           // Rarity Badge
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: achievement.rarityColor.withValues(alpha: 0.2),
+                              color: achievement.rarityColor.withValues(
+                                alpha: 0.2,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -321,9 +325,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 4),
-                      
+
                       Text(
                         achievement.description,
                         style: TextStyle(
@@ -331,10 +335,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                           color: Colors.white.withValues(alpha: 0.8),
                         ),
                       ),
-                      
+
                       if (!isUnlocked && progress > 0) ...[
                         const SizedBox(height: 8),
-                        
+
                         // Progress Bar
                         Row(
                           children: [
@@ -357,9 +361,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                                 ),
                               ),
                             ),
-                            
+
                             const SizedBox(width: 8),
-                            
+
                             Text(
                               '${achievement.currentProgress}/${achievement.targetValue}',
                               style: TextStyle(
@@ -373,24 +377,23 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // Points and Status
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     if (isUnlocked) ...[
-                      Icon(
-                        Icons.check_circle,
-                        color: Colors.green,
-                        size: 20,
-                      ),
+                      Icon(Icons.check_circle, color: Colors.green, size: 20),
                       const SizedBox(height: 4),
                     ],
-                    
+
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.amber.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -408,11 +411,11 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                 ),
               ],
             ),
-            
+
             // Unlock Date
             if (isUnlocked && achievement.unlockedAt != null) ...[
               const SizedBox(height: 12),
-              
+
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -427,7 +430,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                       color: Colors.green.withValues(alpha: 0.8),
                     ),
                     const SizedBox(width: 8),
-                    
+
                     Text(
                       'Unlocked ${_formatDate(achievement.unlockedAt!)}',
                       style: TextStyle(

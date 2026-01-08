@@ -51,9 +51,9 @@ class PauseOverlay extends StatelessWidget {
                 size: 64,
                 color: theme.accentColor,
               ).animate().scale(delay: 100.ms),
-              
+
               const SizedBox(height: 16),
-              
+
               // Pause Text
               Text(
                 'PAUSED',
@@ -64,9 +64,9 @@ class PauseOverlay extends StatelessWidget {
                   letterSpacing: 2,
                 ),
               ).animate().fadeIn(delay: 200.ms),
-              
+
               const SizedBox(height: 24),
-              
+
               // Store Access Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -77,7 +77,9 @@ class PauseOverlay extends StatelessWidget {
                     label: 'Premium',
                     colors: [Colors.purple, Colors.blue],
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const PremiumBenefitsScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const PremiumBenefitsScreen(),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -87,12 +89,14 @@ class PauseOverlay extends StatelessWidget {
                     label: 'Store',
                     colors: [Colors.orange, Colors.amber],
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const StoreScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const StoreScreen(),
+                      ),
                     ),
                   ),
                 ],
               ).animate().fadeIn(delay: 250.ms),
-              
+
               const SizedBox(height: 16),
 
               // Game Guide Section (moved from game screen)
@@ -111,9 +115,9 @@ class PauseOverlay extends StatelessWidget {
                     icon: Icons.play_arrow,
                     width: 200,
                   ).animate().slideX(begin: -1, delay: 300.ms),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   GradientButton(
                     onPressed: onRestart,
                     text: 'RESTART',
@@ -123,9 +127,9 @@ class PauseOverlay extends StatelessWidget {
                     width: 200,
                     outlined: true,
                   ).animate().slideX(begin: 1, delay: 400.ms),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   GradientButton(
                     onPressed: onHome,
                     text: 'HOME',
@@ -150,9 +154,7 @@ class PauseOverlay extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
       ),
       child: Theme(
         data: ThemeData(dividerColor: Colors.transparent),
@@ -250,11 +252,7 @@ class PauseOverlay extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: colors.first,
-              size: 18,
-            ),
+            Icon(icon, color: colors.first, size: 18),
             const SizedBox(width: 8),
             Text(
               label,

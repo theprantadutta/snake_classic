@@ -19,9 +19,9 @@ class TournamentRepositoryImpl implements TournamentRepository {
     required ApiDataSource remote,
     required CacheDataSource cache,
     required NetworkInfo network,
-  })  : _remote = remote,
-        _cache = cache,
-        _network = network;
+  }) : _remote = remote,
+       _cache = cache,
+       _network = network;
 
   @override
   Future<Either<Failure, TournamentsData>> getTournaments({
@@ -147,7 +147,8 @@ class TournamentRepositoryImpl implements TournamentRepository {
     if (await _cache.isCacheFresh(cacheKey)) {
       final cached = await _cache.getCached<TournamentLeaderboardData>(
         cacheKey,
-        (data) => TournamentLeaderboardData.fromJson(jsonDecode(data as String)),
+        (data) =>
+            TournamentLeaderboardData.fromJson(jsonDecode(data as String)),
       );
       if (cached != null) {
         AppLogger.debug('Tournament leaderboard cache hit');
@@ -179,7 +180,9 @@ class TournamentRepositoryImpl implements TournamentRepository {
         AppLogger.debug('Tournament leaderboard fetched from network');
         return Right(leaderboardData);
       } catch (e) {
-        AppLogger.warning('Network fetch failed for tournament leaderboard: $e');
+        AppLogger.warning(
+          'Network fetch failed for tournament leaderboard: $e',
+        );
       }
     }
 
@@ -197,7 +200,9 @@ class TournamentRepositoryImpl implements TournamentRepository {
   }
 
   @override
-  Future<Either<Failure, Tournament>> joinTournament(String tournamentId) async {
+  Future<Either<Failure, Tournament>> joinTournament(
+    String tournamentId,
+  ) async {
     if (!await _network.isConnected) {
       return Left(NetworkFailure('No internet connection'));
     }
@@ -237,7 +242,9 @@ class TournamentRepositoryImpl implements TournamentRepository {
       );
 
       // Invalidate tournament leaderboard cache
-      await _cache.invalidate('${CacheKeys.tournamentDetails(tournamentId)}_leaderboard');
+      await _cache.invalidate(
+        '${CacheKeys.tournamentDetails(tournamentId)}_leaderboard',
+      );
       await _cache.invalidate(CacheKeys.tournamentDetails(tournamentId));
 
       return const Right(null);

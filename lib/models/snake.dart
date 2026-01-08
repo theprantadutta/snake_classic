@@ -12,10 +12,8 @@ class Snake {
   // Flag to track if a direction change has been queued this tick
   bool _hasQueuedDirection = false;
 
-  Snake({
-    required this.body,
-    this.currentDirection = Direction.right,
-  }) : _lastCommittedDirection = Direction.right;
+  Snake({required this.body, this.currentDirection = Direction.right})
+    : _lastCommittedDirection = Direction.right;
 
   Position get head => body.first;
   Position get tail => body.last;
@@ -46,7 +44,12 @@ class Snake {
     return snake;
   }
 
-  void move({required bool ateFood, int? boardWidth, int? boardHeight, bool wrapAround = false}) {
+  void move({
+    required bool ateFood,
+    int? boardWidth,
+    int? boardHeight,
+    bool wrapAround = false,
+  }) {
     // Commit the current direction for the next tick's validation
     _lastCommittedDirection = currentDirection;
 

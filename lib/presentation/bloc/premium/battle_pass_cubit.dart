@@ -14,10 +14,9 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   final StorageService _storageService;
   final DataSyncService _dataSyncService = DataSyncService();
 
-  BattlePassCubit({
-    required StorageService storageService,
-  })  : _storageService = storageService,
-        super(BattlePassState.initial());
+  BattlePassCubit({required StorageService storageService})
+    : _storageService = storageService,
+      super(BattlePassState.initial());
 
   /// Initialize battle pass state
   Future<void> initialize() async {
@@ -30,36 +29,43 @@ class BattlePassCubit extends Cubit<BattlePassState> {
 
       if (battlePassData != null) {
         final data = json.decode(battlePassData);
-        emit(state.copyWith(
-          status: BattlePassStatus.ready,
-          isActive: data['is_active'] ?? false,
-          currentTier: data['current_tier'] ?? 0,
-          currentXP: data['current_xp'] ?? 0,
-          xpForNextTier: data['xp_for_next_tier'] ?? 100,
-          expiryDate: data['expiry_date'] != null
-              ? DateTime.tryParse(data['expiry_date'])
-              : null,
-          claimedFreeTiers: (data['claimed_free_tiers'] as List<dynamic>?)
-                  ?.map((e) => e as int)
-                  .toSet() ??
-              {},
-          claimedPremiumTiers: (data['claimed_premium_tiers'] as List<dynamic>?)
-                  ?.map((e) => e as int)
-                  .toSet() ??
-              {},
-        ));
+        emit(
+          state.copyWith(
+            status: BattlePassStatus.ready,
+            isActive: data['is_active'] ?? false,
+            currentTier: data['current_tier'] ?? 0,
+            currentXP: data['current_xp'] ?? 0,
+            xpForNextTier: data['xp_for_next_tier'] ?? 100,
+            expiryDate: data['expiry_date'] != null
+                ? DateTime.tryParse(data['expiry_date'])
+                : null,
+            claimedFreeTiers:
+                (data['claimed_free_tiers'] as List<dynamic>?)
+                    ?.map((e) => e as int)
+                    .toSet() ??
+                {},
+            claimedPremiumTiers:
+                (data['claimed_premium_tiers'] as List<dynamic>?)
+                    ?.map((e) => e as int)
+                    .toSet() ??
+                {},
+          ),
+        );
       } else {
         emit(state.copyWith(status: BattlePassStatus.ready));
       }
 
       AppLogger.info(
-          'BattlePassCubit initialized. Active: ${state.isActive}, Tier: ${state.currentTier}');
+        'BattlePassCubit initialized. Active: ${state.isActive}, Tier: ${state.currentTier}',
+      );
     } catch (e) {
       AppLogger.error('Error initializing BattlePassCubit', e);
-      emit(state.copyWith(
-        status: BattlePassStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(
+          status: BattlePassStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
@@ -79,12 +85,11 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   /// Activate battle pass (after purchase)
   Future<void> activate({Duration duration = const Duration(days: 90)}) async {
     final expiryDate = DateTime.now().add(duration);
-    emit(state.copyWith(
-      isActive: true,
-      expiryDate: expiryDate,
-    ));
+    emit(state.copyWith(isActive: true, expiryDate: expiryDate));
     await _saveState();
-    AppLogger.info('Battle pass activated until ${expiryDate.toIso8601String()}');
+    AppLogger.info(
+      'Battle pass activated until ${expiryDate.toIso8601String()}',
+    );
   }
 
   /// Add XP to battle pass
@@ -103,11 +108,13 @@ class BattlePassCubit extends Cubit<BattlePassState> {
       xpForNext = state.xpRequiredForTier(newTier);
     }
 
-    emit(state.copyWith(
-      currentXP: newXP,
-      currentTier: newTier,
-      xpForNextTier: xpForNext,
-    ));
+    emit(
+      state.copyWith(
+        currentXP: newXP,
+        currentTier: newTier,
+        xpForNextTier: xpForNext,
+      ),
+    );
     await _saveState();
 
     AppLogger.info('Added $xp XP. New tier: $newTier, XP: $newXP/$xpForNext');
@@ -124,15 +131,11 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     await _saveState();
 
     // Queue for background sync
-    _dataSyncService.queueSync(
-      'battle_pass_claim',
-      {
-        'level': tier,
-        'tier': 'free',
-        'claimed_at': DateTime.now().toIso8601String(),
-      },
-      priority: SyncPriority.high,
-    );
+    _dataSyncService.queueSync('battle_pass_claim', {
+      'level': tier,
+      'tier': 'free',
+      'claimed_at': DateTime.now().toIso8601String(),
+    }, priority: SyncPriority.high);
 
     AppLogger.info('Claimed free reward for tier $tier');
     return true;
@@ -150,15 +153,11 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     await _saveState();
 
     // Queue for background sync
-    _dataSyncService.queueSync(
-      'battle_pass_claim',
-      {
-        'level': tier,
-        'tier': 'premium',
-        'claimed_at': DateTime.now().toIso8601String(),
-      },
-      priority: SyncPriority.high,
-    );
+    _dataSyncService.queueSync('battle_pass_claim', {
+      'level': tier,
+      'tier': 'premium',
+      'claimed_at': DateTime.now().toIso8601String(),
+    }, priority: SyncPriority.high);
 
     AppLogger.info('Claimed premium reward for tier $tier');
     return true;

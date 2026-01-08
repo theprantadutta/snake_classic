@@ -1,19 +1,8 @@
 import 'package:flutter/material.dart';
 
-enum AchievementType {
-  score,
-  games,
-  streak,
-  survival,
-  special,
-}
+enum AchievementType { score, games, streak, survival, special }
 
-enum AchievementRarity {
-  common,
-  rare,
-  epic,
-  legendary,
-}
+enum AchievementRarity { common, rare, epic, legendary }
 
 class Achievement {
   final String id;
@@ -137,9 +126,9 @@ class Achievement {
       targetValue: json['targetValue'] ?? 0,
       points: json['points'] ?? 0,
       isUnlocked: json['isUnlocked'] ?? false,
-      unlockedAt: json['unlockedAt'] != null 
-        ? DateTime.parse(json['unlockedAt'])
-        : null,
+      unlockedAt: json['unlockedAt'] != null
+          ? DateTime.parse(json['unlockedAt'])
+          : null,
       currentProgress: json['currentProgress'] ?? 0,
     );
   }
@@ -148,7 +137,7 @@ class Achievement {
     return [
       // Score Achievements (IDs match backend)
       const Achievement(
-        id: 'first_bite',  // Backend: first_bite
+        id: 'first_bite', // Backend: first_bite
         title: 'First Bite',
         description: 'Score your first point',
         icon: Icons.star,
@@ -158,7 +147,7 @@ class Achievement {
         points: 10,
       ),
       const Achievement(
-        id: 'getting_started',  // Backend: getting_started
+        id: 'getting_started', // Backend: getting_started
         title: 'Getting Started',
         description: 'Score 100 points',
         icon: Icons.emoji_events,
@@ -168,7 +157,7 @@ class Achievement {
         points: 25,
       ),
       const Achievement(
-        id: 'high_scorer',  // Backend: high_scorer
+        id: 'high_scorer', // Backend: high_scorer
         title: 'High Scorer',
         description: 'Score 500 points in a single game',
         icon: Icons.trending_up,
@@ -178,7 +167,7 @@ class Achievement {
         points: 50,
       ),
       const Achievement(
-        id: 'master_scorer',  // Backend: master_scorer
+        id: 'master_scorer', // Backend: master_scorer
         title: 'Master Scorer',
         description: 'Score 1000 points in a single game',
         icon: Icons.military_tech,
@@ -188,7 +177,7 @@ class Achievement {
         points: 100,
       ),
       const Achievement(
-        id: 'legendary_scorer',  // Backend: legendary_scorer
+        id: 'legendary_scorer', // Backend: legendary_scorer
         title: 'Legendary Scorer',
         description: 'Score 2000 points in a single game',
         icon: Icons.diamond,
@@ -200,7 +189,7 @@ class Achievement {
 
       // Games Played Achievements (IDs match backend)
       const Achievement(
-        id: 'first_game',  // Backend: first_game
+        id: 'first_game', // Backend: first_game
         title: 'First Game',
         description: 'Play your first game',
         icon: Icons.play_arrow,
@@ -210,7 +199,7 @@ class Achievement {
         points: 10,
       ),
       const Achievement(
-        id: 'regular_player',  // Backend: regular_player
+        id: 'regular_player', // Backend: regular_player
         title: 'Regular Player',
         description: 'Play 10 games',
         icon: Icons.videogame_asset,
@@ -220,7 +209,7 @@ class Achievement {
         points: 25,
       ),
       const Achievement(
-        id: 'dedicated_player',  // Backend: dedicated_player
+        id: 'dedicated_player', // Backend: dedicated_player
         title: 'Dedicated Player',
         description: 'Play 50 games',
         icon: Icons.sports_esports,
@@ -230,7 +219,7 @@ class Achievement {
         points: 50,
       ),
       const Achievement(
-        id: 'snake_enthusiast',  // Backend: snake_enthusiast
+        id: 'snake_enthusiast', // Backend: snake_enthusiast
         title: 'Snake Enthusiast',
         description: 'Play 100 games',
         icon: Icons.gamepad,
@@ -240,7 +229,7 @@ class Achievement {
         points: 100,
       ),
       const Achievement(
-        id: 'snake_addict',  // Backend: snake_addict
+        id: 'snake_addict', // Backend: snake_addict
         title: 'Snake Addict',
         description: 'Play 500 games',
         icon: Icons.sports_esports,
@@ -252,7 +241,7 @@ class Achievement {
 
       // Survival Achievements (IDs match backend)
       const Achievement(
-        id: 'survivor',  // Backend: survivor
+        id: 'survivor', // Backend: survivor
         title: 'Survivor',
         description: 'Survive for 60 seconds',
         icon: Icons.timer,
@@ -262,23 +251,23 @@ class Achievement {
         points: 15,
       ),
       const Achievement(
-        id: 'endurance',  // Backend: endurance
+        id: 'endurance', // Backend: endurance
         title: 'Endurance',
         description: 'Survive for 2 minutes',
         icon: Icons.schedule,
         type: AchievementType.survival,
         rarity: AchievementRarity.rare,
-        targetValue: 120,  // 2 minutes = 120 seconds
+        targetValue: 120, // 2 minutes = 120 seconds
         points: 30,
       ),
       const Achievement(
-        id: 'marathon',  // Backend: marathon
+        id: 'marathon', // Backend: marathon
         title: 'Marathon',
         description: 'Survive for 5 minutes',
         icon: Icons.hourglass_full,
         type: AchievementType.survival,
         rarity: AchievementRarity.epic,
-        targetValue: 300,  // 5 minutes = 300 seconds
+        targetValue: 300, // 5 minutes = 300 seconds
         points: 75,
       ),
 

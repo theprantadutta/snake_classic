@@ -240,9 +240,18 @@ class _MultiplayerBoardPainter extends CustomPainter {
     // Draw all snakes
     for (var player in game.players) {
       if (player.snake.isNotEmpty) {
-        final color = MultiplayerGameBoard.playerColors[player.rank % MultiplayerGameBoard.playerColors.length];
+        final color =
+            MultiplayerGameBoard.playerColors[player.rank %
+                MultiplayerGameBoard.playerColors.length];
         final isCurrentPlayer = player.userId == currentUserId;
-        _drawSnake(canvas, player, color, cellWidth, cellHeight, isCurrentPlayer);
+        _drawSnake(
+          canvas,
+          player,
+          color,
+          cellWidth,
+          cellHeight,
+          isCurrentPlayer,
+        );
       }
     }
   }
@@ -264,20 +273,16 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
     // Main food circle
     final foodPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          theme.foodColor,
-          theme.foodColor.withValues(alpha: 0.8),
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(centerX, centerY),
-        radius: radius,
-      ));
+      ..shader =
+          RadialGradient(
+            colors: [theme.foodColor, theme.foodColor.withValues(alpha: 0.8)],
+          ).createShader(
+            Rect.fromCircle(center: Offset(centerX, centerY), radius: radius),
+          );
     canvas.drawCircle(Offset(centerX, centerY), radius, foodPaint);
 
     // Highlight
-    final highlightPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6);
+    final highlightPaint = Paint()..color = Colors.white.withValues(alpha: 0.6);
     canvas.drawCircle(
       Offset(centerX - radius * 0.3, centerY - radius * 0.3),
       radius * 0.2,
@@ -314,25 +319,32 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
       // Gradient for 3D effect
       final segmentPaint = Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(-0.3, -0.3),
-          colors: [
-            _lighten(baseColor, 0.3),
-            baseColor,
-            _darken(baseColor, 0.2),
-          ],
-          stops: const [0.0, 0.5, 1.0],
-        ).createShader(Rect.fromCircle(
-          center: Offset(centerX, centerY),
-          radius: segmentSize,
-        ));
+        ..shader =
+            RadialGradient(
+              center: const Alignment(-0.3, -0.3),
+              colors: [
+                _lighten(baseColor, 0.3),
+                baseColor,
+                _darken(baseColor, 0.2),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(centerX, centerY),
+                radius: segmentSize,
+              ),
+            );
 
       // Draw glow for current player's head
       if (isHead && isCurrentPlayer && !isDead) {
         final glowPaint = Paint()
           ..color = baseColor.withValues(alpha: 0.4)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-        canvas.drawCircle(Offset(centerX, centerY), segmentSize * 1.3, glowPaint);
+        canvas.drawCircle(
+          Offset(centerX, centerY),
+          segmentSize * 1.3,
+          glowPaint,
+        );
       }
 
       // Draw segment with rounded corners
@@ -348,8 +360,14 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
       // Draw eyes on head
       if (isHead) {
-        _drawEyes(canvas, Offset(centerX, centerY), player.currentDirection,
-            segmentSize, baseColor, isDead);
+        _drawEyes(
+          canvas,
+          Offset(centerX, centerY),
+          player.currentDirection,
+          segmentSize,
+          baseColor,
+          isDead,
+        );
       }
 
       // Draw border for visibility
@@ -409,19 +427,31 @@ class _MultiplayerBoardPainter extends CustomPainter {
     switch (direction) {
       case Direction.up:
         leftEyePos = Offset(center.dx - eyeOffset, center.dy - eyeOffset * 0.5);
-        rightEyePos = Offset(center.dx + eyeOffset, center.dy - eyeOffset * 0.5);
+        rightEyePos = Offset(
+          center.dx + eyeOffset,
+          center.dy - eyeOffset * 0.5,
+        );
         break;
       case Direction.down:
         leftEyePos = Offset(center.dx - eyeOffset, center.dy + eyeOffset * 0.5);
-        rightEyePos = Offset(center.dx + eyeOffset, center.dy + eyeOffset * 0.5);
+        rightEyePos = Offset(
+          center.dx + eyeOffset,
+          center.dy + eyeOffset * 0.5,
+        );
         break;
       case Direction.left:
         leftEyePos = Offset(center.dx - eyeOffset * 0.5, center.dy - eyeOffset);
-        rightEyePos = Offset(center.dx - eyeOffset * 0.5, center.dy + eyeOffset);
+        rightEyePos = Offset(
+          center.dx - eyeOffset * 0.5,
+          center.dy + eyeOffset,
+        );
         break;
       case Direction.right:
         leftEyePos = Offset(center.dx + eyeOffset * 0.5, center.dy - eyeOffset);
-        rightEyePos = Offset(center.dx + eyeOffset * 0.5, center.dy + eyeOffset);
+        rightEyePos = Offset(
+          center.dx + eyeOffset * 0.5,
+          center.dy + eyeOffset,
+        );
         break;
     }
 
@@ -460,12 +490,16 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
   Color _lighten(Color color, double amount) {
     final hsl = HSLColor.fromColor(color);
-    return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
+    return hsl
+        .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
+        .toColor();
   }
 
   Color _darken(Color color, double amount) {
     final hsl = HSLColor.fromColor(color);
-    return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
+    return hsl
+        .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
+        .toColor();
   }
 
   @override

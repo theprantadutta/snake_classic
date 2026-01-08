@@ -38,8 +38,9 @@ class AuthService {
       // Check if authentication is supported on this platform
       if (_googleSignIn.supportsAuthenticate()) {
         // Use authenticate method for supported platforms
-        final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-        
+        final GoogleSignInAccount googleUser = await _googleSignIn
+            .authenticate();
+
         AppLogger.firebase('Google user signed in: ${googleUser.email}');
 
         // Obtain the auth details from the request
@@ -58,7 +59,9 @@ class AuthService {
         AppLogger.firebase('Creating Firebase credential...');
 
         // Sign in to Firebase with the credential
-        final UserCredential result = await _auth.signInWithCredential(credential);
+        final UserCredential result = await _auth.signInWithCredential(
+          credential,
+        );
 
         if (result.user != null) {
           AppLogger.success('Firebase sign-in successful: ${result.user!.uid}');
@@ -70,11 +73,15 @@ class AuthService {
 
         return result;
       } else {
-        AppLogger.firebase('❌ Google Sign-In authenticate not supported on this platform');
+        AppLogger.firebase(
+          '❌ Google Sign-In authenticate not supported on this platform',
+        );
         return null;
       }
     } on FirebaseAuthException catch (e) {
-      AppLogger.firebase('Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}');
+      AppLogger.firebase(
+        'Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}',
+      );
       return null;
     } catch (e, stackTrace) {
       AppLogger.firebase('Error signing in with Google', e, stackTrace);
@@ -176,7 +183,11 @@ class AuthService {
   }
 
   /// Submit score to backend (handles high score tracking automatically)
-  Future<void> updateHighScore(int score, {int gameDuration = 0, int foodsEaten = 0}) async {
+  Future<void> updateHighScore(
+    int score, {
+    int gameDuration = 0,
+    int foodsEaten = 0,
+  }) async {
     if (currentUser == null) return;
 
     try {
@@ -195,7 +206,10 @@ class AuthService {
   Future<bool> updateUsername(String newUsername) async {
     if (currentUser == null) return false;
 
-    final result = await _usernameService.updateUsername(currentUser!.uid, newUsername);
+    final result = await _usernameService.updateUsername(
+      currentUser!.uid,
+      newUsername,
+    );
     return result.success;
   }
 

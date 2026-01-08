@@ -40,11 +40,13 @@ class AuthCubit extends Cubit<AuthState> {
       // Update state based on current user
       _updateFromUserService(isFirstTime: isFirstTime);
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: e.toString(),
+          isLoading: false,
+        ),
+      );
     }
   }
 
@@ -56,20 +58,24 @@ class AuthCubit extends Cubit<AuthState> {
     final user = _userService.currentUser;
 
     if (user != null) {
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        user: user,
-        isLoading: false,
-        isFirstTimeUser: isFirstTime ?? state.isFirstTimeUser,
-        clearError: true,
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.authenticated,
+          user: user,
+          isLoading: false,
+          isFirstTimeUser: isFirstTime ?? state.isFirstTimeUser,
+          clearError: true,
+        ),
+      );
     } else {
-      emit(state.copyWith(
-        status: AuthStatus.unauthenticated,
-        clearUser: true,
-        isLoading: false,
-        isFirstTimeUser: isFirstTime ?? state.isFirstTimeUser,
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.unauthenticated,
+          clearUser: true,
+          isLoading: false,
+          isFirstTimeUser: isFirstTime ?? state.isFirstTimeUser,
+        ),
+      );
     }
   }
 
@@ -81,18 +87,17 @@ class AuthCubit extends Cubit<AuthState> {
       final result = await _userService.signInWithGoogle();
 
       if (!result) {
-        emit(state.copyWith(
-          isLoading: false,
-          errorMessage: 'Google sign-in failed',
-        ));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: 'Google sign-in failed',
+          ),
+        );
       }
 
       return result;
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
       return false;
     }
   }
@@ -105,18 +110,17 @@ class AuthCubit extends Cubit<AuthState> {
       final result = await _userService.signInAnonymously();
 
       if (!result) {
-        emit(state.copyWith(
-          isLoading: false,
-          errorMessage: 'Anonymous sign-in failed',
-        ));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: 'Anonymous sign-in failed',
+          ),
+        );
       }
 
       return result;
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
       return false;
     }
   }
@@ -129,10 +133,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _userService.signOut();
       // User service listener will update the state
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
     }
   }
 
@@ -161,7 +162,9 @@ class AuthCubit extends Cubit<AuthState> {
   /// Update authenticated username
   Future<bool> updateAuthenticatedUsername(String newUsername) async {
     try {
-      final result = await _userService.updateAuthenticatedUsername(newUsername);
+      final result = await _userService.updateAuthenticatedUsername(
+        newUsername,
+      );
       return result;
     } catch (e) {
       emit(state.copyWith(errorMessage: e.toString()));

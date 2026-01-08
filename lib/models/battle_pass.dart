@@ -167,10 +167,11 @@ class BattlePassLevel {
   });
 
   bool get hasRewards => freeReward != null || premiumReward != null;
-  
+
   int get totalXpRequired {
     // XP required from level 1 to this level
-    return (level * 100) + ((level - 1) * level * 5); // Progressive XP requirement
+    return (level * 100) +
+        ((level - 1) * level * 5); // Progressive XP requirement
   }
 
   Map<String, dynamic> toJson() {
@@ -187,12 +188,12 @@ class BattlePassLevel {
     return BattlePassLevel(
       level: json['level'],
       xpRequired: json['xp_required'],
-      freeReward: json['free_reward'] != null 
-        ? BattlePassReward.fromJson(json['free_reward'])
-        : null,
+      freeReward: json['free_reward'] != null
+          ? BattlePassReward.fromJson(json['free_reward'])
+          : null,
       premiumReward: json['premium_reward'] != null
-        ? BattlePassReward.fromJson(json['premium_reward'])
-        : null,
+          ? BattlePassReward.fromJson(json['premium_reward'])
+          : null,
       isMilestone: json['is_milestone'] ?? false,
     );
   }
@@ -262,7 +263,7 @@ class BattlePassSeason {
   int getLevelFromXp(int totalXp) {
     int currentLevel = 1;
     int xpAccumulated = 0;
-    
+
     for (int i = 1; i <= levels.length; i++) {
       xpAccumulated += getXpForLevel(i);
       if (totalXp >= xpAccumulated) {
@@ -271,27 +272,27 @@ class BattlePassSeason {
         break;
       }
     }
-    
+
     return currentLevel.clamp(1, maxLevel);
   }
 
   List<BattlePassReward> getUnlockedRewards(int currentLevel, bool hasPremium) {
     final rewards = <BattlePassReward>[];
-    
+
     for (int i = 1; i <= currentLevel && i <= levels.length; i++) {
       final levelData = levels[i - 1];
-      
+
       // Add free rewards
       if (levelData.freeReward != null) {
         rewards.add(levelData.freeReward!);
       }
-      
+
       // Add premium rewards if user has premium
       if (hasPremium && levelData.premiumReward != null) {
         rewards.add(levelData.premiumReward!);
       }
     }
-    
+
     return rewards;
   }
 
@@ -334,18 +335,19 @@ class BattlePassSeason {
     final now = DateTime.now();
     final startDate = now.subtract(const Duration(days: 5));
     final endDate = now.add(const Duration(days: 55));
-    
+
     final levels = <BattlePassLevel>[];
-    
+
     for (int i = 1; i <= 100; i++) {
       final isMilestone = i % 10 == 0;
       final xpRequired = 100 + (i * 5); // Progressive XP requirement
-      
+
       BattlePassReward? freeReward;
       BattlePassReward? premiumReward;
-      
+
       // Create rewards based on level
-      if (i % 5 == 0) { // Free rewards every 5 levels
+      if (i % 5 == 0) {
+        // Free rewards every 5 levels
         freeReward = BattlePassReward(
           id: 'free_$i',
           name: 'Free Reward $i',
@@ -356,8 +358,9 @@ class BattlePassSeason {
           icon: _getRewardTypeForLevel(i, false).icon,
         );
       }
-      
-      if (i % 3 == 0) { // Premium rewards every 3 levels
+
+      if (i % 3 == 0) {
+        // Premium rewards every 3 levels
         premiumReward = BattlePassReward(
           id: 'premium_$i',
           name: 'Premium Reward $i',
@@ -370,16 +373,18 @@ class BattlePassSeason {
           color: Colors.amber,
         );
       }
-      
-      levels.add(BattlePassLevel(
-        level: i,
-        xpRequired: xpRequired,
-        freeReward: freeReward,
-        premiumReward: premiumReward,
-        isMilestone: isMilestone,
-      ));
+
+      levels.add(
+        BattlePassLevel(
+          level: i,
+          xpRequired: xpRequired,
+          freeReward: freeReward,
+          premiumReward: premiumReward,
+          isMilestone: isMilestone,
+        ),
+      );
     }
-    
+
     return BattlePassSeason(
       id: 'season_1',
       name: 'Cosmic Serpent Season',
@@ -399,12 +404,19 @@ class BattlePassSeason {
     );
   }
 
-  static BattlePassRewardType _getRewardTypeForLevel(int level, bool isPremium) {
+  static BattlePassRewardType _getRewardTypeForLevel(
+    int level,
+    bool isPremium,
+  ) {
     if (level % 50 == 0) return BattlePassRewardType.special;
-    if (level % 25 == 0) return isPremium ? BattlePassRewardType.skin : BattlePassRewardType.title;
+    if (level % 25 == 0)
+      return isPremium ? BattlePassRewardType.skin : BattlePassRewardType.title;
     if (level % 20 == 0) return BattlePassRewardType.theme;
     if (level % 15 == 0) return BattlePassRewardType.trail;
-    if (level % 10 == 0) return isPremium ? BattlePassRewardType.powerUp : BattlePassRewardType.tournamentEntry;
+    if (level % 10 == 0)
+      return isPremium
+          ? BattlePassRewardType.powerUp
+          : BattlePassRewardType.tournamentEntry;
     if (level % 7 == 0) return BattlePassRewardType.coins;
     return BattlePassRewardType.xp;
   }
@@ -452,7 +464,7 @@ class UserBattlePass {
   double getLevelProgress(BattlePassSeason season) {
     final xpForNext = getXpForNextLevel(season);
     if (xpForNext == 0) return 1.0;
-    
+
     final totalXpForCurrentLevel = season.getTotalXpForLevel(currentLevel);
     final xpIntoCurrentLevel = currentXp - totalXpForCurrentLevel;
     return (xpIntoCurrentLevel / xpForNext).clamp(0.0, 1.0);

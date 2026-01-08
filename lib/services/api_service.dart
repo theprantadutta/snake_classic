@@ -25,9 +25,10 @@ class ApiService {
 
   // Backend configuration
   static String get baseUrl {
-    final backendUrl = dotenv.env['BACKEND_URL'] ??
-                       dotenv.env['NOTIFICATION_BACKEND_URL'] ??
-                       'http://127.0.0.1:8393';
+    final backendUrl =
+        dotenv.env['BACKEND_URL'] ??
+        dotenv.env['NOTIFICATION_BACKEND_URL'] ??
+        'http://127.0.0.1:8393';
     return '$backendUrl/api/v1';
   }
 
@@ -102,22 +103,29 @@ class ApiService {
       return jsonDecode(response.body);
     }
 
-    AppLogger.error('API error: ${response.statusCode} from ${response.request?.url}', response.body);
+    AppLogger.error(
+      'API error: ${response.statusCode} from ${response.request?.url}',
+      response.body,
+    );
     return null;
   }
 
   // ==================== Authentication ====================
 
   /// Authenticate with Firebase token
-  Future<Map<String, dynamic>?> authenticateWithFirebase(String firebaseIdToken) async {
+  Future<Map<String, dynamic>?> authenticateWithFirebase(
+    String firebaseIdToken,
+  ) async {
     try {
       AppLogger.network('Authenticating with backend using Firebase token');
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/firebase'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'firebase_token': firebaseIdToken}),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/firebase'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'firebase_token': firebaseIdToken}),
+          )
+          .timeout(_timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -131,7 +139,10 @@ class ApiService {
         }
       }
 
-      AppLogger.error('Backend authentication failed: ${response.statusCode}', response.body);
+      AppLogger.error(
+        'Backend authentication failed: ${response.statusCode}',
+        response.body,
+      );
       return null;
     } catch (e) {
       AppLogger.error('Error authenticating with backend', e);
@@ -142,10 +153,9 @@ class ApiService {
   /// Get current user info
   Future<Map<String, dynamic>?> getCurrentUser() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/auth/me'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/auth/me'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -157,10 +167,9 @@ class ApiService {
   /// Logout from backend
   Future<bool> logout() async {
     try {
-      await http.post(
-        Uri.parse('$baseUrl/auth/logout'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      await http
+          .post(Uri.parse('$baseUrl/auth/logout'), headers: _authHeaders)
+          .timeout(_timeout);
 
       await clearToken();
       return true;
@@ -176,10 +185,9 @@ class ApiService {
   /// Get user profile
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/$userId'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/users/$userId'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -191,11 +199,13 @@ class ApiService {
   /// Update current user profile
   Future<Map<String, dynamic>?> updateProfile(Map<String, dynamic> data) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/users/me'),
-        headers: _authHeaders,
-        body: jsonEncode(data),
-      ).timeout(_timeout);
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/users/me'),
+            headers: _authHeaders,
+            body: jsonEncode(data),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -207,11 +217,13 @@ class ApiService {
   /// Check username availability
   Future<Map<String, dynamic>?> checkUsername(String username) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/username/check'),
-        headers: _authHeaders,
-        body: jsonEncode({'username': username}),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/users/username/check'),
+            headers: _authHeaders,
+            body: jsonEncode({'username': username}),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -223,11 +235,13 @@ class ApiService {
   /// Set/update username
   Future<Map<String, dynamic>?> setUsername(String username) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/users/username'),
-        headers: _authHeaders,
-        body: jsonEncode({'username': username}),
-      ).timeout(_timeout);
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/users/username'),
+            headers: _authHeaders,
+            body: jsonEncode({'username': username}),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -237,12 +251,17 @@ class ApiService {
   }
 
   /// Search users
-  Future<List<Map<String, dynamic>>?> searchUsers(String query, {int limit = 20}) async {
+  Future<List<Map<String, dynamic>>?> searchUsers(
+    String query, {
+    int limit = 20,
+  }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/search/?query=$query&limit=$limit'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/users/search/?query=$query&limit=$limit'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       final data = _handleResponse(response);
       if (data != null && data['users'] != null) {
@@ -286,11 +305,13 @@ class ApiService {
         body['idempotency_key'] = idempotencyKey;
       }
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/scores'),
-        headers: _authHeaders,
-        body: jsonEncode(body),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/scores'),
+            headers: _authHeaders,
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -300,13 +321,17 @@ class ApiService {
   }
 
   /// Submit multiple scores in batch (for offline sync)
-  Future<Map<String, dynamic>?> submitScoresBatch(List<Map<String, dynamic>> scores) async {
+  Future<Map<String, dynamic>?> submitScoresBatch(
+    List<Map<String, dynamic>> scores,
+  ) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/scores/batch'),
-        headers: _authHeaders,
-        body: jsonEncode({'scores': scores}),
-      ).timeout(const Duration(seconds: 30)); // Longer timeout for batch
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/scores/batch'),
+            headers: _authHeaders,
+            body: jsonEncode({'scores': scores}),
+          )
+          .timeout(const Duration(seconds: 30)); // Longer timeout for batch
 
       return _handleResponse(response);
     } catch (e) {
@@ -325,10 +350,9 @@ class ApiService {
       String url = '$baseUrl/scores/me?limit=$limit&offset=$offset';
       if (gameMode != null) url += '&game_mode=$gameMode';
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse(url), headers: _authHeaders)
+          .timeout(_timeout);
 
       final data = _handleResponse(response);
       if (data is List) {
@@ -344,10 +368,9 @@ class ApiService {
   /// Get user's score stats
   Future<Map<String, dynamic>?> getUserScoreStats() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/scores/me/stats'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/scores/me/stats'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -366,10 +389,14 @@ class ApiService {
     int pageSize = 50,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/leaderboard/global?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse(
+              '$baseUrl/leaderboard/global?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize',
+            ),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -386,10 +413,14 @@ class ApiService {
     int pageSize = 50,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/leaderboard/weekly?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse(
+              '$baseUrl/leaderboard/weekly?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize',
+            ),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -406,10 +437,14 @@ class ApiService {
     int pageSize = 50,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/leaderboard/daily?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse(
+              '$baseUrl/leaderboard/daily?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize',
+            ),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -426,10 +461,14 @@ class ApiService {
     int pageSize = 50,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/leaderboard/friends?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse(
+              '$baseUrl/leaderboard/friends?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize',
+            ),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -443,10 +482,9 @@ class ApiService {
   /// Get all achievements
   Future<List<Map<String, dynamic>>?> getAllAchievements() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/achievements'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/achievements'), headers: _authHeaders)
+          .timeout(_timeout);
 
       final data = _handleResponse(response);
       if (data is List) {
@@ -462,10 +500,9 @@ class ApiService {
   /// Get user's achievements
   Future<Map<String, dynamic>?> getUserAchievements() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/achievements/me'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/achievements/me'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -481,19 +518,23 @@ class ApiService {
   }) async {
     // Validate: API requires progress_increment >= 1
     if (progressIncrement < 1) {
-      AppLogger.warning('Skipping achievement update: progressIncrement must be >= 1, got $progressIncrement');
+      AppLogger.warning(
+        'Skipping achievement update: progressIncrement must be >= 1, got $progressIncrement',
+      );
       return null;
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/achievements/progress'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'achievement_id': achievementId,
-          'progress_increment': progressIncrement,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/achievements/progress'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'achievement_id': achievementId,
+              'progress_increment': progressIncrement,
+            }),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -507,10 +548,9 @@ class ApiService {
   /// Get friends list
   Future<Map<String, dynamic>?> getFriends() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/social/friends'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/social/friends'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -522,10 +562,9 @@ class ApiService {
   /// Get pending friend requests
   Future<Map<String, dynamic>?> getPendingRequests() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/social/requests'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/social/requests'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -540,14 +579,16 @@ class ApiService {
     String? userId,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/social/friends/request'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'friend_username': username,
-          'friend_user_id': userId,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/social/friends/request'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'friend_username': username,
+              'friend_user_id': userId,
+            }),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -559,10 +600,12 @@ class ApiService {
   /// Accept friend request
   Future<Map<String, dynamic>?> acceptFriendRequest(String requestId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/social/friends/accept/$requestId'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/social/friends/accept/$requestId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -574,10 +617,12 @@ class ApiService {
   /// Reject friend request
   Future<Map<String, dynamic>?> rejectFriendRequest(String requestId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/social/friends/reject/$requestId'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/social/friends/reject/$requestId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -589,10 +634,12 @@ class ApiService {
   /// Remove friend
   Future<Map<String, dynamic>?> removeFriend(String friendId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/social/friends/$friendId'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/social/friends/$friendId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -615,10 +662,9 @@ class ApiService {
       if (status != null) url += '&status=$status';
       if (type != null) url += '&type=$type';
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse(url), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -630,10 +676,12 @@ class ApiService {
   /// Get tournament details
   Future<Map<String, dynamic>?> getTournament(String tournamentId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/tournaments/$tournamentId'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/tournaments/$tournamentId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -645,10 +693,12 @@ class ApiService {
   /// Join tournament
   Future<Map<String, dynamic>?> joinTournament(String tournamentId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/tournaments/$tournamentId/join'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/tournaments/$tournamentId/join'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -665,15 +715,17 @@ class ApiService {
     int foodsEaten = 0,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/tournaments/$tournamentId/score'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'score': score,
-          'game_duration_seconds': gameDuration,
-          'foods_eaten': foodsEaten,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/tournaments/$tournamentId/score'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'score': score,
+              'game_duration_seconds': gameDuration,
+              'foods_eaten': foodsEaten,
+            }),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -689,10 +741,14 @@ class ApiService {
     int offset = 0,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/tournaments/$tournamentId/leaderboard?limit=$limit&offset=$offset'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse(
+              '$baseUrl/tournaments/$tournamentId/leaderboard?limit=$limit&offset=$offset',
+            ),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -711,16 +767,18 @@ class ApiService {
     int speed = 100,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/multiplayer/create'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'mode': mode,
-          'max_players': maxPlayers,
-          'grid_size': gridSize,
-          'speed': speed,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/multiplayer/create'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'mode': mode,
+              'max_players': maxPlayers,
+              'grid_size': gridSize,
+              'speed': speed,
+            }),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -732,11 +790,13 @@ class ApiService {
   /// Join multiplayer game by code
   Future<Map<String, dynamic>?> joinMultiplayerGame(String roomCode) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/multiplayer/join'),
-        headers: _authHeaders,
-        body: jsonEncode({'room_code': roomCode}),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/multiplayer/join'),
+            headers: _authHeaders,
+            body: jsonEncode({'room_code': roomCode}),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -748,10 +808,9 @@ class ApiService {
   /// Get current multiplayer game
   Future<Map<String, dynamic>?> getCurrentMultiplayerGame() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/multiplayer/current'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/multiplayer/current'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -763,10 +822,12 @@ class ApiService {
   /// Get available multiplayer games (public, waiting for players)
   Future<List<dynamic>?> getAvailableGames() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/multiplayer/available'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/multiplayer/available'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as List<dynamic>;
@@ -787,7 +848,9 @@ class ApiService {
   /// Get WebSocket URL for multiplayer (deprecated, use SignalR)
   @Deprecated('Use getSignalRHubUrl() instead')
   String getMultiplayerWebSocketUrl(String gameId) {
-    final wsUrl = baseUrl.replaceFirst('http', 'ws').replaceFirst('/api/v1', '');
+    final wsUrl = baseUrl
+        .replaceFirst('http', 'ws')
+        .replaceFirst('/api/v1', '');
     return '$wsUrl/api/v1/multiplayer/ws/$gameId?token=$_accessToken';
   }
 
@@ -803,21 +866,24 @@ class ApiService {
     DateTime? purchaseTime,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/purchases/verify'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'receipt': {
-            'platform': platform,
-            'receipt_data': receiptData,
-            'product_id': productId,
-            'transaction_id': transactionId,
-            'purchase_token': purchaseToken,
-            'purchase_time': (purchaseTime ?? DateTime.now()).toIso8601String(),
-          },
-          'device_info': {},
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/purchases/verify'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'receipt': {
+                'platform': platform,
+                'receipt_data': receiptData,
+                'product_id': productId,
+                'transaction_id': transactionId,
+                'purchase_token': purchaseToken,
+                'purchase_time': (purchaseTime ?? DateTime.now())
+                    .toIso8601String(),
+              },
+              'device_info': {},
+            }),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -829,10 +895,12 @@ class ApiService {
   /// Get premium content
   Future<Map<String, dynamic>?> getPremiumContent() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/purchases/premium-content'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/purchases/premium-content'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -846,10 +914,12 @@ class ApiService {
   /// Get current battle pass season
   Future<Map<String, dynamic>?> getCurrentBattlePassSeason() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/BattlePass/current-season'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/BattlePass/current-season'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -861,10 +931,9 @@ class ApiService {
   /// Get battle pass progress
   Future<Map<String, dynamic>?> getBattlePassProgress() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/BattlePass/progress'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/BattlePass/progress'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -879,14 +948,13 @@ class ApiService {
     String source = 'gameplay',
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/BattlePass/add-xp'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'xp': xp,
-          'source': source,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/BattlePass/add-xp'),
+            headers: _authHeaders,
+            body: jsonEncode({'xp': xp, 'source': source}),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -901,14 +969,13 @@ class ApiService {
     required String tier,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/BattlePass/claim-reward'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'level': level,
-          'tier': tier,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/BattlePass/claim-reward'),
+            headers: _authHeaders,
+            body: jsonEncode({'level': level, 'tier': tier}),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -922,10 +989,9 @@ class ApiService {
   /// Get daily bonus status
   Future<Map<String, dynamic>?> getDailyBonusStatus() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/DailyBonus/status'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/DailyBonus/status'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -937,11 +1003,13 @@ class ApiService {
   /// Claim daily bonus
   Future<Map<String, dynamic>?> claimDailyBonus() async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/DailyBonus/claim'),
-        headers: _authHeaders,
-        body: jsonEncode({}),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/DailyBonus/claim'),
+            headers: _authHeaders,
+            body: jsonEncode({}),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -955,10 +1023,9 @@ class ApiService {
   /// Get today's daily challenges with user progress
   Future<Map<String, dynamic>?> getDailyChallenges() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/dailychallenges'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/dailychallenges'), headers: _authHeaders)
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -974,19 +1041,18 @@ class ApiService {
     String? gameMode,
   }) async {
     try {
-      final body = <String, dynamic>{
-        'type': type,
-        'value': value,
-      };
+      final body = <String, dynamic>{'type': type, 'value': value};
       if (gameMode != null) {
         body['gameMode'] = gameMode;
       }
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/dailychallenges/progress'),
-        headers: _authHeaders,
-        body: jsonEncode(body),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/dailychallenges/progress'),
+            headers: _authHeaders,
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -998,10 +1064,12 @@ class ApiService {
   /// Claim reward for a completed challenge
   Future<Map<String, dynamic>?> claimChallengeReward(String challengeId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/dailychallenges/claim/$challengeId'),
-        headers: _authHeaders,
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/dailychallenges/claim/$challengeId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
 
       return _handleResponse(response);
     } catch (e) {
@@ -1018,14 +1086,13 @@ class ApiService {
     String platform = 'flutter',
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/register-token'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'fcm_token': fcmToken,
-          'platform': platform,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/users/register-token'),
+            headers: _authHeaders,
+            body: jsonEncode({'fcm_token': fcmToken, 'platform': platform}),
+          )
+          .timeout(_timeout);
 
       return response.statusCode == 200;
     } catch (e) {
@@ -1037,14 +1104,13 @@ class ApiService {
   /// Subscribe to notification topic
   Future<bool> subscribeToTopic(String fcmToken, String topic) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/notifications/topics/subscribe'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'fcm_token': fcmToken,
-          'topic': topic,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/notifications/topics/subscribe'),
+            headers: _authHeaders,
+            body: jsonEncode({'fcm_token': fcmToken, 'topic': topic}),
+          )
+          .timeout(_timeout);
 
       return response.statusCode == 200;
     } catch (e) {
@@ -1056,14 +1122,13 @@ class ApiService {
   /// Unsubscribe from notification topic
   Future<bool> unsubscribeFromTopic(String fcmToken, String topic) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/notifications/topics/unsubscribe'),
-        headers: _authHeaders,
-        body: jsonEncode({
-          'fcm_token': fcmToken,
-          'topic': topic,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/notifications/topics/unsubscribe'),
+            headers: _authHeaders,
+            body: jsonEncode({'fcm_token': fcmToken, 'topic': topic}),
+          )
+          .timeout(_timeout);
 
       return response.statusCode == 200;
     } catch (e) {
@@ -1077,10 +1142,12 @@ class ApiService {
   /// Check backend health
   Future<bool> checkHealth() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/test/health'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/test/health'),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(_timeout);
 
       return response.statusCode == 200;
     } catch (e) {

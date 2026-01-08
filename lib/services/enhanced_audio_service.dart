@@ -4,12 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:snake_classic/utils/constants.dart';
 
-enum SoundType {
-  sfx,
-  music,
-  ambient,
-  ui,
-}
+enum SoundType { sfx, music, ambient, ui }
 
 enum AudioEnvironment {
   classic,
@@ -43,7 +38,8 @@ class SpatialAudioPosition {
 }
 
 class EnhancedAudioService {
-  static final EnhancedAudioService _instance = EnhancedAudioService._internal();
+  static final EnhancedAudioService _instance =
+      EnhancedAudioService._internal();
   factory EnhancedAudioService() => _instance;
   EnhancedAudioService._internal();
 
@@ -106,7 +102,7 @@ class EnhancedAudioService {
   bool get musicEnabled => _musicEnabled;
   bool get ambientEnabled => _ambientEnabled;
   bool get spatialAudioEnabled => _spatialAudioEnabled;
-  
+
   double get masterVolume => _masterVolume;
   double get sfxVolume => _sfxVolume;
   double get musicVolume => _musicVolume;
@@ -119,7 +115,7 @@ class EnhancedAudioService {
     try {
       // Pre-warm audio players
       await _createAudioPlayers();
-      
+
       if (kDebugMode) {
         print('Enhanced Audio Service initialized');
       }
@@ -136,7 +132,7 @@ class EnhancedAudioService {
       _sfxPlayers['sfx_$i'] = AudioPlayer();
       _uiPlayers['ui_$i'] = AudioPlayer();
     }
-    
+
     for (int i = 0; i < 2; i++) {
       _musicPlayers['music_$i'] = AudioPlayer();
       _ambientPlayers['ambient_$i'] = AudioPlayer();
@@ -177,7 +173,10 @@ class EnhancedAudioService {
     await _updatePlayerVolumes(_uiPlayers, _uiVolume);
   }
 
-  Future<void> _updatePlayerVolumes(Map<String, AudioPlayer> players, double baseVolume) async {
+  Future<void> _updatePlayerVolumes(
+    Map<String, AudioPlayer> players,
+    double baseVolume,
+  ) async {
     final effectiveVolume = baseVolume * _masterVolume;
     for (final player in players.values) {
       await player.setVolume(effectiveVolume);
@@ -226,11 +225,11 @@ class EnhancedAudioService {
 
   Future<void> _applyEnvironmentSettings() async {
     final settings = _environmentSettings[_currentEnvironment] ?? {};
-    
+
     // Apply environment-specific audio processing
     // Note: This is a simplified implementation
     // In a real app, you might use audio effects libraries
-    
+
     if (kDebugMode) {
       print('Applied audio environment: $_currentEnvironment');
       print('Settings: $settings');
@@ -250,7 +249,13 @@ class EnhancedAudioService {
     if (!_sfxEnabled) return;
 
     // Fire and forget - don't block game loop
-    _playSfxAsync(soundId, volume: volume, position: position, pitch: pitch, loop: loop);
+    _playSfxAsync(
+      soundId,
+      volume: volume,
+      position: position,
+      pitch: pitch,
+      loop: loop,
+    );
   }
 
   Future<void> _playSfxAsync(
@@ -281,7 +286,6 @@ class EnhancedAudioService {
       if (loop) {
         await player.setReleaseMode(ReleaseMode.loop);
       }
-
     } catch (e) {
       if (kDebugMode) print('SFX playback error: $e');
     }
@@ -313,7 +317,6 @@ class EnhancedAudioService {
       if (loop) {
         await player.setReleaseMode(ReleaseMode.loop);
       }
-      
     } catch (e) {
       if (kDebugMode) print('Music playback error: $e');
     }
@@ -337,7 +340,6 @@ class EnhancedAudioService {
       if (loop) {
         await player.setReleaseMode(ReleaseMode.loop);
       }
-      
     } catch (e) {
       if (kDebugMode) print('Ambient playback error: $e');
     }
@@ -356,7 +358,6 @@ class EnhancedAudioService {
       final effectiveVolume = (volume ?? 1.0) * _uiVolume * _masterVolume;
       await player.setVolume(effectiveVolume);
       await player.play(AssetSource('audio/$soundId.wav'));
-
     } catch (e) {
       if (kDebugMode) print('UI audio playback error: $e');
     }
@@ -370,18 +371,18 @@ class EnhancedAudioService {
     SpatialAudioPosition? position,
   }) {
     double volume = baseVolume * categoryVolume * _masterVolume;
-    
+
     if (_spatialAudioEnabled && position != null) {
       // Apply distance attenuation
       volume *= (1.0 - position.distance * 0.3);
-      
+
       // Apply stereo positioning (simplified)
       // In a real implementation, you'd use proper spatial audio APIs
       if (position.x != 0.0) {
         volume *= (1.0 - (position.x.abs()) * 0.1);
       }
     }
-    
+
     return volume.clamp(0.0, 1.0);
   }
 
@@ -401,7 +402,9 @@ class EnhancedAudioService {
     Duration duration,
   ) async {
     const steps = 20;
-    final stepDuration = Duration(milliseconds: duration.inMilliseconds ~/ steps);
+    final stepDuration = Duration(
+      milliseconds: duration.inMilliseconds ~/ steps,
+    );
     final volumeStep = (toVolume - fromVolume) / steps;
 
     for (int i = 0; i <= steps; i++) {
@@ -497,7 +500,7 @@ class EnhancedAudioService {
         musicId = 'crystal_theme';
         break;
     }
-    
+
     await setAudioEnvironment(_themeToAudioEnvironment(theme));
     await playMusic(musicId, fadeInDuration: const Duration(seconds: 2));
   }
@@ -523,7 +526,7 @@ class EnhancedAudioService {
       default:
         return; // No ambient for other themes
     }
-    
+
     await playAmbient(ambientId, volume: 0.3);
   }
 
@@ -554,16 +557,18 @@ class EnhancedAudioService {
 
   // Advanced Audio Features
 
-  Future<void> playSequentialSfx(List<String> soundIds, {
+  Future<void> playSequentialSfx(
+    List<String> soundIds, {
     Duration delay = const Duration(milliseconds: 200),
   }) async {
     for (final soundId in soundIds) {
-      playSfx(soundId);  // Fire and forget
+      playSfx(soundId); // Fire and forget
       await Future.delayed(delay);
     }
   }
 
-  void playRandomVariation(String baseSoundId, {
+  void playRandomVariation(
+    String baseSoundId, {
     int variations = 3,
     SpatialAudioPosition? position,
   }) {

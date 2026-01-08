@@ -24,20 +24,9 @@ enum MultiplayerGameStatus {
   abandoned,
 }
 
-enum MultiplayerGameMode {
-  classic,
-  speedRun,
-  survival,
-  powerUpMadness,
-}
+enum MultiplayerGameMode { classic, speedRun, survival, powerUpMadness }
 
-enum PlayerStatus {
-  waiting,
-  ready,
-  playing,
-  crashed,
-  disconnected,
-}
+enum PlayerStatus { waiting, ready, playing, crashed, disconnected }
 
 class MultiplayerGame {
   final String id;
@@ -173,9 +162,13 @@ class MultiplayerGame {
   }
 
   bool get isFull => players.length >= maxPlayers;
-  bool get canStart => players.length >= 2 && players.every((p) => p.status == PlayerStatus.ready);
-  bool get isFinished => status == MultiplayerGameStatus.finished || status == MultiplayerGameStatus.abandoned;
-  
+  bool get canStart =>
+      players.length >= 2 &&
+      players.every((p) => p.status == PlayerStatus.ready);
+  bool get isFinished =>
+      status == MultiplayerGameStatus.finished ||
+      status == MultiplayerGameStatus.abandoned;
+
   MultiplayerPlayer? getPlayer(String userId) {
     try {
       return players.firstWhere((player) => player.userId == userId);
@@ -185,7 +178,9 @@ class MultiplayerGame {
   }
 
   List<MultiplayerPlayer> get alivePlayers {
-    return players.where((player) => player.status == PlayerStatus.playing).toList();
+    return players
+        .where((player) => player.status == PlayerStatus.playing)
+        .toList();
   }
 
   String get modeDisplayName {
@@ -284,7 +279,8 @@ class MultiplayerPlayer {
   factory MultiplayerPlayer.fromJson(Map<String, dynamic> json) {
     return MultiplayerPlayer(
       userId: json['userId'] ?? json['user_id'] ?? '',
-      displayName: json['displayName'] ?? json['display_name'] ?? 'Unknown Player',
+      displayName:
+          json['displayName'] ?? json['display_name'] ?? 'Unknown Player',
       photoUrl: json['photoUrl'] ?? json['photo_url'],
       status: PlayerStatus.values.firstWhere(
         (status) => status.name == json['status'],
@@ -294,17 +290,24 @@ class MultiplayerPlayer {
           .map((pos) => Position.fromJson(pos))
           .toList(),
       currentDirection: Direction.values.firstWhere(
-        (direction) => direction.name == (json['currentDirection'] ?? json['direction']),
+        (direction) =>
+            direction.name == (json['currentDirection'] ?? json['direction']),
         orElse: () => Direction.right,
       ),
       score: json['score'] ?? 0,
       rank: json['rank'] ?? 0,
       lastUpdate: _parseDateTime(json['lastUpdate'] ?? json['last_update_at']),
-      activePowerUps: List<String>.from(json['activePowerUps'] ?? json['active_power_ups'] ?? []),
+      activePowerUps: List<String>.from(
+        json['activePowerUps'] ?? json['active_power_ups'] ?? [],
+      ),
       connectionId: json['connectionId'] ?? json['connection_id'],
-      disconnectedAt: _parseDateTime(json['disconnectedAt'] ?? json['disconnected_at']),
+      disconnectedAt: _parseDateTime(
+        json['disconnectedAt'] ?? json['disconnected_at'],
+      ),
       eliminationRank: json['eliminationRank'] ?? json['elimination_rank'],
-      eliminatedAt: _parseDateTime(json['eliminatedAt'] ?? json['eliminated_at']),
+      eliminatedAt: _parseDateTime(
+        json['eliminatedAt'] ?? json['eliminated_at'],
+      ),
     );
   }
 
@@ -395,7 +398,9 @@ class PowerUpSpawn {
       type: json['type'] ?? '',
       position: Position.fromJson(json['position']),
       createdAt: _parseDateTime(json['createdAt']) ?? DateTime.now(),
-      expiresAt: _parseDateTime(json['expiresAt']) ?? DateTime.now().add(const Duration(minutes: 1)),
+      expiresAt:
+          _parseDateTime(json['expiresAt']) ??
+          DateTime.now().add(const Duration(minutes: 1)),
     );
   }
 
@@ -444,7 +449,10 @@ class MultiplayerGameAction {
   }
 
   // Factory methods for common actions
-  factory MultiplayerGameAction.changeDirection(String playerId, Direction direction) {
+  factory MultiplayerGameAction.changeDirection(
+    String playerId,
+    Direction direction,
+  ) {
     return MultiplayerGameAction(
       playerId: playerId,
       actionType: 'changeDirection',
@@ -462,7 +470,11 @@ class MultiplayerGameAction {
     );
   }
 
-  factory MultiplayerGameAction.gameUpdate(String playerId, List<Position> snake, int score) {
+  factory MultiplayerGameAction.gameUpdate(
+    String playerId,
+    List<Position> snake,
+    int score,
+  ) {
     return MultiplayerGameAction(
       playerId: playerId,
       actionType: 'gameUpdate',

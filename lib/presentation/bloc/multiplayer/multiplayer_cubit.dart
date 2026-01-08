@@ -39,11 +39,11 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     required UnifiedUserService userService,
     required AudioService audioService,
     required HapticService hapticService,
-  })  : _multiplayerService = multiplayerService,
-        _userService = userService,
-        _audioService = audioService,
-        _hapticService = hapticService,
-        super(MultiplayerState.initial()) {
+  }) : _multiplayerService = multiplayerService,
+       _userService = userService,
+       _audioService = audioService,
+       _hapticService = hapticService,
+       super(MultiplayerState.initial()) {
     // Start listening to matchmaking stream
     _startMatchmakingListener();
     // Start listening to error stream
@@ -54,10 +54,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _errorSubscription = _multiplayerService.errorStream.listen((error) {
       _hapticService.heavyImpact();
       _startGameTimeoutTimer?.cancel();
-      emit(state.copyWith(
-        errorMessage: error,
-        isLoading: false,
-      ));
+      emit(state.copyWith(errorMessage: error, isLoading: false));
     });
   }
 
@@ -72,38 +69,46 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
           // First emit the status change with clear matchmaking
           // Don't set currentGame here - let the stream listener handle it
-          emit(state.copyWith(
-            status: MultiplayerStatus.inLobby,
-            clearMatchmaking: true,
-          ));
+          emit(
+            state.copyWith(
+              status: MultiplayerStatus.inLobby,
+              clearMatchmaking: true,
+            ),
+          );
 
           // Start listening to game updates
           _startListening();
         } else if (status.error != null) {
           _stopMatchmakingTimer();
           _audioService.playSound('game_over');
-          emit(state.copyWith(
-            status: MultiplayerStatus.error,
-            errorMessage: status.error,
-            clearMatchmaking: true,
-          ));
+          emit(
+            state.copyWith(
+              status: MultiplayerStatus.error,
+              errorMessage: status.error,
+              clearMatchmaking: true,
+            ),
+          );
         } else if (status.isSearching) {
-          emit(state.copyWith(
-            status: MultiplayerStatus.inMatchmaking,
-            isMatchmaking: true,
-            matchmakingQueuePosition: status.queuePosition,
-            matchmakingEstimatedWait: status.estimatedWaitSeconds,
-            matchmakingMode: status.mode,
-            matchmakingPlayerCount: status.playerCount,
-          ));
+          emit(
+            state.copyWith(
+              status: MultiplayerStatus.inMatchmaking,
+              isMatchmaking: true,
+              matchmakingQueuePosition: status.queuePosition,
+              matchmakingEstimatedWait: status.estimatedWaitSeconds,
+              matchmakingMode: status.mode,
+              matchmakingPlayerCount: status.playerCount,
+            ),
+          );
         }
       },
       onError: (error) {
         _stopMatchmakingTimer();
-        emit(state.copyWith(
-          errorMessage: 'Matchmaking error: $error',
-          clearMatchmaking: true,
-        ));
+        emit(
+          state.copyWith(
+            errorMessage: 'Matchmaking error: $error',
+            clearMatchmaking: true,
+          ),
+        );
       },
     );
   }
@@ -165,27 +170,30 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         _audioService.playSound('high_score');
         _hapticService.mediumImpact();
 
-        emit(state.copyWith(
-          status: MultiplayerStatus.inLobby,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(status: MultiplayerStatus.inLobby, isLoading: false),
+        );
         return true;
       } else {
         _audioService.playSound('game_over');
         _hapticService.heavyImpact();
-        emit(state.copyWith(
-          isLoading: false,
-          errorMessage: 'Failed to create game',
-        ));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: 'Failed to create game',
+          ),
+        );
         return false;
       }
     } catch (e) {
       _audioService.playSound('game_over');
       _hapticService.heavyImpact();
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: 'Error creating game: $e',
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: 'Error creating game: $e',
+        ),
+      );
       return false;
     }
   }
@@ -206,27 +214,31 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         _audioService.playSound('high_score');
         _hapticService.mediumImpact();
 
-        emit(state.copyWith(
-          status: MultiplayerStatus.inLobby,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(status: MultiplayerStatus.inLobby, isLoading: false),
+        );
         return true;
       } else {
         _audioService.playSound('game_over');
         _hapticService.heavyImpact();
-        emit(state.copyWith(
-          isLoading: false,
-          errorMessage: 'Failed to join game. Game might be full or not exist.',
-        ));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage:
+                'Failed to join game. Game might be full or not exist.',
+          ),
+        );
         return false;
       }
     } catch (e) {
       _audioService.playSound('game_over');
       _hapticService.heavyImpact();
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: 'Error joining game: $e',
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: 'Error joining game: $e',
+        ),
+      );
       return false;
     }
   }
@@ -236,11 +248,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     try {
       await _multiplayerService.leaveGame();
       _stopListening();
-      emit(state.copyWith(
-        status: MultiplayerStatus.idle,
-        clearGame: true,
-        clearError: true,
-      ));
+      emit(
+        state.copyWith(
+          status: MultiplayerStatus.idle,
+          clearGame: true,
+          clearError: true,
+        ),
+      );
     } catch (e) {
       emit(state.copyWith(errorMessage: 'Error leaving game: $e'));
     }
@@ -314,44 +328,55 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   Future<void> loadAvailableGames() async {
     try {
       final games = await _multiplayerService.getAvailableGames();
-      emit(state.copyWith(
-        status: MultiplayerStatus.idle,
-        availableGames: games,
-      ));
+      emit(
+        state.copyWith(status: MultiplayerStatus.idle, availableGames: games),
+      );
     } catch (e) {
       emit(state.copyWith(errorMessage: 'Error loading available games: $e'));
     }
   }
 
   /// Quick match using matchmaking system
-  Future<bool> quickMatch(MultiplayerGameMode mode, {int playerCount = 2}) async {
-    emit(state.copyWith(isLoading: true, clearError: true, clearMatchmaking: true));
+  Future<bool> quickMatch(
+    MultiplayerGameMode mode, {
+    int playerCount = 2,
+  }) async {
+    emit(
+      state.copyWith(isLoading: true, clearError: true, clearMatchmaking: true),
+    );
 
     try {
       _audioService.playSound('button_click');
       _hapticService.lightImpact();
 
-      await _multiplayerService.joinMatchmaking(mode: mode, playerCount: playerCount);
+      await _multiplayerService.joinMatchmaking(
+        mode: mode,
+        playerCount: playerCount,
+      );
 
-      emit(state.copyWith(
-        status: MultiplayerStatus.inMatchmaking,
-        isLoading: false,
-        isMatchmaking: true,
-        matchmakingMode: mode,
-        matchmakingPlayerCount: playerCount,
-        matchmakingElapsedSeconds: 0,
-        matchmakingTimedOut: false,
-      ));
+      emit(
+        state.copyWith(
+          status: MultiplayerStatus.inMatchmaking,
+          isLoading: false,
+          isMatchmaking: true,
+          matchmakingMode: mode,
+          matchmakingPlayerCount: playerCount,
+          matchmakingElapsedSeconds: 0,
+          matchmakingTimedOut: false,
+        ),
+      );
 
       // Start the matchmaking timer
       _startMatchmakingTimer();
 
       return true;
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: 'Error starting matchmaking: $e',
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: 'Error starting matchmaking: $e',
+        ),
+      );
       return false;
     }
   }
@@ -395,12 +420,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       }
     }
 
-    emit(state.copyWith(
-      status: MultiplayerStatus.idle,
-      isMatchmaking: false,
-      matchmakingTimedOut: true,
-      matchmakingElapsedSeconds: matchmakingTimeoutSeconds,
-    ));
+    emit(
+      state.copyWith(
+        status: MultiplayerStatus.idle,
+        isMatchmaking: false,
+        matchmakingTimedOut: true,
+        matchmakingElapsedSeconds: matchmakingTimeoutSeconds,
+      ),
+    );
   }
 
   /// Cancel matchmaking
@@ -411,10 +438,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _audioService.playSound('button_click');
       await _multiplayerService.leaveMatchmaking();
 
-      emit(state.copyWith(
-        status: MultiplayerStatus.idle,
-        clearMatchmaking: true,
-      ));
+      emit(
+        state.copyWith(status: MultiplayerStatus.idle, clearMatchmaking: true),
+      );
     } catch (e) {
       emit(state.copyWith(errorMessage: 'Error canceling matchmaking: $e'));
     }
@@ -422,18 +448,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   /// Clear matchmaking timeout state (to dismiss the timeout message)
   void clearMatchmakingTimeout() {
-    emit(state.copyWith(
-      matchmakingTimedOut: false,
-      clearMatchmaking: true,
-    ));
+    emit(state.copyWith(matchmakingTimedOut: false, clearMatchmaking: true));
   }
 
   /// Attempt to reconnect to a game after disconnect
   Future<bool> attemptReconnect() async {
-    emit(state.copyWith(
-      status: MultiplayerStatus.reconnecting,
-      isLoading: true,
-    ));
+    emit(
+      state.copyWith(status: MultiplayerStatus.reconnecting, isLoading: true),
+    );
 
     try {
       final success = await _multiplayerService.attemptReconnect();
@@ -444,26 +466,29 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
         await _startListening();
 
-        emit(state.copyWith(
-          status: MultiplayerStatus.playing,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(status: MultiplayerStatus.playing, isLoading: false),
+        );
         return true;
       } else {
         _audioService.playSound('game_over');
-        emit(state.copyWith(
-          status: MultiplayerStatus.idle,
-          isLoading: false,
-          errorMessage: 'Could not reconnect to game',
-        ));
+        emit(
+          state.copyWith(
+            status: MultiplayerStatus.idle,
+            isLoading: false,
+            errorMessage: 'Could not reconnect to game',
+          ),
+        );
         return false;
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: MultiplayerStatus.idle,
-        isLoading: false,
-        errorMessage: 'Reconnection failed: $e',
-      ));
+      emit(
+        state.copyWith(
+          status: MultiplayerStatus.idle,
+          isLoading: false,
+          errorMessage: 'Reconnection failed: $e',
+        ),
+      );
       return false;
     }
   }
@@ -609,10 +634,12 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
       final success = await _multiplayerService.startGame();
       if (!success) {
-        emit(state.copyWith(
-          errorMessage: 'Failed to start game',
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(
+            errorMessage: 'Failed to start game',
+            isLoading: false,
+          ),
+        );
         return false;
       }
 
@@ -620,19 +647,23 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _startGameTimeoutTimer?.cancel();
       _startGameTimeoutTimer = Timer(const Duration(seconds: 5), () {
         if (state.isLoading && state.status != MultiplayerStatus.playing) {
-          emit(state.copyWith(
-            errorMessage: 'Start game timed out. Please try again.',
-            isLoading: false,
-          ));
+          emit(
+            state.copyWith(
+              errorMessage: 'Start game timed out. Please try again.',
+              isLoading: false,
+            ),
+          );
         }
       });
 
       return success;
     } catch (e) {
-      emit(state.copyWith(
-        errorMessage: 'Error starting game: $e',
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          errorMessage: 'Error starting game: $e',
+          isLoading: false,
+        ),
+      );
       return false;
     }
   }
@@ -691,11 +722,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           newStatus = MultiplayerStatus.inLobby;
         }
 
-        emit(state.copyWith(
-          status: newStatus,
-          currentGame: game,
-          isLoading: shouldClearLoading ? false : null,
-        ));
+        emit(
+          state.copyWith(
+            status: newStatus,
+            currentGame: game,
+            isLoading: shouldClearLoading ? false : null,
+          ),
+        );
       },
       onError: (error) {
         emit(state.copyWith(errorMessage: 'Game stream error: $error'));
@@ -726,10 +759,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         newStatus = MultiplayerStatus.inLobby;
       }
 
-      emit(state.copyWith(
-        status: newStatus,
-        currentGame: currentGame,
-      ));
+      emit(state.copyWith(status: newStatus, currentGame: currentGame));
     }
   }
 

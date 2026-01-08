@@ -184,20 +184,24 @@ class _LoadingScreenState extends State<LoadingScreen>
           int waitTime = 0;
           while ((authCubit.state.status == AuthStatus.initial ||
                   authCubit.state.status == AuthStatus.loading) &&
-                 waitTime < 3000 &&
-                 mounted) {
+              waitTime < 3000 &&
+              mounted) {
             await Future.delayed(const Duration(milliseconds: 100));
             waitTime += 100;
           }
 
-          AppLogger.info('AuthCubit status: ${authCubit.state.status}, isFirstTimeUser: ${authCubit.state.isFirstTimeUser}');
+          AppLogger.info(
+            'AuthCubit status: ${authCubit.state.status}, isFirstTimeUser: ${authCubit.state.isFirstTimeUser}',
+          );
         }
 
         final isFirstTime = authCubit.state.isFirstTimeUser;
 
         if (isFirstTime) {
           await _updateProgress(1.0, 'Welcome!', 'Choose how to continue');
-          await Future.delayed(const Duration(milliseconds: 50)); // Reduced from 100ms
+          await Future.delayed(
+            const Duration(milliseconds: 50),
+          ); // Reduced from 100ms
 
           // Navigate to first-time auth screen
           if (!mounted) {
@@ -236,7 +240,9 @@ class _LoadingScreenState extends State<LoadingScreen>
         'Ready to play!',
         'Welcome back to Snake Classic',
       );
-      await Future.delayed(const Duration(milliseconds: 50)); // Reduced from 100ms
+      await Future.delayed(
+        const Duration(milliseconds: 50),
+      ); // Reduced from 100ms
 
       // Navigation to Home Screen with smooth transition (returning users)
       if (mounted) {
@@ -379,7 +385,10 @@ class _LoadingScreenState extends State<LoadingScreen>
       final userId = unifiedUserService.currentUser?.uid;
 
       if (userId != null) {
-        final syncService = Provider.of<DataSyncService>(context, listen: false);
+        final syncService = Provider.of<DataSyncService>(
+          context,
+          listen: false,
+        );
         // Initialize DataSyncService with userId (this also sets up sync)
         await syncService.initialize(userId);
         AppLogger.success('DataSyncService initialized');
@@ -387,7 +396,9 @@ class _LoadingScreenState extends State<LoadingScreen>
         // Perform any pending sync operations
         await syncService.forceSyncNow();
       } else {
-        AppLogger.warning('No user ID available for sync service initialization');
+        AppLogger.warning(
+          'No user ID available for sync service initialization',
+        );
       }
 
       AppLogger.success('Final sync completed');

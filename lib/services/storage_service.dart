@@ -51,7 +51,10 @@ class StorageService {
   Future<BoardSize> getBoardSize() async {
     await _initPrefs();
     final boardSizeIndex = _prefs?.getInt(GameConstants.boardSizeKey) ?? 1;
-    return GameConstants.availableBoardSizes[boardSizeIndex.clamp(0, GameConstants.availableBoardSizes.length - 1)];
+    return GameConstants.availableBoardSizes[boardSizeIndex.clamp(
+      0,
+      GameConstants.availableBoardSizes.length - 1,
+    )];
   }
 
   Future<void> saveBoardSize(BoardSize boardSize) async {
@@ -62,13 +65,18 @@ class StorageService {
 
   Future<Duration> getCrashFeedbackDuration() async {
     await _initPrefs();
-    final durationSeconds = _prefs?.getInt(GameConstants.crashFeedbackDurationKey) ?? GameConstants.defaultCrashFeedbackDuration.inSeconds;
+    final durationSeconds =
+        _prefs?.getInt(GameConstants.crashFeedbackDurationKey) ??
+        GameConstants.defaultCrashFeedbackDuration.inSeconds;
     return Duration(seconds: durationSeconds);
   }
 
   Future<void> saveCrashFeedbackDuration(Duration duration) async {
     await _initPrefs();
-    await _prefs?.setInt(GameConstants.crashFeedbackDurationKey, duration.inSeconds);
+    await _prefs?.setInt(
+      GameConstants.crashFeedbackDurationKey,
+      duration.inSeconds,
+    );
   }
 
   Future<String?> getStatistics() async {
@@ -103,7 +111,8 @@ class StorageService {
 
   Future<bool> isTrailSystemEnabled() async {
     await _initPrefs();
-    return _prefs?.getBool(GameConstants.trailSystemEnabledKey) ?? false; // Default to false
+    return _prefs?.getBool(GameConstants.trailSystemEnabledKey) ??
+        false; // Default to false
   }
 
   Future<void> setTrailSystemEnabled(bool enabled) async {
@@ -125,8 +134,12 @@ class StorageService {
   // D-Pad position preference
   Future<DPadPosition> getDPadPosition() async {
     await _initPrefs();
-    final positionIndex = _prefs?.getInt('dpad_position') ?? 1; // Default to center (1)
-    return DPadPosition.values[positionIndex.clamp(0, DPadPosition.values.length - 1)];
+    final positionIndex =
+        _prefs?.getInt('dpad_position') ?? 1; // Default to center (1)
+    return DPadPosition.values[positionIndex.clamp(
+      0,
+      DPadPosition.values.length - 1,
+    )];
   }
 
   Future<void> setDPadPosition(DPadPosition position) async {
@@ -149,7 +162,7 @@ class StorageService {
   Future<void> saveReplay(String replayId, String replayJson) async {
     await _initPrefs();
     await _prefs?.setString('replay_$replayId', replayJson);
-    
+
     // Update replay keys list
     final keys = await getReplayKeys();
     if (!keys.contains(replayId)) {
@@ -171,7 +184,7 @@ class StorageService {
   Future<void> deleteReplay(String replayId) async {
     await _initPrefs();
     await _prefs?.remove('replay_$replayId');
-    
+
     // Update replay keys list
     final keys = await getReplayKeys();
     keys.remove(replayId);
@@ -454,7 +467,10 @@ class StorageService {
     await _initPrefs();
     await _prefs?.setBool('trial_is_on', isOnTrial);
     if (trialStartDate != null) {
-      await _prefs?.setString('trial_start_date', trialStartDate.toIso8601String());
+      await _prefs?.setString(
+        'trial_start_date',
+        trialStartDate.toIso8601String(),
+      );
     }
     if (trialEndDate != null) {
       await _prefs?.setString('trial_end_date', trialEndDate.toIso8601String());

@@ -338,8 +338,12 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
                                 }
                               }
                             },
-                            selectedColor: theme.accentColor.withValues(alpha: 0.3),
-                            backgroundColor: theme.primaryColor.withValues(alpha: 0.1,),
+                            selectedColor: theme.accentColor.withValues(
+                              alpha: 0.3,
+                            ),
+                            backgroundColor: theme.primaryColor.withValues(
+                              alpha: 0.1,
+                            ),
                             labelStyle: TextStyle(
                               color: _playbackSpeed == speed
                                   ? theme.accentColor

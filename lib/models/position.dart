@@ -12,10 +12,10 @@ class Position {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Position && 
-      runtimeType == other.runtimeType &&
-      x == other.x &&
-      y == other.y;
+      other is Position &&
+          runtimeType == other.runtimeType &&
+          x == other.x &&
+          y == other.y;
 
   @override
   int get hashCode => x.hashCode ^ y.hashCode;
@@ -42,10 +42,7 @@ class Position {
 
   // JSON serialization
   Map<String, dynamic> toJson() {
-    return {
-      'x': x,
-      'y': y,
-    };
+    return {'x': x, 'y': y};
   }
 
   factory Position.fromJson(Map<String, dynamic> json) {

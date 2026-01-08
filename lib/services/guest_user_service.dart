@@ -15,7 +15,7 @@ class GuestUser {
   final String preferredTheme;
   final bool soundEnabled;
   final bool musicEnabled;
-  
+
   const GuestUser({
     required this.guestId,
     required this.username,
@@ -29,7 +29,7 @@ class GuestUser {
     this.soundEnabled = true,
     this.musicEnabled = true,
   });
-  
+
   GuestUser copyWith({
     String? guestId,
     String? username,
@@ -57,7 +57,7 @@ class GuestUser {
       musicEnabled: musicEnabled ?? this.musicEnabled,
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'guestId': guestId,
@@ -73,12 +73,14 @@ class GuestUser {
       'musicEnabled': musicEnabled,
     };
   }
-  
+
   factory GuestUser.fromJson(Map<String, dynamic> json) {
     return GuestUser(
       guestId: json['guestId'] ?? '',
       username: json['username'] ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
       highScore: json['highScore'] ?? 0,
       totalGamesPlayed: json['totalGamesPlayed'] ?? 0,
       totalScore: json['totalScore'] ?? 0,
@@ -98,10 +100,10 @@ class GuestUserService {
 
   static const String _guestUserKey = 'guest_user_data';
   static const String _hasInitializedKey = 'has_initialized_guest';
-  
+
   final Uuid _uuid = const Uuid();
   final Random _random = Random();
-  
+
   SharedPreferences? _prefs;
   GuestUser? _currentGuestUser;
 
@@ -119,34 +121,34 @@ class GuestUserService {
   /// Create a new guest user with auto-generated username
   Future<GuestUser> createGuestUser() async {
     await initialize();
-    
+
     final guestId = _uuid.v4();
     final username = _generateUniqueUsername();
     final now = DateTime.now();
-    
+
     final guestUser = GuestUser(
       guestId: guestId,
       username: username,
       createdAt: now,
     );
-    
+
     // Save to local storage
     await _saveGuestUser(guestUser);
     _currentGuestUser = guestUser;
-    
+
     // Mark as initialized
     await _prefs!.setBool(_hasInitializedKey, true);
-    
+
     return guestUser;
   }
 
   /// Load existing guest user from local storage
   Future<GuestUser?> loadGuestUser() async {
     await initialize();
-    
+
     final userData = _prefs!.getString(_guestUserKey);
     if (userData == null) return null;
-    
+
     try {
       final userMap = jsonDecode(userData);
       final guestUser = GuestUser.fromJson(userMap);
@@ -165,7 +167,7 @@ class GuestUserService {
     if (existingUser != null) {
       return existingUser;
     }
-    
+
     return await createGuestUser();
   }
 
@@ -178,27 +180,27 @@ class GuestUserService {
   /// Update high score for guest user
   Future<void> updateHighScore(int score) async {
     if (_currentGuestUser == null) return;
-    
+
     final currentHighScore = _currentGuestUser!.highScore;
     final newTotalGames = _currentGuestUser!.totalGamesPlayed + 1;
     final newTotalScore = _currentGuestUser!.totalScore + score;
-    
+
     final updatedUser = _currentGuestUser!.copyWith(
       highScore: score > currentHighScore ? score : currentHighScore,
       totalGamesPlayed: newTotalGames,
       totalScore: newTotalScore,
     );
-    
+
     await updateGuestUser(updatedUser);
   }
 
   /// Update username for guest user (with validation)
   Future<bool> updateUsername(String newUsername) async {
     if (_currentGuestUser == null) return false;
-    
+
     // Validate username
     if (!_isValidUsername(newUsername)) return false;
-    
+
     final updatedUser = _currentGuestUser!.copyWith(username: newUsername);
     await updateGuestUser(updatedUser);
     return true;
@@ -224,7 +226,7 @@ class GuestUserService {
   /// Export guest user data for migration
   Map<String, dynamic> exportGuestData() {
     if (_currentGuestUser == null) return {};
-    
+
     return {
       'highScore': _currentGuestUser!.highScore,
       'totalGamesPlayed': _currentGuestUser!.totalGamesPlayed,
@@ -248,33 +250,59 @@ class GuestUserService {
 
   String _generateUniqueUsername() {
     final adjectives = [
-      'Swift', 'Quick', 'Fast', 'Sneaky', 'Sharp', 'Cool', 'Epic', 'Super',
-      'Mega', 'Ultra', 'Pro', 'Elite', 'Master', 'Ace', 'Clever', 'Smart'
+      'Swift',
+      'Quick',
+      'Fast',
+      'Sneaky',
+      'Sharp',
+      'Cool',
+      'Epic',
+      'Super',
+      'Mega',
+      'Ultra',
+      'Pro',
+      'Elite',
+      'Master',
+      'Ace',
+      'Clever',
+      'Smart',
     ];
-    
+
     final nouns = [
-      'Snake', 'Viper', 'Python', 'Cobra', 'Serpent', 'Player', 'Gamer',
-      'Champion', 'Hunter', 'Racer', 'Striker', 'Warrior', 'Hero', 'Legend'
+      'Snake',
+      'Viper',
+      'Python',
+      'Cobra',
+      'Serpent',
+      'Player',
+      'Gamer',
+      'Champion',
+      'Hunter',
+      'Racer',
+      'Striker',
+      'Warrior',
+      'Hero',
+      'Legend',
     ];
-    
+
     final adjective = adjectives[_random.nextInt(adjectives.length)];
     final noun = nouns[_random.nextInt(nouns.length)];
     final number = _random.nextInt(9999) + 1;
-    
+
     return '${adjective}_${noun}_$number';
   }
 
   bool _isValidUsername(String username) {
     // Username validation rules
     if (username.length < 3 || username.length > 20) return false;
-    
+
     // Allow alphanumeric characters and underscores
     final validRegex = RegExp(r'^[a-zA-Z0-9_]+$');
     if (!validRegex.hasMatch(username)) return false;
-    
+
     // Must start with a letter
     if (!RegExp(r'^[a-zA-Z]').hasMatch(username)) return false;
-    
+
     return true;
   }
 }

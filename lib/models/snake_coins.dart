@@ -186,7 +186,7 @@ class CoinTransaction {
   });
 
   String get displayAmount => isEarned ? '+$amount' : '-$amount';
-  
+
   String get description {
     if (isEarned) {
       final source = earningSource?.displayName ?? 'Unknown';
@@ -261,12 +261,12 @@ class DailyLoginBonus {
 
   bool get isAvailable {
     if (isCollected) return false;
-    
+
     // Check if it's the current day in the login streak
     final today = DateTime.now();
     final daysSinceEpoch = today.difference(DateTime(2024, 1, 1)).inDays;
     final currentStreakDay = (daysSinceEpoch % 7) + 1;
-    
+
     return day == currentStreakDay;
   }
 
@@ -275,10 +275,7 @@ class DailyLoginBonus {
     return bonusItem != null ? '$coinText + $bonusItem' : coinText;
   }
 
-  DailyLoginBonus copyWith({
-    bool? isCollected,
-    DateTime? collectedAt,
-  }) {
+  DailyLoginBonus copyWith({bool? isCollected, DateTime? collectedAt}) {
     return DailyLoginBonus(
       day: day,
       coins: coins,
@@ -314,11 +311,26 @@ class DailyLoginBonus {
     return [
       const DailyLoginBonus(day: 1, coins: 10, isCollected: false),
       const DailyLoginBonus(day: 2, coins: 15, isCollected: false),
-      const DailyLoginBonus(day: 3, coins: 20, bonusItem: 'Speed Boost Power-up', isCollected: false),
+      const DailyLoginBonus(
+        day: 3,
+        coins: 20,
+        bonusItem: 'Speed Boost Power-up',
+        isCollected: false,
+      ),
       const DailyLoginBonus(day: 4, coins: 25, isCollected: false),
-      const DailyLoginBonus(day: 5, coins: 30, bonusItem: '2x XP Boost', isCollected: false),
+      const DailyLoginBonus(
+        day: 5,
+        coins: 30,
+        bonusItem: '2x XP Boost',
+        isCollected: false,
+      ),
       const DailyLoginBonus(day: 6, coins: 40, isCollected: false),
-      const DailyLoginBonus(day: 7, coins: 50, bonusItem: 'Premium Theme (1 day)', isCollected: false),
+      const DailyLoginBonus(
+        day: 7,
+        coins: 50,
+        bonusItem: 'Premium Theme (1 day)',
+        isCollected: false,
+      ),
     ];
   }
 }
@@ -346,10 +358,9 @@ class CoinPurchaseOption {
 
   int get totalCoins => coins + bonusCoins;
   double get coinsPerDollar => totalCoins / price;
-  
-  String get displayCoins => bonusCoins > 0 
-      ? '$coins + $bonusCoins bonus'
-      : '$coins coins';
+
+  String get displayCoins =>
+      bonusCoins > 0 ? '$coins + $bonusCoins bonus' : '$coins coins';
 
   Map<String, dynamic> toJson() {
     return {

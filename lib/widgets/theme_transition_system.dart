@@ -2,26 +2,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:snake_classic/utils/constants.dart';
 
-enum TransitionType {
-  fade,
-  slide,
-  morph,
-  particle,
-  ripple,
-  spiral,
-  wave,
-}
+enum TransitionType { fade, slide, morph, particle, ripple, spiral, wave }
 
 class ThemeTransitionController extends ChangeNotifier {
   final TickerProvider vsync;
   late AnimationController _controller;
   late Animation<double> _animation;
-  
+
   GameTheme? _fromTheme;
   GameTheme? _toTheme;
   TransitionType _transitionType = TransitionType.fade;
   bool _isTransitioning = false;
-  
+
   VoidCallback? onTransitionComplete;
 
   ThemeTransitionController({required this.vsync}) {
@@ -113,7 +105,7 @@ class _ThemeTransitionWidgetState extends State<ThemeTransitionWidget>
   @override
   void initState() {
     super.initState();
-    
+
     _effectController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
@@ -136,11 +128,11 @@ class _ThemeTransitionWidgetState extends State<ThemeTransitionWidget>
 
   void _onTransitionUpdate() {
     setState(() {});
-    
+
     if (widget.controller.isTransitioning && !_effectController.isAnimating) {
       _effectController.forward(from: 0.0);
     }
-    
+
     if (!widget.controller.isTransitioning && _effectController.isAnimating) {
       _effectController.stop();
       _effectController.reset();
@@ -219,14 +211,10 @@ class TransitionEffectPainter extends CustomPainter {
       ..color = toTheme.backgroundColor.withValues(alpha: progress)
       ..style = PaintingStyle.fill;
 
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      paint,
-    );
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
   }
 
   void _paintSlideTransition(Canvas canvas, Size size) {
-
     // Draw sliding color bars
     final paint = Paint()..style = PaintingStyle.fill;
 
@@ -235,35 +223,38 @@ class TransitionEffectPainter extends CustomPainter {
       final y = i * barHeight;
       final delay = i * 0.1;
       final barProgress = ((progress - delay) / (1.0 - delay)).clamp(0.0, 1.0);
-      
-      paint.color = Color.lerp(
-        fromTheme.backgroundColor,
-        toTheme.backgroundColor,
-        barProgress,
-      ) ?? toTheme.backgroundColor;
+
+      paint.color =
+          Color.lerp(
+            fromTheme.backgroundColor,
+            toTheme.backgroundColor,
+            barProgress,
+          ) ??
+          toTheme.backgroundColor;
 
       final barWidth = size.width * barProgress;
-      canvas.drawRect(
-        Rect.fromLTWH(0, y, barWidth, barHeight),
-        paint,
-      );
+      canvas.drawRect(Rect.fromLTWH(0, y, barWidth, barHeight), paint);
     }
   }
 
   void _paintMorphTransition(Canvas canvas, Size size) {
     final morphProgress = Curves.elasticOut.transform(progress);
-    
+
     // Create morphing shapes that blend between themes
     final paint = Paint()
       ..style = PaintingStyle.fill
-      ..color = Color.lerp(
-        fromTheme.accentColor,
-        toTheme.accentColor,
-        morphProgress,
-      ) ?? toTheme.accentColor;
+      ..color =
+          Color.lerp(
+            fromTheme.accentColor,
+            toTheme.accentColor,
+            morphProgress,
+          ) ??
+          toTheme.accentColor;
 
     final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = math.sqrt(size.width * size.width + size.height * size.height);
+    final maxRadius = math.sqrt(
+      size.width * size.width + size.height * size.height,
+    );
     final radius = maxRadius * morphProgress;
 
     // Draw expanding circle with morphing color
@@ -279,11 +270,13 @@ class TransitionEffectPainter extends CustomPainter {
       );
 
       if (shapeRadius > 0) {
-        paint.color = Color.lerp(
-          fromTheme.foodColor,
-          toTheme.foodColor,
-          morphProgress,
-        )?.withValues(alpha: 0.6) ?? toTheme.foodColor.withValues(alpha: 0.6);
+        paint.color =
+            Color.lerp(
+              fromTheme.foodColor,
+              toTheme.foodColor,
+              morphProgress,
+            )?.withValues(alpha: 0.6) ??
+            toTheme.foodColor.withValues(alpha: 0.6);
 
         canvas.drawCircle(shapeCenter, shapeRadius * 0.5, paint);
       }
@@ -301,49 +294,55 @@ class TransitionEffectPainter extends CustomPainter {
       // Calculate particle position
       final startX = (i * 37) % size.width.toInt();
       final startY = (i * 67) % size.height.toInt();
-      
+
       final targetX = size.width / 2;
       final targetY = size.height / 2;
-      
+
       final currentX = startX + (targetX - startX) * particleProgress;
       final currentY = startY + (targetY - startY) * particleProgress;
 
       // Particle color transition
-      paint.color = Color.lerp(
-        fromTheme.snakeColor,
-        toTheme.snakeColor,
-        particleProgress,
-      )?.withValues(alpha: particleProgress) ?? toTheme.snakeColor.withValues(alpha: particleProgress);
+      paint.color =
+          Color.lerp(
+            fromTheme.snakeColor,
+            toTheme.snakeColor,
+            particleProgress,
+          )?.withValues(alpha: particleProgress) ??
+          toTheme.snakeColor.withValues(alpha: particleProgress);
 
-      final particleSize = (math.sin(particleProgress * math.pi) * 6).clamp(1.0, 6.0);
-      canvas.drawCircle(
-        Offset(currentX, currentY),
-        particleSize,
-        paint,
+      final particleSize = (math.sin(particleProgress * math.pi) * 6).clamp(
+        1.0,
+        6.0,
       );
+      canvas.drawCircle(Offset(currentX, currentY), particleSize, paint);
     }
   }
 
   void _paintRippleTransition(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = math.sqrt(size.width * size.width + size.height * size.height);
-    
+    final maxRadius = math.sqrt(
+      size.width * size.width + size.height * size.height,
+    );
+
     // Draw multiple ripples
     for (int i = 0; i < 3; i++) {
       final rippleDelay = i * 0.3;
-      final rippleProgress = ((progress - rippleDelay) / (1.0 - rippleDelay)).clamp(0.0, 1.0);
-      
+      final rippleProgress = ((progress - rippleDelay) / (1.0 - rippleDelay))
+          .clamp(0.0, 1.0);
+
       if (rippleProgress <= 0) continue;
 
       final rippleRadius = maxRadius * Curves.easeOut.transform(rippleProgress);
       final rippleOpacity = (1.0 - rippleProgress) * 0.5;
 
       final paint = Paint()
-        ..color = Color.lerp(
-          fromTheme.accentColor,
-          toTheme.accentColor,
-          rippleProgress,
-        )?.withValues(alpha: rippleOpacity) ?? toTheme.accentColor.withValues(alpha: rippleOpacity)
+        ..color =
+            Color.lerp(
+              fromTheme.accentColor,
+              toTheme.accentColor,
+              rippleProgress,
+            )?.withValues(alpha: rippleOpacity) ??
+            toTheme.accentColor.withValues(alpha: rippleOpacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 4.0;
 
@@ -362,12 +361,12 @@ class TransitionEffectPainter extends CustomPainter {
 
     final path = Path();
     final steps = 100;
-    
+
     for (int i = 0; i <= steps; i++) {
       final t = (i / steps) * progress;
       final angle = t * spiralTurns * 2 * math.pi;
       final radius = t * maxRadius;
-      
+
       final x = center.dx + math.cos(angle) * radius;
       final y = center.dy + math.sin(angle) * radius;
 
@@ -379,45 +378,51 @@ class TransitionEffectPainter extends CustomPainter {
     }
 
     // Color gradient along spiral
-    paint.color = Color.lerp(
-      fromTheme.snakeColor,
-      toTheme.snakeColor,
-      progress,
-    ) ?? toTheme.snakeColor;
+    paint.color =
+        Color.lerp(fromTheme.snakeColor, toTheme.snakeColor, progress) ??
+        toTheme.snakeColor;
 
     canvas.drawPath(path, paint);
   }
 
   void _paintWaveTransition(Canvas canvas, Size size) {
     final waveCount = 5;
-    final paint = Paint()
-      ..style = PaintingStyle.fill;
+    final paint = Paint()..style = PaintingStyle.fill;
 
     for (int wave = 0; wave < waveCount; wave++) {
       final waveDelay = wave * 0.1;
-      final waveProgress = ((progress - waveDelay) / (1.0 - waveDelay)).clamp(0.0, 1.0);
-      
+      final waveProgress = ((progress - waveDelay) / (1.0 - waveDelay)).clamp(
+        0.0,
+        1.0,
+      );
+
       if (waveProgress <= 0) continue;
 
       final path = Path();
       final waveHeight = size.height * waveProgress;
-      
+
       path.moveTo(0, size.height);
-      
+
       for (double x = 0; x <= size.width; x += 5) {
-        final waveOffset = math.sin((x / size.width + wave * 0.2 + effectProgress) * math.pi * 4) * 20;
+        final waveOffset =
+            math.sin(
+              (x / size.width + wave * 0.2 + effectProgress) * math.pi * 4,
+            ) *
+            20;
         final y = size.height - waveHeight + waveOffset;
         path.lineTo(x, y);
       }
-      
+
       path.lineTo(size.width, size.height);
       path.close();
 
-      paint.color = Color.lerp(
-        fromTheme.backgroundColor,
-        toTheme.backgroundColor,
-        waveProgress,
-      )?.withValues(alpha: 0.7) ?? toTheme.backgroundColor.withValues(alpha: 0.7);
+      paint.color =
+          Color.lerp(
+            fromTheme.backgroundColor,
+            toTheme.backgroundColor,
+            waveProgress,
+          )?.withValues(alpha: 0.7) ??
+          toTheme.backgroundColor.withValues(alpha: 0.7);
 
       canvas.drawPath(path, paint);
     }
@@ -426,10 +431,10 @@ class TransitionEffectPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant TransitionEffectPainter oldDelegate) {
     return progress != oldDelegate.progress ||
-           fromTheme != oldDelegate.fromTheme ||
-           toTheme != oldDelegate.toTheme ||
-           transitionType != oldDelegate.transitionType ||
-           effectProgress != oldDelegate.effectProgress;
+        fromTheme != oldDelegate.fromTheme ||
+        toTheme != oldDelegate.toTheme ||
+        transitionType != oldDelegate.transitionType ||
+        effectProgress != oldDelegate.effectProgress;
   }
 }
 
@@ -437,7 +442,12 @@ class TransitionEffectPainter extends CustomPainter {
 class TransitionAwareThemeBuilder extends StatelessWidget {
   final ThemeTransitionController controller;
   final GameTheme currentTheme;
-  final Widget Function(BuildContext context, GameTheme effectiveTheme, bool isTransitioning) builder;
+  final Widget Function(
+    BuildContext context,
+    GameTheme effectiveTheme,
+    bool isTransitioning,
+  )
+  builder;
 
   const TransitionAwareThemeBuilder({
     super.key,
@@ -451,10 +461,10 @@ class TransitionAwareThemeBuilder extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, child) {
-        final effectiveTheme = controller.isTransitioning 
+        final effectiveTheme = controller.isTransitioning
             ? (controller.toTheme ?? currentTheme)
             : currentTheme;
-            
+
         return builder(context, effectiveTheme, controller.isTransitioning);
       },
     );

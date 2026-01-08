@@ -20,7 +20,9 @@ class LeaderboardService {
   static const String _friendsLeaderboardKey = 'leaderboard_friends';
 
   /// Get global leaderboard with cache-first pattern
-  Future<List<Map<String, dynamic>>> getGlobalLeaderboard({int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> getGlobalLeaderboard({
+    int limit = 50,
+  }) async {
     // 1. Try to get cached data first
     final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
       _globalLeaderboardKey,
@@ -40,12 +42,13 @@ class LeaderboardService {
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
       // Try to get stale cached data as fallback
-      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
-        _globalLeaderboardKey,
-        (data) => List<Map<String, dynamic>>.from(
-          (data as List).map((e) => Map<String, dynamic>.from(e)),
-        ),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<List<Map<String, dynamic>>>(
+            _globalLeaderboardKey,
+            (data) => List<Map<String, dynamic>>.from(
+              (data as List).map((e) => Map<String, dynamic>.from(e)),
+            ),
+          );
       return fallback ?? [];
     }
 
@@ -53,13 +56,17 @@ class LeaderboardService {
     return await _fetchAndCacheGlobalLeaderboard(limit);
   }
 
-  Future<List<Map<String, dynamic>>> _fetchAndCacheGlobalLeaderboard(int limit) async {
+  Future<List<Map<String, dynamic>>> _fetchAndCacheGlobalLeaderboard(
+    int limit,
+  ) async {
     try {
       final response = await _apiService.getGlobalLeaderboard(pageSize: limit);
 
       if (response != null && response['entries'] != null) {
         final entries = List<Map<String, dynamic>>.from(response['entries']);
-        final mapped = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+        final mapped = entries
+            .map((entry) => _mapLeaderboardEntry(entry))
+            .toList();
 
         // Cache the result
         await _cacheService.setCache<List<Map<String, dynamic>>>(
@@ -90,10 +97,13 @@ class LeaderboardService {
     });
   }
 
-  Stream<List<Map<String, dynamic>>> getGlobalLeaderboardStream({int limit = 50}) {
-    return Stream.periodic(const Duration(seconds: 30), (_) => null)
-        .asyncMap((_) => getGlobalLeaderboard(limit: limit))
-        .distinct();
+  Stream<List<Map<String, dynamic>>> getGlobalLeaderboardStream({
+    int limit = 50,
+  }) {
+    return Stream.periodic(
+      const Duration(seconds: 30),
+      (_) => null,
+    ).asyncMap((_) => getGlobalLeaderboard(limit: limit)).distinct();
   }
 
   Future<Map<String, dynamic>?> getUserRank(String userId) async {
@@ -120,7 +130,8 @@ class LeaderboardService {
         'totalPlayers': leaderboard.length,
         'userScore': userScore,
         'percentile': leaderboard.isNotEmpty
-            ? ((leaderboard.length - rank + 1) / leaderboard.length * 100).round()
+            ? ((leaderboard.length - rank + 1) / leaderboard.length * 100)
+                  .round()
             : 0,
       };
     } catch (e) {
@@ -129,7 +140,9 @@ class LeaderboardService {
   }
 
   /// Get weekly leaderboard with cache-first pattern
-  Future<List<Map<String, dynamic>>> getWeeklyLeaderboard({int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> getWeeklyLeaderboard({
+    int limit = 50,
+  }) async {
     // 1. Try to get cached data first
     final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
       _weeklyLeaderboardKey,
@@ -147,12 +160,13 @@ class LeaderboardService {
 
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
-        _weeklyLeaderboardKey,
-        (data) => List<Map<String, dynamic>>.from(
-          (data as List).map((e) => Map<String, dynamic>.from(e)),
-        ),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<List<Map<String, dynamic>>>(
+            _weeklyLeaderboardKey,
+            (data) => List<Map<String, dynamic>>.from(
+              (data as List).map((e) => Map<String, dynamic>.from(e)),
+            ),
+          );
       return fallback ?? [];
     }
 
@@ -160,13 +174,17 @@ class LeaderboardService {
     return await _fetchAndCacheWeeklyLeaderboard(limit);
   }
 
-  Future<List<Map<String, dynamic>>> _fetchAndCacheWeeklyLeaderboard(int limit) async {
+  Future<List<Map<String, dynamic>>> _fetchAndCacheWeeklyLeaderboard(
+    int limit,
+  ) async {
     try {
       final response = await _apiService.getWeeklyLeaderboard(pageSize: limit);
 
       if (response != null && response['entries'] != null) {
         final entries = List<Map<String, dynamic>>.from(response['entries']);
-        final mapped = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+        final mapped = entries
+            .map((entry) => _mapLeaderboardEntry(entry))
+            .toList();
 
         await _cacheService.setCache<List<Map<String, dynamic>>>(
           _weeklyLeaderboardKey,
@@ -195,14 +213,19 @@ class LeaderboardService {
     });
   }
 
-  Stream<List<Map<String, dynamic>>> getWeeklyLeaderboardStream({int limit = 50}) {
-    return Stream.periodic(const Duration(seconds: 30), (_) => null)
-        .asyncMap((_) => getWeeklyLeaderboard(limit: limit))
-        .distinct();
+  Stream<List<Map<String, dynamic>>> getWeeklyLeaderboardStream({
+    int limit = 50,
+  }) {
+    return Stream.periodic(
+      const Duration(seconds: 30),
+      (_) => null,
+    ).asyncMap((_) => getWeeklyLeaderboard(limit: limit)).distinct();
   }
 
   /// Get daily leaderboard with cache-first pattern
-  Future<List<Map<String, dynamic>>> getDailyLeaderboard({int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> getDailyLeaderboard({
+    int limit = 50,
+  }) async {
     // 1. Try to get cached data first
     final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
       _dailyLeaderboardKey,
@@ -220,12 +243,13 @@ class LeaderboardService {
 
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
-        _dailyLeaderboardKey,
-        (data) => List<Map<String, dynamic>>.from(
-          (data as List).map((e) => Map<String, dynamic>.from(e)),
-        ),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<List<Map<String, dynamic>>>(
+            _dailyLeaderboardKey,
+            (data) => List<Map<String, dynamic>>.from(
+              (data as List).map((e) => Map<String, dynamic>.from(e)),
+            ),
+          );
       return fallback ?? [];
     }
 
@@ -233,13 +257,17 @@ class LeaderboardService {
     return await _fetchAndCacheDailyLeaderboard(limit);
   }
 
-  Future<List<Map<String, dynamic>>> _fetchAndCacheDailyLeaderboard(int limit) async {
+  Future<List<Map<String, dynamic>>> _fetchAndCacheDailyLeaderboard(
+    int limit,
+  ) async {
     try {
       final response = await _apiService.getDailyLeaderboard(pageSize: limit);
 
       if (response != null && response['entries'] != null) {
         final entries = List<Map<String, dynamic>>.from(response['entries']);
-        final mapped = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+        final mapped = entries
+            .map((entry) => _mapLeaderboardEntry(entry))
+            .toList();
 
         await _cacheService.setCache<List<Map<String, dynamic>>>(
           _dailyLeaderboardKey,
@@ -269,7 +297,10 @@ class LeaderboardService {
   }
 
   /// Get friends leaderboard with cache-first pattern
-  Future<List<Map<String, dynamic>>> getFriendsLeaderboard(List<String> friendIds, {int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> getFriendsLeaderboard(
+    List<String> friendIds, {
+    int limit = 50,
+  }) async {
     if (friendIds.isEmpty) return [];
 
     // 1. Try to get cached data first
@@ -289,12 +320,13 @@ class LeaderboardService {
 
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
-        _friendsLeaderboardKey,
-        (data) => List<Map<String, dynamic>>.from(
-          (data as List).map((e) => Map<String, dynamic>.from(e)),
-        ),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<List<Map<String, dynamic>>>(
+            _friendsLeaderboardKey,
+            (data) => List<Map<String, dynamic>>.from(
+              (data as List).map((e) => Map<String, dynamic>.from(e)),
+            ),
+          );
       return fallback ?? [];
     }
 
@@ -302,13 +334,17 @@ class LeaderboardService {
     return await _fetchAndCacheFriendsLeaderboard(limit);
   }
 
-  Future<List<Map<String, dynamic>>> _fetchAndCacheFriendsLeaderboard(int limit) async {
+  Future<List<Map<String, dynamic>>> _fetchAndCacheFriendsLeaderboard(
+    int limit,
+  ) async {
     try {
       final response = await _apiService.getFriendsLeaderboard(pageSize: limit);
 
       if (response != null && response['entries'] != null) {
         final entries = List<Map<String, dynamic>>.from(response['entries']);
-        final mapped = entries.map((entry) => _mapLeaderboardEntry(entry)).toList();
+        final mapped = entries
+            .map((entry) => _mapLeaderboardEntry(entry))
+            .toList();
 
         await _cacheService.setCache<List<Map<String, dynamic>>>(
           _friendsLeaderboardKey,
@@ -340,8 +376,8 @@ class LeaderboardService {
   /// Check if we have any cached leaderboard data
   Future<bool> hasCachedData() async {
     return await _cacheService.hasCachedData(_globalLeaderboardKey) ||
-           await _cacheService.hasCachedData(_weeklyLeaderboardKey) ||
-           await _cacheService.hasCachedData(_dailyLeaderboardKey);
+        await _cacheService.hasCachedData(_weeklyLeaderboardKey) ||
+        await _cacheService.hasCachedData(_dailyLeaderboardKey);
   }
 
   /// Get cache freshness info for UI
@@ -390,13 +426,19 @@ class LeaderboardService {
   Map<String, dynamic> _mapLeaderboardEntry(Map<String, dynamic> entry) {
     return {
       'uid': entry['user_id'] ?? entry['uid'] ?? '',
-      'displayName': entry['display_name'] ?? entry['displayName'] ?? 'Anonymous',
+      'displayName':
+          entry['display_name'] ?? entry['displayName'] ?? 'Anonymous',
       'username': entry['username'] ?? entry['display_name'] ?? 'Anonymous',
-      'highScore': entry['high_score'] ?? entry['highScore'] ?? entry['score'] ?? 0,
+      'highScore':
+          entry['high_score'] ?? entry['highScore'] ?? entry['score'] ?? 0,
       'photoURL': entry['photo_url'] ?? entry['photoURL'],
-      'totalGamesPlayed': entry['total_games_played'] ?? entry['totalGamesPlayed'] ?? 0,
+      'totalGamesPlayed':
+          entry['total_games_played'] ?? entry['totalGamesPlayed'] ?? 0,
       'isAnonymous': entry['is_anonymous'] ?? entry['isAnonymous'] ?? false,
-      'highScoreDate': entry['high_score_date'] ?? entry['highScoreDate'] ?? entry['created_at'],
+      'highScoreDate':
+          entry['high_score_date'] ??
+          entry['highScoreDate'] ??
+          entry['created_at'],
       'rank': entry['rank'],
     };
   }

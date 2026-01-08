@@ -37,10 +37,7 @@ class ThemeSelectorScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: currentTheme.primaryColor,
-          ),
+          icon: Icon(Icons.arrow_back, color: currentTheme.primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -60,28 +57,32 @@ class ThemeSelectorScreen extends StatelessWidget {
                     color: currentTheme.accentColor,
                   ),
                 ).animate().fadeIn().slideX(begin: -0.3, duration: 500.ms),
-                
+
                 const SizedBox(height: 8),
-                
+
                 Text(
-                  'Select a theme that matches your mood',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withValues(alpha: 0.8),
-                  ),
-                ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.3, duration: 500.ms),
-                
+                      'Select a theme that matches your mood',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(delay: 200.ms)
+                    .slideX(begin: -0.3, duration: 500.ms),
+
                 const SizedBox(height: 30),
-                
+
                 // Theme Grid
                 Expanded(
                   child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.85,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.85,
+                        ),
                     itemCount: GameTheme.values.length,
                     itemBuilder: (context, index) {
                       final theme = GameTheme.values[index];
@@ -118,220 +119,242 @@ class ThemeSelectorScreen extends StatelessWidget {
     final isPremiumTheme = PremiumContent.premiumThemes.contains(theme);
 
     return GestureDetector(
-      onTap: () async {
-        if (isLocked) {
-          _showPremiumThemeDialog(context, theme, premiumState);
-        } else {
-          context.read<ThemeCubit>().setTheme(theme);
-        }
-      },
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected 
-                  ? theme.accentColor 
-                  : isLocked
-                    ? Colors.orange.withValues(alpha: 0.6)
-                    : theme.primaryColor.withValues(alpha: 0.3),
-                width: isSelected ? 3 : isLocked ? 2 : 1,
-              ),
-              boxShadow: [
-                if (isSelected)
-                  BoxShadow(
-                    color: theme.accentColor.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    spreadRadius: 2,
+          onTap: () async {
+            if (isLocked) {
+              _showPremiumThemeDialog(context, theme, premiumState);
+            } else {
+              context.read<ThemeCubit>().setTheme(theme);
+            }
+          },
+          child: Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.backgroundColor,
+                      theme.backgroundColor.withValues(alpha: 0.8),
+                    ],
                   ),
-                if (isLocked)
-                  BoxShadow(
-                    color: Colors.orange.withValues(alpha: 0.2),
-                    blurRadius: 15,
-                    spreadRadius: 1,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? theme.accentColor
+                        : isLocked
+                        ? Colors.orange.withValues(alpha: 0.6)
+                        : theme.primaryColor.withValues(alpha: 0.3),
+                    width: isSelected
+                        ? 3
+                        : isLocked
+                        ? 2
+                        : 1,
                   ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Theme Name and Premium Badge
-                  Row(
+                  boxShadow: [
+                    if (isSelected)
+                      BoxShadow(
+                        color: theme.accentColor.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                    if (isLocked)
+                      BoxShadow(
+                        color: Colors.orange.withValues(alpha: 0.2),
+                        blurRadius: 15,
+                        spreadRadius: 1,
+                      ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Text(
-                              theme.name,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: isLocked 
-                                  ? Colors.white.withValues(alpha: 0.6)
-                                  : theme.accentColor,
-                              ),
-                            ),
-                            if (isPremiumTheme) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      // Theme Name and Premium Badge
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Text(
+                                  theme.name,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isLocked
+                                        ? Colors.white.withValues(alpha: 0.6)
+                                        : theme.accentColor,
                                   ),
+                                ),
+                                if (isPremiumTheme) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFFFFD700),
+                                          Color(0xFFFFA500),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'PRO',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+
+                          if (isSelected && !isLocked)
+                            Icon(
+                              Icons.check_circle,
+                              color: theme.accentColor,
+                              size: 24,
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Theme Preview - Mini Game Board
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: theme.backgroundColor.withValues(
+                                  alpha: 0.5,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: theme.primaryColor.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                              ),
+                              child: _buildMiniGamePreview(theme),
+                            ),
+                            if (isLocked)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.6),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Text(
-                                  'PRO',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.lock,
+                                    color: Colors.orange,
+                                    size: 32,
                                   ),
                                 ),
                               ),
-                            ],
                           ],
                         ),
                       ),
-                      
-                      if (isSelected && !isLocked)
-                        Icon(
-                          Icons.check_circle,
-                          color: theme.accentColor,
-                          size: 24,
-                        ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Theme Preview - Mini Game Board
-                  Expanded(
-                    child: Stack(
-                      children: [
+
+                      const SizedBox(height: 12),
+
+                      // Theme Description or Price
+                      if (isLocked)
                         Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: theme.backgroundColor.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: theme.primaryColor.withValues(alpha: 0.3),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _getThemePrice(theme),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
                             ),
                           ),
-                          child: _buildMiniGamePreview(theme),
-                        ),
-                        if (isLocked)
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.lock,
-                                color: Colors.orange,
-                                size: 32,
-                              ),
-                            ),
+                        )
+                      else
+                        Text(
+                          _getThemeDescription(theme),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Theme Description or Price
-                  if (isLocked)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                          textAlign: TextAlign.center,
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _getThemePrice(theme),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    )
-                  else
-                    Text(
-                      _getThemeDescription(theme),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Color Palette
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildColorDot(
-                        theme.snakeColor, 
-                        'Snake', 
-                        isLocked: isLocked,
-                      ),
-                      _buildColorDot(
-                        theme.foodColor, 
-                        'Food',
-                        isLocked: isLocked,
-                      ),
-                      _buildColorDot(
-                        theme.accentColor, 
-                        'UI',
-                        isLocked: isLocked,
+
+                      const SizedBox(height: 8),
+
+                      // Color Palette
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildColorDot(
+                            theme.snakeColor,
+                            'Snake',
+                            isLocked: isLocked,
+                          ),
+                          _buildColorDot(
+                            theme.foodColor,
+                            'Food',
+                            isLocked: isLocked,
+                          ),
+                          _buildColorDot(
+                            theme.accentColor,
+                            'UI',
+                            isLocked: isLocked,
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-          
-          // Premium Badge Overlay
-          if (isPremiumTheme && !isLocked)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+
+              // Premium Badge Overlay
+              if (isPremiumTheme && !isLocked)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.star,
+                      color: Colors.black,
+                      size: 16,
+                    ),
                   ),
-                  shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.star,
-                  color: Colors.black,
-                  size: 16,
-                ),
-              ),
-            ),
-        ],
-      ),
-    ).animate(delay: (index * 100).ms)
-     .fadeIn(duration: 500.ms)
-     .scale(begin: const Offset(0.8, 0.8), duration: 500.ms, curve: Curves.elasticOut);
+            ],
+          ),
+        )
+        .animate(delay: (index * 100).ms)
+        .fadeIn(duration: 500.ms)
+        .scale(
+          begin: const Offset(0.8, 0.8),
+          duration: 500.ms,
+          curve: Curves.elasticOut,
+        );
   }
 
   Widget _buildMiniGamePreview(GameTheme theme) {
@@ -406,9 +429,13 @@ class ThemeSelectorScreen extends StatelessWidget {
     }
   }
 
-  void _showPremiumThemeDialog(BuildContext context, GameTheme theme, PremiumState premiumState) {
+  void _showPremiumThemeDialog(
+    BuildContext context,
+    GameTheme theme,
+    PremiumState premiumState,
+  ) {
     final themePrice = _getThemePrice(theme);
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -423,11 +450,7 @@ class ThemeSelectorScreen extends StatelessWidget {
           ),
           title: Row(
             children: [
-              Icon(
-                Icons.lock,
-                color: Colors.orange,
-                size: 24,
-              ),
+              Icon(Icons.lock, color: Colors.orange, size: 24),
               const SizedBox(width: 8),
               Text(
                 'Premium Theme',
@@ -461,9 +484,9 @@ class ThemeSelectorScreen extends StatelessWidget {
                 ),
                 child: _buildMiniGamePreview(theme),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               Text(
                 theme.name,
                 style: TextStyle(
@@ -472,9 +495,9 @@ class ThemeSelectorScreen extends StatelessWidget {
                   color: theme.accentColor,
                 ),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               Text(
                 _getThemeDescription(theme),
                 style: TextStyle(
@@ -482,9 +505,9 @@ class ThemeSelectorScreen extends StatelessWidget {
                   fontSize: 16,
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Purchase options
               Container(
                 padding: const EdgeInsets.all(16),
@@ -505,11 +528,7 @@ class ThemeSelectorScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.star,
-                          color: Colors.amber,
-                          size: 20,
-                        ),
+                        Icon(Icons.star, color: Colors.amber, size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Purchase Options',
@@ -521,9 +540,9 @@ class ThemeSelectorScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Individual theme purchase
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -557,9 +576,9 @@ class ThemeSelectorScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     // Bundle purchase
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -588,7 +607,10 @@ class ThemeSelectorScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.green,
                                       borderRadius: BorderRadius.circular(8),
@@ -636,9 +658,9 @@ class ThemeSelectorScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Pro subscription option
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -733,9 +755,13 @@ class ThemeSelectorScreen extends StatelessWidget {
     );
   }
 
-  void _handleThemePurchase(BuildContext context, GameTheme theme, String purchaseType) {
+  void _handleThemePurchase(
+    BuildContext context,
+    GameTheme theme,
+    String purchaseType,
+  ) {
     final purchaseService = PurchaseService();
-    
+
     String productId;
     switch (purchaseType) {
       case 'individual':
@@ -837,7 +863,7 @@ class MiniGamePainter extends CustomPainter {
         cellSize * 0.8,
         cellSize * 0.8,
       );
-      
+
       canvas.drawRRect(
         RRect.fromRectAndRadius(rect, Radius.circular(cellSize * 0.1)),
         snakePaint,

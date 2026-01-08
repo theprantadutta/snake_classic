@@ -2,13 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 
 /// Authentication status
-enum AuthStatus {
-  initial,
-  loading,
-  authenticated,
-  unauthenticated,
-  error,
-}
+enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
 /// State class for AuthCubit
 class AuthState extends Equatable {
@@ -23,7 +17,8 @@ class AuthState extends Equatable {
     this.user,
     this.errorMessage,
     this.isLoading = false,
-    this.isFirstTimeUser = true, // Default to true - assume first time until checked
+    this.isFirstTimeUser =
+        true, // Default to true - assume first time until checked
   });
 
   /// Initial state

@@ -11,18 +11,14 @@ class AppLogger {
       maxHistoryItems: 1000,
       useHistory: true,
     ),
-    logger: TalkerLogger(
-      settings: TalkerLoggerSettings(
-        enableColors: true,
-      ),
-    ),
+    logger: TalkerLogger(settings: TalkerLoggerSettings(enableColors: true)),
   );
 
   /// Get the Talker instance for advanced usage
   static Talker get instance => _talker;
 
   // Service-specific loggers with emojis for easy identification
-  
+
   /// 👤 User system related logs
   static void user(String message, [Object? error, StackTrace? stackTrace]) {
     if (kDebugMode) {
@@ -35,7 +31,11 @@ class AppLogger {
   }
 
   /// 🔥 Firebase related logs
-  static void firebase(String message, [Object? error, StackTrace? stackTrace]) {
+  static void firebase(
+    String message, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) {
     if (kDebugMode) {
       if (error != null) {
         _talker.error('🔥 [FIREBASE] $message', error, stackTrace);
@@ -90,7 +90,11 @@ class AppLogger {
   }
 
   /// 🏆 Achievement related logs
-  static void achievement(String message, [Object? error, StackTrace? stackTrace]) {
+  static void achievement(
+    String message, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) {
     if (kDebugMode) {
       if (error != null) {
         _talker.error('🏆 [ACHIEVEMENT] $message', error, stackTrace);

@@ -1,12 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-enum ShakeIntensity {
-  light,
-  medium,
-  heavy,
-  extreme,
-}
+enum ShakeIntensity { light, medium, heavy, extreme }
 
 class ScreenShakeController extends ChangeNotifier {
   bool _isShaking = false;
@@ -14,7 +9,7 @@ class ScreenShakeController extends ChangeNotifier {
   Duration _duration = Duration.zero;
   DateTime? _shakeStartTime;
   Offset _currentOffset = Offset.zero;
-  
+
   bool get isShaking => _isShaking;
   Offset get offset => _currentOffset;
   double get intensity => _intensity;
@@ -60,7 +55,7 @@ class ScreenShakeController extends ChangeNotifier {
     // Generate random shake offset
     final random = math.Random();
     final currentIntensity = _intensity * dampening;
-    
+
     _currentOffset = Offset(
       (random.nextDouble() - 0.5) * 2 * currentIntensity,
       (random.nextDouble() - 0.5) * 2 * currentIntensity,
@@ -200,9 +195,10 @@ class GameJuiceController extends ChangeNotifier {
     }
 
     // Calculate scale using a punch curve (quick scale up, then down)
-    final progress = elapsed.inMilliseconds / _scalePunchDuration.inMilliseconds;
+    final progress =
+        elapsed.inMilliseconds / _scalePunchDuration.inMilliseconds;
     final punchCurve = math.sin(progress * math.pi);
-    
+
     _scalePunchValue = 1.0 + (0.1 * punchCurve);
     notifyListeners();
 
@@ -273,7 +269,10 @@ class GameJuiceController extends ChangeNotifier {
   }
 
   void buttonPress() {
-    triggerScalePunch(intensity: 0.03, duration: const Duration(milliseconds: 100));
+    triggerScalePunch(
+      intensity: 0.03,
+      duration: const Duration(milliseconds: 100),
+    );
   }
 
   void achievementUnlocked() {
@@ -353,10 +352,7 @@ class GameJuiceWidget extends StatelessWidget {
     Widget result = child;
 
     if (applyScale) {
-      result = ScalePunchWidget(
-        controller: controller,
-        child: result,
-      );
+      result = ScalePunchWidget(controller: controller, child: result);
     }
 
     if (applyShake) {

@@ -10,9 +10,9 @@ enum SyncStatus { idle, syncing, synced, offline, error }
 
 enum SyncPriority {
   critical, // Purchases, premium status - sync immediately
-  high,     // Scores, achievements - sync soon
-  normal,   // Statistics, preferences - sync when convenient
-  low,      // Profile updates, non-essential - sync eventually
+  high, // Scores, achievements - sync soon
+  normal, // Statistics, preferences - sync when convenient
+  low, // Profile updates, non-essential - sync eventually
 }
 
 /// Represents an item in the sync queue
@@ -116,11 +116,17 @@ class DataSyncService extends ChangeNotifier {
   // Getters
   SyncStatus get syncStatus => _syncStatus;
   bool get isOnline => _connectivityService.isOnline;
-  bool get hasPendingSync => _syncQueue.any((item) => item.status == SyncItemStatus.pending);
-  int get pendingCount => _syncQueue.where((item) =>
-      item.status == SyncItemStatus.pending || item.status == SyncItemStatus.failed
-  ).length;
-  int get failedCount => _syncQueue.where((item) => item.status == SyncItemStatus.failed).length;
+  bool get hasPendingSync =>
+      _syncQueue.any((item) => item.status == SyncItemStatus.pending);
+  int get pendingCount => _syncQueue
+      .where(
+        (item) =>
+            item.status == SyncItemStatus.pending ||
+            item.status == SyncItemStatus.failed,
+      )
+      .length;
+  int get failedCount =>
+      _syncQueue.where((item) => item.status == SyncItemStatus.failed).length;
 
   SyncState get currentSyncState => SyncState(
     pendingCount: pendingCount,
@@ -150,7 +156,9 @@ class DataSyncService extends ChangeNotifier {
     await _loadSyncQueue();
 
     // Listen to connectivity changes
-    _connectivitySubscription = _connectivityService.onlineStatusStream.listen((isOnline) {
+    _connectivitySubscription = _connectivityService.onlineStatusStream.listen((
+      isOnline,
+    ) {
       if (isOnline) {
         // Just came online, attempt sync
         _performSync();
@@ -231,10 +239,7 @@ class DataSyncService extends ChangeNotifier {
     final id = '${dataType}_${DateTime.now().millisecondsSinceEpoch}';
 
     // For scores, add idempotency key and played_at timestamp
-    final enrichedData = <String, dynamic>{
-      ...data,
-      'userId': _currentUserId,
-    };
+    final enrichedData = <String, dynamic>{...data, 'userId': _currentUserId};
 
     if (dataType == 'score') {
       // Generate idempotency key if not already present
@@ -330,7 +335,8 @@ class DataSyncService extends ChangeNotifier {
             gameDuration: item.data['gameDuration'] ?? 0,
             foodsEaten: item.data['foodsEaten'] ?? 0,
           );
-          return tournamentResult != null && tournamentResult['success'] == true;
+          return tournamentResult != null &&
+              tournamentResult['success'] == true;
 
         case 'battle_pass_claim':
           // Claim battle pass reward on backend
@@ -370,7 +376,9 @@ class DataSyncService extends ChangeNotifier {
 
         default:
           // Generic profile update
-          final result = await _apiService.updateProfile({item.dataType: item.data});
+          final result = await _apiService.updateProfile({
+            item.dataType: item.data,
+          });
           return result != null;
       }
     } catch (e) {
@@ -400,7 +408,8 @@ class DataSyncService extends ChangeNotifier {
         'game_mode': item.data['gameMode'] ?? 'classic',
         'difficulty': item.data['difficulty'] ?? 'normal',
         if (playedAt != null) 'played_at': playedAt.toUtc().toIso8601String(),
-        if (item.data['idempotencyKey'] != null) 'idempotency_key': item.data['idempotencyKey'],
+        if (item.data['idempotencyKey'] != null)
+          'idempotency_key': item.data['idempotencyKey'],
       };
     }).toList();
 
@@ -423,7 +432,9 @@ class DataSyncService extends ChangeNotifier {
 
           if (kDebugMode) {
             final wasDup = scoreResult['was_duplicate'] == true;
-            print('Batch synced score: ${item.data['score']} ${wasDup ? '(duplicate)' : ''}');
+            print(
+              'Batch synced score: ${item.data['score']} ${wasDup ? '(duplicate)' : ''}',
+            );
           }
         } else {
           item.lastError = scoreResult['error'] ?? 'Unknown error';
@@ -440,10 +451,14 @@ class DataSyncService extends ChangeNotifier {
     if (!_apiService.isAuthenticated) return;
     if (_isSyncing) return; // Prevent concurrent syncs
 
-    final pendingItems = _syncQueue.where((item) =>
-        item.status == SyncItemStatus.pending ||
-        (item.status == SyncItemStatus.failed && item.retryCount < _maxRetries)
-    ).toList();
+    final pendingItems = _syncQueue
+        .where(
+          (item) =>
+              item.status == SyncItemStatus.pending ||
+              (item.status == SyncItemStatus.failed &&
+                  item.retryCount < _maxRetries),
+        )
+        .toList();
 
     if (pendingItems.isEmpty) return;
 
@@ -459,8 +474,12 @@ class DataSyncService extends ChangeNotifier {
     final retryItems = <SyncQueueItem>[];
 
     // Separate score items for batch processing
-    final scoreItems = pendingItems.where((item) => item.dataType == 'score').toList();
-    final otherItems = pendingItems.where((item) => item.dataType != 'score').toList();
+    final scoreItems = pendingItems
+        .where((item) => item.dataType == 'score')
+        .toList();
+    final otherItems = pendingItems
+        .where((item) => item.dataType != 'score')
+        .toList();
 
     // Batch sync scores if there are multiple
     if (scoreItems.length >= 2) {
@@ -507,13 +526,17 @@ class DataSyncService extends ChangeNotifier {
         if (item.retryCount >= _maxRetries) {
           item.status = SyncItemStatus.failed;
           if (kDebugMode) {
-            print('Failed permanently: ${item.dataType} (max retries exceeded)');
+            print(
+              'Failed permanently: ${item.dataType} (max retries exceeded)',
+            );
           }
         } else {
           item.status = SyncItemStatus.pending;
           retryItems.add(item);
           if (kDebugMode) {
-            print('Will retry: ${item.dataType} (attempt ${item.retryCount}/$_maxRetries)');
+            print(
+              'Will retry: ${item.dataType} (attempt ${item.retryCount}/$_maxRetries)',
+            );
           }
         }
       }
@@ -538,7 +561,9 @@ class DataSyncService extends ChangeNotifier {
     _updateSyncStatus();
 
     if (kDebugMode) {
-      print('Sync complete. Completed: ${completedIds.length}, Pending retries: ${retryItems.length}');
+      print(
+        'Sync complete. Completed: ${completedIds.length}, Pending retries: ${retryItems.length}',
+      );
     }
   }
 
@@ -567,7 +592,8 @@ class DataSyncService extends ChangeNotifier {
     if (_connectivityService.isOnline) {
       // Reset retry counts for failed items to allow retry
       for (final item in _syncQueue) {
-        if (item.status == SyncItemStatus.failed && item.retryCount >= _maxRetries) {
+        if (item.status == SyncItemStatus.failed &&
+            item.retryCount >= _maxRetries) {
           item.retryCount = 0;
           item.status = SyncItemStatus.pending;
         }
@@ -600,8 +626,10 @@ class DataSyncService extends ChangeNotifier {
     Map<String, dynamic> localData,
     Map<String, dynamic> cloudData,
   ) {
-    final localTimestamp = DateTime.tryParse(localData['lastUpdated'] ?? '') ?? DateTime(2000);
-    final cloudTimestamp = DateTime.tryParse(cloudData['lastUpdated'] ?? '') ?? DateTime(2000);
+    final localTimestamp =
+        DateTime.tryParse(localData['lastUpdated'] ?? '') ?? DateTime(2000);
+    final cloudTimestamp =
+        DateTime.tryParse(cloudData['lastUpdated'] ?? '') ?? DateTime(2000);
 
     if (localTimestamp.isAfter(cloudTimestamp)) {
       return localData;
@@ -660,7 +688,9 @@ class DataSyncService extends ChangeNotifier {
     if (_prefs == null) return;
 
     try {
-      final queueJson = jsonEncode(_syncQueue.map((item) => item.toJson()).toList());
+      final queueJson = jsonEncode(
+        _syncQueue.map((item) => item.toJson()).toList(),
+      );
       await _prefs!.setString('sync_queue_items', queueJson);
 
       final meta = {
@@ -684,10 +714,13 @@ class DataSyncService extends ChangeNotifier {
 
   /// Remove completed and old failed items
   Future<void> cleanupQueue() async {
-    _syncQueue.removeWhere((item) =>
-        item.status == SyncItemStatus.completed ||
-        (item.status == SyncItemStatus.failed &&
-         item.queuedAt.isBefore(DateTime.now().subtract(const Duration(days: 7))))
+    _syncQueue.removeWhere(
+      (item) =>
+          item.status == SyncItemStatus.completed ||
+          (item.status == SyncItemStatus.failed &&
+              item.queuedAt.isBefore(
+                DateTime.now().subtract(const Duration(days: 7)),
+              )),
     );
     await _saveSyncQueue();
     _updateSyncStatus();

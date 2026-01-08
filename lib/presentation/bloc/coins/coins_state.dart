@@ -2,12 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 
 /// Status of the coins cubit
-enum CoinsStatus {
-  initial,
-  loading,
-  ready,
-  error,
-}
+enum CoinsStatus { initial, loading, ready, error }
 
 /// State class for CoinsCubit
 class CoinsState extends Equatable {
@@ -31,9 +26,9 @@ class CoinsState extends Equatable {
 
   /// Initial state
   factory CoinsState.initial() => CoinsState(
-        balance: CoinBalance.initial,
-        dailyBonuses: DailyLoginBonus.getWeeklyBonuses(),
-      );
+    balance: CoinBalance.initial,
+    dailyBonuses: DailyLoginBonus.getWeeklyBonuses(),
+  );
 
   /// Create a copy with updated values
   CoinsState copyWith({
@@ -94,12 +89,12 @@ class CoinsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        balance,
-        transactions,
-        dailyBonuses,
-        earningMultiplier,
-        hasPremiumBonus,
-        errorMessage,
-      ];
+    status,
+    balance,
+    transactions,
+    dailyBonuses,
+    earningMultiplier,
+    hasPremiumBonus,
+    errorMessage,
+  ];
 }

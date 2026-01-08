@@ -93,7 +93,9 @@ class _AnimatedSnakeLogoState extends State<AnimatedSnakeLogo>
                   ],
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(widget.size * 0.05), // Minimal padding for better fit
+                  padding: EdgeInsets.all(
+                    widget.size * 0.05,
+                  ), // Minimal padding for better fit
                   child: Image.asset(
                     widget.useTextLogo
                         ? 'assets/images/snake_classic_logo.png'

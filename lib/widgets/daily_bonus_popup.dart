@@ -52,7 +52,8 @@ class DailyBonusStatus {
       todayReward: json['today_reward'] != null
           ? DailyBonusReward.fromJson(json['today_reward'])
           : null,
-      weekRewards: (json['week_rewards'] as List?)
+      weekRewards:
+          (json['week_rewards'] as List?)
               ?.map((r) => DailyBonusReward.fromJson(r))
               .toList() ??
           [],
@@ -158,54 +159,55 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 360),
-        decoration: BoxDecoration(
-          color: widget.theme.backgroundColor,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Colors.amber.withValues(alpha: 0.5),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.amber.withValues(alpha: 0.3),
-              blurRadius: 30,
-              spreadRadius: 5,
+      child:
+          Container(
+            constraints: const BoxConstraints(maxWidth: 360),
+            decoration: BoxDecoration(
+              color: widget.theme.backgroundColor,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.amber.withValues(alpha: 0.5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.amber.withValues(alpha: 0.3),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            _buildHeader(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                _buildHeader(),
 
-            // Week progress
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildWeekProgress(currentDay),
+                // Week progress
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildWeekProgress(currentDay),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Today's reward
+                if (todayReward != null) _buildTodayReward(todayReward),
+
+                const SizedBox(height: 20),
+
+                // Claim button
+                _buildClaimButton(),
+
+                const SizedBox(height: 16),
+
+                // Close button (if can't claim)
+                if (!widget.status.canClaim) _buildCloseButton(),
+
+                const SizedBox(height: 16),
+              ],
             ),
-
-            const SizedBox(height: 16),
-
-            // Today's reward
-            if (todayReward != null) _buildTodayReward(todayReward),
-
-            const SizedBox(height: 20),
-
-            // Claim button
-            _buildClaimButton(),
-
-            const SizedBox(height: 16),
-
-            // Close button (if can't claim)
-            if (!widget.status.canClaim) _buildCloseButton(),
-
-            const SizedBox(height: 16),
-          ],
-        ),
-      ).animate().scale(
+          ).animate().scale(
             begin: const Offset(0.8, 0.8),
             end: const Offset(1, 1),
             duration: 300.ms,
@@ -251,28 +253,23 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
 
           // Gift icon with animation
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Colors.amber, Colors.orange],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withValues(alpha: 0.5),
-                  blurRadius: 20,
-                  spreadRadius: 5,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.amber, Colors.orange],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withValues(alpha: 0.5),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Text(
-              '🎁',
-              style: TextStyle(fontSize: 40),
-            ),
-          )
-              .animate(
-                onPlay: (controller) => controller.repeat(reverse: true),
+                child: const Text('🎁', style: TextStyle(fontSize: 40)),
               )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
               .scale(
                 begin: const Offset(1, 1),
                 end: const Offset(1.1, 1.1),
@@ -383,19 +380,13 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
     } else if (isToday) {
       bgColor = Colors.amber.withValues(alpha: 0.3);
       borderColor = Colors.amber;
-      icon = Text(
-        '🎁',
-        style: TextStyle(fontSize: hasBonus ? 14 : 12),
-      );
+      icon = Text('🎁', style: TextStyle(fontSize: hasBonus ? 14 : 12));
     } else {
       bgColor = widget.theme.backgroundColor.withValues(alpha: 0.5);
       borderColor = widget.theme.accentColor.withValues(alpha: 0.3);
       icon = Text(
         hasBonus ? '⭐' : '🪙',
-        style: TextStyle(
-          fontSize: 12,
-          color: isFuture ? Colors.grey : null,
-        ),
+        style: TextStyle(fontSize: 12, color: isFuture ? Colors.grey : null),
       );
     }
 
@@ -422,7 +413,11 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
     if (isToday && widget.status.canClaim) {
       circle = circle
           .animate(onPlay: (c) => c.repeat(reverse: true))
-          .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 800.ms);
+          .scale(
+            begin: const Offset(1, 1),
+            end: const Offset(1.1, 1.1),
+            duration: 800.ms,
+          );
     }
 
     return Column(
@@ -435,7 +430,9 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
           style: TextStyle(
             color: isToday
                 ? Colors.amber
-                : widget.theme.accentColor.withValues(alpha: isFuture ? 0.4 : 0.7),
+                : widget.theme.accentColor.withValues(
+                    alpha: isFuture ? 0.4 : 0.7,
+                  ),
             fontSize: 10,
             fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
           ),
@@ -456,9 +453,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.amber.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -478,7 +473,10 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
             children: [
               // Coins
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
@@ -503,7 +501,10 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
               // Bonus item if any
               if (reward.bonusItem != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.purple.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -574,9 +575,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Colors.amber, Colors.orange],
-          ),
+          gradient: const LinearGradient(colors: [Colors.amber, Colors.orange]),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -599,10 +598,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    '🎉',
-                    style: TextStyle(fontSize: 20),
-                  ),
+                  Text('🎉', style: TextStyle(fontSize: 20)),
                   SizedBox(width: 8),
                   Text(
                     'CLAIM REWARD',

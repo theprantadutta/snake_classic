@@ -52,7 +52,9 @@ class AudioService {
     }
 
     _initialized = true;
-    debugPrint('AudioService initialized with SoLoud - ${_loadedSounds.length} sounds loaded');
+    debugPrint(
+      'AudioService initialized with SoLoud - ${_loadedSounds.length} sounds loaded',
+    );
   }
 
   /// Pre-load all sound effects into SoLoud

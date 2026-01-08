@@ -71,13 +71,24 @@ class ProductIds {
 
   static List<String> get allProductIds => [
     // Themes
-    crystalTheme, cyberpunkTheme, spaceTheme, oceanTheme, desertTheme, forestTheme, themesBundle,
+    crystalTheme,
+    cyberpunkTheme,
+    spaceTheme,
+    oceanTheme,
+    desertTheme,
+    forestTheme,
+    themesBundle,
     // Coins
     coinPackSmall, coinPackMedium, coinPackLarge, coinPackMega,
     // Power-ups
     megaPowerupsPack, exclusivePowerupsPack, premiumPowerupsBundle,
     // Snake skins
-    goldenSnake, rainbowSnake, galaxySnake, dragonSnake, electricSnake, fireSnake, 
+    goldenSnake,
+    rainbowSnake,
+    galaxySnake,
+    dragonSnake,
+    electricSnake,
+    fireSnake,
     iceSnake, shadowSnake, neonSnake, crystalSnake, cosmicSnake,
     // Trail effects
     particleTrail, glowTrail, rainbowTrail, fireTrail, electricTrail, starTrail,
@@ -87,18 +98,28 @@ class ProductIds {
     // Subscriptions
     snakeClassicProMonthly, snakeClassicProYearly, battlePass,
     // Tournament entries
-    tournamentBronze, tournamentSilver, tournamentGold, championshipEntry, tournamentVipEntry,
+    tournamentBronze,
+    tournamentSilver,
+    tournamentGold,
+    championshipEntry,
+    tournamentVipEntry,
   ];
 
   static List<String> get consumableIds => [
     // Coins
     coinPackSmall, coinPackMedium, coinPackLarge, coinPackMega,
     // Tournament entries
-    tournamentBronze, tournamentSilver, tournamentGold, championshipEntry, tournamentVipEntry,
+    tournamentBronze,
+    tournamentSilver,
+    tournamentGold,
+    championshipEntry,
+    tournamentVipEntry,
   ];
 
   static List<String> get subscriptionIds => [
-    snakeClassicProMonthly, snakeClassicProYearly, battlePass,
+    snakeClassicProMonthly,
+    snakeClassicProYearly,
+    battlePass,
   ];
 }
 
@@ -125,9 +146,12 @@ class PurchaseService {
   String? get queryProductError => _queryProductError;
 
   // Stream controllers for UI updates
-  final StreamController<bool> _purchasePendingController = StreamController<bool>.broadcast();
-  final StreamController<List<ProductDetails>> _productsController = StreamController<List<ProductDetails>>.broadcast();
-  final StreamController<String> _purchaseStatusController = StreamController<String>.broadcast();
+  final StreamController<bool> _purchasePendingController =
+      StreamController<bool>.broadcast();
+  final StreamController<List<ProductDetails>> _productsController =
+      StreamController<List<ProductDetails>>.broadcast();
+  final StreamController<String> _purchaseStatusController =
+      StreamController<String>.broadcast();
 
   Stream<bool> get purchasePendingStream => _purchasePendingController.stream;
   Stream<List<ProductDetails>> get productsStream => _productsController.stream;
@@ -141,7 +165,7 @@ class PurchaseService {
   Future<void> initialize() async {
     try {
       AppLogger.info('Initializing Purchase Service...');
-      
+
       _isAvailable = await _inAppPurchase.isAvailable();
       if (!_isAvailable) {
         AppLogger.error('In-app purchases not available on this device');
@@ -159,7 +183,7 @@ class PurchaseService {
 
       await loadProducts();
       await restorePurchases();
-      
+
       AppLogger.info('Purchase Service initialized successfully');
     } catch (e) {
       AppLogger.error('Error initializing Purchase Service', e);
@@ -169,10 +193,9 @@ class PurchaseService {
   Future<void> loadProducts() async {
     try {
       AppLogger.info('Loading products...');
-      
-      final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(
-        ProductIds.allProductIds.toSet(),
-      );
+
+      final ProductDetailsResponse response = await _inAppPurchase
+          .queryProductDetails(ProductIds.allProductIds.toSet());
 
       if (response.notFoundIDs.isNotEmpty) {
         AppLogger.warning('Products not found: ${response.notFoundIDs}');
@@ -186,7 +209,7 @@ class PurchaseService {
 
       _products = response.productDetails;
       _productsController.add(_products);
-      
+
       AppLogger.info('Loaded ${_products.length} products successfully');
     } catch (e) {
       AppLogger.error('Error loading products', e);
@@ -205,13 +228,19 @@ class PurchaseService {
       _purchasePending = true;
       _purchasePendingController.add(true);
 
-      final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
+      final PurchaseParam purchaseParam = PurchaseParam(
+        productDetails: productDetails,
+      );
 
       bool success;
       if (ProductIds.consumableIds.contains(productDetails.id)) {
-        success = await _inAppPurchase.buyConsumable(purchaseParam: purchaseParam);
+        success = await _inAppPurchase.buyConsumable(
+          purchaseParam: purchaseParam,
+        );
       } else {
-        success = await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+        success = await _inAppPurchase.buyNonConsumable(
+          purchaseParam: purchaseParam,
+        );
       }
 
       if (!success) {
@@ -230,7 +259,9 @@ class PurchaseService {
     }
   }
 
-  Future<void> _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) async {
+  Future<void> _listenToPurchaseUpdated(
+    List<PurchaseDetails> purchaseDetailsList,
+  ) async {
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
         _purchaseStatusController.add('Purchase pending...');
@@ -239,8 +270,7 @@ class PurchaseService {
           AppLogger.error('Purchase error: ${purchaseDetails.error}');
           _purchaseStatusController.add('Purchase failed');
         } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-                   purchaseDetails.status == PurchaseStatus.restored) {
-          
+            purchaseDetails.status == PurchaseStatus.restored) {
           // Verify purchase with backend
           bool valid = await _verifyPurchase(purchaseDetails);
           if (valid) {
@@ -251,11 +281,11 @@ class PurchaseService {
             _purchaseStatusController.add('Purchase verification failed');
           }
         }
-        
+
         if (purchaseDetails.pendingCompletePurchase) {
           await _inAppPurchase.completePurchase(purchaseDetails);
         }
-        
+
         _purchasePending = false;
         _purchasePendingController.add(false);
       }
@@ -265,13 +295,13 @@ class PurchaseService {
   Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {
     try {
       AppLogger.info('Verifying purchase: ${purchaseDetails.productID}');
-      
+
       // In production, you should verify purchases with your backend
       // For now, we'll implement a basic verification
-      
+
       // Send to backend for verification
       final success = await _verifyWithBackend(purchaseDetails);
-      
+
       if (success) {
         AppLogger.info('Purchase verified successfully');
         return true;
@@ -288,12 +318,12 @@ class PurchaseService {
   Future<bool> _verifyWithBackend(PurchaseDetails purchaseDetails) async {
     try {
       final backendService = BackendService();
-      
+
       // Extract platform-specific data
       String platform = 'unknown';
       String receiptData = '';
       String? purchaseToken;
-      
+
       // Platform detection and receipt extraction
       if (purchaseDetails.verificationData.source == 'app_store') {
         platform = 'ios';
@@ -303,10 +333,10 @@ class PurchaseService {
         receiptData = purchaseDetails.verificationData.serverVerificationData;
         purchaseToken = purchaseDetails.purchaseID;
       }
-      
+
       // Get current user ID
       String userId = _getUserId?.call() ?? 'anonymous_user';
-      
+
       final verificationResult = await backendService.verifyPurchase(
         platform: platform,
         receiptData: receiptData,
@@ -316,21 +346,26 @@ class PurchaseService {
         purchaseToken: purchaseToken,
         deviceInfo: {
           'source': purchaseDetails.verificationData.source,
-          'local_verification_data': purchaseDetails.verificationData.localVerificationData,
+          'local_verification_data':
+              purchaseDetails.verificationData.localVerificationData,
         },
       );
-      
+
       if (verificationResult != null && verificationResult['valid'] == true) {
         AppLogger.info('Purchase verified successfully by backend');
-        
+
         // Handle premium content unlocking based on backend response
         if (verificationResult['premium_content_unlocked'] != null) {
-          await _unlockPremiumContent(verificationResult['premium_content_unlocked']);
+          await _unlockPremiumContent(
+            verificationResult['premium_content_unlocked'],
+          );
         }
-        
+
         return true;
       } else {
-        AppLogger.error('Backend verification failed: ${verificationResult?['error_message'] ?? 'Unknown error'}');
+        AppLogger.error(
+          'Backend verification failed: ${verificationResult?['error_message'] ?? 'Unknown error'}',
+        );
         return false;
       }
     } catch (e) {
@@ -342,14 +377,14 @@ class PurchaseService {
   Future<void> _unlockPremiumContent(List<dynamic> contentList) async {
     try {
       AppLogger.info('Unlocking premium content: ${contentList.join(', ')}');
-      
+
       // Trigger a premium content sync with the backend
       final userId = _getUserId?.call();
       if (userId != null) {
         final backendService = BackendService();
         await backendService.syncPremiumStatus(userId: userId);
       }
-      
+
       // Content will be applied when PremiumCubit syncs with backend
       AppLogger.info('Premium content unlock initiated');
     } catch (e) {
@@ -360,11 +395,11 @@ class PurchaseService {
   Future<void> _deliverProduct(PurchaseDetails purchaseDetails) async {
     try {
       AppLogger.info('Delivering product: ${purchaseDetails.productID}');
-      
+
       // Get PremiumCubit from the context if available
       // This would normally be passed through dependency injection
       // For now, we'll handle the logic here and the provider will sync later
-      
+
       switch (purchaseDetails.productID) {
         // Premium Themes
         case ProductIds.crystalTheme:
@@ -446,10 +481,12 @@ class PurchaseService {
           await _addTournamentEntry(purchaseDetails.productID);
           break;
       }
-      
+
       // Broadcast purchase completion event for PremiumCubit to handle
-      _purchaseStatusController.add('purchase_completed:${purchaseDetails.productID}');
-      
+      _purchaseStatusController.add(
+        'purchase_completed:${purchaseDetails.productID}',
+      );
+
       AppLogger.info('Product delivered successfully');
     } catch (e) {
       AppLogger.error('Error delivering product', e);
@@ -501,20 +538,22 @@ class PurchaseService {
   Future<void> restorePurchases() async {
     try {
       AppLogger.info('Restoring purchases...');
-      
+
       // First, restore with the platform store
       await _inAppPurchase.restorePurchases();
-      
+
       // Then sync with backend to ensure premium status is up to date
       final userId = _getUserId?.call();
       if (userId != null) {
         final backendService = BackendService();
-        final syncSuccess = await backendService.syncPremiumStatus(userId: userId);
+        final syncSuccess = await backendService.syncPremiumStatus(
+          userId: userId,
+        );
         if (syncSuccess) {
           AppLogger.info('Premium status synced with backend during restore');
         }
       }
-      
+
       AppLogger.info('Purchases restored successfully');
     } catch (e) {
       AppLogger.error('Error restoring purchases', e);
@@ -539,16 +578,19 @@ class PurchaseService {
   }
 
   bool isPurchased(String productId) {
-    return _purchases.any((purchase) => 
-      purchase.productID == productId && 
-      purchase.status == PurchaseStatus.purchased
+    return _purchases.any(
+      (purchase) =>
+          purchase.productID == productId &&
+          purchase.status == PurchaseStatus.purchased,
     );
   }
 
   bool hasActiveSubscription(String subscriptionId) {
-    final purchase = _purchases.where((p) => p.productID == subscriptionId).firstOrNull;
+    final purchase = _purchases
+        .where((p) => p.productID == subscriptionId)
+        .firstOrNull;
     if (purchase == null) return false;
-    
+
     // For subscriptions, check if still active
     // This would need to be verified with the app store
     return purchase.status == PurchaseStatus.purchased;
@@ -561,4 +603,3 @@ class PurchaseService {
     _purchaseStatusController.close();
   }
 }
-

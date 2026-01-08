@@ -3,16 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/constants.dart';
 
-enum TrailType {
-  none,
-  basic,
-  glow,
-  particles,
-  lightning,
-  rainbow,
-  fire,
-  ice,
-}
+enum TrailType { none, basic, glow, particles, lightning, rainbow, fire, ice }
 
 class TrailSegment {
   final Offset position;
@@ -83,7 +74,6 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
       return;
     }
 
-
     // Add new trail segments from snake body
     _addTrailSegments();
 
@@ -100,7 +90,7 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
     for (int i = 0; i < widget.snakeBody.length; i++) {
       final position = widget.snakeBody[i];
       final intensity = (widget.snakeBody.length - i) / widget.snakeBody.length;
-      
+
       // Convert grid position to screen position
       final screenPosition = Offset(
         position.x * widget.cellWidth + widget.cellWidth / 2,
@@ -108,17 +98,20 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
       );
 
       // Only add if this position isn't already recent in our trail
-      final shouldAdd = _trailSegments.isEmpty ||
+      final shouldAdd =
+          _trailSegments.isEmpty ||
           _trailSegments.last.position.dx != screenPosition.dx ||
           _trailSegments.last.position.dy != screenPosition.dy;
 
       if (shouldAdd) {
-        _trailSegments.add(TrailSegment(
-          position: screenPosition,
-          intensity: intensity,
-          size: _getTrailSize(i),
-          color: _getTrailColor(intensity),
-        ));
+        _trailSegments.add(
+          TrailSegment(
+            position: screenPosition,
+            intensity: intensity,
+            size: _getTrailSize(i),
+            color: _getTrailColor(intensity),
+          ),
+        );
       }
     }
 
@@ -155,7 +148,7 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
   double _getTrailSize(int bodyIndex) {
     final baseSize = math.min(widget.cellWidth, widget.cellHeight) * 0.3;
     final sizeFactor = 1.0 - (bodyIndex / widget.snakeBody.length) * 0.5;
-    
+
     switch (widget.trailType) {
       case TrailType.glow:
       case TrailType.fire:
@@ -174,24 +167,24 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
 
   Color _getTrailColor(double intensity) {
     final baseColor = widget.theme.snakeColor;
-    
+
     switch (widget.trailType) {
       case TrailType.basic:
         return baseColor.withValues(alpha: intensity * 0.6);
-        
+
       case TrailType.glow:
         return baseColor.withValues(alpha: intensity * 0.8);
-        
+
       case TrailType.particles:
         return baseColor.withValues(alpha: intensity * 0.7);
-        
+
       case TrailType.lightning:
         return Colors.white.withValues(alpha: intensity * 0.9);
-        
+
       case TrailType.rainbow:
         final hue = (_animationController.value * 360 + intensity * 60) % 360;
         return HSVColor.fromAHSV(intensity * 0.8, hue, 1.0, 1.0).toColor();
-        
+
       case TrailType.fire:
         final fireIntensity = intensity * 0.8;
         return Color.lerp(
@@ -199,14 +192,14 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
           Colors.orange,
           math.sin(_animationController.value * math.pi * 2) * 0.5 + 0.5,
         )!.withValues(alpha: fireIntensity);
-        
+
       case TrailType.ice:
         return Color.lerp(
           Colors.cyan,
           Colors.lightBlueAccent,
           intensity,
         )!.withValues(alpha: intensity * 0.7);
-        
+
       case TrailType.none:
         return Colors.transparent;
     }
@@ -286,7 +279,7 @@ class SnakeTrailPainter extends CustomPainter {
     for (int i = segments.length - 1; i >= 0; i--) {
       final segment = segments[i];
       final ageFactor = 1.0 - (segment.age / 0.5).clamp(0.0, 1.0);
-      
+
       final paint = Paint()
         ..color = segment.color.withValues(alpha: segment.color.a * ageFactor)
         ..style = PaintingStyle.stroke
@@ -295,11 +288,7 @@ class SnakeTrailPainter extends CustomPainter {
         ..isAntiAlias = true;
 
       if (i > 0) {
-        canvas.drawLine(
-          segments[i - 1].position,
-          segment.position,
-          paint,
-        );
+        canvas.drawLine(segments[i - 1].position, segment.position, paint);
       }
     }
   }
@@ -307,12 +296,12 @@ class SnakeTrailPainter extends CustomPainter {
   void _paintGlowTrail(Canvas canvas) {
     for (final segment in segments) {
       final ageFactor = 1.0 - (segment.age / 0.8).clamp(0.0, 1.0);
-      
+
       // Draw multiple glow layers
       for (int layer = 3; layer > 0; layer--) {
         final layerSize = segment.size * layer * 0.8;
         final layerAlpha = (segment.color.a * ageFactor * 0.3) / layer;
-        
+
         final paint = Paint()
           ..color = segment.color.withValues(alpha: layerAlpha)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, layerSize * 0.3)
@@ -332,11 +321,11 @@ class SnakeTrailPainter extends CustomPainter {
 
   void _paintParticleTrail(Canvas canvas) {
     final random = math.Random(42); // Fixed seed for consistent pattern
-    
+
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
       final ageFactor = 1.0 - (segment.age / 0.8).clamp(0.0, 1.0);
-      
+
       // Draw multiple small particles around the segment
       for (int p = 0; p < 3; p++) {
         final angle = (i + p) * 0.5 + animationValue * math.pi * 2;
@@ -348,7 +337,10 @@ class SnakeTrailPainter extends CustomPainter {
 
         final paint = Paint()
           ..color = segment.color.withValues(
-            alpha: segment.color.a * ageFactor * (0.5 + 0.5 * math.sin(animationValue * math.pi * 4))
+            alpha:
+                segment.color.a *
+                ageFactor *
+                (0.5 + 0.5 * math.sin(animationValue * math.pi * 4)),
           )
           ..isAntiAlias = true;
 
@@ -371,15 +363,15 @@ class SnakeTrailPainter extends CustomPainter {
       final current = segments[i];
       final previous = segments[i - 1];
       final ageFactor = 1.0 - (current.age / 0.6).clamp(0.0, 1.0);
-      
+
       paint.color = Colors.white.withValues(alpha: ageFactor);
-      
+
       // Add some randomness to create lightning effect
       final midPoint = Offset(
-        (current.position.dx + previous.position.dx) / 2 + 
-        (math.sin(animationValue * math.pi * 8 + i) * 5),
-        (current.position.dy + previous.position.dy) / 2 + 
-        (math.cos(animationValue * math.pi * 6 + i) * 5),
+        (current.position.dx + previous.position.dx) / 2 +
+            (math.sin(animationValue * math.pi * 8 + i) * 5),
+        (current.position.dy + previous.position.dy) / 2 +
+            (math.cos(animationValue * math.pi * 6 + i) * 5),
       );
 
       // Draw as path with jagged edges
@@ -406,7 +398,7 @@ class SnakeTrailPainter extends CustomPainter {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
       final ageFactor = 1.0 - (segment.age / 1.0).clamp(0.0, 1.0);
-      
+
       // Create rainbow effect
       final hue = (animationValue * 360 + i * 10) % 360;
       final rainbowColor = HSVColor.fromAHSV(
@@ -436,11 +428,11 @@ class SnakeTrailPainter extends CustomPainter {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
       final ageFactor = 1.0 - (segment.age / 0.6).clamp(0.0, 1.0);
-      
+
       // Create flickering fire effect
       final flicker = 0.8 + 0.2 * math.sin(animationValue * math.pi * 8 + i);
       final fireSize = segment.size * flicker * ageFactor;
-      
+
       // Draw fire layers (red, orange, yellow)
       final colors = [
         Colors.red.withValues(alpha: ageFactor * 0.8),
@@ -470,10 +462,11 @@ class SnakeTrailPainter extends CustomPainter {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
       final ageFactor = 1.0 - (segment.age / 1.0).clamp(0.0, 1.0);
-      
+
       // Create crystalline ice effect
-      final sparkle = 0.7 + 0.3 * math.sin(animationValue * math.pi * 6 + i * 2);
-      
+      final sparkle =
+          0.7 + 0.3 * math.sin(animationValue * math.pi * 6 + i * 2);
+
       // Draw ice crystal base
       final basePaint = Paint()
         ..color = Colors.lightBlueAccent.withValues(alpha: ageFactor * 0.7)
@@ -513,7 +506,7 @@ class SnakeTrailPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant SnakeTrailPainter oldDelegate) {
     return segments.length != oldDelegate.segments.length ||
-           animationValue != oldDelegate.animationValue ||
-           trailType != oldDelegate.trailType;
+        animationValue != oldDelegate.animationValue ||
+        trailType != oldDelegate.trailType;
   }
 }

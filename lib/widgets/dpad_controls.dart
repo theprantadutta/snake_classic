@@ -147,10 +147,14 @@ class _DPadButtonState extends State<_DPadButton> {
         decoration: BoxDecoration(
           color: _isPressed
               ? widget.theme.accentColor.withValues(alpha: widget.opacity * 0.5)
-              : widget.theme.accentColor.withValues(alpha: widget.opacity * 0.2),
+              : widget.theme.accentColor.withValues(
+                  alpha: widget.opacity * 0.2,
+                ),
           borderRadius: BorderRadius.circular(widget.size * 0.25),
           border: Border.all(
-            color: widget.theme.accentColor.withValues(alpha: widget.opacity * 0.4),
+            color: widget.theme.accentColor.withValues(
+              alpha: widget.opacity * 0.4,
+            ),
             width: _isPressed ? 2 : 1,
           ),
           boxShadow: _isPressed

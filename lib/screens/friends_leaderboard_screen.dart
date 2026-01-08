@@ -10,10 +10,11 @@ class FriendsLeaderboardScreen extends StatefulWidget {
   const FriendsLeaderboardScreen({super.key});
 
   @override
-  State<FriendsLeaderboardScreen> createState() => _FriendsLeaderboardScreenState();
+  State<FriendsLeaderboardScreen> createState() =>
+      _FriendsLeaderboardScreenState();
 }
 
-class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen> 
+class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     with SingleTickerProviderStateMixin {
   final SocialService _socialService = SocialService();
   List<UserProfile> _leaderboard = [];
@@ -38,7 +39,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
 
   Future<void> _loadLeaderboard() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final leaderboard = await _socialService.getFriendsLeaderboard();
       setState(() {
@@ -104,11 +105,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(
-                Icons.leaderboard,
-                color: theme.accentColor,
-                size: 28,
-              ),
+              Icon(Icons.leaderboard, color: theme.accentColor, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -136,7 +133,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
             decoration: BoxDecoration(
               color: theme.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -193,7 +192,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
       children: [
         // Top 3 podium
         if (_leaderboard.length >= 2) _buildPodium(theme),
-        
+
         // Rest of the leaderboard
         Expanded(
           child: ListView.builder(
@@ -203,7 +202,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               final actualIndex = index + 3; // Skip top 3
               final user = _leaderboard[actualIndex];
               final rank = actualIndex + 1;
-              
+
               return _buildLeaderboardCard(
                 user: user,
                 rank: rank,
@@ -235,7 +234,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 delay: 200.ms,
               ),
             ),
-          
+
           // 1st place
           Expanded(
             child: _buildPodiumPlace(
@@ -246,7 +245,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               delay: 100.ms,
             ),
           ),
-          
+
           // 3rd place
           if (_leaderboard.length >= 3)
             Expanded(
@@ -285,10 +284,14 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
         CircleAvatar(
           radius: rank == 1 ? 32 : 24,
           backgroundColor: theme.accentColor.withValues(alpha: 0.2),
-          backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+          backgroundImage: user.photoUrl != null
+              ? NetworkImage(user.photoUrl!)
+              : null,
           child: user.photoUrl == null
               ? Text(
-                  user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : 'U',
+                  user.displayName.isNotEmpty
+                      ? user.displayName[0].toUpperCase()
+                      : 'U',
                   style: TextStyle(
                     color: theme.accentColor,
                     fontSize: rank == 1 ? 24 : 18,
@@ -297,9 +300,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 )
               : null,
         ).animate().scale(delay: delay),
-        
+
         const SizedBox(height: 8),
-        
+
         // Rank crown/medal
         Container(
           padding: const EdgeInsets.all(4),
@@ -320,9 +323,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
             size: rank == 1 ? 20 : 16,
           ),
         ).animate().scale(delay: delay + 100.ms),
-        
+
         const SizedBox(height: 4),
-        
+
         // User name
         Text(
           user.displayName,
@@ -335,7 +338,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ).animate().fadeIn(delay: delay + 200.ms),
-        
+
         // Score
         Text(
           '${user.highScore}',
@@ -345,9 +348,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
             fontWeight: FontWeight.bold,
           ),
         ).animate().fadeIn(delay: delay + 300.ms),
-        
+
         const SizedBox(height: 8),
-        
+
         // Podium base
         Container(
           height: height,
@@ -411,7 +414,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               decoration: BoxDecoration(
                 color: theme.accentColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: theme.accentColor.withValues(alpha: 0.3),
+                ),
               ),
               child: Center(
                 child: Text(
@@ -424,17 +429,21 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 16),
-            
+
             // User avatar
             CircleAvatar(
               radius: 20,
               backgroundColor: theme.accentColor.withValues(alpha: 0.2),
-              backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+              backgroundImage: user.photoUrl != null
+                  ? NetworkImage(user.photoUrl!)
+                  : null,
               child: user.photoUrl == null
                   ? Text(
-                      user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : 'U',
+                      user.displayName.isNotEmpty
+                          ? user.displayName[0].toUpperCase()
+                          : 'U',
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 16,
@@ -443,9 +452,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                     )
                   : null,
             ),
-            
+
             const SizedBox(width: 16),
-            
+
             // User info
             Expanded(
               child: Column(
@@ -490,7 +499,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 ],
               ),
             ),
-            
+
             // Score
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -498,11 +507,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.emoji_events,
-                      size: 16,
-                      color: Colors.amber,
-                    ),
+                    Icon(Icons.emoji_events, size: 16, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text(
                       '${user.highScore}',

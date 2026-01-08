@@ -8,7 +8,7 @@ enum PowerUpType {
   invincibility,
   scoreMultiplier,
   slowMotion;
-  
+
   String get name {
     switch (this) {
       case PowerUpType.speedBoost:
@@ -21,7 +21,7 @@ enum PowerUpType {
         return 'Slow Motion';
     }
   }
-  
+
   String get description {
     switch (this) {
       case PowerUpType.speedBoost:
@@ -34,7 +34,7 @@ enum PowerUpType {
         return 'Slows down game for precise control (12 seconds)';
     }
   }
-  
+
   String get icon {
     switch (this) {
       case PowerUpType.speedBoost:
@@ -47,7 +47,7 @@ enum PowerUpType {
         return '🐌';
     }
   }
-  
+
   Color get color {
     switch (this) {
       case PowerUpType.speedBoost:
@@ -60,7 +60,7 @@ enum PowerUpType {
         return Colors.purple;
     }
   }
-  
+
   Duration get duration {
     switch (this) {
       case PowerUpType.speedBoost:
@@ -73,7 +73,7 @@ enum PowerUpType {
         return const Duration(seconds: 12);
     }
   }
-  
+
   int get rarity {
     switch (this) {
       case PowerUpType.speedBoost:
@@ -93,11 +93,8 @@ class PowerUp {
   final PowerUpType type;
   final DateTime createdAt;
 
-  PowerUp({
-    required this.position,
-    required this.type,
-    DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+  PowerUp({required this.position, required this.type, DateTime? createdAt})
+    : createdAt = createdAt ?? DateTime.now();
 
   static Position generateRandomPosition(
     int boardWidth,
@@ -107,15 +104,15 @@ class PowerUp {
   }) {
     final random = Random();
     Position newPosition;
-    
+
     do {
       newPosition = Position(
         random.nextInt(boardWidth),
         random.nextInt(boardHeight),
       );
-    } while (snake.occupiesPosition(newPosition) || 
-             (foodPosition != null && newPosition == foodPosition));
-    
+    } while (snake.occupiesPosition(newPosition) ||
+        (foodPosition != null && newPosition == foodPosition));
+
     return newPosition;
   }
 
@@ -126,23 +123,26 @@ class PowerUp {
     Position? foodPosition,
   }) {
     final random = Random();
-    
+
     // Power-ups have a 5% chance to spawn
     if (random.nextDouble() > 0.05) {
       return null;
     }
-    
+
     final position = generateRandomPosition(
-      boardWidth, 
-      boardHeight, 
-      snake, 
+      boardWidth,
+      boardHeight,
+      snake,
       foodPosition: foodPosition,
     );
-    
+
     // Select power-up type based on rarity
-    final totalRarity = PowerUpType.values.fold(0, (sum, type) => sum + type.rarity);
+    final totalRarity = PowerUpType.values.fold(
+      0,
+      (sum, type) => sum + type.rarity,
+    );
     final randomValue = random.nextInt(totalRarity);
-    
+
     int currentValue = 0;
     for (final type in PowerUpType.values) {
       currentValue += type.rarity;
@@ -150,7 +150,7 @@ class PowerUp {
         return PowerUp(position: position, type: type);
       }
     }
-    
+
     return PowerUp(position: position, type: PowerUpType.speedBoost);
   }
 
@@ -178,7 +178,8 @@ class PowerUp {
 
   double get pulsePhase {
     // Create a pulsing animation effect
-    final secondsSinceCreated = DateTime.now().difference(createdAt).inMilliseconds / 1000.0;
+    final secondsSinceCreated =
+        DateTime.now().difference(createdAt).inMilliseconds / 1000.0;
     return (sin(secondsSinceCreated * 3.0) + 1.0) / 2.0; // 0.0 to 1.0
   }
 }
@@ -188,23 +189,20 @@ class ActivePowerUp {
   final DateTime activatedAt;
   final Duration duration;
 
-  ActivePowerUp({
-    required this.type,
-    DateTime? activatedAt,
-    Duration? duration,
-  }) : activatedAt = activatedAt ?? DateTime.now(),
-       duration = duration ?? type.duration;
+  ActivePowerUp({required this.type, DateTime? activatedAt, Duration? duration})
+    : activatedAt = activatedAt ?? DateTime.now(),
+      duration = duration ?? type.duration;
 
   bool get isExpired {
     return DateTime.now().difference(activatedAt) >= duration;
   }
-  
+
   Duration get remainingTime {
     final elapsed = DateTime.now().difference(activatedAt);
     final remaining = duration - elapsed;
     return remaining.isNegative ? Duration.zero : remaining;
   }
-  
+
   double get progress {
     final elapsed = DateTime.now().difference(activatedAt).inMilliseconds;
     final total = duration.inMilliseconds;

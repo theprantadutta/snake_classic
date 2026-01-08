@@ -100,10 +100,7 @@ class _MultiplayerGameAdapterState extends State<MultiplayerGameAdapter>
     // Convert food position
     Food? food;
     if (widget.game.foodPosition != null) {
-      food = Food(
-        position: widget.game.foodPosition!,
-        type: FoodType.normal,
-      );
+      food = Food(position: widget.game.foodPosition!, type: FoodType.normal);
     }
 
     return GameState(
@@ -121,8 +118,9 @@ class _MultiplayerGameAdapterState extends State<MultiplayerGameAdapter>
 
   /// Calculate move progress locally for smooth 60fps animation
   double _calculateMoveProgress() {
-    final elapsed =
-        DateTime.now().difference(_lastGameStateChangeTime).inMilliseconds;
+    final elapsed = DateTime.now()
+        .difference(_lastGameStateChangeTime)
+        .inMilliseconds;
     return (elapsed / gameSpeed).clamp(0.0, 1.0);
   }
 
@@ -362,7 +360,8 @@ class _MultiplayerBoardPainter extends CustomPainter {
       if (isCurrentPlayer) {
         // Use local snake state for smooth rendering
         if (localSnake.isNotEmpty) {
-          final color = multiplayerColors[player.rank % multiplayerColors.length];
+          final color =
+              multiplayerColors[player.rank % multiplayerColors.length];
           _drawSnake(
             canvas,
             localSnake,
@@ -378,7 +377,8 @@ class _MultiplayerBoardPainter extends CustomPainter {
       } else {
         // Use server state for other players
         if (player.snake.isNotEmpty) {
-          final color = multiplayerColors[player.rank % multiplayerColors.length];
+          final color =
+              multiplayerColors[player.rank % multiplayerColors.length];
           _drawSnake(
             canvas,
             player.snake,
@@ -412,20 +412,16 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
     // Main food circle with gradient
     final foodPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          theme.foodColor,
-          theme.foodColor.withValues(alpha: 0.8),
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(centerX, centerY),
-        radius: radius,
-      ));
+      ..shader =
+          RadialGradient(
+            colors: [theme.foodColor, theme.foodColor.withValues(alpha: 0.8)],
+          ).createShader(
+            Rect.fromCircle(center: Offset(centerX, centerY), radius: radius),
+          );
     canvas.drawCircle(Offset(centerX, centerY), radius, foodPaint);
 
     // Highlight
-    final highlightPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6);
+    final highlightPaint = Paint()..color = Colors.white.withValues(alpha: 0.6);
     canvas.drawCircle(
       Offset(centerX - radius * 0.3, centerY - radius * 0.3),
       radius * 0.2,
@@ -469,18 +465,21 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
       // Gradient for 3D effect
       final segmentPaint = Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(-0.3, -0.3),
-          colors: [
-            _lighten(baseColor, 0.3),
-            baseColor,
-            _darken(baseColor, 0.2),
-          ],
-          stops: const [0.0, 0.5, 1.0],
-        ).createShader(Rect.fromCircle(
-          center: Offset(centerX, centerY),
-          radius: segmentSize,
-        ));
+        ..shader =
+            RadialGradient(
+              center: const Alignment(-0.3, -0.3),
+              colors: [
+                _lighten(baseColor, 0.3),
+                baseColor,
+                _darken(baseColor, 0.2),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(centerX, centerY),
+                radius: segmentSize,
+              ),
+            );
 
       // Draw glow for current player's head
       if (isHead && isCurrentPlayer && !isDead) {
@@ -488,7 +487,10 @@ class _MultiplayerBoardPainter extends CustomPainter {
           ..color = baseColor.withValues(alpha: 0.4)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
         canvas.drawCircle(
-            Offset(centerX, centerY), segmentSize * 1.4, glowPaint);
+          Offset(centerX, centerY),
+          segmentSize * 1.4,
+          glowPaint,
+        );
       }
 
       // Draw segment with rounded corners
@@ -504,8 +506,14 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
       // Draw eyes on head
       if (isHead) {
-        _drawEyes(canvas, Offset(centerX, centerY), direction, segmentSize,
-            baseColor, isDead);
+        _drawEyes(
+          canvas,
+          Offset(centerX, centerY),
+          direction,
+          segmentSize,
+          baseColor,
+          isDead,
+        );
       }
 
       // Draw border for visibility
@@ -564,28 +572,32 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
     switch (direction) {
       case Direction.up:
-        leftEyePos =
-            Offset(center.dx - eyeOffset, center.dy - eyeOffset * 0.5);
-        rightEyePos =
-            Offset(center.dx + eyeOffset, center.dy - eyeOffset * 0.5);
+        leftEyePos = Offset(center.dx - eyeOffset, center.dy - eyeOffset * 0.5);
+        rightEyePos = Offset(
+          center.dx + eyeOffset,
+          center.dy - eyeOffset * 0.5,
+        );
         break;
       case Direction.down:
-        leftEyePos =
-            Offset(center.dx - eyeOffset, center.dy + eyeOffset * 0.5);
-        rightEyePos =
-            Offset(center.dx + eyeOffset, center.dy + eyeOffset * 0.5);
+        leftEyePos = Offset(center.dx - eyeOffset, center.dy + eyeOffset * 0.5);
+        rightEyePos = Offset(
+          center.dx + eyeOffset,
+          center.dy + eyeOffset * 0.5,
+        );
         break;
       case Direction.left:
-        leftEyePos =
-            Offset(center.dx - eyeOffset * 0.5, center.dy - eyeOffset);
-        rightEyePos =
-            Offset(center.dx - eyeOffset * 0.5, center.dy + eyeOffset);
+        leftEyePos = Offset(center.dx - eyeOffset * 0.5, center.dy - eyeOffset);
+        rightEyePos = Offset(
+          center.dx - eyeOffset * 0.5,
+          center.dy + eyeOffset,
+        );
         break;
       case Direction.right:
-        leftEyePos =
-            Offset(center.dx + eyeOffset * 0.5, center.dy - eyeOffset);
-        rightEyePos =
-            Offset(center.dx + eyeOffset * 0.5, center.dy + eyeOffset);
+        leftEyePos = Offset(center.dx + eyeOffset * 0.5, center.dy - eyeOffset);
+        rightEyePos = Offset(
+          center.dx + eyeOffset * 0.5,
+          center.dy + eyeOffset,
+        );
         break;
     }
 

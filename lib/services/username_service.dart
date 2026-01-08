@@ -13,30 +13,118 @@ class UsernameService {
   // Username validation rules
   static const int minLength = 3;
   static const int maxLength = 20;
-  static final RegExp _validUsernameRegex = RegExp(r'^[a-zA-Z][a-zA-Z0-9_]{2,19}$');
+  static final RegExp _validUsernameRegex = RegExp(
+    r'^[a-zA-Z][a-zA-Z0-9_]{2,19}$',
+  );
 
   // Reserved/blocked usernames
   static const List<String> _reservedUsernames = [
-    'admin', 'administrator', 'mod', 'moderator', 'system', 'support',
-    'help', 'api', 'www', 'mail', 'email', 'test', 'guest', 'null',
-    'undefined', 'root', 'user', 'player', 'snake', 'game', 'server',
+    'admin',
+    'administrator',
+    'mod',
+    'moderator',
+    'system',
+    'support',
+    'help',
+    'api',
+    'www',
+    'mail',
+    'email',
+    'test',
+    'guest',
+    'null',
+    'undefined',
+    'root',
+    'user',
+    'player',
+    'snake',
+    'game',
+    'server',
   ];
 
   // Word lists for username generation
   static const List<String> _adjectives = [
-    'Swift', 'Quick', 'Fast', 'Sneaky', 'Sharp', 'Cool', 'Epic', 'Super',
-    'Mega', 'Ultra', 'Pro', 'Elite', 'Master', 'Ace', 'Clever', 'Smart',
-    'Brave', 'Bold', 'Wild', 'Fierce', 'Mighty', 'Strong', 'Agile', 'Smooth',
-    'Silent', 'Shadow', 'Golden', 'Silver', 'Diamond', 'Ruby', 'Fire', 'Ice',
-    'Thunder', 'Lightning', 'Storm', 'Wind', 'Ocean', 'Mountain', 'Forest', 'Sky',
+    'Swift',
+    'Quick',
+    'Fast',
+    'Sneaky',
+    'Sharp',
+    'Cool',
+    'Epic',
+    'Super',
+    'Mega',
+    'Ultra',
+    'Pro',
+    'Elite',
+    'Master',
+    'Ace',
+    'Clever',
+    'Smart',
+    'Brave',
+    'Bold',
+    'Wild',
+    'Fierce',
+    'Mighty',
+    'Strong',
+    'Agile',
+    'Smooth',
+    'Silent',
+    'Shadow',
+    'Golden',
+    'Silver',
+    'Diamond',
+    'Ruby',
+    'Fire',
+    'Ice',
+    'Thunder',
+    'Lightning',
+    'Storm',
+    'Wind',
+    'Ocean',
+    'Mountain',
+    'Forest',
+    'Sky',
   ];
 
   static const List<String> _nouns = [
-    'Snake', 'Viper', 'Python', 'Cobra', 'Serpent', 'Player', 'Gamer',
-    'Champion', 'Hunter', 'Racer', 'Striker', 'Warrior', 'Hero', 'Legend',
-    'Dragon', 'Phoenix', 'Eagle', 'Hawk', 'Wolf', 'Tiger', 'Lion', 'Bear',
-    'Fox', 'Shark', 'Panther', 'Falcon', 'Raven', 'Stallion', 'Ranger', 'Scout',
-    'Knight', 'Ninja', 'Samurai', 'Guardian', 'Defender', 'Assassin', 'Ghost', 'Spirit',
+    'Snake',
+    'Viper',
+    'Python',
+    'Cobra',
+    'Serpent',
+    'Player',
+    'Gamer',
+    'Champion',
+    'Hunter',
+    'Racer',
+    'Striker',
+    'Warrior',
+    'Hero',
+    'Legend',
+    'Dragon',
+    'Phoenix',
+    'Eagle',
+    'Hawk',
+    'Wolf',
+    'Tiger',
+    'Lion',
+    'Bear',
+    'Fox',
+    'Shark',
+    'Panther',
+    'Falcon',
+    'Raven',
+    'Stallion',
+    'Ranger',
+    'Scout',
+    'Knight',
+    'Ninja',
+    'Samurai',
+    'Guardian',
+    'Defender',
+    'Assassin',
+    'Ghost',
+    'Spirit',
   ];
 
   /// Validates a username according to the rules
@@ -60,7 +148,8 @@ class UsernameService {
     if (!_validUsernameRegex.hasMatch(username)) {
       return UsernameValidationResult(
         isValid: false,
-        error: 'Username must start with a letter and contain only letters, numbers, and underscores',
+        error:
+            'Username must start with a letter and contain only letters, numbers, and underscores',
       );
     }
 
@@ -89,7 +178,9 @@ class UsernameService {
   }
 
   /// Comprehensive username validation (format + availability)
-  Future<UsernameValidationResult> validateUsernameComplete(String username) async {
+  Future<UsernameValidationResult> validateUsernameComplete(
+    String username,
+  ) async {
     // First check format
     final formatResult = validateUsername(username);
     if (!formatResult.isValid) {
@@ -122,7 +213,8 @@ class UsernameService {
     final suggestions = <String>[];
     final usedCombinations = <String>{};
 
-    while (suggestions.length < count && usedCombinations.length < _adjectives.length * _nouns.length) {
+    while (suggestions.length < count &&
+        usedCombinations.length < _adjectives.length * _nouns.length) {
       final adjective = _adjectives[_random.nextInt(_adjectives.length)];
       final noun = _nouns[_random.nextInt(_nouns.length)];
       final combination = '$adjective$noun';
@@ -139,7 +231,8 @@ class UsernameService {
       ];
 
       for (final variation in variations) {
-        if (validateUsername(variation).isValid && !suggestions.contains(variation)) {
+        if (validateUsername(variation).isValid &&
+            !suggestions.contains(variation)) {
           suggestions.add(variation);
           break;
         }
@@ -207,15 +300,15 @@ class UsernameService {
   }
 
   /// Update username via backend API
-  Future<UsernameUpdateResult> updateUsername(String userId, String newUsername) async {
+  Future<UsernameUpdateResult> updateUsername(
+    String userId,
+    String newUsername,
+  ) async {
     try {
       // Validate the new username
       final validation = await validateUsernameComplete(newUsername);
       if (!validation.isValid) {
-        return UsernameUpdateResult(
-          success: false,
-          error: validation.error!,
-        );
+        return UsernameUpdateResult(success: false, error: validation.error!);
       }
 
       // Update via API
@@ -266,18 +359,12 @@ class UsernameValidationResult {
   final bool isValid;
   final String? error;
 
-  const UsernameValidationResult({
-    required this.isValid,
-    this.error,
-  });
+  const UsernameValidationResult({required this.isValid, this.error});
 }
 
 class UsernameUpdateResult {
   final bool success;
   final String? error;
 
-  const UsernameUpdateResult({
-    required this.success,
-    this.error,
-  });
+  const UsernameUpdateResult({required this.success, this.error});
 }

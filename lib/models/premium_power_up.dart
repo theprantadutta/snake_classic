@@ -9,7 +9,7 @@ enum PremiumPowerUpType {
   megaInvincibility,
   megaScoreMultiplier,
   megaSlowMotion,
-  
+
   // Exclusive premium power-ups
   teleport,
   sizeReducer,
@@ -258,7 +258,9 @@ class PremiumPowerUp extends PowerUp {
     List<Color>? glowColors,
   }) : glowColors = glowColors ?? [premiumType.color],
        super(
-         type: _mapToBasicType(premiumType), // Map to basic type for compatibility
+         type: _mapToBasicType(
+           premiumType,
+         ), // Map to basic type for compatibility
        );
 
   static PowerUpType _mapToBasicType(PremiumPowerUpType premiumType) {
@@ -285,21 +287,21 @@ class PremiumPowerUp extends PowerUp {
     bool premiumOnly = false,
   }) {
     final random = Random();
-    
+
     // Check if any premium power-up should spawn
     double totalChance = 0.0;
     for (final type in PremiumPowerUpType.values) {
       totalChance += type.spawnChance;
     }
-    
+
     if (!premiumOnly && random.nextDouble() > totalChance) {
       return null; // No premium power-up spawned
     }
-    
+
     // Select which premium power-up to spawn
     final randomValue = random.nextDouble() * totalChance;
     double currentChance = 0.0;
-    
+
     for (final type in PremiumPowerUpType.values) {
       currentChance += type.spawnChance;
       if (randomValue <= currentChance) {
@@ -309,51 +311,48 @@ class PremiumPowerUp extends PowerUp {
           snake,
           foodPosition: foodPosition,
         );
-        
-        return PremiumPowerUp(
-          position: position,
-          premiumType: type,
-        );
+
+        return PremiumPowerUp(position: position, premiumType: type);
       }
     }
-    
+
     return null;
   }
 
   @override
   double get pulsePhase {
     // Enhanced pulsing effect for premium power-ups
-    final secondsSinceCreated = DateTime.now().difference(createdAt).inMilliseconds / 1000.0;
+    final secondsSinceCreated =
+        DateTime.now().difference(createdAt).inMilliseconds / 1000.0;
     return (sin(secondsSinceCreated * 4.0) + 1.0) / 2.0; // Faster pulse
   }
 
   double get glowIntensity {
     // Intensity of the glow effect (0.0 to 1.0)
-    final secondsSinceCreated = DateTime.now().difference(createdAt).inMilliseconds / 1000.0;
+    final secondsSinceCreated =
+        DateTime.now().difference(createdAt).inMilliseconds / 1000.0;
     return (sin(secondsSinceCreated * 2.0) * 0.3 + 0.7).clamp(0.4, 1.0);
   }
 
   List<Offset> get sparklePositions {
     // Generate sparkle effect positions around the power-up
     final sparkles = <Offset>[];
-    
+
     for (int i = 0; i < 6; i++) {
-      final angle = (i * pi * 2 / 6) + (DateTime.now().millisecondsSinceEpoch / 1000.0);
+      final angle =
+          (i * pi * 2 / 6) + (DateTime.now().millisecondsSinceEpoch / 1000.0);
       final radius = 15.0 + sin(angle * 2) * 5.0;
       final x = position.x + cos(angle) * radius;
       final y = position.y + sin(angle) * radius;
       sparkles.add(Offset(x, y));
     }
-    
+
     return sparkles;
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'position': {
-        'x': position.x,
-        'y': position.y,
-      },
+      'position': {'x': position.x, 'y': position.y},
       'premium_type': premiumType.id,
       'created_at': createdAt.toIso8601String(),
       'has_visual_effect': hasVisualEffect,
@@ -367,15 +366,19 @@ class PremiumPowerUp extends PowerUp {
       (t) => t.id == json['premium_type'],
       orElse: () => PremiumPowerUpType.megaSpeedBoost,
     );
-    
-    final glowColors = (json['glow_colors'] as List<dynamic>?)
-        ?.map((c) => Color(c as int))
-        .toList() ?? [premiumType.color];
+
+    final glowColors =
+        (json['glow_colors'] as List<dynamic>?)
+            ?.map((c) => Color(c as int))
+            .toList() ??
+        [premiumType.color];
 
     return PremiumPowerUp(
       position: Position.fromJson(json['position']),
       premiumType: premiumType,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
       hasVisualEffect: json['has_visual_effect'] ?? true,
       hasSoundEffect: json['has_sound_effect'] ?? true,
       glowColors: glowColors,
@@ -392,9 +395,7 @@ class PremiumActivePowerUp extends ActivePowerUp {
     super.activatedAt,
     super.duration,
     this.additionalData = const {},
-  }) : super(
-         type: _mapToBasicType(premiumType),
-       );
+  }) : super(type: _mapToBasicType(premiumType));
 
   static PowerUpType _mapToBasicType(PremiumPowerUpType premiumType) {
     switch (premiumType) {
@@ -414,13 +415,14 @@ class PremiumActivePowerUp extends ActivePowerUp {
   // Specific getters for different premium power-up effects
   int get comboMultiplier => additionalData['combo_multiplier'] ?? 1;
   int get crashesRemaining => additionalData['crashes_remaining'] ?? 0;
-  bool get isSizeReduced => premiumType == PremiumPowerUpType.sizeReducer && !isExpired;
-  bool get hasDoubleSnake => premiumType == PremiumPowerUpType.doubleTrouble && !isExpired;
-  bool get isMagneticActive => premiumType == PremiumPowerUpType.magneticFood && !isExpired;
+  bool get isSizeReduced =>
+      premiumType == PremiumPowerUpType.sizeReducer && !isExpired;
+  bool get hasDoubleSnake =>
+      premiumType == PremiumPowerUpType.doubleTrouble && !isExpired;
+  bool get isMagneticActive =>
+      premiumType == PremiumPowerUpType.magneticFood && !isExpired;
 
-  PremiumActivePowerUp copyWith({
-    Map<String, dynamic>? additionalData,
-  }) {
+  PremiumActivePowerUp copyWith({Map<String, dynamic>? additionalData}) {
     return PremiumActivePowerUp(
       premiumType: premiumType,
       activatedAt: activatedAt,

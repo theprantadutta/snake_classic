@@ -48,14 +48,10 @@ class SocialService {
   /// Send friend request (offline-first: queues for background sync)
   Future<bool> sendFriendRequest(String toUserId) async {
     // Queue for background sync - returns immediately
-    _dataSyncService.queueSync(
-      'friend_request_send',
-      {
-        'userId': toUserId,
-        'sent_at': DateTime.now().toIso8601String(),
-      },
-      priority: SyncPriority.normal,
-    );
+    _dataSyncService.queueSync('friend_request_send', {
+      'userId': toUserId,
+      'sent_at': DateTime.now().toIso8601String(),
+    }, priority: SyncPriority.normal);
 
     // Invalidate friend requests cache so next fetch gets fresh data
     await _cacheService.invalidateCache(_friendRequestsKey);
@@ -65,14 +61,10 @@ class SocialService {
   /// Accept friend request (offline-first: queues for background sync)
   Future<bool> acceptFriendRequest(String fromUserId) async {
     // Queue for background sync - returns immediately
-    _dataSyncService.queueSync(
-      'friend_request_accept',
-      {
-        'requestId': fromUserId,
-        'accepted_at': DateTime.now().toIso8601String(),
-      },
-      priority: SyncPriority.normal,
-    );
+    _dataSyncService.queueSync('friend_request_accept', {
+      'requestId': fromUserId,
+      'accepted_at': DateTime.now().toIso8601String(),
+    }, priority: SyncPriority.normal);
 
     // Invalidate caches so next fetch gets fresh data
     await _cacheService.invalidateCache(_friendsListKey);
@@ -83,14 +75,10 @@ class SocialService {
   /// Reject friend request (offline-first: queues for background sync)
   Future<bool> rejectFriendRequest(String fromUserId) async {
     // Queue for background sync - returns immediately
-    _dataSyncService.queueSync(
-      'friend_request_reject',
-      {
-        'requestId': fromUserId,
-        'rejected_at': DateTime.now().toIso8601String(),
-      },
-      priority: SyncPriority.normal,
-    );
+    _dataSyncService.queueSync('friend_request_reject', {
+      'requestId': fromUserId,
+      'rejected_at': DateTime.now().toIso8601String(),
+    }, priority: SyncPriority.normal);
 
     // Invalidate cache so next fetch gets fresh data
     await _cacheService.invalidateCache(_friendRequestsKey);
@@ -100,14 +88,10 @@ class SocialService {
   /// Remove friend (offline-first: queues for background sync)
   Future<bool> removeFriend(String friendUserId) async {
     // Queue for background sync - returns immediately
-    _dataSyncService.queueSync(
-      'friend_remove',
-      {
-        'friendId': friendUserId,
-        'removed_at': DateTime.now().toIso8601String(),
-      },
-      priority: SyncPriority.normal,
-    );
+    _dataSyncService.queueSync('friend_remove', {
+      'friendId': friendUserId,
+      'removed_at': DateTime.now().toIso8601String(),
+    }, priority: SyncPriority.normal);
 
     // Invalidate cache so next fetch gets fresh data
     await _cacheService.invalidateCache(_friendsListKey);
@@ -133,10 +117,11 @@ class SocialService {
 
     // Offline fallback
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<Map<String, dynamic>>(
-        cacheKey,
-        (data) => Map<String, dynamic>.from(data as Map),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<Map<String, dynamic>>(
+            cacheKey,
+            (data) => Map<String, dynamic>.from(data as Map),
+          );
       return fallback != null ? _mapToUserProfile(fallback) : null;
     }
 
@@ -188,19 +173,24 @@ class SocialService {
       if (_connectivityService.isOnline) {
         _refreshFriendsInBackground();
       }
-      return _sortFriends(cached.map((data) => _mapToUserProfile(data)).toList());
+      return _sortFriends(
+        cached.map((data) => _mapToUserProfile(data)).toList(),
+      );
     }
 
     // 2. Offline fallback
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
-        _friendsListKey,
-        (data) => List<Map<String, dynamic>>.from(
-          (data as List).map((e) => Map<String, dynamic>.from(e)),
-        ),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<List<Map<String, dynamic>>>(
+            _friendsListKey,
+            (data) => List<Map<String, dynamic>>.from(
+              (data as List).map((e) => Map<String, dynamic>.from(e)),
+            ),
+          );
       return fallback != null
-          ? _sortFriends(fallback.map((data) => _mapToUserProfile(data)).toList())
+          ? _sortFriends(
+              fallback.map((data) => _mapToUserProfile(data)).toList(),
+            )
           : [];
     }
 
@@ -221,7 +211,9 @@ class SocialService {
         (data) => data,
       );
 
-      return _sortFriends(friends.map((data) => _mapToUserProfile(data)).toList());
+      return _sortFriends(
+        friends.map((data) => _mapToUserProfile(data)).toList(),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error getting friends: $e');
@@ -269,10 +261,11 @@ class SocialService {
 
     // 2. Offline fallback
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<Map<String, dynamic>>(
-        _friendRequestsKey,
-        (data) => Map<String, dynamic>.from(data as Map),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<Map<String, dynamic>>(
+            _friendRequestsKey,
+            (data) => Map<String, dynamic>.from(data as Map),
+          );
       return fallback != null ? _parseFriendRequests(fallback) : [];
     }
 
@@ -407,17 +400,28 @@ class SocialService {
 
   // Stream friends for real-time updates (polling-based)
   Stream<List<UserProfile>> watchFriends() {
-    return Stream.periodic(const Duration(seconds: 30), (_) => null)
-        .asyncMap((_) => getFriends())
-        .distinct();
+    return Stream.periodic(
+      const Duration(seconds: 30),
+      (_) => null,
+    ).asyncMap((_) => getFriends()).distinct();
   }
 
   // Stream friend requests for real-time updates (polling-based)
   Stream<List<FriendRequest>> watchFriendRequests() {
     return Stream.periodic(const Duration(seconds: 30), (_) => null)
         .asyncMap((_) => getFriendRequests())
-        .where((requests) => requests.where((r) => r.type == FriendRequestType.received).isNotEmpty || requests.isEmpty)
-        .map((requests) => requests.where((r) => r.type == FriendRequestType.received).toList())
+        .where(
+          (requests) =>
+              requests
+                  .where((r) => r.type == FriendRequestType.received)
+                  .isNotEmpty ||
+              requests.isEmpty,
+        )
+        .map(
+          (requests) => requests
+              .where((r) => r.type == FriendRequestType.received)
+              .toList(),
+        )
         .distinct();
   }
 
@@ -433,17 +437,27 @@ class SocialService {
       status: _parseUserStatus(data['status']),
       statusMessage: data['status_message'] ?? data['statusMessage'],
       highScore: data['high_score'] ?? data['highScore'] ?? 0,
-      totalGamesPlayed: data['total_games_played'] ?? data['totalGamesPlayed'] ?? 0,
+      totalGamesPlayed:
+          data['total_games_played'] ?? data['totalGamesPlayed'] ?? 0,
       friends: List<String>.from(data['friends'] ?? []),
-      friendRequests: List<String>.from(data['friend_requests'] ?? data['friendRequests'] ?? []),
-      sentRequests: List<String>.from(data['sent_requests'] ?? data['sentRequests'] ?? []),
-      joinedDate: _parseDateTime(data['joined_date'] ?? data['joinedDate'] ?? data['created_at']),
+      friendRequests: List<String>.from(
+        data['friend_requests'] ?? data['friendRequests'] ?? [],
+      ),
+      sentRequests: List<String>.from(
+        data['sent_requests'] ?? data['sentRequests'] ?? [],
+      ),
+      joinedDate: _parseDateTime(
+        data['joined_date'] ?? data['joinedDate'] ?? data['created_at'],
+      ),
       lastSeen: _parseDateTime(data['last_seen'] ?? data['lastSeen']),
     );
   }
 
   /// Map backend response to FriendRequest
-  FriendRequest _mapToFriendRequest(Map<String, dynamic> data, FriendRequestType type) {
+  FriendRequest _mapToFriendRequest(
+    Map<String, dynamic> data,
+    FriendRequestType type,
+  ) {
     return FriendRequest(
       id: data['id']?.toString() ?? '',
       fromUserId: data['from_user_id'] ?? data['fromUserId'] ?? '',

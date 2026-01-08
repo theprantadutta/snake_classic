@@ -31,8 +31,7 @@ class GameBoard extends StatefulWidget {
   State<GameBoard> createState() => _GameBoardState();
 }
 
-class _GameBoardState extends State<GameBoard>
-    with TickerProviderStateMixin {
+class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _pulseAnimation;
 
@@ -74,13 +73,16 @@ class _GameBoardState extends State<GameBoard>
   void dispose() {
     _animationController.dispose();
     _moveAnimationController.dispose();
-    _particleManager.clear(); // Clean up particle emissions to prevent memory leaks
+    _particleManager
+        .clear(); // Clean up particle emissions to prevent memory leaks
     super.dispose();
   }
 
   /// Calculate move progress locally based on time since last game state change
   double _calculateMoveProgress(int gameSpeed) {
-    final elapsed = DateTime.now().difference(_lastGameStateChangeTime).inMilliseconds;
+    final elapsed = DateTime.now()
+        .difference(_lastGameStateChangeTime)
+        .inMilliseconds;
     return (elapsed / gameSpeed).clamp(0.0, 1.0);
   }
 
@@ -103,212 +105,231 @@ class _GameBoardState extends State<GameBoard>
             }
 
             return RepaintBoundary(
-          // Isolate repaints to this widget
-          child: Container(
-            margin: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              // Enhanced gradient background matching home screen exactly
-              gradient: RadialGradient(
-                center: Alignment.topRight,
-                radius: 1.5,
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.12),
-                  theme.backgroundColor.withValues(alpha: 0.98),
-                  theme.backgroundColor,
-                  Colors.black.withValues(alpha: 0.08),
-                ],
-                stops: const [0.0, 0.4, 0.8, 1.0],
-              ),
-              // Enhanced border with premium glow effect (tournament mode uses purple/gold)
-              border: Border.all(
-                color: widget.isTournamentMode
-                    ? Colors.purple.withValues(alpha: 0.7)
-                    : theme.accentColor.withValues(alpha: 0.5),
-                width: widget.isTournamentMode ? 4.0 : 3.0,
-              ),
-              borderRadius: BorderRadius.circular(0),
-              // Premium multi-layer shadow system (tournament mode uses purple/gold glow)
-              boxShadow: widget.isTournamentMode
-                  ? [
-                      // Primary purple glow effect
-                      BoxShadow(
-                        color: Colors.purple.withValues(alpha: 0.35),
-                        blurRadius: 20,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 0),
-                      ),
-                      // Gold accent glow
-                      BoxShadow(
-                        color: Colors.amber.withValues(alpha: 0.25),
-                        blurRadius: 28,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 0),
-                      ),
-                      // Depth shadow
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 24,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 12),
-                      ),
-                      // Pulsing outer glow
-                      BoxShadow(
-                        color: Colors.purple.withValues(alpha: 0.2),
-                        blurRadius: 48,
-                        spreadRadius: -4,
-                        offset: const Offset(0, 0),
-                      ),
-                    ]
-                  : [
-                      // Primary glow effect
-                      BoxShadow(
-                        color: theme.accentColor.withValues(alpha: 0.25),
-                        blurRadius: 16,
-                        spreadRadius: -1,
-                        offset: const Offset(0, 0),
-                      ),
-                      // Depth shadow
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        blurRadius: 24,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 12),
-                      ),
-                      // Inner highlight
-                      BoxShadow(
-                        color: theme.accentColor.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        spreadRadius: -4,
-                        offset: const Offset(0, -4),
-                      ),
-                      // Ambient outer glow
-                      BoxShadow(
-                        color: theme.accentColor.withValues(alpha: 0.15),
-                        blurRadius: 48,
-                        spreadRadius: -8,
-                        offset: const Offset(0, 0),
-                      ),
-                    ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(0),
+              // Isolate repaints to this widget
               child: Container(
-                // Inner container with enhanced pattern overlay matching home screen
+                margin: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  // Enhanced gradient background matching home screen exactly
+                  gradient: RadialGradient(
+                    center: Alignment.topRight,
+                    radius: 1.5,
                     colors: [
-                      theme.backgroundColor.withValues(alpha: 0.95),
+                      theme.accentColor.withValues(alpha: 0.12),
                       theme.backgroundColor.withValues(alpha: 0.98),
-                      theme.accentColor.withValues(alpha: 0.05),
-                      theme.foodColor.withValues(alpha: 0.02),
+                      theme.backgroundColor,
+                      Colors.black.withValues(alpha: 0.08),
                     ],
                     stops: const [0.0, 0.4, 0.8, 1.0],
                   ),
+                  // Enhanced border with premium glow effect (tournament mode uses purple/gold)
+                  border: Border.all(
+                    color: widget.isTournamentMode
+                        ? Colors.purple.withValues(alpha: 0.7)
+                        : theme.accentColor.withValues(alpha: 0.5),
+                    width: widget.isTournamentMode ? 4.0 : 3.0,
+                  ),
+                  borderRadius: BorderRadius.circular(0),
+                  // Premium multi-layer shadow system (tournament mode uses purple/gold glow)
+                  boxShadow: widget.isTournamentMode
+                      ? [
+                          // Primary purple glow effect
+                          BoxShadow(
+                            color: Colors.purple.withValues(alpha: 0.35),
+                            blurRadius: 20,
+                            spreadRadius: 0,
+                            offset: const Offset(0, 0),
+                          ),
+                          // Gold accent glow
+                          BoxShadow(
+                            color: Colors.amber.withValues(alpha: 0.25),
+                            blurRadius: 28,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 0),
+                          ),
+                          // Depth shadow
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 24,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 12),
+                          ),
+                          // Pulsing outer glow
+                          BoxShadow(
+                            color: Colors.purple.withValues(alpha: 0.2),
+                            blurRadius: 48,
+                            spreadRadius: -4,
+                            offset: const Offset(0, 0),
+                          ),
+                        ]
+                      : [
+                          // Primary glow effect
+                          BoxShadow(
+                            color: theme.accentColor.withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            spreadRadius: -1,
+                            offset: const Offset(0, 0),
+                          ),
+                          // Depth shadow
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 24,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 12),
+                          ),
+                          // Inner highlight
+                          BoxShadow(
+                            color: theme.accentColor.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            spreadRadius: -4,
+                            offset: const Offset(0, -4),
+                          ),
+                          // Ambient outer glow
+                          BoxShadow(
+                            color: theme.accentColor.withValues(alpha: 0.15),
+                            blurRadius: 48,
+                            spreadRadius: -8,
+                            offset: const Offset(0, 0),
+                          ),
+                        ],
                 ),
-                child: Stack(
-                  children: [
-                    // Subtle pattern overlay
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _GameBoardBackgroundPainter(theme),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(0),
+                  child: Container(
+                    // Inner container with enhanced pattern overlay matching home screen
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          theme.backgroundColor.withValues(alpha: 0.95),
+                          theme.backgroundColor.withValues(alpha: 0.98),
+                          theme.accentColor.withValues(alpha: 0.05),
+                          theme.foodColor.withValues(alpha: 0.02),
+                        ],
+                        stops: const [0.0, 0.4, 0.8, 1.0],
                       ),
                     ),
-                    // Game content
-                    AspectRatio(
-                      aspectRatio:
-                          widget.gameState.boardWidth /
-                          widget.gameState.boardHeight,
-                      child: BlocBuilder<GameCubit, GameCubitState>(
-                        // CRITICAL: Only rebuild when actual game state changes
-                        // NOT on animation frame updates (moveProgress changes)
-                        // This reduces rebuilds from ~60/sec to ~3-5/sec
-                        buildWhen: (previous, current) =>
-                            !identical(previous.gameState, current.gameState) ||
-                            !identical(previous.previousGameState, current.previousGameState),
-                        builder: (context, cubitState) {
-                          // Use the gameState from cubit, not from widget!
-                          // This ensures we always have the latest state
-                          final currentGameState = cubitState.gameState ?? widget.gameState;
-
-                          // Track when game state changes for smooth animation
-                          if (!identical(_lastGameStateForAnimation, currentGameState)) {
-                            _lastGameStateChangeTime = DateTime.now();
-                            _lastGameStateForAnimation = currentGameState;
-                          }
-
-                          // AnimatedBuilder drives 60fps repaints for smooth snake movement
-                          // without causing BlocBuilder rebuilds
-                          return AnimatedBuilder(
-                            animation: _moveAnimationController,
-                            builder: (context, child) {
-                              final gameSpeed = currentGameState.gameSpeed;
-                              final moveProgress = _calculateMoveProgress(gameSpeed);
-
-                              return CustomPaint(
-                                painter: OptimizedGameBoardPainter(
-                                  gameState: currentGameState,
-                                  theme: theme,
-                                  pulseAnimation: _pulseAnimation,
-                                  // Smooth movement calculated locally
-                                  moveProgress: moveProgress,
-                                  previousGameState: cubitState.previousGameState,
-                                  premiumState: premiumState,
-                                  // Pass time once per frame to avoid DateTime.now() in paint loop
-                                  animationTimeMs: DateTime.now().millisecondsSinceEpoch,
+                    child: Stack(
+                      children: [
+                        // Subtle pattern overlay
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: _GameBoardBackgroundPainter(theme),
+                          ),
+                        ),
+                        // Game content
+                        AspectRatio(
+                          aspectRatio:
+                              widget.gameState.boardWidth /
+                              widget.gameState.boardHeight,
+                          child: BlocBuilder<GameCubit, GameCubitState>(
+                            // CRITICAL: Only rebuild when actual game state changes
+                            // NOT on animation frame updates (moveProgress changes)
+                            // This reduces rebuilds from ~60/sec to ~3-5/sec
+                            buildWhen: (previous, current) =>
+                                !identical(
+                                  previous.gameState,
+                                  current.gameState,
+                                ) ||
+                                !identical(
+                                  previous.previousGameState,
+                                  current.previousGameState,
                                 ),
-                                size: Size.infinite,
-                                // Performance: Only repaint when needed
-                                isComplex: false,
-                                willChange: true,
+                            builder: (context, cubitState) {
+                              // Use the gameState from cubit, not from widget!
+                              // This ensures we always have the latest state
+                              final currentGameState =
+                                  cubitState.gameState ?? widget.gameState;
+
+                              // Track when game state changes for smooth animation
+                              if (!identical(
+                                _lastGameStateForAnimation,
+                                currentGameState,
+                              )) {
+                                _lastGameStateChangeTime = DateTime.now();
+                                _lastGameStateForAnimation = currentGameState;
+                              }
+
+                              // AnimatedBuilder drives 60fps repaints for smooth snake movement
+                              // without causing BlocBuilder rebuilds
+                              return AnimatedBuilder(
+                                animation: _moveAnimationController,
+                                builder: (context, child) {
+                                  final gameSpeed = currentGameState.gameSpeed;
+                                  final moveProgress = _calculateMoveProgress(
+                                    gameSpeed,
+                                  );
+
+                                  return CustomPaint(
+                                    painter: OptimizedGameBoardPainter(
+                                      gameState: currentGameState,
+                                      theme: theme,
+                                      pulseAnimation: _pulseAnimation,
+                                      // Smooth movement calculated locally
+                                      moveProgress: moveProgress,
+                                      previousGameState:
+                                          cubitState.previousGameState,
+                                      premiumState: premiumState,
+                                      // Pass time once per frame to avoid DateTime.now() in paint loop
+                                      animationTimeMs:
+                                          DateTime.now().millisecondsSinceEpoch,
+                                    ),
+                                    size: Size.infinite,
+                                    // Performance: Only repaint when needed
+                                    isComplex: false,
+                                    willChange: true,
+                                  );
+                                },
                               );
                             },
-                          );
-                        },
-                      ),
-                    ),
-                    // Snake trail system (shown when cosmetic trail selected OR theme trail enabled)
-                    Builder(
-                      builder: (context) {
-                        final effectiveTrailType = _getEffectiveTrailType(premiumState, themeState, theme);
-                        if (effectiveTrailType == TrailType.none) {
-                          return const SizedBox.shrink();
-                        }
-                        return Positioned.fill(
-                          child: SnakeTrailSystem(
-                            snakeBody: widget.gameState.snake.body,
-                            trailType: effectiveTrailType,
-                            theme: theme,
-                            cellWidth: widget.cellSize,
-                            cellHeight: widget.cellSize,
-                            isPlaying:
-                                widget.gameState.status == GameStatus.playing,
                           ),
-                        );
-                      },
-                    ),
-                    // Advanced particle system
-                    Positioned.fill(
-                      child: AdvancedParticleSystem(
-                        emissions: _particleManager.emissions,
-                        autoRemoveEmissions: true,
-                      ),
-                    ),
-                    // Shader effects overlay
-                    if (_shouldUseShaderEffects(theme))
-                      Positioned.fill(
-                        child: ShaderEnhancedBackground(
-                          theme: theme,
-                          enabled: true,
-                          child: const SizedBox.expand(),
                         ),
-                      ),
-                  ],
+                        // Snake trail system (shown when cosmetic trail selected OR theme trail enabled)
+                        Builder(
+                          builder: (context) {
+                            final effectiveTrailType = _getEffectiveTrailType(
+                              premiumState,
+                              themeState,
+                              theme,
+                            );
+                            if (effectiveTrailType == TrailType.none) {
+                              return const SizedBox.shrink();
+                            }
+                            return Positioned.fill(
+                              child: SnakeTrailSystem(
+                                snakeBody: widget.gameState.snake.body,
+                                trailType: effectiveTrailType,
+                                theme: theme,
+                                cellWidth: widget.cellSize,
+                                cellHeight: widget.cellSize,
+                                isPlaying:
+                                    widget.gameState.status ==
+                                    GameStatus.playing,
+                              ),
+                            );
+                          },
+                        ),
+                        // Advanced particle system
+                        Positioned.fill(
+                          child: AdvancedParticleSystem(
+                            emissions: _particleManager.emissions,
+                            autoRemoveEmissions: true,
+                          ),
+                        ),
+                        // Shader effects overlay
+                        if (_shouldUseShaderEffects(theme))
+                          Positioned.fill(
+                            child: ShaderEnhancedBackground(
+                              theme: theme,
+                              enabled: true,
+                              child: const SizedBox.expand(),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
             );
           },
         );
@@ -377,7 +398,11 @@ class _GameBoardState extends State<GameBoard>
   }
 
   /// Get the effective trail type considering both cosmetics and theme settings
-  TrailType _getEffectiveTrailType(PremiumState premiumState, ThemeState themeState, GameTheme theme) {
+  TrailType _getEffectiveTrailType(
+    PremiumState premiumState,
+    ThemeState themeState,
+    GameTheme theme,
+  ) {
     // If user has a premium trail selected (not 'none'), use that
     if (premiumState.selectedTrailId != 'none' &&
         premiumState.isTrailOwned(premiumState.selectedTrailId)) {
@@ -392,9 +417,13 @@ class _GameBoardState extends State<GameBoard>
     return TrailType.none;
   }
 
-  void _addFoodParticleEffect(Offset position, GameTheme theme, FoodType foodType) {
+  void _addFoodParticleEffect(
+    Offset position,
+    GameTheme theme,
+    FoodType foodType,
+  ) {
     ParticleConfig particleConfig;
-    
+
     // Choose particle effect based on food type
     switch (foodType) {
       case FoodType.normal:
@@ -407,7 +436,7 @@ class _GameBoardState extends State<GameBoard>
         particleConfig = ParticleConfig.specialFoodExplosion;
         break;
     }
-    
+
     _particleManager.emitAt(
       position,
       particleConfig,
@@ -417,7 +446,7 @@ class _GameBoardState extends State<GameBoard>
 
   void _addPowerUpParticleEffect(Offset position, PowerUpType powerUpType) {
     ParticleConfig particleConfig;
-    
+
     // Choose particle effect based on power-up type
     switch (powerUpType) {
       case PowerUpType.speedBoost:
@@ -433,7 +462,7 @@ class _GameBoardState extends State<GameBoard>
         particleConfig = ParticleConfig.slowMotionCollection;
         break;
     }
-    
+
     _particleManager.emitAt(
       position,
       particleConfig,
@@ -449,13 +478,18 @@ class _GameBoardState extends State<GameBoard>
     if (previousState == null) return;
 
     // Check if food was consumed (score increased)
-    if (currentState.score > previousState.score && previousState.food != null) {
+    if (currentState.score > previousState.score &&
+        previousState.food != null) {
       // Calculate food position in screen coordinates accounting for container margin
       const containerMargin = 8.0; // Match the margin in the Container
-      final foodScreenX = previousState.food!.position.x * widget.cellSize + 
-          widget.cellSize / 2 + containerMargin;
-      final foodScreenY = previousState.food!.position.y * widget.cellSize + 
-          widget.cellSize / 2 + containerMargin;
+      final foodScreenX =
+          previousState.food!.position.x * widget.cellSize +
+          widget.cellSize / 2 +
+          containerMargin;
+      final foodScreenY =
+          previousState.food!.position.y * widget.cellSize +
+          widget.cellSize / 2 +
+          containerMargin;
       final foodPosition = Offset(foodScreenX, foodScreenY);
 
       // Add food consumption particle effect with food type
@@ -466,10 +500,14 @@ class _GameBoardState extends State<GameBoard>
     if (previousState.powerUp != null && currentState.powerUp == null) {
       // Calculate power-up position accounting for container margin
       const containerMargin = 8.0; // Match the margin in the Container
-      final powerUpScreenX = previousState.powerUp!.position.x * widget.cellSize + 
-          widget.cellSize / 2 + containerMargin;
-      final powerUpScreenY = previousState.powerUp!.position.y * widget.cellSize + 
-          widget.cellSize / 2 + containerMargin;
+      final powerUpScreenX =
+          previousState.powerUp!.position.x * widget.cellSize +
+          widget.cellSize / 2 +
+          containerMargin;
+      final powerUpScreenY =
+          previousState.powerUp!.position.y * widget.cellSize +
+          widget.cellSize / 2 +
+          containerMargin;
       final powerUpPosition = Offset(powerUpScreenX, powerUpScreenY);
 
       // Add power-up collection effect with power-up type
@@ -517,7 +555,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final double moveProgress;
   final GameState? previousGameState;
   final PremiumState premiumState;
-  final int animationTimeMs; // Passed once per frame to avoid DateTime.now() in paint
+  final int
+  animationTimeMs; // Passed once per frame to avoid DateTime.now() in paint
 
   // Cache paint objects to avoid recreation
   late final Paint _snakeHeadPaint;
@@ -584,7 +623,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
   }
 
   // Draw warning glow when snake head approaches walls
-  void _drawWallWarning(Canvas canvas, Size size, double cellWidth, double cellHeight) {
+  void _drawWallWarning(
+    Canvas canvas,
+    Size size,
+    double cellWidth,
+    double cellHeight,
+  ) {
     final headPosition = gameState.snake.head;
 
     // Calculate distances to each wall
@@ -600,7 +644,10 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final leftIntensity = _calculateWarningIntensity(distanceLeft, threshold);
     final rightIntensity = _calculateWarningIntensity(distanceRight, threshold);
     final topIntensity = _calculateWarningIntensity(distanceTop, threshold);
-    final bottomIntensity = _calculateWarningIntensity(distanceBottom, threshold);
+    final bottomIntensity = _calculateWarningIntensity(
+      distanceBottom,
+      threshold,
+    );
 
     // Draw warning glows where needed
     if (leftIntensity > 0) {
@@ -620,7 +667,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
   double _calculateWarningIntensity(int distance, int threshold) {
     if (distance > threshold) return 0.0;
     if (distance <= 0) return GameConstants.wallWarningMaxIntensity;
-    return GameConstants.wallWarningMaxIntensity * (1.0 - (distance / threshold));
+    return GameConstants.wallWarningMaxIntensity *
+        (1.0 - (distance / threshold));
   }
 
   void _drawEdgeGlow(Canvas canvas, Size size, String edge, double intensity) {
@@ -645,7 +693,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
         gradientEnd = Alignment.centerRight;
         break;
       case 'right':
-        glowRect = Rect.fromLTWH(size.width - glowWidth, 0, glowWidth, size.height);
+        glowRect = Rect.fromLTWH(
+          size.width - glowWidth,
+          0,
+          glowWidth,
+          size.height,
+        );
         gradientStart = Alignment.centerRight;
         gradientEnd = Alignment.centerLeft;
         break;
@@ -655,7 +708,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
         gradientEnd = Alignment.bottomCenter;
         break;
       case 'bottom':
-        glowRect = Rect.fromLTWH(0, size.height - glowWidth, size.width, glowWidth);
+        glowRect = Rect.fromLTWH(
+          0,
+          size.height - glowWidth,
+          size.width,
+          glowWidth,
+        );
         gradientStart = Alignment.bottomCenter;
         gradientEnd = Alignment.topCenter;
         break;
@@ -667,10 +725,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: gradientStart,
         end: gradientEnd,
-        colors: [
-          warningColor,
-          warningColor.withValues(alpha: 0),
-        ],
+        colors: [warningColor, warningColor.withValues(alpha: 0)],
       ).createShader(glowRect);
 
     canvas.drawRect(glowRect, paint);
@@ -765,7 +820,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
   void _drawSnakeHead(Canvas canvas, Rect rect, Direction direction) {
     // Breathing animation - subtle size variation
-    final breathingScale = 1.0 + 0.03 * math.sin(pulseAnimation.value * 2 * math.pi * 2.5); // 2.5 breaths per second
+    final breathingScale =
+        1.0 +
+        0.03 *
+            math.sin(
+              pulseAnimation.value * 2 * math.pi * 2.5,
+            ); // 2.5 breaths per second
     final breathingRect = Rect.fromCenter(
       center: rect.center,
       width: rect.width * breathingScale,
@@ -790,12 +850,20 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
     // Draw glow background for neon theme with breathing effect
     if (theme == GameTheme.neon) {
-      _drawNeonGlow(canvas, breathingRect, theme.snakeColor, 8.0 * breathingScale);
+      _drawNeonGlow(
+        canvas,
+        breathingRect,
+        theme.snakeColor,
+        8.0 * breathingScale,
+      );
     }
 
     // Enhanced head shape with better radius
     final radius = Radius.circular(breathingRect.width * 0.3);
-    canvas.drawRRect(RRect.fromRectAndRadius(breathingRect, radius), _snakeHeadPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(breathingRect, radius),
+      _snakeHeadPaint,
+    );
 
     // Draw enhanced snake eyes with breathing
     _drawSnakeEyes(canvas, breathingRect, direction);
@@ -810,7 +878,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
   List<Color> _getHeadGradientColors() {
     // Use selected skin colors if available, otherwise fall back to theme colors
     final skinColors = _getSelectedSkinColors();
-    
+
     if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic') {
       // Use skin colors for premium skins
       if (skinColors.length == 1) {
@@ -824,7 +892,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
         return skinColors.take(3).toList();
       }
     }
-    
+
     // Fall back to original theme-based colors for classic skin
     switch (theme) {
       case GameTheme.classic:
@@ -944,9 +1012,16 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final opacity = isTail ? 0.5 : (0.6 + 0.4 * fadeRatio);
 
     // Add breathing effect to body segments near head
-    final breathingIntensity = math.max(0.0, (5 - index) / 5.0); // First 5 segments get breathing
-    final breathingScale = 1.0 + (0.02 * breathingIntensity * math.sin(pulseAnimation.value * 2 * math.pi * 2.5));
-    
+    final breathingIntensity = math.max(
+      0.0,
+      (5 - index) / 5.0,
+    ); // First 5 segments get breathing
+    final breathingScale =
+        1.0 +
+        (0.02 *
+            breathingIntensity *
+            math.sin(pulseAnimation.value * 2 * math.pi * 2.5));
+
     final breathingRect = Rect.fromCenter(
       center: rect.center,
       width: rect.width * breathingScale,
@@ -964,32 +1039,47 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
     // Draw neon glow for body segments with breathing effect
     if (theme == GameTheme.neon && !isTail) {
-      _drawNeonGlow(canvas, breathingRect, theme.snakeColor, 4.0 * fadeRatio * breathingScale);
+      _drawNeonGlow(
+        canvas,
+        breathingRect,
+        theme.snakeColor,
+        4.0 * fadeRatio * breathingScale,
+      );
     }
 
     // Enhanced body shape with smooth curves
     final radius = _getBodyRadius(breathingRect);
-    canvas.drawRRect(RRect.fromRectAndRadius(breathingRect, radius), _snakeBodyPaint);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(breathingRect, radius),
+      _snakeBodyPaint,
+    );
 
     // Add theme-specific highlights with breathing
-    _drawBodyHighlight(canvas, breathingRect, isTail, fadeRatio * breathingScale);
+    _drawBodyHighlight(
+      canvas,
+      breathingRect,
+      isTail,
+      fadeRatio * breathingScale,
+    );
   }
 
   Color _getBodyColor(double opacity) {
     // Use selected skin colors if available, otherwise fall back to theme colors
     final skinColors = _getSelectedSkinColors();
-    
+
     if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic') {
       // For single color skins, use the color with opacity
       if (skinColors.length == 1) {
         return skinColors[0].withValues(alpha: opacity);
       } else {
         // For multi-color skins, cycle through colors using passed animation time
-        final colorIndex = (animationTimeMs ~/ GameConstants.colorCycleIntervalMs) % skinColors.length;
+        final colorIndex =
+            (animationTimeMs ~/ GameConstants.colorCycleIntervalMs) %
+            skinColors.length;
         return skinColors[colorIndex].withValues(alpha: opacity);
       }
     }
-    
+
     // Fall back to original theme-based colors for classic skin
     switch (theme) {
       case GameTheme.classic:
@@ -1629,12 +1719,14 @@ class OptimizedGameBoardPainter extends CustomPainter {
       rect.width,
       rect.height,
     );
-    
+
     final radius = Radius.circular(rect.width * 0.3);
     canvas.drawRRect(RRect.fromRectAndRadius(shadowRect, radius), shadowPaint);
 
     // Deeper shadow for more dramatic effect on certain themes
-    if (theme == GameTheme.neon || theme == GameTheme.space || theme == GameTheme.cyberpunk) {
+    if (theme == GameTheme.neon ||
+        theme == GameTheme.space ||
+        theme == GameTheme.cyberpunk) {
       final deepShadowPaint = Paint()
         ..color = Colors.black.withValues(alpha: 0.15)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0)
@@ -1646,15 +1738,24 @@ class OptimizedGameBoardPainter extends CustomPainter {
         rect.width,
         rect.height,
       );
-      
-      canvas.drawRRect(RRect.fromRectAndRadius(deepShadowRect, radius), deepShadowPaint);
+
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(deepShadowRect, radius),
+        deepShadowPaint,
+      );
     }
   }
 
-  void _drawBreathingHighlight(Canvas canvas, Rect rect, double breathingScale) {
+  void _drawBreathingHighlight(
+    Canvas canvas,
+    Rect rect,
+    double breathingScale,
+  ) {
     // Subtle breathing highlight that pulses
-    final highlightIntensity = 0.15 + 0.05 * (breathingScale - 1.0) / 0.03; // Scale intensity with breathing
-    
+    final highlightIntensity =
+        0.15 +
+        0.05 * (breathingScale - 1.0) / 0.03; // Scale intensity with breathing
+
     final highlightPaint = Paint()
       ..color = Colors.white.withValues(alpha: highlightIntensity)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
@@ -1686,7 +1787,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       rect.width,
       rect.height,
     );
-    
+
     final radius = Radius.circular(rect.width * 0.25);
     canvas.drawRRect(RRect.fromRectAndRadius(shadowRect, radius), shadowPaint);
   }
@@ -2182,24 +2283,28 @@ class OptimizedGameBoardPainter extends CustomPainter {
     return selectedSkinType.colors;
   }
 
-
   // Debug counter for shouldRepaint
   static int _repaintCheckCount = 0;
 
   @override
   bool shouldRepaint(covariant OptimizedGameBoardPainter oldDelegate) {
-    final shouldRepaint = oldDelegate.gameState != gameState ||
+    final shouldRepaint =
+        oldDelegate.gameState != gameState ||
         oldDelegate.theme != theme ||
         oldDelegate.pulseAnimation.value != pulseAnimation.value ||
         oldDelegate.moveProgress != moveProgress ||
         oldDelegate.previousGameState != previousGameState ||
-        oldDelegate.premiumState.selectedSkinId != premiumState.selectedSkinId ||
-        oldDelegate.premiumState.selectedTrailId != premiumState.selectedTrailId;
+        oldDelegate.premiumState.selectedSkinId !=
+            premiumState.selectedSkinId ||
+        oldDelegate.premiumState.selectedTrailId !=
+            premiumState.selectedTrailId;
 
     _repaintCheckCount++;
     if (_repaintCheckCount <= 10 || _repaintCheckCount % 100 == 0) {
       final gameStateChanged = oldDelegate.gameState != gameState;
-      debugPrint('[GameBoard] shouldRepaint #$_repaintCheckCount: $shouldRepaint (gameStateChanged: $gameStateChanged, snake: ${gameState.snake.head})');
+      debugPrint(
+        '[GameBoard] shouldRepaint #$_repaintCheckCount: $shouldRepaint (gameStateChanged: $gameStateChanged, snake: ${gameState.snake.head})',
+      );
     }
 
     return shouldRepaint;

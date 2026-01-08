@@ -4,22 +4,16 @@ import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/constants.dart';
 
-enum MovementCurve {
-  linear,
-  easeInOut,
-  easeOut,
-  bouncy,
-  elastic,
-}
+enum MovementCurve { linear, easeInOut, easeOut, bouncy, elastic }
 
 class SmoothMovementController extends ChangeNotifier {
   final TickerProvider vsync;
   late AnimationController _controller;
   late Animation<double> _animation;
-  
+
   MovementCurve _curve = MovementCurve.easeOut;
   Duration _moveDuration = const Duration(milliseconds: 150);
-  
+
   // Interpolation state
   List<Position>? _previousPositions;
   List<Position>? _targetPositions;
@@ -31,13 +25,10 @@ class SmoothMovementController extends ChangeNotifier {
   }
 
   void _initializeController() {
-    _controller = AnimationController(
-      duration: _moveDuration,
-      vsync: vsync,
-    );
+    _controller = AnimationController(duration: _moveDuration, vsync: vsync);
 
     _updateAnimation();
-    
+
     _controller.addListener(() {
       _progress = _animation.value;
       notifyListeners();
@@ -75,15 +66,12 @@ class SmoothMovementController extends ChangeNotifier {
     _animation = CurvedAnimation(parent: _controller, curve: curve);
   }
 
-  void updateMovementSettings({
-    MovementCurve? curve,
-    Duration? duration,
-  }) {
+  void updateMovementSettings({MovementCurve? curve, Duration? duration}) {
     if (curve != null && curve != _curve) {
       _curve = curve;
       _updateAnimation();
     }
-    
+
     if (duration != null && duration != _moveDuration) {
       _moveDuration = duration;
       _controller.duration = duration;
@@ -98,26 +86,36 @@ class SmoothMovementController extends ChangeNotifier {
     _previousPositions = List.from(fromPositions);
     _targetPositions = List.from(toPositions);
     _isAnimating = true;
-    
+
     _controller.reset();
     _controller.forward();
   }
 
   List<Offset> getInterpolatedPositions(double cellWidth, double cellHeight) {
-    if (!_isAnimating || _previousPositions == null || _targetPositions == null) {
+    if (!_isAnimating ||
+        _previousPositions == null ||
+        _targetPositions == null) {
       // Return target positions if not animating
-      return _targetPositions?.map((pos) => Offset(
-        pos.x * cellWidth + cellWidth / 2,
-        pos.y * cellHeight + cellHeight / 2,
-      )).toList() ?? [];
+      return _targetPositions
+              ?.map(
+                (pos) => Offset(
+                  pos.x * cellWidth + cellWidth / 2,
+                  pos.y * cellHeight + cellHeight / 2,
+                ),
+              )
+              .toList() ??
+          [];
     }
 
     final interpolatedPositions = <Offset>[];
-    final maxLength = math.max(_previousPositions!.length, _targetPositions!.length);
+    final maxLength = math.max(
+      _previousPositions!.length,
+      _targetPositions!.length,
+    );
 
     for (int i = 0; i < maxLength; i++) {
       late Position fromPos, toPos;
-      
+
       // Handle cases where snake grows or shrinks
       if (i < _previousPositions!.length && i < _targetPositions!.length) {
         fromPos = _previousPositions![i];
@@ -135,13 +133,13 @@ class SmoothMovementController extends ChangeNotifier {
       // Perform interpolation
       final lerpedX = fromPos.x + (toPos.x - fromPos.x) * _progress;
       final lerpedY = fromPos.y + (toPos.y - fromPos.y) * _progress;
-      
+
       // Convert to screen coordinates
       final screenPos = Offset(
         lerpedX * cellWidth + cellWidth / 2,
         lerpedY * cellHeight + cellHeight / 2,
       );
-      
+
       interpolatedPositions.add(screenPos);
     }
 
@@ -151,8 +149,10 @@ class SmoothMovementController extends ChangeNotifier {
   // Get interpolated position for a single segment (useful for head tracking)
   Offset? getInterpolatedHeadPosition(double cellWidth, double cellHeight) {
     if (_targetPositions == null || _targetPositions!.isEmpty) return null;
-    
-    if (!_isAnimating || _previousPositions == null || _previousPositions!.isEmpty) {
+
+    if (!_isAnimating ||
+        _previousPositions == null ||
+        _previousPositions!.isEmpty) {
       final headPos = _targetPositions!.first;
       return Offset(
         headPos.x * cellWidth + cellWidth / 2,
@@ -162,10 +162,10 @@ class SmoothMovementController extends ChangeNotifier {
 
     final fromPos = _previousPositions!.first;
     final toPos = _targetPositions!.first;
-    
+
     final lerpedX = fromPos.x + (toPos.x - fromPos.x) * _progress;
     final lerpedY = fromPos.y + (toPos.y - fromPos.y) * _progress;
-    
+
     return Offset(
       lerpedX * cellWidth + cellWidth / 2,
       lerpedY * cellHeight + cellHeight / 2,
@@ -191,7 +191,7 @@ class SmoothFoodController extends ChangeNotifier {
   late AnimationController _idleController;
   late Animation<double> _popAnimation;
   late Animation<double> _idleAnimation;
-  
+
   bool _isVisible = false;
   Offset? _position;
 
@@ -281,10 +281,15 @@ class SmoothSnakePainter extends CustomPainter {
     _drawHead(canvas, positions.first);
   }
 
-  void _drawBodySegment(Canvas canvas, Offset position, int index, int totalLength) {
+  void _drawBodySegment(
+    Canvas canvas,
+    Offset position,
+    int index,
+    int totalLength,
+  ) {
     final fadeFactor = (totalLength - index) / totalLength;
     final segmentSize = bodySize * (0.7 + 0.3 * fadeFactor);
-    
+
     final paint = Paint()
       ..color = bodyColor.withValues(alpha: 0.6 + 0.4 * fadeFactor)
       ..isAntiAlias = true;
@@ -331,10 +336,7 @@ class SmoothSnakePainter extends CustomPainter {
 
     // Draw head gradient
     final gradient = RadialGradient(
-      colors: [
-        headColor,
-        headColor.withValues(alpha: 0.8),
-      ],
+      colors: [headColor, headColor.withValues(alpha: 0.8)],
       stops: const [0.0, 1.0],
     );
 
@@ -435,8 +437,8 @@ class SmoothSnakePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant SmoothSnakePainter oldDelegate) {
     return positions.length != oldDelegate.positions.length ||
-           positions.any((pos) => !oldDelegate.positions.contains(pos)) ||
-           currentDirection != oldDelegate.currentDirection;
+        positions.any((pos) => !oldDelegate.positions.contains(pos)) ||
+        currentDirection != oldDelegate.currentDirection;
   }
 }
 
@@ -480,10 +482,8 @@ class _SmoothGameRendererState extends State<SmoothGameRenderer> {
 
   @override
   Widget build(BuildContext context) {
-    final interpolatedPositions = widget.movementController.getInterpolatedPositions(
-      widget.cellWidth,
-      widget.cellHeight,
-    );
+    final interpolatedPositions = widget.movementController
+        .getInterpolatedPositions(widget.cellWidth, widget.cellHeight);
 
     return CustomPaint(
       painter: SmoothSnakePainter(

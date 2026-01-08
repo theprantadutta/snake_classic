@@ -28,7 +28,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       // Load saved settings (now synced)
       final highScore = await _storageService.getHighScore();
       final savedBoardSize = await _storageService.getBoardSize();
-      final crashFeedbackDuration = await _storageService.getCrashFeedbackDuration();
+      final crashFeedbackDuration = await _storageService
+          .getCrashFeedbackDuration();
       final dPadEnabled = await _storageService.isDPadEnabled();
       final dPadPosition = await _storageService.getDPadPosition();
       final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
@@ -36,15 +37,17 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       // Convert saved board size to BoardSize object
       final boardSize = _convertToBoardSize(savedBoardSize);
 
-      emit(state.copyWith(
-        status: GameSettingsStatus.ready,
-        highScore: highScore,
-        boardSize: boardSize,
-        crashFeedbackDuration: crashFeedbackDuration,
-        dPadEnabled: dPadEnabled,
-        dPadPosition: dPadPosition,
-        screenShakeEnabled: screenShakeEnabled,
-      ));
+      emit(
+        state.copyWith(
+          status: GameSettingsStatus.ready,
+          highScore: highScore,
+          boardSize: boardSize,
+          crashFeedbackDuration: crashFeedbackDuration,
+          dPadEnabled: dPadEnabled,
+          dPadPosition: dPadPosition,
+          screenShakeEnabled: screenShakeEnabled,
+        ),
+      );
 
       AppLogger.info('GameSettingsCubit initialized. High score: $highScore');
     } catch (e) {
@@ -98,7 +101,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
   }
 
   /// Alias for setDPadPosition
-  Future<void> updateDPadPosition(DPadPosition position) => setDPadPosition(position);
+  Future<void> updateDPadPosition(DPadPosition position) =>
+      setDPadPosition(position);
 
   /// Update board size
   Future<void> setBoardSize(BoardSize size) async {
@@ -120,7 +124,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
   }
 
   /// Alias for setCrashFeedbackDuration
-  Future<void> updateCrashFeedbackDuration(Duration duration) => setCrashFeedbackDuration(duration);
+  Future<void> updateCrashFeedbackDuration(Duration duration) =>
+      setCrashFeedbackDuration(duration);
 
   /// Update high score if new score is higher
   Future<bool> updateHighScore(int newScore) async {

@@ -7,36 +7,36 @@ class GameStatistics {
   final int highScore;
   final int totalGameTime; // in seconds
   final int averageGameTime; // in seconds
-  
+
   // Food consumption stats
   final int totalFoodConsumed;
   final Map<String, int> foodTypeCount; // normal, bonus, special
   final int totalFoodPoints;
-  
+
   // Power-up statistics
   final int totalPowerUpsCollected;
   final Map<String, int> powerUpTypeCount; // speedBoost, invincibility, etc.
   final int totalPowerUpTime; // total time with active power-ups (seconds)
-  
+
   // Survival and performance metrics
   final int longestSurvivalTime; // in seconds
   final int highestLevel;
   final int totalLevelsGained;
   final double averageScore;
   final double survivalRate; // percentage of games that lasted > 30 seconds
-  
+
   // Collision statistics
   final int wallCollisions;
   final int selfCollisions;
   final int totalCollisions;
   final double collisionRate; // collisions per game
-  
+
   // Streak and consistency metrics
   final int currentWinStreak; // games without dying quickly (>30s)
   final int longestWinStreak;
   final int gamesWithoutWallHit;
   final int perfectGames; // games with no collisions
-  
+
   // Session and time-based stats
   final int totalSessions;
   final int averageGamesPerSession;
@@ -44,7 +44,7 @@ class GameStatistics {
   final DateTime? firstPlayedDate;
   final List<int> recentScores; // last 10 scores
   final Map<String, int> dailyPlayTime; // date -> seconds played
-  
+
   // Achievement progress
   final int achievementsUnlocked;
   final int totalAchievements;
@@ -99,7 +99,9 @@ class GameStatistics {
   }
 
   double get averagePowerUpsPerGame {
-    return totalGamesPlayed > 0 ? totalPowerUpsCollected / totalGamesPlayed : 0.0;
+    return totalGamesPlayed > 0
+        ? totalPowerUpsCollected / totalGamesPlayed
+        : 0.0;
   }
 
   double get averagePointsPerFood {
@@ -120,7 +122,7 @@ class GameStatistics {
 
   String get favoriteFood {
     if (foodTypeCount.isEmpty) return 'none';
-    
+
     final sortedFood = foodTypeCount.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return sortedFood.first.key;
@@ -128,7 +130,7 @@ class GameStatistics {
 
   String get favoritePowerUp {
     if (powerUpTypeCount.isEmpty) return 'none';
-    
+
     final sortedPowerUps = powerUpTypeCount.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return sortedPowerUps.first.key;
@@ -165,44 +167,48 @@ class GameStatistics {
     final newHighScore = score > highScore ? score : highScore;
     final newTotalGameTime = totalGameTime + gameTime;
     final newAverageGameTime = (newTotalGameTime / newTotalGames).round();
-    
+
     final newTotalFoodConsumed = totalFoodConsumed + foodConsumed;
     final newFoodTypeCount = Map<String, int>.from(foodTypeCount);
     foodTypes.forEach((key, value) {
       newFoodTypeCount[key] = (newFoodTypeCount[key] ?? 0) + value;
     });
-    
+
     final newTotalPowerUps = totalPowerUpsCollected + powerUpsCollected;
     final newPowerUpTypeCount = Map<String, int>.from(powerUpTypeCount);
     powerUpTypes.forEach((key, value) {
       newPowerUpTypeCount[key] = (newPowerUpTypeCount[key] ?? 0) + value;
     });
-    
+
     final newWallCollisions = hitWall ? wallCollisions + 1 : wallCollisions;
     final newSelfCollisions = hitSelf ? selfCollisions + 1 : selfCollisions;
     final newTotalCollisions = newWallCollisions + newSelfCollisions;
-    
+
     final survived30Seconds = gameTime >= 30;
     final newCurrentStreak = survived30Seconds ? currentWinStreak + 1 : 0;
-    final newLongestStreak = newCurrentStreak > longestWinStreak ? newCurrentStreak : longestWinStreak;
-    
+    final newLongestStreak = newCurrentStreak > longestWinStreak
+        ? newCurrentStreak
+        : longestWinStreak;
+
     final newGamesWithoutWallHit = hitWall ? 0 : gamesWithoutWallHit + 1;
     final newPerfectGames = isPerfectGame ? perfectGames + 1 : perfectGames;
-    
+
     final newRecentScores = [...recentScores, score];
     if (newRecentScores.length > 10) {
       newRecentScores.removeAt(0);
     }
-    
+
     final today = DateTime.now();
     final todayKey = '${today.year}-${today.month}-${today.day}';
     final newDailyPlayTime = Map<String, int>.from(dailyPlayTime);
     newDailyPlayTime[todayKey] = (newDailyPlayTime[todayKey] ?? 0) + gameTime;
-    
-    final survivedGames = recentScores.where((s) => s > 0).length + (survived30Seconds ? 1 : 0);
+
+    final survivedGames =
+        recentScores.where((s) => s > 0).length + (survived30Seconds ? 1 : 0);
     final newSurvivalRate = survivedGames / newTotalGames;
-    
-    final newAchievementsUnlocked = achievementsUnlocked + unlockedAchievements.length;
+
+    final newAchievementsUnlocked =
+        achievementsUnlocked + unlockedAchievements.length;
     final newAchievementProgress = newAchievementsUnlocked / totalAchievements;
 
     return GameStatistics(
@@ -217,7 +223,9 @@ class GameStatistics {
       totalPowerUpsCollected: newTotalPowerUps,
       powerUpTypeCount: newPowerUpTypeCount,
       totalPowerUpTime: totalPowerUpTime + powerUpTime,
-      longestSurvivalTime: gameTime > longestSurvivalTime ? gameTime : longestSurvivalTime,
+      longestSurvivalTime: gameTime > longestSurvivalTime
+          ? gameTime
+          : longestSurvivalTime,
       highestLevel: level > highestLevel ? level : highestLevel,
       totalLevelsGained: totalLevelsGained + (level - 1),
       averageScore: newTotalScore / newTotalGames,
@@ -231,7 +239,9 @@ class GameStatistics {
       gamesWithoutWallHit: newGamesWithoutWallHit,
       perfectGames: newPerfectGames,
       totalSessions: totalSessions,
-      averageGamesPerSession: totalSessions > 0 ? (newTotalGames / totalSessions).round() : newTotalGames,
+      averageGamesPerSession: totalSessions > 0
+          ? (newTotalGames / totalSessions).round()
+          : newTotalGames,
       lastPlayedDate: today,
       firstPlayedDate: firstPlayedDate ?? today,
       recentScores: newRecentScores,
@@ -386,11 +396,11 @@ class GameStatistics {
       perfectGames: json['perfectGames'] ?? 0,
       totalSessions: json['totalSessions'] ?? 0,
       averageGamesPerSession: json['averageGamesPerSession'] ?? 0,
-      lastPlayedDate: json['lastPlayedDate'] != null 
-          ? DateTime.parse(json['lastPlayedDate']) 
+      lastPlayedDate: json['lastPlayedDate'] != null
+          ? DateTime.parse(json['lastPlayedDate'])
           : null,
-      firstPlayedDate: json['firstPlayedDate'] != null 
-          ? DateTime.parse(json['firstPlayedDate']) 
+      firstPlayedDate: json['firstPlayedDate'] != null
+          ? DateTime.parse(json['firstPlayedDate'])
           : null,
       recentScores: List<int>.from(json['recentScores'] ?? []),
       dailyPlayTime: Map<String, int>.from(json['dailyPlayTime'] ?? {}),
@@ -401,7 +411,7 @@ class GameStatistics {
   }
 
   String toJsonString() => jsonEncode(toJson());
-  
+
   factory GameStatistics.fromJsonString(String jsonString) {
     return GameStatistics.fromJson(jsonDecode(jsonString));
   }

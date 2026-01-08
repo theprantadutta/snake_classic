@@ -8,7 +8,8 @@ class ApiException implements Exception {
   ApiException(this.message, {this.statusCode});
 
   @override
-  String toString() => 'ApiException: $message${statusCode != null ? ' (status: $statusCode)' : ''}';
+  String toString() =>
+      'ApiException: $message${statusCode != null ? ' (status: $statusCode)' : ''}';
 }
 
 /// Data source for remote API operations
@@ -27,7 +28,9 @@ class ApiDataSource {
   String? get currentUserId => _apiService.currentUserId;
 
   /// Authenticate with Firebase token
-  Future<Map<String, dynamic>> authenticateWithFirebase(String firebaseIdToken) async {
+  Future<Map<String, dynamic>> authenticateWithFirebase(
+    String firebaseIdToken,
+  ) async {
     final result = await _apiService.authenticateWithFirebase(firebaseIdToken);
     if (result == null) {
       throw ApiException('Authentication failed');
@@ -93,7 +96,10 @@ class ApiDataSource {
   }
 
   /// Search users
-  Future<List<Map<String, dynamic>>> searchUsers(String query, {int limit = 20}) async {
+  Future<List<Map<String, dynamic>>> searchUsers(
+    String query, {
+    int limit = 20,
+  }) async {
     final result = await _apiService.searchUsers(query, limit: limit);
     if (result == null) {
       throw ApiException('Failed to search users');
@@ -131,7 +137,9 @@ class ApiDataSource {
   }
 
   /// Submit multiple scores in batch (for offline sync)
-  Future<Map<String, dynamic>> submitScoresBatch(List<Map<String, dynamic>> scores) async {
+  Future<Map<String, dynamic>> submitScoresBatch(
+    List<Map<String, dynamic>> scores,
+  ) async {
     final result = await _apiService.submitScoresBatch(scores);
     if (result == null) {
       throw ApiException('Failed to submit scores batch');
@@ -530,7 +538,10 @@ class ApiDataSource {
     required int level,
     required String tier,
   }) async {
-    final result = await _apiService.claimBattlePassReward(level: level, tier: tier);
+    final result = await _apiService.claimBattlePassReward(
+      level: level,
+      tier: tier,
+    );
     if (result == null) {
       throw ApiException('Failed to claim battle pass reward');
     }
@@ -544,7 +555,10 @@ class ApiDataSource {
     required String fcmToken,
     String platform = 'flutter',
   }) async {
-    return await _apiService.registerFcmToken(fcmToken: fcmToken, platform: platform);
+    return await _apiService.registerFcmToken(
+      fcmToken: fcmToken,
+      platform: platform,
+    );
   }
 
   /// Subscribe to notification topic

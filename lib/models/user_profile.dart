@@ -4,7 +4,7 @@ enum UserStatus {
   online,
   offline,
   playing;
-  
+
   String get displayName {
     switch (this) {
       case UserStatus.online:
@@ -15,7 +15,7 @@ enum UserStatus {
         return 'Playing';
     }
   }
-  
+
   String get emoji {
     switch (this) {
       case UserStatus.online:
@@ -133,14 +133,21 @@ class UserProfile {
     return UserProfile(
       uid: json['uid'] ?? '',
       displayName: json['displayName'] ?? '',
-      username: json['username'] ?? json['displayName'] ?? 'Player', // Fallback to displayName for existing users
+      username:
+          json['username'] ??
+          json['displayName'] ??
+          'Player', // Fallback to displayName for existing users
       email: json['email'] ?? '',
       photoUrl: json['photoUrl'],
       highScore: json['highScore'] ?? 0,
       totalGamesPlayed: json['totalGamesPlayed'] ?? 0,
       level: json['level'] ?? 1,
-      joinedDate: DateTime.parse(json['joinedDate'] ?? DateTime.now().toIso8601String()),
-      lastSeen: DateTime.parse(json['lastSeen'] ?? DateTime.now().toIso8601String()),
+      joinedDate: DateTime.parse(
+        json['joinedDate'] ?? DateTime.now().toIso8601String(),
+      ),
+      lastSeen: DateTime.parse(
+        json['lastSeen'] ?? DateTime.now().toIso8601String(),
+      ),
       status: UserStatus.values.firstWhere(
         (status) => status.name == json['status'],
         orElse: () => UserStatus.offline,
@@ -164,11 +171,11 @@ class UserProfile {
   bool isFriend(String userId) => friends.contains(userId);
   bool hasSentRequestTo(String userId) => sentRequests.contains(userId);
   bool hasRequestFrom(String userId) => friendRequests.contains(userId);
-  
+
   String get formattedJoinDate {
     final now = DateTime.now();
     final difference = now.difference(joinedDate);
-    
+
     if (difference.inDays > 365) {
       final years = (difference.inDays / 365).floor();
       return '${years}y ago';
@@ -183,14 +190,14 @@ class UserProfile {
       return 'Just now';
     }
   }
-  
+
   String get formattedLastSeen {
     final now = DateTime.now();
     final difference = now.difference(lastSeen);
-    
+
     if (status == UserStatus.online) return 'Online now';
     if (status == UserStatus.playing) return 'Playing now';
-    
+
     if (difference.inDays > 0) {
       return 'Last seen ${difference.inDays}d ago';
     } else if (difference.inHours > 0) {
@@ -201,15 +208,12 @@ class UserProfile {
       return 'Last seen just now';
     }
   }
-  
+
   int get friendsCount => friends.length;
   int get pendingRequestsCount => friendRequests.length;
 }
 
-enum FriendRequestType {
-  sent,
-  received,
-}
+enum FriendRequestType { sent, received }
 
 class FriendRequest {
   final String id;
@@ -244,7 +248,10 @@ class FriendRequest {
     };
   }
 
-  factory FriendRequest.fromJson(Map<String, dynamic> json, FriendRequestType type) {
+  factory FriendRequest.fromJson(
+    Map<String, dynamic> json,
+    FriendRequestType type,
+  ) {
     return FriendRequest(
       id: json['id'] ?? '',
       fromUserId: json['fromUserId'] ?? '',
@@ -252,7 +259,9 @@ class FriendRequest {
       fromUserName: json['fromUserName'] ?? '',
       toUserName: json['toUserName'] ?? '',
       fromUserPhotoUrl: json['fromUserPhotoUrl'],
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
       type: type,
     );
   }
@@ -260,7 +269,7 @@ class FriendRequest {
   String get formattedDate {
     final now = DateTime.now();
     final difference = now.difference(createdAt);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays}d ago';
     } else if (difference.inHours > 0) {

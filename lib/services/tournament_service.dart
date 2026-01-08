@@ -45,12 +45,13 @@ class TournamentService {
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
       // Try to get stale cached data as fallback
-      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
-        _activeTournamentsKey,
-        (data) => List<Map<String, dynamic>>.from(
-          (data as List).map((e) => Map<String, dynamic>.from(e)),
-        ),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<List<Map<String, dynamic>>>(
+            _activeTournamentsKey,
+            (data) => List<Map<String, dynamic>>.from(
+              (data as List).map((e) => Map<String, dynamic>.from(e)),
+            ),
+          );
       return fallback?.map((data) => _mapToTournament(data)).toList() ?? [];
     }
 
@@ -64,7 +65,9 @@ class TournamentService {
 
       if (response == null || response['tournaments'] == null) return [];
 
-      final tournaments = List<Map<String, dynamic>>.from(response['tournaments']);
+      final tournaments = List<Map<String, dynamic>>.from(
+        response['tournaments'],
+      );
 
       // Cache the raw data
       await _cacheService.setCache<List<Map<String, dynamic>>>(
@@ -110,12 +113,13 @@ class TournamentService {
 
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
-        _tournamentHistoryKey,
-        (data) => List<Map<String, dynamic>>.from(
-          (data as List).map((e) => Map<String, dynamic>.from(e)),
-        ),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<List<Map<String, dynamic>>>(
+            _tournamentHistoryKey,
+            (data) => List<Map<String, dynamic>>.from(
+              (data as List).map((e) => Map<String, dynamic>.from(e)),
+            ),
+          );
       return fallback?.map((data) => _mapToTournament(data)).toList() ?? [];
     }
 
@@ -132,7 +136,9 @@ class TournamentService {
 
       if (response == null || response['tournaments'] == null) return [];
 
-      final tournaments = List<Map<String, dynamic>>.from(response['tournaments']);
+      final tournaments = List<Map<String, dynamic>>.from(
+        response['tournaments'],
+      );
 
       await _cacheService.setCache<List<Map<String, dynamic>>>(
         _tournamentHistoryKey,
@@ -178,10 +184,11 @@ class TournamentService {
 
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<Map<String, dynamic>>(
-        cacheKey,
-        (data) => Map<String, dynamic>.from(data as Map),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<Map<String, dynamic>>(
+            cacheKey,
+            (data) => Map<String, dynamic>.from(data as Map),
+          );
       return fallback != null ? _mapToTournament(fallback) : null;
     }
 
@@ -246,7 +253,11 @@ class TournamentService {
   }
 
   /// Submit score to tournament (offline-first: queues for background sync)
-  Future<bool> submitScore(String tournamentId, int score, Map<String, dynamic> gameStats) async {
+  Future<bool> submitScore(
+    String tournamentId,
+    int score,
+    Map<String, dynamic> gameStats,
+  ) async {
     // Offline-first: Queue the score submission for background sync
     // This allows the user to continue playing without waiting for the API
     _dataSyncService.queueSync(
@@ -257,7 +268,8 @@ class TournamentService {
         'gameDuration': gameStats['duration'] ?? 0,
         'foodsEaten': gameStats['foodsEaten'] ?? 0,
         'playedAt': DateTime.now().toIso8601String(),
-        'idempotencyKey': '${tournamentId}_${DateTime.now().millisecondsSinceEpoch}_$score',
+        'idempotencyKey':
+            '${tournamentId}_${DateTime.now().millisecondsSinceEpoch}_$score',
       },
       priority: SyncPriority.critical, // Tournament scores are critical
     );
@@ -270,7 +282,10 @@ class TournamentService {
   }
 
   /// Get tournament leaderboard with caching
-  Future<List<TournamentParticipant>> getTournamentLeaderboard(String tournamentId, {int limit = 50}) async {
+  Future<List<TournamentParticipant>> getTournamentLeaderboard(
+    String tournamentId, {
+    int limit = 50,
+  }) async {
     final cacheKey = 'tournament_leaderboard_$tournamentId';
 
     // 1. Try to get cached data first
@@ -290,12 +305,13 @@ class TournamentService {
 
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
-      final fallback = await _cacheService.getCachedFallback<List<Map<String, dynamic>>>(
-        cacheKey,
-        (data) => List<Map<String, dynamic>>.from(
-          (data as List).map((e) => Map<String, dynamic>.from(e)),
-        ),
-      );
+      final fallback = await _cacheService
+          .getCachedFallback<List<Map<String, dynamic>>>(
+            cacheKey,
+            (data) => List<Map<String, dynamic>>.from(
+              (data as List).map((e) => Map<String, dynamic>.from(e)),
+            ),
+          );
       return fallback?.map((data) => _mapToParticipant(data)).toList() ?? [];
     }
 
@@ -303,7 +319,10 @@ class TournamentService {
     return await _fetchAndCacheTournamentLeaderboard(tournamentId, limit);
   }
 
-  Future<List<TournamentParticipant>> _fetchAndCacheTournamentLeaderboard(String tournamentId, int limit) async {
+  Future<List<TournamentParticipant>> _fetchAndCacheTournamentLeaderboard(
+    String tournamentId,
+    int limit,
+  ) async {
     try {
       final response = await _apiService.getTournamentLeaderboard(
         tournamentId,
@@ -330,7 +349,10 @@ class TournamentService {
     }
   }
 
-  void _refreshTournamentLeaderboardInBackground(String tournamentId, int limit) {
+  void _refreshTournamentLeaderboardInBackground(
+    String tournamentId,
+    int limit,
+  ) {
     _fetchAndCacheTournamentLeaderboard(tournamentId, limit).catchError((e) {
       if (kDebugMode) {
         print('Background refresh failed: $e');
@@ -373,13 +395,17 @@ class TournamentService {
 
   // Stream tournaments for real-time updates (polling-based)
   Stream<List<Tournament>> watchActiveTournaments() {
-    return Stream.periodic(const Duration(seconds: 30), (_) => null)
-        .asyncMap((_) => getActiveTournaments())
-        .distinct();
+    return Stream.periodic(
+      const Duration(seconds: 30),
+      (_) => null,
+    ).asyncMap((_) => getActiveTournaments()).distinct();
   }
 
   // Stream tournament leaderboard for real-time updates (polling-based)
-  Stream<List<TournamentParticipant>> watchTournamentLeaderboard(String tournamentId, {int limit = 50}) {
+  Stream<List<TournamentParticipant>> watchTournamentLeaderboard(
+    String tournamentId, {
+    int limit = 50,
+  }) {
     return Stream.periodic(const Duration(seconds: 10), (_) => null)
         .asyncMap((_) => getTournamentLeaderboard(tournamentId, limit: limit))
         .distinct();
@@ -415,8 +441,10 @@ class TournamentService {
       gameMode: _parseTournamentGameMode(data['game_mode'] ?? data['gameMode']),
       startDate: _parseDateTime(data['start_date'] ?? data['startDate']),
       endDate: _parseDateTime(data['end_date'] ?? data['endDate']),
-      maxParticipants: data['max_participants'] ?? data['maxParticipants'] ?? 100,
-      currentParticipants: data['current_participants'] ?? data['currentParticipants'] ?? 0,
+      maxParticipants:
+          data['max_participants'] ?? data['maxParticipants'] ?? 100,
+      currentParticipants:
+          data['current_participants'] ?? data['currentParticipants'] ?? 0,
       rewards: rewards,
       userBestScore: data['user_best_score'] ?? data['userBestScore'],
       userAttempts: data['user_attempts'] ?? data['userAttempts'],
@@ -429,10 +457,15 @@ class TournamentService {
       userId: data['user_id'] ?? data['userId'] ?? '',
       displayName: data['display_name'] ?? data['displayName'] ?? 'Anonymous',
       photoUrl: data['photo_url'] ?? data['photoUrl'],
-      highScore: data['high_score'] ?? data['highScore'] ?? data['best_score'] ?? 0,
+      highScore:
+          data['high_score'] ?? data['highScore'] ?? data['best_score'] ?? 0,
       attempts: data['attempts'] ?? data['games_played'] ?? 0,
-      joinedDate: _parseDateTime(data['joined_date'] ?? data['joinedDate'] ?? data['joined_at']),
-      lastScoreDate: _parseDateTime(data['last_score_date'] ?? data['lastScoreDate'] ?? data['updated_at']),
+      joinedDate: _parseDateTime(
+        data['joined_date'] ?? data['joinedDate'] ?? data['joined_at'],
+      ),
+      lastScoreDate: _parseDateTime(
+        data['last_score_date'] ?? data['lastScoreDate'] ?? data['updated_at'],
+      ),
     );
   }
 

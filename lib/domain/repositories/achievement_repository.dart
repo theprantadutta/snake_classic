@@ -20,18 +20,20 @@ class UserAchievementProgress {
     final achievementsJson = json['achievements'] as List<dynamic>? ?? [];
     return UserAchievementProgress(
       userId: json['user_id'] ?? json['userId'] ?? '',
-      achievements: achievementsJson.map((e) => Achievement.fromJson(e)).toList(),
+      achievements: achievementsJson
+          .map((e) => Achievement.fromJson(e))
+          .toList(),
       totalPoints: json['total_points'] ?? json['totalPoints'] ?? 0,
       unlockedCount: json['unlocked_count'] ?? json['unlockedCount'] ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'user_id': userId,
-        'achievements': achievements.map((e) => e.toJson()).toList(),
-        'total_points': totalPoints,
-        'unlocked_count': unlockedCount,
-      };
+    'user_id': userId,
+    'achievements': achievements.map((e) => e.toJson()).toList(),
+    'total_points': totalPoints,
+    'unlocked_count': unlockedCount,
+  };
 }
 
 /// Abstract repository for achievement operations
