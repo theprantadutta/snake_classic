@@ -646,6 +646,7 @@ class NotificationService {
 }
 
 // Background message handler - must be top-level function
+@pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   AppLogger.info('📨 Background message received: ${message.messageId}');
 
