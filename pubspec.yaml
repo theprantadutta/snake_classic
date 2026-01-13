@@ -37,6 +37,9 @@ dependencies:
   
   # Animations and effects
   flutter_animate: ^4.5.0
+
+  # Custom fonts
+  google_fonts: ^6.2.1
   
   # Vector math for game calculations
   vector_math: ^2.1.4

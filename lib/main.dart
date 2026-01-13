@@ -24,6 +24,7 @@ import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/utils/typography.dart';
 // import 'package:snake_classic/utils/performance_monitor.dart'; // temporarily disabled
 import 'package:talker_flutter/talker_flutter.dart';
 
@@ -220,7 +221,9 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
                     themeState.currentTheme.backgroundColor,
                 visualDensity: VisualDensity.adaptivePlatformDensity,
                 useMaterial3: false,
-                fontFamily: 'monospace',
+                textTheme: GameTypography.createTextTheme(
+                  color: themeState.currentTheme.accentColor,
+                ),
               ),
               home: const LoadingScreen(),
             );

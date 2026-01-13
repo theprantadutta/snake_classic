@@ -2,10 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
-import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
@@ -22,8 +21,8 @@ import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/store_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
-import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -32,6 +31,7 @@ import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,6 +42,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _logoController;
+  late AnimationController _playButtonPulseController;
+  late Animation<double> _playButtonPulseAnimation;
   bool _dailyBonusChecked = false;
 
   @override
@@ -52,6 +54,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 1500), // Reduced duration
       vsync: this,
     );
+
+    // Play button pulse animation - subtle continuous pulse
+    _playButtonPulseController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    _playButtonPulseAnimation = Tween<double>(begin: 1.0, end: 1.04).animate(
+      CurvedAnimation(
+        parent: _playButtonPulseController,
+        curve: Curves.easeInOut,
+      ),
+    );
+    _playButtonPulseController.repeat(reverse: true);
 
     // Theme transitions are handled by ThemeTransitionWidget directly
 
@@ -123,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _logoController.dispose();
+    _playButtonPulseController.dispose();
     super.dispose();
   }
 
@@ -338,11 +354,69 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
 
-        const Spacer(),
+        // Center: Coins display
+        Expanded(
+          child: Center(
+            child: BlocBuilder<CoinsCubit, CoinsState>(
+              builder: (context, coinsState) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const StoreScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 10 : 14,
+                      vertical: isSmallScreen ? 6 : 8,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.amber.withValues(alpha: 0.15),
+                          Colors.orange.withValues(alpha: 0.08),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        isSmallScreen ? 16 : 20,
+                      ),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.monetization_on,
+                          color: Colors.amber,
+                          size: isSmallScreen ? 18 : 22,
+                        ),
+                        SizedBox(width: isSmallScreen ? 4 : 6),
+                        Text(
+                          _formatCoins(coinsState.total),
+                          style: TextStyle(
+                            color: Colors.amber,
+                            fontSize: isSmallScreen ? 14 : 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
 
-        // Settings and profile
+        // Right side: Help and Profile
         Row(
           children: [
+            // Help button
             GestureDetector(
               onTap: () {
                 Navigator.of(context).push(
@@ -371,6 +445,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
             SizedBox(width: isSmallScreen ? 8 : 12),
 
+            // Profile button
             GestureDetector(
               onTap: () {
                 Navigator.of(context).push(
@@ -427,18 +502,45 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         horizontal: 16,
       ),
       child: Center(
-        child: Image.asset(
-          'assets/images/snake_classic_transparent.png',
-          width: logoSize,
-          height: logoSize,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(
-              Icons.games,
-              size: logoSize * 0.5,
-              color: theme.accentColor,
-            );
-          },
+        child: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: theme.accentColor.withValues(alpha: 0.3),
+                blurRadius: 30,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child:
+              Image.asset(
+                    'assets/images/snake_classic_transparent.png',
+                    width: logoSize,
+                    height: logoSize,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.games,
+                        size: logoSize * 0.5,
+                        color: theme.accentColor,
+                      );
+                    },
+                  )
+                  .animate(
+                    onPlay: (controller) => controller.repeat(reverse: true),
+                  )
+                  .shimmer(
+                    duration: 2500.ms,
+                    color: theme.accentColor.withValues(alpha: 0.25),
+                  )
+                  .animate()
+                  .fadeIn(duration: 600.ms)
+                  .scale(
+                    begin: const Offset(0.8, 0.8),
+                    end: const Offset(1.0, 1.0),
+                    duration: 600.ms,
+                    curve: Curves.easeOutBack,
+                  ),
         ),
       ),
     );
@@ -575,97 +677,106 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               context,
             ).push(MaterialPageRoute(builder: (context) => const GameScreen()));
           },
-          child: Container(
-            width: buttonSize,
-            height: buttonSize,
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                colors: [
-                  theme.accentColor,
-                  theme.foodColor,
-                  theme.accentColor.withValues(alpha: 0.8),
+          child: AnimatedBuilder(
+            animation: _playButtonPulseAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _playButtonPulseAnimation.value,
+                child: child,
+              );
+            },
+            child: Container(
+              width: buttonSize,
+              height: buttonSize,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    theme.accentColor,
+                    theme.foodColor,
+                    theme.accentColor.withValues(alpha: 0.8),
+                  ],
+                  stops: const [0.0, 0.6, 1.0],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.accentColor.withValues(alpha: 0.4),
+                    blurRadius: isSmallButton ? 20 : 30,
+                    spreadRadius: isSmallButton ? 3 : 5,
+                    offset: const Offset(0, 6),
+                  ),
+                  BoxShadow(
+                    color: theme.foodColor.withValues(alpha: 0.3),
+                    blurRadius: isSmallButton ? 30 : 50,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 10),
+                  ),
                 ],
-                stops: const [0.0, 0.6, 1.0],
               ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.4),
-                  blurRadius: isSmallButton ? 20 : 30,
-                  spreadRadius: isSmallButton ? 3 : 5,
-                  offset: const Offset(0, 6),
-                ),
-                BoxShadow(
-                  color: theme.foodColor.withValues(alpha: 0.3),
-                  blurRadius: isSmallButton ? 30 : 50,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Animated pulse ring
-                Container(
-                  width: buttonSize - (isSmallButton ? 8 : 10),
-                  height: buttonSize - (isSmallButton ? 8 : 10),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      width: isSmallButton ? 2 : 3,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Animated pulse ring
+                  Container(
+                    width: buttonSize - (isSmallButton ? 8 : 10),
+                    height: buttonSize - (isSmallButton ? 8 : 10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        width: isSmallButton ? 2 : 3,
+                      ),
                     ),
                   ),
-                ),
-                // Inner content
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.play_arrow_rounded,
-                      size: isSmallButton
-                          ? 60
-                          : buttonSize < 180
-                          ? 80
-                          : buttonSize < 220
-                          ? 100
-                          : 120,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          offset: const Offset(0, 3),
-                          blurRadius: 12,
-                          color: Colors.black.withValues(alpha: 0.4),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: isSmallButton ? 5 : 7),
-                    Text(
-                      'PLAY',
-                      style: TextStyle(
-                        fontSize: isSmallButton
-                            ? 14
+                  // Inner content
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.play_arrow_rounded,
+                        size: isSmallButton
+                            ? 60
                             : buttonSize < 180
-                            ? 18
+                            ? 80
                             : buttonSize < 220
-                            ? 22
-                            : 26,
-                        fontWeight: FontWeight.w900,
+                            ? 100
+                            : 120,
                         color: Colors.white,
-                        letterSpacing: 2,
                         shadows: [
                           Shadow(
-                            offset: const Offset(0, 2),
-                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                            blurRadius: 12,
                             color: Colors.black.withValues(alpha: 0.4),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      SizedBox(height: isSmallButton ? 5 : 7),
+                      Text(
+                        'PLAY',
+                        style: TextStyle(
+                          fontSize: isSmallButton
+                              ? 14
+                              : buttonSize < 180
+                              ? 18
+                              : buttonSize < 220
+                              ? 22
+                              : 26,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 2,
+                          shadows: [
+                            Shadow(
+                              offset: const Offset(0, 2),
+                              blurRadius: 6,
+                              color: Colors.black.withValues(alpha: 0.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -1024,8 +1135,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   badge: item.badge,
                 )
                 .animate()
-                .fadeIn(delay: (900 + (index * 100)).ms)
-                .slideY(begin: 0.5, duration: 400.ms);
+                .fadeIn(delay: (600 + (index * 80)).ms, duration: 300.ms)
+                .slideY(begin: 0.6, duration: 400.ms, curve: Curves.easeOutBack)
+                .scale(
+                  begin: const Offset(0.85, 0.85),
+                  end: const Offset(1.0, 1.0),
+                  duration: 350.ms,
+                  curve: Curves.easeOutBack,
+                );
           }).toList(),
         ),
 
@@ -1061,8 +1178,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       badge: item.badge,
                     )
                     .animate()
-                    .fadeIn(delay: (900 + (index * 100)).ms)
-                    .slideY(begin: 0.5, duration: 400.ms);
+                    .fadeIn(delay: (600 + (index * 80)).ms, duration: 300.ms)
+                    .slideY(
+                      begin: 0.6,
+                      duration: 400.ms,
+                      curve: Curves.easeOutBack,
+                    )
+                    .scale(
+                      begin: const Offset(0.85, 0.85),
+                      end: const Offset(1.0, 1.0),
+                      duration: 350.ms,
+                      curve: Curves.easeOutBack,
+                    );
               })
               .toList(),
         ),
@@ -1224,13 +1351,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 // Tagline
                 SizedBox(
                   width: double.infinity,
-                  child: Text(
-                    'The classic snake game, reimagined',
-                    textAlign: TextAlign.start,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
+                  child: Center(
+                    child: Text(
+                      'The classic snake game, reimagined',
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ),
                 ),
@@ -1267,7 +1396,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         'Relive the nostalgia of the iconic snake game with a modern twist. Challenge yourself across multiple game modes, unlock achievements, complete daily challenges, and climb the global leaderboard.',
@@ -1282,11 +1412,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          _buildFeatureChip('Multiple Modes', Icons.sports_esports, theme),
-                          _buildFeatureChip('Achievements', Icons.emoji_events, theme),
-                          _buildFeatureChip('Daily Challenges', Icons.today, theme),
-                          _buildFeatureChip('Leaderboards', Icons.leaderboard, theme),
-                          _buildFeatureChip('Customization', Icons.palette, theme),
+                          _buildFeatureChip(
+                            'Multiple Modes',
+                            Icons.sports_esports,
+                            theme,
+                          ),
+                          _buildFeatureChip(
+                            'Achievements',
+                            Icons.emoji_events,
+                            theme,
+                          ),
+                          _buildFeatureChip(
+                            'Daily Challenges',
+                            Icons.today,
+                            theme,
+                          ),
+                          _buildFeatureChip(
+                            'Leaderboards',
+                            Icons.leaderboard,
+                            theme,
+                          ),
+                          _buildFeatureChip(
+                            'Customization',
+                            Icons.palette,
+                            theme,
+                          ),
                         ],
                       ),
                     ],
@@ -1408,18 +1558,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: theme.accentColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: theme.accentColor.withValues(alpha: 0.8),
-          ),
+          Icon(icon, size: 14, color: theme.accentColor.withValues(alpha: 0.8)),
           const SizedBox(width: 4),
           Text(
             label,
@@ -1434,125 +1578,137 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _showComingSoonDialog(
-    BuildContext context,
-    GameTheme theme,
-    String featureName,
-  ) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: theme.backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(
-              color: Colors.green.withValues(alpha: 0.3),
-              width: 2,
-            ),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.construction, color: Colors.amber, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Coming Soon',
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.green.withValues(alpha: 0.1),
-                      Colors.teal.withValues(alpha: 0.05),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.green.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.group_work, size: 48, color: Colors.green),
-                    const SizedBox(height: 16),
-                    Text(
-                      featureName,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'We\'re working hard to bring you an amazing multiplayer experience!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(Icons.star, color: Colors.amber, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Stay tuned for updates!',
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.8),
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.green.withValues(alpha: 0.1),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
-                ),
-              ),
-              child: Text(
-                'Got it!',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  // void _showComingSoonDialog(
+  //   BuildContext context,
+  //   GameTheme theme,
+  //   String featureName,
+  // ) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         backgroundColor: theme.backgroundColor,
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(24),
+  //           side: BorderSide(
+  //             color: Colors.green.withValues(alpha: 0.3),
+  //             width: 2,
+  //           ),
+  //         ),
+  //         title: Row(
+  //           children: [
+  //             Icon(Icons.construction, color: Colors.amber, size: 28),
+  //             const SizedBox(width: 12),
+  //             Expanded(
+  //               child: Text(
+  //                 'Coming Soon',
+  //                 style: TextStyle(
+  //                   color: theme.accentColor,
+  //                   fontWeight: FontWeight.bold,
+  //                   fontSize: 20,
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.all(20),
+  //               decoration: BoxDecoration(
+  //                 gradient: LinearGradient(
+  //                   colors: [
+  //                     Colors.green.withValues(alpha: 0.1),
+  //                     Colors.teal.withValues(alpha: 0.05),
+  //                   ],
+  //                 ),
+  //                 borderRadius: BorderRadius.circular(16),
+  //                 border: Border.all(
+  //                   color: Colors.green.withValues(alpha: 0.3),
+  //                 ),
+  //               ),
+  //               child: Column(
+  //                 children: [
+  //                   Icon(Icons.group_work, size: 48, color: Colors.green),
+  //                   const SizedBox(height: 16),
+  //                   Text(
+  //                     featureName,
+  //                     style: TextStyle(
+  //                       color: theme.accentColor,
+  //                       fontWeight: FontWeight.bold,
+  //                       fontSize: 18,
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 8),
+  //                   Text(
+  //                     'We\'re working hard to bring you an amazing multiplayer experience!',
+  //                     textAlign: TextAlign.center,
+  //                     style: TextStyle(
+  //                       color: theme.accentColor.withValues(alpha: 0.7),
+  //                       fontSize: 14,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             const SizedBox(height: 16),
+  //             Row(
+  //               children: [
+  //                 Icon(Icons.star, color: Colors.amber, size: 16),
+  //                 const SizedBox(width: 8),
+  //                 Expanded(
+  //                   child: Text(
+  //                     'Stay tuned for updates!',
+  //                     style: TextStyle(
+  //                       color: theme.accentColor.withValues(alpha: 0.8),
+  //                       fontSize: 12,
+  //                       fontStyle: FontStyle.italic,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             style: TextButton.styleFrom(
+  //               backgroundColor: Colors.green.withValues(alpha: 0.1),
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 24,
+  //                 vertical: 12,
+  //               ),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(16),
+  //                 side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
+  //               ),
+  //             ),
+  //             child: Text(
+  //               'Got it!',
+  //               style: TextStyle(
+  //                 color: Colors.green,
+  //                 fontWeight: FontWeight.w600,
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
+  /// Format coin balance for display (e.g., 1.2K, 1.5M)
+  String _formatCoins(int coins) {
+    if (coins >= 1000000) {
+      final value = coins / 1000000;
+      return '${value.toStringAsFixed(value >= 10 ? 0 : 1)}M';
+    } else if (coins >= 1000) {
+      final value = coins / 1000;
+      return '${value.toStringAsFixed(value >= 10 ? 0 : 1)}K';
+    }
+    return '$coins';
   }
 
   double _getResponsiveNavButtonSize(double screenHeight) {

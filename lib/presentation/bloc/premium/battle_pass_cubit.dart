@@ -202,10 +202,22 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     if (_apiService.isAuthenticated) {
       final result = await _apiService.addBattlePassXP(xp: xp, source: source);
       if (result != null) {
+        // Check if no active season - this is not an error, just skip
+        final noActiveSeason = result['noActiveSeason'] == true ||
+            result['no_active_season'] == true;
+        if (noActiveSeason) {
+          AppLogger.info('No active battle pass season - XP not added');
+          return;
+        }
+
         // Update state from backend response
-        final newLevel = result['current_level'] ?? state.currentTier;
-        final newXp = result['current_xp'] ?? state.currentXP;
-        final xpToNext = result['xp_to_next_level'] ?? state.xpForNextTier;
+        final newLevel = result['newLevel'] ??
+            result['current_level'] ??
+            state.currentTier;
+        final newXp = result['newXp'] ?? result['current_xp'] ?? state.currentXP;
+        final xpToNext = result['xpToNextLevel'] ??
+            result['xp_to_next_level'] ??
+            state.xpForNextTier;
 
         emit(
           state.copyWith(

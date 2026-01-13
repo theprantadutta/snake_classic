@@ -488,8 +488,8 @@ class PowerUpBundle {
         PremiumPowerUpType.megaScoreMultiplier,
         PremiumPowerUpType.megaSlowMotion,
       ],
-      originalPrice: 11.96, // Individual prices would total this
-      bundlePrice: 6.99,
+      originalPrice: 1196, // 4 power-ups at ~299 coins each
+      bundlePrice: 699,
       icon: '⚡',
     ),
     PowerUpBundle(
@@ -502,8 +502,8 @@ class PowerUpBundle {
         PremiumPowerUpType.scoreShield,
         PremiumPowerUpType.ghostMode,
       ],
-      originalPrice: 15.96,
-      bundlePrice: 9.99,
+      originalPrice: 1596,
+      bundlePrice: 999,
       icon: '🎯',
     ),
     PowerUpBundle(
@@ -511,8 +511,8 @@ class PowerUpBundle {
       name: 'Ultimate Power Pack',
       description: 'Every premium power-up available',
       powerUps: PremiumPowerUpType.values,
-      originalPrice: 39.90, // Sum of all individual prices
-      bundlePrice: 19.99,
+      originalPrice: 3990, // Sum of all individual power-up prices
+      bundlePrice: 1999,
       icon: '👑',
     ),
   ];

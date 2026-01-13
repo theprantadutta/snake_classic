@@ -8,6 +8,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/cosmetics_screen.dart';
 import 'package:snake_classic/screens/battle_pass_screen.dart';
+import 'package:snake_classic/screens/store_screen.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/username_service.dart';
@@ -719,60 +720,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         // Board size selection buttons
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: GameConstants.availableBoardSizes.map((boardSize) {
-            final isSelected = _selectedBoardSize == boardSize;
-            final isCurrentlyPlaying = gameState.isPlaying;
+        BlocBuilder<PremiumCubit, PremiumState>(
+          builder: (context, premiumState) {
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: GameConstants.availableBoardSizes.map((boardSize) {
+                final isSelected = _selectedBoardSize == boardSize;
+                final isCurrentlyPlaying = gameState.isPlaying;
+                // Check if board is premium and user doesn't have premium
+                final isPremiumLocked =
+                    boardSize.isPremium && !premiumState.hasPremium;
 
-            return GestureDetector(
-              onTap: isCurrentlyPlaying
-                  ? null
-                  : () async {
-                      setState(() {
-                        _selectedBoardSize = boardSize;
-                      });
-                      await context.read<GameSettingsCubit>().updateBoardSize(
-                        boardSize,
-                      );
-                    },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.2)
-                      : Colors.transparent,
-                  border: Border.all(
-                    color: isSelected
-                        ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.3),
-                    width: isSelected ? 2 : 1,
+                return GestureDetector(
+                  onTap: isCurrentlyPlaying
+                      ? null
+                      : (isPremiumLocked
+                          ? () => _showPremiumBoardDialog(
+                              context, boardSize, theme)
+                          : () async {
+                              setState(() {
+                                _selectedBoardSize = boardSize;
+                              });
+                              await context
+                                  .read<GameSettingsCubit>()
+                                  .updateBoardSize(boardSize);
+                            }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isPremiumLocked
+                          ? Colors.purple.shade900.withValues(alpha: 0.15)
+                          : (isSelected
+                              ? theme.accentColor.withValues(alpha: 0.2)
+                              : Colors.transparent),
+                      border: Border.all(
+                        color: isPremiumLocked
+                            ? Colors.purple.shade400.withValues(alpha: 0.5)
+                            : (isSelected
+                                ? theme.accentColor
+                                : theme.accentColor.withValues(alpha: 0.3)),
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isPremiumLocked)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Icon(
+                              Icons.lock,
+                              size: 12,
+                              color: Colors.purple.shade400,
+                            ),
+                          ),
+                        Text(
+                          '${boardSize.name}\n${boardSize.width}×${boardSize.height}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isCurrentlyPlaying
+                                ? theme.accentColor.withValues(alpha: 0.5)
+                                : (isPremiumLocked
+                                    ? Colors.purple.shade300
+                                    : (isSelected
+                                        ? theme.accentColor
+                                        : Colors.white.withValues(alpha: 0.8))),
+                            fontSize: 11,
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${boardSize.name}\n${boardSize.width}×${boardSize.height}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isCurrentlyPlaying
-                        ? theme.accentColor.withValues(alpha: 0.5)
-                        : (isSelected
-                              ? theme.accentColor
-                              : Colors.white.withValues(alpha: 0.8)),
-                    fontSize: 11,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
+                );
+              }).toList(),
             );
-          }).toList(),
+          },
         ),
 
         if (gameState.isPlaying) ...[
@@ -1223,6 +1253,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         );
       },
+    );
+  }
+
+  void _showPremiumBoardDialog(
+    BuildContext context,
+    BoardSize boardSize,
+    GameTheme theme,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: Colors.purple.shade400.withValues(alpha: 0.5),
+          ),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.lock, color: Colors.purple.shade400),
+            const SizedBox(width: 8),
+            Text(
+              'Premium Board',
+              style: TextStyle(color: theme.accentColor),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${boardSize.name} (${boardSize.width}×${boardSize.height})',
+              style: TextStyle(
+                color: Colors.purple.shade300,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              boardSize.description,
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.7),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Get Premium to unlock all board sizes and more!',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.8),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StoreScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purple.shade600,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'View Premium',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

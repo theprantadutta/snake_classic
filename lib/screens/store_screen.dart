@@ -1361,25 +1361,14 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildBoardsTab(GameTheme theme, PremiumState premiumState) {
-    final boards = [
-      _BoardItem(
-        'Small',
-        '15x15',
-        'Perfect for quick games',
-        Icons.smartphone,
-        true,
-      ),
-      _BoardItem('Medium', '20x20', 'Balanced gameplay', Icons.tablet, true),
-      _BoardItem('Large', '25x25', 'Extended gameplay', Icons.computer, true),
-      _BoardItem('Huge', '35x35', 'Epic snake adventures', Icons.tv, false),
-      _BoardItem(
-        'Massive',
-        '50x50',
-        'Ultimate challenge',
-        Icons.desktop_windows,
-        false,
-      ),
-    ];
+    // Generate board items from GameConstants
+    final boards = GameConstants.availableBoardSizes.map((size) => _BoardItem(
+      size.name,
+      '${size.width}x${size.height}',
+      size.description,
+      _getBoardIcon(size.width),
+      !size.isPremium, // isFree = !isPremium
+    )).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -1394,11 +1383,29 @@ class _StoreScreenState extends State<StoreScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            'Unlock premium boards with a Premium subscription',
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.7),
+              fontSize: 14,
+            ),
+          ),
           const SizedBox(height: 16),
           ...boards.map((board) => _buildBoardCard(board, theme)),
         ],
       ),
     );
+  }
+
+  IconData _getBoardIcon(int width) {
+    if (width <= 15) return Icons.smartphone;
+    if (width <= 20) return Icons.tablet;
+    if (width <= 25) return Icons.computer;
+    if (width <= 30) return Icons.laptop;
+    if (width <= 35) return Icons.tv;
+    if (width <= 40) return Icons.desktop_windows;
+    return Icons.monitor;
   }
 
   Widget _buildBoardCard(_BoardItem board, GameTheme theme) {

@@ -27,6 +27,10 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen>
     with WidgetsBindingObserver, TickerProviderStateMixin {
+  // D-Pad area dimensions
+  static const double _dpadAreaHeight = 160.0; // 140px D-Pad + 20px padding
+  static const double _dpadSize = 140.0;
+
   Direction? _lastSwipeDirection;
   late AnimationController _gestureIndicatorController;
   late GameJuiceController _juiceController;
@@ -222,6 +226,7 @@ class _GameScreenState extends State<GameScreen>
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop(); // Close dialog
+              gameCubit.resetGame(); // Reset game state before exiting
               Navigator.of(context).pop(); // Exit game
             },
             child: Text('Exit', style: TextStyle(color: theme.foodColor)),
@@ -496,45 +501,199 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  /// Builds the D-Pad control positioned according to user preference
-  Widget _buildPositionedDPad(DPadPosition position, GameTheme theme) {
-    double? left;
-    double? right;
+  /// Builds game board with corner stats overlay (for D-Pad enabled mode)
+  Widget _buildGameBoardWithCornerStats(
+    GameState gameState,
+    GameCubitState gameCubitState,
+    GameTheme theme,
+    bool isSmallScreen,
+  ) {
+    return Stack(
+      children: [
+        // Game board container
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: isSmallScreen ? 8 : 12,
+          ),
+          child: LayoutBuilder(
+            builder: (context, boardConstraints) {
+              // Calculate optimal board size (slightly smaller to account for corner badges)
+              final availableSize = math.min(
+                boardConstraints.maxWidth,
+                boardConstraints.maxHeight,
+              );
 
-    switch (position) {
-      case DPadPosition.bottomLeft:
-        left = 20;
-        right = null;
-        break;
-      case DPadPosition.bottomCenter:
-        left = 0;
-        right = 0;
-        break;
-      case DPadPosition.bottomRight:
-        left = null;
-        right = 20;
-        break;
-    }
+              // Track board size for score popups
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _boardSize = Size(availableSize, availableSize);
+                }
+              });
 
-    return Positioned(
-      bottom: 100,
-      left: left,
-      right: right,
-      child: position == DPadPosition.bottomCenter
-          ? Center(
-              child: DPadControls(
-                onDirection: _handleSwipe,
-                theme: theme,
-                opacity: 0.6,
-                size: 140,
+              return Center(
+                child: Builder(
+                  builder: (boardContext) {
+                    // Track board offset after layout
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        final box = boardContext.findRenderObject() as RenderBox?;
+                        if (box != null) {
+                          _boardOffset = box.localToGlobal(Offset.zero);
+                        }
+                      }
+                    });
+
+                    return SizedBox(
+                      width: availableSize,
+                      height: availableSize,
+                      child: GameBoard(
+                        gameState: gameState,
+                        isTournamentMode: gameCubitState.isTournamentMode,
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+
+        // Corner stats overlay
+        _buildCornerStats(gameState, theme, isSmallScreen),
+      ],
+    );
+  }
+
+  /// Builds corner stats overlay (Length and Speed badges)
+  Widget _buildCornerStats(
+    GameState gameState,
+    GameTheme theme,
+    bool isSmallScreen,
+  ) {
+    return Positioned.fill(
+      child: Padding(
+        padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+        child: Stack(
+          children: [
+            // Bottom-left: Length
+            Positioned(
+              left: 0,
+              bottom: 0,
+              child: _buildCornerStatBadge(
+                'Length',
+                '${gameState.snake.length}',
+                Icons.straighten,
+                theme,
+                isSmallScreen,
               ),
-            )
-          : DPadControls(
-              onDirection: _handleSwipe,
-              theme: theme,
-              opacity: 0.6,
-              size: 140,
             ),
+            // Bottom-right: Speed
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: _buildCornerStatBadge(
+                'Speed',
+                _getSpeedLabel(gameState.gameSpeed),
+                _getSpeedIcon(gameState.gameSpeed),
+                theme,
+                isSmallScreen,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a compact stat badge for corner display
+  Widget _buildCornerStatBadge(
+    String label,
+    String value,
+    IconData icon,
+    GameTheme theme,
+    bool isSmallScreen,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 8 : 10,
+        vertical: isSmallScreen ? 4 : 6,
+      ),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.85),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: theme.accentColor.withValues(alpha: 0.8),
+            size: isSmallScreen ? 12 : 14,
+          ),
+          SizedBox(width: isSmallScreen ? 4 : 6),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: isSmallScreen ? 11 : 13,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.6),
+                  fontSize: isSmallScreen ? 8 : 9,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the dedicated D-Pad area at the bottom of the screen
+  Widget _buildDPadArea(DPadPosition position, GameTheme theme) {
+    return Container(
+      height: _dpadAreaHeight,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: _buildDPadControl(position, theme),
+    );
+  }
+
+  /// Builds the D-Pad control aligned according to user preference
+  Widget _buildDPadControl(DPadPosition position, GameTheme theme) {
+    return Align(
+      alignment: switch (position) {
+        DPadPosition.bottomLeft => Alignment.centerLeft,
+        DPadPosition.bottomCenter => Alignment.center,
+        DPadPosition.bottomRight => Alignment.centerRight,
+      },
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: position == DPadPosition.bottomCenter ? 0 : 20,
+        ),
+        child: DPadControls(
+          onDirection: _handleSwipe,
+          theme: theme,
+          opacity: 0.7, // Slightly more visible since not overlapping
+          size: _dpadSize,
+        ),
+      ),
     );
   }
 
@@ -663,94 +822,95 @@ class _GameScreenState extends State<GameScreen>
                                             isSmallScreen,
                                           ),
 
-                                          // Game Board
+                                          // Game Board - conditionally with corner stats or standard layout
                                           Expanded(
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: isSmallScreen
-                                                    ? 8
-                                                    : 12,
-                                              ),
-                                              child: LayoutBuilder(
-                                                builder: (context, boardConstraints) {
-                                                  // Calculate optimal board size
-                                                  final availableSize = math.min(
-                                                    boardConstraints.maxWidth,
-                                                    boardConstraints.maxHeight -
-                                                        (isSmallScreen
-                                                            ? 40
-                                                            : 60), // Reserve space for info
-                                                  );
+                                            child: settingsState.dPadEnabled
+                                                ? _buildGameBoardWithCornerStats(
+                                                    gameState,
+                                                    gameCubitState,
+                                                    theme,
+                                                    isSmallScreen,
+                                                  )
+                                                : Container(
+                                                    padding: EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: isSmallScreen ? 8 : 12,
+                                                    ),
+                                                    child: LayoutBuilder(
+                                                      builder: (context, boardConstraints) {
+                                                        // Calculate optimal board size
+                                                        final availableSize = math.min(
+                                                          boardConstraints.maxWidth,
+                                                          boardConstraints.maxHeight -
+                                                              (isSmallScreen ? 40 : 60),
+                                                        );
 
-                                                  // Track board size for score popups
-                                                  WidgetsBinding.instance
-                                                      .addPostFrameCallback((
-                                                        _,
-                                                      ) {
-                                                        if (mounted) {
-                                                          _boardSize = Size(
-                                                            availableSize,
-                                                            availableSize,
-                                                          );
-                                                        }
-                                                      });
+                                                        // Track board size for score popups
+                                                        WidgetsBinding.instance
+                                                            .addPostFrameCallback((_) {
+                                                          if (mounted) {
+                                                            _boardSize = Size(
+                                                              availableSize,
+                                                              availableSize,
+                                                            );
+                                                          }
+                                                        });
 
-                                                  return Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      // Game Board with GlobalKey for position tracking
-                                                      Builder(
-                                                        builder: (boardContext) {
-                                                          // Track board offset after layout
-                                                          WidgetsBinding.instance.addPostFrameCallback((
-                                                            _,
-                                                          ) {
-                                                            if (mounted) {
-                                                              final box =
-                                                                  boardContext
-                                                                          .findRenderObject()
-                                                                      as RenderBox?;
-                                                              if (box != null) {
-                                                                _boardOffset = box
-                                                                    .localToGlobal(
-                                                                      Offset
-                                                                          .zero,
-                                                                    );
-                                                              }
-                                                            }
-                                                          });
+                                                        return Column(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment.center,
+                                                          children: [
+                                                            Builder(
+                                                              builder: (boardContext) {
+                                                                WidgetsBinding.instance
+                                                                    .addPostFrameCallback((_) {
+                                                                  if (mounted) {
+                                                                    final box = boardContext
+                                                                            .findRenderObject()
+                                                                        as RenderBox?;
+                                                                    if (box != null) {
+                                                                      _boardOffset =
+                                                                          box.localToGlobal(
+                                                                        Offset.zero,
+                                                                      );
+                                                                    }
+                                                                  }
+                                                                });
 
-                                                          return SizedBox(
-                                                            width:
-                                                                availableSize,
-                                                            height:
-                                                                availableSize,
-                                                            child: GameBoard(
-                                                              gameState:
-                                                                  gameState,
-                                                              isTournamentMode:
-                                                                  gameCubitState
-                                                                      .isTournamentMode,
+                                                                return SizedBox(
+                                                                  width: availableSize,
+                                                                  height: availableSize,
+                                                                  child: GameBoard(
+                                                                    gameState: gameState,
+                                                                    isTournamentMode:
+                                                                        gameCubitState
+                                                                            .isTournamentMode,
+                                                                  ),
+                                                                );
+                                                              },
                                                             ),
-                                                          );
-                                                        },
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              ),
-                                            ),
+                                                          ],
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
                                           ),
 
-                                          // Compact Game Info Footer
-                                          _buildCompactGameInfo(
-                                            gameState,
-                                            theme,
-                                            isSmallScreen,
-                                          ),
+                                          // Compact Game Info Footer (only when D-Pad is disabled)
+                                          if (!settingsState.dPadEnabled)
+                                            _buildCompactGameInfo(
+                                              gameState,
+                                              theme,
+                                              isSmallScreen,
+                                            ),
+
+                                          // Dedicated D-Pad area at bottom (only when D-Pad is enabled and playing)
+                                          if (settingsState.dPadEnabled &&
+                                              gameState.status == GameStatus.playing)
+                                            _buildDPadArea(
+                                              settingsState.dPadPosition,
+                                              theme,
+                                            ),
                                         ],
                                       );
                                     },
@@ -768,14 +928,6 @@ class _GameScreenState extends State<GameScreen>
                                       },
                                       onHome: () =>
                                           _showExitConfirmation(context),
-                                    ),
-
-                                  // D-Pad Controls Overlay (optional, user preference)
-                                  if (settingsState.dPadEnabled &&
-                                      gameState.status == GameStatus.playing)
-                                    _buildPositionedDPad(
-                                      settingsState.dPadPosition,
-                                      theme,
                                     ),
 
                                   // Score Popups Layer
