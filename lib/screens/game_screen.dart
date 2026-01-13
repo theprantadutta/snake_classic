@@ -505,7 +505,7 @@ class _GameScreenState extends State<GameScreen>
     GameTheme theme,
     bool isSmallScreen,
   ) {
-    final dpadSize = isSmallScreen ? 100.0 : 120.0;
+    final dpadSize = isSmallScreen ? 115.0 : 135.0;
 
     return Container(
       padding: EdgeInsets.symmetric(

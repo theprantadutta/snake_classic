@@ -74,15 +74,6 @@ class DPadControls extends StatelessWidget {
               buttonSize: buttonSize,
             ),
           ),
-          // Center indicator (optional visual element)
-          Container(
-            width: buttonSize * 0.5,
-            height: buttonSize * 0.5,
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: opacity * 0.1),
-              shape: BoxShape.circle,
-            ),
-          ),
         ],
       ),
     );
