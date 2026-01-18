@@ -38,10 +38,17 @@ void main() async {
   AppLogger.lifecycle('Snake Classic starting up...');
 
   try {
-    // Initialize system UI mode - immersiveSticky hides UI but allows swipe to reveal
+    // Hide status bar but keep navigation area for back gesture
     SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.immersiveSticky,
-      overlays: [],
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.bottom],
+    );
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
     );
 
     // Load environment variables
@@ -142,17 +149,16 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
   }
 
   void _setImmersiveMode() {
+    // Hide status bar but keep navigation area accessible for back gesture
     SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.immersiveSticky,
-      overlays: [], // Hide all overlays
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.bottom],
     );
-    // Make system bars transparent when they appear on swipe
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
         systemNavigationBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
         systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
   }
