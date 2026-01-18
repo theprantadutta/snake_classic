@@ -2,56 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/services/daily_challenge_service.dart';
+import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
-class DailyChallengesScreen extends StatefulWidget {
+class DailyChallengesScreen extends ConsumerStatefulWidget {
   const DailyChallengesScreen({super.key});
 
   @override
-  State<DailyChallengesScreen> createState() => _DailyChallengesScreenState();
+  ConsumerState<DailyChallengesScreen> createState() => _DailyChallengesScreenState();
 }
 
-class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
-  final DailyChallengeService _challengeService = DailyChallengeService();
+class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   final AudioService _audioService = AudioService();
-  bool _isRefreshing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _challengeService.addListener(_onChallengesChanged);
-    _refreshChallenges();
-  }
-
-  @override
-  void dispose() {
-    _challengeService.removeListener(_onChallengesChanged);
-    super.dispose();
-  }
-
-  void _onChallengesChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
 
   Future<void> _refreshChallenges() async {
-    setState(() => _isRefreshing = true);
-    await _challengeService.refreshChallenges();
-    if (mounted) {
-      setState(() => _isRefreshing = false);
-    }
+    await ref.read(dailyChallengesProvider.notifier).refresh();
   }
 
   Future<void> _claimReward(DailyChallenge challenge) async {
-    final success = await _challengeService.claimReward(challenge.id);
+    final success = await ref.read(dailyChallengesProvider.notifier).claimReward(challenge.id);
     if (success) {
       // Actually earn the coins via CoinsCubit
       if (mounted) {
@@ -90,7 +66,7 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
   }
 
   Future<void> _claimAllRewards() async {
-    final totalClaimed = await _challengeService.claimAllRewards();
+    final totalClaimed = await ref.read(dailyChallengesProvider.notifier).claimAllRewards();
     if (totalClaimed > 0) {
       // Actually earn the coins via CoinsCubit
       if (mounted) {
@@ -124,15 +100,23 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch the daily challenges state from Riverpod
+    final challengesState = ref.watch(dailyChallengesProvider);
+
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
-        return _buildContent(context, theme);
+        return _buildContent(context, theme, challengesState);
       },
     );
   }
 
-  Widget _buildContent(BuildContext context, GameTheme theme) {
+  Widget _buildContent(BuildContext context, GameTheme theme, DailyChallengesState challengesState) {
+    final isRefreshing = challengesState.isLoading;
+    final challenges = challengesState.challenges;
+    final hasUnclaimedRewards = challengesState.hasUnclaimedRewards;
+    final allCompleted = challengesState.allCompleted;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -146,14 +130,14 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          if (_challengeService.hasUnclaimedRewards)
+          if (hasUnclaimedRewards)
             TextButton.icon(
               onPressed: _claimAllRewards,
               icon: Icon(Icons.redeem, color: Colors.amber),
               label: Text('Claim All', style: TextStyle(color: Colors.amber)),
             ),
           IconButton(
-            icon: _isRefreshing
+            icon: isRefreshing
                 ? SizedBox(
                     width: 20,
                     height: 20,
@@ -163,7 +147,7 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
                     ),
                   )
                 : Icon(Icons.refresh, color: theme.accentColor),
-            onPressed: _isRefreshing ? null : _refreshChallenges,
+            onPressed: isRefreshing ? null : _refreshChallenges,
           ),
         ],
       ),
@@ -179,23 +163,22 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Progress summary card
-                _buildProgressSummary(theme),
+                _buildProgressSummary(theme, challengesState),
                 const SizedBox(height: 20),
 
                 // Challenges list
-                if (_challengeService.isLoading &&
-                    _challengeService.challenges.isEmpty)
+                if (isRefreshing && challenges.isEmpty)
                   _buildLoadingState(theme)
-                else if (_challengeService.challenges.isEmpty)
+                else if (challenges.isEmpty)
                   _buildEmptyState(theme)
                 else
-                  ..._challengeService.challenges.asMap().entries.map(
+                  ...challenges.asMap().entries.map(
                     (e) => _buildChallengeCard(e.value, e.key, theme),
                   ),
 
                 // All complete bonus
-                if (_challengeService.allCompleted)
-                  _buildAllCompleteBonusCard(theme),
+                if (allCompleted)
+                  _buildAllCompleteBonusCard(theme, challengesState),
 
                 const SizedBox(height: 20),
 
@@ -209,10 +192,11 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
     );
   }
 
-  Widget _buildProgressSummary(GameTheme theme) {
-    final completed = _challengeService.completedCount;
-    final total = _challengeService.totalCount;
+  Widget _buildProgressSummary(GameTheme theme, DailyChallengesState challengesState) {
+    final completed = challengesState.completedCount;
+    final total = challengesState.totalCount;
     final progress = total > 0 ? completed / total : 0.0;
+    final allCompleted = challengesState.allCompleted;
 
     return Container(
           padding: const EdgeInsets.all(20),
@@ -274,7 +258,7 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
                             alpha: 0.2,
                           ),
                           valueColor: AlwaysStoppedAnimation(
-                            _challengeService.allCompleted
+                            allCompleted
                                 ? Colors.green
                                 : theme.accentColor,
                           ),
@@ -300,7 +284,7 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
                   value: progress,
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   valueColor: AlwaysStoppedAnimation(
-                    _challengeService.allCompleted
+                    allCompleted
                         ? Colors.green
                         : theme.accentColor,
                   ),
@@ -607,7 +591,7 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
         .slideX(begin: 0.1, end: 0, duration: 400.ms);
   }
 
-  Widget _buildAllCompleteBonusCard(GameTheme theme) {
+  Widget _buildAllCompleteBonusCard(GameTheme theme, DailyChallengesState challengesState) {
     return Container(
           margin: const EdgeInsets.only(top: 8),
           padding: const EdgeInsets.all(20),
@@ -672,7 +656,7 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
                     Icon(Icons.monetization_on, color: Colors.white, size: 20),
                     const SizedBox(width: 4),
                     Text(
-                      '+${_challengeService.bonusCoins}',
+                      '+${challengesState.bonusCoins}',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

@@ -85,31 +85,31 @@ enum CoinEarningSource {
   int getBaseAmount() {
     switch (this) {
       case CoinEarningSource.gameCompleted:
-        return 5;
+        return 1;
       case CoinEarningSource.foodEaten:
         return 1;
       case CoinEarningSource.scoreMilestone:
-        return 10;
+        return 3;
       case CoinEarningSource.dailyChallenge:
-        return 50;
+        return 15;
       case CoinEarningSource.achievementUnlocked:
-        return 25;
-      case CoinEarningSource.tournamentReward:
-        return 100;
-      case CoinEarningSource.dailyLogin:
         return 10;
-      case CoinEarningSource.watchedAd:
-        return 15;
-      case CoinEarningSource.levelUp:
-        return 20;
-      case CoinEarningSource.perfectGame:
+      case CoinEarningSource.tournamentReward:
         return 50;
+      case CoinEarningSource.dailyLogin:
+        return 5;
+      case CoinEarningSource.watchedAd:
+        return 10;
+      case CoinEarningSource.levelUp:
+        return 5;
+      case CoinEarningSource.perfectGame:
+        return 10;
       case CoinEarningSource.longSurvival:
-        return 30;
+        return 5;
       case CoinEarningSource.multiplayer:
-        return 15;
+        return 5;
       case CoinEarningSource.battlePassReward:
-        return 25;
+        return 10;
       case CoinEarningSource.purchase:
         return 0; // Variable based on purchase
     }
@@ -259,15 +259,46 @@ class DailyLoginBonus {
     this.collectedAt,
   });
 
-  bool get isAvailable {
-    if (isCollected) return false;
-
-    // Check if it's the current day in the login streak
+  /// Get the current week number since epoch (2024-01-01)
+  static int get currentWeekNumber {
     final today = DateTime.now();
     final daysSinceEpoch = today.difference(DateTime(2024, 1, 1)).inDays;
-    final currentStreakDay = (daysSinceEpoch % 7) + 1;
+    return daysSinceEpoch ~/ 7;
+  }
 
-    return day == currentStreakDay;
+  /// Get the current day in the 7-day cycle (1-7)
+  static int get currentStreakDay {
+    final today = DateTime.now();
+    final daysSinceEpoch = today.difference(DateTime(2024, 1, 1)).inDays;
+    return (daysSinceEpoch % 7) + 1;
+  }
+
+  bool get isAvailable {
+    // Check if it's the current day in the login streak
+    if (day != currentStreakDay) return false;
+
+    // If never collected, it's available
+    if (!isCollected || collectedAt == null) return true;
+
+    // Check if the bonus was collected in the current week
+    // If collected in a previous week, it should be available again
+    final collectedDaysSinceEpoch =
+        collectedAt!.difference(DateTime(2024, 1, 1)).inDays;
+    final collectedWeekNumber = collectedDaysSinceEpoch ~/ 7;
+
+    // If collected in a different week, it's available
+    return collectedWeekNumber != currentWeekNumber;
+  }
+
+  /// Check if this bonus was collected in the current week
+  bool get wasCollectedThisWeek {
+    if (!isCollected || collectedAt == null) return false;
+
+    final collectedDaysSinceEpoch =
+        collectedAt!.difference(DateTime(2024, 1, 1)).inDays;
+    final collectedWeekNumber = collectedDaysSinceEpoch ~/ 7;
+
+    return collectedWeekNumber == currentWeekNumber;
   }
 
   String get displayReward {
@@ -309,25 +340,25 @@ class DailyLoginBonus {
 
   static List<DailyLoginBonus> getWeeklyBonuses() {
     return [
-      const DailyLoginBonus(day: 1, coins: 10, isCollected: false),
-      const DailyLoginBonus(day: 2, coins: 15, isCollected: false),
+      const DailyLoginBonus(day: 1, coins: 3, isCollected: false),
+      const DailyLoginBonus(day: 2, coins: 4, isCollected: false),
       const DailyLoginBonus(
         day: 3,
-        coins: 20,
+        coins: 5,
         bonusItem: 'Speed Boost Power-up',
         isCollected: false,
       ),
-      const DailyLoginBonus(day: 4, coins: 25, isCollected: false),
+      const DailyLoginBonus(day: 4, coins: 6, isCollected: false),
       const DailyLoginBonus(
         day: 5,
-        coins: 30,
+        coins: 8,
         bonusItem: '2x XP Boost',
         isCollected: false,
       ),
-      const DailyLoginBonus(day: 6, coins: 40, isCollected: false),
+      const DailyLoginBonus(day: 6, coins: 10, isCollected: false),
       const DailyLoginBonus(
         day: 7,
-        coins: 50,
+        coins: 15,
         bonusItem: 'Premium Theme (1 day)',
         isCollected: false,
       ),
@@ -392,15 +423,15 @@ class CoinPurchaseOption {
     CoinPurchaseOption(
       id: 'coin_pack_small',
       name: 'Starter Pack',
-      coins: 100,
+      coins: 500,
       price: 0.99,
       description: 'Perfect for trying out premium items',
     ),
     CoinPurchaseOption(
       id: 'coin_pack_medium',
       name: 'Value Pack',
-      coins: 500,
-      bonusCoins: 50,
+      coins: 2500,
+      bonusCoins: 250,
       price: 4.99,
       description: 'Great value with bonus coins',
       isPopular: true,
@@ -408,8 +439,8 @@ class CoinPurchaseOption {
     CoinPurchaseOption(
       id: 'coin_pack_large',
       name: 'Premium Pack',
-      coins: 1200,
-      bonusCoins: 200,
+      coins: 6000,
+      bonusCoins: 1000,
       price: 9.99,
       description: 'Best value for serious players',
       isBestValue: true,
@@ -417,8 +448,8 @@ class CoinPurchaseOption {
     CoinPurchaseOption(
       id: 'coin_pack_mega',
       name: 'Ultimate Pack',
-      coins: 2500,
-      bonusCoins: 500,
+      coins: 12500,
+      bonusCoins: 2500,
       price: 19.99,
       description: 'Maximum coins with huge bonus',
     ),

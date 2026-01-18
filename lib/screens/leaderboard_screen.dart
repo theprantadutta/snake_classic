@@ -1,37 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
-import 'package:snake_classic/services/leaderboard_service.dart';
+import 'package:snake_classic/providers/leaderboard_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
-class LeaderboardScreen extends StatefulWidget {
+class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
   @override
-  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen>
+class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final LeaderboardService _leaderboardService = LeaderboardService();
-  Map<String, dynamic>? _userRank;
-
-  // Leaderboard data
-  List<Map<String, dynamic>> _globalLeaderboard = [];
-  List<Map<String, dynamic>> _weeklyLeaderboard = [];
-  bool _isLoadingGlobal = true;
-  bool _isLoadingWeekly = true;
-  String? _globalError;
-  String? _weeklyError;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadData();
+    // Calculate user rank once data is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateUserRank();
+    });
   }
 
   @override
@@ -40,95 +34,35 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    // Load both leaderboards in parallel first
-    await Future.wait([_loadGlobalLeaderboard(), _loadWeeklyLeaderboard()]);
-    // Then calculate user rank from already loaded data (no extra API call)
-    _calculateUserRank();
-  }
-
   void _calculateUserRank() {
     final authState = context.read<AuthCubit>().state;
     if (!authState.isSignedIn || authState.userId == null) return;
-    if (_globalLeaderboard.isEmpty) return;
-
-    final userId = authState.userId!;
-    for (int i = 0; i < _globalLeaderboard.length; i++) {
-      if (_globalLeaderboard[i]['uid'] == userId) {
-        if (mounted) {
-          setState(() {
-            _userRank = {
-              'rank': i + 1,
-              'totalPlayers': _globalLeaderboard.length,
-              'userScore': _globalLeaderboard[i]['highScore'] ?? 0,
-              'percentile':
-                  ((_globalLeaderboard.length - i) /
-                          _globalLeaderboard.length *
-                          100)
-                      .round(),
-            };
-          });
-        }
-        return;
-      }
-    }
+    ref.read(combinedLeaderboardProvider.notifier).calculateUserRankFor(authState.userId);
   }
 
   Future<void> _loadGlobalLeaderboard() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoadingGlobal = true;
-      _globalError = null;
-    });
-
-    try {
-      final data = await _leaderboardService.getGlobalLeaderboard();
-      if (mounted) {
-        setState(() {
-          _globalLeaderboard = data;
-          _isLoadingGlobal = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _globalError = 'Failed to load leaderboard';
-          _isLoadingGlobal = false;
-        });
-      }
-    }
+    await ref.read(combinedLeaderboardProvider.notifier).refresh();
+    _calculateUserRank();
   }
 
   Future<void> _loadWeeklyLeaderboard() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoadingWeekly = true;
-      _weeklyError = null;
-    });
-
-    try {
-      final data = await _leaderboardService.getWeeklyLeaderboard();
-      if (mounted) {
-        setState(() {
-          _weeklyLeaderboard = data;
-          _isLoadingWeekly = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _weeklyError = 'Failed to load weekly leaderboard';
-          _isLoadingWeekly = false;
-        });
-      }
-    }
+    await ref.read(combinedLeaderboardProvider.notifier).refresh();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch the leaderboard state from Riverpod
+    final leaderboardState = ref.watch(combinedLeaderboardProvider);
     final themeState = context.watch<ThemeCubit>().state;
     final authState = context.watch<AuthCubit>().state;
     final theme = themeState.currentTheme;
+
+    // Update user rank when global leaderboard loads
+    ref.listen<CombinedLeaderboardState>(combinedLeaderboardProvider, (prev, next) {
+      if (prev?.isLoadingGlobal == true && next.isLoadingGlobal == false) {
+        _calculateUserRank();
+      }
+    });
 
     return Scaffold(
       body: AppBackground(
@@ -143,16 +77,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               _buildTabBar(theme),
 
               // User Rank Card
-              if (authState.isSignedIn && _userRank != null)
-                _buildUserRankCard(authState, theme),
+              if (authState.isSignedIn && leaderboardState.userRank != null)
+                _buildUserRankCard(authState, theme, leaderboardState.userRank!),
 
               // Leaderboard Content
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildGlobalLeaderboard(theme, authState),
-                    _buildWeeklyLeaderboard(theme, authState),
+                    _buildGlobalLeaderboard(theme, authState, leaderboardState),
+                    _buildWeeklyLeaderboard(theme, authState, leaderboardState),
                   ],
                 ),
               ),
@@ -205,7 +139,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildUserRankCard(AuthState authState, GameTheme theme) {
+  Widget _buildUserRankCard(AuthState authState, GameTheme theme, Map<String, dynamic> userRank) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -260,7 +194,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   Icon(Icons.leaderboard, color: theme.accentColor, size: 20),
                   const SizedBox(width: 4),
                   Text(
-                    '#${_userRank!['rank']}',
+                    '#${userRank['rank']}',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -270,7 +204,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 ],
               ),
               Text(
-                'Top ${_userRank!['percentile']}%',
+                'Top ${userRank['percentile']}%',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.6),
@@ -283,12 +217,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildGlobalLeaderboard(GameTheme theme, AuthState authState) {
-    if (_isLoadingGlobal) {
+  Widget _buildGlobalLeaderboard(GameTheme theme, AuthState authState, CombinedLeaderboardState leaderboardState) {
+    if (leaderboardState.isLoadingGlobal) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_globalError != null) {
+    if (leaderboardState.globalError != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -300,7 +234,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              _globalError!,
+              leaderboardState.globalError!,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 16,
@@ -317,7 +251,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       );
     }
 
-    if (_globalLeaderboard.isEmpty) {
+    if (leaderboardState.globalEntries.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -352,9 +286,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       onRefresh: _loadGlobalLeaderboard,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _globalLeaderboard.length,
+        itemCount: leaderboardState.globalEntries.length,
         itemBuilder: (context, index) {
-          final player = _globalLeaderboard[index];
+          final player = leaderboardState.globalEntries[index];
           final isCurrentUser =
               authState.isSignedIn &&
               authState.userId != null &&
@@ -366,12 +300,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildWeeklyLeaderboard(GameTheme theme, AuthState authState) {
-    if (_isLoadingWeekly) {
+  Widget _buildWeeklyLeaderboard(GameTheme theme, AuthState authState, CombinedLeaderboardState leaderboardState) {
+    if (leaderboardState.isLoadingWeekly) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_weeklyError != null) {
+    if (leaderboardState.weeklyError != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -383,7 +317,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              _weeklyError!,
+              leaderboardState.weeklyError!,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 16,
@@ -400,7 +334,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       );
     }
 
-    if (_weeklyLeaderboard.isEmpty) {
+    if (leaderboardState.weeklyEntries.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -435,9 +369,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       onRefresh: _loadWeeklyLeaderboard,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _weeklyLeaderboard.length,
+        itemCount: leaderboardState.weeklyEntries.length,
         itemBuilder: (context, index) {
-          final player = _weeklyLeaderboard[index];
+          final player = leaderboardState.weeklyEntries[index];
           final isCurrentUser =
               authState.isSignedIn &&
               authState.userId != null &&

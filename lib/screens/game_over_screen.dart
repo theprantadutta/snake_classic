@@ -583,6 +583,7 @@ class _GameOverScreenState extends State<GameOverScreen>
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Section Title
                   Row(
@@ -604,7 +605,8 @@ class _GameOverScreenState extends State<GameOverScreen>
                   SizedBox(height: constraints.maxHeight < 600 ? 8 : 12),
 
                   // Achievement content - more compact
-                  SingleChildScrollView(
+                  Flexible(
+                    child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -661,6 +663,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                         ],
                       ],
                     ),
+                  ),
                   ),
                 ],
               ),

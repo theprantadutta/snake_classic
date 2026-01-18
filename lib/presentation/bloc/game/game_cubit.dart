@@ -953,8 +953,8 @@ class GameCubit extends Cubit<GameCubitState> {
     required int gameDurationSeconds,
   }) async {
     try {
-      // Base coins + bonus based on score (5 base + 1 per 50 points, max 100)
-      final coinsEarned = (5 + (score ~/ 50)).clamp(5, 100);
+      // Base coins + bonus based on score (1 base + 1 per 100 points, max 20)
+      final coinsEarned = (1 + (score ~/ 100)).clamp(1, 20);
 
       await _coinsCubit.earnCoins(
         CoinEarningSource.gameCompleted,

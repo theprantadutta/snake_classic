@@ -1,37 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
-import 'package:snake_classic/services/social_service.dart';
+import 'package:snake_classic/providers/friends_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
-class FriendsScreen extends StatefulWidget {
+class FriendsScreen extends ConsumerStatefulWidget {
   const FriendsScreen({super.key});
 
   @override
-  State<FriendsScreen> createState() => _FriendsScreenState();
+  ConsumerState<FriendsScreen> createState() => _FriendsScreenState();
 }
 
-class _FriendsScreenState extends State<FriendsScreen>
+class _FriendsScreenState extends ConsumerState<FriendsScreen>
     with SingleTickerProviderStateMixin {
-  final SocialService _socialService = SocialService();
   final TextEditingController _searchController = TextEditingController();
-
   late TabController _tabController;
-  List<UserProfile> _friends = [];
-  List<FriendRequest> _friendRequests = [];
-  List<UserProfile> _searchResults = [];
-  bool _isLoading = false;
-  bool _isSearching = false;
-  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadData();
   }
 
   @override
@@ -42,48 +34,18 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final results = await Future.wait([
-        _socialService.getFriends(),
-        _socialService.getFriendRequests(),
-      ]);
-
-      setState(() {
-        _friends = results[0] as List<UserProfile>;
-        _friendRequests = results[1] as List<FriendRequest>;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
+    await ref.read(friendsProvider.notifier).refresh();
   }
 
-  Future<void> _searchUsers(String query) async {
-    if (query.length < 2) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-      return;
-    }
-
-    setState(() => _isSearching = true);
-
-    try {
-      final results = await _socialService.searchUsers(query);
-      setState(() {
-        _searchResults = results;
-        _isSearching = false;
-      });
-    } catch (e) {
-      setState(() => _isSearching = false);
-    }
+  void _searchUsers(String query) {
+    ref.read(friendsProvider.notifier).searchUsers(query);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch the friends state from Riverpod
+    final friendsState = ref.watch(friendsProvider);
+
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
@@ -95,17 +57,17 @@ class _FriendsScreenState extends State<FriendsScreen>
               child: Column(
                 children: [
                   _buildHeader(theme),
-                  _buildSearchBar(theme),
-                  _buildTabBar(theme),
+                  _buildSearchBar(theme, friendsState),
+                  _buildTabBar(theme, friendsState),
                   Expanded(
-                    child: _isLoading
+                    child: friendsState.isLoading
                         ? _buildLoadingIndicator(theme)
                         : TabBarView(
                             controller: _tabController,
                             children: [
-                              _buildFriendsList(theme),
-                              _buildFriendRequestsList(theme),
-                              _buildSearchResults(theme),
+                              _buildFriendsList(theme, friendsState),
+                              _buildFriendRequestsList(theme, friendsState),
+                              _buildSearchResults(theme, friendsState),
                             ],
                           ),
                   ),
@@ -152,7 +114,7 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  Widget _buildSearchBar(GameTheme theme) {
+  Widget _buildSearchBar(GameTheme theme, FriendsState friendsState) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -169,14 +131,11 @@ class _FriendsScreenState extends State<FriendsScreen>
             Icons.search,
             color: theme.accentColor.withValues(alpha: 0.7),
           ),
-          suffixIcon: _searchQuery.isNotEmpty
+          suffixIcon: friendsState.searchQuery.isNotEmpty
               ? IconButton(
                   onPressed: () {
                     _searchController.clear();
-                    setState(() {
-                      _searchQuery = '';
-                      _searchResults = [];
-                    });
+                    ref.read(friendsProvider.notifier).clearSearch();
                     _tabController.animateTo(0);
                   },
                   icon: Icon(
@@ -193,7 +152,6 @@ class _FriendsScreenState extends State<FriendsScreen>
         ),
         style: TextStyle(color: theme.accentColor),
         onChanged: (value) {
-          setState(() => _searchQuery = value);
           _searchUsers(value);
           if (value.isNotEmpty) {
             _tabController.animateTo(2);
@@ -203,7 +161,10 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  Widget _buildTabBar(GameTheme theme) {
+  Widget _buildTabBar(GameTheme theme, FriendsState friendsState) {
+    final friends = friendsState.friends;
+    final friendRequests = friendsState.friendRequests;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: TabBar(
@@ -217,7 +178,7 @@ class _FriendsScreenState extends State<FriendsScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text('Friends'),
-                if (_friends.isNotEmpty) ...[
+                if (friends.isNotEmpty) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -229,7 +190,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '${_friends.length}',
+                      '${friends.length}',
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),
@@ -242,7 +203,7 @@ class _FriendsScreenState extends State<FriendsScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text('Requests'),
-                if (_friendRequests.isNotEmpty) ...[
+                if (friendRequests.isNotEmpty) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -254,7 +215,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '${_friendRequests.length}',
+                      '${friendRequests.length}',
                       style: const TextStyle(fontSize: 12, color: Colors.white),
                     ),
                   ),
@@ -289,8 +250,10 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  Widget _buildFriendsList(GameTheme theme) {
-    if (_friends.isEmpty) {
+  Widget _buildFriendsList(GameTheme theme, FriendsState friendsState) {
+    final friends = friendsState.friends;
+
+    if (friends.isEmpty) {
       return _buildEmptyState(
         icon: Icons.people_outline,
         title: 'No Friends Yet',
@@ -301,9 +264,9 @@ class _FriendsScreenState extends State<FriendsScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _friends.length,
+      itemCount: friends.length,
       itemBuilder: (context, index) {
-        final friend = _friends[index];
+        final friend = friends[index];
         return _buildUserCard(
           user: friend,
           theme: theme,
@@ -341,13 +304,9 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  Widget _buildFriendRequestsList(GameTheme theme) {
-    final receivedRequests = _friendRequests
-        .where((r) => r.type == FriendRequestType.received)
-        .toList();
-    final sentRequests = _friendRequests
-        .where((r) => r.type == FriendRequestType.sent)
-        .toList();
+  Widget _buildFriendRequestsList(GameTheme theme, FriendsState friendsState) {
+    final receivedRequests = friendsState.receivedRequests;
+    final sentRequests = friendsState.sentRequests;
 
     if (receivedRequests.isEmpty && sentRequests.isEmpty) {
       return _buildEmptyState(
@@ -394,8 +353,12 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  Widget _buildSearchResults(GameTheme theme) {
-    if (_searchQuery.isEmpty) {
+  Widget _buildSearchResults(GameTheme theme, FriendsState friendsState) {
+    final searchQuery = friendsState.searchQuery;
+    final isSearching = friendsState.isSearching;
+    final searchResults = friendsState.searchResults;
+
+    if (searchQuery.isEmpty) {
       return _buildEmptyState(
         icon: Icons.search,
         title: 'Search for Friends',
@@ -404,7 +367,7 @@ class _FriendsScreenState extends State<FriendsScreen>
       );
     }
 
-    if (_isSearching) {
+    if (isSearching) {
       return Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
@@ -412,7 +375,7 @@ class _FriendsScreenState extends State<FriendsScreen>
       );
     }
 
-    if (_searchResults.isEmpty) {
+    if (searchResults.isEmpty) {
       return _buildEmptyState(
         icon: Icons.search_off,
         title: 'No Users Found',
@@ -423,13 +386,13 @@ class _FriendsScreenState extends State<FriendsScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _searchResults.length,
+      itemCount: searchResults.length,
       itemBuilder: (context, index) {
-        final user = _searchResults[index];
+        final user = searchResults[index];
         return _buildUserCard(
           user: user,
           theme: theme,
-          trailing: _buildSearchUserActions(user, theme),
+          trailing: _buildSearchUserActions(user, theme, friendsState),
         ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.2);
       },
     );
@@ -714,15 +677,12 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  Widget _buildSearchUserActions(UserProfile user, GameTheme theme) {
-    // Check if already friends or have pending request
-    final isFriend = _friends.any((f) => f.uid == user.uid);
-    final hasSentRequest = _friendRequests.any(
-      (r) => r.toUserId == user.uid && r.type == FriendRequestType.sent,
-    );
-    final hasReceivedRequest = _friendRequests.any(
-      (r) => r.fromUserId == user.uid && r.type == FriendRequestType.received,
-    );
+  Widget _buildSearchUserActions(UserProfile user, GameTheme theme, FriendsState friendsState) {
+    // Check if already friends or have pending request using provider helper methods
+    final notifier = ref.read(friendsProvider.notifier);
+    final isFriend = notifier.isFriend(user.uid);
+    final hasSentRequest = notifier.hasSentRequestTo(user.uid);
+    final hasReceivedRequest = notifier.hasReceivedRequestFrom(user.uid);
 
     if (isFriend) {
       return Container(
@@ -831,32 +791,29 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   Future<void> _sendFriendRequest(String userId) async {
-    final success = await _socialService.sendFriendRequest(userId);
+    final success = await ref.read(friendsProvider.notifier).sendFriendRequest(userId);
     if (success && mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Friend request sent!')));
-      _loadData();
     }
   }
 
   Future<void> _acceptFriendRequest(String fromUserId) async {
-    final success = await _socialService.acceptFriendRequest(fromUserId);
+    final success = await ref.read(friendsProvider.notifier).acceptFriendRequest(fromUserId);
     if (success && mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Friend request accepted!')));
-      _loadData();
     }
   }
 
   Future<void> _rejectFriendRequest(String fromUserId) async {
-    final success = await _socialService.rejectFriendRequest(fromUserId);
+    final success = await ref.read(friendsProvider.notifier).rejectFriendRequest(fromUserId);
     if (success && mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Friend request rejected')));
-      _loadData();
     }
   }
 
@@ -931,7 +888,7 @@ class _FriendsScreenState extends State<FriendsScreen>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.backgroundColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -947,7 +904,7 @@ class _FriendsScreenState extends State<FriendsScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               'Cancel',
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
@@ -955,17 +912,16 @@ class _FriendsScreenState extends State<FriendsScreen>
           ),
           TextButton(
             onPressed: () async {
-              final navigator = Navigator.of(context);
+              final navigator = Navigator.of(dialogContext);
               final scaffoldMessenger = ScaffoldMessenger.of(context);
               navigator.pop();
-              final success = await _socialService.removeFriend(friend.uid);
+              final success = await ref.read(friendsProvider.notifier).removeFriend(friend.uid);
               if (success && mounted) {
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text('${friend.displayName} removed from friends'),
                   ),
                 );
-                _loadData();
               }
             },
             child: const Text('Remove', style: TextStyle(color: Colors.red)),

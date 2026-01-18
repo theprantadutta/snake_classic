@@ -1,83 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
-import 'package:snake_classic/services/connectivity_service.dart';
-import 'package:snake_classic/services/tournament_service.dart';
+import 'package:snake_classic/providers/tournaments_provider.dart';
 import 'package:snake_classic/screens/tournament_detail_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
-class TournamentsScreen extends StatefulWidget {
+class TournamentsScreen extends ConsumerStatefulWidget {
   const TournamentsScreen({super.key});
 
   @override
-  State<TournamentsScreen> createState() => _TournamentsScreenState();
+  ConsumerState<TournamentsScreen> createState() => _TournamentsScreenState();
 }
 
-class _TournamentsScreenState extends State<TournamentsScreen>
+class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     with SingleTickerProviderStateMixin {
-  final TournamentService _tournamentService = TournamentService();
-  final ConnectivityService _connectivityService = ConnectivityService();
-
   late TabController _tabController;
-  List<Tournament> _activeTournaments = [];
-  List<Tournament> _historyTournaments = [];
-  Map<String, dynamic> _userStats = {};
-  bool _isLoading = true;
-  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _isOffline = !_connectivityService.isOnline;
-    _connectivityService.addListener(_onConnectivityChanged);
-    _loadData();
   }
 
   @override
   void dispose() {
-    _connectivityService.removeListener(_onConnectivityChanged);
     _tabController.dispose();
     super.dispose();
   }
 
-  void _onConnectivityChanged() {
-    final wasOffline = _isOffline;
-    setState(() {
-      _isOffline = !_connectivityService.isOnline;
-    });
-    // Refresh data when coming back online
-    if (wasOffline && !_isOffline) {
-      _loadData();
-    }
-  }
-
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final results = await Future.wait([
-        _tournamentService.getActiveTournaments(),
-        _tournamentService.getTournamentHistory(),
-        _tournamentService.getUserTournamentStats(),
-      ]);
-
-      setState(() {
-        _activeTournaments = results[0] as List<Tournament>;
-        _historyTournaments = results[1] as List<Tournament>;
-        _userStats = results[2] as Map<String, dynamic>;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
+    await ref.read(tournamentsProvider.notifier).refresh();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch the tournaments state from Riverpod
+    final tournamentsState = ref.watch(tournamentsProvider);
+
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
@@ -91,14 +54,14 @@ class _TournamentsScreenState extends State<TournamentsScreen>
                   _buildHeader(theme),
                   _buildTabBar(theme),
                   Expanded(
-                    child: _isLoading
+                    child: tournamentsState.isLoading
                         ? _buildLoadingIndicator(theme)
                         : TabBarView(
                             controller: _tabController,
                             children: [
-                              _buildActiveTournaments(theme),
-                              _buildTournamentHistory(theme),
-                              _buildUserStats(theme),
+                              _buildActiveTournaments(theme, tournamentsState.activeTournaments),
+                              _buildTournamentHistory(theme, tournamentsState.historyTournaments),
+                              _buildUserStats(theme, tournamentsState.userStats),
                             ],
                           ),
                   ),
@@ -183,8 +146,8 @@ class _TournamentsScreenState extends State<TournamentsScreen>
     );
   }
 
-  Widget _buildActiveTournaments(GameTheme theme) {
-    if (_activeTournaments.isEmpty) {
+  Widget _buildActiveTournaments(GameTheme theme, List<Tournament> activeTournaments) {
+    if (activeTournaments.isEmpty) {
       return _buildEmptyState(
         icon: Icons.emoji_events,
         title: 'No Active Tournaments',
@@ -195,9 +158,9 @@ class _TournamentsScreenState extends State<TournamentsScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _activeTournaments.length,
+      itemCount: activeTournaments.length,
       itemBuilder: (context, index) {
-        final tournament = _activeTournaments[index];
+        final tournament = activeTournaments[index];
         return _buildTournamentCard(
           tournament: tournament,
           theme: theme,
@@ -207,8 +170,8 @@ class _TournamentsScreenState extends State<TournamentsScreen>
     );
   }
 
-  Widget _buildTournamentHistory(GameTheme theme) {
-    if (_historyTournaments.isEmpty) {
+  Widget _buildTournamentHistory(GameTheme theme, List<Tournament> historyTournaments) {
+    if (historyTournaments.isEmpty) {
       return _buildEmptyState(
         icon: Icons.history,
         title: 'No Tournament History',
@@ -219,9 +182,9 @@ class _TournamentsScreenState extends State<TournamentsScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _historyTournaments.length,
+      itemCount: historyTournaments.length,
       itemBuilder: (context, index) {
-        final tournament = _historyTournaments[index];
+        final tournament = historyTournaments[index];
         return _buildTournamentCard(
           tournament: tournament,
           theme: theme,
@@ -232,8 +195,8 @@ class _TournamentsScreenState extends State<TournamentsScreen>
     );
   }
 
-  Widget _buildUserStats(GameTheme theme) {
-    if (_userStats.isEmpty) {
+  Widget _buildUserStats(GameTheme theme, Map<String, dynamic> userStats) {
+    if (userStats.isEmpty) {
       return _buildEmptyState(
         icon: Icons.bar_chart,
         title: 'No Tournament Stats',
@@ -246,9 +209,9 @@ class _TournamentsScreenState extends State<TournamentsScreen>
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildStatsOverview(theme),
+          _buildStatsOverview(theme, userStats),
           const SizedBox(height: 24),
-          _buildStatsDetails(theme),
+          _buildStatsDetails(theme, userStats),
         ],
       ),
     );
@@ -547,7 +510,7 @@ class _TournamentsScreenState extends State<TournamentsScreen>
     );
   }
 
-  Widget _buildStatsOverview(GameTheme theme) {
+  Widget _buildStatsOverview(GameTheme theme, Map<String, dynamic> userStats) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -572,7 +535,7 @@ class _TournamentsScreenState extends State<TournamentsScreen>
               Expanded(
                 child: _buildStatItem(
                   'Tournaments',
-                  '${_userStats['totalTournaments'] ?? 0}',
+                  '${userStats['totalTournaments'] ?? 0}',
                   Icons.emoji_events,
                   Colors.blue,
                   theme,
@@ -581,7 +544,7 @@ class _TournamentsScreenState extends State<TournamentsScreen>
               Expanded(
                 child: _buildStatItem(
                   'Wins',
-                  '${_userStats['wins'] ?? 0}',
+                  '${userStats['wins'] ?? 0}',
                   Icons.emoji_events,
                   Colors.amber,
                   theme,
@@ -595,7 +558,7 @@ class _TournamentsScreenState extends State<TournamentsScreen>
               Expanded(
                 child: _buildStatItem(
                   'Top 3 Finishes',
-                  '${_userStats['topThreeFinishes'] ?? 0}',
+                  '${userStats['topThreeFinishes'] ?? 0}',
                   Icons.military_tech,
                   Colors.orange,
                   theme,
@@ -604,7 +567,7 @@ class _TournamentsScreenState extends State<TournamentsScreen>
               Expanded(
                 child: _buildStatItem(
                   'Best Score',
-                  '${_userStats['bestScore'] ?? 0}',
+                  '${userStats['bestScore'] ?? 0}',
                   Icons.star,
                   Colors.purple,
                   theme,
@@ -617,7 +580,7 @@ class _TournamentsScreenState extends State<TournamentsScreen>
     );
   }
 
-  Widget _buildStatsDetails(GameTheme theme) {
+  Widget _buildStatsDetails(GameTheme theme, Map<String, dynamic> userStats) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -639,13 +602,13 @@ class _TournamentsScreenState extends State<TournamentsScreen>
           const SizedBox(height: 16),
           _buildDetailRow(
             'Total Attempts',
-            '${_userStats['totalAttempts'] ?? 0}',
+            '${userStats['totalAttempts'] ?? 0}',
             theme,
           ),
-          _buildDetailRow('Win Rate', '${_userStats['winRate'] ?? 0}%', theme),
+          _buildDetailRow('Win Rate', '${userStats['winRate'] ?? 0}%', theme),
           _buildDetailRow(
             'Average Performance',
-            'Top ${100 - (_userStats['winRate'] ?? 0)}%',
+            'Top ${100 - (userStats['winRate'] ?? 0)}%',
             theme,
           ),
         ],

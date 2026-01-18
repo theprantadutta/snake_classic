@@ -42,10 +42,10 @@ Create the following **Managed Products**:
 
 | Product ID | Name | Description | Price |
 |------------|------|-------------|-------|
-| `coin_pack_small` | Starter Coin Pack | 100 Snake Coins for premium items | $0.99 |
-| `coin_pack_medium` | Value Coin Pack | 500 + 50 bonus Snake Coins | $4.99 |
-| `coin_pack_large` | Premium Coin Pack | 1,200 + 200 bonus Snake Coins | $9.99 |
-| `coin_pack_mega` | Ultimate Coin Pack | 2,500 + 500 bonus Snake Coins | $19.99 |
+| `coin_pack_small` | Starter Coin Pack | 500 Snake Coins for premium items | $0.99 |
+| `coin_pack_medium` | Value Coin Pack | 2,500 + 250 bonus Snake Coins | $4.99 |
+| `coin_pack_large` | Premium Coin Pack | 6,000 + 1,000 bonus Snake Coins | $9.99 |
+| `coin_pack_mega` | Ultimate Coin Pack | 12,500 + 2,500 bonus Snake Coins | $19.99 |
 
 ### 2.3 Premium Power-ups (Available with Coins or Premium)
 

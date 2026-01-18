@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
@@ -86,50 +85,78 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   /// Check and show daily bonus popup if available
-  /// Uses offline-first approach - gives coins immediately, syncs API in background
+  /// Uses offline-first approach - tries API first, falls back to local state
   Future<void> _checkDailyBonus() async {
     if (_dailyBonusChecked) return;
     _dailyBonusChecked = true;
 
+    if (!mounted) return;
+
     try {
-      final apiService = ApiService();
-      final response = await apiService.getDailyBonusStatus();
+      DailyBonusStatus? status;
 
-      if (response == null || !mounted) return;
-
-      final status = DailyBonusStatus.fromJson(response);
-
-      if (status.canClaim && mounted) {
-        final theme = context.read<ThemeCubit>().state.currentTheme;
-
-        await DailyBonusPopup.show(
-          context: context,
-          theme: theme,
-          status: status,
-          onClaim: () async {
-            // Offline-first: Give coins immediately, no waiting for API
-            if (mounted) {
-              final reward = status.todayReward;
-              if (reward != null) {
-                context.read<CoinsCubit>().earnCoins(
-                  CoinEarningSource.dailyLogin,
-                  customAmount: reward.coins,
-                  itemName: 'Day ${reward.day} Bonus',
-                );
-              }
-            }
-
-            // Queue the API call for background sync (fire and forget)
-            DataSyncService().queueSync('daily_bonus_claim', {
-              'day': status.currentStreak,
-              'coins': status.todayReward?.coins ?? 0,
-              'claimed_at': DateTime.now().toIso8601String(),
-            }, priority: SyncPriority.high);
-
-            return true; // Always return true for instant feedback
-          },
-        );
+      // Try API first
+      try {
+        final apiService = ApiService();
+        final response = await apiService.getDailyBonusStatus();
+        if (response != null) {
+          status = DailyBonusStatus.fromJson(response);
+        }
+      } catch (e) {
+        AppLogger.warning('API daily bonus check failed, using local state: $e');
       }
+
+      // Fall back to local CoinsCubit state if API failed
+      if (status == null && mounted) {
+        final coinsCubit = context.read<CoinsCubit>();
+        if (coinsCubit.state.canCollectDailyBonus) {
+          final localBonus = coinsCubit.state.availableDailyBonus;
+          if (localBonus != null) {
+            status = DailyBonusStatus(
+              canClaim: true,
+              currentStreak: localBonus.day,
+              todayReward: DailyBonusReward(
+                day: localBonus.day,
+                coins: localBonus.coins,
+                bonusItem: localBonus.bonusItem,
+              ),
+              weekRewards: coinsCubit.state.dailyBonuses
+                  .map((b) => DailyBonusReward(
+                        day: b.day,
+                        coins: b.coins,
+                        bonusItem: b.bonusItem,
+                        claimed: b.isCollected,
+                      ))
+                  .toList(),
+            );
+          }
+        }
+      }
+
+      if (status == null || !status.canClaim || !mounted) return;
+
+      final theme = context.read<ThemeCubit>().state.currentTheme;
+
+      await DailyBonusPopup.show(
+        context: context,
+        theme: theme,
+        status: status,
+        onClaim: () async {
+          // Offline-first: Give coins immediately via CoinsCubit
+          if (mounted) {
+            await context.read<CoinsCubit>().collectDailyBonus();
+          }
+
+          // Queue the API call for background sync (fire and forget)
+          DataSyncService().queueSync('daily_bonus_claim', {
+            'day': status!.currentStreak,
+            'coins': status.todayReward?.coins ?? 0,
+            'claimed_at': DateTime.now().toIso8601String(),
+          }, priority: SyncPriority.high);
+
+          return true; // Always return true for instant feedback
+        },
+      );
     } catch (e) {
       AppLogger.error('Error checking daily bonus', e);
     }

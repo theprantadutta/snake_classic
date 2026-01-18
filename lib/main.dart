@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:provider/provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -114,7 +115,9 @@ void main() async {
   }
 
   runApp(
-    const SnakeClassicApp(),
+    const riverpod.ProviderScope(
+      child: SnakeClassicApp(),
+    ),
   ); // .withPerformanceMonitoring() temporarily disabled
 }
 
