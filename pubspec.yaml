@@ -34,6 +34,12 @@ dependencies:
   
   # Persistent storage
   shared_preferences: ^2.2.3
+
+  # Drift database for offline-first storage
+  drift: ^2.18.0
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.4
+  path: ^1.9.0
   
   # Animations and effects
   flutter_animate: ^4.5.0
@@ -95,6 +101,10 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   flutter_launcher_icons: "^0.14.4"
+
+  # Drift code generation
+  drift_dev: ^2.18.0
+  build_runner: ^2.4.9
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

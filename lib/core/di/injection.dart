@@ -1,5 +1,8 @@
 import 'package:get_it/get_it.dart';
 
+// Database
+import 'package:snake_classic/data/database/app_database.dart';
+
 // Services
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/offline_cache_service.dart';
@@ -47,17 +50,39 @@ final getIt = GetIt.instance;
 /// Initialize all dependencies
 /// Call this in main() before runApp()
 Future<void> configureDependencies() async {
+  // ==================== Database ====================
+  // Register AppDatabase as a singleton (created once, used everywhere)
+  final database = AppDatabase();
+  getIt.registerSingleton<AppDatabase>(database);
+
+  // Initialize database defaults
+  await database.initializeDefaults();
+
   // ==================== External Services ====================
   // These are services that already exist and have their own singleton patterns
   // We register them so other dependencies can use DI
 
   getIt.registerLazySingleton<ApiService>(() => ApiService());
-  getIt.registerLazySingleton<OfflineCacheService>(() => OfflineCacheService());
+
+  // OfflineCacheService needs database initialization
+  getIt.registerLazySingleton<OfflineCacheService>(() {
+    final service = OfflineCacheService();
+    service.initializeWithDatabase(getIt<AppDatabase>());
+    return service;
+  });
+
   getIt.registerLazySingleton<ConnectivityService>(() => ConnectivityService());
   getIt.registerLazySingleton<AudioService>(() => AudioService());
   getIt.registerLazySingleton<HapticService>(() => HapticService());
   getIt.registerLazySingleton<PreferencesService>(() => PreferencesService());
-  getIt.registerLazySingleton<StorageService>(() => StorageService());
+
+  // StorageService needs database initialization
+  getIt.registerLazySingleton<StorageService>(() {
+    final service = StorageService();
+    service.initialize(getIt<AppDatabase>());
+    return service;
+  });
+
   getIt.registerLazySingleton<UnifiedUserService>(() => UnifiedUserService());
   getIt.registerLazySingleton<MultiplayerService>(() => MultiplayerService());
   getIt.registerLazySingleton<EnhancedAudioService>(

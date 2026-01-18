@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/data/database/app_database.dart';
+import 'package:snake_classic/data/daos/sync_dao.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 
@@ -38,26 +38,38 @@ class SyncQueueItem {
   });
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'dataType': dataType,
-    'data': data,
-    'priority': priority.index,
-    'queuedAt': queuedAt.toIso8601String(),
-    'retryCount': retryCount,
-    'lastError': lastError,
-    'status': status.index,
-  };
+        'id': id,
+        'dataType': dataType,
+        'data': data,
+        'priority': priority.index,
+        'queuedAt': queuedAt.toIso8601String(),
+        'retryCount': retryCount,
+        'lastError': lastError,
+        'status': status.index,
+      };
 
   factory SyncQueueItem.fromJson(Map<String, dynamic> json) => SyncQueueItem(
-    id: json['id'],
-    dataType: json['dataType'],
-    data: Map<String, dynamic>.from(json['data']),
-    priority: SyncPriority.values[json['priority'] ?? 2],
-    queuedAt: DateTime.parse(json['queuedAt']),
-    retryCount: json['retryCount'] ?? 0,
-    lastError: json['lastError'],
-    status: SyncItemStatus.values[json['status'] ?? 0],
-  );
+        id: json['id'],
+        dataType: json['dataType'],
+        data: Map<String, dynamic>.from(json['data']),
+        priority: SyncPriority.values[json['priority'] ?? 2],
+        queuedAt: DateTime.parse(json['queuedAt']),
+        retryCount: json['retryCount'] ?? 0,
+        lastError: json['lastError'],
+        status: SyncItemStatus.values[json['status'] ?? 0],
+      );
+
+  factory SyncQueueItem.fromDriftData(SyncQueueData data, Map<String, dynamic> parsedData) =>
+      SyncQueueItem(
+        id: data.id,
+        dataType: data.dataType,
+        data: parsedData,
+        priority: SyncPriority.values[data.priority.clamp(0, 3)],
+        queuedAt: data.queuedAt,
+        retryCount: data.retryCount,
+        lastError: data.lastError,
+        status: SyncItemStatus.values[data.status.clamp(0, 3)],
+      );
 }
 
 enum SyncItemStatus { pending, syncing, failed, completed }
@@ -92,7 +104,7 @@ class DataSyncService extends ChangeNotifier {
   final ApiService _apiService = ApiService();
   final ConnectivityService _connectivityService = ConnectivityService();
 
-  SharedPreferences? _prefs;
+  SyncDao? _syncDao;
   Timer? _syncTimer;
   Timer? _retryTimer;
   StreamSubscription<bool>? _connectivitySubscription;
@@ -129,13 +141,19 @@ class DataSyncService extends ChangeNotifier {
       _syncQueue.where((item) => item.status == SyncItemStatus.failed).length;
 
   SyncState get currentSyncState => SyncState(
-    pendingCount: pendingCount,
-    failedCount: failedCount,
-    isSyncing: _isSyncing,
-    lastSyncTime: _lastSyncTime,
-    lastSuccessTime: _lastSuccessTime,
-    pendingItems: List.unmodifiable(_syncQueue),
-  );
+        pendingCount: pendingCount,
+        failedCount: failedCount,
+        isSyncing: _isSyncing,
+        lastSyncTime: _lastSyncTime,
+        lastSuccessTime: _lastSuccessTime,
+        pendingItems: List.unmodifiable(_syncQueue),
+      );
+
+  /// Initialize with database
+  Future<void> initializeWithDatabase(AppDatabase database, String userId) async {
+    _syncDao = database.syncDao;
+    await initialize(userId);
+  }
 
   Future<void> initialize(String userId) async {
     // Prevent re-initialization
@@ -147,12 +165,11 @@ class DataSyncService extends ChangeNotifier {
     }
 
     _currentUserId = userId;
-    _prefs = await SharedPreferences.getInstance();
 
     // Initialize connectivity service (safe to call multiple times)
     await _connectivityService.initialize();
 
-    // Load pending sync data
+    // Load pending sync data from Drift
     await _loadSyncQueue();
 
     // Listen to connectivity changes
@@ -261,7 +278,7 @@ class DataSyncService extends ChangeNotifier {
     // Sort by priority (critical first)
     _syncQueue.sort((a, b) => a.priority.index.compareTo(b.priority.index));
 
-    // Save queue to storage
+    // Save queue to Drift database
     await _saveSyncQueue();
 
     if (kDebugMode) {
@@ -474,12 +491,10 @@ class DataSyncService extends ChangeNotifier {
     final retryItems = <SyncQueueItem>[];
 
     // Separate score items for batch processing
-    final scoreItems = pendingItems
-        .where((item) => item.dataType == 'score')
-        .toList();
-    final otherItems = pendingItems
-        .where((item) => item.dataType != 'score')
-        .toList();
+    final scoreItems =
+        pendingItems.where((item) => item.dataType == 'score').toList();
+    final otherItems =
+        pendingItems.where((item) => item.dataType != 'score').toList();
 
     // Batch sync scores if there are multiple
     if (scoreItems.length >= 2) {
@@ -545,6 +560,11 @@ class DataSyncService extends ChangeNotifier {
     // Remove completed items
     _syncQueue.removeWhere((item) => completedIds.contains(item.id));
 
+    // Also remove from Drift database
+    for (final id in completedIds) {
+      await _syncDao?.removeSyncItem(id);
+    }
+
     // Schedule retries with exponential backoff
     if (retryItems.isNotEmpty) {
       _scheduleRetry(retryItems);
@@ -556,7 +576,7 @@ class DataSyncService extends ChangeNotifier {
       _lastSuccessTime = DateTime.now();
     }
 
-    // Save updated queue
+    // Save updated queue to Drift
     await _saveSyncQueue();
     _updateSyncStatus();
 
@@ -638,66 +658,38 @@ class DataSyncService extends ChangeNotifier {
     }
   }
 
-  /// Load sync queue from local storage
+  /// Load sync queue from Drift database
   Future<void> _loadSyncQueue() async {
-    if (_prefs == null) return;
+    if (_syncDao == null) return;
 
-    final queueJson = _prefs!.getString('sync_queue_items');
-    if (queueJson != null) {
-      try {
-        final List<dynamic> decoded = jsonDecode(queueJson);
-        _syncQueue.clear();
-        for (final item in decoded) {
-          _syncQueue.add(SyncQueueItem.fromJson(item));
-        }
+    try {
+      final items = await _syncDao!.getSyncQueueAsMaps();
+      _syncQueue.clear();
 
-        // Sort by priority
-        _syncQueue.sort((a, b) => a.priority.index.compareTo(b.priority.index));
-
-        if (kDebugMode) {
-          print('Loaded ${_syncQueue.length} sync queue items');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error loading sync queue: $e');
-        }
+      for (final item in items) {
+        _syncQueue.add(SyncQueueItem.fromJson(item));
       }
-    }
 
-    // Load metadata
-    final metaJson = _prefs!.getString('sync_queue_meta');
-    if (metaJson != null) {
-      try {
-        final meta = jsonDecode(metaJson) as Map<String, dynamic>;
-        _lastSyncTime = meta['lastSyncTime'] != null
-            ? DateTime.parse(meta['lastSyncTime'])
-            : null;
-        _lastSuccessTime = meta['lastSuccessTime'] != null
-            ? DateTime.parse(meta['lastSuccessTime'])
-            : null;
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error loading sync metadata: $e');
-        }
+      // Sort by priority
+      _syncQueue.sort((a, b) => a.priority.index.compareTo(b.priority.index));
+
+      if (kDebugMode) {
+        print('Loaded ${_syncQueue.length} sync queue items from Drift');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading sync queue: $e');
       }
     }
   }
 
-  /// Save sync queue to local storage
+  /// Save sync queue to Drift database
   Future<void> _saveSyncQueue() async {
-    if (_prefs == null) return;
+    if (_syncDao == null) return;
 
     try {
-      final queueJson = jsonEncode(
-        _syncQueue.map((item) => item.toJson()).toList(),
-      );
-      await _prefs!.setString('sync_queue_items', queueJson);
-
-      final meta = {
-        'lastSyncTime': _lastSyncTime?.toIso8601String(),
-        'lastSuccessTime': _lastSuccessTime?.toIso8601String(),
-      };
-      await _prefs!.setString('sync_queue_meta', jsonEncode(meta));
+      final queueMaps = _syncQueue.map((item) => item.toJson()).toList();
+      await _syncDao!.saveSyncQueueFromMaps(queueMaps);
     } catch (e) {
       if (kDebugMode) {
         print('Error saving sync queue: $e');
@@ -708,7 +700,7 @@ class DataSyncService extends ChangeNotifier {
   /// Clear all pending sync data
   Future<void> clearPendingData() async {
     _syncQueue.clear();
-    await _saveSyncQueue();
+    await _syncDao?.clearSyncQueue();
     _updateSyncStatus();
   }
 

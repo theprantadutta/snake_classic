@@ -1,10 +1,19 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:drift/drift.dart';
+import 'package:snake_classic/data/database/app_database.dart';
+import 'package:snake_classic/data/daos/settings_dao.dart';
+import 'package:snake_classic/data/daos/game_dao.dart';
+import 'package:snake_classic/data/daos/store_dao.dart';
+import 'package:snake_classic/data/daos/sync_dao.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 class StorageService {
   static StorageService? _instance;
-  SharedPreferences? _prefs;
+  AppDatabase? _database;
+  SettingsDao? _settingsDao;
+  GameDao? _gameDao;
+  StoreDao? _storeDao;
+  SyncDao? _syncDao;
 
   StorageService._internal();
 
@@ -13,44 +22,69 @@ class StorageService {
     return _instance!;
   }
 
-  Future<void> _initPrefs() async {
-    _prefs ??= await SharedPreferences.getInstance();
+  /// Initialize the storage service with database
+  Future<void> initialize(AppDatabase database) async {
+    _database = database;
+    _settingsDao = database.settingsDao;
+    _gameDao = database.gameDao;
+    _storeDao = database.storeDao;
+    _syncDao = database.syncDao;
+
+    // Initialize default data
+    await _database!.initializeDefaults();
   }
 
+  /// Check if initialized
+  bool get isInitialized => _database != null;
+
+  // ==================== High Score ====================
+
   Future<int> getHighScore() async {
-    await _initPrefs();
-    return _prefs?.getInt(GameConstants.highScoreKey) ?? 0;
+    final settings = await _settingsDao?.getSettings();
+    return settings?.highScore ?? 0;
   }
 
   Future<void> saveHighScore(int score) async {
-    await _initPrefs();
-    await _prefs?.setInt(GameConstants.highScoreKey, score);
+    await _settingsDao?.updateHighScore(score);
   }
 
+  // ==================== Theme ====================
+
   Future<GameTheme> getSelectedTheme() async {
-    await _initPrefs();
-    final themeIndex = _prefs?.getInt(GameConstants.selectedThemeKey) ?? 0;
+    final settings = await _settingsDao?.getSettings();
+    final themeIndex = settings?.themeIndex ?? 0;
     return GameTheme.values[themeIndex.clamp(0, GameTheme.values.length - 1)];
   }
 
   Future<void> saveSelectedTheme(GameTheme theme) async {
-    await _initPrefs();
-    await _prefs?.setInt(GameConstants.selectedThemeKey, theme.index);
+    await _settingsDao?.updateTheme(theme.index);
   }
 
+  // ==================== Sound Settings ====================
+
   Future<bool> isSoundEnabled() async {
-    await _initPrefs();
-    return _prefs?.getBool(GameConstants.soundEnabledKey) ?? true;
+    final settings = await _settingsDao?.getSettings();
+    return settings?.soundEnabled ?? true;
   }
 
   Future<void> setSoundEnabled(bool enabled) async {
-    await _initPrefs();
-    await _prefs?.setBool(GameConstants.soundEnabledKey, enabled);
+    await _settingsDao?.updateSoundEnabled(enabled);
   }
 
+  Future<bool> isMusicEnabled() async {
+    final settings = await _settingsDao?.getSettings();
+    return settings?.musicEnabled ?? true;
+  }
+
+  Future<void> setMusicEnabled(bool enabled) async {
+    await _settingsDao?.updateMusicEnabled(enabled);
+  }
+
+  // ==================== Board Size ====================
+
   Future<BoardSize> getBoardSize() async {
-    await _initPrefs();
-    final boardSizeIndex = _prefs?.getInt(GameConstants.boardSizeKey) ?? 1;
+    final settings = await _settingsDao?.getSettings();
+    final boardSizeIndex = settings?.boardSizeIndex ?? 1;
     return GameConstants.availableBoardSizes[boardSizeIndex.clamp(
       0,
       GameConstants.availableBoardSizes.length - 1,
@@ -58,84 +92,37 @@ class StorageService {
   }
 
   Future<void> saveBoardSize(BoardSize boardSize) async {
-    await _initPrefs();
     final index = GameConstants.availableBoardSizes.indexOf(boardSize);
-    await _prefs?.setInt(GameConstants.boardSizeKey, index);
+    await _settingsDao?.updateBoardSize(index >= 0 ? index : 1);
   }
 
+  // ==================== Crash Feedback ====================
+
   Future<Duration> getCrashFeedbackDuration() async {
-    await _initPrefs();
-    final durationSeconds =
-        _prefs?.getInt(GameConstants.crashFeedbackDurationKey) ??
+    final settings = await _settingsDao?.getSettings();
+    final durationSeconds = settings?.crashFeedbackDurationSeconds ??
         GameConstants.defaultCrashFeedbackDuration.inSeconds;
     return Duration(seconds: durationSeconds);
   }
 
   Future<void> saveCrashFeedbackDuration(Duration duration) async {
-    await _initPrefs();
-    await _prefs?.setInt(
-      GameConstants.crashFeedbackDurationKey,
-      duration.inSeconds,
-    );
+    await _settingsDao?.updateCrashFeedbackDuration(duration.inSeconds);
   }
 
-  Future<String?> getStatistics() async {
-    await _initPrefs();
-    return _prefs?.getString(GameConstants.statisticsKey);
-  }
+  // ==================== D-Pad Settings ====================
 
-  Future<void> saveStatistics(String statisticsJson) async {
-    await _initPrefs();
-    await _prefs?.setString(GameConstants.statisticsKey, statisticsJson);
-  }
-
-  Future<String?> getAchievements() async {
-    await _initPrefs();
-    return _prefs?.getString('achievements');
-  }
-
-  Future<void> saveAchievements(String achievementsJson) async {
-    await _initPrefs();
-    await _prefs?.setString('achievements', achievementsJson);
-  }
-
-  Future<bool> isMusicEnabled() async {
-    await _initPrefs();
-    return _prefs?.getBool('music_enabled') ?? true;
-  }
-
-  Future<void> setMusicEnabled(bool enabled) async {
-    await _initPrefs();
-    await _prefs?.setBool('music_enabled', enabled);
-  }
-
-  Future<bool> isTrailSystemEnabled() async {
-    await _initPrefs();
-    return _prefs?.getBool(GameConstants.trailSystemEnabledKey) ??
-        false; // Default to false
-  }
-
-  Future<void> setTrailSystemEnabled(bool enabled) async {
-    await _initPrefs();
-    await _prefs?.setBool(GameConstants.trailSystemEnabledKey, enabled);
-  }
-
-  // D-Pad controls preference
   Future<bool> isDPadEnabled() async {
-    await _initPrefs();
-    return _prefs?.getBool('dpad_enabled') ?? false; // Default to false
+    final settings = await _settingsDao?.getSettings();
+    return settings?.dPadEnabled ?? false;
   }
 
   Future<void> setDPadEnabled(bool enabled) async {
-    await _initPrefs();
-    await _prefs?.setBool('dpad_enabled', enabled);
+    await _settingsDao?.updateDPadEnabled(enabled);
   }
 
-  // D-Pad position preference
   Future<DPadPosition> getDPadPosition() async {
-    await _initPrefs();
-    final positionIndex =
-        _prefs?.getInt('dpad_position') ?? 1; // Default to center (1)
+    final settings = await _settingsDao?.getSettings();
+    final positionIndex = settings?.dPadPositionIndex ?? 1;
     return DPadPosition.values[positionIndex.clamp(
       0,
       DPadPosition.values.length - 1,
@@ -143,319 +130,294 @@ class StorageService {
   }
 
   Future<void> setDPadPosition(DPadPosition position) async {
-    await _initPrefs();
-    await _prefs?.setInt('dpad_position', position.index);
+    await _settingsDao?.updateDPadPosition(position.index);
   }
 
-  // Screen shake preference
+  // ==================== Trail System ====================
+
+  Future<bool> isTrailSystemEnabled() async {
+    final settings = await _settingsDao?.getSettings();
+    return settings?.trailSystemEnabled ?? false;
+  }
+
+  Future<void> setTrailSystemEnabled(bool enabled) async {
+    await _settingsDao?.updateTrailSystemEnabled(enabled);
+  }
+
+  // ==================== Screen Shake ====================
+
   Future<bool> isScreenShakeEnabled() async {
-    await _initPrefs();
-    return _prefs?.getBool('screen_shake_enabled') ?? false; // Default to false
+    final settings = await _settingsDao?.getSettings();
+    return settings?.screenShakeEnabled ?? false;
   }
 
   Future<void> setScreenShakeEnabled(bool enabled) async {
-    await _initPrefs();
-    await _prefs?.setBool('screen_shake_enabled', enabled);
+    await _settingsDao?.updateScreenShakeEnabled(enabled);
   }
 
-  // Replay storage methods
-  Future<void> saveReplay(String replayId, String replayJson) async {
-    await _initPrefs();
-    await _prefs?.setString('replay_$replayId', replayJson);
+  // ==================== Statistics ====================
 
-    // Update replay keys list
-    final keys = await getReplayKeys();
-    if (!keys.contains(replayId)) {
-      keys.add(replayId);
-      await _prefs?.setStringList('replay_keys', keys);
-    }
+  Future<String?> getStatistics() async {
+    return await _gameDao?.getStatisticsAsJson();
+  }
+
+  Future<void> saveStatistics(String statisticsJson) async {
+    await _gameDao?.updateStatisticsFromJson(statisticsJson);
+  }
+
+  // ==================== Achievements ====================
+
+  Future<String?> getAchievements() async {
+    return await _gameDao?.getAchievementsAsJson();
+  }
+
+  Future<void> saveAchievements(String achievementsJson) async {
+    await _gameDao?.loadAchievementsFromJson(achievementsJson);
+  }
+
+  // ==================== Replays ====================
+
+  Future<void> saveReplay(String replayId, String replayJson) async {
+    final data = json.decode(replayJson) as Map<String, dynamic>;
+    await _gameDao?.saveReplay(ReplaysCompanion(
+      id: Value(replayId),
+      name: Value(data['name']),
+      score: Value(data['score'] ?? 0),
+      snakeLength: Value(data['snakeLength'] ?? 0),
+      gameDurationSeconds: Value(data['gameDurationSeconds'] ?? 0),
+      gameMode: Value(data['gameMode'] ?? 'classic'),
+      boardSize: Value(data['boardSize'] ?? '20x20'),
+      replayData: Value(json.encode(data['replayData'] ?? [])),
+      isFavorite: Value(data['isFavorite'] ?? false),
+    ));
   }
 
   Future<String?> getReplay(String replayId) async {
-    await _initPrefs();
-    return _prefs?.getString('replay_$replayId');
+    final replay = await _gameDao?.getReplay(replayId);
+    if (replay == null) return null;
+
+    return json.encode({
+      'id': replay.id,
+      'name': replay.name,
+      'score': replay.score,
+      'snakeLength': replay.snakeLength,
+      'gameDurationSeconds': replay.gameDurationSeconds,
+      'gameMode': replay.gameMode,
+      'boardSize': replay.boardSize,
+      'replayData': json.decode(replay.replayData),
+      'isFavorite': replay.isFavorite,
+      'recordedAt': replay.recordedAt.toIso8601String(),
+    });
   }
 
   Future<List<String>> getReplayKeys() async {
-    await _initPrefs();
-    return _prefs?.getStringList('replay_keys') ?? [];
+    return await _gameDao?.getReplayKeys() ?? [];
   }
 
   Future<void> deleteReplay(String replayId) async {
-    await _initPrefs();
-    await _prefs?.remove('replay_$replayId');
-
-    // Update replay keys list
-    final keys = await getReplayKeys();
-    keys.remove(replayId);
-    await _prefs?.setStringList('replay_keys', keys);
+    await _gameDao?.deleteReplay(replayId);
   }
 
-  // Premium features persistence
+  // ==================== Premium ====================
+
   Future<bool> isPremiumActive() async {
-    await _initPrefs();
-    return _prefs?.getBool('premium_active') ?? false;
+    return await _storeDao?.isPremiumActive() ?? false;
   }
 
   Future<void> setPremiumActive(bool active) async {
-    await _initPrefs();
-    await _prefs?.setBool('premium_active', active);
+    await _storeDao?.setPremiumActive(active);
   }
 
   Future<String?> getPremiumExpirationDate() async {
-    await _initPrefs();
-    return _prefs?.getString('premium_expiration');
+    return await _storeDao?.getPremiumExpirationDate();
   }
 
   Future<void> setPremiumExpirationDate(String? date) async {
-    await _initPrefs();
+    DateTime? expirationDate;
     if (date != null) {
-      await _prefs?.setString('premium_expiration', date);
-    } else {
-      await _prefs?.remove('premium_expiration');
+      expirationDate = DateTime.tryParse(date);
     }
+    await _storeDao?.setPremiumActive(
+      expirationDate != null && DateTime.now().isBefore(expirationDate),
+      expirationDate: expirationDate,
+    );
   }
 
+  // ==================== Selected Skin/Trail ====================
+
   Future<String?> getSelectedSkinId() async {
-    await _initPrefs();
-    return _prefs?.getString('selected_skin_id');
+    final settings = await _settingsDao?.getSettings();
+    return settings?.selectedSkinId;
   }
 
   Future<void> setSelectedSkinId(String? skinId) async {
-    await _initPrefs();
-    if (skinId != null) {
-      await _prefs?.setString('selected_skin_id', skinId);
-    } else {
-      await _prefs?.remove('selected_skin_id');
-    }
+    await _settingsDao?.updateSelectedSkin(skinId);
   }
 
   Future<String?> getSelectedTrailId() async {
-    await _initPrefs();
-    return _prefs?.getString('selected_trail_id');
+    final settings = await _settingsDao?.getSettings();
+    return settings?.selectedTrailId;
   }
 
   Future<void> setSelectedTrailId(String? trailId) async {
-    await _initPrefs();
-    if (trailId != null) {
-      await _prefs?.setString('selected_trail_id', trailId);
-    } else {
-      await _prefs?.remove('selected_trail_id');
-    }
+    await _settingsDao?.updateSelectedTrail(trailId);
   }
 
+  // ==================== Unlocked Items ====================
+
   Future<List<String>> getUnlockedThemes() async {
-    await _initPrefs();
-    return _prefs?.getStringList('unlocked_themes') ?? [];
+    return await _storeDao?.getUnlockedThemes() ?? [];
   }
 
   Future<void> setUnlockedThemes(List<String> themes) async {
-    await _initPrefs();
-    await _prefs?.setStringList('unlocked_themes', themes);
+    await _storeDao?.setUnlockedThemes(themes);
   }
 
   Future<List<String>> getUnlockedSkins() async {
-    await _initPrefs();
-    return _prefs?.getStringList('unlocked_skins') ?? [];
+    return await _storeDao?.getUnlockedSkins() ?? [];
   }
 
   Future<void> setUnlockedSkins(List<String> skins) async {
-    await _initPrefs();
-    await _prefs?.setStringList('unlocked_skins', skins);
+    await _storeDao?.setUnlockedSkins(skins);
   }
 
   Future<List<String>> getUnlockedTrails() async {
-    await _initPrefs();
-    return _prefs?.getStringList('unlocked_trails') ?? [];
+    return await _storeDao?.getUnlockedTrails() ?? [];
   }
 
   Future<void> setUnlockedTrails(List<String> trails) async {
-    await _initPrefs();
-    await _prefs?.setStringList('unlocked_trails', trails);
+    await _storeDao?.setUnlockedTrails(trails);
   }
 
   Future<List<String>> getUnlockedPowerUps() async {
-    await _initPrefs();
-    return _prefs?.getStringList('unlocked_powerups') ?? [];
+    return await _storeDao?.getUnlockedPowerUps() ?? [];
   }
 
   Future<void> setUnlockedPowerUps(List<String> powerUps) async {
-    await _initPrefs();
-    await _prefs?.setStringList('unlocked_powerups', powerUps);
+    await _storeDao?.setUnlockedPowerUps(powerUps);
   }
 
   Future<List<String>> getUnlockedBoardSizes() async {
-    await _initPrefs();
-    return _prefs?.getStringList('unlocked_board_sizes') ?? [];
+    return await _storeDao?.getUnlockedBoardSizes() ?? [];
   }
 
   Future<void> setUnlockedBoardSizes(List<String> boardSizes) async {
-    await _initPrefs();
-    await _prefs?.setStringList('unlocked_board_sizes', boardSizes);
+    await _storeDao?.setUnlockedBoardSizes(boardSizes);
   }
 
   Future<List<String>> getUnlockedGameModes() async {
-    await _initPrefs();
-    return _prefs?.getStringList('unlocked_game_modes') ?? [];
+    return await _storeDao?.getUnlockedGameModes() ?? [];
   }
 
   Future<void> setUnlockedGameModes(List<String> gameModes) async {
-    await _initPrefs();
-    await _prefs?.setStringList('unlocked_game_modes', gameModes);
+    await _storeDao?.setUnlockedGameModes(gameModes);
   }
 
-  Future<int> getCoins() async {
-    await _initPrefs();
-    return _prefs?.getInt('coins') ?? 0;
-  }
-
-  Future<void> setCoins(int coins) async {
-    await _initPrefs();
-    await _prefs?.setInt('coins', coins);
-  }
-
-  Future<String?> getBattlePassData() async {
-    await _initPrefs();
-    return _prefs?.getString('battle_pass_data');
-  }
-
-  Future<void> setBattlePassData(String? data) async {
-    await _initPrefs();
-    if (data != null) {
-      await _prefs?.setString('battle_pass_data', data);
-    } else {
-      await _prefs?.remove('battle_pass_data');
-    }
-  }
-
-  Future<List<String>> getPurchaseHistory() async {
-    await _initPrefs();
-    return _prefs?.getStringList('purchase_history') ?? [];
-  }
-
-  Future<void> addPurchaseToHistory(String purchaseJson) async {
-    await _initPrefs();
-    final history = await getPurchaseHistory();
-    history.add(purchaseJson);
-    await _prefs?.setStringList('purchase_history', history);
-  }
-
-  Future<void> clearAllData() async {
-    await _initPrefs();
-    await _prefs?.clear();
-  }
-
-  // Sync queue persistence methods
-  static const String _syncQueueKey = 'sync_queue';
-  static const String _syncQueueMetaKey = 'sync_queue_meta';
-
-  /// Get the persisted sync queue
-  Future<List<Map<String, dynamic>>> getSyncQueue() async {
-    await _initPrefs();
-    final queueJson = _prefs?.getString(_syncQueueKey);
-    if (queueJson == null) return [];
-
-    try {
-      final List<dynamic> decoded = json.decode(queueJson);
-      return decoded.cast<Map<String, dynamic>>();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Save the sync queue for persistence
-  Future<void> saveSyncQueue(List<Map<String, dynamic>> queue) async {
-    await _initPrefs();
-    await _prefs?.setString(_syncQueueKey, json.encode(queue));
-  }
-
-  /// Get sync queue metadata (last sync time, stats)
-  Future<Map<String, dynamic>?> getSyncQueueMeta() async {
-    await _initPrefs();
-    final metaJson = _prefs?.getString(_syncQueueMetaKey);
-    if (metaJson == null) return null;
-
-    try {
-      return json.decode(metaJson) as Map<String, dynamic>;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Save sync queue metadata
-  Future<void> saveSyncQueueMeta(Map<String, dynamic> meta) async {
-    await _initPrefs();
-    await _prefs?.setString(_syncQueueMetaKey, json.encode(meta));
-  }
-
-  /// Clear the sync queue
-  Future<void> clearSyncQueue() async {
-    await _initPrefs();
-    await _prefs?.remove(_syncQueueKey);
-    await _prefs?.remove(_syncQueueMetaKey);
-  }
-
-  // Local score queue for offline games
-  static const String _localScoresKey = 'local_scores_pending';
-
-  /// Get pending local scores that need to be synced
-  Future<List<Map<String, dynamic>>> getPendingLocalScores() async {
-    await _initPrefs();
-    final scoresJson = _prefs?.getString(_localScoresKey);
-    if (scoresJson == null) return [];
-
-    try {
-      final List<dynamic> decoded = json.decode(scoresJson);
-      return decoded.cast<Map<String, dynamic>>();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Add a local score to pending sync queue
-  Future<void> addPendingLocalScore(Map<String, dynamic> score) async {
-    await _initPrefs();
-    final scores = await getPendingLocalScores();
-    scores.add(score);
-    await _prefs?.setString(_localScoresKey, json.encode(scores));
-  }
-
-  /// Clear pending local scores after successful sync
-  Future<void> clearPendingLocalScores() async {
-    await _initPrefs();
-    await _prefs?.remove(_localScoresKey);
-  }
-
-  /// Remove specific local scores by IDs
-  Future<void> removePendingLocalScores(List<String> ids) async {
-    await _initPrefs();
-    final scores = await getPendingLocalScores();
-    scores.removeWhere((score) => ids.contains(score['id']));
-    await _prefs?.setString(_localScoresKey, json.encode(scores));
-  }
-
-  // Unlocked bundles
   Future<List<String>> getUnlockedBundles() async {
-    await _initPrefs();
-    return _prefs?.getStringList('unlocked_bundles') ?? [];
+    return await _storeDao?.getUnlockedBundles() ?? [];
   }
 
   Future<void> setUnlockedBundles(List<String> bundles) async {
-    await _initPrefs();
-    await _prefs?.setStringList('unlocked_bundles', bundles);
+    await _storeDao?.setUnlockedBundles(bundles);
   }
 
-  // Trial data
-  Future<Map<String, dynamic>> getTrialData() async {
-    await _initPrefs();
-    final isOnTrial = _prefs?.getBool('trial_is_on') ?? false;
-    final trialStartStr = _prefs?.getString('trial_start_date');
-    final trialEndStr = _prefs?.getString('trial_end_date');
+  // ==================== Coins ====================
 
+  Future<int> getCoins() async {
+    return await _storeDao?.getCoinBalance() ?? 0;
+  }
+
+  Future<void> setCoins(int coins) async {
+    await _storeDao?.setCoinBalance(coins);
+  }
+
+  // ==================== Battle Pass ====================
+
+  Future<String?> getBattlePassData() async {
+    return await _storeDao?.getBattlePassData();
+  }
+
+  Future<void> setBattlePassData(String? data) async {
+    await _storeDao?.setBattlePassData(data);
+  }
+
+  // ==================== Purchase History ====================
+
+  Future<List<String>> getPurchaseHistory() async {
+    return await _storeDao?.getPurchaseHistoryJson() ?? [];
+  }
+
+  Future<void> addPurchaseToHistory(String purchaseJson) async {
+    await _storeDao?.addPurchaseFromJson(purchaseJson);
+  }
+
+  // ==================== Sync Queue ====================
+
+  Future<List<Map<String, dynamic>>> getSyncQueue() async {
+    return await _syncDao?.getSyncQueueAsMaps() ?? [];
+  }
+
+  Future<void> saveSyncQueue(List<Map<String, dynamic>> queue) async {
+    await _syncDao?.saveSyncQueueFromMaps(queue);
+  }
+
+  Future<Map<String, dynamic>?> getSyncQueueMeta() async {
+    // Sync metadata is now part of the sync queue items
+    final pending = await _syncDao?.getPendingSyncCount() ?? 0;
+    final failed = await _syncDao?.getFailedSyncCount() ?? 0;
     return {
-      'isOnTrial': isOnTrial,
-      'trialStartDate': trialStartStr,
-      'trialEndDate': trialEndStr,
+      'pendingCount': pending,
+      'failedCount': failed,
+    };
+  }
+
+  Future<void> saveSyncQueueMeta(Map<String, dynamic> meta) async {
+    // Metadata is managed automatically through sync queue
+  }
+
+  Future<void> clearSyncQueue() async {
+    await _syncDao?.clearSyncQueue();
+  }
+
+  // ==================== Local Scores Queue ====================
+
+  Future<List<Map<String, dynamic>>> getPendingLocalScores() async {
+    final items = await _syncDao?.getSyncQueueAsMaps() ?? [];
+    return items.where((item) => item['dataType'] == 'score').toList();
+  }
+
+  Future<void> addPendingLocalScore(Map<String, dynamic> score) async {
+    final id = 'score_${DateTime.now().millisecondsSinceEpoch}';
+    await _syncDao?.addToSyncQueue(
+      id: id,
+      dataType: 'score',
+      data: score,
+      priority: 1, // High priority
+    );
+  }
+
+  Future<void> clearPendingLocalScores() async {
+    final items = await _syncDao?.getSyncQueueAsMaps() ?? [];
+    for (final item in items) {
+      if (item['dataType'] == 'score') {
+        await _syncDao?.removeSyncItem(item['id']);
+      }
+    }
+  }
+
+  Future<void> removePendingLocalScores(List<String> ids) async {
+    for (final id in ids) {
+      await _syncDao?.removeSyncItem(id);
+    }
+  }
+
+  // ==================== Trial Data ====================
+
+  Future<Map<String, dynamic>> getTrialData() async {
+    return await _storeDao?.getTrialData() ?? {
+      'isOnTrial': false,
+      'trialStartDate': null,
+      'trialEndDate': null,
     };
   }
 
@@ -464,26 +426,20 @@ class StorageService {
     DateTime? trialStartDate,
     DateTime? trialEndDate,
   }) async {
-    await _initPrefs();
-    await _prefs?.setBool('trial_is_on', isOnTrial);
-    if (trialStartDate != null) {
-      await _prefs?.setString(
-        'trial_start_date',
-        trialStartDate.toIso8601String(),
-      );
-    }
-    if (trialEndDate != null) {
-      await _prefs?.setString('trial_end_date', trialEndDate.toIso8601String());
-    }
+    await _storeDao?.setTrialData(
+      isOnTrial: isOnTrial,
+      trialStartDate: trialStartDate,
+      trialEndDate: trialEndDate,
+    );
   }
 
-  // Tournament entries
+  // ==================== Tournament Entries ====================
+
   Future<Map<String, int>> getTournamentEntries() async {
-    await _initPrefs();
-    return {
-      'bronze': _prefs?.getInt('tournament_entries_bronze') ?? 0,
-      'silver': _prefs?.getInt('tournament_entries_silver') ?? 0,
-      'gold': _prefs?.getInt('tournament_entries_gold') ?? 0,
+    return await _storeDao?.getTournamentEntries() ?? {
+      'bronze': 0,
+      'silver': 0,
+      'gold': 0,
     };
   }
 
@@ -492,9 +448,43 @@ class StorageService {
     required int silver,
     required int gold,
   }) async {
-    await _initPrefs();
-    await _prefs?.setInt('tournament_entries_bronze', bronze);
-    await _prefs?.setInt('tournament_entries_silver', silver);
-    await _prefs?.setInt('tournament_entries_gold', gold);
+    await _storeDao?.setTournamentEntries(
+      bronze: bronze,
+      silver: silver,
+      gold: gold,
+    );
+  }
+
+  // ==================== Clear All Data ====================
+
+  Future<void> clearAllData() async {
+    await _database?.clearAllData();
+  }
+
+  // ==================== Watch Streams (Reactive) ====================
+
+  /// Watch settings for reactive UI updates
+  Stream<GameSetting?> watchSettings() {
+    return _settingsDao?.watchSettings() ?? const Stream.empty();
+  }
+
+  /// Watch coin balance for reactive UI updates
+  Stream<int> watchCoinBalance() {
+    return _storeDao?.watchCoinBalance() ?? const Stream.empty();
+  }
+
+  /// Watch statistics for reactive UI updates
+  Stream<Statistic?> watchStatistics() {
+    return _gameDao?.watchStatistics() ?? const Stream.empty();
+  }
+
+  /// Watch achievements for reactive UI updates
+  Stream<List<Achievement>> watchAchievements() {
+    return _gameDao?.watchAchievements() ?? const Stream.empty();
+  }
+
+  /// Watch pending sync items
+  Stream<List<SyncQueueData>> watchPendingSyncItems() {
+    return _syncDao?.watchPendingSyncItems() ?? const Stream.empty();
   }
 }

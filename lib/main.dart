@@ -145,6 +145,14 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
     // Re-apply immersive mode when app resumes
     if (state == AppLifecycleState.resumed) {
       _setImmersiveMode();
+      // Trigger sync when app comes back to foreground
+      DataSyncService().forceSyncNow();
+    }
+
+    // When app goes to background, attempt to sync pending data
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      DataSyncService().forceSyncNow();
     }
   }
 

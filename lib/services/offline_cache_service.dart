@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/data/database/app_database.dart';
+import 'package:snake_classic/data/daos/sync_dao.dart';
 
 /// Cache entry with metadata for TTL management
 class CacheEntry<T> {
@@ -17,41 +17,16 @@ class CacheEntry<T> {
     final remaining = expiresAt.difference(DateTime.now());
     return remaining.isNegative ? Duration.zero : remaining;
   }
-
-  Map<String, dynamic> toJson(Object Function(T) dataEncoder) => {
-    'data': dataEncoder(data),
-    'cachedAt': cachedAt.toIso8601String(),
-    'ttlMillis': ttl.inMilliseconds,
-  };
-
-  static CacheEntry<T>? fromJson<T>(
-    Map<String, dynamic> json,
-    T Function(Object) dataDecoder,
-  ) {
-    try {
-      return CacheEntry<T>(
-        data: dataDecoder(json['data']),
-        cachedAt: DateTime.parse(json['cachedAt']),
-        ttl: Duration(milliseconds: json['ttlMillis']),
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to parse cache entry: $e');
-      }
-      return null;
-    }
-  }
 }
 
 /// Centralized cache management service with TTL-based freshness
+/// Now backed by Drift database for persistence
 class OfflineCacheService extends ChangeNotifier {
   static final OfflineCacheService _instance = OfflineCacheService._internal();
   factory OfflineCacheService() => _instance;
   OfflineCacheService._internal();
 
-  SharedPreferences? _prefs;
-  static const String _cachePrefix = 'cache_';
-  static const String _cacheMetaPrefix = 'cache_meta_';
+  SyncDao? _syncDao;
 
   /// Cache configurations with TTL for each data type
   static const Map<String, Duration> cacheConfigs = {
@@ -81,58 +56,26 @@ class OfflineCacheService extends ChangeNotifier {
     'user_statistics': Duration(minutes: 1),
   };
 
+  /// Initialize with database
+  Future<void> initializeWithDatabase(AppDatabase database) async {
+    _syncDao = database.syncDao;
+    await initialize();
+  }
+
   /// Initialize the cache service
   Future<void> initialize() async {
-    _prefs = await SharedPreferences.getInstance();
-
     // Clean expired cache entries on startup
     await _cleanExpiredCache();
 
     if (kDebugMode) {
-      print('OfflineCacheService initialized');
+      print('OfflineCacheService initialized with Drift');
     }
-  }
-
-  Future<void> _ensureInitialized() async {
-    _prefs ??= await SharedPreferences.getInstance();
   }
 
   /// Get cached data if available and not expired
   Future<T?> getCached<T>(String key, T Function(Object) decoder) async {
-    await _ensureInitialized();
-
-    final metaKey = '$_cacheMetaPrefix$key';
-    final dataKey = '$_cachePrefix$key';
-
-    final metaJson = _prefs?.getString(metaKey);
-    final dataJson = _prefs?.getString(dataKey);
-
-    if (metaJson == null || dataJson == null) {
-      return null;
-    }
-
-    try {
-      final meta = json.decode(metaJson) as Map<String, dynamic>;
-      final cachedAt = DateTime.parse(meta['cachedAt']);
-      final ttlMillis = meta['ttlMillis'] as int;
-      final ttl = Duration(milliseconds: ttlMillis);
-
-      // Check if expired
-      if (DateTime.now().isAfter(cachedAt.add(ttl))) {
-        if (kDebugMode) {
-          print('Cache expired for key: $key');
-        }
-        return null;
-      }
-
-      final data = json.decode(dataJson);
-      return decoder(data);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to get cache for $key: $e');
-      }
-      return null;
-    }
+    if (_syncDao == null) return null;
+    return await _syncDao!.getCached<T>(key, decoder);
   }
 
   /// Get cached data even if expired (for offline fallback)
@@ -140,24 +83,8 @@ class OfflineCacheService extends ChangeNotifier {
     String key,
     T Function(Object) decoder,
   ) async {
-    await _ensureInitialized();
-
-    final dataKey = '$_cachePrefix$key';
-    final dataJson = _prefs?.getString(dataKey);
-
-    if (dataJson == null) {
-      return null;
-    }
-
-    try {
-      final data = json.decode(dataJson);
-      return decoder(data);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to get fallback cache for $key: $e');
-      }
-      return null;
-    }
+    if (_syncDao == null) return null;
+    return await _syncDao!.getCachedFallback<T>(key, decoder);
   }
 
   /// Store data in cache with TTL
@@ -167,106 +94,38 @@ class OfflineCacheService extends ChangeNotifier {
     Object Function(T) encoder, {
     Duration? customTtl,
   }) async {
-    await _ensureInitialized();
+    if (_syncDao == null) return;
 
     final ttl = customTtl ?? cacheConfigs[key] ?? const Duration(minutes: 5);
-    final now = DateTime.now();
+    await _syncDao!.setCache<T>(key, data, encoder, ttl: ttl);
 
-    final metaKey = '$_cacheMetaPrefix$key';
-    final dataKey = '$_cachePrefix$key';
-
-    final meta = {
-      'cachedAt': now.toIso8601String(),
-      'ttlMillis': ttl.inMilliseconds,
-    };
-
-    try {
-      final encodedData = encoder(data);
-      await _prefs?.setString(metaKey, json.encode(meta));
-      await _prefs?.setString(dataKey, json.encode(encodedData));
-
-      if (kDebugMode) {
-        print('Cached data for key: $key (TTL: ${ttl.inMinutes}min)');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to cache data for $key: $e');
-      }
+    if (kDebugMode) {
+      print('Cached data for key: $key (TTL: ${ttl.inMinutes}min)');
     }
   }
 
   /// Check if cache is fresh (not expired)
   Future<bool> isCacheFresh(String key) async {
-    await _ensureInitialized();
-
-    final metaKey = '$_cacheMetaPrefix$key';
-    final metaJson = _prefs?.getString(metaKey);
-
-    if (metaJson == null) {
-      return false;
-    }
-
-    try {
-      final meta = json.decode(metaJson) as Map<String, dynamic>;
-      final cachedAt = DateTime.parse(meta['cachedAt']);
-      final ttlMillis = meta['ttlMillis'] as int;
-      final ttl = Duration(milliseconds: ttlMillis);
-
-      return DateTime.now().isBefore(cachedAt.add(ttl));
-    } catch (e) {
-      return false;
-    }
+    if (_syncDao == null) return false;
+    return await _syncDao!.isCacheFresh(key);
   }
 
   /// Check if any cached data exists (regardless of freshness)
   Future<bool> hasCachedData(String key) async {
-    await _ensureInitialized();
-    final dataKey = '$_cachePrefix$key';
-    return _prefs?.getString(dataKey) != null;
+    if (_syncDao == null) return false;
+    return await _syncDao!.hasCachedData(key);
   }
 
   /// Get cache metadata (for debugging/status display)
   Future<Map<String, dynamic>?> getCacheInfo(String key) async {
-    await _ensureInitialized();
-
-    final metaKey = '$_cacheMetaPrefix$key';
-    final metaJson = _prefs?.getString(metaKey);
-
-    if (metaJson == null) {
-      return null;
-    }
-
-    try {
-      final meta = json.decode(metaJson) as Map<String, dynamic>;
-      final cachedAt = DateTime.parse(meta['cachedAt']);
-      final ttlMillis = meta['ttlMillis'] as int;
-      final ttl = Duration(milliseconds: ttlMillis);
-      final expiresAt = cachedAt.add(ttl);
-      final isExpired = DateTime.now().isAfter(expiresAt);
-
-      return {
-        'cachedAt': cachedAt,
-        'ttl': ttl,
-        'expiresAt': expiresAt,
-        'isExpired': isExpired,
-        'remainingSeconds': isExpired
-            ? 0
-            : expiresAt.difference(DateTime.now()).inSeconds,
-      };
-    } catch (e) {
-      return null;
-    }
+    if (_syncDao == null) return null;
+    return await _syncDao!.getCacheInfo(key);
   }
 
   /// Invalidate specific cache entry
   Future<void> invalidateCache(String key) async {
-    await _ensureInitialized();
-
-    final metaKey = '$_cacheMetaPrefix$key';
-    final dataKey = '$_cachePrefix$key';
-
-    await _prefs?.remove(metaKey);
-    await _prefs?.remove(dataKey);
+    if (_syncDao == null) return;
+    await _syncDao!.invalidateCache(key);
 
     if (kDebugMode) {
       print('Invalidated cache for key: $key');
@@ -275,44 +134,21 @@ class OfflineCacheService extends ChangeNotifier {
 
   /// Invalidate all cache entries matching a pattern
   Future<void> invalidateCachePattern(String pattern) async {
-    await _ensureInitialized();
-
-    final keys = _prefs?.getKeys() ?? <String>{};
-    final keysToRemove = keys
-        .where((k) => k.startsWith(_cachePrefix) && k.contains(pattern))
-        .toList();
-
-    for (final key in keysToRemove) {
-      await _prefs?.remove(key);
-      // Also remove meta key
-      final metaKey = key.replaceFirst(_cachePrefix, _cacheMetaPrefix);
-      await _prefs?.remove(metaKey);
-    }
+    if (_syncDao == null) return;
+    await _syncDao!.invalidateCachePattern(pattern);
 
     if (kDebugMode) {
-      print(
-        'Invalidated ${keysToRemove.length} cache entries matching: $pattern',
-      );
+      print('Invalidated cache entries matching: $pattern');
     }
   }
 
   /// Clear all cached data
   Future<void> clearAllCache() async {
-    await _ensureInitialized();
-
-    final keys = _prefs?.getKeys() ?? <String>{};
-    final cacheKeys = keys
-        .where(
-          (k) => k.startsWith(_cachePrefix) || k.startsWith(_cacheMetaPrefix),
-        )
-        .toList();
-
-    for (final key in cacheKeys) {
-      await _prefs?.remove(key);
-    }
+    if (_syncDao == null) return;
+    await _syncDao!.clearAllCache();
 
     if (kDebugMode) {
-      print('Cleared all cache (${cacheKeys.length} entries)');
+      print('Cleared all cache');
     }
 
     notifyListeners();
@@ -320,39 +156,9 @@ class OfflineCacheService extends ChangeNotifier {
 
   /// Clean expired cache entries
   Future<void> _cleanExpiredCache() async {
-    await _ensureInitialized();
+    if (_syncDao == null) return;
 
-    final keys = _prefs?.getKeys() ?? <String>{};
-    final metaKeys = keys.where((k) => k.startsWith(_cacheMetaPrefix)).toList();
-
-    int cleanedCount = 0;
-
-    for (final metaKey in metaKeys) {
-      final metaJson = _prefs?.getString(metaKey);
-      if (metaJson == null) continue;
-
-      try {
-        final meta = json.decode(metaJson) as Map<String, dynamic>;
-        final cachedAt = DateTime.parse(meta['cachedAt']);
-        final ttlMillis = meta['ttlMillis'] as int;
-        final ttl = Duration(milliseconds: ttlMillis);
-
-        // Only clean very old expired cache (e.g., > 24 hours past expiry)
-        final gracePeriod = const Duration(hours: 24);
-        if (DateTime.now().isAfter(cachedAt.add(ttl).add(gracePeriod))) {
-          final dataKey = metaKey.replaceFirst(_cacheMetaPrefix, _cachePrefix);
-          await _prefs?.remove(metaKey);
-          await _prefs?.remove(dataKey);
-          cleanedCount++;
-        }
-      } catch (e) {
-        // Invalid meta, remove both keys
-        final dataKey = metaKey.replaceFirst(_cacheMetaPrefix, _cachePrefix);
-        await _prefs?.remove(metaKey);
-        await _prefs?.remove(dataKey);
-        cleanedCount++;
-      }
-    }
+    final cleanedCount = await _syncDao!.cleanExpiredCache();
 
     if (kDebugMode && cleanedCount > 0) {
       print('Cleaned $cleanedCount expired cache entries');
@@ -361,55 +167,15 @@ class OfflineCacheService extends ChangeNotifier {
 
   /// Get statistics about cache usage
   Future<Map<String, dynamic>> getCacheStatistics() async {
-    await _ensureInitialized();
-
-    final keys = _prefs?.getKeys() ?? <String>{};
-    final cacheDataKeys = keys
-        .where((k) => k.startsWith(_cachePrefix))
-        .toList();
-    final cacheMetaKeys = keys
-        .where((k) => k.startsWith(_cacheMetaPrefix))
-        .toList();
-
-    int totalSize = 0;
-    int freshCount = 0;
-    int expiredCount = 0;
-
-    for (final metaKey in cacheMetaKeys) {
-      final metaJson = _prefs?.getString(metaKey);
-      if (metaJson == null) continue;
-
-      totalSize += metaJson.length;
-
-      try {
-        final meta = json.decode(metaJson) as Map<String, dynamic>;
-        final cachedAt = DateTime.parse(meta['cachedAt']);
-        final ttlMillis = meta['ttlMillis'] as int;
-        final ttl = Duration(milliseconds: ttlMillis);
-
-        if (DateTime.now().isBefore(cachedAt.add(ttl))) {
-          freshCount++;
-        } else {
-          expiredCount++;
-        }
-      } catch (_) {
-        expiredCount++;
-      }
+    if (_syncDao == null) {
+      return {
+        'totalEntries': 0,
+        'freshEntries': 0,
+        'expiredEntries': 0,
+        'totalSizeBytes': 0,
+        'totalSizeKB': '0.00',
+      };
     }
-
-    for (final dataKey in cacheDataKeys) {
-      final dataJson = _prefs?.getString(dataKey);
-      if (dataJson != null) {
-        totalSize += dataJson.length;
-      }
-    }
-
-    return {
-      'totalEntries': cacheDataKeys.length,
-      'freshEntries': freshCount,
-      'expiredEntries': expiredCount,
-      'totalSizeBytes': totalSize,
-      'totalSizeKB': (totalSize / 1024).toStringAsFixed(2),
-    };
+    return await _syncDao!.getCacheStatistics();
   }
 }
