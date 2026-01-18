@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
@@ -51,6 +53,20 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
   Future<void> _claimReward(DailyChallenge challenge) async {
     final success = await _challengeService.claimReward(challenge.id);
     if (success) {
+      // Actually earn the coins via CoinsCubit
+      if (mounted) {
+        context.read<CoinsCubit>().earnCoins(
+          CoinEarningSource.dailyChallenge,
+          customAmount: challenge.coinReward,
+          itemName: challenge.title,
+          metadata: {
+            'challengeId': challenge.id,
+            'xpReward': challenge.xpReward,
+            'difficulty': challenge.difficulty.name,
+          },
+        );
+      }
+
       HapticFeedback.mediumImpact();
       _audioService.playSound('coin_collect');
       if (mounted) {
@@ -76,6 +92,16 @@ class _DailyChallengesScreenState extends State<DailyChallengesScreen> {
   Future<void> _claimAllRewards() async {
     final totalClaimed = await _challengeService.claimAllRewards();
     if (totalClaimed > 0) {
+      // Actually earn the coins via CoinsCubit
+      if (mounted) {
+        context.read<CoinsCubit>().earnCoins(
+          CoinEarningSource.dailyChallenge,
+          customAmount: totalClaimed,
+          itemName: 'All Daily Challenges',
+          metadata: {'bulkClaim': true},
+        );
+      }
+
       HapticFeedback.heavyImpact();
       _audioService.playSound('coin_collect');
       if (mounted) {

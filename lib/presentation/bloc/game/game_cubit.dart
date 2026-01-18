@@ -9,8 +9,10 @@ import 'package:snake_classic/models/game_state.dart' as model;
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/snake.dart';
+import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/game_replay.dart' show GameRecorder;
 import 'package:snake_classic/models/tournament.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
@@ -41,6 +43,7 @@ class GameCubit extends Cubit<GameCubitState> {
   final StatisticsService _statisticsService;
   final StorageService _storageService;
   final GameSettingsCubit _settingsCubit;
+  final CoinsCubit _coinsCubit;
   final DataSyncService _dataSyncService = DataSyncService();
   final DailyChallengeService _dailyChallengeService = DailyChallengeService();
   final ApiService _apiService = ApiService();
@@ -75,6 +78,7 @@ class GameCubit extends Cubit<GameCubitState> {
     required StatisticsService statisticsService,
     required StorageService storageService,
     required GameSettingsCubit settingsCubit,
+    required CoinsCubit coinsCubit,
   }) : _audioService = audioService,
        _enhancedAudioService = enhancedAudioService,
        _hapticService = hapticService,
@@ -82,6 +86,7 @@ class GameCubit extends Cubit<GameCubitState> {
        _statisticsService = statisticsService,
        _storageService = storageService,
        _settingsCubit = settingsCubit,
+       _coinsCubit = coinsCubit,
        super(GameCubitState.initial());
 
   /// Initialize the game cubit
@@ -414,6 +419,12 @@ class GameCubit extends Cubit<GameCubitState> {
         );
         _audioService.playSound('level_up');
         HapticFeedback.mediumImpact();
+
+        // Award coins for level up
+        _coinsCubit.earnCoins(
+          CoinEarningSource.levelUp,
+          metadata: {'level': newLevel},
+        );
       } else {
         _audioService.playSound('eat');
         HapticFeedback.lightImpact();
@@ -658,16 +669,35 @@ class GameCubit extends Cubit<GameCubitState> {
     final gameState = state.gameState;
     if (gameState == null) return;
 
-    // Check achievements
-    _achievementService.checkScoreAchievements(gameState.score);
-    _achievementService.checkSurvivalAchievements(gameDurationSeconds);
-    _achievementService.checkSpecialAchievements(
+    // Check achievements and award coins for newly unlocked ones
+    final scoreUnlocks = await _achievementService.checkScoreAchievements(
+      gameState.score,
+    );
+    final survivalUnlocks = await _achievementService.checkSurvivalAchievements(
+      gameDurationSeconds,
+    );
+    final specialUnlocks = await _achievementService.checkSpecialAchievements(
       level: gameState.level,
       hitWall: _hitWallThisGame,
       hitSelf: _hitSelfThisGame,
       foodTypesEaten: _foodTypesEatenThisGame,
       noWallGames: _consecutiveGamesWithoutWallHits,
     );
+
+    // Award coins for newly unlocked achievements
+    final allNewUnlocks = [...scoreUnlocks, ...survivalUnlocks, ...specialUnlocks];
+    for (final achievement in allNewUnlocks) {
+      await _coinsCubit.earnCoins(
+        CoinEarningSource.achievementUnlocked,
+        customAmount: achievement.points,
+        itemName: achievement.title,
+        metadata: {
+          'achievementId': achievement.id,
+          'type': achievement.type.name,
+          'rarity': achievement.rarity.name,
+        },
+      );
+    }
 
     // Calculate power-up time
     _currentGamePowerUpTime = gameState.activePowerUps
@@ -885,6 +915,14 @@ class GameCubit extends Cubit<GameCubitState> {
     // Track game end statistics and achievements
     await _trackGameEnd();
 
+    // Award coins for game completion
+    await _awardGameCompletionCoins(
+      score: gameState.score,
+      level: gameState.level,
+      foodEaten: foodEaten,
+      gameDurationSeconds: gameDurationSeconds,
+    );
+
     // Add battle pass XP based on game performance
     await _addBattlePassXP(
       score: gameState.score,
@@ -905,6 +943,57 @@ class GameCubit extends Cubit<GameCubitState> {
         ),
       ),
     );
+  }
+
+  /// Award coins for completing a game based on performance
+  Future<void> _awardGameCompletionCoins({
+    required int score,
+    required int level,
+    required int foodEaten,
+    required int gameDurationSeconds,
+  }) async {
+    try {
+      // Base coins + bonus based on score (5 base + 1 per 50 points, max 100)
+      final coinsEarned = (5 + (score ~/ 50)).clamp(5, 100);
+
+      await _coinsCubit.earnCoins(
+        CoinEarningSource.gameCompleted,
+        customAmount: coinsEarned,
+        metadata: {'score': score, 'level': level, 'foodEaten': foodEaten},
+      );
+
+      // Bonus for perfect game (no wall/self hits, played > 30 seconds)
+      final isPerfectGame = !_hitWallThisGame &&
+          !_hitSelfThisGame &&
+          gameDurationSeconds > 30;
+
+      if (isPerfectGame) {
+        await _coinsCubit.earnCoins(
+          CoinEarningSource.perfectGame,
+          metadata: {
+            'duration': gameDurationSeconds,
+            'score': score,
+          },
+        );
+      }
+
+      // Bonus for long survival (> 3 minutes = 180 seconds)
+      if (gameDurationSeconds > 180) {
+        await _coinsCubit.earnCoins(
+          CoinEarningSource.longSurvival,
+          metadata: {
+            'duration': gameDurationSeconds,
+            'score': score,
+          },
+        );
+      }
+
+      AppLogger.info(
+        'Awarded game completion coins: $coinsEarned (score: $score, perfect: $isPerfectGame, long: ${gameDurationSeconds > 180})',
+      );
+    } catch (e) {
+      AppLogger.error('Error awarding game completion coins', e);
+    }
   }
 
   /// Calculate and add XP to battle pass based on game performance

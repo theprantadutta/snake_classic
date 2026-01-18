@@ -130,8 +130,6 @@ Future<void> configureDependencies() async {
     () => AuthCubit(getIt<UnifiedUserService>()),
   );
 
-  getIt.registerFactory<CoinsCubit>(() => CoinsCubit());
-
   getIt.registerFactory<MultiplayerCubit>(
     () => MultiplayerCubit(
       multiplayerService: getIt<MultiplayerService>(),
@@ -145,6 +143,9 @@ Future<void> configureDependencies() async {
     () => GameSettingsCubit(getIt<StorageService>()),
   );
 
+  // Register CoinsCubit as singleton so it can be shared across game sessions
+  getIt.registerLazySingleton<CoinsCubit>(() => CoinsCubit());
+
   getIt.registerFactory<GameCubit>(
     () => GameCubit(
       audioService: getIt<AudioService>(),
@@ -154,6 +155,7 @@ Future<void> configureDependencies() async {
       statisticsService: getIt<StatisticsService>(),
       storageService: getIt<StorageService>(),
       settingsCubit: getIt<GameSettingsCubit>(),
+      coinsCubit: getIt<CoinsCubit>(),
     ),
   );
 
