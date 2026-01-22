@@ -72,3 +72,4 @@ lib/generated/
 notification_backend/
 .claude/
 nul
+_nul

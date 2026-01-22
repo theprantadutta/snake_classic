@@ -22,7 +22,7 @@ android {
     // compileSdk = flutter.compileSdkVersion
     compileSdk = 36
     // ndkVersion = flutter.ndkVersion
-    ndkVersion = "29.0.13113456"
+    ndkVersion = "29.0.14206865"
 
     compileOptions {
         // Flag to enable support for the new language APIs
@@ -42,7 +42,8 @@ android {
         multiDexEnabled = true
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // minSdk = flutter.minSdkVersion
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
