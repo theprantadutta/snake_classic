@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/providers/providers.dart';
@@ -60,9 +61,9 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
 
   static const _ttl = Duration(minutes: 5);
 
-  DailyChallengesNotifier(this._ref) :
-    _service = DailyChallengeService(),
-    super(const DailyChallengesState(isLoading: true)) {
+  DailyChallengesNotifier(this._ref)
+    : _service = DailyChallengeService(),
+      super(const DailyChallengesState(isLoading: true)) {
     _initialize();
   }
 
@@ -179,8 +180,8 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
 /// Provider for daily challenges state
 final dailyChallengesProvider =
     StateNotifierProvider<DailyChallengesNotifier, DailyChallengesState>((ref) {
-  return DailyChallengesNotifier(ref);
-});
+      return DailyChallengesNotifier(ref);
+    });
 
 /// Convenience provider for just the challenges list
 final dailyChallengesListProvider = Provider<List<DailyChallenge>>((ref) {

@@ -1,16 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/services/leaderboard_service.dart';
 import 'package:snake_classic/providers/providers.dart';
 
 /// Leaderboard types
-enum LeaderboardType {
-  global,
-  weekly,
-  daily,
-  friends,
-}
+enum LeaderboardType { global, weekly, daily, friends }
 
 /// State for leaderboard data
 class LeaderboardState {
@@ -63,8 +59,8 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
   }
 
   LeaderboardNotifier(this._ref, this._type)
-      : _service = LeaderboardService(),
-        super(const LeaderboardState(isLoading: true)) {
+    : _service = LeaderboardService(),
+      super(const LeaderboardState(isLoading: true)) {
     _initialize();
   }
 
@@ -100,10 +96,7 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
 
     try {
       final entries = await _fetchEntries();
-      state = state.copyWith(
-        entries: entries,
-        isLoading: false,
-      );
+      state = state.copyWith(entries: entries, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -131,10 +124,7 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
 
     try {
       final entries = await _fetchEntries();
-      state = state.copyWith(
-        entries: entries,
-        isLoading: false,
-      );
+      state = state.copyWith(entries: entries, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -161,10 +151,12 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
 }
 
 /// Family provider for leaderboards by type
-final leaderboardProvider = StateNotifierProvider.family<LeaderboardNotifier,
-    LeaderboardState, LeaderboardType>(
-  (ref, type) => LeaderboardNotifier(ref, type),
-);
+final leaderboardProvider =
+    StateNotifierProvider.family<
+      LeaderboardNotifier,
+      LeaderboardState,
+      LeaderboardType
+    >((ref, type) => LeaderboardNotifier(ref, type));
 
 /// Combined leaderboard state for screens that show multiple types
 class CombinedLeaderboardState {
@@ -221,11 +213,13 @@ class CombinedLeaderboardNotifier
   static const _weeklyTtl = Duration(minutes: 5);
 
   CombinedLeaderboardNotifier(this._ref)
-      : _service = LeaderboardService(),
-        super(const CombinedLeaderboardState(
+    : _service = LeaderboardService(),
+      super(
+        const CombinedLeaderboardState(
           isLoadingGlobal: true,
           isLoadingWeekly: true,
-        )) {
+        ),
+      ) {
     _initialize();
   }
 
@@ -267,10 +261,7 @@ class CombinedLeaderboardNotifier
 
   Future<void> _loadData() async {
     // Load both in parallel
-    await Future.wait([
-      _loadGlobal(),
-      _loadWeekly(),
-    ]);
+    await Future.wait([_loadGlobal(), _loadWeekly()]);
 
     // Calculate user rank from global leaderboard
     _calculateUserRank();
@@ -280,10 +271,7 @@ class CombinedLeaderboardNotifier
     state = state.copyWith(isLoadingGlobal: true, globalError: null);
     try {
       final entries = await _service.getGlobalLeaderboard();
-      state = state.copyWith(
-        globalEntries: entries,
-        isLoadingGlobal: false,
-      );
+      state = state.copyWith(globalEntries: entries, isLoadingGlobal: false);
     } catch (e) {
       state = state.copyWith(
         isLoadingGlobal: false,
@@ -296,10 +284,7 @@ class CombinedLeaderboardNotifier
     state = state.copyWith(isLoadingWeekly: true, weeklyError: null);
     try {
       final entries = await _service.getWeeklyLeaderboard();
-      state = state.copyWith(
-        weeklyEntries: entries,
-        isLoadingWeekly: false,
-      );
+      state = state.copyWith(weeklyEntries: entries, isLoadingWeekly: false);
     } catch (e) {
       state = state.copyWith(
         isLoadingWeekly: false,
@@ -326,10 +311,11 @@ class CombinedLeaderboardNotifier
             'rank': i + 1,
             'totalPlayers': state.globalEntries.length,
             'userScore': state.globalEntries[i]['highScore'] ?? 0,
-            'percentile': ((state.globalEntries.length - i) /
-                    state.globalEntries.length *
-                    100)
-                .round(),
+            'percentile':
+                ((state.globalEntries.length - i) /
+                        state.globalEntries.length *
+                        100)
+                    .round(),
           },
         );
         return;
@@ -341,20 +327,14 @@ class CombinedLeaderboardNotifier
 
   /// Refresh all leaderboards
   Future<void> refresh() async {
-    await Future.wait([
-      _refreshGlobal(),
-      _refreshWeekly(),
-    ]);
+    await Future.wait([_refreshGlobal(), _refreshWeekly()]);
   }
 
   Future<void> _refreshGlobal() async {
     state = state.copyWith(isLoadingGlobal: true, globalError: null);
     try {
       final entries = await _service.getGlobalLeaderboard();
-      state = state.copyWith(
-        globalEntries: entries,
-        isLoadingGlobal: false,
-      );
+      state = state.copyWith(globalEntries: entries, isLoadingGlobal: false);
     } catch (e) {
       state = state.copyWith(
         isLoadingGlobal: false,
@@ -367,10 +347,7 @@ class CombinedLeaderboardNotifier
     state = state.copyWith(isLoadingWeekly: true, weeklyError: null);
     try {
       final entries = await _service.getWeeklyLeaderboard();
-      state = state.copyWith(
-        weeklyEntries: entries,
-        isLoadingWeekly: false,
-      );
+      state = state.copyWith(weeklyEntries: entries, isLoadingWeekly: false);
     } catch (e) {
       state = state.copyWith(
         isLoadingWeekly: false,
@@ -388,10 +365,11 @@ class CombinedLeaderboardNotifier
 }
 
 /// Provider for combined leaderboard state (for main leaderboard screen)
-final combinedLeaderboardProvider = StateNotifierProvider<
-    CombinedLeaderboardNotifier, CombinedLeaderboardState>(
-  (ref) => CombinedLeaderboardNotifier(ref),
-);
+final combinedLeaderboardProvider =
+    StateNotifierProvider<
+      CombinedLeaderboardNotifier,
+      CombinedLeaderboardState
+    >((ref) => CombinedLeaderboardNotifier(ref));
 
 /// Convenience provider for global leaderboard entries
 final globalLeaderboardProvider = Provider<List<Map<String, dynamic>>>((ref) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/providers/providers.dart';
@@ -51,8 +52,8 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
   static const _ttl = Duration(minutes: 5);
 
   TournamentsNotifier(this._ref)
-      : _service = TournamentService(),
-        super(const TournamentsState(isLoading: true)) {
+    : _service = TournamentService(),
+      super(const TournamentsState(isLoading: true)) {
     _initialize();
   }
 
@@ -179,8 +180,8 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
 /// Provider for tournaments state
 final tournamentsProvider =
     StateNotifierProvider<TournamentsNotifier, TournamentsState>((ref) {
-  return TournamentsNotifier(ref);
-});
+      return TournamentsNotifier(ref);
+    });
 
 /// Convenience provider for active tournaments
 final activeTournamentsProvider = Provider<List<Tournament>>((ref) {
@@ -204,9 +205,10 @@ final tournamentsOfflineProvider = Provider<bool>((ref) {
 
 /// Provider for tournament leaderboard (family provider by tournament ID)
 final tournamentLeaderboardProvider =
-    FutureProvider.family<List<TournamentParticipant>, String>(
-  (ref, tournamentId) async {
-    final notifier = ref.watch(tournamentsProvider.notifier);
-    return await notifier.getTournamentLeaderboard(tournamentId);
-  },
-);
+    FutureProvider.family<List<TournamentParticipant>, String>((
+      ref,
+      tournamentId,
+    ) async {
+      final notifier = ref.watch(tournamentsProvider.notifier);
+      return await notifier.getTournamentLeaderboard(tournamentId);
+    });

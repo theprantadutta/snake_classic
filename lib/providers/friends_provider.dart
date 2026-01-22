@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/providers/providers.dart';
@@ -26,8 +27,9 @@ class FriendsState {
   });
 
   /// Get received friend requests
-  List<FriendRequest> get receivedRequests =>
-      friendRequests.where((r) => r.type == FriendRequestType.received).toList();
+  List<FriendRequest> get receivedRequests => friendRequests
+      .where((r) => r.type == FriendRequestType.received)
+      .toList();
 
   /// Get sent friend requests
   List<FriendRequest> get sentRequests =>
@@ -68,8 +70,8 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
   static const _searchDebounceDelay = Duration(milliseconds: 300);
 
   FriendsNotifier(this._ref)
-      : _service = SocialService(),
-        super(const FriendsState(isLoading: true)) {
+    : _service = SocialService(),
+      super(const FriendsState(isLoading: true)) {
     _initialize();
   }
 
@@ -115,10 +117,7 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to load friends',
-      );
+      state = state.copyWith(isLoading: false, error: 'Failed to load friends');
     }
   }
 
@@ -150,10 +149,7 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
     state = state.copyWith(searchQuery: query);
 
     if (query.length < 2) {
-      state = state.copyWith(
-        searchResults: [],
-        isSearching: false,
-      );
+      state = state.copyWith(searchResults: [], isSearching: false);
       return;
     }
 
@@ -164,15 +160,9 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
     _searchDebounce = Timer(_searchDebounceDelay, () async {
       try {
         final results = await _service.searchUsers(query);
-        state = state.copyWith(
-          searchResults: results,
-          isSearching: false,
-        );
+        state = state.copyWith(searchResults: results, isSearching: false);
       } catch (e) {
-        state = state.copyWith(
-          isSearching: false,
-          error: 'Search failed',
-        );
+        state = state.copyWith(isSearching: false, error: 'Search failed');
       }
     });
   }
@@ -256,8 +246,9 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
 }
 
 /// Provider for friends state
-final friendsProvider =
-    StateNotifierProvider<FriendsNotifier, FriendsState>((ref) {
+final friendsProvider = StateNotifierProvider<FriendsNotifier, FriendsState>((
+  ref,
+) {
   return FriendsNotifier(ref);
 });
 

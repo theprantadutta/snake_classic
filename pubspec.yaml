@@ -21,7 +21,7 @@ dependencies:
   flutter_bloc: ^9.0.0
   bloc: ^9.0.0
   equatable: ^2.0.5
-  flutter_riverpod: ^2.5.1
+  flutter_riverpod: ^3.2.0
 
   # Dependency injection
   get_it: ^9.2.0
@@ -46,7 +46,7 @@ dependencies:
   flutter_animate: ^4.5.0
 
   # Custom fonts
-  google_fonts: ^6.2.1
+  google_fonts: ^7.1.0
   
   # Vector math for game calculations
   vector_math: ^2.1.4
