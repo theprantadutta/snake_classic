@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/game_state.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -124,8 +127,14 @@ class _GameOverScreenState extends State<GameOverScreen>
               );
             }
 
+            // Get high score from both sources and use the max
+            final authState = context.watch<AuthCubit>().state;
+            final displayHighScore = math.max(
+              gameState.highScore,
+              authState.highScore,
+            );
             final isHighScore =
-                gameState.score == gameState.highScore && gameState.score > 0;
+                gameState.score == displayHighScore && gameState.score > 0;
 
             return Scaffold(
               body: Container(
@@ -341,6 +350,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                                     gameState,
                                     theme,
                                     constraints,
+                                    displayHighScore,
                                   ),
 
                                   SizedBox(
@@ -383,20 +393,11 @@ class _GameOverScreenState extends State<GameOverScreen>
                                       Expanded(
                                         child:
                                             GradientButton(
-                                              onPressed: () async {
+                                              onPressed: () {
                                                 final gameCubit = context
                                                     .read<GameCubit>();
                                                 gameCubit.resetGame();
-                                                await Future.delayed(
-                                                  const Duration(
-                                                    milliseconds: 50,
-                                                  ),
-                                                );
-                                                gameCubit.startGame();
-
-                                                if (context.mounted) {
-                                                  context.pushReplacement(AppRoutes.game);
-                                                }
+                                                context.go(AppRoutes.game);
                                               },
                                               text: 'PLAY AGAIN',
                                               primaryColor: theme.accentColor,
@@ -454,6 +455,7 @@ class _GameOverScreenState extends State<GameOverScreen>
     GameState gameState,
     GameTheme theme,
     BoxConstraints constraints,
+    int displayHighScore,
   ) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -508,7 +510,7 @@ class _GameOverScreenState extends State<GameOverScreen>
             children: [
               _buildStat('Length', '${gameState.snake.length}', theme),
               _buildStat('Level', '${gameState.level}', theme),
-              _buildStat('High Score', '${gameState.highScore}', theme),
+              _buildStat('High Score', '$displayHighScore', theme),
             ],
           ),
         ],

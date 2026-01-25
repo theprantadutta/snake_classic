@@ -54,9 +54,12 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: 0.8),
-      child: Center(
+    return GestureDetector(
+      onTap: widget.onSkip,
+      behavior: HitTestBehavior.opaque,
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.8),
+        child: Center(
         child:
             Container(
               margin: const EdgeInsets.all(40),
@@ -250,6 +253,7 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
               duration: 400.ms,
               curve: Curves.elasticOut,
             ),
+        ),
       ),
     );
   }
