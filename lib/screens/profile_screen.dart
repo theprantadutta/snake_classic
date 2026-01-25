@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -8,9 +9,7 @@ import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
-import 'package:snake_classic/services/achievement_service.dart';
-import 'package:snake_classic/services/statistics_service.dart';
-import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -22,40 +21,21 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final StatisticsService _statisticsService = StatisticsService();
-  final StorageService _storageService = StorageService();
-  final AchievementService _achievementService = AchievementService();
-  Map<String, dynamic> _displayStats = {};
-  List<Achievement> _recentAchievements = [];
-  bool _isLoading = true;
+  late final AppDataCache _appCache;
 
   @override
   void initState() {
     super.initState();
-
-    _loadStatistics();
-    _loadRecentAchievements();
+    _appCache = getIt<AppDataCache>();
+    // Trigger background refresh for fresh data (non-blocking)
+    _appCache.refreshInBackground();
   }
 
-  Future<void> _loadStatistics() async {
-    await _statisticsService.initialize();
-    setState(() {
-      _displayStats = _statisticsService.getDisplayStatistics();
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _loadRecentAchievements() async {
-    await _achievementService.initialize();
-    final achievements = _achievementService.getUnlockedAchievements();
-    achievements.sort(
-      (a, b) =>
-          (b.unlockedAt ?? DateTime(0)).compareTo(a.unlockedAt ?? DateTime(0)),
-    );
-    setState(() {
-      _recentAchievements = achievements.take(3).toList();
-    });
-  }
+  // Convenience getters using cached data
+  Map<String, dynamic> get _displayStats => _appCache.statistics ?? {};
+  List<Achievement> get _recentAchievements => _appCache.recentAchievements ?? [];
+  // Data is already loaded - no loading state needed
+  bool get _isLoading => !_appCache.isFullyLoaded;
 
   @override
   void dispose() {
@@ -955,19 +935,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                FutureBuilder<List<String>>(
-                  future: _storageService.getReplayKeys(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    }
-
-                    final replayKeys = snapshot.data ?? [];
+                Builder(
+                  builder: (context) {
+                    final replayKeys = _appCache.replayKeys ?? [];
                     if (replayKeys.isEmpty) {
                       return Center(
                         child: Padding(

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -9,6 +10,7 @@ import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/cosmetics_screen.dart';
 import 'package:snake_classic/screens/battle_pass_screen.dart';
 import 'package:snake_classic/screens/store_screen.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/username_service.dart';
@@ -27,6 +29,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final AudioService _audioService = AudioService();
   final StorageService _storageService = StorageService();
+  late final AppDataCache _appCache;
   bool _soundEnabled = true;
   bool _musicEnabled = true;
   bool _dPadEnabled = false;
@@ -40,10 +43,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    _appCache = getIt<AppDataCache>();
+    _loadSettingsFromCache();
   }
 
-  Future<void> _loadSettings() async {
+  void _loadSettingsFromCache() {
+    // Use cached settings data for instant display
+    final settingsData = _appCache.settingsData;
+    if (settingsData != null) {
+      setState(() {
+        _soundEnabled = _audioService.isSoundEnabled;
+        _musicEnabled = _audioService.isMusicEnabled;
+        _dPadEnabled = settingsData['dPadEnabled'] ?? false;
+        _screenShakeEnabled = settingsData['screenShakeEnabled'] ?? false;
+        _dPadPosition = settingsData['dPadPosition'] ?? DPadPosition.bottomCenter;
+        _selectedBoardSize = settingsData['boardSize'] ?? GameConstants.availableBoardSizes[1];
+        _selectedCrashFeedbackDuration = settingsData['crashFeedbackDuration'] ?? GameConstants.defaultCrashFeedbackDuration;
+      });
+    } else {
+      // Fallback to direct load if cache not available
+      _loadSettingsDirectly();
+    }
+  }
+
+  Future<void> _loadSettingsDirectly() async {
     await _audioService.initialize();
     final boardSize = await _storageService.getBoardSize();
     final crashFeedbackDuration = await _storageService

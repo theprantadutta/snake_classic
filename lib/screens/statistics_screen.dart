@@ -3,9 +3,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/leaderboard_screen.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -20,33 +22,22 @@ class StatisticsScreen extends StatefulWidget {
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
   final StatisticsService _statisticsService = StatisticsService();
-  Map<String, dynamic> _displayStats = {};
-  Map<String, dynamic> _performanceTrends = {};
-  Map<String, dynamic> _playPatterns = {};
-  bool _isLoading = true;
+  late final AppDataCache _appCache;
 
   @override
   void initState() {
     super.initState();
-    _loadStatistics();
+    _appCache = getIt<AppDataCache>();
+    // Trigger background refresh for fresh data (non-blocking)
+    _appCache.refreshInBackground();
   }
 
-  Future<void> _loadStatistics() async {
-    setState(() => _isLoading = true);
-
-    try {
-      await _statisticsService.initialize();
-      _displayStats = _statisticsService.getDisplayStatistics();
-      _performanceTrends = _statisticsService.getPerformanceTrends();
-      _playPatterns = _statisticsService.getPlayPatterns();
-    } catch (e) {
-      // Handle error
-    }
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
-  }
+  // Convenience getters using cached data - instant display!
+  Map<String, dynamic> get _displayStats => _appCache.statistics ?? {};
+  Map<String, dynamic> get _performanceTrends => _appCache.performanceTrends ?? {};
+  Map<String, dynamic> get _playPatterns => _appCache.playPatterns ?? {};
+  // Data is already loaded - no loading state needed
+  bool get _isLoading => !_appCache.isFullyLoaded;
 
   @override
   Widget build(BuildContext context) {
@@ -1086,7 +1077,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Future<void> _refreshStatistics() async {
-    await _loadStatistics();
+    await _appCache.refreshStatistics();
+    if (mounted) setState(() {});
   }
 
   void _showResetDialog() {
@@ -1120,7 +1112,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             onPressed: () async {
               Navigator.of(context).pop();
               await _statisticsService.resetStatistics();
-              await _loadStatistics();
+              await _refreshStatistics();
             },
             child: const Text('Reset', style: TextStyle(color: Colors.red)),
           ),

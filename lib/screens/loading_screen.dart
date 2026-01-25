@@ -17,6 +17,8 @@ import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
@@ -137,23 +139,15 @@ class _LoadingScreenState extends State<LoadingScreen>
       );
       await _initializePreferences();
 
-      // Step 4: Initialize Game Data
+      // Step 4: Load ALL game data CONCURRENTLY (fast!)
       await _updateProgress(
         0.55,
-        'Loading game statistics...',
-        'Calculating your progress',
+        'Loading game data...',
+        'Fetching all data concurrently',
       );
-      await _initializeStatistics();
+      await _preloadAllDataConcurrently();
 
-      // Step 5: Initialize Achievement System
-      await _updateProgress(
-        0.7,
-        'Checking achievements...',
-        'Unlocking rewards',
-      );
-      await _initializeAchievements();
-
-      // Step 6: Initialize Audio System
+      // Step 5: Initialize Audio System
       await _updateProgress(
         0.85,
         'Configuring audio system...',
@@ -334,6 +328,37 @@ class _LoadingScreenState extends State<LoadingScreen>
       AppLogger.info('Preferences and Cubits initialized successfully');
     } catch (e) {
       AppLogger.prefs('Preferences initialization warning', e);
+    }
+  }
+
+  /// Load ALL data concurrently for maximum speed
+  Future<void> _preloadAllDataConcurrently() async {
+    try {
+      AppLogger.lifecycle('Preloading all data concurrently');
+
+      // All these run IN PARALLEL - much faster!
+      await Future.wait([
+        // Core services initialization
+        _initializeStatistics(),
+        _initializeAchievements(),
+
+        // Preload ALL cached data (stats, settings, leaderboards, etc.)
+        _preloadAppDataCache(),
+      ]);
+
+      AppLogger.success('All data preloaded concurrently');
+    } catch (e) {
+      AppLogger.error('Concurrent preload warning', e);
+    }
+  }
+
+  Future<void> _preloadAppDataCache() async {
+    try {
+      final appCache = getIt<AppDataCache>();
+      await appCache.preloadAll();
+      AppLogger.success('AppDataCache preloaded successfully');
+    } catch (e) {
+      AppLogger.error('AppDataCache preload warning', e);
     }
   }
 

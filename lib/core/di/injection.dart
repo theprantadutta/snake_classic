@@ -17,6 +17,7 @@ import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 
 // Core
 import 'package:snake_classic/core/network/network_info.dart';
@@ -91,6 +92,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<AchievementService>(() => AchievementService());
   getIt.registerLazySingleton<StatisticsService>(() => StatisticsService());
   getIt.registerLazySingleton<PurchaseService>(() => PurchaseService());
+  getIt.registerLazySingleton<AppDataCache>(() => AppDataCache());
 
   // ==================== Core ====================
 
