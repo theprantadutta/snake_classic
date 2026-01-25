@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/leaderboard_service.dart';
 import 'package:snake_classic/providers/providers.dart';
 
@@ -206,6 +207,7 @@ class CombinedLeaderboardNotifier
     extends StateNotifier<CombinedLeaderboardState> {
   final Ref _ref;
   final LeaderboardService _service;
+  final AppDataCache _appCache;
   Timer? _globalTimer;
   Timer? _weeklyTimer;
 
@@ -214,6 +216,7 @@ class CombinedLeaderboardNotifier
 
   CombinedLeaderboardNotifier(this._ref)
     : _service = LeaderboardService(),
+      _appCache = AppDataCache(),
       super(
         const CombinedLeaderboardState(
           isLoadingGlobal: true,
@@ -224,8 +227,23 @@ class CombinedLeaderboardNotifier
   }
 
   void _initialize() {
-    // Initial load
-    _loadData();
+    // Check cache first - use preloaded data if available
+    if (_appCache.isFullyLoaded &&
+        _appCache.globalLeaderboard != null &&
+        _appCache.weeklyLeaderboard != null) {
+      // Use cached data immediately - no loading state!
+      state = CombinedLeaderboardState(
+        globalEntries: _appCache.globalLeaderboard!,
+        weeklyEntries: _appCache.weeklyLeaderboard!,
+        isLoadingGlobal: false,
+        isLoadingWeekly: false,
+      );
+      // Refresh in background (silent, no loading indicator)
+      _refreshInBackground();
+    } else {
+      // No cache - load normally
+      _loadData();
+    }
 
     // Set up TTL-based refresh for each type
     _startTtlTimers();
@@ -238,6 +256,22 @@ class CombinedLeaderboardNotifier
         refresh();
       }
     });
+  }
+
+  Future<void> _refreshInBackground() async {
+    // Silent refresh - don't set isLoading
+    try {
+      final results = await Future.wait([
+        _service.getGlobalLeaderboard(),
+        _service.getWeeklyLeaderboard(),
+      ]);
+      state = state.copyWith(
+        globalEntries: results[0],
+        weeklyEntries: results[1],
+      );
+    } catch (_) {
+      // Ignore errors in background refresh
+    }
   }
 
   void _startTtlTimers() {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/models/user_profile.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/providers/providers.dart';
 
@@ -63,6 +64,7 @@ class FriendsState {
 class FriendsNotifier extends StateNotifier<FriendsState> {
   final Ref _ref;
   final SocialService _service;
+  final AppDataCache _appCache;
   Timer? _ttlTimer;
   Timer? _searchDebounce;
 
@@ -71,13 +73,26 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
 
   FriendsNotifier(this._ref)
     : _service = SocialService(),
+      _appCache = AppDataCache(),
       super(const FriendsState(isLoading: true)) {
     _initialize();
   }
 
   void _initialize() {
-    // Initial load
-    _loadData();
+    // Check cache first - use preloaded data if available
+    if (_appCache.isFullyLoaded && _appCache.friendsList != null) {
+      // Use cached data immediately - no loading state!
+      state = FriendsState(
+        friends: _appCache.friendsList!,
+        friendRequests: _appCache.friendRequests ?? [],
+        isLoading: false,
+      );
+      // Refresh in background (silent, no loading indicator)
+      _refreshInBackground();
+    } else {
+      // No cache - load normally
+      _loadData();
+    }
 
     // Set up TTL-based refresh
     _startTtlTimer();
@@ -90,6 +105,23 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
         refresh();
       }
     });
+  }
+
+  Future<void> _refreshInBackground() async {
+    // Silent refresh - don't set isLoading
+    try {
+      final results = await Future.wait([
+        _service.getFriends(),
+        _service.getFriendRequests(),
+      ]);
+
+      state = state.copyWith(
+        friends: results[0] as List<UserProfile>,
+        friendRequests: results[1] as List<FriendRequest>,
+      );
+    } catch (_) {
+      // Ignore errors in background refresh
+    }
   }
 
   void _startTtlTimer() {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -18,6 +19,7 @@ class ReplaysScreen extends StatefulWidget {
 class _ReplaysScreenState extends State<ReplaysScreen>
     with SingleTickerProviderStateMixin {
   final StorageService _storageService = StorageService();
+  final AppDataCache _appCache = AppDataCache();
   List<GameReplay> _replays = [];
   bool _isLoading = true;
   late TabController _tabController;
@@ -26,13 +28,50 @@ class _ReplaysScreenState extends State<ReplaysScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadReplays();
+    _initializeReplays();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _initializeReplays() {
+    // Check if we have cached replay keys for instant display
+    if (_appCache.isFullyLoaded && _appCache.replayKeys != null) {
+      // Load replays using cached keys (still need to load full replay data)
+      _loadReplaysFromKeys(_appCache.replayKeys!);
+    } else {
+      // No cache - load normally
+      _loadReplays();
+    }
+  }
+
+  Future<void> _loadReplaysFromKeys(List<String> replayKeys) async {
+    // Show loading only briefly while we parse the replays
+    final replays = <GameReplay>[];
+
+    for (final key in replayKeys) {
+      final replayJson = await _storageService.getReplay(key);
+      if (replayJson != null) {
+        try {
+          final replay = GameReplay.fromJsonString(replayJson);
+          replays.add(replay);
+        } catch (e) {
+          // Silently skip corrupted replays
+        }
+      }
+    }
+
+    replays.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    if (mounted) {
+      setState(() {
+        _replays = replays;
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadReplays() async {
@@ -54,14 +93,18 @@ class _ReplaysScreenState extends State<ReplaysScreen>
 
       replays.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-      setState(() {
-        _replays = replays;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _replays = replays;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

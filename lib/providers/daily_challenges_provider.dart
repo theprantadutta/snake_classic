@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/providers/providers.dart';
 
@@ -56,6 +57,7 @@ class DailyChallengesState {
 class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
   final Ref _ref;
   final DailyChallengeService _service;
+  final AppDataCache _appCache;
   Timer? _ttlTimer;
   VoidCallback? _serviceListener;
 
@@ -63,6 +65,7 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
 
   DailyChallengesNotifier(this._ref)
     : _service = DailyChallengeService(),
+      _appCache = AppDataCache(),
       super(const DailyChallengesState(isLoading: true)) {
     _initialize();
   }
@@ -72,8 +75,25 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
     _serviceListener = _onServiceChanged;
     _service.addListener(_serviceListener!);
 
-    // Initial load
-    _loadData();
+    // Check cache first - use preloaded data if available
+    if (_appCache.isFullyLoaded &&
+        _appCache.dailyChallenges != null &&
+        _appCache.dailyChallenges!.isNotEmpty) {
+      // Use cached data immediately - no loading state!
+      final challenges = _appCache.dailyChallenges!;
+      state = DailyChallengesState(
+        challenges: challenges,
+        completedCount: challenges.where((c) => c.isCompleted).length,
+        totalCount: challenges.length,
+        allCompleted: challenges.every((c) => c.isCompleted),
+        isLoading: false,
+      );
+      // Refresh in background (silent, no loading indicator)
+      _refreshInBackground();
+    } else {
+      // No cache - load normally
+      _loadData();
+    }
 
     // Set up TTL-based refresh
     _startTtlTimer();
@@ -86,6 +106,16 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
         refresh();
       }
     });
+  }
+
+  Future<void> _refreshInBackground() async {
+    // Silent refresh - don't set isLoading
+    try {
+      await _service.refreshChallenges();
+      _syncStateFromService();
+    } catch (_) {
+      // Ignore errors in background refresh
+    }
   }
 
   void _onServiceChanged() {

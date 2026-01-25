@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/models/tournament.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/providers/providers.dart';
 
@@ -47,19 +48,34 @@ class TournamentsState {
 class TournamentsNotifier extends StateNotifier<TournamentsState> {
   final Ref _ref;
   final TournamentService _service;
+  final AppDataCache _appCache;
   Timer? _ttlTimer;
 
   static const _ttl = Duration(minutes: 5);
 
   TournamentsNotifier(this._ref)
     : _service = TournamentService(),
+      _appCache = AppDataCache(),
       super(const TournamentsState(isLoading: true)) {
     _initialize();
   }
 
   void _initialize() {
-    // Initial load
-    _loadData();
+    // Check cache first - use preloaded data if available
+    if (_appCache.isFullyLoaded && _appCache.activeTournaments != null) {
+      // Use cached data immediately - no loading state!
+      state = TournamentsState(
+        activeTournaments: _appCache.activeTournaments!,
+        historyTournaments: _appCache.historyTournaments ?? [],
+        isLoading: false,
+        isOffline: !_ref.read(isOnlineSyncProvider),
+      );
+      // Refresh in background (silent, no loading indicator)
+      _refreshInBackground();
+    } else {
+      // No cache - load normally
+      _loadData();
+    }
 
     // Set up TTL-based refresh
     _startTtlTimer();
@@ -75,6 +91,26 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
         refresh();
       }
     });
+  }
+
+  Future<void> _refreshInBackground() async {
+    // Silent refresh - don't set isLoading
+    try {
+      final results = await Future.wait([
+        _service.getActiveTournaments(),
+        _service.getTournamentHistory(),
+        _service.getUserTournamentStats(),
+      ]);
+
+      state = state.copyWith(
+        activeTournaments: results[0] as List<Tournament>,
+        historyTournaments: results[1] as List<Tournament>,
+        userStats: results[2] as Map<String, dynamic>,
+        isOffline: !_ref.read(isOnlineSyncProvider),
+      );
+    } catch (_) {
+      // Ignore errors in background refresh
+    }
   }
 
   void _startTtlTimer() {

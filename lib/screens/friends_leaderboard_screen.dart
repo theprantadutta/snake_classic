@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -19,6 +20,7 @@ class FriendsLeaderboardScreen extends StatefulWidget {
 class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     with SingleTickerProviderStateMixin {
   final SocialService _socialService = SocialService();
+  final AppDataCache _appCache = AppDataCache();
   List<UserProfile> _leaderboard = [];
   bool _isLoading = true;
   late AnimationController _animationController;
@@ -30,7 +32,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _loadLeaderboard();
+    _initializeLeaderboard();
   }
 
   @override
@@ -39,18 +41,56 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     super.dispose();
   }
 
+  void _initializeLeaderboard() {
+    // Check cache first - use preloaded friends list sorted by high score
+    if (_appCache.isFullyLoaded && _appCache.friendsList != null && _appCache.friendsList!.isNotEmpty) {
+      // Sort friends by high score for leaderboard display
+      final sortedFriends = List<UserProfile>.from(_appCache.friendsList!);
+      sortedFriends.sort((a, b) => b.highScore.compareTo(a.highScore));
+
+      setState(() {
+        _leaderboard = sortedFriends;
+        _isLoading = false;
+      });
+      _animationController.forward();
+
+      // Refresh in background for latest data
+      _refreshInBackground();
+    } else {
+      // No cache - load normally
+      _loadLeaderboard();
+    }
+  }
+
+  Future<void> _refreshInBackground() async {
+    try {
+      final leaderboard = await _socialService.getFriendsLeaderboard();
+      if (mounted) {
+        setState(() {
+          _leaderboard = leaderboard;
+        });
+      }
+    } catch (_) {
+      // Ignore errors in background refresh
+    }
+  }
+
   Future<void> _loadLeaderboard() async {
     setState(() => _isLoading = true);
 
     try {
       final leaderboard = await _socialService.getFriendsLeaderboard();
-      setState(() {
-        _leaderboard = leaderboard;
-        _isLoading = false;
-      });
-      _animationController.forward();
+      if (mounted) {
+        setState(() {
+          _leaderboard = leaderboard;
+          _isLoading = false;
+        });
+        _animationController.forward();
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
