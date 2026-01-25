@@ -60,21 +60,40 @@ class PreferencesService extends ChangeNotifier {
 
     _prefs = await SharedPreferences.getInstance();
 
-    // Load local preferences first
+    // Load local preferences first (fast, always works)
     await _loadLocalPreferences();
 
-    // If user is signed in, try to sync with cloud preferences
-    if (_userService.isSignedIn) {
-      await _syncWithCloud();
-    }
-
+    // Mark initialized BEFORE cloud sync - this is critical for offline-first
     _isInitialized = true;
 
     if (kDebugMode) {
-      print('PreferencesService initialized');
+      print('PreferencesService initialized (local data loaded)');
     }
 
     notifyListeners();
+
+    // Cloud sync in background - don't await, don't block app startup
+    if (_userService.isSignedIn) {
+      _syncWithCloudInBackground();
+    }
+  }
+
+  /// Sync with cloud in background without blocking initialization
+  void _syncWithCloudInBackground() {
+    // Use Future.microtask to avoid blocking
+    Future.microtask(() async {
+      try {
+        await _syncWithCloud();
+        if (kDebugMode) {
+          print('PreferencesService: Background cloud sync completed');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('PreferencesService: Background cloud sync failed: $e');
+        }
+        // Silently fail - local data is already loaded
+      }
+    });
   }
 
   Future<void> _loadLocalPreferences() async {

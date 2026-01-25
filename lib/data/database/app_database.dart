@@ -371,7 +371,72 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async {
+      await m.createAll();
+      // Create indexes on initial database creation
+      await _createIndexes();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // Add indexes for frequently queried columns
+        await _createIndexes();
+      }
+    },
+  );
+
+  /// Create indexes for better query performance
+  Future<void> _createIndexes() async {
+    // SyncQueue indexes for faster pending item queries
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_sync_queue_priority ON sync_queue(priority)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_sync_queue_queued_at ON sync_queue(queued_at)',
+    );
+
+    // DailyChallenges index for date-based queries
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_daily_challenges_date ON daily_challenges(challenge_date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_daily_challenges_expires ON daily_challenges(expires_at)',
+    );
+
+    // CoinTransactions index for timestamp-based queries
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_coin_transactions_created ON coin_transactions(created_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_coin_transactions_type ON coin_transactions(type)',
+    );
+
+    // Achievements index for unlock status queries
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_achievements_unlocked ON achievements(is_unlocked)',
+    );
+
+    // UnlockedItems index for item type queries
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_unlocked_items_type ON unlocked_items(item_type)',
+    );
+
+    // Replays index for sorting by date
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_replays_recorded ON replays(recorded_at)',
+    );
+
+    // CacheStore index for expiration checks
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_cache_store_expires ON cache_store(expires_at)',
+    );
+  }
 
   /// Initialize default data if tables are empty
   Future<void> initializeDefaults() async {

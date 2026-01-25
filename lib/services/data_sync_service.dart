@@ -156,10 +156,27 @@ class DataSyncService extends ChangeNotifier {
   }
 
   Future<void> initialize(String userId) async {
-    // Prevent re-initialization
+    final isPlaceholder = userId.startsWith('local_') || userId.startsWith('offline_');
+    final wasPlaceholder = _currentUserId?.startsWith('local_') == true ||
+        _currentUserId?.startsWith('offline_') == true;
+
+    // Allow re-initialization if upgrading from placeholder to real user
     if (_isInitialized && _currentUserId == userId) {
       if (kDebugMode) {
         print('DataSyncService already initialized for user: $userId');
+      }
+      return;
+    }
+
+    // If upgrading from placeholder to real user, trigger sync
+    if (_isInitialized && wasPlaceholder && !isPlaceholder) {
+      if (kDebugMode) {
+        print('DataSyncService: Upgrading from placeholder to real user: $userId');
+      }
+      _currentUserId = userId;
+      // Trigger sync now that we have real user
+      if (_connectivityService.isOnline) {
+        _performSync();
       }
       return;
     }
@@ -173,6 +190,7 @@ class DataSyncService extends ChangeNotifier {
     await _loadSyncQueue();
 
     // Listen to connectivity changes
+    _connectivitySubscription?.cancel(); // Cancel any existing subscription
     _connectivitySubscription = _connectivityService.onlineStatusStream.listen((
       isOnline,
     ) {
@@ -186,8 +204,8 @@ class DataSyncService extends ChangeNotifier {
     // Start periodic sync timer
     _startSyncTimer();
 
-    // Initial sync if online
-    if (_connectivityService.isOnline) {
+    // Initial sync if online and we have a real user (not placeholder)
+    if (_connectivityService.isOnline && !isPlaceholder) {
       _performSync();
     }
 
@@ -196,8 +214,36 @@ class DataSyncService extends ChangeNotifier {
     _isInitialized = true;
 
     if (kDebugMode) {
-      print('DataSyncService initialized for user: $userId');
+      print('DataSyncService initialized for user: $userId${isPlaceholder ? ' (placeholder)' : ''}');
       print('Pending sync items: ${_syncQueue.length}');
+    }
+  }
+
+  /// Upgrade user ID from placeholder to real user and trigger sync
+  Future<void> upgradeUser(String realUserId) async {
+    if (realUserId.startsWith('local_') || realUserId.startsWith('offline_')) {
+      return; // Still a placeholder, ignore
+    }
+
+    final wasPlaceholder = _currentUserId?.startsWith('local_') == true ||
+        _currentUserId?.startsWith('offline_') == true;
+
+    if (wasPlaceholder) {
+      if (kDebugMode) {
+        print('DataSyncService: Upgrading user from $_currentUserId to $realUserId');
+      }
+      _currentUserId = realUserId;
+
+      // Update user ID in pending sync items
+      for (final item in _syncQueue) {
+        item.data['userId'] = realUserId;
+      }
+      await _saveSyncQueue();
+
+      // Trigger sync with real user
+      if (_connectivityService.isOnline) {
+        await _performSync();
+      }
     }
   }
 

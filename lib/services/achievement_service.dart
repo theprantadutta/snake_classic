@@ -62,10 +62,24 @@ class AchievementService extends ChangeNotifier {
 
   Future<void> _loadFromLocalStorage() async {
     // Try to load from cache first
-    final cached = await _cacheService.getCachedFallback<Map<String, dynamic>>(
-      _achievementsKey,
-      (data) => Map<String, dynamic>.from(data as Map),
-    );
+    Map<String, dynamic>? cached;
+    try {
+      cached = await _cacheService.getCachedFallback<Map<String, dynamic>>(
+        _achievementsKey,
+        (data) {
+          if (data is Map<String, dynamic>) return data;
+          if (data is Map) return Map<String, dynamic>.from(data);
+          // Invalid format - throw to trigger fallback
+          throw FormatException('Expected Map but got ${data.runtimeType}');
+        },
+      );
+    } catch (e) {
+      // Cache read failed (possibly wrong format), continue to fallback
+      if (kDebugMode) {
+        print('Achievement cache read failed, using fallback: $e');
+      }
+      cached = null;
+    }
 
     if (cached != null) {
       _updateAchievementsFromData(cached);
@@ -73,7 +87,26 @@ class AchievementService extends ChangeNotifier {
       // Fall back to storage service
       final localData = await _storageService.getAchievements();
       if (localData != null && localData.isNotEmpty) {
-        _updateAchievementsFromData(jsonDecode(localData));
+        final decoded = jsonDecode(localData);
+
+        // Handle both Map format (new) and List format (legacy)
+        if (decoded is Map<String, dynamic>) {
+          _updateAchievementsFromData(decoded);
+        } else if (decoded is Map) {
+          _updateAchievementsFromData(Map<String, dynamic>.from(decoded));
+        } else if (decoded is List) {
+          // Legacy format: convert List to Map by achievement id
+          final mapData = <String, dynamic>{};
+          for (final item in decoded) {
+            if (item is Map && item['id'] != null) {
+              mapData[item['id'].toString()] = Map<String, dynamic>.from(item);
+            }
+          }
+          if (mapData.isNotEmpty) {
+            _updateAchievementsFromData(mapData);
+          }
+        }
+        // Else: unknown format, skip loading (will use defaults)
       }
     }
   }

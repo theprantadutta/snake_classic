@@ -14,22 +14,40 @@ class AuthCubit extends Cubit<AuthState> {
   final UnifiedUserService _userService;
   VoidCallback? _userServiceListener;
 
+  /// Completer that signals when local initialization is done
+  final Completer<void> _localInitCompleter = Completer<void>();
+
   AuthCubit(this._userService) : super(AuthState.initial());
+
+  /// Wait for local initialization (SharedPreferences check) to complete.
+  /// This is fast and does not depend on network.
+  Future<void> waitForLocalInit() => _localInitCompleter.future;
 
   /// Initialize the auth cubit
   Future<void> initialize() async {
     if (state.status == AuthStatus.authenticated) return;
 
-    emit(state.copyWith(status: AuthStatus.loading, isLoading: true));
-
     try {
+      // FIRST: Load isFirstTimeUser from SharedPreferences (fast, local-only)
+      // This must happen before any network calls to prevent race conditions
+      final isFirstTime = await _isFirstTimeUser();
+
+      emit(state.copyWith(
+        status: AuthStatus.loading,
+        isLoading: true,
+        isFirstTimeUser: isFirstTime, // Set from local storage IMMEDIATELY
+      ));
+
+      // Signal that local init is complete - LoadingScreen can proceed
+      if (!_localInitCompleter.isCompleted) {
+        _localInitCompleter.complete();
+      }
+
       // Initialize the user service if not already initialized
+      // This may involve network calls but isFirstTimeUser is already set
       if (!_userService.isInitialized) {
         await _userService.initialize();
       }
-
-      // Check if first time user
-      final isFirstTime = await _isFirstTimeUser();
 
       // Listen to user service changes
       _userServiceListener = () {
@@ -40,6 +58,10 @@ class AuthCubit extends Cubit<AuthState> {
       // Update state based on current user
       _updateFromUserService(isFirstTime: isFirstTime);
     } catch (e) {
+      // Complete the completer even on error to prevent hanging
+      if (!_localInitCompleter.isCompleted) {
+        _localInitCompleter.complete();
+      }
       emit(
         state.copyWith(
           status: AuthStatus.error,

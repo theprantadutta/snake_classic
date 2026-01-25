@@ -145,6 +145,10 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   Future<List<Achievement>> getUnlockedAchievements() =>
       (select(achievements)..where((t) => t.isUnlocked.equals(true))).get();
 
+  /// Get achievement by ID
+  Future<Achievement?> getAchievementById(String id) =>
+      (select(achievements)..where((t) => t.id.equals(id))).getSingleOrNull();
+
   /// Update achievement progress
   Future<void> updateAchievementProgress(
     String achievementId,
@@ -220,23 +224,55 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   }
 
   /// Load achievements from JSON
+  /// Supports both List format (full achievement data) and Map format (progress only)
   Future<void> loadAchievementsFromJson(String jsonData) async {
-    final List<dynamic> list = json.decode(jsonData);
-    for (final item in list) {
-      await upsertAchievement(AchievementsCompanion(
-        id: Value(item['id']),
-        name: Value(item['name']),
-        description: Value(item['description']),
-        category: Value(item['category'] ?? 'general'),
-        currentProgress: Value(item['currentProgress'] ?? 0),
-        targetProgress: Value(item['targetProgress'] ?? 1),
-        isUnlocked: Value(item['isUnlocked'] ?? false),
-        unlockedAt: item['unlockedAt'] != null
-            ? Value(DateTime.parse(item['unlockedAt']))
-            : const Value.absent(),
-        rewardCoins: Value(item['rewardCoins'] ?? 0),
-        rewardClaimed: Value(item['rewardClaimed'] ?? false),
-      ));
+    final decoded = json.decode(jsonData);
+
+    if (decoded is List) {
+      // List format: full achievement data from backend or old format
+      for (final item in decoded) {
+        await upsertAchievement(AchievementsCompanion(
+          id: Value(item['id']),
+          name: Value(item['name']),
+          description: Value(item['description']),
+          category: Value(item['category'] ?? 'general'),
+          currentProgress: Value(item['currentProgress'] ?? 0),
+          targetProgress: Value(item['targetProgress'] ?? 1),
+          isUnlocked: Value(item['isUnlocked'] ?? false),
+          unlockedAt: item['unlockedAt'] != null
+              ? Value(DateTime.parse(item['unlockedAt']))
+              : const Value.absent(),
+          rewardCoins: Value(item['rewardCoins'] ?? 0),
+          rewardClaimed: Value(item['rewardClaimed'] ?? false),
+        ));
+      }
+    } else if (decoded is Map) {
+      // Map format: progress-only data keyed by achievement id
+      // This format only updates progress fields for existing achievements
+      for (final entry in decoded.entries) {
+        final id = entry.key.toString();
+        final data = entry.value;
+        if (data == null || data is! Map) continue;
+
+        // Get existing achievement to preserve name/description/etc
+        final existing = await getAchievementById(id);
+        if (existing != null) {
+          await upsertAchievement(AchievementsCompanion(
+            id: Value(id),
+            name: Value(existing.name),
+            description: Value(existing.description),
+            category: Value(existing.category),
+            currentProgress: Value(data['currentProgress'] ?? existing.currentProgress),
+            targetProgress: Value(existing.targetProgress),
+            isUnlocked: Value(data['isUnlocked'] ?? existing.isUnlocked),
+            unlockedAt: data['unlockedAt'] != null
+                ? Value(DateTime.parse(data['unlockedAt']))
+                : (existing.unlockedAt != null ? Value(existing.unlockedAt!) : const Value.absent()),
+            rewardCoins: Value(existing.rewardCoins),
+            rewardClaimed: Value(existing.rewardClaimed),
+          ));
+        }
+      }
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
@@ -174,25 +175,28 @@ class _LoadingScreenState extends State<LoadingScreen>
       if (mounted) {
         final authCubit = context.read<AuthCubit>();
 
-        // Wait for AuthCubit to finish initializing if still in initial/loading state
-        // This ensures isFirstTimeUser has been properly checked from SharedPreferences
-        if (authCubit.state.status == AuthStatus.initial ||
-            authCubit.state.status == AuthStatus.loading) {
-          AppLogger.info('Waiting for AuthCubit to finish initializing...');
-
-          // Wait up to 3 seconds for auth to finish
-          int waitTime = 0;
-          while ((authCubit.state.status == AuthStatus.initial ||
-                  authCubit.state.status == AuthStatus.loading) &&
-              waitTime < 3000 &&
-              mounted) {
-            await Future.delayed(const Duration(milliseconds: 100));
-            waitTime += 100;
-          }
-
-          AppLogger.info(
-            'AuthCubit status: ${authCubit.state.status}, isFirstTimeUser: ${authCubit.state.isFirstTimeUser}',
+        // Wait for local init only (fast, no network) with 2-second timeout
+        // This uses the Completer instead of polling - more reliable and efficient
+        try {
+          await authCubit.waitForLocalInit().timeout(
+            const Duration(seconds: 2),
           );
+          AppLogger.info(
+            'AuthCubit local init complete. isFirstTimeUser: ${authCubit.state.isFirstTimeUser}',
+          );
+        } catch (e) {
+          // Timeout - fall back to checking SharedPreferences directly
+          AppLogger.warning('AuthCubit local init timeout, checking prefs directly');
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            final isFirstTimeFromPrefs = !(prefs.getBool('first_time_setup_complete') ?? false);
+            // Update state if needed (though authCubit should have it by now)
+            if (authCubit.state.isFirstTimeUser != isFirstTimeFromPrefs) {
+              AppLogger.info('Using direct prefs check: isFirstTime=$isFirstTimeFromPrefs');
+            }
+          } catch (_) {
+            // Ignore - use whatever authCubit has
+          }
         }
 
         final isFirstTime = authCubit.state.isFirstTimeUser;
@@ -382,26 +386,30 @@ class _LoadingScreenState extends State<LoadingScreen>
         context,
         listen: false,
       );
-      final userId = unifiedUserService.currentUser?.uid;
 
-      if (userId != null) {
-        final syncService = Provider.of<DataSyncService>(
-          context,
-          listen: false,
-        );
-        // Initialize DataSyncService with userId (this also sets up sync)
-        await syncService.initialize(userId);
-        AppLogger.success('DataSyncService initialized');
+      // Use real user ID or fallback to local placeholder
+      // This ensures DataSyncService initializes even without a real user
+      final userId = unifiedUserService.currentUser?.uid ?? 'local_pending';
+      final isPlaceholder = userId.startsWith('local_') || userId.startsWith('offline_');
 
-        // Perform any pending sync operations
+      final syncService = Provider.of<DataSyncService>(
+        context,
+        listen: false,
+      );
+
+      // Initialize DataSyncService - works with local queue even without real user
+      await syncService.initialize(userId);
+      AppLogger.success('DataSyncService initialized with userId: $userId');
+
+      // Attempt sync only if we have a real user (not placeholder)
+      if (!isPlaceholder && unifiedUserService.currentUser != null) {
         await syncService.forceSyncNow();
+        AppLogger.success('Force sync completed');
       } else {
-        AppLogger.warning(
-          'No user ID available for sync service initialization',
-        );
+        AppLogger.info('Skipping force sync - using placeholder user or offline');
       }
 
-      AppLogger.success('Final sync completed');
+      AppLogger.success('Final sync operations completed');
     } catch (e) {
       AppLogger.sync('Final sync warning', e);
     }

@@ -245,19 +245,21 @@ class UnifiedUserService extends ChangeNotifier {
         if (cachedUser != null) {
           AppLogger.user('Using cached user session (no Firebase auth)');
           _currentUser = cachedUser;
+          _isInitialized = true; // Mark initialized with cached user
           notifyListeners();
 
-          // Try anonymous sign-in in background (if we come online later)
-          _signInAnonymously().catchError((_) {
-            // Ignore errors - we have a cached user
-            return false;
-          });
+          // Try anonymous sign-in in background (non-blocking)
+          _tryAnonymousSignInBackground();
         } else {
-          AppLogger.user(
-            'No existing user or cache, signing in anonymously...',
-          );
-          // No user signed in and no cache, create anonymous user
-          await _signInAnonymously();
+          // No cache - create offline guest IMMEDIATELY, then try Firebase in background
+          AppLogger.user('No cache found, creating offline guest user immediately');
+          _currentUser = await _createOfflineGuestUser();
+          await _cacheUserSession(_currentUser!);
+          _isInitialized = true; // Mark initialized with offline guest
+          notifyListeners();
+
+          // Try to upgrade to Firebase anonymous in background (non-blocking)
+          _tryAnonymousSignInBackground();
         }
       }
 
@@ -574,6 +576,21 @@ class UnifiedUserService extends ChangeNotifier {
   Future<void> _clearCachedUserSession() async {
     if (_prefs == null) return;
     await _prefs!.remove(_cachedUserKey);
+  }
+
+  /// Try anonymous sign-in in background without blocking initialization
+  void _tryAnonymousSignInBackground() {
+    Future.microtask(() async {
+      try {
+        final success = await _signInAnonymously();
+        if (success) {
+          AppLogger.user('Background anonymous sign-in successful');
+        }
+      } catch (e) {
+        AppLogger.user('Background anonymous sign-in failed (expected if offline): $e');
+        // Ignore errors - we already have a local user
+      }
+    });
   }
 
   /// Create a purely offline guest user (no Firebase auth required)
