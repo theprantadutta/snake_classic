@@ -2,24 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/screens/achievements_screen.dart';
-import 'package:snake_classic/screens/battle_pass_screen.dart';
-import 'package:snake_classic/screens/cosmetics_screen.dart';
-import 'package:snake_classic/screens/daily_challenges_screen.dart';
-import 'package:snake_classic/screens/friends_screen.dart';
-import 'package:snake_classic/screens/game_screen.dart';
-import 'package:snake_classic/screens/instructions_screen.dart';
-import 'package:snake_classic/screens/leaderboard_screen.dart';
-import 'package:snake_classic/screens/premium_benefits_screen.dart';
-import 'package:snake_classic/screens/profile_screen.dart';
-import 'package:snake_classic/screens/settings_screen.dart';
-import 'package:snake_classic/screens/statistics_screen.dart';
-import 'package:snake_classic/screens/store_screen.dart';
-import 'package:snake_classic/screens/tournaments_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -334,9 +322,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         // Theme switcher
         GestureDetector(
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-            );
+            context.push(AppRoutes.settings);
           },
           child: Container(
             padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
@@ -388,11 +374,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               builder: (context, coinsState) {
                 return GestureDetector(
                   onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const StoreScreen(),
-                      ),
-                    );
+                    context.push(AppRoutes.store);
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(
@@ -446,11 +428,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Help button
             GestureDetector(
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const InstructionsScreen(),
-                  ),
-                );
+                context.push(AppRoutes.instructions);
               },
               child: Container(
                 padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
@@ -475,11 +453,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Profile button
             GestureDetector(
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
+                context.push(AppRoutes.profile);
               },
               child: Container(
                 padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
@@ -700,9 +674,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         return GestureDetector(
           onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (context) => const GameScreen()));
+            context.push(AppRoutes.game);
           },
           child: AnimatedBuilder(
             animation: _playButtonPulseAnimation,
@@ -847,19 +819,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             icon: Icons.analytics,
             color: theme.accentColor,
             isSmallScreen: isSmallScreen,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const StatisticsScreen()),
-            ),
+            onTap: () => context.push(AppRoutes.statistics),
           ),
 
           // Center: High Score display
           Expanded(
             child: GestureDetector(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const StatisticsScreen(),
-                ),
-              ),
+              onTap: () => context.push(AppRoutes.statistics),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -914,11 +880,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             icon: Icons.leaderboard,
             color: Colors.amber,
             isSmallScreen: isSmallScreen,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const LeaderboardScreen(),
-              ),
-            ),
+            onTap: () => context.push(AppRoutes.leaderboard),
           ),
         ],
       ),
@@ -970,11 +932,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             label: 'PREMIUM',
             gradient: [Colors.purple.shade400, Colors.indigo.shade400],
             isSmallScreen: isSmallScreen,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const PremiumBenefitsScreen(),
-              ),
-            ),
+            onTap: () => context.push(AppRoutes.premiumBenefits),
           ),
         ),
         SizedBox(width: isSmallScreen ? 12 : 16),
@@ -986,9 +944,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             label: 'STORE',
             gradient: [Colors.orange.shade400, Colors.amber.shade400],
             isSmallScreen: isSmallScreen,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const StoreScreen()),
-            ),
+            onTap: () => context.push(AppRoutes.store),
           ),
         ),
       ],
@@ -1097,46 +1053,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Note: isMediumScreen not needed in bottom navigation
     final navigationItems = [
       _NavItem(Icons.leaderboard, 'BOARD', Colors.amber, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
-        );
+        context.push(AppRoutes.leaderboard);
       }),
       _NavItem(Icons.calendar_today, 'DAILY', Colors.cyan, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const DailyChallengesScreen(),
-          ),
-        );
+        context.push(AppRoutes.dailyChallenges);
       }, badge: _getDailyChallengesBadge()),
       _NavItem(Icons.emoji_events, 'EVENTS', Colors.purple, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const TournamentsScreen()),
-        );
+        context.push(AppRoutes.tournaments);
       }),
       _NavItem(Icons.timeline, 'BATTLE', Colors.deepPurple, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const BattlePassScreen()),
-        );
+        context.push(AppRoutes.battlePass);
       }),
       _NavItem(Icons.people, 'FRIENDS', Colors.blue, () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => const FriendsScreen()));
+        context.push(AppRoutes.friends);
       }),
       _NavItem(Icons.analytics, 'STATS', Colors.teal, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const StatisticsScreen()),
-        );
+        context.push(AppRoutes.statistics);
       }),
       _NavItem(Icons.palette, 'COSMETICS', Colors.indigo, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const CosmeticsScreen()),
-        );
+        context.push(AppRoutes.cosmetics);
       }),
       _NavItem(Icons.military_tech, 'AWARDS', Colors.orange, () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const AchievementsScreen()),
-        );
+        context.push(AppRoutes.achievements);
       }),
     ];
 

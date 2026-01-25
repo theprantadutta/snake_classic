@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/achievement_service.dart';
@@ -60,7 +61,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         bottom: TabBar(
           controller: _tabController,

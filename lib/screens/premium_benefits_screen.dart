@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -49,7 +50,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                 elevation: 0,
                 leading: IconButton(
                   icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(),
                 ),
               ),
               body: AppBackground(

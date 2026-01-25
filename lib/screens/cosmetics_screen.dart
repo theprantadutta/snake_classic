@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
-import 'package:snake_classic/screens/store_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -142,7 +143,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
           const SizedBox(width: 8),
@@ -245,11 +246,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             ElevatedButton.icon(
               onPressed: () {
                 // Navigate to store coins tab
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const StoreScreen(initialTab: 1),
-                  ),
-                );
+                context.pushReplacement('${AppRoutes.store}?tab=1');
               },
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Buy More'),

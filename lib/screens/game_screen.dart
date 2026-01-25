@@ -2,10 +2,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/screens/game_over_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/game_board.dart';
@@ -126,9 +127,7 @@ class _GameScreenState extends State<GameScreen>
       _hasNavigatedToGameOver = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const GameOverScreen()),
-          );
+          context.pushReplacement(AppRoutes.gameOver);
         }
       });
     }
@@ -223,7 +222,7 @@ class _GameScreenState extends State<GameScreen>
             onPressed: () {
               Navigator.of(dialogContext).pop(); // Close dialog
               gameCubit.resetGame(); // Reset game state before exiting
-              Navigator.of(context).pop(); // Exit game
+              context.pop(); // Exit game
             },
             child: Text('Exit', style: TextStyle(color: theme.foodColor)),
           ),

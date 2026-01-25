@@ -11,9 +11,17 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
-  final Tournament tournament;
+  /// The tournament ID for deep link support.
+  final String tournamentId;
 
-  const TournamentDetailScreen({super.key, required this.tournament});
+  /// Optional tournament object (for instant display when navigating with object).
+  final Tournament? tournament;
+
+  const TournamentDetailScreen({
+    super.key,
+    required this.tournamentId,
+    this.tournament,
+  });
 
   @override
   State<TournamentDetailScreen> createState() => _TournamentDetailScreenState();
@@ -24,17 +32,60 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   final TournamentService _tournamentService = TournamentService();
 
   late TabController _tabController;
-  late Tournament _tournament;
+  Tournament? _tournament;
   List<TournamentParticipant> _leaderboard = [];
   bool _isLoading = false;
+  bool _isLoadingTournament = false;
   bool _isJoining = false;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
     _tournament = widget.tournament;
     _tabController = TabController(length: 3, vsync: this);
-    _loadLeaderboard();
+
+    if (_tournament != null) {
+      // Tournament provided via navigation, load leaderboard
+      _loadLeaderboard();
+    } else {
+      // Deep link: need to load tournament from service
+      _loadTournamentFromId();
+    }
+  }
+
+  Future<void> _loadTournamentFromId() async {
+    setState(() {
+      _isLoadingTournament = true;
+      _loadError = null;
+    });
+
+    try {
+      final tournament = await _tournamentService.getTournament(
+        widget.tournamentId,
+      );
+      if (mounted) {
+        if (tournament != null) {
+          setState(() {
+            _tournament = tournament;
+            _isLoadingTournament = false;
+          });
+          _loadLeaderboard();
+        } else {
+          setState(() {
+            _loadError = 'Tournament not found';
+            _isLoadingTournament = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadError = 'Failed to load tournament';
+          _isLoadingTournament = false;
+        });
+      }
+    }
   }
 
   @override
@@ -44,11 +95,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Future<void> _loadLeaderboard() async {
+    if (_tournament == null) return;
+
     setState(() => _isLoading = true);
 
     try {
       final leaderboard = await _tournamentService.getTournamentLeaderboard(
-        _tournament.id,
+        _tournament!.id,
       );
       setState(() {
         _leaderboard = leaderboard;
@@ -60,8 +113,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Future<void> _refreshTournament() async {
+    final tournamentId = _tournament?.id ?? widget.tournamentId;
     final updatedTournament = await _tournamentService.getTournament(
-      _tournament.id,
+      tournamentId,
     );
     if (updatedTournament != null && mounted) {
       setState(() {
@@ -91,26 +145,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
             ),
             child: SafeArea(
-              child: Column(
-                children: [
-                  _buildHeader(theme),
-                  _buildTournamentInfo(theme),
-                  _buildTabBar(theme),
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildOverviewTab(theme),
-                        _buildLeaderboardTab(theme),
-                        _buildRulesTab(theme),
-                      ],
-                    ),
-                  ),
-                  if (_tournament.status.canJoin ||
-                      _tournament.status.canSubmitScore)
-                    _buildActionButtons(theme),
-                ],
-              ),
+              child: _buildContent(theme),
             ),
           ),
         );
@@ -118,7 +153,85 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     );
   }
 
+  Widget _buildContent(GameTheme theme) {
+    // Show loading state when fetching tournament from deep link
+    if (_isLoadingTournament) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading tournament...',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.8),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Show error state
+    if (_loadError != null || _tournament == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.accentColor.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _loadError ?? 'Tournament not found',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.8),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.accentColor,
+              ),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final tournament = _tournament!;
+    return Column(
+      children: [
+        _buildHeader(theme),
+        _buildTournamentInfo(theme),
+        _buildTabBar(theme),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildOverviewTab(theme),
+              _buildLeaderboardTab(theme),
+              _buildRulesTab(theme),
+            ],
+          ),
+        ),
+        if (tournament.status.canJoin || tournament.status.canSubmitScore)
+          _buildActionButtons(theme),
+      ],
+    );
+  }
+
   Widget _buildHeader(GameTheme theme) {
+    final tournament = _tournament!;
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -133,7 +246,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _tournament.name,
+                  tournament.name,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -141,10 +254,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                   ),
                 ),
                 Text(
-                  _tournament.type.displayName,
+                  tournament.type.displayName,
                   style: TextStyle(
                     fontSize: 14,
-                    color: _getTournamentTypeColor(_tournament.type),
+                    color: _getTournamentTypeColor(tournament.type),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -165,6 +278,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildTournamentInfo(GameTheme theme) {
+    final tournament = _tournament!;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -173,7 +287,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _getTournamentStatusColor(
-            _tournament.status,
+            tournament.status,
           ).withValues(alpha: 0.3),
         ),
       ),
@@ -185,12 +299,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _getTournamentTypeColor(
-                    _tournament.type,
+                    tournament.type,
                   ).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _tournament.type.emoji,
+                  tournament.type.emoji,
                   style: const TextStyle(fontSize: 24),
                 ),
               ),
@@ -208,16 +322,16 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                           ),
                           decoration: BoxDecoration(
                             color: _getTournamentStatusColor(
-                              _tournament.status,
+                              tournament.status,
                             ).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            _tournament.status.displayName,
+                            tournament.status.displayName,
                             style: TextStyle(
                               fontSize: 12,
                               color: _getTournamentStatusColor(
-                                _tournament.status,
+                                tournament.status,
                               ),
                               fontWeight: FontWeight.bold,
                             ),
@@ -237,12 +351,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                _tournament.gameMode.emoji,
+                                tournament.gameMode.emoji,
                                 style: const TextStyle(fontSize: 12),
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                _tournament.gameMode.displayName,
+                                tournament.gameMode.displayName,
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: Colors.blue,
@@ -264,7 +378,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _tournament.timeRemainingFormatted,
+                          tournament.timeRemainingFormatted,
                           style: TextStyle(
                             fontSize: 14,
                             color: theme.accentColor.withValues(alpha: 0.8),
@@ -283,7 +397,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${_tournament.currentParticipants}/${_tournament.maxParticipants} players',
+                          '${tournament.currentParticipants}/${tournament.maxParticipants} players',
                           style: TextStyle(
                             fontSize: 14,
                             color: theme.accentColor.withValues(alpha: 0.8),
@@ -296,7 +410,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
             ],
           ),
-          if (_tournament.hasJoined) ...[
+          if (tournament.hasJoined) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -321,10 +435,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                             color: Colors.green,
                           ),
                         ),
-                        if (_tournament.userBestScore != null &&
-                            _tournament.userAttempts != null)
+                        if (tournament.userBestScore != null &&
+                            tournament.userAttempts != null)
                           Text(
-                            'Best Score: ${_tournament.userBestScore} • Attempts: ${_tournament.userAttempts}',
+                            'Best Score: ${tournament.userBestScore} • Attempts: ${tournament.userAttempts}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.green.withValues(alpha: 0.8),
@@ -333,7 +447,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                       ],
                     ),
                   ),
-                  if (_tournament.userRank > 0)
+                  if (tournament.userRank > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -344,7 +458,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Rank #${_tournament.userRank}',
+                        'Rank #${tournament.userRank}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.amber,
@@ -466,6 +580,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildDescriptionCard(GameTheme theme) {
+    final tournament = _tournament!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -492,7 +607,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            _tournament.description,
+            tournament.description,
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.8),
@@ -509,7 +624,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                _tournament.formattedDateRange,
+                tournament.formattedDateRange,
                 style: TextStyle(
                   fontSize: 14,
                   color: theme.accentColor.withValues(alpha: 0.7),
@@ -523,7 +638,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildRewardsCard(GameTheme theme) {
-    if (_tournament.rewards.isEmpty) return const SizedBox.shrink();
+    final tournament = _tournament!;
+    if (tournament.rewards.isEmpty) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -550,7 +666,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ],
           ),
           const SizedBox(height: 12),
-          ..._tournament.rewards.entries.map((entry) {
+          ...tournament.rewards.entries.map((entry) {
             final rank = entry.key;
             final reward = entry.value;
 
@@ -610,6 +726,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildGameModeCard(GameTheme theme) {
+    final tournament = _tournament!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -623,12 +740,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           Row(
             children: [
               Text(
-                _tournament.gameMode.emoji,
+                tournament.gameMode.emoji,
                 style: const TextStyle(fontSize: 20),
               ),
               const SizedBox(width: 8),
               Text(
-                _tournament.gameMode.displayName,
+                tournament.gameMode.displayName,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -639,7 +756,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            _tournament.gameMode.description,
+            tournament.gameMode.description,
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.8),
@@ -849,11 +966,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildActionButtons(GameTheme theme) {
+    final tournament = _tournament!;
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          if (!_tournament.hasJoined && _tournament.status.canJoin)
+          if (!tournament.hasJoined && tournament.status.canJoin)
             GradientButton(
               onPressed: _isJoining ? null : () => _joinTournament(),
               text: _isJoining ? 'JOINING...' : 'JOIN TOURNAMENT',
@@ -861,7 +979,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               secondaryColor: Colors.cyan,
               icon: Icons.person_add,
             )
-          else if (_tournament.status.canSubmitScore)
+          else if (tournament.status.canSubmitScore)
             GradientButton(
               onPressed: _playTournament,
               text: 'PLAY NOW',
@@ -870,10 +988,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               icon: Icons.play_arrow,
             ),
 
-          if (_tournament.status == TournamentStatus.upcoming) ...[
+          if (tournament.status == TournamentStatus.upcoming) ...[
             const SizedBox(height: 8),
             Text(
-              'Tournament starts ${_tournament.timeRemainingFormatted}',
+              'Tournament starts ${tournament.timeRemainingFormatted}',
               style: TextStyle(
                 fontSize: 12,
                 color: theme.accentColor.withValues(alpha: 0.6),
@@ -887,6 +1005,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   List<String> _getTournamentRules() {
+    final tournament = _tournament!;
     final baseRules = [
       'Play during the tournament period to have your scores counted',
       'You can play multiple times - only your highest score counts',
@@ -895,7 +1014,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     ];
 
     // Add game mode specific rules
-    switch (_tournament.gameMode) {
+    switch (tournament.gameMode) {
       case TournamentGameMode.speedRun:
         baseRules.add('Game speed increases rapidly every 10 points');
         break;
@@ -961,10 +1080,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Future<void> _joinTournament() async {
+    final tournament = _tournament!;
     setState(() => _isJoining = true);
 
     try {
-      final success = await _tournamentService.joinTournament(_tournament.id);
+      final success = await _tournamentService.joinTournament(tournament.id);
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -990,10 +1110,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   void _playTournament() {
+    final tournament = _tournament!;
     final gameCubit = context.read<GameCubit>();
 
     // Set tournament mode in game cubit
-    gameCubit.setTournamentMode(_tournament.id, _tournament.gameMode);
+    gameCubit.setTournamentMode(tournament.id, tournament.gameMode);
 
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => const GameScreen()))

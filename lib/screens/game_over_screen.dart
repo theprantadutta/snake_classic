@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/screens/game_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -394,14 +395,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                                                 gameCubit.startGame();
 
                                                 if (context.mounted) {
-                                                  Navigator.of(
-                                                    context,
-                                                  ).pushReplacement(
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const GameScreen(),
-                                                    ),
-                                                  );
+                                                  context.pushReplacement(AppRoutes.game);
                                                 }
                                               },
                                               text: 'PLAY AGAIN',
@@ -423,9 +417,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                                                 context
                                                     .read<GameCubit>()
                                                     .backToMenu();
-                                                Navigator.of(context).popUntil(
-                                                  (route) => route.isFirst,
-                                                );
+                                                context.go(AppRoutes.home);
                                               },
                                               text: 'MENU',
                                               primaryColor: theme.snakeColor

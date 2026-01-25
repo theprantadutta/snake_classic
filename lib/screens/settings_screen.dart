@@ -1,15 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
-import 'package:snake_classic/screens/theme_selector_screen.dart';
-import 'package:snake_classic/screens/cosmetics_screen.dart';
-import 'package:snake_classic/screens/battle_pass_screen.dart';
-import 'package:snake_classic/screens/store_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
@@ -321,8 +319,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   // Back Button
                                   Center(
                                     child: GradientButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
+                                      onPressed: () => context.pop(),
                                       text: 'BACK TO GAME',
                                       primaryColor: theme.accentColor,
                                       secondaryColor: theme.foodColor,
@@ -444,13 +441,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         GradientButton(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const ThemeSelectorScreen(),
-              ),
-            );
-          },
+          onPressed: () => context.push(AppRoutes.themeSelector),
           text: 'BROWSE THEMES',
           primaryColor: theme.accentColor,
           secondaryColor: theme.primaryColor,
@@ -1347,10 +1338,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const StoreScreen()),
-              );
+              context.push(AppRoutes.store);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.purple.shade600,
@@ -1965,14 +1953,10 @@ extension _SettingsPremium on _SettingsScreenState {
   }
 
   void _openCosmeticsSelector() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const CosmeticsScreen()));
+    context.push(AppRoutes.cosmetics);
   }
 
   void _openBattlePass() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const BattlePassScreen()));
+    context.push(AppRoutes.battlePass);
   }
 }

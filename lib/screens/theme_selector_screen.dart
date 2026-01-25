@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -38,7 +39,7 @@ class ThemeSelectorScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: currentTheme.primaryColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
       ),
       body: AppBackground(
@@ -721,7 +722,7 @@ class ThemeSelectorScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
               child: Text(
                 'Cancel',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
@@ -729,7 +730,7 @@ class ThemeSelectorScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                context.pop();
                 _handleThemePurchase(context, theme, 'individual');
               },
               style: ElevatedButton.styleFrom(
@@ -740,7 +741,7 @@ class ThemeSelectorScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                context.pop();
                 _handleThemePurchase(context, theme, 'bundle');
               },
               style: ElevatedButton.styleFrom(

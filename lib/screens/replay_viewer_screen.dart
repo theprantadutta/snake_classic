@@ -1,28 +1,86 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 import '../widgets/app_background.dart';
 
 class ReplayViewerScreen extends StatefulWidget {
-  final GameReplay replay;
+  /// The replay ID for deep link support.
+  final String replayId;
 
-  const ReplayViewerScreen({super.key, required this.replay});
+  /// Optional replay object (for instant display when navigating with object).
+  final GameReplay? replay;
+
+  const ReplayViewerScreen({
+    super.key,
+    required this.replayId,
+    this.replay,
+  });
 
   @override
   State<ReplayViewerScreen> createState() => _ReplayViewerScreenState();
 }
 
 class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
+  final StorageService _storageService = StorageService();
+
+  GameReplay? _replay;
   int _currentFrameIndex = 0;
   bool _isPlaying = false;
   double _playbackSpeed = 1.0;
   Timer? _playbackTimer;
+  bool _isLoadingReplay = false;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    _replay = widget.replay;
+
+    if (_replay == null) {
+      // Deep link: need to load replay from storage
+      _loadReplayFromId();
+    }
+  }
+
+  Future<void> _loadReplayFromId() async {
+    setState(() {
+      _isLoadingReplay = true;
+      _loadError = null;
+    });
+
+    try {
+      final replayJson = await _storageService.getReplay(widget.replayId);
+      if (mounted) {
+        if (replayJson != null) {
+          final data = json.decode(replayJson) as Map<String, dynamic>;
+          setState(() {
+            _replay = GameReplay.fromJson(data);
+            _isLoadingReplay = false;
+          });
+        } else {
+          setState(() {
+            _loadError = 'Replay not found';
+            _isLoadingReplay = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadError = 'Failed to load replay';
+          _isLoadingReplay = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -30,11 +88,13 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     super.dispose();
   }
 
-  GameFrame? get _currentFrame =>
-      widget.replay.frames.isNotEmpty &&
-          _currentFrameIndex < widget.replay.frames.length
-      ? widget.replay.frames[_currentFrameIndex]
-      : null;
+  GameFrame? get _currentFrame {
+    final replay = _replay;
+    if (replay == null) return null;
+    return replay.frames.isNotEmpty && _currentFrameIndex < replay.frames.length
+        ? replay.frames[_currentFrameIndex]
+        : null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +104,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Replay: ${widget.replay.playerName}',
+          _replay != null ? 'Replay: ${_replay!.playerName}' : 'Loading Replay...',
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: Colors.transparent,
@@ -67,30 +127,89 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
               ],
             ),
           ),
-          child: Column(
-            children: [
-              // Game info header
-              _buildGameInfo(theme),
-
-              const SizedBox(height: 16),
-
-              // Game board
-              Expanded(child: Center(child: _buildGameBoard(theme))),
-
-              const SizedBox(height: 16),
-
-              // Playback controls
-              _buildPlaybackControls(theme),
-
-              const SizedBox(height: 16),
-            ],
-          ),
+          child: _buildContent(theme),
         ),
       ),
     );
   }
 
+  Widget _buildContent(GameTheme theme) {
+    // Show loading state when fetching replay from deep link
+    if (_isLoadingReplay) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading replay...',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.8),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Show error state
+    if (_loadError != null || _replay == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.accentColor.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _loadError ?? 'Replay not found',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.8),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.accentColor,
+              ),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Game info header
+        _buildGameInfo(theme),
+
+        const SizedBox(height: 16),
+
+        // Game board
+        Expanded(child: Center(child: _buildGameBoard(theme))),
+
+        const SizedBox(height: 16),
+
+        // Playback controls
+        _buildPlaybackControls(theme),
+
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
   Widget _buildGameInfo(GameTheme theme) {
+    final replay = _replay!;
     final frame = _currentFrame;
 
     return Container(
@@ -118,12 +237,12 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
               ),
               _buildInfoItem(
                 'Frame',
-                '${_currentFrameIndex + 1}/${widget.replay.totalFrames}',
+                '${_currentFrameIndex + 1}/${replay.totalFrames}',
                 Icons.movie,
               ),
               _buildInfoItem(
                 'Time',
-                widget.replay.formattedDuration,
+                replay.formattedDuration,
                 Icons.timer,
               ),
             ],
@@ -219,6 +338,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
   }
 
   Widget _buildPlaybackControls(GameTheme theme) {
+    final replay = _replay!;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -240,7 +360,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
                 child: Slider(
                   value: _currentFrameIndex.toDouble(),
                   min: 0,
-                  max: (widget.replay.totalFrames - 1).toDouble(),
+                  max: (replay.totalFrames - 1).toDouble(),
                   onChanged: (value) {
                     setState(() {
                       _currentFrameIndex = value.round();
@@ -251,7 +371,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
                 ),
               ),
               Text(
-                widget.replay.totalFrames.toString(),
+                replay.totalFrames.toString(),
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
             ],
@@ -289,7 +409,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
 
               // Step forward
               IconButton(
-                onPressed: _currentFrameIndex < widget.replay.totalFrames - 1
+                onPressed: _currentFrameIndex < replay.totalFrames - 1
                     ? () => _seekFrames(1)
                     : null,
                 icon: const Icon(Icons.keyboard_arrow_right),
@@ -298,7 +418,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
 
               // Next frame
               IconButton(
-                onPressed: _currentFrameIndex < widget.replay.totalFrames - 1
+                onPressed: _currentFrameIndex < replay.totalFrames - 1
                     ? _nextFrame
                     : null,
                 icon: const Icon(Icons.skip_next),
@@ -372,7 +492,10 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
   }
 
   void _startPlayback() {
-    if (_currentFrameIndex >= widget.replay.totalFrames - 1) {
+    final replay = _replay;
+    if (replay == null) return;
+
+    if (_currentFrameIndex >= replay.totalFrames - 1) {
       _currentFrameIndex = 0;
     }
 
@@ -384,7 +507,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     final interval = (100 / _playbackSpeed).round(); // Base 100ms interval
 
     _playbackTimer = Timer.periodic(Duration(milliseconds: interval), (_) {
-      if (_currentFrameIndex < widget.replay.totalFrames - 1) {
+      if (_currentFrameIndex < replay.totalFrames - 1) {
         setState(() {
           _currentFrameIndex++;
         });
@@ -410,7 +533,10 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
   }
 
   void _nextFrame() {
-    if (_currentFrameIndex < widget.replay.totalFrames - 1) {
+    final replay = _replay;
+    if (replay == null) return;
+
+    if (_currentFrameIndex < replay.totalFrames - 1) {
       setState(() {
         _currentFrameIndex++;
       });
@@ -418,9 +544,12 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
   }
 
   void _seekFrames(int delta) {
+    final replay = _replay;
+    if (replay == null) return;
+
     final newIndex = (_currentFrameIndex + delta).clamp(
       0,
-      widget.replay.totalFrames - 1,
+      replay.totalFrames - 1,
     );
     setState(() {
       _currentFrameIndex = newIndex;

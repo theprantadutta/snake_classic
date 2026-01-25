@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -114,7 +115,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             style: IconButton.styleFrom(
               backgroundColor: theme.accentColor.withValues(alpha: 0.1),
             ),
@@ -1405,7 +1406,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  context.pop();
                   _handleBattlePassPurchase();
                 },
                 style: ElevatedButton.styleFrom(
@@ -1427,7 +1428,7 @@ class _BattlePassScreenState extends State<BattlePassScreen>
             ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => context.pop(),
               child: Text(
                 'Maybe Later',
                 style: TextStyle(

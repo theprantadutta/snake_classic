@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -97,7 +99,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           Row(
             children: [
               IconButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.pop(),
                 icon: Icon(
                   Icons.arrow_back,
                   color: theme.accentColor,
@@ -564,7 +566,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
-            onPressed: () => Navigator.of(context).pushNamed('/friends'),
+            onPressed: () => context.push(AppRoutes.friends),
             icon: const Icon(Icons.person_add),
             label: const Text('Add Friends'),
             style: ElevatedButton.styleFrom(

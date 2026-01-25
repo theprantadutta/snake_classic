@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Data class for daily bonus reward
@@ -117,11 +118,11 @@ class DailyBonusPopup extends StatefulWidget {
           isLoading: false, // Never show loading - instant feedback
           onClaim: () async {
             // Close popup immediately for instant feedback
-            Navigator.of(dialogContext).pop();
+            dialogContext.pop();
             // Call the claim handler (handles coins + background sync)
             await onClaim();
           },
-          onClose: () => Navigator.of(dialogContext).pop(),
+          onClose: () => dialogContext.pop(),
         );
       },
     );

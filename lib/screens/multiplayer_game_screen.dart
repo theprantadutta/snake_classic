@@ -2,12 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/multiplayer_game_adapter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
@@ -377,7 +378,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(dialogContext).pop();
+              dialogContext.pop();
               _navigateToLobby();
             },
             child: Container(
@@ -402,9 +403,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
   void _navigateToLobby() {
     context.read<MultiplayerCubit>().leaveGame();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const MultiplayerLobbyScreen()),
-    );
+    context.pushReplacement(AppRoutes.multiplayerLobby);
   }
 
   void _showExitDialog() {
@@ -428,7 +427,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+            onPressed: () => dialogContext.pop(),
             child: Text(
               'Cancel',
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
@@ -436,7 +435,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(dialogContext).pop();
+              dialogContext.pop();
               _navigateToLobby();
             },
             child: const Text('Leave', style: TextStyle(color: Colors.red)),

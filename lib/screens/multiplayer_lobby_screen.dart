@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/screens/multiplayer_game_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -133,11 +134,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   // Navigate to game screen when game starts
                   if (multiplayerState.isGameActive) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => const MultiplayerGameScreen(),
-                        ),
-                      );
+                      context.pushReplacement(AppRoutes.multiplayerGame);
                     });
                   }
 
@@ -341,7 +338,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
 
@@ -382,7 +379,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           IconButton(
             onPressed: () {
               context.read<MultiplayerCubit>().leaveGame();
-              Navigator.of(context).pop();
+              context.pop();
             },
             icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
@@ -1396,7 +1393,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               child: GradientButton(
                 onPressed: () {
                   context.read<MultiplayerCubit>().leaveGame();
-                  Navigator.of(context).pop();
+                  context.pop();
                 },
                 text: 'LEAVE',
                 primaryColor: Colors.red,
@@ -1507,7 +1504,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
               child: Text(
                 'Cancel',
                 style: TextStyle(
@@ -1517,7 +1514,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             ),
             GradientButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                context.pop();
                 context.read<MultiplayerCubit>().createGame(
                   mode: selectedMode,
                   isPrivate: isPrivate,

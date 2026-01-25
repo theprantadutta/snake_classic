@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/game_replay.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/storage_service.dart';
-import 'package:snake_classic/screens/replay_viewer_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -90,7 +91,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
@@ -187,14 +188,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
         side: BorderSide(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ReplayViewerScreen(replay: replay),
-            ),
-          );
-        },
+        onTap: () => context.push(AppRoutes.replayViewerPath(replay.id), extra: replay),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -324,15 +318,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ReplayViewerScreen(replay: replay),
-                          ),
-                        );
-                      },
+                      onPressed: () => context.push(AppRoutes.replayViewerPath(replay.id), extra: replay),
                       icon: const Icon(Icons.play_arrow, size: 16),
                       label: const Text('Watch'),
                       style: ElevatedButton.styleFrom(

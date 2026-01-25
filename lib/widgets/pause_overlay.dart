@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
-import 'package:snake_classic/screens/store_screen.dart';
-import 'package:snake_classic/screens/premium_benefits_screen.dart';
 
 class PauseOverlay extends StatelessWidget {
   final GameTheme theme;
@@ -76,11 +76,7 @@ class PauseOverlay extends StatelessWidget {
                     icon: Icons.star,
                     label: 'Premium',
                     colors: [Colors.purple, Colors.blue],
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const PremiumBenefitsScreen(),
-                      ),
-                    ),
+                    onTap: () => context.push(AppRoutes.premiumBenefits),
                   ),
                   const SizedBox(width: 16),
                   _buildStoreButton(
@@ -88,11 +84,7 @@ class PauseOverlay extends StatelessWidget {
                     icon: Icons.store,
                     label: 'Store',
                     colors: [Colors.orange, Colors.amber],
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const StoreScreen(),
-                      ),
-                    ),
+                    onTap: () => context.push(AppRoutes.store),
                   ),
                 ],
               ).animate().fadeIn(delay: 250.ms),

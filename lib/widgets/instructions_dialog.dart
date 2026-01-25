@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
@@ -55,7 +56,7 @@ class InstructionsDialog extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => context.pop(),
                     icon: Icon(Icons.close, color: theme.accentColor, size: 28),
                   ),
                 ],
@@ -212,7 +213,7 @@ class InstructionsDialog extends StatelessWidget {
 
               // Close Button
               GradientButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => context.pop(),
                     text: 'GOT IT!',
                     primaryColor: theme.accentColor,
                     secondaryColor: theme.foodColor,

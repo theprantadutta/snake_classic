@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/screens/cosmetics_screen.dart';
-import 'package:snake_classic/screens/premium_benefits_screen.dart';
 
 class StoreScreen extends StatefulWidget {
   final int initialTab;
@@ -63,7 +63,7 @@ class _StoreScreenState extends State<StoreScreen>
                     elevation: 0,
                     leading: IconButton(
                       icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => context.pop(),
                     ),
                   ),
                   body: AppBackground(
@@ -451,11 +451,7 @@ class _StoreScreenState extends State<StoreScreen>
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const PremiumBenefitsScreen(),
-          ),
-        ),
+        onPressed: () => context.push(AppRoutes.premiumBenefits),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
@@ -741,13 +737,7 @@ class _StoreScreenState extends State<StoreScreen>
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const CosmeticsScreen(),
-                  ),
-                );
-              },
+              onPressed: () => context.push(AppRoutes.cosmetics),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.accentColor,
                 foregroundColor: theme.backgroundColor,

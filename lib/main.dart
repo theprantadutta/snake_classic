@@ -16,10 +16,9 @@ import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.da
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/screens/loading_screen.dart';
+import 'package:snake_classic/router/app_router.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
-import 'package:snake_classic/services/navigation_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -27,7 +26,6 @@ import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/typography.dart';
 // import 'package:snake_classic/utils/performance_monitor.dart'; // temporarily disabled
-import 'package:talker_flutter/talker_flutter.dart';
 
 import 'firebase_options.dart';
 
@@ -225,13 +223,10 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
         ],
         child: BlocBuilder<ThemeCubit, ThemeState>(
           builder: (context, themeState) {
-            return MaterialApp(
+            return MaterialApp.router(
               title: 'Snake Classic',
               debugShowCheckedModeBanner: false,
-              navigatorKey: NavigationService.navigatorKey,
-              navigatorObservers: [
-                if (kDebugMode) TalkerRouteObserver(AppLogger.instance),
-              ],
+              routerConfig: appRouter,
               theme: ThemeData(
                 brightness: Brightness.dark,
                 scaffoldBackgroundColor:
@@ -242,7 +237,6 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
                   color: themeState.currentTheme.accentColor,
                 ),
               ),
-              home: const LoadingScreen(),
             );
           },
         ),

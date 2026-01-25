@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
-import 'package:snake_classic/screens/achievements_screen.dart';
-import 'package:snake_classic/screens/friends_screen.dart';
-import 'package:snake_classic/screens/replays_screen.dart';
-import 'package:snake_classic/screens/statistics_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -77,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: IconButton(
             icon: Icon(Icons.arrow_back_rounded, color: theme.primaryColor),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
           ),
         ),
       ),
@@ -1293,31 +1291,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToStatistics(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const StatisticsScreen()),
-    );
+    context.push(AppRoutes.statistics);
   }
 
   void _navigateToFriends(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const FriendsScreen()),
-    );
+    context.push(AppRoutes.friends);
   }
 
   void _navigateToAchievements(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AchievementsScreen()),
-    );
+    context.push(AppRoutes.achievements);
   }
 
   void _navigateToReplays(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ReplaysScreen()),
-    );
+    context.push(AppRoutes.replays);
   }
 
   void _showStyledSnackBar(

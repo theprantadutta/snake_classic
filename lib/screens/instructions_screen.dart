@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -38,7 +39,7 @@ class InstructionsScreen extends StatelessWidget {
             elevation: 0,
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: theme.accentColor),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => context.pop(),
             ),
           ),
           body: AppBackground(
@@ -209,7 +210,7 @@ class InstructionsScreen extends StatelessWidget {
                       // Back to Game Button
                       Center(
                             child: GradientButton(
-                              onPressed: () => Navigator.of(context).pop(),
+                              onPressed: () => context.pop(),
                               text: 'BACK TO GAME',
                               primaryColor: theme.accentColor,
                               secondaryColor: theme.foodColor,

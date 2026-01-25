@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/screens/achievements_screen.dart';
-import 'package:snake_classic/screens/leaderboard_screen.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -134,7 +134,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
           ),
 
@@ -670,9 +670,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: 8),
 
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pushNamed('/achievements');
-                    },
+                    onTap: () => context.push(AppRoutes.achievements),
                     child: Text(
                       'View All Achievements →',
                       style: TextStyle(
@@ -702,11 +700,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: GradientButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AchievementsScreen(),
-                        ),
-                      ),
+                      onPressed: () => context.push(AppRoutes.achievements),
                       text: 'VIEW ACHIEVEMENTS',
                       primaryColor: Colors.amber,
                       secondaryColor: Colors.orange,
@@ -719,11 +713,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: GradientButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const LeaderboardScreen(),
-                        ),
-                      ),
+                      onPressed: () => context.push(AppRoutes.leaderboard),
                       text: 'LEADERBOARD',
                       primaryColor: theme.accentColor,
                       secondaryColor: theme.foodColor,
@@ -737,11 +727,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               children: [
                 Expanded(
                   child: GradientButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AchievementsScreen(),
-                      ),
-                    ),
+                    onPressed: () => context.push(AppRoutes.achievements),
                     text: 'VIEW ACHIEVEMENTS',
                     primaryColor: Colors.amber,
                     secondaryColor: Colors.orange,
@@ -753,11 +739,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                 Expanded(
                   child: GradientButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const LeaderboardScreen(),
-                      ),
-                    ),
+                    onPressed: () => context.push(AppRoutes.leaderboard),
                     text: 'LEADERBOARD',
                     primaryColor: theme.accentColor,
                     secondaryColor: theme.foodColor,

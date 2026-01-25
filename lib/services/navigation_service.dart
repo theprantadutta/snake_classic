@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/router/app_router.dart';
+import 'package:snake_classic/router/routes.dart';
 import '../utils/logger.dart';
-import '../screens/home_screen.dart';
-import '../screens/achievements_screen.dart';
-import '../screens/tournaments_screen.dart';
-import '../screens/friends_screen.dart';
-import '../screens/leaderboard_screen.dart';
-import '../screens/profile_screen.dart';
-import '../screens/settings_screen.dart';
 
 class NavigationService {
   static final NavigationService _instance = NavigationService._internal();
   factory NavigationService() => _instance;
   NavigationService._internal();
 
-  // Global navigator key for programmatic navigation
-  static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
+  /// Get the root navigator context from GoRouter
+  BuildContext? get _routerContext {
+    return appRouter.routerDelegate.navigatorKey.currentContext;
+  }
 
   /// Navigate to a screen based on route from notification
   Future<void> navigateFromNotification({
@@ -24,79 +20,71 @@ class NavigationService {
     bool clearStack = false,
   }) async {
     try {
-      AppLogger.info('🧭 Navigating from notification: $route');
+      AppLogger.info('Navigating from notification: $route');
 
-      final context = navigatorKey.currentContext;
-      if (context == null) {
-        AppLogger.warning('Navigation context not available');
-        return;
-      }
-
-      Widget destination;
+      String routePath;
 
       switch (route.toLowerCase()) {
         case 'home':
-          destination = const HomeScreen();
+          routePath = AppRoutes.home;
           break;
 
         case 'achievements':
-          destination = const AchievementsScreen();
+          routePath = AppRoutes.achievements;
           break;
 
         case 'tournament_detail':
+          // If we have a tournament ID, navigate to the detail page
+          final tournamentId = params?['tournament_id'] as String?;
+          if (tournamentId != null) {
+            routePath = AppRoutes.tournamentDetailPath(tournamentId);
+          } else {
+            routePath = AppRoutes.tournaments;
+          }
+          break;
+
         case 'tournaments':
-          destination = const TournamentsScreen(); // Simplified for now
+          routePath = AppRoutes.tournaments;
           break;
 
         case 'friends_screen':
         case 'social':
-          destination = const FriendsScreen();
+          routePath = AppRoutes.friends;
           break;
 
         case 'leaderboard':
-          destination = const LeaderboardScreen();
+          routePath = AppRoutes.leaderboard;
           break;
 
         case 'profile':
-          destination = const ProfileScreen();
+          routePath = AppRoutes.profile;
           break;
 
         case 'settings':
-          destination = const SettingsScreen();
+          routePath = AppRoutes.settings;
           break;
 
         default:
           AppLogger.warning(
             'Unknown navigation route: $route, falling back to home',
           );
-          destination = const HomeScreen();
+          routePath = AppRoutes.home;
       }
 
       if (clearStack) {
-        // Replace entire navigation stack
-        await Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => destination),
-          (Route<dynamic> route) => false,
-        );
+        // Replace entire navigation stack (like pushAndRemoveUntil)
+        appRouter.go(routePath);
       } else {
-        // Push new screen
-        await Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => destination));
+        // Push new screen on top of stack
+        appRouter.push(routePath);
       }
 
-      AppLogger.info('✅ Navigation completed: $route');
+      AppLogger.info('Navigation completed: $route');
     } catch (e) {
       AppLogger.error('Failed to navigate from notification', e);
 
       // Fallback to home screen
-      final context = navigatorKey.currentContext;
-      if (context != null && context.mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (Route<dynamic> route) => false,
-        );
-      }
+      appRouter.go(AppRoutes.home);
     }
   }
 
@@ -110,10 +98,7 @@ class NavigationService {
 
   /// Navigate to tournament detail
   Future<void> navigateToTournament(String tournamentId) async {
-    await navigateFromNotification(
-      route: 'tournament_detail',
-      params: {'tournament_id': tournamentId},
-    );
+    appRouter.push(AppRoutes.tournamentDetailPath(tournamentId));
   }
 
   /// Navigate to user profile or friends screen
@@ -134,37 +119,30 @@ class NavigationService {
 
   /// Navigate to home screen (clear stack)
   Future<void> navigateToHome() async {
-    await navigateFromNotification(route: 'home', clearStack: true);
+    appRouter.go(AppRoutes.home);
   }
 
   /// Pop current screen if possible
   void goBack() {
-    final context = navigatorKey.currentContext;
-    if (context != null && Navigator.canPop(context)) {
-      Navigator.of(context).pop();
+    if (appRouter.canPop()) {
+      appRouter.pop();
     }
   }
 
   /// Check if we can go back
   bool canGoBack() {
-    final context = navigatorKey.currentContext;
-    return context != null && Navigator.canPop(context);
+    return appRouter.canPop();
   }
 
   /// Get current route name if available
   String? getCurrentRouteName() {
-    final context = navigatorKey.currentContext;
-    if (context != null) {
-      final route = ModalRoute.of(context);
-      return route?.settings.name;
-    }
-    return null;
+    return appRouter.routerDelegate.currentConfiguration.last.matchedLocation;
   }
 
   /// Show a snackbar message
   void showSnackBar(String message, {bool isError = false}) {
-    final context = navigatorKey.currentContext;
-    if (context != null) {
+    final context = _routerContext;
+    if (context != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
@@ -181,11 +159,11 @@ class NavigationService {
     required String message,
     List<Widget>? actions,
   }) async {
-    final context = navigatorKey.currentContext;
-    if (context != null) {
+    final context = _routerContext;
+    if (context != null && context.mounted) {
       await showDialog(
         context: context,
-        builder: (BuildContext context) {
+        builder: (BuildContext dialogContext) {
           return AlertDialog(
             title: Text(title),
             content: Text(message),
@@ -194,7 +172,7 @@ class NavigationService {
                 [
                   TextButton(
                     child: const Text('OK'),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(dialogContext).pop(),
                   ),
                 ],
           );
