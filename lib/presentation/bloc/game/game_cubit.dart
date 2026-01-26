@@ -881,13 +881,28 @@ class GameCubit extends Cubit<GameCubitState> {
     final gameState = state.gameState;
     if (gameState == null) return;
 
-    // Update high score if necessary
+    // Determine high score FIRST (sync operation)
     int highScore = gameState.highScore;
     bool isNewHighScore = gameState.score > highScore;
-
     if (isNewHighScore) {
       highScore = gameState.score;
+    }
+
+    // EMIT STATE IMMEDIATELY - UI updates right away for instant feedback
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.gameOver,
+        gameState: gameState.copyWith(
+          status: model.GameStatus.gameOver,
+          highScore: highScore,
+        ),
+      ),
+    );
+
+    // Now do async housekeeping (user already sees game over screen)
+    if (isNewHighScore) {
       await _storageService.saveHighScore(highScore);
+      _settingsCubit.updateHighScore(highScore);
       _audioService.playSound('high_score');
       _enhancedAudioService.playSfx('high_score', volume: 1.0);
     }
@@ -932,17 +947,6 @@ class GameCubit extends Cubit<GameCubitState> {
 
     // Stop recording
     _gameRecorder.stopRecording();
-
-    // Emit game over state
-    emit(
-      state.copyWith(
-        status: GamePlayStatus.gameOver,
-        gameState: gameState.copyWith(
-          status: model.GameStatus.gameOver,
-          highScore: highScore,
-        ),
-      ),
-    );
   }
 
   /// Award coins for completing a game based on performance
