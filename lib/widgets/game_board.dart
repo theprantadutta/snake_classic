@@ -246,6 +246,11 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
                                 _lastGameStateForAnimation,
                                 currentGameState,
                               )) {
+                                // Reset animation cache when starting a fresh game
+                                // (previousGameState is null on new game start)
+                                if (cubitState.previousGameState == null) {
+                                  _lastGameStateForAnimation = null;
+                                }
                                 _lastGameStateChangeTime = DateTime.now();
                                 _lastGameStateForAnimation = currentGameState;
                               }

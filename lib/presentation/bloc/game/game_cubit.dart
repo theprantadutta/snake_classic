@@ -149,7 +149,7 @@ class GameCubit extends Cubit<GameCubitState> {
       status: GamePlayStatus.playing,
       gameState: gameState.copyWith(food: food),
       moveProgress: 0.0,
-      previousGameState: null,
+      clearPreviousGameState: true,
     );
 
     debugPrint(
@@ -843,7 +843,7 @@ class GameCubit extends Cubit<GameCubitState> {
       state.copyWith(
         status: GamePlayStatus.ready,
         gameState: gameState,
-        previousGameState: null,
+        clearPreviousGameState: true,
         moveProgress: 0.0,
       ),
     );
@@ -859,7 +859,7 @@ class GameCubit extends Cubit<GameCubitState> {
     emit(
       state.copyWith(
         status: GamePlayStatus.ready,
-        previousGameState: null,
+        clearPreviousGameState: true,
         moveProgress: 0.0,
       ),
     );

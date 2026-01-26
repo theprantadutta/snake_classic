@@ -39,6 +39,7 @@ class GameCubitState extends Equatable {
     double? moveProgress,
     model.GameState? previousGameState,
     bool clearTournament = false,
+    bool clearPreviousGameState = false,
   }) {
     return GameCubitState(
       status: status ?? this.status,
@@ -50,7 +51,9 @@ class GameCubitState extends Equatable {
           ? null
           : (tournamentMode ?? this.tournamentMode),
       moveProgress: moveProgress ?? this.moveProgress,
-      previousGameState: previousGameState ?? this.previousGameState,
+      previousGameState: clearPreviousGameState
+          ? null
+          : (previousGameState ?? this.previousGameState),
     );
   }
 
