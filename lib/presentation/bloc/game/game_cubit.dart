@@ -134,6 +134,8 @@ class GameCubit extends Cubit<GameCubitState> {
     _powerUpsCollectedThisGame = 0;
     _currentGameFoodTypes.clear();
     _currentGameFoodPoints = 0;
+    _currentGamePowerUpTypes.clear();
+    _currentGamePowerUpTime = 0;
     _updateCount = 0;
 
     // Generate initial food
@@ -343,12 +345,24 @@ class GameCubit extends Cubit<GameCubitState> {
     }
 
     // Check collisions before moving
+    final nextHeadPosition = snake.head.move(snake.currentDirection);
     final willEatFood =
         currentFood != null &&
-        snake.head.move(snake.currentDirection) == currentFood.position;
+        nextHeadPosition == currentFood.position;
+
+    // Check power-up collision: both current position AND next position
+    // This ensures we don't miss collection if snake spawned on or passed through
     final willCollectPowerUp =
         currentPowerUp != null &&
-        snake.head.move(snake.currentDirection) == currentPowerUp.position;
+        (nextHeadPosition == currentPowerUp.position ||
+         snake.head == currentPowerUp.position);
+
+    // Debug logging for power-up collision detection
+    if (currentPowerUp != null) {
+      debugPrint('🎯 Power-up at: ${currentPowerUp.position} (type: ${currentPowerUp.type.name})');
+      debugPrint('🐍 Snake head: ${snake.head}, next: $nextHeadPosition');
+      debugPrint('✅ Will collect power-up: $willCollectPowerUp');
+    }
 
     // Move snake
     snake.move(
@@ -441,8 +455,14 @@ class GameCubit extends Cubit<GameCubitState> {
     // Handle power-up collection
     var activePowerUps = previousState.removeExpiredPowerUps().activePowerUps;
     if (willCollectPowerUp) {
+      debugPrint('🎁 Collecting power-up: ${currentPowerUp.type.name}');
       _hapticService.powerUpCollected();
       _powerUpsCollectedThisGame++;
+
+      // Track power-up type for statistics
+      _currentGamePowerUpTypes[currentPowerUp.type.name] =
+          (_currentGamePowerUpTypes[currentPowerUp.type.name] ?? 0) + 1;
+
       activePowerUps = [
         ...activePowerUps,
         ActivePowerUp(type: currentPowerUp.type),
