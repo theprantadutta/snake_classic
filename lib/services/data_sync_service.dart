@@ -387,8 +387,12 @@ class DataSyncService extends ChangeNotifier {
 
         case 'daily_bonus_claim':
           // Sync daily bonus claim with backend
+          // Note: If bonus was already claimed (alreadyClaimed: true), treat as success
+          // This is an idempotent operation - we don't want to retry if already claimed
           final result = await _apiService.claimDailyBonus();
-          return result != null && result['success'] == true;
+          if (result == null) return false;
+          // Success if API returned success OR if bonus was already claimed
+          return result['success'] == true || result['alreadyClaimed'] == true;
 
         case 'tournament_score':
           // Submit tournament score to backend

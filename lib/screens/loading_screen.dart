@@ -143,7 +143,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       await _updateProgress(
         0.55,
         'Loading game data...',
-        'Fetching all data concurrently',
+        'Fetching Game Data',
       );
       await _preloadAllDataConcurrently();
 

@@ -1022,6 +1022,7 @@ class ApiService {
   }
 
   /// Claim daily bonus
+  /// Returns success response, or {alreadyClaimed: true} if already claimed today
   Future<Map<String, dynamic>?> claimDailyBonus() async {
     try {
       final response = await http
@@ -1031,6 +1032,22 @@ class ApiService {
             body: jsonEncode({}),
           )
           .timeout(_timeout);
+
+      // Handle 400 "already claimed" as success (idempotent operation)
+      if (response.statusCode == 400) {
+        try {
+          final body = jsonDecode(response.body);
+          final errorMsg = (body['error'] ?? body['message'] ?? '').toString().toLowerCase();
+          if (errorMsg.contains('already claimed') || errorMsg.contains('already collected')) {
+            // Not an error - just means the bonus was already claimed
+            // Return success with a flag so sync service knows not to retry
+            AppLogger.network('Daily bonus already claimed today (treating as success)');
+            return {'success': true, 'alreadyClaimed': true};
+          }
+        } catch (_) {
+          // If we can't parse the body, fall through to normal error handling
+        }
+      }
 
       return _handleResponse(response);
     } catch (e) {
