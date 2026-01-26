@@ -7,6 +7,7 @@ import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/game_board.dart';
@@ -17,6 +18,7 @@ import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
 import 'package:snake_classic/widgets/dpad_controls.dart';
 import 'package:snake_classic/widgets/score_popup.dart';
+import 'package:snake_classic/widgets/walkthrough/game_tutorial.dart';
 import 'package:snake_classic/models/food.dart';
 
 class GameScreen extends StatefulWidget {
@@ -44,6 +46,11 @@ class _GameScreenState extends State<GameScreen>
   bool _showLevelUpPopup = false;
   int _levelUpPopupLevel = 1;
   late AnimationController _levelUpPopupController;
+
+  // Game tutorial
+  bool _tutorialActive = false;
+  GameTutorialController? _tutorialController;
+  bool _tutorialChecked = false;
 
   @override
   void initState() {
@@ -94,7 +101,55 @@ class _GameScreenState extends State<GameScreen>
       }
       // Request keyboard focus
       _keyboardFocusNode.requestFocus();
+
+      // Check for game tutorial
+      _checkTutorial();
     });
+  }
+
+  /// Check if game tutorial should be shown
+  Future<void> _checkTutorial() async {
+    if (_tutorialChecked) return;
+    _tutorialChecked = true;
+
+    final walkthroughService = WalkthroughService();
+    await walkthroughService.initialize();
+
+    if (!walkthroughService.isComplete(WalkthroughService.gameTutorialId)) {
+      if (mounted) {
+        _startTutorial();
+      }
+    }
+  }
+
+  /// Start the game tutorial
+  void _startTutorial() {
+    final gameCubit = context.read<GameCubit>();
+    gameCubit.pauseGame();
+
+    setState(() {
+      _tutorialActive = true;
+      _tutorialController = GameTutorialController();
+      _tutorialController!.onComplete = _onTutorialComplete;
+      _tutorialController!.start();
+    });
+  }
+
+  /// Called when tutorial is complete
+  void _onTutorialComplete() async {
+    final walkthroughService = WalkthroughService();
+    await walkthroughService.markComplete(WalkthroughService.gameTutorialId);
+
+    if (mounted) {
+      setState(() {
+        _tutorialActive = false;
+        _tutorialController?.dispose();
+        _tutorialController = null;
+      });
+
+      // Resume the game
+      context.read<GameCubit>().resumeGame();
+    }
   }
 
   @override
@@ -104,6 +159,7 @@ class _GameScreenState extends State<GameScreen>
     _gestureIndicatorController.dispose();
     _levelUpPopupController.dispose();
     _juiceController.dispose();
+    _tutorialController?.dispose();
     super.dispose();
   }
 
@@ -146,6 +202,12 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _handleSwipe(Direction direction) {
+    // If tutorial is active, send swipe to tutorial controller
+    if (_tutorialActive && _tutorialController != null) {
+      _tutorialController!.onSwipeDetected(direction);
+      return;
+    }
+
     context.read<GameCubit>().changeDirection(direction);
 
     // Update last swipe direction and animate indicator
@@ -813,8 +875,8 @@ class _GameScreenState extends State<GameScreen>
                                     },
                                   ),
 
-                                  // Pause Overlay
-                                  if (gameState.status == GameStatus.paused)
+                                  // Pause Overlay (don't show during tutorial)
+                                  if (gameState.status == GameStatus.paused && !_tutorialActive)
                                     PauseOverlay(
                                       theme: theme,
                                       onResume: () => context
@@ -865,6 +927,14 @@ class _GameScreenState extends State<GameScreen>
                                     .read<GameCubit>()
                                     .skipCrashFeedback(),
                                 duration: settingsState.crashFeedbackDuration,
+                              ),
+
+                            // Game Tutorial Overlay
+                            if (_tutorialActive && _tutorialController != null)
+                              GameTutorialOverlay(
+                                controller: _tutorialController!,
+                                theme: theme,
+                                onSkip: _onTutorialComplete,
                               ),
                           ],
                         ),

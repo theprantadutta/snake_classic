@@ -13,6 +13,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
+import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -278,7 +279,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                                   const SizedBox(height: 32),
 
-                                  // 6. Premium Section (if available)
+                                  // 6. Help & Tutorial Section
+                                  _buildSection('HELP & TUTORIAL', [
+                                    _buildReplayTutorialButton(theme),
+                                  ], theme),
+
+                                  const SizedBox(height: 32),
+
+                                  // 7. Premium Section (if available)
                                   if (premiumState.isInitialized)
                                     _buildSection('PREMIUM FEATURES', [
                                       _buildPremiumStatusCard(
@@ -1084,6 +1092,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildReplayTutorialButton(GameTheme theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GradientButton(
+          onPressed: () => _showReplayTutorialDialog(theme),
+          text: 'REPLAY TUTORIAL',
+          primaryColor: theme.accentColor,
+          secondaryColor: theme.foodColor,
+          icon: Icons.school,
+          width: double.infinity,
+          outlined: true,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Watch the home tour or game tutorial again',
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showReplayTutorialDialog(GameTheme theme) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.school, color: theme.accentColor),
+            const SizedBox(width: 12),
+            Text(
+              'Replay Tutorial',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Which tutorial would you like to replay?',
+          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+            },
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final walkthroughService = WalkthroughService();
+              await walkthroughService.initialize();
+              await walkthroughService.reset(WalkthroughService.homeWalkthroughId);
+              if (mounted) {
+                context.go(AppRoutes.home);
+              }
+            },
+            child: Text(
+              'Home Tour',
+              style: TextStyle(color: theme.foodColor),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final walkthroughService = WalkthroughService();
+              await walkthroughService.initialize();
+              await walkthroughService.reset(WalkthroughService.gameTutorialId);
+              if (mounted) {
+                context.go(AppRoutes.game);
+              }
+            },
+            child: Text(
+              'Game Tutorial',
+              style: TextStyle(color: theme.accentColor),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -2,36 +2,42 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
+import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
+import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _logoController;
   late AnimationController _playButtonPulseController;
   late Animation<double> _playButtonPulseAnimation;
   bool _dailyBonusChecked = false;
+  bool _walkthroughChecked = false;
 
   @override
   void initState() {
@@ -70,6 +76,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _checkDailyBonus();
       }
     });
+
+    // Check for walkthrough after daily bonus popup delay
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) {
+        _checkWalkthrough();
+      }
+    });
+  }
+
+  /// Check if home walkthrough should be shown
+  Future<void> _checkWalkthrough() async {
+    if (_walkthroughChecked) return;
+    _walkthroughChecked = true;
+
+    final walkthroughNotifier = ref.read(walkthroughProvider.notifier);
+    final isComplete = await walkthroughNotifier.isWalkthroughComplete(
+      WalkthroughService.homeWalkthroughId,
+    );
+
+    if (!isComplete && mounted) {
+      walkthroughNotifier.start(
+        walkthroughId: WalkthroughService.homeWalkthroughId,
+        steps: HomeWalkthrough.getSteps(),
+      );
+    }
   }
 
   /// Check and show daily bonus popup if available
@@ -159,6 +190,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final walkthroughState = ref.watch(walkthroughProvider);
+
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
@@ -167,10 +200,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           builder: (context, authState) {
             return BlocBuilder<GameCubit, GameCubitState>(
               builder: (context, gameState) {
-                return ThemeTransitionWidget(
-                  controller: ThemeTransitionController(vsync: this),
-                  currentTheme: theme,
-                  child: Scaffold(
+                return Stack(
+                  children: [
+                    ThemeTransitionWidget(
+                      controller: ThemeTransitionController(vsync: this),
+                      currentTheme: theme,
+                      child: Scaffold(
                     body: AppBackground(
                       theme: theme,
                       child: SafeArea(
@@ -301,7 +336,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: const Icon(Icons.bug_report),
                           )
                         : null,
-                  ),
+                      ),
+                    ),
+
+                    // Walkthrough overlay
+                    if (walkthroughState.isActive &&
+                        walkthroughState.currentStep != null)
+                      WalkthroughOverlay(
+                        step: walkthroughState.currentStep!,
+                        theme: theme,
+                        currentStepIndex: walkthroughState.currentStepIndex,
+                        totalSteps: walkthroughState.steps.length,
+                        onNext: () => ref.read(walkthroughProvider.notifier).next(),
+                        onSkip: () => ref.read(walkthroughProvider.notifier).skip(),
+                      ),
+                  ],
                 );
               },
             );
@@ -319,12 +368,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   ) {
     return Row(
       children: [
-        // Theme switcher
+        // Theme switcher / Settings
         GestureDetector(
           onTap: () {
             context.push(AppRoutes.settings);
           },
           child: Container(
+            key: HomeWalkthrough.settingsKey,
             padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
             decoration: BoxDecoration(
               color: theme.accentColor.withValues(alpha: 0.1),
@@ -377,6 +427,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     context.push(AppRoutes.store);
                   },
                   child: Container(
+                    key: HomeWalkthrough.coinsKey,
                     padding: EdgeInsets.symmetric(
                       horizontal: isSmallScreen ? 10 : 14,
                       vertical: isSmallScreen ? 6 : 8,
@@ -456,6 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 context.push(AppRoutes.profile);
               },
               child: Container(
+                key: HomeWalkthrough.profileKey,
                 padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -685,6 +737,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               );
             },
             child: Container(
+              key: HomeWalkthrough.playButtonKey,
               width: buttonSize,
               height: buttonSize,
               decoration: BoxDecoration(
@@ -945,6 +998,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             gradient: [Colors.orange.shade400, Colors.amber.shade400],
             isSmallScreen: isSmallScreen,
             onTap: () => context.push(AppRoutes.store),
+            widgetKey: HomeWalkthrough.storeKey,
           ),
         ),
       ],
@@ -959,6 +1013,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required List<Color> gradient,
     required bool isSmallScreen,
     required VoidCallback onTap,
+    Key? widgetKey,
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -970,6 +1025,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return GestureDetector(
           onTap: onTap,
           child: Container(
+            key: widgetKey,
             height: buttonHeight,
             constraints: BoxConstraints(
               minWidth: 100,
@@ -1057,7 +1113,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }),
       _NavItem(Icons.calendar_today, 'DAILY', Colors.cyan, () {
         context.push(AppRoutes.dailyChallenges);
-      }, badge: _getDailyChallengesBadge()),
+      }, badge: _getDailyChallengesBadge(), widgetKey: HomeWalkthrough.dailyChallengesKey),
       _NavItem(Icons.emoji_events, 'EVENTS', Colors.purple, () {
         context.push(AppRoutes.tournaments);
       }),
@@ -1098,6 +1154,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   isSmallScreen: isVerySmallScreen || isSmallScreen,
                   screenHeight: screenHeight,
                   badge: item.badge,
+                  widgetKey: item.widgetKey,
                 )
                 .animate()
                 .fadeIn(delay: (600 + (index * 80)).ms, duration: 300.ms)
@@ -1141,6 +1198,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       isSmallScreen: isVerySmallScreen || isSmallScreen,
                       screenHeight: screenHeight,
                       badge: item.badge,
+                      widgetKey: item.widgetKey,
                     )
                     .animate()
                     .fadeIn(delay: (600 + (index * 80)).ms, duration: 300.ms)
@@ -1171,6 +1229,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required bool isSmallScreen,
     required double screenHeight,
     int? badge,
+    GlobalKey? widgetKey,
   }) {
     final buttonSize = _getResponsiveNavButtonSize(screenHeight);
     final iconSize = screenHeight < 600
@@ -1187,6 +1246,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             clipBehavior: Clip.none,
             children: [
               Container(
+                key: widgetKey,
                 width: buttonSize,
                 height: buttonSize,
                 decoration: BoxDecoration(
@@ -1698,6 +1758,7 @@ class _NavItem {
   final Color color;
   final VoidCallback onTap;
   final int? badge;
+  final GlobalKey? widgetKey;
 
-  _NavItem(this.icon, this.label, this.color, this.onTap, {this.badge});
+  _NavItem(this.icon, this.label, this.color, this.onTap, {this.badge, this.widgetKey});
 }
