@@ -908,7 +908,11 @@ class GameCubit extends Cubit<GameCubitState> {
       highScore = gameState.score;
     }
 
-    // EMIT STATE IMMEDIATELY - UI updates right away for instant feedback
+    // Track game end statistics and achievements BEFORE emitting state
+    // This ensures achievements are populated when game over screen loads
+    await _trackGameEnd();
+
+    // EMIT STATE - UI updates (achievements are now ready)
     emit(
       state.copyWith(
         status: GamePlayStatus.gameOver,
@@ -919,7 +923,7 @@ class GameCubit extends Cubit<GameCubitState> {
       ),
     );
 
-    // Now do async housekeeping (user already sees game over screen)
+    // Now do remaining async housekeeping (user already sees game over screen)
     if (isNewHighScore) {
       await _storageService.saveHighScore(highScore);
       _settingsCubit.updateHighScore(highScore);
@@ -946,9 +950,6 @@ class GameCubit extends Cubit<GameCubitState> {
       'idempotencyKey':
           '${DateTime.now().millisecondsSinceEpoch}_${gameState.score}',
     }, priority: SyncPriority.high);
-
-    // Track game end statistics and achievements
-    await _trackGameEnd();
 
     // Award coins for game completion
     await _awardGameCompletionCoins(
