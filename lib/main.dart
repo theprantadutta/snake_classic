@@ -19,6 +19,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/app_router.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -85,6 +86,9 @@ void main() async {
       }),
       PurchaseService().initialize().then((_) {
         AppLogger.success('Purchase service initialized');
+      }),
+      InAppUpdateService().checkForUpdate().then((_) {
+        AppLogger.success('In-app update check completed');
       }),
     ]);
     AppLogger.success('All services initialized');
