@@ -3,26 +3,28 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/particle_effect.dart';
 
-class GameOverScreen extends StatefulWidget {
+class GameOverScreen extends ConsumerStatefulWidget {
   const GameOverScreen({super.key});
 
   @override
-  State<GameOverScreen> createState() => _GameOverScreenState();
+  ConsumerState<GameOverScreen> createState() => _GameOverScreenState();
 }
 
-class _GameOverScreenState extends State<GameOverScreen>
+class _GameOverScreenState extends ConsumerState<GameOverScreen>
     with TickerProviderStateMixin {
   late AnimationController _explosionController;
   late AnimationController _scoreController;
@@ -63,6 +65,11 @@ class _GameOverScreenState extends State<GameOverScreen>
 
     // Load achievements data
     _loadAchievements();
+
+    // Refresh daily challenge data after game ends
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(dailyChallengesProvider.notifier).refresh();
+    });
   }
 
   Future<void> _loadAchievements() async {

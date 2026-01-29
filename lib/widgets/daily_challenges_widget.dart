@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
-import 'package:snake_classic/services/daily_challenge_service.dart';
+import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Compact widget for displaying daily challenges on the home screen
-class DailyChallengesWidget extends StatefulWidget {
+class DailyChallengesWidget extends ConsumerWidget {
   final GameTheme theme;
   final VoidCallback? onTap;
   final VoidCallback? onClaimReward;
@@ -18,44 +19,14 @@ class DailyChallengesWidget extends StatefulWidget {
   });
 
   @override
-  State<DailyChallengesWidget> createState() => _DailyChallengesWidgetState();
-}
-
-class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
-  final DailyChallengeService _challengeService = DailyChallengeService();
-
-  @override
-  void initState() {
-    super.initState();
-    _challengeService.addListener(_onChallengesChanged);
-    _initializeChallenges();
-  }
-
-  @override
-  void dispose() {
-    _challengeService.removeListener(_onChallengesChanged);
-    super.dispose();
-  }
-
-  void _onChallengesChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Future<void> _initializeChallenges() async {
-    if (_challengeService.needsRefresh) {
-      await _challengeService.refreshChallenges();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final challenges = _challengeService.challenges;
-    final hasRewards = _challengeService.hasUnclaimedRewards;
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the provider for reactive state updates
+    final state = ref.watch(dailyChallengesProvider);
+    final challenges = state.challenges;
+    final hasRewards = state.hasUnclaimedRewards;
 
     return GestureDetector(
-          onTap: widget.onTap,
+          onTap: onTap,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             padding: const EdgeInsets.all(16),
@@ -64,15 +35,15 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  widget.theme.primaryColor.withValues(alpha: 0.3),
-                  widget.theme.accentColor.withValues(alpha: 0.2),
+                  theme.primaryColor.withValues(alpha: 0.3),
+                  theme.accentColor.withValues(alpha: 0.2),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: hasRewards
                     ? Colors.amber.withValues(alpha: 0.8)
-                    : widget.theme.primaryColor.withValues(alpha: 0.3),
+                    : theme.primaryColor.withValues(alpha: 0.3),
                 width: hasRewards ? 2 : 1,
               ),
               boxShadow: hasRewards
@@ -93,7 +64,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
                   children: [
                     Icon(
                       Icons.calendar_today,
-                      color: widget.theme.accentColor,
+                      color: theme.accentColor,
                       size: 24,
                     ),
                     const SizedBox(width: 8),
@@ -114,51 +85,50 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: _challengeService.allCompleted
+                        color: state.allCompleted
                             ? Colors.green.withValues(alpha: 0.3)
-                            : widget.theme.primaryColor.withValues(alpha: 0.3),
+                            : theme.primaryColor.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _challengeService.allCompleted
+                          color: state.allCompleted
                               ? Colors.green
-                              : widget.theme.primaryColor.withValues(
+                              : theme.primaryColor.withValues(
                                   alpha: 0.5,
                                 ),
                         ),
                       ),
                       child: Text(
-                        '${_challengeService.completedCount}/${_challengeService.totalCount}',
+                        '${state.completedCount}/${state.totalCount}',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: _challengeService.allCompleted
+                          color: state.allCompleted
                               ? Colors.green
-                              : widget.theme.accentColor,
+                              : theme.accentColor,
                         ),
                       ),
                     ),
                     if (hasRewards) ...[
                       const SizedBox(width: 8),
-                      _buildClaimBadge(),
+                      _buildClaimBadge(state),
                     ],
                   ],
                 ),
                 const SizedBox(height: 12),
 
                 // Challenge list or loading/empty state
-                if (_challengeService.isLoading)
+                if (state.isLoading)
                   _buildLoadingState()
                 else if (challenges.isEmpty)
                   _buildEmptyState()
                 else
                   ...challenges
                       .take(3)
-                      .map((challenge) => _buildChallengeItem(challenge)),
+                      .map((challenge) => _buildChallengeItem(challenge, ref)),
 
                 // Bonus indicator
-                if (_challengeService.allCompleted &&
-                    _challengeService.bonusCoins > 0)
-                  _buildBonusIndicator(),
+                if (state.allCompleted && state.bonusCoins > 0)
+                  _buildBonusIndicator(state),
               ],
             ),
           ),
@@ -168,7 +138,10 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
         .slideY(begin: 0.1, end: 0, duration: 400.ms);
   }
 
-  Widget _buildClaimBadge() {
+  Widget _buildClaimBadge(DailyChallengesState state) {
+    final unclaimedCount = state.challenges
+        .where((c) => c.isCompleted && !c.claimedReward)
+        .length;
     return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -181,7 +154,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
               Icon(Icons.star, color: Colors.white, size: 14),
               const SizedBox(width: 4),
               Text(
-                '${_challengeService.unclaimedRewardsCount}',
+                '$unclaimedCount',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -204,7 +177,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(widget.theme.accentColor),
+          valueColor: AlwaysStoppedAnimation(theme.accentColor),
           strokeWidth: 2,
         ),
       ),
@@ -226,7 +199,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
     );
   }
 
-  Widget _buildChallengeItem(DailyChallenge challenge) {
+  Widget _buildChallengeItem(DailyChallenge challenge, WidgetRef ref) {
     final isCompleted = challenge.isCompleted;
     final canClaim = challenge.canClaim;
 
@@ -241,10 +214,10 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
             decoration: BoxDecoration(
               color: isCompleted
                   ? Colors.green.withValues(alpha: 0.2)
-                  : widget.theme.primaryColor.withValues(alpha: 0.2),
+                  : theme.primaryColor.withValues(alpha: 0.2),
               shape: BoxShape.circle,
               border: Border.all(
-                color: isCompleted ? Colors.green : widget.theme.primaryColor,
+                color: isCompleted ? Colors.green : theme.primaryColor,
                 width: 2,
               ),
             ),
@@ -280,7 +253,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
                     value: challenge.progressPercentage,
                     backgroundColor: Colors.white.withValues(alpha: 0.1),
                     valueColor: AlwaysStoppedAnimation(
-                      isCompleted ? Colors.green : widget.theme.accentColor,
+                      isCompleted ? Colors.green : theme.accentColor,
                     ),
                     minHeight: 4,
                   ),
@@ -292,7 +265,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
 
           // Progress text or claim button
           if (canClaim)
-            _buildClaimButton(challenge)
+            _buildClaimButton(challenge, ref)
           else
             Text(
               '${challenge.currentProgress}/${challenge.targetValue}',
@@ -309,12 +282,12 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
     );
   }
 
-  Widget _buildClaimButton(DailyChallenge challenge) {
+  Widget _buildClaimButton(DailyChallenge challenge, WidgetRef ref) {
     return GestureDetector(
           onTap: () async {
-            final success = await _challengeService.claimReward(challenge.id);
-            if (success && widget.onClaimReward != null) {
-              widget.onClaimReward!();
+            final success = await ref.read(dailyChallengesProvider.notifier).claimReward(challenge.id);
+            if (success && onClaimReward != null) {
+              onClaimReward!();
             }
           },
           child: Container(
@@ -348,7 +321,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
         );
   }
 
-  Widget _buildBonusIndicator() {
+  Widget _buildBonusIndicator(DailyChallengesState state) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
@@ -382,7 +355,7 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              '+${_challengeService.bonusCoins} Bonus',
+              '+${state.bonusCoins} Bonus',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -414,6 +387,6 @@ class _DailyChallengesWidgetState extends State<DailyChallengesWidget> {
         iconData = Icons.play_circle_outline;
         break;
     }
-    return Icon(iconData, color: widget.theme.primaryColor, size: 14);
+    return Icon(iconData, color: theme.primaryColor, size: 14);
   }
 }

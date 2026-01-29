@@ -60,6 +60,7 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
   final AppDataCache _appCache;
   Timer? _ttlTimer;
   VoidCallback? _serviceListener;
+  String? _lastRefreshDate;
 
   static const _ttl = Duration(minutes: 5);
 
@@ -111,7 +112,14 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
   Future<void> _refreshInBackground() async {
     // Silent refresh - don't set isLoading
     try {
+      // Check if new day started
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      if (_lastRefreshDate != null && _lastRefreshDate != today) {
+        await _service.clearCache();
+      }
+
       await _service.refreshChallenges();
+      _lastRefreshDate = today;
       _syncStateFromService();
     } catch (_) {
       // Ignore errors in background refresh
@@ -148,6 +156,7 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _service.initialize();
+      _lastRefreshDate = DateTime.now().toIso8601String().split('T')[0];
       _syncStateFromService();
     } catch (e) {
       state = state.copyWith(
@@ -158,10 +167,19 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
   }
 
   /// Refresh challenges from the server
+  /// Automatically detects day changes and clears cache if needed
   Future<void> refresh() async {
+    // Check if new day started - if so, clear cache to get fresh challenges
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    if (_lastRefreshDate != null && _lastRefreshDate != today) {
+      // New day detected - clear cache to force full refresh
+      await _service.clearCache();
+    }
+
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _service.refreshChallenges();
+      _lastRefreshDate = today;
       _syncStateFromService();
     } catch (e) {
       state = state.copyWith(

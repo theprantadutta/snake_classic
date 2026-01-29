@@ -626,9 +626,9 @@ class GameCubit extends Cubit<GameCubitState> {
       );
 
       // Immediately transition to game over after short delay
-      Future.delayed(const Duration(milliseconds: 500), () {
+      Future.delayed(const Duration(milliseconds: 500), () async {
         if (state.status == GamePlayStatus.crashed) {
-          _gameOver();
+          await _gameOver();
         }
       });
       return;
@@ -668,9 +668,9 @@ class GameCubit extends Cubit<GameCubitState> {
 
         // Normal mode: use configured duration
         final modalDuration = Duration(seconds: durationSeconds.clamp(1, 10));
-        Future.delayed(modalDuration, () {
+        Future.delayed(modalDuration, () async {
           if (state.status == GamePlayStatus.crashed) {
-            _gameOver();
+            await _gameOver();
           }
         });
       }
@@ -776,8 +776,8 @@ class GameCubit extends Cubit<GameCubitState> {
       },
     );
 
-    // Update daily challenge progress
-    _updateDailyChallengeProgress(
+    // Update daily challenge progress (awaited to ensure sync before game over screen)
+    await _updateDailyChallengeProgress(
       score: gameState.score,
       foodEaten: _currentGameFoodTypes.values.fold(
         0,
@@ -897,7 +897,7 @@ class GameCubit extends Cubit<GameCubitState> {
   }
 
   /// Finalize game over after crash feedback - transitions from crashed to gameOver
-  void _gameOver() async {
+  Future<void> _gameOver() async {
     debugPrint('🎮 [GameCubit] _gameOver called');
 
     _hapticService.gameOver();
