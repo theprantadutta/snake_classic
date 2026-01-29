@@ -65,13 +65,38 @@ class CoinsCubit extends Cubit<CoinsState> {
             .toList();
       }
 
+      // Load daily earning cap data
+      final dailyEarnings = _prefs!.getInt('daily_earnings') ?? 0;
+      final lastResetStr = _prefs!.getString('last_earning_reset');
+      DateTime lastEarningReset = DateTime.now().toUtc();
+      if (lastResetStr != null) {
+        lastEarningReset = DateTime.parse(lastResetStr);
+      }
+
+      // Check if we need to reset daily earnings (new UTC day)
+      final now = DateTime.now().toUtc();
+      final resetDate = DateTime.utc(
+        lastEarningReset.year,
+        lastEarningReset.month,
+        lastEarningReset.day,
+      );
+      final today = DateTime.utc(now.year, now.month, now.day);
+      final shouldReset = today.isAfter(resetDate);
+
       emit(
         state.copyWith(
           balance: balance,
           transactions: transactions,
           dailyBonuses: dailyBonuses,
+          dailyEarnings: shouldReset ? 0 : dailyEarnings,
+          lastEarningReset: shouldReset ? now : lastEarningReset,
         ),
       );
+
+      // Save reset if needed
+      if (shouldReset) {
+        await _saveDailyCapData();
+      }
 
       AppLogger.info('Coin data loaded successfully');
     } catch (e) {
@@ -101,8 +126,41 @@ class CoinsCubit extends Cubit<CoinsState> {
           .map((b) => json.encode(b.toJson()))
           .toList();
       await _prefs!.setStringList('daily_bonuses', bonusesJson);
+
+      // Save daily cap data
+      await _saveDailyCapData();
     } catch (e) {
       AppLogger.error('Error saving coin data', e);
+    }
+  }
+
+  Future<void> _saveDailyCapData() async {
+    if (_prefs == null) return;
+    await _prefs!.setInt('daily_earnings', state.dailyEarnings);
+    await _prefs!.setString(
+      'last_earning_reset',
+      state.lastEarningReset.toIso8601String(),
+    );
+  }
+
+  /// Check if earning would exceed daily cap
+  bool _wouldExceedDailyCap(int amount) {
+    return state.dailyEarnings + amount > state.dailyEarningCap;
+  }
+
+  /// Reset daily earnings if needed (called at midnight UTC)
+  void _checkAndResetDailyEarnings() {
+    final now = DateTime.now().toUtc();
+    final lastReset = state.lastEarningReset;
+    final resetDate = DateTime.utc(lastReset.year, lastReset.month, lastReset.day);
+    final today = DateTime.utc(now.year, now.month, now.day);
+
+    if (today.isAfter(resetDate)) {
+      emit(state.copyWith(
+        dailyEarnings: 0,
+        lastEarningReset: now,
+      ));
+      AppLogger.info('Daily earnings reset at midnight UTC');
     }
   }
 
@@ -112,11 +170,11 @@ class CoinsCubit extends Cubit<CoinsState> {
     bool premiumBonus = hasPremium || hasBattlePass;
 
     if (hasPremium && hasBattlePass) {
-      multiplier = 2.5; // Pro + Battle Pass
+      multiplier = 1.75; // Pro + Battle Pass
     } else if (hasPremium) {
-      multiplier = 2.0; // Pro only
+      multiplier = 1.5; // Pro only
     } else if (hasBattlePass) {
-      multiplier = 1.5; // Battle Pass only
+      multiplier = 1.25; // Battle Pass only
     } else {
       multiplier = 1.0; // Free tier
     }
@@ -139,43 +197,83 @@ class CoinsCubit extends Cubit<CoinsState> {
     Map<String, dynamic>? metadata,
   }) async {
     try {
+      // Check for daily reset
+      _checkAndResetDailyEarnings();
+
       final baseAmount = customAmount ?? source.getBaseAmount();
+      if (baseAmount <= 0) return true; // Skip if no coins to earn
+
       final multipliedAmount = (baseAmount * state.earningMultiplier).round();
 
-      final transaction = CoinTransaction(
-        id: _uuid.v4(),
-        amount: multipliedAmount,
-        isEarned: true,
-        earningSource: source,
-        itemName: itemName,
-        timestamp: DateTime.now(),
-        metadata: metadata ?? {},
-      );
+      // Check daily earning cap (purchases bypass the cap)
+      if (source != CoinEarningSource.purchase && _wouldExceedDailyCap(multipliedAmount)) {
+        // Cap the amount to remaining daily allowance
+        final cappedAmount = state.remainingDailyEarnings;
+        if (cappedAmount <= 0) {
+          AppLogger.info('Daily earning cap reached, no coins awarded');
+          return false;
+        }
 
-      final newTransactions = [transaction, ...state.transactions];
-      // Keep only recent transactions in memory (limit to 500)
-      final limitedTransactions = newTransactions.take(500).toList();
+        // Award capped amount
+        return _processEarning(source, cappedAmount, itemName, metadata, wasCapped: true);
+      }
 
-      final newBalance = state.balance.copyWith(
-        total: state.balance.total + multipliedAmount,
-        earned: state.balance.earned + multipliedAmount,
-        lastUpdated: DateTime.now(),
-      );
-
-      emit(
-        state.copyWith(balance: newBalance, transactions: limitedTransactions),
-      );
-
-      await _saveData();
-
-      AppLogger.info(
-        'Earned $multipliedAmount coins from ${source.displayName}',
-      );
-      return true;
+      return _processEarning(source, multipliedAmount, itemName, metadata);
     } catch (e) {
       AppLogger.error('Error earning coins', e);
       return false;
     }
+  }
+
+  Future<bool> _processEarning(
+    CoinEarningSource source,
+    int amount,
+    String? itemName,
+    Map<String, dynamic>? metadata, {
+    bool wasCapped = false,
+  }) async {
+    final transaction = CoinTransaction(
+      id: _uuid.v4(),
+      amount: amount,
+      isEarned: true,
+      earningSource: source,
+      itemName: itemName,
+      timestamp: DateTime.now(),
+      metadata: {
+        ...?metadata,
+        if (wasCapped) 'capped': true,
+      },
+    );
+
+    final newTransactions = [transaction, ...state.transactions];
+    // Keep only recent transactions in memory (limit to 500)
+    final limitedTransactions = newTransactions.take(500).toList();
+
+    final newBalance = state.balance.copyWith(
+      total: state.balance.total + amount,
+      earned: state.balance.earned + amount,
+      lastUpdated: DateTime.now(),
+    );
+
+    // Update daily earnings (purchases don't count toward cap)
+    final newDailyEarnings = source != CoinEarningSource.purchase
+        ? state.dailyEarnings + amount
+        : state.dailyEarnings;
+
+    emit(
+      state.copyWith(
+        balance: newBalance,
+        transactions: limitedTransactions,
+        dailyEarnings: newDailyEarnings,
+      ),
+    );
+
+    await _saveData();
+
+    AppLogger.info(
+      'Earned $amount coins from ${source.displayName}${wasCapped ? ' (capped)' : ''}',
+    );
+    return true;
   }
 
   /// Spend coins on an item

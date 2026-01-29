@@ -982,8 +982,8 @@ class GameCubit extends Cubit<GameCubitState> {
     required int gameDurationSeconds,
   }) async {
     try {
-      // Base coins + bonus based on score (1 base + 1 per 100 points, max 20)
-      final coinsEarned = (1 + (score ~/ 100)).clamp(1, 20);
+      // Base coins + bonus based on score (1 base + 1 per 200 points, max 10)
+      final coinsEarned = (1 + (score ~/ 200)).clamp(1, 10);
 
       await _coinsCubit.earnCoins(
         CoinEarningSource.gameCompleted,
@@ -1006,8 +1006,8 @@ class GameCubit extends Cubit<GameCubitState> {
         );
       }
 
-      // Bonus for long survival (> 3 minutes = 180 seconds)
-      if (gameDurationSeconds > 180) {
+      // Bonus for long survival (> 5 minutes = 300 seconds)
+      if (gameDurationSeconds > 300) {
         await _coinsCubit.earnCoins(
           CoinEarningSource.longSurvival,
           metadata: {
@@ -1018,7 +1018,7 @@ class GameCubit extends Cubit<GameCubitState> {
       }
 
       AppLogger.info(
-        'Awarded game completion coins: $coinsEarned (score: $score, perfect: $isPerfectGame, long: ${gameDurationSeconds > 180})',
+        'Awarded game completion coins: $coinsEarned (score: $score, perfect: $isPerfectGame, long: ${gameDurationSeconds > 300})',
       );
     } catch (e) {
       AppLogger.error('Error awarding game completion coins', e);

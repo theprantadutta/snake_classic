@@ -87,29 +87,29 @@ enum CoinEarningSource {
       case CoinEarningSource.gameCompleted:
         return 1;
       case CoinEarningSource.foodEaten:
-        return 1;
+        return 0; // Removed to reduce economy inflation
       case CoinEarningSource.scoreMilestone:
-        return 3;
+        return 2;
       case CoinEarningSource.dailyChallenge:
-        return 15;
-      case CoinEarningSource.achievementUnlocked:
         return 10;
+      case CoinEarningSource.achievementUnlocked:
+        return 8;
       case CoinEarningSource.tournamentReward:
-        return 50;
+        return 30;
       case CoinEarningSource.dailyLogin:
         return 5;
       case CoinEarningSource.watchedAd:
-        return 10;
+        return 8;
       case CoinEarningSource.levelUp:
-        return 5;
+        return 3;
       case CoinEarningSource.perfectGame:
-        return 10;
+        return 5;
       case CoinEarningSource.longSurvival:
-        return 5;
+        return 3;
       case CoinEarningSource.multiplayer:
-        return 5;
+        return 3;
       case CoinEarningSource.battlePassReward:
-        return 10;
+        return 8;
       case CoinEarningSource.purchase:
         return 0; // Variable based on purchase
     }
@@ -340,25 +340,25 @@ class DailyLoginBonus {
 
   static List<DailyLoginBonus> getWeeklyBonuses() {
     return [
-      const DailyLoginBonus(day: 1, coins: 3, isCollected: false),
-      const DailyLoginBonus(day: 2, coins: 4, isCollected: false),
+      const DailyLoginBonus(day: 1, coins: 2, isCollected: false),
+      const DailyLoginBonus(day: 2, coins: 3, isCollected: false),
       const DailyLoginBonus(
         day: 3,
-        coins: 5,
+        coins: 4,
         bonusItem: 'Speed Boost Power-up',
         isCollected: false,
       ),
-      const DailyLoginBonus(day: 4, coins: 6, isCollected: false),
+      const DailyLoginBonus(day: 4, coins: 5, isCollected: false),
       const DailyLoginBonus(
         day: 5,
-        coins: 8,
+        coins: 6,
         bonusItem: '2x XP Boost',
         isCollected: false,
       ),
-      const DailyLoginBonus(day: 6, coins: 10, isCollected: false),
+      const DailyLoginBonus(day: 6, coins: 7, isCollected: false),
       const DailyLoginBonus(
         day: 7,
-        coins: 15,
+        coins: 10,
         bonusItem: 'Premium Theme (1 day)',
         isCollected: false,
       ),

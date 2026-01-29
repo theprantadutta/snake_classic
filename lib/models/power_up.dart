@@ -25,13 +25,13 @@ enum PowerUpType {
   String get description {
     switch (this) {
       case PowerUpType.speedBoost:
-        return 'Increases snake speed for 10 seconds';
+        return 'Increases snake speed for 7 seconds';
       case PowerUpType.invincibility:
-        return 'Pass through walls and yourself for 8 seconds';
+        return 'Pass through walls and yourself for 6 seconds';
       case PowerUpType.scoreMultiplier:
-        return 'Double points for 15 seconds';
+        return 'Double points for 10 seconds';
       case PowerUpType.slowMotion:
-        return 'Slows down game for precise control (12 seconds)';
+        return 'Slows down game for precise control (8 seconds)';
     }
   }
 
@@ -64,13 +64,13 @@ enum PowerUpType {
   Duration get duration {
     switch (this) {
       case PowerUpType.speedBoost:
-        return const Duration(seconds: 10);
+        return const Duration(seconds: 7);
       case PowerUpType.invincibility:
-        return const Duration(seconds: 8);
+        return const Duration(seconds: 6);
       case PowerUpType.scoreMultiplier:
-        return const Duration(seconds: 15);
+        return const Duration(seconds: 10);
       case PowerUpType.slowMotion:
-        return const Duration(seconds: 12);
+        return const Duration(seconds: 8);
     }
   }
 
@@ -124,8 +124,8 @@ class PowerUp {
   }) {
     final random = Random();
 
-    // Power-ups have a 5% chance to spawn
-    if (random.nextDouble() > 0.05) {
+    // Power-ups have a 3% chance to spawn
+    if (random.nextDouble() > 0.03) {
       return null;
     }
 

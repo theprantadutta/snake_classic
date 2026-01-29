@@ -14,6 +14,10 @@ class CoinsState extends Equatable {
   final bool hasPremiumBonus;
   final String? errorMessage;
 
+  /// Daily earning cap tracking
+  final int dailyEarnings;
+  final DateTime lastEarningReset;
+
   const CoinsState({
     this.status = CoinsStatus.initial,
     required this.balance,
@@ -22,12 +26,15 @@ class CoinsState extends Equatable {
     this.earningMultiplier = 1.0,
     this.hasPremiumBonus = false,
     this.errorMessage,
+    this.dailyEarnings = 0,
+    required this.lastEarningReset,
   });
 
   /// Initial state
   factory CoinsState.initial() => CoinsState(
     balance: CoinBalance.initial,
     dailyBonuses: DailyLoginBonus.getWeeklyBonuses(),
+    lastEarningReset: DateTime.now().toUtc(),
   );
 
   /// Create a copy with updated values
@@ -40,6 +47,8 @@ class CoinsState extends Equatable {
     bool? hasPremiumBonus,
     String? errorMessage,
     bool clearError = false,
+    int? dailyEarnings,
+    DateTime? lastEarningReset,
   }) {
     return CoinsState(
       status: status ?? this.status,
@@ -49,8 +58,19 @@ class CoinsState extends Equatable {
       earningMultiplier: earningMultiplier ?? this.earningMultiplier,
       hasPremiumBonus: hasPremiumBonus ?? this.hasPremiumBonus,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      dailyEarnings: dailyEarnings ?? this.dailyEarnings,
+      lastEarningReset: lastEarningReset ?? this.lastEarningReset,
     );
   }
+
+  /// Daily earning cap (150 for free users, 250 for premium)
+  int get dailyEarningCap => hasPremiumBonus ? 250 : 150;
+
+  /// Remaining earnings allowed today
+  int get remainingDailyEarnings => (dailyEarningCap - dailyEarnings).clamp(0, dailyEarningCap);
+
+  /// Whether daily cap has been reached
+  bool get dailyCapReached => dailyEarnings >= dailyEarningCap;
 
   /// Whether the coins system is ready
   bool get isReady => status == CoinsStatus.ready;
@@ -96,5 +116,7 @@ class CoinsState extends Equatable {
     earningMultiplier,
     hasPremiumBonus,
     errorMessage,
+    dailyEarnings,
+    lastEarningReset,
   ];
 }

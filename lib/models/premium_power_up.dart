@@ -489,7 +489,7 @@ class PowerUpBundle {
         PremiumPowerUpType.megaSlowMotion,
       ],
       originalPrice: 1196, // 4 power-ups at ~299 coins each
-      bundlePrice: 699,
+      bundlePrice: 899,
       icon: '⚡',
     ),
     PowerUpBundle(
@@ -503,7 +503,7 @@ class PowerUpBundle {
         PremiumPowerUpType.ghostMode,
       ],
       originalPrice: 1596,
-      bundlePrice: 999,
+      bundlePrice: 1199,
       icon: '🎯',
     ),
     PowerUpBundle(
@@ -512,7 +512,7 @@ class PowerUpBundle {
       description: 'Every premium power-up available',
       powerUps: PremiumPowerUpType.values,
       originalPrice: 3990, // Sum of all individual power-up prices
-      bundlePrice: 1999,
+      bundlePrice: 2799,
       icon: '👑',
     ),
   ];
