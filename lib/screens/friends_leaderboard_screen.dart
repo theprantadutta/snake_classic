@@ -329,6 +329,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           backgroundImage: user.photoUrl != null
               ? NetworkImage(user.photoUrl!)
               : null,
+          onBackgroundImageError: (e, s) {},
           child: user.photoUrl == null
               ? Text(
                   user.displayName.isNotEmpty
@@ -481,6 +482,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               backgroundImage: user.photoUrl != null
                   ? NetworkImage(user.photoUrl!)
                   : null,
+              onBackgroundImageError: (e, s) {},
               child: user.photoUrl == null
                   ? Text(
                       user.displayName.isNotEmpty

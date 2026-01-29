@@ -340,8 +340,10 @@ class GameCubit extends Cubit<GameCubitState> {
 
     // Check for expired power-up
     var currentPowerUp = previousState.powerUp;
+    var shouldClearPowerUp = false;
     if (currentPowerUp?.isExpired == true) {
       currentPowerUp = null;
+      shouldClearPowerUp = true;
     }
 
     // Check collisions before moving
@@ -468,6 +470,7 @@ class GameCubit extends Cubit<GameCubitState> {
         ActivePowerUp(type: currentPowerUp.type),
       ];
       currentPowerUp = null;
+      shouldClearPowerUp = true;
       _audioService.playSound('power_up');
     }
 
@@ -475,6 +478,7 @@ class GameCubit extends Cubit<GameCubitState> {
       snake: snake,
       food: currentFood,
       powerUp: currentPowerUp,
+      clearPowerUp: shouldClearPowerUp,
       score: newScore,
       level: newLevel,
       currentCombo: newCombo,

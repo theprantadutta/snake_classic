@@ -421,6 +421,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               backgroundImage: user.photoUrl != null
                   ? NetworkImage(user.photoUrl!)
                   : null,
+              onBackgroundImageError: (e, s) {},
               child: user.photoUrl == null
                   ? Text(
                       user.displayName.isNotEmpty
@@ -534,6 +535,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               backgroundImage: request.fromUserPhotoUrl != null
                   ? NetworkImage(request.fromUserPhotoUrl!)
                   : null,
+              onBackgroundImageError: (e, s) {},
               child: request.fromUserPhotoUrl == null
                   ? Text(
                       request.fromUserName.isNotEmpty

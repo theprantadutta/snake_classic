@@ -1212,6 +1212,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             backgroundImage: player.photoUrl != null
                 ? NetworkImage(player.photoUrl!)
                 : null,
+            onBackgroundImageError: (e, s) {},
             backgroundColor: theme.accentColor.withValues(alpha: 0.2),
             child: player.photoUrl == null
                 ? Icon(Icons.person, color: theme.accentColor, size: 24)

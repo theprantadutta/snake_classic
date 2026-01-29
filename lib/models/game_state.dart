@@ -255,6 +255,7 @@ class GameState {
     Food? food,
     List<Food>? foods,
     PowerUp? powerUp,
+    bool clearPowerUp = false,
     List<ActivePowerUp>? activePowerUps,
     int? score,
     int? highScore,
@@ -276,7 +277,7 @@ class GameState {
       snake: snake ?? this.snake,
       food: food ?? this.food,
       foods: foods ?? this.foods,
-      powerUp: powerUp ?? this.powerUp,
+      powerUp: clearPowerUp ? null : (powerUp ?? this.powerUp),
       activePowerUps: activePowerUps ?? this.activePowerUps,
       score: score ?? this.score,
       highScore: highScore ?? this.highScore,
@@ -301,7 +302,7 @@ class GameState {
   }
 
   GameState clearPowerUp() {
-    return copyWith(powerUp: null);
+    return copyWith(clearPowerUp: true);
   }
 
   GameState addActivePowerUp(ActivePowerUp activePowerUp) {

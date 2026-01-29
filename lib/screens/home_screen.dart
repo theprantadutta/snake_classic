@@ -526,6 +526,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                     ? CircleAvatar(
                         radius: isSmallScreen ? 12 : 16,
                         backgroundImage: NetworkImage(authState.photoURL!),
+                        onBackgroundImageError: (e, s) {},
                       )
                     : Icon(
                         Icons.account_circle,

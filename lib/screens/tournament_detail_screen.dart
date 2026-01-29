@@ -817,6 +817,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             backgroundImage: participant.photoUrl != null
                 ? NetworkImage(participant.photoUrl!)
                 : null,
+            onBackgroundImageError: (e, s) {},
             child: participant.photoUrl == null
                 ? Text(
                     participant.displayName.isNotEmpty
