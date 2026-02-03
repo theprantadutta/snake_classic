@@ -334,13 +334,13 @@ class BattlePassSeason {
   static BattlePassSeason createSampleSeason() {
     final now = DateTime.now();
     final startDate = now.subtract(const Duration(days: 5));
-    final endDate = now.add(const Duration(days: 55));
+    final endDate = now.add(const Duration(days: 60));
 
     final levels = <BattlePassLevel>[];
 
     for (int i = 1; i <= 100; i++) {
       final isMilestone = i % 10 == 0;
-      final xpRequired = 100 + (i * 5); // Progressive XP requirement
+      final xpRequired = 100 + (i * 50); // Progressive XP requirement
 
       BattlePassReward? freeReward;
       BattlePassReward? premiumReward;

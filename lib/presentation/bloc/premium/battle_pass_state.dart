@@ -85,12 +85,12 @@ class BattlePassState extends Equatable {
   bool isPremiumTierClaimed(int tier) => claimedPremiumTiers.contains(tier);
 
   /// Maximum tier level
-  static const int maxTier = 50;
+  static const int maxTier = 100;
 
   /// XP required per tier (can be customized)
   int xpRequiredForTier(int tier) {
-    // Base: 100 XP, increasing by 10 per tier
-    return 100 + (tier * 10);
+    // Base: 100 XP, increasing by 50 per tier
+    return 100 + (tier * 50);
   }
 
   @override
