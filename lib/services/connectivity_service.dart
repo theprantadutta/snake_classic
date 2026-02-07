@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 
-/// Enhanced connectivity service that checks actual internet access,
-/// not just network connection status.
+/// Enhanced connectivity service that checks actual internet access
+/// and backend reachability, not just network connection status.
 class ConnectivityService extends ChangeNotifier {
   static final ConnectivityService _instance = ConnectivityService._internal();
   factory ConnectivityService() => _instance;
@@ -16,14 +18,26 @@ class ConnectivityService extends ChangeNotifier {
 
   bool _hasNetworkConnection = false;
   bool _hasInternetAccess = false;
+  bool _isBackendReachable = false;
   DateTime? _lastOnlineTime;
   bool _isInitialized = false;
 
   // Getters
-  bool get isOnline => _hasNetworkConnection && _hasInternetAccess;
+  bool get isOnline =>
+      _hasNetworkConnection && _hasInternetAccess && _isBackendReachable;
   bool get hasNetworkConnection => _hasNetworkConnection;
   bool get hasInternetAccess => _hasInternetAccess;
+  bool get isBackendReachable => _isBackendReachable;
   DateTime? get lastOnlineTime => _lastOnlineTime;
+
+  /// Backend health endpoint URL
+  static String get _healthUrl {
+    final backendUrl =
+        dotenv.env['BACKEND_URL'] ??
+        dotenv.env['NOTIFICATION_BACKEND_URL'] ??
+        'http://127.0.0.1:8393';
+    return '$backendUrl/health/status';
+  }
 
   // Stream controller for online status changes
   final StreamController<bool> _onlineStatusController =
@@ -65,11 +79,12 @@ class ConnectivityService extends ChangeNotifier {
         !results.contains(ConnectivityResult.none) && results.isNotEmpty;
 
     if (_hasNetworkConnection) {
-      // Network available, check actual internet access
+      // Network available, check backend health
       await _checkInternetAccess();
     } else {
       // No network connection
       _hasInternetAccess = false;
+      _isBackendReachable = false;
       _emitOnlineStatus();
     }
 
@@ -77,15 +92,16 @@ class ConnectivityService extends ChangeNotifier {
     if (kDebugMode && hadNetwork != _hasNetworkConnection) {
       print(
         'Network connection changed: $_hasNetworkConnection, '
-        'Internet: $_hasInternetAccess',
+        'Internet: $_hasInternetAccess, Backend: $_isBackendReachable',
       );
     }
   }
 
-  /// Check if we have actual internet access by trying to resolve a hostname
+  /// Check backend reachability via /health endpoint, with DNS fallback
   Future<bool> _checkInternetAccess() async {
     if (!_hasNetworkConnection) {
       _hasInternetAccess = false;
+      _isBackendReachable = false;
       _emitOnlineStatus();
       return false;
     }
@@ -93,25 +109,24 @@ class ConnectivityService extends ChangeNotifier {
     final wasOnline = isOnline;
 
     try {
-      // Try to lookup a reliable hostname
-      final result = await InternetAddress.lookup(
-        'google.com',
-      ).timeout(const Duration(seconds: 5));
+      // Try to reach the backend health endpoint
+      final response = await http
+          .get(Uri.parse(_healthUrl))
+          .timeout(const Duration(seconds: 5));
 
-      _hasInternetAccess = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-
-      if (_hasInternetAccess) {
+      if (response.statusCode == 200) {
+        _hasInternetAccess = true;
+        _isBackendReachable = true;
         _lastOnlineTime = DateTime.now();
+      } else {
+        // Backend responded but not healthy — still reachable internet-wise
+        _hasInternetAccess = true;
+        _isBackendReachable = false;
       }
-    } on SocketException catch (_) {
-      _hasInternetAccess = false;
-    } on TimeoutException catch (_) {
-      _hasInternetAccess = false;
-    } catch (e) {
-      _hasInternetAccess = false;
-      if (kDebugMode) {
-        print('Internet check error: $e');
-      }
+    } catch (_) {
+      // Health check failed — determine if it's internet or backend issue
+      _isBackendReachable = false;
+      await _checkInternetFallback();
     }
 
     // Only emit if status changed
@@ -119,7 +134,27 @@ class ConnectivityService extends ChangeNotifier {
       _emitOnlineStatus();
     }
 
-    return _hasInternetAccess;
+    return isOnline;
+  }
+
+  /// DNS fallback to distinguish "no internet" from "backend down"
+  Future<void> _checkInternetFallback() async {
+    try {
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 3));
+
+      _hasInternetAccess = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      _hasInternetAccess = false;
+    } on TimeoutException catch (_) {
+      _hasInternetAccess = false;
+    } catch (e) {
+      _hasInternetAccess = false;
+      if (kDebugMode) {
+        print('Internet fallback check error: $e');
+      }
+    }
   }
 
   void _emitOnlineStatus() {
@@ -159,6 +194,8 @@ class ConnectivityService extends ChangeNotifier {
       return 'No network connection';
     } else if (!_hasInternetAccess) {
       return 'No internet access';
+    } else if (!_isBackendReachable) {
+      return 'Server unreachable';
     } else {
       return 'Online';
     }

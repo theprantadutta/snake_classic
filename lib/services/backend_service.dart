@@ -254,16 +254,17 @@ class BackendService {
     try {
       AppLogger.network('Checking backend health');
 
+      final healthUrl = _baseUrl.replaceFirst('/api/v1', '/health/status');
       final response = await http
           .get(
-            Uri.parse('$_baseUrl/test/health'),
+            Uri.parse(healthUrl),
             headers: {'Content-Type': 'application/json'},
           )
-          .timeout(_timeout);
+          .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        AppLogger.network('Backend health check: ${data['message']}');
+        AppLogger.network('Backend health check: ${data['status']}');
         return true;
       } else {
         AppLogger.error(

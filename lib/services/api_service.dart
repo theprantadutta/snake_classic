@@ -1180,12 +1180,13 @@ class ApiService {
   /// Check backend health
   Future<bool> checkHealth() async {
     try {
+      final healthUrl = baseUrl.replaceFirst('/api/v1', '/health/status');
       final response = await http
           .get(
-            Uri.parse('$baseUrl/test/health'),
+            Uri.parse(healthUrl),
             headers: {'Content-Type': 'application/json'},
           )
-          .timeout(_timeout);
+          .timeout(const Duration(seconds: 5));
 
       return response.statusCode == 200;
     } catch (e) {
