@@ -208,8 +208,8 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
         BlocProvider<PremiumCubit>(
           create: (_) => getIt<PremiumCubit>()..initialize(),
         ),
-        BlocProvider<BattlePassCubit>(
-          create: (_) => getIt<BattlePassCubit>()..initialize(),
+        BlocProvider<BattlePassCubit>.value(
+          value: getIt<BattlePassCubit>()..initialize(),
         ),
       ],
       // MultiProvider for core services that are not Cubits

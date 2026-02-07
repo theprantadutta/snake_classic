@@ -13,7 +13,6 @@ import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/game_replay.dart' show GameRecorder;
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
-import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
@@ -23,6 +22,8 @@ import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
+import 'package:snake_classic/models/battle_pass.dart';
+import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -44,9 +45,9 @@ class GameCubit extends Cubit<GameCubitState> {
   final StorageService _storageService;
   final GameSettingsCubit _settingsCubit;
   final CoinsCubit _coinsCubit;
+  final BattlePassCubit _battlePassCubit;
   final DataSyncService _dataSyncService = DataSyncService();
   final DailyChallengeService _dailyChallengeService = DailyChallengeService();
-  final ApiService _apiService = ApiService();
 
   Timer? _gameTimer;
   Timer? _animationTimer;
@@ -64,6 +65,9 @@ class GameCubit extends Cubit<GameCubitState> {
   int _powerUpsCollectedThisGame = 0;
   int _consecutiveGamesWithoutWallHits = 0;
 
+  // Battle pass milestone tracking (reset per game)
+  final Set<String> _bpMilestonesThisGame = {};
+
   // Statistics tracking
   final Map<String, int> _currentGameFoodTypes = {};
   int _currentGameFoodPoints = 0;
@@ -79,6 +83,7 @@ class GameCubit extends Cubit<GameCubitState> {
     required StorageService storageService,
     required GameSettingsCubit settingsCubit,
     required CoinsCubit coinsCubit,
+    required BattlePassCubit battlePassCubit,
   }) : _audioService = audioService,
        _enhancedAudioService = enhancedAudioService,
        _hapticService = hapticService,
@@ -87,6 +92,7 @@ class GameCubit extends Cubit<GameCubitState> {
        _storageService = storageService,
        _settingsCubit = settingsCubit,
        _coinsCubit = coinsCubit,
+       _battlePassCubit = battlePassCubit,
        super(GameCubitState.initial());
 
   /// Initialize the game cubit
@@ -137,6 +143,10 @@ class GameCubit extends Cubit<GameCubitState> {
     _currentGamePowerUpTypes.clear();
     _currentGamePowerUpTime = 0;
     _updateCount = 0;
+    _bpMilestonesThisGame.clear();
+
+    // Daily first game XP
+    _awardDailyFirstGameXP();
 
     // Generate initial food
     final food = Food.generateRandom(
@@ -427,6 +437,9 @@ class GameCubit extends Cubit<GameCubitState> {
       newScore += multipliedPoints;
       _currentGameFoodPoints += multipliedPoints;
 
+      // Battle pass score milestones
+      _checkScoreMilestones(newScore);
+
       // Level up (unlimited levels with progressive difficulty)
       if (newScore >= previousState.targetScore) {
         newLevel++;
@@ -460,6 +473,12 @@ class GameCubit extends Cubit<GameCubitState> {
       debugPrint('🎁 Collecting power-up: ${currentPowerUp.type.name}');
       _hapticService.powerUpCollected();
       _powerUpsCollectedThisGame++;
+
+      // Battle pass XP for power-up collection
+      _battlePassCubit.addXP(
+        BattlePassXpSource.getXpForAction('power_up_collected'),
+        source: 'power_up_collected',
+      );
 
       // Track power-up type for statistics
       _currentGamePowerUpTypes[currentPowerUp.type.name] =
@@ -708,7 +727,7 @@ class GameCubit extends Cubit<GameCubitState> {
       noWallGames: _consecutiveGamesWithoutWallHits,
     );
 
-    // Award coins for newly unlocked achievements
+    // Award coins and battle pass XP for newly unlocked achievements
     final allNewUnlocks = [...scoreUnlocks, ...survivalUnlocks, ...specialUnlocks];
     for (final achievement in allNewUnlocks) {
       await _coinsCubit.earnCoins(
@@ -721,6 +740,13 @@ class GameCubit extends Cubit<GameCubitState> {
           'rarity': achievement.rarity.name,
         },
       );
+
+      // Battle pass XP based on achievement rarity
+      final xpKey = 'achievement_unlocked_${achievement.rarity.name}';
+      final xp = BattlePassXpSource.getXpForAction(xpKey);
+      if (xp > 0) {
+        await _battlePassCubit.addXP(xp, source: xpKey);
+      }
     }
 
     // Calculate power-up time
@@ -1031,23 +1057,67 @@ class GameCubit extends Cubit<GameCubitState> {
     required int foodEaten,
     required int survivalSeconds,
   }) async {
-    // Calculate XP earned from game
-    // Base XP from score (1 XP per 10 points)
-    int xp = score ~/ 10;
-    // Bonus from food (2 XP per food)
-    xp += foodEaten * 2;
-    // Bonus from survival time (1 XP per 30 seconds)
-    xp += survivalSeconds ~/ 30;
-    // Minimum XP of 1 for playing
-    xp = xp.clamp(1, 500);
+    // Game completed XP
+    final gameCompletedXp = BattlePassXpSource.getXpForAction('game_completed');
+    if (gameCompletedXp > 0) {
+      await _battlePassCubit.addXP(gameCompletedXp, source: 'game_completed');
+    }
 
-    if (xp > 0 && _apiService.isAuthenticated) {
-      try {
-        await _apiService.addBattlePassXP(xp: xp, source: 'gameplay');
-        AppLogger.info('Added $xp XP to battle pass');
-      } catch (e) {
-        AppLogger.error('Failed to add battle pass XP', e);
+    // Survival milestone XP (only if not already awarded this game)
+    if (survivalSeconds >= 300 && !_bpMilestonesThisGame.contains('survival_300s')) {
+      _bpMilestonesThisGame.add('survival_300s');
+      final xp = BattlePassXpSource.getXpForAction('survival_300s');
+      if (xp > 0) {
+        await _battlePassCubit.addXP(xp, source: 'survival_300s');
       }
+    }
+    if (survivalSeconds >= 60 && !_bpMilestonesThisGame.contains('survival_60s')) {
+      _bpMilestonesThisGame.add('survival_60s');
+      final xp = BattlePassXpSource.getXpForAction('survival_60s');
+      if (xp > 0) {
+        await _battlePassCubit.addXP(xp, source: 'survival_60s');
+      }
+    }
+  }
+
+  /// Check and award battle pass XP for score milestones
+  void _checkScoreMilestones(int score) {
+    if (score >= 1000 && !_bpMilestonesThisGame.contains('score_1000')) {
+      _bpMilestonesThisGame.add('score_1000');
+      final xp = BattlePassXpSource.getXpForAction('score_milestone_1000');
+      if (xp > 0) _battlePassCubit.addXP(xp, source: 'score_milestone_1000');
+    }
+    if (score >= 500 && !_bpMilestonesThisGame.contains('score_500')) {
+      _bpMilestonesThisGame.add('score_500');
+      final xp = BattlePassXpSource.getXpForAction('score_milestone_500');
+      if (xp > 0) _battlePassCubit.addXP(xp, source: 'score_milestone_500');
+    }
+    if (score >= 100 && !_bpMilestonesThisGame.contains('score_100')) {
+      _bpMilestonesThisGame.add('score_100');
+      final xp = BattlePassXpSource.getXpForAction('score_milestone_100');
+      if (xp > 0) _battlePassCubit.addXP(xp, source: 'score_milestone_100');
+    }
+  }
+
+  /// Award daily first game XP if this is the first game today
+  Future<void> _awardDailyFirstGameXP() async {
+    try {
+      final lastPlayDate = await _storageService.getLastPlayDate();
+      final today = DateTime.now();
+      final isFirstGameToday = lastPlayDate == null ||
+          lastPlayDate.year != today.year ||
+          lastPlayDate.month != today.month ||
+          lastPlayDate.day != today.day;
+
+      if (isFirstGameToday) {
+        final xp = BattlePassXpSource.getXpForAction('daily_game');
+        if (xp > 0) {
+          await _battlePassCubit.addXP(xp, source: 'daily_game');
+        }
+        await _storageService.saveLastPlayDate(today);
+      }
+    } catch (e) {
+      AppLogger.error('Error checking daily first game', e);
     }
   }
 

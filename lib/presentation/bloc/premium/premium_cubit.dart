@@ -116,8 +116,60 @@ class PremiumCubit extends Cubit<PremiumState> {
     ) {
       if (status == 'premium_purchased' || status == 'premium_restored') {
         _handlePremiumPurchased();
+      } else if (status.startsWith('purchase_completed:')) {
+        final productId = status.substring('purchase_completed:'.length);
+        _handlePurchaseCompleted(productId);
       }
     });
+  }
+
+  Future<void> _handlePurchaseCompleted(String productId) async {
+    AppLogger.info('Handling purchase completion: $productId');
+
+    // Subscriptions
+    if (productId.contains('pro_monthly') ||
+        productId.contains('pro_yearly')) {
+      _handlePremiumPurchased();
+      return;
+    }
+
+    // Trail effects (prefixed with 'trail_')
+    if (productId.startsWith('trail_')) {
+      await unlockTrail(productId);
+      return;
+    }
+
+    // Snake skins (individual skin IDs without prefix)
+    const skinIds = {
+      'golden', 'rainbow', 'galaxy', 'dragon', 'electric',
+      'fire', 'ice', 'shadow', 'neon', 'crystal', 'cosmic',
+    };
+    if (skinIds.contains(productId)) {
+      await unlockSkin(productId);
+      return;
+    }
+
+    // Cosmetic bundles
+    const bundleIds = {
+      'starter_pack', 'elemental_pack', 'cosmic_collection',
+      'ultimate_collection',
+    };
+    if (bundleIds.contains(productId)) {
+      await unlockBundle(productId);
+      return;
+    }
+
+    // Tournament entries
+    if (productId.contains('tournament')) {
+      if (productId.contains('bronze')) {
+        await addTournamentEntry('bronze');
+      } else if (productId.contains('silver')) {
+        await addTournamentEntry('silver');
+      } else if (productId.contains('gold')) {
+        await addTournamentEntry('gold');
+      }
+      return;
+    }
   }
 
   void _handlePremiumPurchased() {
@@ -328,39 +380,6 @@ class PremiumCubit extends Cubit<PremiumState> {
       silver: state.silverTournamentEntries,
       gold: state.goldTournamentEntries,
     );
-  }
-
-  /// Handle purchase completion from purchase service
-  Future<void> handlePurchaseCompletion(String productId) async {
-    AppLogger.info('Handling purchase completion: $productId');
-
-    // Handle subscription purchases
-    if (productId.contains('pro_monthly') || productId.contains('pro_yearly')) {
-      _handlePremiumPurchased();
-      return;
-    }
-
-    // Handle battle pass
-    if (productId.contains('battle_pass')) {
-      // Battle pass is handled by BattlePassCubit
-      return;
-    }
-
-    // Handle tournament entries
-    if (productId.contains('tournament')) {
-      if (productId.contains('bronze')) {
-        await addTournamentEntry('bronze');
-      } else if (productId.contains('silver')) {
-        await addTournamentEntry('silver');
-      } else if (productId.contains('gold')) {
-        await addTournamentEntry('gold');
-      }
-      return;
-    }
-
-    // Handle themes, skins, trails, power-ups based on product ID
-    // The purchase service will emit the appropriate product ID
-    AppLogger.info('Purchase completed for: $productId');
   }
 
   // Convenience checker methods (delegate to state)

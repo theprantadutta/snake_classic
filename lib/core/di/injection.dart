@@ -183,6 +183,7 @@ Future<void> configureDependencies() async {
       storageService: getIt<StorageService>(),
       settingsCubit: getIt<GameSettingsCubit>(),
       coinsCubit: getIt<CoinsCubit>(),
+      battlePassCubit: getIt<BattlePassCubit>(),
     ),
   );
 
@@ -193,7 +194,7 @@ Future<void> configureDependencies() async {
     ),
   );
 
-  getIt.registerFactory<BattlePassCubit>(
+  getIt.registerLazySingleton<BattlePassCubit>(
     () => BattlePassCubit(storageService: getIt<StorageService>()),
   );
 }

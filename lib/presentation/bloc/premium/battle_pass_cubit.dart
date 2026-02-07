@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -69,6 +70,14 @@ class BattlePassCubit extends Cubit<BattlePassState> {
         return false;
       }
 
+      // Parse season from backend
+      BattlePassSeason? season;
+      try {
+        season = BattlePassSeason.fromJson(seasonData);
+      } catch (e) {
+        AppLogger.error('Failed to parse season from backend', e);
+      }
+
       final progressData = results[1];
       if (progressData == null) {
         // Season exists but user has no progress yet - start fresh
@@ -84,6 +93,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
             xpForNextTier: 100,
             expiryDate: endDate,
             seasonName: seasonData['name'] ?? 'Season 1',
+            season: season,
           ),
         );
         await _saveState();
@@ -120,6 +130,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
           claimedFreeTiers: claimedFree,
           claimedPremiumTiers: claimedPremium,
           seasonName: progressData['season_name'] ?? 'Season 1',
+          season: season,
         ),
       );
       await _saveState();
@@ -132,6 +143,19 @@ class BattlePassCubit extends Cubit<BattlePassState> {
 
   /// Load from local storage (offline fallback)
   Future<void> _loadFromLocalStorage() async {
+    // Load cached season separately
+    BattlePassSeason? season;
+    try {
+      final seasonJson = await _storageService.getCachedSeasonJson();
+      if (seasonJson != null) {
+        season = BattlePassSeason.fromJson(json.decode(seasonJson));
+      }
+    } catch (e) {
+      AppLogger.error('Failed to parse cached season', e);
+    }
+    // Fallback to sample season if no cached season
+    season ??= BattlePassSeason.createSampleSeason();
+
     final battlePassData = await _storageService.getBattlePassData();
 
     if (battlePassData != null) {
@@ -157,10 +181,15 @@ class BattlePassCubit extends Cubit<BattlePassState> {
                   .toSet() ??
               {},
           seasonName: data['season_name'] ?? 'Season 1',
+          season: season,
         ),
       );
     } else {
-      emit(state.copyWith(status: BattlePassStatus.ready));
+      // No cached data at all — use sample season as fallback
+      emit(state.copyWith(
+        status: BattlePassStatus.ready,
+        season: season,
+      ));
     }
   }
 
@@ -185,6 +214,13 @@ class BattlePassCubit extends Cubit<BattlePassState> {
       'season_name': state.seasonName,
     };
     await _storageService.setBattlePassData(json.encode(data));
+
+    // Cache season separately
+    if (state.season != null) {
+      await _storageService.setCachedSeasonJson(
+        json.encode(state.season!.toJson()),
+      );
+    }
   }
 
   /// Activate battle pass (after purchase)
@@ -199,7 +235,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
 
   /// Add XP to battle pass (syncs with backend if online)
   Future<void> addXP(int xp, {String source = 'gameplay'}) async {
-    if (state.currentTier >= BattlePassState.maxTier) return;
+    if (state.currentTier >= state.maxTier) return;
 
     // Try to sync with backend first
     if (_apiService.isAuthenticated) {
@@ -243,7 +279,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     var xpForNext = state.xpForNextTier;
 
     // Level up logic
-    while (newXP >= xpForNext && newTier < BattlePassState.maxTier) {
+    while (newXP >= xpForNext && newTier < state.maxTier) {
       newXP -= xpForNext;
       newTier++;
       xpForNext = state.xpRequiredForTier(newTier);

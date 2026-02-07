@@ -709,7 +709,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                             : isUnlocked
                             ? 'OWNED'
                             : price > 0
-                            ? '${price.toInt()} coins'
+                            ? '\$${price.toStringAsFixed(2)}'
                             : 'FREE',
                         style: const TextStyle(
                           color: Colors.white,

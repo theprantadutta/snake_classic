@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/data/daos/settings_dao.dart';
 import 'package:snake_classic/data/daos/game_dao.dart';
@@ -339,6 +340,32 @@ class StorageService {
 
   Future<void> setBattlePassData(String? data) async {
     await _storeDao?.setBattlePassData(data);
+  }
+
+  Future<DateTime?> getLastPlayDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dateStr = prefs.getString('last_play_date');
+    if (dateStr == null) return null;
+    return DateTime.tryParse(dateStr);
+  }
+
+  Future<void> saveLastPlayDate(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_play_date', date.toIso8601String());
+  }
+
+  Future<String?> getCachedSeasonJson() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('battle_pass_season');
+  }
+
+  Future<void> setCachedSeasonJson(String? seasonJson) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (seasonJson == null) {
+      await prefs.remove('battle_pass_season');
+    } else {
+      await prefs.setString('battle_pass_season', seasonJson);
+    }
   }
 
   // ==================== Purchase History ====================

@@ -131,9 +131,9 @@ class BattlePassReward {
 
   factory BattlePassReward.fromJson(Map<String, dynamic> json) {
     return BattlePassReward(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
+      id: json['id'] ?? '',
+      name: json['name'] ?? 'Reward',
+      description: json['description'] ?? '',
       type: BattlePassRewardType.values.firstWhere(
         (t) => t.name == json['type'],
         orElse: () => BattlePassRewardType.xp,
@@ -186,8 +186,8 @@ class BattlePassLevel {
 
   factory BattlePassLevel.fromJson(Map<String, dynamic> json) {
     return BattlePassLevel(
-      level: json['level'],
-      xpRequired: json['xp_required'],
+      level: json['level'] ?? 0,
+      xpRequired: json['xp_required'] ?? 100,
       freeReward: json['free_reward'] != null
           ? BattlePassReward.fromJson(json['free_reward'])
           : null,
@@ -314,15 +314,18 @@ class BattlePassSeason {
 
   factory BattlePassSeason.fromJson(Map<String, dynamic> json) {
     return BattlePassSeason(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      theme: json['theme'],
-      startDate: DateTime.parse(json['start_date']),
-      endDate: DateTime.parse(json['end_date']),
-      levels: (json['levels'] as List)
-          .map((l) => BattlePassLevel.fromJson(l))
-          .toList(),
+      id: json['id'] ?? 'unknown',
+      name: json['name'] ?? 'Season',
+      description: json['description'] ?? '',
+      theme: json['theme'] ?? 'default',
+      startDate: DateTime.tryParse(json['start_date'] ?? '') ?? DateTime.now(),
+      endDate: DateTime.tryParse(json['end_date'] ?? json['endDate'] ?? '') ??
+          DateTime.now().add(const Duration(days: 60)),
+      levels: json['levels'] != null
+          ? (json['levels'] as List)
+              .map((l) => BattlePassLevel.fromJson(l as Map<String, dynamic>))
+              .toList()
+          : [],
       price: json['price']?.toDouble() ?? 9.99,
       bannerImage: json['banner_image'] ?? '',
       themeColor: Color(json['theme_color'] ?? 0xFF9C27B0),
@@ -348,28 +351,32 @@ class BattlePassSeason {
       // Create rewards based on level
       if (i % 5 == 0) {
         // Free rewards every 5 levels
+        final freeType = _getRewardTypeForLevel(i, false);
+        final freeQty = _getQuantityForLevel(i, false);
         freeReward = BattlePassReward(
           id: 'free_$i',
-          name: 'Free Reward $i',
-          description: 'Free reward for level $i',
-          type: _getRewardTypeForLevel(i, false),
+          name: _getRewardName(i, freeType, false, freeQty),
+          description: _getRewardDescription(freeType, false),
+          type: freeType,
           tier: BattlePassTier.free,
-          quantity: _getQuantityForLevel(i, false),
-          icon: _getRewardTypeForLevel(i, false).icon,
+          quantity: freeQty,
+          icon: freeType.icon,
         );
       }
 
       if (i % 3 == 0) {
         // Premium rewards every 3 levels
+        final premType = _getRewardTypeForLevel(i, true);
+        final premQty = _getQuantityForLevel(i, true);
         premiumReward = BattlePassReward(
           id: 'premium_$i',
-          name: 'Premium Reward $i',
-          description: 'Premium reward for level $i',
-          type: _getRewardTypeForLevel(i, true),
+          name: _getRewardName(i, premType, true, premQty),
+          description: _getRewardDescription(premType, true),
+          type: premType,
           tier: BattlePassTier.premium,
-          quantity: _getQuantityForLevel(i, true),
+          quantity: premQty,
           isSpecial: isMilestone,
-          icon: _getRewardTypeForLevel(i, true).icon,
+          icon: premType.icon,
           color: Colors.amber,
         );
       }
@@ -409,14 +416,16 @@ class BattlePassSeason {
     bool isPremium,
   ) {
     if (level % 50 == 0) return BattlePassRewardType.special;
-    if (level % 25 == 0)
+    if (level % 25 == 0) {
       return isPremium ? BattlePassRewardType.skin : BattlePassRewardType.title;
+    }
     if (level % 20 == 0) return BattlePassRewardType.theme;
     if (level % 15 == 0) return BattlePassRewardType.trail;
-    if (level % 10 == 0)
+    if (level % 10 == 0) {
       return isPremium
           ? BattlePassRewardType.powerUp
           : BattlePassRewardType.tournamentEntry;
+    }
     if (level % 7 == 0) return BattlePassRewardType.coins;
     return BattlePassRewardType.xp;
   }
@@ -427,6 +436,49 @@ class BattlePassSeason {
     if (level % 10 == 0) return isPremium ? 3 : 1; // Milestone rewards
     if (level % 5 == 0) return isPremium ? 100 : 50; // Coins
     return isPremium ? 25 : 15; // XP
+  }
+
+  static const _freeRewardNames = <BattlePassRewardType, List<String>>{
+    BattlePassRewardType.xp: ['XP Boost', 'Star Dust', 'Energy Pack'],
+    BattlePassRewardType.coins: ['50 Coins', '75 Coins', '100 Coins'],
+    BattlePassRewardType.tournamentEntry: ['Bronze Entry', 'Silver Entry'],
+    BattlePassRewardType.title: ['Stargazer', 'Voyager'],
+    BattlePassRewardType.theme: ['Nebula Theme'],
+    BattlePassRewardType.trail: ['Stardust Trail'],
+    BattlePassRewardType.special: ['Legendary Crate'],
+  };
+
+  static const _premiumRewardNames = <BattlePassRewardType, List<String>>{
+    BattlePassRewardType.xp: ['Mega XP', 'Cosmic Charge', 'Nova Burst'],
+    BattlePassRewardType.coins: ['200 Coins', '350 Coins', '500 Coins'],
+    BattlePassRewardType.skin: ['Galaxy Skin', 'Crystal Serpent'],
+    BattlePassRewardType.trail: ['Neon Trail', 'Plasma Wake', 'Cosmic Aura'],
+    BattlePassRewardType.theme: ['Cyberpunk Theme', 'Crystal Theme'],
+    BattlePassRewardType.powerUp: ['Speed Boost', 'Score Shield', 'Ghost Mode'],
+    BattlePassRewardType.special: ['Season Trophy', 'Cosmic Crown'],
+    BattlePassRewardType.title: ['Cosmic Legend', 'Star Commander'],
+  };
+
+  static String _getRewardName(
+    int level,
+    BattlePassRewardType type,
+    bool isPremium,
+    int quantity,
+  ) {
+    final names = isPremium
+        ? _premiumRewardNames[type]
+        : _freeRewardNames[type];
+    if (names != null && names.isNotEmpty) {
+      return names[(level ~/ 5) % names.length];
+    }
+    // Fallback: use type display name with quantity
+    if (quantity > 1) return '${type.displayName} x$quantity';
+    return type.displayName;
+  }
+
+  static String _getRewardDescription(BattlePassRewardType type, bool isPremium) {
+    final prefix = isPremium ? 'Exclusive premium' : 'Free';
+    return '$prefix ${type.displayName.toLowerCase()} reward';
   }
 }
 

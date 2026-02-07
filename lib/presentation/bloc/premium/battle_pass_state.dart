@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:snake_classic/models/battle_pass.dart';
 
 /// Status of the battle pass cubit
 enum BattlePassStatus { initial, loading, ready, error }
@@ -18,6 +19,7 @@ class BattlePassState extends Equatable {
   final Set<int> claimedPremiumTiers;
   final String? errorMessage;
   final String seasonName;
+  final BattlePassSeason? season;
 
   const BattlePassState({
     this.status = BattlePassStatus.initial,
@@ -30,6 +32,7 @@ class BattlePassState extends Equatable {
     this.claimedPremiumTiers = const {},
     this.errorMessage,
     this.seasonName = 'Season 1',
+    this.season,
   });
 
   /// Initial state
@@ -48,6 +51,7 @@ class BattlePassState extends Equatable {
     String? errorMessage,
     bool clearError = false,
     String? seasonName,
+    BattlePassSeason? season,
   }) {
     return BattlePassState(
       status: status ?? this.status,
@@ -60,6 +64,7 @@ class BattlePassState extends Equatable {
       claimedPremiumTiers: claimedPremiumTiers ?? this.claimedPremiumTiers,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       seasonName: seasonName ?? this.seasonName,
+      season: season ?? this.season,
     );
   }
 
@@ -84,8 +89,8 @@ class BattlePassState extends Equatable {
   /// Check if a premium tier reward is claimed
   bool isPremiumTierClaimed(int tier) => claimedPremiumTiers.contains(tier);
 
-  /// Maximum tier level
-  static const int maxTier = 100;
+  /// Maximum tier level (derived from season if available)
+  int get maxTier => season?.levels.length ?? 100;
 
   /// XP required per tier (can be customized)
   int xpRequiredForTier(int tier) {
@@ -105,5 +110,6 @@ class BattlePassState extends Equatable {
     claimedPremiumTiers,
     errorMessage,
     seasonName,
+    season,
   ];
 }
