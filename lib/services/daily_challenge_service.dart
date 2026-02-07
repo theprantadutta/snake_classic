@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/offline_cache_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -48,7 +49,16 @@ class DailyChallengeService extends ChangeNotifier {
 
   Future<void> initialize() async {
     await _loadFromCache();
-    await refreshChallenges();
+    // Refresh silently in background — don't block initialization
+    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
+      _refreshInBackground();
+    }
+  }
+
+  void _refreshInBackground() {
+    refreshChallenges().catchError((e) {
+      AppLogger.error('Background refresh failed', e);
+    });
   }
 
   Future<void> _loadFromCache() async {
@@ -118,7 +128,7 @@ class DailyChallengeService extends ChangeNotifier {
     if (_isLoading) return;
 
     _isLoading = true;
-    notifyListeners();
+    // DON'T notifyListeners() here — no spinner
 
     try {
       if (_connectivityService.isOnline && _apiService.isAuthenticated) {
@@ -126,12 +136,12 @@ class DailyChallengeService extends ChangeNotifier {
         if (response != null) {
           _updateFromResponse(response);
 
-          // Cache the response
+          // Cache the response with 12h TTL (challenges change once per day)
           await _cacheService.setCache<Map<String, dynamic>>(
             _challengesKey,
             response,
             (data) => data,
-            customTtl: const Duration(minutes: 5),
+            customTtl: const Duration(hours: 12),
           );
 
           // Sync any pending progress
@@ -142,7 +152,7 @@ class DailyChallengeService extends ChangeNotifier {
       AppLogger.error('Error refreshing daily challenges', e);
     } finally {
       _isLoading = false;
-      notifyListeners();
+      notifyListeners(); // Only notify ONCE when data is ready
     }
   }
 
@@ -280,42 +290,47 @@ class DailyChallengeService extends ChangeNotifier {
     await _saveLocalProgress();
   }
 
-  /// Claim reward for a completed challenge
+  /// Claim reward for a completed challenge (optimistic update)
   Future<bool> claimReward(String challengeId) async {
-    final challenge = _challenges.firstWhere(
-      (c) => c.id == challengeId,
-      orElse: () => throw Exception('Challenge not found'),
-    );
+    final index = _challenges.indexWhere((c) => c.id == challengeId);
+    if (index < 0) return false;
 
-    if (!challenge.isCompleted || challenge.claimedReward) {
-      return false;
-    }
+    final challenge = _challenges[index];
+    if (!challenge.isCompleted || challenge.claimedReward) return false;
 
-    try {
-      final response = await _apiService.claimChallengeReward(challengeId);
+    // Optimistic local update FIRST
+    _challenges[index] = challenge.copyWith(claimedReward: true);
+    notifyListeners();
 
-      if (response != null && response['success'] == true) {
-        // Update local state
-        final index = _challenges.indexWhere((c) => c.id == challengeId);
-        if (index >= 0) {
-          _challenges[index] = _challenges[index].copyWith(claimedReward: true);
+    // Sync with backend in background
+    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
+      try {
+        final response = await _apiService.claimChallengeReward(challengeId);
+        if (response != null) {
+          final bonus = response['bonusCoins'] as int? ?? 0;
+          if (bonus > 0) {
+            _bonusCoins = bonus;
+            AppLogger.info('All challenges completed! Bonus: $bonus coins');
+          }
+          notifyListeners();
         }
-
-        // Check for bonus
-        final bonus = response['bonusCoins'] as int? ?? 0;
-        if (bonus > 0) {
-          _bonusCoins = bonus;
-          AppLogger.info('All challenges completed! Bonus: $bonus coins');
-        }
-
-        notifyListeners();
-        return true;
+      } catch (e) {
+        AppLogger.error('Error claiming challenge reward', e);
+        // Queue for retry — local state already updated
+        DataSyncService().queueSync('challenge_claim', {
+          'challengeId': challengeId,
+          'claimed_at': DateTime.now().toIso8601String(),
+        }, priority: SyncPriority.high);
       }
-    } catch (e) {
-      AppLogger.error('Error claiming challenge reward', e);
+    } else {
+      // Offline — queue for sync
+      DataSyncService().queueSync('challenge_claim', {
+        'challengeId': challengeId,
+        'claimed_at': DateTime.now().toIso8601String(),
+      }, priority: SyncPriority.high);
     }
 
-    return false;
+    return true; // Always succeeds locally
   }
 
   /// Claim all unclaimed rewards

@@ -116,10 +116,8 @@ class DailyChallengesWidget extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Challenge list or loading/empty state
-                if (state.isLoading)
-                  _buildLoadingState()
-                else if (challenges.isEmpty)
+                // Challenge list or empty state (no spinner — data shows instantly from cache)
+                if (challenges.isEmpty)
                   _buildEmptyState()
                 else
                   ...challenges
@@ -170,18 +168,6 @@ class DailyChallengesWidget extends ConsumerWidget {
           end: const Offset(1.1, 1.1),
           duration: 800.ms,
         );
-  }
-
-  Widget _buildLoadingState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(theme.accentColor),
-          strokeWidth: 2,
-        ),
-      ),
-    );
   }
 
   Widget _buildEmptyState() {

@@ -441,6 +441,11 @@ class DataSyncService extends ChangeNotifier {
           );
           return removeResult != null && removeResult['success'] == true;
 
+        case 'challenge_claim':
+          // Claim daily challenge reward
+          final challengeId = item.data['challengeId'] as String;
+          return await _apiService.claimChallengeReward(challengeId) != null;
+
         default:
           // Generic profile update
           final result = await _apiService.updateProfile({

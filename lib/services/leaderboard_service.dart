@@ -19,6 +19,9 @@ class LeaderboardService {
   static const String _dailyLeaderboardKey = 'leaderboard_daily';
   static const String _friendsLeaderboardKey = 'leaderboard_friends';
 
+  // Track in-flight background refreshes to prevent duplicates
+  final Set<String> _activeRefreshes = {};
+
   /// Get global leaderboard with cache-first pattern
   Future<List<Map<String, dynamic>>> getGlobalLeaderboard({
     int limit = 50,
@@ -88,8 +91,11 @@ class LeaderboardService {
   }
 
   void _refreshGlobalLeaderboardInBackground(int limit) {
-    // Non-blocking background refresh
-    _fetchAndCacheGlobalLeaderboard(limit).catchError((e) {
+    if (_activeRefreshes.contains('global')) return; // Already refreshing
+    _activeRefreshes.add('global');
+    _fetchAndCacheGlobalLeaderboard(limit).whenComplete(() {
+      _activeRefreshes.remove('global');
+    }).catchError((e) {
       if (kDebugMode) {
         print('Background refresh failed: $e');
       }
@@ -205,7 +211,11 @@ class LeaderboardService {
   }
 
   void _refreshWeeklyLeaderboardInBackground(int limit) {
-    _fetchAndCacheWeeklyLeaderboard(limit).catchError((e) {
+    if (_activeRefreshes.contains('weekly')) return; // Already refreshing
+    _activeRefreshes.add('weekly');
+    _fetchAndCacheWeeklyLeaderboard(limit).whenComplete(() {
+      _activeRefreshes.remove('weekly');
+    }).catchError((e) {
       if (kDebugMode) {
         print('Background refresh failed: $e');
       }
@@ -288,7 +298,11 @@ class LeaderboardService {
   }
 
   void _refreshDailyLeaderboardInBackground(int limit) {
-    _fetchAndCacheDailyLeaderboard(limit).catchError((e) {
+    if (_activeRefreshes.contains('daily')) return; // Already refreshing
+    _activeRefreshes.add('daily');
+    _fetchAndCacheDailyLeaderboard(limit).whenComplete(() {
+      _activeRefreshes.remove('daily');
+    }).catchError((e) {
       if (kDebugMode) {
         print('Background refresh failed: $e');
       }
@@ -365,7 +379,11 @@ class LeaderboardService {
   }
 
   void _refreshFriendsLeaderboardInBackground(int limit) {
-    _fetchAndCacheFriendsLeaderboard(limit).catchError((e) {
+    if (_activeRefreshes.contains('friends')) return; // Already refreshing
+    _activeRefreshes.add('friends');
+    _fetchAndCacheFriendsLeaderboard(limit).whenComplete(() {
+      _activeRefreshes.remove('friends');
+    }).catchError((e) {
       if (kDebugMode) {
         print('Background refresh failed: $e');
       }

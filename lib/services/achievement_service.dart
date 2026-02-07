@@ -49,9 +49,13 @@ class AchievementService extends ChangeNotifier {
       // First load from local cache/storage
       await _loadFromLocalStorage();
 
-      // Then try to sync with backend if online
+      // Sync with backend in background — don't block
       if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-        await _syncWithBackend();
+        _syncWithBackend().catchError((e) {
+          if (kDebugMode) {
+            print('Background achievement sync failed: $e');
+          }
+        }); // No await!
       }
     } catch (e) {
       if (kDebugMode) {

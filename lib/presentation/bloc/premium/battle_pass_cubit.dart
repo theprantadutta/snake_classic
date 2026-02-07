@@ -20,30 +20,24 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     : _storageService = storageService,
       super(BattlePassState.initial());
 
-  /// Initialize battle pass state from backend or local storage
+  /// Initialize battle pass state — always load local first (instant), then background refresh
   Future<void> initialize() async {
     if (state.status == BattlePassStatus.ready) return;
 
     emit(state.copyWith(status: BattlePassStatus.loading));
 
     try {
-      // Try to load from backend first
-      if (_apiService.isAuthenticated) {
-        final loaded = await _loadFromBackend();
-        if (loaded) {
-          AppLogger.info(
-            'BattlePassCubit initialized from backend. Active: ${state.isActive}, Tier: ${state.currentTier}',
-          );
-          return;
-        }
-      }
-
-      // Fallback to local storage
+      // Always load local first — instant
       await _loadFromLocalStorage();
 
       AppLogger.info(
         'BattlePassCubit initialized from local storage. Active: ${state.isActive}, Tier: ${state.currentTier}',
       );
+
+      // Then refresh from backend silently (don't block)
+      if (_apiService.isAuthenticated) {
+        _refreshFromBackendSilently();
+      }
     } catch (e) {
       AppLogger.error('Error initializing BattlePassCubit', e);
       emit(
@@ -55,17 +49,27 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     }
   }
 
+  void _refreshFromBackendSilently() {
+    _loadFromBackend().catchError((e) {
+      AppLogger.error('Background battle pass refresh failed', e);
+      return false;
+    });
+  }
+
   /// Load battle pass data from backend
   Future<bool> _loadFromBackend() async {
     try {
-      // Get current season
-      final seasonData = await _apiService.getCurrentBattlePassSeason();
+      // Fetch season and progress in parallel
+      final results = await Future.wait([
+        _apiService.getCurrentBattlePassSeason(),
+        _apiService.getBattlePassProgress(),
+      ]);
+      final seasonData = results[0];
       if (seasonData == null) {
         return false;
       }
 
-      // Get user progress
-      final progressData = await _apiService.getBattlePassProgress();
+      final progressData = results[1];
       if (progressData == null) {
         // Season exists but user has no progress yet - start fresh
         final endDate = DateTime.tryParse(
@@ -160,9 +164,8 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     }
   }
 
-  /// Refresh data from backend
+  /// Refresh data from backend (silent — no loading state)
   Future<void> refresh() async {
-    emit(state.copyWith(status: BattlePassStatus.loading));
     if (_apiService.isAuthenticated) {
       await _loadFromBackend();
     } else {

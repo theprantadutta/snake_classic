@@ -62,7 +62,7 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
   VoidCallback? _serviceListener;
   String? _lastRefreshDate;
 
-  static const _ttl = Duration(minutes: 5);
+  static const _ttl = Duration(minutes: 30);
 
   DailyChallengesNotifier(this._ref)
     : _service = DailyChallengeService(),
@@ -137,7 +137,7 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
       totalCount: _service.totalCount,
       allCompleted: _service.allCompleted,
       bonusCoins: _service.bonusCoins,
-      isLoading: _service.isLoading,
+      isLoading: false, // Never propagate loading from background refresh
       hasUnclaimedRewards: _service.hasUnclaimedRewards,
     );
   }
@@ -158,6 +158,8 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
       await _service.initialize();
       _lastRefreshDate = DateTime.now().toIso8601String().split('T')[0];
       _syncStateFromService();
+      // initialize() no longer blocks on API — set loading false immediately
+      state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
