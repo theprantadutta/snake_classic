@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,7 +33,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with TickerProviderStateMixin {
   late AnimationController _logoController;
   late AnimationController _playButtonPulseController;
   late Animation<double> _playButtonPulseAnimation;
@@ -122,7 +124,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
           status = DailyBonusStatus.fromJson(response);
         }
       } catch (e) {
-        AppLogger.warning('API daily bonus check failed, using local state: $e');
+        AppLogger.warning(
+          'API daily bonus check failed, using local state: $e',
+        );
       }
 
       // Fall back to local CoinsCubit state if API failed
@@ -140,12 +144,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                 bonusItem: localBonus.bonusItem,
               ),
               weekRewards: coinsCubit.state.dailyBonuses
-                  .map((b) => DailyBonusReward(
-                        day: b.day,
-                        coins: b.coins,
-                        bonusItem: b.bonusItem,
-                        claimed: b.isCollected,
-                      ))
+                  .map(
+                    (b) => DailyBonusReward(
+                      day: b.day,
+                      coins: b.coins,
+                      bonusItem: b.bonusItem,
+                      claimed: b.isCollected,
+                    ),
+                  )
                   .toList(),
             );
           }
@@ -206,136 +212,141 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                       controller: ThemeTransitionController(vsync: this),
                       currentTheme: theme,
                       child: Scaffold(
-                    body: AppBackground(
-                      theme: theme,
-                      child: SafeArea(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final screenWidth = constraints.maxWidth;
-                            final screenHeight = constraints.maxHeight;
+                        body: AppBackground(
+                          theme: theme,
+                          child: SafeArea(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final screenWidth = constraints.maxWidth;
+                                final screenHeight = constraints.maxHeight;
 
-                            // Enhanced screen size detection with more granular breakpoints
-                            final isVerySmallScreen =
-                                screenHeight < 600 || screenWidth < 350;
+                                // Enhanced screen size detection with more granular breakpoints
+                                final isVerySmallScreen =
+                                    screenHeight < 600 || screenWidth < 350;
 
-                            // Use a simple Column with proper constraints for better stability
-                            return Column(
-                              children: [
-                                // Top navigation bar - fixed height
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: screenWidth * 0.04,
-                                    vertical: isVerySmallScreen ? 4 : 8,
-                                  ),
-                                  child: _buildTopNavigation(
-                                    context,
-                                    authState,
-                                    theme,
-                                    isVerySmallScreen,
-                                  ),
-                                ),
+                                // Use a simple Column with proper constraints for better stability
+                                return Column(
+                                  children: [
+                                    // Top navigation bar - fixed height
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: screenWidth * 0.04,
+                                        vertical: isVerySmallScreen ? 4 : 8,
+                                      ),
+                                      child: _buildTopNavigation(
+                                        context,
+                                        authState,
+                                        theme,
+                                        isVerySmallScreen,
+                                      ),
+                                    ),
 
-                                // Game title with logo - flexible sizing
-                                _buildGameTitle(theme, screenHeight),
+                                    // Game title with logo - flexible sizing
+                                    _buildGameTitle(theme, screenHeight),
 
-                                // Main content area - scrollable if needed
-                                Expanded(
-                                  child: screenHeight < 600
-                                      ? SingleChildScrollView(
-                                          child: Column(
-                                            children: [
-                                              SizedBox(
-                                                height: (screenHeight * 0.6)
-                                                    .clamp(300, 500),
-                                                child: _buildMainPlayArea(
-                                                  context,
-                                                  gameState,
-                                                  authState,
-                                                  theme,
-                                                  screenHeight,
-                                                  screenWidth,
-                                                  screenHeight,
+                                    // Main content area - scrollable if needed
+                                    Expanded(
+                                      child: screenHeight < 600
+                                          ? SingleChildScrollView(
+                                              child: Column(
+                                                children: [
+                                                  SizedBox(
+                                                    height: (screenHeight * 0.6)
+                                                        .clamp(300, 500),
+                                                    child: _buildMainPlayArea(
+                                                      context,
+                                                      gameState,
+                                                      authState,
+                                                      theme,
+                                                      screenHeight,
+                                                      screenWidth,
+                                                      screenHeight,
+                                                    ),
+                                                  ),
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal:
+                                                              screenWidth *
+                                                              0.04,
+                                                        ),
+                                                    child:
+                                                        _buildBottomNavigation(
+                                                          context,
+                                                          themeState,
+                                                          theme,
+                                                          screenHeight,
+                                                          screenWidth,
+                                                        ),
+                                                  ),
+                                                  SizedBox(
+                                                    height: isVerySmallScreen
+                                                        ? 8
+                                                        : 12,
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          : Column(
+                                              children: [
+                                                // Main play area - takes available space
+                                                Expanded(
+                                                  child: _buildMainPlayArea(
+                                                    context,
+                                                    gameState,
+                                                    authState,
+                                                    theme,
+                                                    screenHeight,
+                                                    screenWidth,
+                                                    screenHeight,
+                                                  ),
                                                 ),
-                                              ),
-                                              Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal:
-                                                      screenWidth * 0.04,
+
+                                                // Bottom navigation grid - fixed at bottom
+                                                Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal:
+                                                        screenWidth * 0.04,
+                                                    vertical: isVerySmallScreen
+                                                        ? 8
+                                                        : 12,
+                                                  ),
+                                                  child: _buildBottomNavigation(
+                                                    context,
+                                                    themeState,
+                                                    theme,
+                                                    screenHeight,
+                                                    screenWidth,
+                                                  ),
                                                 ),
-                                                child: _buildBottomNavigation(
-                                                  context,
-                                                  themeState,
-                                                  theme,
-                                                  screenHeight,
-                                                  screenWidth,
-                                                ),
-                                              ),
-                                              SizedBox(
-                                                height: isVerySmallScreen
-                                                    ? 8
-                                                    : 12,
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                      : Column(
-                                          children: [
-                                            // Main play area - takes available space
-                                            Expanded(
-                                              child: _buildMainPlayArea(
-                                                context,
-                                                gameState,
-                                                authState,
-                                                theme,
-                                                screenHeight,
-                                                screenWidth,
-                                                screenHeight,
-                                              ),
+                                              ],
                                             ),
-
-                                            // Bottom navigation grid - fixed at bottom
-                                            Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: screenWidth * 0.04,
-                                                vertical: isVerySmallScreen
-                                                    ? 8
-                                                    : 12,
-                                              ),
-                                              child: _buildBottomNavigation(
-                                                context,
-                                                themeState,
-                                                theme,
-                                                screenHeight,
-                                                screenWidth,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    floatingActionButton: kDebugMode
-                        ? FloatingActionButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      TalkerScreen(talker: AppLogger.instance),
-                                ),
-                              );
-                            },
-                            backgroundColor: theme.accentColor.withValues(
-                              alpha: 0.1,
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
-                            foregroundColor: theme.accentColor,
-                            mini: true,
-                            child: const Icon(Icons.bug_report),
-                          )
-                        : null,
+                          ),
+                        ),
+                        floatingActionButton: kDebugMode
+                            ? FloatingActionButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => TalkerScreen(
+                                        talker: AppLogger.instance,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                backgroundColor: theme.accentColor.withValues(
+                                  alpha: 0.1,
+                                ),
+                                foregroundColor: theme.accentColor,
+                                mini: true,
+                                child: const Icon(Icons.bug_report),
+                              )
+                            : null,
                       ),
                     ),
 
@@ -347,8 +358,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                         theme: theme,
                         currentStepIndex: walkthroughState.currentStepIndex,
                         totalSteps: walkthroughState.steps.length,
-                        onNext: () => ref.read(walkthroughProvider.notifier).next(),
-                        onSkip: () => ref.read(walkthroughProvider.notifier).skip(),
+                        onNext: () =>
+                            ref.read(walkthroughProvider.notifier).next(),
+                        onSkip: () =>
+                            ref.read(walkthroughProvider.notifier).skip(),
                       ),
                   ],
                 );
@@ -1112,9 +1125,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
       _NavItem(Icons.leaderboard, 'BOARD', Colors.amber, () {
         context.push(AppRoutes.leaderboard);
       }),
-      _NavItem(Icons.calendar_today, 'DAILY', Colors.cyan, () {
-        context.push(AppRoutes.dailyChallenges);
-      }, badge: _getDailyChallengesBadge(), widgetKey: HomeWalkthrough.dailyChallengesKey),
+      _NavItem(
+        Icons.calendar_today,
+        'DAILY',
+        Colors.cyan,
+        () {
+          context.push(AppRoutes.dailyChallenges);
+        },
+        badge: _getDailyChallengesBadge(),
+        widgetKey: HomeWalkthrough.dailyChallengesKey,
+      ),
       _NavItem(Icons.emoji_events, 'EVENTS', Colors.purple, () {
         context.push(AppRoutes.tournaments);
       }),
@@ -1321,8 +1341,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     );
   }
 
-  void _showCreditsDialog(BuildContext context, GameTheme theme) {
+  void _showCreditsDialog(BuildContext context, GameTheme theme) async {
     final currentYear = DateTime.now().year;
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -1403,7 +1425,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Version 2.0.0',
+                    'v${packageInfo.version} (${packageInfo.buildNumber})',
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.8),
                       fontSize: 12,
@@ -1432,6 +1454,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                           fontSize: 13,
                           height: 1.5,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
                       Wrap(
@@ -1761,5 +1784,12 @@ class _NavItem {
   final int? badge;
   final GlobalKey? widgetKey;
 
-  _NavItem(this.icon, this.label, this.color, this.onTap, {this.badge, this.widgetKey});
+  _NavItem(
+    this.icon,
+    this.label,
+    this.color,
+    this.onTap, {
+    this.badge,
+    this.widgetKey,
+  });
 }
