@@ -21,6 +21,7 @@ import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:talker_flutter/talker_flutter.dart';
@@ -50,9 +51,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       vsync: this,
     );
 
-    // Play button pulse animation - subtle continuous pulse
+    // Play button pulse animation - calm breathing
     _playButtonPulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2500),
       vsync: this,
     );
     _playButtonPulseAnimation = Tween<double>(begin: 1.0, end: 1.04).animate(
@@ -600,14 +601,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     duration: 2500.ms,
                     color: theme.accentColor.withValues(alpha: 0.25),
                   )
-                  .animate()
-                  .fadeIn(duration: 600.ms)
-                  .scale(
-                    begin: const Offset(0.8, 0.8),
-                    end: const Offset(1.0, 1.0),
-                    duration: 600.ms,
-                    curve: Curves.easeOutBack,
-                  ),
+                  .gameHero(),
         ),
       ),
     );
@@ -1177,15 +1171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   badge: item.badge,
                   widgetKey: item.widgetKey,
                 )
-                .animate()
-                .fadeIn(delay: (600 + (index * 80)).ms, duration: 300.ms)
-                .slideY(begin: 0.6, duration: 400.ms, curve: Curves.easeOutBack)
-                .scale(
-                  begin: const Offset(0.85, 0.85),
-                  end: const Offset(1.0, 1.0),
-                  duration: 350.ms,
-                  curve: Curves.easeOutBack,
-                );
+                .gameGridItem(index);
           }).toList(),
         ),
 
@@ -1221,19 +1207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       badge: item.badge,
                       widgetKey: item.widgetKey,
                     )
-                    .animate()
-                    .fadeIn(delay: (600 + (index * 80)).ms, duration: 300.ms)
-                    .slideY(
-                      begin: 0.6,
-                      duration: 400.ms,
-                      curve: Curves.easeOutBack,
-                    )
-                    .scale(
-                      begin: const Offset(0.85, 0.85),
-                      end: const Offset(1.0, 1.0),
-                      duration: 350.ms,
-                      curve: Curves.easeOutBack,
-                    );
+                    .gameGridItem(index);
               })
               .toList(),
         ),

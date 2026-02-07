@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
@@ -816,7 +816,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2);
+    ).gameZoomIn();
   }
 
   Widget _buildStatCard(

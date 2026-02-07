@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 class InstructionsDialog extends StatelessWidget {
@@ -60,7 +61,7 @@ class InstructionsDialog extends StatelessWidget {
                     icon: Icon(Icons.close, color: theme.accentColor, size: 28),
                   ),
                 ],
-              ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.3),
+              ).gameEntrance(delay: 50.ms),
 
               const SizedBox(height: 24),
 
@@ -220,9 +221,7 @@ class InstructionsDialog extends StatelessWidget {
                     icon: Icons.check,
                     width: 160,
                   )
-                  .animate()
-                  .fadeIn(delay: 500.ms)
-                  .scale(begin: const Offset(0.8, 0.8)),
+                  .gamePop(delay: 300.ms),
             ],
           ),
         ),
@@ -281,7 +280,7 @@ class InstructionsDialog extends StatelessWidget {
           if (children != null) ...[const SizedBox(height: 12), ...children],
         ],
       ),
-    ).animate().fadeIn(delay: (200 + index * 100).ms).slideY(begin: 0.3);
+    ).gameListItem(index);
   }
 
   Widget _buildControlItem(String gesture, String action, GameTheme theme) {

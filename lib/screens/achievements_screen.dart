@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class AchievementsScreen extends StatefulWidget {
@@ -201,7 +201,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 100.ms).slideY(begin: -0.2, duration: 400.ms);
+    ).gameEntrance();
   }
 
   Widget _buildAchievementsList(
@@ -238,9 +238,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         final achievement = achievements[index];
 
         return _buildAchievementCard(achievement, theme)
-            .animate(delay: (index * 50).ms)
-            .fadeIn(duration: 300.ms)
-            .slideX(begin: 0.2, duration: 300.ms);
+            .gameListItem(index);
       },
     );
   }

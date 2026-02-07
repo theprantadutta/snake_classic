@@ -38,14 +38,15 @@ class _GradientButtonState extends State<GradientButton>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 80),
+      reverseDuration: const Duration(milliseconds: 120),
       vsync: this,
     );
 
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+      end: 0.88,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _glowAnimation = Tween<double>(
       begin: 0.0,

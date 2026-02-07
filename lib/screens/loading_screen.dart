@@ -20,6 +20,7 @@ import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
 
@@ -588,7 +589,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             color: theme.accentColor.withValues(alpha: 0.7),
             letterSpacing: 1.5,
           ),
-        ).animate().fadeIn(delay: 600.ms),
+        ).gameEntrance(delay: 200.ms),
       ],
     );
   }
@@ -839,7 +840,7 @@ class _LoadingScreenState extends State<LoadingScreen>
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.5);
+    ).gameZoomIn(delay: 300.ms);
   }
 
   Widget _buildFeaturesPreview(GameTheme theme) {
@@ -856,7 +857,7 @@ class _LoadingScreenState extends State<LoadingScreen>
               color: theme.accentColor.withValues(alpha: 0.8),
               letterSpacing: 2,
             ),
-          ).animate().fadeIn(delay: 1200.ms),
+          ).gameEntrance(delay: 350.ms),
 
           const SizedBox(height: 16),
 
@@ -869,21 +870,21 @@ class _LoadingScreenState extends State<LoadingScreen>
                 Icons.speed_rounded,
                 '60FPS',
                 'Smooth Gameplay',
-                1300.ms,
+                0,
               ),
               _buildFeatureItem(
                 theme,
                 Icons.auto_awesome_rounded,
                 'EFFECTS',
                 'Visual Particles',
-                1400.ms,
+                1,
               ),
               _buildFeatureItem(
                 theme,
                 Icons.emoji_events_rounded,
                 'LEVELS',
                 'Progressive Fun',
-                1500.ms,
+                2,
               ),
             ],
           ),
@@ -898,21 +899,21 @@ class _LoadingScreenState extends State<LoadingScreen>
                 Icons.volume_up_rounded,
                 'AUDIO',
                 'Immersive Sound',
-                1600.ms,
+                3,
               ),
               _buildFeatureItem(
                 theme,
                 Icons.leaderboard_rounded,
                 'SCORES',
                 'Global Rankings',
-                1700.ms,
+                4,
               ),
               _buildFeatureItem(
                 theme,
                 Icons.palette_rounded,
                 'THEMES',
                 'Multiple Styles',
-                1800.ms,
+                5,
               ),
             ],
           ),
@@ -926,7 +927,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     IconData icon,
     String title,
     String subtitle,
-    Duration delay,
+    int index,
   ) {
     return Expanded(
       child: Container(
@@ -973,7 +974,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             ),
           ],
         ),
-      ).animate().fadeIn(delay: delay).scale(begin: const Offset(0.8, 0.8)),
+      ).gameGridItem(index),
     );
   }
 
@@ -995,7 +996,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                 ],
               ),
             ),
-          ).animate().fadeIn(delay: 2000.ms).scaleX(begin: 0),
+          ).gameEntrance(delay: 700.ms),
 
           SizedBox(height: isSmallScreen ? 16 : 24),
 
@@ -1010,7 +1011,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   color: theme.accentColor.withValues(alpha: 0.6),
                   letterSpacing: 1.5,
                 ),
-              ).animate().fadeIn(delay: 2200.ms),
+              ).gameEntrance(delay: 750.ms),
 
               SizedBox(height: isSmallScreen ? 6 : 8),
 
@@ -1053,9 +1054,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                       ],
                     ),
                   )
-                  .animate()
-                  .fadeIn(delay: 2400.ms)
-                  .scale(begin: const Offset(0.9, 0.9)),
+                  .gamePop(delay: 800.ms),
 
               SizedBox(height: isSmallScreen ? 8 : 12),
 
@@ -1068,7 +1067,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   fontStyle: FontStyle.italic,
                   fontWeight: FontWeight.w500,
                 ),
-              ).animate().fadeIn(delay: 2600.ms),
+              ).gameEntrance(delay: 900.ms),
             ],
           ),
         ],
@@ -1157,9 +1156,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   ],
                 ),
               )
-              .animate()
-              .fadeIn(delay: 500.ms)
-              .scale(begin: const Offset(0.8, 0.8)),
+              .gameZoomIn(delay: 300.ms),
         ],
       ],
     );

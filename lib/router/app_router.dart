@@ -29,6 +29,48 @@ import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/tournament_detail_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
 
+/// Zoom-in page transition (default for most routes)
+CustomTransitionPage<void> _zoomPage(GoRouterState state, Widget child) {
+  return CustomTransitionPage(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 300),
+    reverseTransitionDuration: const Duration(milliseconds: 300),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return ScaleTransition(
+        scale: Tween<double>(begin: 0.92, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        ),
+        child: FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// Scale page transition (dramatic reveal for game screen)
+CustomTransitionPage<void> _scalePage(GoRouterState state, Widget child) {
+  return CustomTransitionPage(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 320),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return ScaleTransition(
+        scale: Tween<double>(begin: 0.85, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+        ),
+        child: FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 /// Global GoRouter instance for the application.
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.loading,
@@ -43,117 +85,94 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.firstTimeAuth,
       name: 'firstTimeAuth',
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const FirstTimeAuthScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.0, 1.0),
-              end: Offset.zero,
-            ).animate(
-              CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              ),
-            ),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const FirstTimeAuthScreen()),
     ),
     GoRoute(
       path: AppRoutes.home,
       name: 'home',
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const HomeScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.0, 1.0),
-              end: Offset.zero,
-            ).animate(
-              CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              ),
-            ),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 600),
-      ),
+      pageBuilder: (context, state) => _zoomPage(state, const HomeScreen()),
     ),
 
     // Game flow
     GoRoute(
       path: AppRoutes.game,
       name: 'game',
-      builder: (context, state) => const GameScreen(),
+      pageBuilder: (context, state) => _scalePage(state, const GameScreen()),
     ),
     GoRoute(
       path: AppRoutes.gameOver,
       name: 'gameOver',
-      builder: (context, state) => const GameOverScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const GameOverScreen()),
     ),
 
     // Profile & Stats
     GoRoute(
       path: AppRoutes.profile,
       name: 'profile',
-      builder: (context, state) => const ProfileScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const ProfileScreen()),
     ),
     GoRoute(
       path: AppRoutes.settings,
       name: 'settings',
-      builder: (context, state) => const SettingsScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const SettingsScreen()),
     ),
     GoRoute(
       path: AppRoutes.statistics,
       name: 'statistics',
-      builder: (context, state) => const StatisticsScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const StatisticsScreen()),
     ),
     GoRoute(
       path: AppRoutes.achievements,
       name: 'achievements',
-      builder: (context, state) => const AchievementsScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const AchievementsScreen()),
     ),
 
     // Social & Competitive
     GoRoute(
       path: AppRoutes.leaderboard,
       name: 'leaderboard',
-      builder: (context, state) => const LeaderboardScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const LeaderboardScreen()),
     ),
     GoRoute(
       path: AppRoutes.friendsLeaderboard,
       name: 'friendsLeaderboard',
-      builder: (context, state) => const FriendsLeaderboardScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const FriendsLeaderboardScreen()),
     ),
     GoRoute(
       path: AppRoutes.friends,
       name: 'friends',
-      builder: (context, state) => const FriendsScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const FriendsScreen()),
     ),
     GoRoute(
       path: AppRoutes.tournaments,
       name: 'tournaments',
-      builder: (context, state) => const TournamentsScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const TournamentsScreen()),
     ),
     GoRoute(
       path: AppRoutes.tournamentDetail,
       name: 'tournamentDetail',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         // Get tournament ID from path parameter
         final tournamentId = state.pathParameters['id'] ?? '';
         // Get tournament object from extra if available (for instant display)
         final tournament = state.extra as Tournament?;
 
-        return TournamentDetailScreen(
-          tournamentId: tournamentId,
-          tournament: tournament,
+        return _zoomPage(
+          state,
+          TournamentDetailScreen(
+            tournamentId: tournamentId,
+            tournament: tournament,
+          ),
         );
       },
     ),
@@ -162,62 +181,72 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.store,
       name: 'store',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         // Get initial tab from query parameter
         final tabString = state.uri.queryParameters['tab'];
         final initialTab = tabString != null ? int.tryParse(tabString) ?? 0 : 0;
-        return StoreScreen(initialTab: initialTab);
+        return _zoomPage(state, StoreScreen(initialTab: initialTab));
       },
     ),
     GoRoute(
       path: AppRoutes.premiumBenefits,
       name: 'premiumBenefits',
-      builder: (context, state) => const PremiumBenefitsScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const PremiumBenefitsScreen()),
     ),
     GoRoute(
       path: AppRoutes.cosmetics,
       name: 'cosmetics',
-      builder: (context, state) => const CosmeticsScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const CosmeticsScreen()),
     ),
     GoRoute(
       path: AppRoutes.battlePass,
       name: 'battlePass',
-      builder: (context, state) => const BattlePassScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const BattlePassScreen()),
     ),
 
     // Other features
     GoRoute(
       path: AppRoutes.dailyChallenges,
       name: 'dailyChallenges',
-      builder: (context, state) => const DailyChallengesScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const DailyChallengesScreen()),
     ),
     GoRoute(
       path: AppRoutes.instructions,
       name: 'instructions',
-      builder: (context, state) => const InstructionsScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const InstructionsScreen()),
     ),
     GoRoute(
       path: AppRoutes.themeSelector,
       name: 'themeSelector',
-      builder: (context, state) => const ThemeSelectorScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const ThemeSelectorScreen()),
     ),
     GoRoute(
       path: AppRoutes.replays,
       name: 'replays',
-      builder: (context, state) => const ReplaysScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const ReplaysScreen()),
     ),
     GoRoute(
       path: AppRoutes.replayViewer,
       name: 'replayViewer',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         // Get replay ID from path parameter
         final replayId = state.pathParameters['id'] ?? '';
         // Get replay object from extra if available (for instant display)
         final replay = state.extra as GameReplay?;
 
-        return ReplayViewerScreen(
-          replayId: replayId,
-          replay: replay,
+        return _zoomPage(
+          state,
+          ReplayViewerScreen(
+            replayId: replayId,
+            replay: replay,
+          ),
         );
       },
     ),
@@ -226,20 +255,22 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.multiplayerLobby,
       name: 'multiplayerLobby',
-      builder: (context, state) => const MultiplayerLobbyScreen(),
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const MultiplayerLobbyScreen()),
     ),
     GoRoute(
       path: AppRoutes.multiplayerLobbyWithId,
       name: 'multiplayerLobbyWithId',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final gameId = state.pathParameters['gameId'];
-        return MultiplayerLobbyScreen(gameId: gameId);
+        return _zoomPage(state, MultiplayerLobbyScreen(gameId: gameId));
       },
     ),
     GoRoute(
       path: AppRoutes.multiplayerGame,
       name: 'multiplayerGame',
-      builder: (context, state) => const MultiplayerGameScreen(),
+      pageBuilder: (context, state) =>
+          _scalePage(state, const MultiplayerGameScreen()),
     ),
   ],
 );

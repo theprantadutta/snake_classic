@@ -14,6 +14,7 @@ import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/particle_effect.dart';
 
@@ -201,7 +202,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                             ),
                                           ],
                                         ),
-                                      ).animate().fadeIn().slideY(begin: -1),
+                                      ).gameHero(),
 
                                       SizedBox(
                                         height: constraints.maxHeight < 600
@@ -266,9 +267,9 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                                 ],
                                               ),
                                             )
+                                            .gamePop(delay: 200.ms)
                                             .animate()
-                                            .scale(delay: 500.ms)
-                                            .shimmer(delay: 1000.ms),
+                                            .shimmer(delay: 600.ms),
 
                                         SizedBox(
                                           height: constraints.maxHeight < 600
@@ -339,9 +340,9 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                                 ],
                                               ),
                                             )
+                                            .gamePop(delay: 300.ms)
                                             .animate()
-                                            .scale(delay: 700.ms)
-                                            .shimmer(delay: 1200.ms),
+                                            .shimmer(delay: 800.ms),
 
                                         SizedBox(
                                           height: constraints.maxHeight < 600
@@ -410,10 +411,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                               primaryColor: theme.accentColor,
                                               secondaryColor: theme.foodColor,
                                               icon: Icons.refresh,
-                                            ).animate().slideX(
-                                              begin: -1,
-                                              delay: 1200.ms,
-                                            ),
+                                            ).gameZoomIn(delay: 600.ms),
                                       ),
 
                                       const SizedBox(width: 12),
@@ -434,10 +432,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                                   .withValues(alpha: 0.6),
                                               icon: Icons.home,
                                               outlined: true,
-                                            ).animate().slideX(
-                                              begin: 1,
-                                              delay: 1400.ms,
-                                            ),
+                                            ).gameZoomIn(delay: 700.ms),
                                       ),
                                     ],
                                   ),
@@ -522,7 +517,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
           ),
         ],
       ),
-    ).animate().scale(delay: 800.ms);
+    ).gameEntrance(delay: 400.ms);
   }
 
   Widget _buildStat(String label, String value, theme) {

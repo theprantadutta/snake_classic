@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +6,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/providers/friends_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class FriendsScreen extends ConsumerStatefulWidget {
@@ -300,7 +300,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
             ],
             onSelected: (value) => _handleFriendAction(value, friend),
           ),
-        ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.2);
+        ).gameListItem(index);
       },
     );
   }
@@ -394,7 +394,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
           user: user,
           theme: theme,
           trailing: _buildSearchUserActions(user, theme, friendsState),
-        ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.2);
+        ).gameListItem(index);
       },
     );
   }

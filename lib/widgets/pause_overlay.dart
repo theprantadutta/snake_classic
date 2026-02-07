@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 class PauseOverlay extends StatelessWidget {
@@ -50,7 +51,7 @@ class PauseOverlay extends StatelessWidget {
                 Icons.pause_circle_filled,
                 size: 64,
                 color: theme.accentColor,
-              ).animate().scale(delay: 100.ms),
+              ).gamePop(delay: 50.ms),
 
               const SizedBox(height: 16),
 
@@ -63,7 +64,7 @@ class PauseOverlay extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
                 ),
-              ).animate().fadeIn(delay: 200.ms),
+              ).gameEntrance(delay: 100.ms),
 
               const SizedBox(height: 24),
 
@@ -87,7 +88,7 @@ class PauseOverlay extends StatelessWidget {
                     onTap: () => context.push(AppRoutes.store),
                   ),
                 ],
-              ).animate().fadeIn(delay: 250.ms),
+              ).gameEntrance(delay: 150.ms),
 
               const SizedBox(height: 16),
 
@@ -106,7 +107,7 @@ class PauseOverlay extends StatelessWidget {
                     secondaryColor: theme.foodColor,
                     icon: Icons.play_arrow,
                     width: 200,
-                  ).animate().slideX(begin: -1, delay: 300.ms),
+                  ).gameZoomIn(delay: 200.ms),
 
                   const SizedBox(height: 16),
 
@@ -118,7 +119,7 @@ class PauseOverlay extends StatelessWidget {
                     icon: Icons.refresh,
                     width: 200,
                     outlined: true,
-                  ).animate().slideX(begin: 1, delay: 400.ms),
+                  ).gameZoomIn(delay: 250.ms),
 
                   const SizedBox(height: 16),
 
@@ -130,7 +131,7 @@ class PauseOverlay extends StatelessWidget {
                     icon: Icons.home,
                     width: 200,
                     outlined: true,
-                  ).animate().slideY(begin: 1, delay: 500.ms),
+                  ).gameZoomIn(delay: 300.ms),
                 ],
               ),
             ],
@@ -199,7 +200,7 @@ class PauseOverlay extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 280.ms);
+    ).gameEntrance(delay: 180.ms);
   }
 
   Widget _buildFoodItem(String emoji, String points) {

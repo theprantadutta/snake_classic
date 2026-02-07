@@ -9,6 +9,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class FirstTimeAuthScreen extends StatefulWidget {
@@ -160,9 +161,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                 color: theme.primaryColor,
                               ),
                             )
-                            .animate()
-                            .scale(duration: 600.ms, curve: Curves.elasticOut)
-                            .fadeIn(),
+                            .gamePop(),
 
                         SizedBox(
                           height: isSmallScreen
@@ -260,13 +259,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                 ],
                               ),
                             )
-                            .animate(delay: 300.ms)
-                            .slideY(
-                              begin: 0.3,
-                              duration: 600.ms,
-                              curve: Curves.easeOutBack,
-                            )
-                            .fadeIn(),
+                            .gameEntrance(delay: 200.ms),
 
                         SizedBox(
                           height: isSmallScreen
@@ -306,13 +299,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                     [Colors.red.shade600, Colors.red.shade700],
                                     () => _handleGoogleSignIn(authCubit),
                                   )
-                                  .animate(delay: 600.ms)
-                                  .slideX(
-                                    begin: -0.5,
-                                    duration: 500.ms,
-                                    curve: Curves.easeOut,
-                                  )
-                                  .fadeIn(),
+                                  .gameZoomIn(delay: 300.ms),
 
                               const SizedBox(height: 16),
 
@@ -327,13 +314,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                     ],
                                     () => _handleGuestLogin(authCubit),
                                   )
-                                  .animate(delay: 800.ms)
-                                  .slideX(
-                                    begin: 0.5,
-                                    duration: 500.ms,
-                                    curve: Curves.easeOut,
-                                  )
-                                  .fadeIn(),
+                                  .gameZoomIn(delay: 400.ms),
                             ],
                           ),
 
@@ -421,9 +402,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                   ],
                 ),
               )
-              .animate()
-              .slideY(begin: -0.3, duration: 600.ms, curve: Curves.easeOutBack)
-              .fadeIn(),
+              .gameEntrance(),
 
           const SizedBox(height: 16),
 
@@ -459,9 +438,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                         ),
                       ),
                     )
-                    .animate(delay: 300.ms)
-                    .slideY(begin: 0.3, duration: 600.ms, curve: Curves.easeOut)
-                    .fadeIn(),
+                    .gameZoomIn(delay: 200.ms),
           ),
 
           const SizedBox(height: 16),
@@ -528,9 +505,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                   ],
                 ),
               )
-              .animate(delay: 600.ms)
-              .slideY(begin: 0.5, duration: 600.ms, curve: Curves.easeOut)
-              .fadeIn(),
+              .gameZoomIn(delay: 300.ms),
 
           const SizedBox(height: 20),
 
@@ -595,9 +570,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                   ),
                 ),
               )
-              .animate(delay: 800.ms)
-              .slideY(begin: 0.5, duration: 600.ms, curve: Curves.easeOut)
-              .fadeIn(),
+              .gameZoomIn(delay: 400.ms),
 
           const SizedBox(height: 20),
         ],

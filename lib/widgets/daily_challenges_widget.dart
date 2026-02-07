@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 
 /// Compact widget for displaying daily challenges on the home screen
 class DailyChallengesWidget extends ConsumerWidget {
@@ -131,9 +132,7 @@ class DailyChallengesWidget extends ConsumerWidget {
             ),
           ),
         )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, end: 0, duration: 400.ms);
+        .gameEntrance();
   }
 
   Widget _buildClaimBadge(DailyChallengesState state) {

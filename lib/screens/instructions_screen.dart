@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class InstructionsScreen extends StatelessWidget {
@@ -218,9 +219,7 @@ class InstructionsScreen extends StatelessWidget {
                               width: 250,
                             ),
                           )
-                          .animate()
-                          .fadeIn(delay: 500.ms)
-                          .scale(begin: const Offset(0.8, 0.8)),
+                          .gamePop(delay: 300.ms),
 
                       const SizedBox(height: 20),
                     ],
@@ -300,7 +299,7 @@ class InstructionsScreen extends StatelessWidget {
           if (children != null) ...[const SizedBox(height: 16), ...children],
         ],
       ),
-    ).animate().fadeIn(delay: (200 + index * 100).ms).slideY(begin: 0.3);
+    ).gameListItem(index);
   }
 
   Widget _buildControlItem(String gesture, String action, GameTheme theme) {

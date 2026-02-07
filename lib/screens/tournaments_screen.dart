@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +7,7 @@ import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/providers/tournaments_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class TournamentsScreen extends ConsumerStatefulWidget {
@@ -166,7 +166,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           tournament: tournament,
           theme: theme,
           onTap: () => _openTournamentDetail(tournament),
-        ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.2);
+        ).gameListItem(index);
       },
     );
   }
@@ -191,7 +191,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           theme: theme,
           showResults: true,
           onTap: () => _openTournamentDetail(tournament),
-        ).animate().fadeIn(delay: (100 * index).ms).slideX(begin: 0.2);
+        ).gameListItem(index);
       },
     );
   }

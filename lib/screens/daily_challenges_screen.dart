@@ -8,6 +8,7 @@ import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -295,9 +296,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             ],
           ),
         )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: -0.1, end: 0, duration: 400.ms);
+        .gameZoomIn();
   }
 
   Widget _buildChallengeCard(
@@ -587,9 +586,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             ),
           ),
         )
-        .animate(delay: (index * 100).ms)
-        .fadeIn(duration: 400.ms)
-        .slideX(begin: 0.1, end: 0, duration: 400.ms);
+        .gameListItem(index);
   }
 
   Widget _buildAllCompleteBonusCard(GameTheme theme, DailyChallengesState challengesState) {
@@ -670,9 +667,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             ],
           ),
         )
+        .gamePop(delay: 300.ms)
         .animate()
-        .fadeIn(duration: 600.ms, delay: 400.ms)
-        .shimmer(duration: 2000.ms, delay: 800.ms);
+        .shimmer(duration: 2000.ms, delay: 500.ms);
   }
 
   Widget _buildLoadingState(GameTheme theme) {
@@ -768,7 +765,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms, delay: 600.ms);
+    ).gameEntrance(delay: 300.ms);
   }
 
   Widget _buildInfoItem(IconData icon, String text) {

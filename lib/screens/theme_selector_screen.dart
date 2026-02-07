@@ -6,6 +6,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class ThemeSelectorScreen extends StatelessWidget {
@@ -57,7 +58,7 @@ class ThemeSelectorScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: currentTheme.accentColor,
                   ),
-                ).animate().fadeIn().slideX(begin: -0.3, duration: 500.ms),
+                ).gameEntrance(),
 
                 const SizedBox(height: 8),
 
@@ -68,9 +69,7 @@ class ThemeSelectorScreen extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.8),
                       ),
                     )
-                    .animate()
-                    .fadeIn(delay: 200.ms)
-                    .slideX(begin: -0.3, duration: 500.ms),
+                    .gameEntrance(delay: 100.ms),
 
                 const SizedBox(height: 30),
 
@@ -349,13 +348,7 @@ class ThemeSelectorScreen extends StatelessWidget {
             ],
           ),
         )
-        .animate(delay: (index * 100).ms)
-        .fadeIn(duration: 500.ms)
-        .scale(
-          begin: const Offset(0.8, 0.8),
-          duration: 500.ms,
-          curve: Curves.elasticOut,
-        );
+        .gameGridItem(index);
   }
 
   Widget _buildMiniGamePreview(GameTheme theme) {

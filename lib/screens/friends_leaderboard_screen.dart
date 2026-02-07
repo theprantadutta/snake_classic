@@ -8,6 +8,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 
 class FriendsLeaderboardScreen extends StatefulWidget {
   const FriendsLeaderboardScreen({super.key});
@@ -342,7 +343,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                   ),
                 )
               : null,
-        ).animate().scale(delay: delay),
+        ).gamePop(delay: delay),
 
         const SizedBox(height: 8),
 
@@ -365,7 +366,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
             color: Colors.white,
             size: rank == 1 ? 20 : 16,
           ),
-        ).animate().scale(delay: delay + 100.ms),
+        ).gamePop(delay: delay + 100.ms),
 
         const SizedBox(height: 4),
 
@@ -380,7 +381,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-        ).animate().fadeIn(delay: delay + 200.ms),
+        ).gameEntrance(delay: delay + 200.ms),
 
         // Score
         Text(
@@ -390,7 +391,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
             fontSize: rank == 1 ? 16 : 14,
             fontWeight: FontWeight.bold,
           ),
-        ).animate().fadeIn(delay: delay + 300.ms),
+        ).gameEntrance(delay: delay + 300.ms),
 
         const SizedBox(height: 8),
 
@@ -428,7 +429,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               ),
             ),
           ),
-        ).animate().slideY(begin: 1, delay: delay),
+        ).gameZoomIn(delay: delay),
       ],
     );
   }
@@ -575,7 +576,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           ],
         ),
       ),
-    ).animate().fadeIn(delay: delay).slideX(begin: 0.2);
+    ).gameListItem(0);
   }
 
   Widget _buildEmptyState(GameTheme theme) {

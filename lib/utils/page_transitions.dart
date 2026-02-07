@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// Available transition types for page navigation
+/// Available transition types for page navigation.
+/// Only scale-based transitions — no slides.
 enum AppTransitionType {
-  /// Fade + slight horizontal slide - default for most screens
-  fadeSlide,
-
-  /// Zoom in with fade - for game screen entry
+  /// Zoom in with fade - default for most screens
   zoomIn,
 
-  /// Slide up with fade - for modal-like screens
-  slideUp,
-
-  /// Slide from right - for lateral navigation
-  slideLeft,
-
-  /// Scale up with fade - for dramatic reveals
+  /// Scale up with fade - for dramatic reveals (game screen)
   scale,
 
   /// No animation - instant transition
@@ -34,7 +26,7 @@ class AppPageRoute<T> extends PageRouteBuilder<T> {
 
   AppPageRoute({
     required this.page,
-    this.transitionType = AppTransitionType.fadeSlide,
+    this.transitionType = AppTransitionType.zoomIn,
     this.customDuration,
     super.settings,
   }) : super(
@@ -56,16 +48,10 @@ class AppPageRoute<T> extends PageRouteBuilder<T> {
   /// Get default duration for each transition type
   static Duration _getDuration(AppTransitionType type) {
     switch (type) {
-      case AppTransitionType.fadeSlide:
-        return const Duration(milliseconds: 350);
       case AppTransitionType.zoomIn:
-        return const Duration(milliseconds: 400);
-      case AppTransitionType.slideUp:
-        return const Duration(milliseconds: 300);
-      case AppTransitionType.slideLeft:
         return const Duration(milliseconds: 300);
       case AppTransitionType.scale:
-        return const Duration(milliseconds: 450);
+        return const Duration(milliseconds: 320);
       case AppTransitionType.none:
         return Duration.zero;
     }
@@ -79,17 +65,8 @@ class AppPageRoute<T> extends PageRouteBuilder<T> {
     Widget child,
   ) {
     switch (type) {
-      case AppTransitionType.fadeSlide:
-        return _FadeSlideTransition(animation: animation, child: child);
-
       case AppTransitionType.zoomIn:
         return _ZoomInTransition(animation: animation, child: child);
-
-      case AppTransitionType.slideUp:
-        return _SlideUpTransition(animation: animation, child: child);
-
-      case AppTransitionType.slideLeft:
-        return _SlideLeftTransition(animation: animation, child: child);
 
       case AppTransitionType.scale:
         return _ScaleTransition(animation: animation, child: child);
@@ -100,38 +77,7 @@ class AppPageRoute<T> extends PageRouteBuilder<T> {
   }
 }
 
-/// Fade + slight horizontal slide transition
-class _FadeSlideTransition extends StatelessWidget {
-  final Animation<double> animation;
-  final Widget child;
-
-  const _FadeSlideTransition({
-    required this.animation,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOut,
-      ),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0.05, 0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-        )),
-        child: child,
-      ),
-    );
-  }
-}
-
-/// Zoom in with fade transition - for game entry
+/// Zoom in with fade transition - default for most screens
 class _ZoomInTransition extends StatelessWidget {
   final Animation<double> animation;
   final Widget child;
@@ -149,37 +95,6 @@ class _ZoomInTransition extends StatelessWidget {
         end: 1.0,
       ).animate(CurvedAnimation(
         parent: animation,
-        curve: Curves.easeOutBack,
-      )),
-      child: FadeTransition(
-        opacity: CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOut,
-        ),
-        child: child,
-      ),
-    );
-  }
-}
-
-/// Slide up with fade transition - for modals
-class _SlideUpTransition extends StatelessWidget {
-  final Animation<double> animation;
-  final Widget child;
-
-  const _SlideUpTransition({
-    required this.animation,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 0.15),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: animation,
         curve: Curves.easeOutCubic,
       )),
       child: FadeTransition(
@@ -189,31 +104,6 @@ class _SlideUpTransition extends StatelessWidget {
         ),
         child: child,
       ),
-    );
-  }
-}
-
-/// Slide from right transition - for lateral navigation
-class _SlideLeftTransition extends StatelessWidget {
-  final Animation<double> animation;
-  final Widget child;
-
-  const _SlideLeftTransition({
-    required this.animation,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(1, 0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-      )),
-      child: child,
     );
   }
 }
@@ -254,7 +144,7 @@ extension NavigatorTransitionExtensions on NavigatorState {
   /// Push a page with specified transition type
   Future<T?> pushWithTransition<T extends Object?>(
     Widget page, {
-    AppTransitionType type = AppTransitionType.fadeSlide,
+    AppTransitionType type = AppTransitionType.zoomIn,
     RouteSettings? settings,
   }) {
     return push(AppPageRoute<T>(
@@ -267,7 +157,7 @@ extension NavigatorTransitionExtensions on NavigatorState {
   /// Push replacement with specified transition type
   Future<T?> pushReplacementWithTransition<T extends Object?, TO extends Object?>(
     Widget page, {
-    AppTransitionType type = AppTransitionType.fadeSlide,
+    AppTransitionType type = AppTransitionType.zoomIn,
     TO? result,
     RouteSettings? settings,
   }) {
@@ -285,7 +175,7 @@ extension NavigatorTransitionExtensions on NavigatorState {
   Future<T?> pushAndRemoveUntilWithTransition<T extends Object?>(
     Widget page,
     RoutePredicate predicate, {
-    AppTransitionType type = AppTransitionType.fadeSlide,
+    AppTransitionType type = AppTransitionType.zoomIn,
     RouteSettings? settings,
   }) {
     return pushAndRemoveUntil(
@@ -303,7 +193,7 @@ extension NavigatorTransitionExtensions on NavigatorState {
 /// Usage: Navigator.of(context).push(appRoute(MyScreen(), type: AppTransitionType.zoomIn))
 Route<T> appRoute<T>(
   Widget page, {
-  AppTransitionType type = AppTransitionType.fadeSlide,
+  AppTransitionType type = AppTransitionType.zoomIn,
   RouteSettings? settings,
 }) {
   return AppPageRoute<T>(

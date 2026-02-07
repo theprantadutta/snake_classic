@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -8,6 +7,7 @@ import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
@@ -560,7 +560,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           participant,
           rank,
           theme,
-        ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1);
+        ).gameListItem(index);
       },
     );
   }

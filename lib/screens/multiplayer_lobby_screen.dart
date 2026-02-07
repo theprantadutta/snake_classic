@@ -11,6 +11,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 class MultiplayerLobbyScreen extends StatefulWidget {
@@ -355,7 +356,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   color: theme.accentColor,
                   letterSpacing: 2,
                 ),
-              ).animate().fadeIn().slideX(begin: -0.3),
+              ).gameEntrance(),
 
               Text(
                 'Play with friends online',
@@ -363,7 +364,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   fontSize: 14,
                   color: theme.accentColor.withValues(alpha: 0.7),
                 ),
-              ).animate().fadeIn(delay: 200.ms),
+              ).gameEntrance(delay: 100.ms),
             ],
           ),
         ],
@@ -569,7 +570,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3);
+    ).gameZoomIn(delay: 100.ms);
   }
 
   Widget _buildMatchmakingUI(
@@ -908,7 +909,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3);
+    ).gameZoomIn(delay: 200.ms);
   }
 
   Widget _buildCreateGameSection(
@@ -992,7 +993,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3);
+    ).gameZoomIn(delay: 300.ms);
   }
 
   Widget _buildAvailableGamesSection(
