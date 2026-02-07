@@ -1,5 +1,6 @@
 # Miscellaneous
 *.class
+android/.kotlin/
 *.log
 *.pyc
 *.swp
