@@ -156,7 +156,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             backgroundImage: authState.photoURL != null
                 ? NetworkImage(authState.photoURL!)
                 : null,
-            onBackgroundImageError: (e, s) {},
+            onBackgroundImageError: authState.photoURL != null
+                ? (e, s) {}
+                : null,
             backgroundColor: theme.primaryColor,
             child: authState.photoURL == null
                 ? Icon(Icons.person, color: theme.backgroundColor)
@@ -448,7 +450,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             backgroundImage: player['photoURL'] != null
                 ? NetworkImage(player['photoURL']!)
                 : null,
-            onBackgroundImageError: (e, s) {},
+            onBackgroundImageError: player['photoURL'] != null
+                ? (e, s) {}
+                : null,
             backgroundColor: theme.primaryColor,
             child: player['photoURL'] == null
                 ? Icon(Icons.person, color: theme.backgroundColor, size: 20)

@@ -322,7 +322,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       backgroundImage: authState.photoURL != null
                           ? NetworkImage(authState.photoURL!)
                           : null,
-                      onBackgroundImageError: (e, s) {},
+                      onBackgroundImageError: authState.photoURL != null ? (e, s) {} : null,
                       backgroundColor: theme.backgroundColor,
                       child: authState.photoURL == null
                           ? Icon(
