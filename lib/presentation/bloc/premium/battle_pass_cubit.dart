@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/battle_pass.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -14,12 +15,16 @@ export 'battle_pass_state.dart';
 /// Cubit for managing battle pass progression
 class BattlePassCubit extends Cubit<BattlePassState> {
   final StorageService _storageService;
+  final PremiumCubit? _premiumCubit;
   final DataSyncService _dataSyncService = DataSyncService();
   final ApiService _apiService = ApiService();
 
-  BattlePassCubit({required StorageService storageService})
-    : _storageService = storageService,
-      super(BattlePassState.initial());
+  BattlePassCubit({
+    required StorageService storageService,
+    PremiumCubit? premiumCubit,
+  }) : _storageService = storageService,
+       _premiumCubit = premiumCubit,
+       super(BattlePassState.initial());
 
   /// Initialize battle pass state — always load local first (instant), then background refresh
   Future<void> initialize() async {
@@ -30,6 +35,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     try {
       // Always load local first — instant
       await _loadFromLocalStorage();
+      _syncBattlePassToPremium();
 
       AppLogger.info(
         'BattlePassCubit initialized from local storage. Active: ${state.isActive}, Tier: ${state.currentTier}',
@@ -76,6 +82,19 @@ class BattlePassCubit extends Cubit<BattlePassState> {
         season = BattlePassSeason.fromJson(seasonData);
       } catch (e) {
         AppLogger.error('Failed to parse season from backend', e);
+      }
+
+      // Detect season transition: if the backend season ID differs from the
+      // locally stored one, reset local progress before loading the new season.
+      final newSeasonId = seasonData['id']?.toString();
+      final currentSeasonId = state.season?.id;
+      if (newSeasonId != null &&
+          currentSeasonId != null &&
+          newSeasonId != currentSeasonId) {
+        AppLogger.info(
+          'Season transition detected: $currentSeasonId -> $newSeasonId',
+        );
+        await reset();
       }
 
       final progressData = results[1];
@@ -134,6 +153,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
         ),
       );
       await _saveState();
+      _syncBattlePassToPremium();
       return true;
     } catch (e) {
       AppLogger.error('Error loading battle pass from backend', e);
@@ -228,6 +248,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     final expiryDate = DateTime.now().add(duration);
     emit(state.copyWith(isActive: true, expiryDate: expiryDate));
     await _saveState();
+    _syncBattlePassToPremium();
     AppLogger.info(
       'Battle pass activated until ${expiryDate.toIso8601String()}',
     );
@@ -266,6 +287,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
           ),
         );
         await _saveState();
+        _syncBattlePassToPremium();
         AppLogger.info(
           'Added $xp XP via backend. New tier: $newLevel, XP: $newXp/$xpToNext',
         );
@@ -293,6 +315,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
       ),
     );
     await _saveState();
+    _syncBattlePassToPremium();
 
     // Queue for background sync if offline
     _dataSyncService.queueSync('battle_pass_xp', {
@@ -306,6 +329,44 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     );
   }
 
+  /// Grant the actual item for a claimed reward via PremiumCubit
+  void _grantRewardItem(BattlePassReward? reward) {
+    if (reward == null || _premiumCubit == null) return;
+
+    switch (reward.type) {
+      case BattlePassRewardType.tournamentEntry:
+        _premiumCubit.addTournamentEntry(
+          reward.itemId ?? 'bronze',
+          count: reward.quantity,
+        );
+        break;
+      case BattlePassRewardType.skin:
+        if (reward.itemId != null) {
+          _premiumCubit.unlockSkin(reward.itemId!);
+        }
+        break;
+      case BattlePassRewardType.trail:
+        if (reward.itemId != null) {
+          _premiumCubit.unlockTrail(reward.itemId!);
+        }
+        break;
+      case BattlePassRewardType.powerUp:
+        if (reward.itemId != null) {
+          _premiumCubit.unlockPowerUp(reward.itemId!);
+        }
+        break;
+      case BattlePassRewardType.theme:
+      case BattlePassRewardType.xp:
+      case BattlePassRewardType.coins:
+      case BattlePassRewardType.title:
+      case BattlePassRewardType.avatar:
+      case BattlePassRewardType.special:
+        // These reward types are handled by the backend or are cosmetic-only
+        break;
+    }
+    AppLogger.info('Granted reward item: ${reward.type.name} (${reward.itemId})');
+  }
+
   /// Claim free tier reward (offline-first: updates locally, syncs with backend)
   Future<bool> claimFreeReward(int tier) async {
     if (tier > state.currentTier) return false;
@@ -315,6 +376,12 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     final updatedClaimed = {...state.claimedFreeTiers, tier};
     emit(state.copyWith(claimedFreeTiers: updatedClaimed));
     await _saveState();
+
+    // Grant the actual item
+    final season = state.season;
+    if (season != null && tier >= 1 && tier <= season.levels.length) {
+      _grantRewardItem(season.levels[tier - 1].freeReward);
+    }
 
     // Try to sync with backend
     if (_apiService.isAuthenticated) {
@@ -350,6 +417,12 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     emit(state.copyWith(claimedPremiumTiers: updatedClaimed));
     await _saveState();
 
+    // Grant the actual item
+    final season = state.season;
+    if (season != null && tier >= 1 && tier <= season.levels.length) {
+      _grantRewardItem(season.levels[tier - 1].premiumReward);
+    }
+
     // Try to sync with backend
     if (_apiService.isAuthenticated) {
       final result = await _apiService.claimBattlePassReward(
@@ -377,7 +450,16 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   Future<void> reset() async {
     emit(BattlePassState.initial().copyWith(status: BattlePassStatus.ready));
     await _saveState();
+    _syncBattlePassToPremium();
     AppLogger.info('Battle pass reset for new season');
+  }
+
+  /// Push current battle pass status to PremiumCubit
+  void _syncBattlePassToPremium() {
+    _premiumCubit?.syncBattlePassStatus(
+      isActive: state.isActive,
+      tier: state.currentTier,
+    );
   }
 
   /// Clear error

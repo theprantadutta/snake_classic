@@ -205,8 +205,8 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
           create: (_) => getIt<MultiplayerCubit>(),
         ),
         // Premium & Battle Pass
-        BlocProvider<PremiumCubit>(
-          create: (_) => getIt<PremiumCubit>()..initialize(),
+        BlocProvider<PremiumCubit>.value(
+          value: getIt<PremiumCubit>()..initialize(),
         ),
         BlocProvider<BattlePassCubit>.value(
           value: getIt<BattlePassCubit>()..initialize(),

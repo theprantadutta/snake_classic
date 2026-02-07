@@ -169,9 +169,9 @@ class BattlePassLevel {
   bool get hasRewards => freeReward != null || premiumReward != null;
 
   int get totalXpRequired {
-    // XP required from level 1 to this level
-    return (level * 100) +
-        ((level - 1) * level * 5); // Progressive XP requirement
+    // Cumulative sum of (100 + i*50) for i in 0..(level-1)
+    // = level*100 + 50*(0+1+...+(level-1)) = level*100 + 25*level*(level-1)
+    return (level * 100) + (25 * level * (level - 1));
   }
 
   Map<String, dynamic> toJson() {
@@ -343,7 +343,7 @@ class BattlePassSeason {
 
     for (int i = 1; i <= 100; i++) {
       final isMilestone = i % 10 == 0;
-      final xpRequired = 100 + (i * 50); // Progressive XP requirement
+      final xpRequired = 100 + ((i - 1) * 50); // 0-indexed: level 1→100, level 2→150, etc.
 
       BattlePassReward? freeReward;
       BattlePassReward? premiumReward;
@@ -572,7 +572,6 @@ class UserBattlePass {
 class BattlePassXpSource {
   static const Map<String, int> xpAmounts = {
     'game_completed': 5,
-    'food_eaten': 0, // Removed to reduce XP inflation
     'score_milestone_100': 3,
     'score_milestone_500': 10,
     'score_milestone_1000': 20,

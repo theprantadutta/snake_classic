@@ -1059,7 +1059,7 @@ class _StoreScreenState extends State<StoreScreen>
                   Row(
                     children: [
                       Text(
-                        '\$${bundle.originalPrice.toStringAsFixed(2)}',
+                        '${bundle.originalPrice.toInt()} coins',
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.5),
                           fontSize: 14,
@@ -1153,7 +1153,7 @@ class _StoreScreenState extends State<StoreScreen>
             const SizedBox(height: 16),
             Text('Price: ${bundle.bundlePrice.toInt()} coins'),
             Text(
-              'You save: \$${bundle.savings.toStringAsFixed(2)} (${bundle.savingsPercentage.toInt()}%)',
+              'You save: ${bundle.savings.toInt()} coins (${bundle.savingsPercentage.toInt()}% off)',
             ),
           ],
         ),

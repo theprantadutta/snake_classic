@@ -3,7 +3,6 @@ import 'dart:convert';
 enum TournamentType {
   daily,
   weekly,
-  monthly,
   special;
 
   String get displayName {
@@ -12,8 +11,6 @@ enum TournamentType {
         return 'Daily Challenge';
       case TournamentType.weekly:
         return 'Weekly Tournament';
-      case TournamentType.monthly:
-        return 'Monthly Championship';
       case TournamentType.special:
         return 'Special Event';
     }
@@ -25,8 +22,6 @@ enum TournamentType {
         return '📅';
       case TournamentType.weekly:
         return '🏆';
-      case TournamentType.monthly:
-        return '👑';
       case TournamentType.special:
         return '⭐';
     }
@@ -38,8 +33,6 @@ enum TournamentType {
         return const Duration(days: 1);
       case TournamentType.weekly:
         return const Duration(days: 7);
-      case TournamentType.monthly:
-        return const Duration(days: 30);
       case TournamentType.special:
         return const Duration(days: 3);
     }
@@ -49,8 +42,7 @@ enum TournamentType {
 enum TournamentStatus {
   upcoming,
   active,
-  ended,
-  cancelled;
+  ended;
 
   String get displayName {
     switch (this) {
@@ -60,8 +52,6 @@ enum TournamentStatus {
         return 'Active';
       case TournamentStatus.ended:
         return 'Ended';
-      case TournamentStatus.cancelled:
-        return 'Cancelled';
     }
   }
 

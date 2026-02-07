@@ -187,15 +187,19 @@ Future<void> configureDependencies() async {
     ),
   );
 
-  getIt.registerFactory<PremiumCubit>(
+  getIt.registerLazySingleton<PremiumCubit>(
     () => PremiumCubit(
       purchaseService: getIt<PurchaseService>(),
       storageService: getIt<StorageService>(),
+      coinsCubit: getIt<CoinsCubit>(),
     ),
   );
 
   getIt.registerLazySingleton<BattlePassCubit>(
-    () => BattlePassCubit(storageService: getIt<StorageService>()),
+    () => BattlePassCubit(
+      storageService: getIt<StorageService>(),
+      premiumCubit: getIt<PremiumCubit>(),
+    ),
   );
 }
 

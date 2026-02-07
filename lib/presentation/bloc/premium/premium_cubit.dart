@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -14,13 +15,16 @@ export 'premium_state.dart';
 class PremiumCubit extends Cubit<PremiumState> {
   final PurchaseService _purchaseService;
   final StorageService _storageService;
+  final CoinsCubit? _coinsCubit;
   StreamSubscription<String>? _purchaseStatusSubscription;
 
   PremiumCubit({
     required PurchaseService purchaseService,
     required StorageService storageService,
+    CoinsCubit? coinsCubit,
   }) : _purchaseService = purchaseService,
        _storageService = storageService,
+       _coinsCubit = coinsCubit,
        super(PremiumState.initial());
 
   /// Initialize premium status
@@ -63,16 +67,20 @@ class PremiumCubit extends Cubit<PremiumState> {
         trialEndDate = DateTime.tryParse(trialData['trialEndDate']);
       }
 
+      // Migrate bare trail IDs to prefixed form (trail_particle, etc.)
+      final migratedTrails = _migrateTrailIds(ownedTrails.toSet());
+      final migratedSelectedTrail = _migrateTrailId(selectedTrailId);
+
       emit(
         state.copyWith(
           status: PremiumStatus.ready,
           tier: isPremiumActive ? PremiumTier.pro : PremiumTier.free,
           subscriptionExpiry: expiryDate,
           selectedSkinId: selectedSkinId,
-          selectedTrailId: selectedTrailId,
+          selectedTrailId: migratedSelectedTrail,
           ownedThemes: _parseThemes(ownedThemes),
           ownedSkins: ownedSkins.toSet(),
-          ownedTrails: ownedTrails.toSet(),
+          ownedTrails: migratedTrails,
           ownedPowerUps: ownedPowerUps.toSet(),
           ownedBoardSizes: ownedBoardSizes.toSet(),
           ownedBundles: ownedBundles.toSet(),
@@ -85,6 +93,15 @@ class PremiumCubit extends Cubit<PremiumState> {
         ),
       );
 
+      // Persist migrated trail data if any IDs were changed
+      if (migratedTrails.length != ownedTrails.length ||
+          !migratedTrails.every((t) => ownedTrails.contains(t))) {
+        await _storageService.setUnlockedTrails(migratedTrails.toList());
+      }
+      if (migratedSelectedTrail != selectedTrailId) {
+        await _storageService.setSelectedTrailId(migratedSelectedTrail);
+      }
+
       // Listen to purchase updates
       _setupPurchaseListener();
 
@@ -95,6 +112,24 @@ class PremiumCubit extends Cubit<PremiumState> {
         state.copyWith(status: PremiumStatus.error, errorMessage: e.toString()),
       );
     }
+  }
+
+  /// Known bare trail enum names that need the 'trail_' prefix
+  static const _bareTrailNames = {
+    'particle', 'glow', 'rainbow', 'fire', 'electric',
+    'star', 'cosmic', 'neon', 'shadow', 'crystal', 'dragon',
+  };
+
+  /// Migrate a single trail ID: bare name → prefixed form
+  String _migrateTrailId(String trailId) {
+    if (trailId == 'none') return 'none';
+    if (_bareTrailNames.contains(trailId)) return 'trail_$trailId';
+    return trailId;
+  }
+
+  /// Migrate a set of trail IDs from bare to prefixed form
+  Set<String> _migrateTrailIds(Set<String> trailIds) {
+    return trailIds.map(_migrateTrailId).toSet();
   }
 
   Set<GameTheme> _parseThemes(List<String> themeNames) {
@@ -177,6 +212,7 @@ class PremiumCubit extends Cubit<PremiumState> {
     emit(state.copyWith(tier: PremiumTier.pro, subscriptionExpiry: expiry));
     _storageService.setPremiumActive(true);
     _storageService.setPremiumExpirationDate(expiry.toIso8601String());
+    _coinsCubit?.updatePremiumMultiplier(true, state.hasBattlePass);
   }
 
   /// Purchase premium subscription (monthly)
@@ -204,6 +240,13 @@ class PremiumCubit extends Cubit<PremiumState> {
     } catch (e) {
       emit(state.copyWith(errorMessage: 'Restore failed: $e'));
     }
+  }
+
+  /// Sync battle pass status from BattlePassCubit
+  void syncBattlePassStatus({required bool isActive, required int tier}) {
+    if (state.hasBattlePass == isActive && state.battlePassTier == tier) return;
+    emit(state.copyWith(hasBattlePass: isActive, battlePassTier: tier));
+    _coinsCubit?.updatePremiumMultiplier(state.hasPremium, isActive);
   }
 
   /// Select skin
@@ -297,6 +340,7 @@ class PremiumCubit extends Cubit<PremiumState> {
       trialEndDate: trialEnd,
     );
 
+    _coinsCubit?.updatePremiumMultiplier(true, state.hasBattlePass);
     AppLogger.info('Free trial started, ends: ${trialEnd.toIso8601String()}');
   }
 
@@ -304,6 +348,7 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> endTrial() async {
     emit(state.copyWith(isOnTrial: false));
     await _storageService.setTrialData(isOnTrial: false);
+    _coinsCubit?.updatePremiumMultiplier(state.hasPremium, state.hasBattlePass);
     AppLogger.info('Trial ended');
   }
 

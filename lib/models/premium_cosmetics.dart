@@ -231,7 +231,7 @@ enum TrailEffectType {
   crystal,
   dragon;
 
-  String get id => name;
+  String get id => this == TrailEffectType.none ? 'none' : 'trail_$name';
 
   String get displayName {
     switch (this) {

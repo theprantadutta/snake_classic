@@ -726,8 +726,6 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         return Colors.blue;
       case TournamentStatus.ended:
         return Colors.grey;
-      case TournamentStatus.cancelled:
-        return Colors.red;
     }
   }
 
@@ -737,8 +735,6 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         return Colors.blue;
       case TournamentType.weekly:
         return Colors.orange;
-      case TournamentType.monthly:
-        return Colors.purple;
       case TournamentType.special:
         return Colors.pink;
     }

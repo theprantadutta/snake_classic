@@ -130,7 +130,7 @@ class TournamentService {
   Future<List<Tournament>> _fetchAndCacheTournamentHistory(int limit) async {
     try {
       final response = await _apiService.listTournaments(
-        status: 'ended',
+        status: 'completed',
         limit: limit,
       );
 
@@ -365,15 +365,46 @@ class TournamentService {
   Future<Map<String, dynamic>> getUserTournamentStats() async {
     try {
       final response = await _apiService.listTournaments();
-      if (response == null) return {};
+      if (response == null || response['tournaments'] == null) return {};
+
+      final tournaments = List<Map<String, dynamic>>.from(
+        response['tournaments'],
+      );
+
+      int totalJoined = 0;
+      int totalAttempts = 0;
+      int bestScore = 0;
+      int topThreeFinishes = 0;
+
+      for (final t in tournaments) {
+        final isJoined = t['is_joined'] ?? t['IsJoined'] ?? false;
+        if (!isJoined) continue;
+
+        totalJoined++;
+
+        final userAttempts = t['user_attempts'] ?? t['userAttempts'] ?? 0;
+        totalAttempts += userAttempts as int;
+
+        final userBest = t['user_best_score'] ?? t['userBestScore'] ?? 0;
+        if ((userBest as int) > bestScore) {
+          bestScore = userBest;
+        }
+
+        final userRank = t['user_rank'] ?? t['userRank'];
+        if (userRank != null && (userRank as int) <= 3) {
+          topThreeFinishes++;
+        }
+      }
 
       return {
-        'totalTournaments': 0,
-        'totalAttempts': 0,
-        'bestScore': 0,
-        'wins': 0,
-        'topThreeFinishes': 0,
-        'winRate': 0,
+        'totalTournaments': totalJoined,
+        'totalAttempts': totalAttempts,
+        'bestScore': bestScore,
+        'wins': topThreeFinishes > 0 ? topThreeFinishes : 0,
+        'topThreeFinishes': topThreeFinishes,
+        'winRate': totalJoined > 0
+            ? ((topThreeFinishes / totalJoined) * 100).round()
+            : 0,
       };
     } catch (e) {
       if (kDebugMode) {
