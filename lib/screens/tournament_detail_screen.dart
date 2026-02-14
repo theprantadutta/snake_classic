@@ -5,6 +5,8 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
+import 'package:snake_classic/services/purchase_service.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
@@ -989,6 +991,37 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               icon: Icons.play_arrow,
             ),
 
+          if (tournament.requiresEntry) ...[
+            const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                final premiumCubit = context.read<PremiumCubit>();
+                if (premiumCubit.state.hasPremium) {
+                  return Text(
+                    'Pro: Unlimited entries',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.amber.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  );
+                }
+                final tier = _getTournamentTier(tournament.type);
+                final count = premiumCubit.state.getTournamentEntryCount(tier);
+                return Text(
+                  'Entries remaining: $count',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: count > 0 ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                );
+              },
+            ),
+          ],
+
           if (tournament.status == TournamentStatus.upcoming) ...[
             const SizedBox(height: 8),
             Text(
@@ -1076,8 +1109,36 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     }
   }
 
+  String _getTournamentTier(TournamentType type) {
+    switch (type) {
+      case TournamentType.daily:
+        return 'bronze';
+      case TournamentType.weekly:
+        return 'silver';
+      case TournamentType.special:
+        return 'gold';
+    }
+  }
+
   Future<void> _joinTournament() async {
     final tournament = _tournament!;
+
+    // Check entry requirement
+    if (tournament.requiresEntry) {
+      final premiumCubit = context.read<PremiumCubit>();
+      final tier = _getTournamentTier(tournament.type);
+
+      // Premium users bypass entry requirement
+      if (!premiumCubit.state.hasPremium) {
+        if (!premiumCubit.hasTournamentEntry(tier)) {
+          _showNoEntryDialog(tier);
+          return;
+        }
+        // Consume an entry
+        await premiumCubit.useTournamentEntry(tier);
+      }
+    }
+
     setState(() => _isJoining = true);
 
     try {
@@ -1104,6 +1165,112 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     if (mounted) {
       setState(() => _isJoining = false);
     }
+  }
+
+  void _showNoEntryDialog(String tier) {
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    final premiumCubit = context.read<PremiumCubit>();
+    final entryCount = premiumCubit.state.getTournamentEntryCount(tier);
+
+    String productId;
+    switch (tier) {
+      case 'bronze':
+        productId = ProductIds.tournamentBronze;
+        break;
+      case 'silver':
+        productId = ProductIds.tournamentSilver;
+        break;
+      case 'gold':
+        productId = ProductIds.tournamentGold;
+        break;
+      default:
+        return;
+    }
+
+    final tierName = '${tier[0].toUpperCase()}${tier.substring(1)}';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.confirmation_num, color: Colors.amber, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Entry Required',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'You need a $tierName tournament entry to join this tournament.',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.8),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Current $tierName entries: $entryCount',
+                style: TextStyle(
+                  color: entryCount > 0 ? Colors.green : Colors.red,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Pro subscribers get unlimited tournament access.',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.5),
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                final purchaseService = PurchaseService();
+                final product = purchaseService.getProduct(productId);
+                if (product != null) {
+                  purchaseService.buyProduct(product);
+                }
+              },
+              child: Text('Buy $tierName Entry'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _playTournament() {

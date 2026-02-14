@@ -417,6 +417,7 @@ class ThemeSelectorScreen extends StatelessWidget {
       case GameTheme.space:
       case GameTheme.ocean:
       case GameTheme.desert:
+      case GameTheme.forest:
         return '\$1.99';
       default:
         return 'FREE';
@@ -774,6 +775,9 @@ class ThemeSelectorScreen extends StatelessWidget {
             break;
           case GameTheme.desert:
             productId = ProductIds.desertTheme;
+            break;
+          case GameTheme.forest:
+            productId = ProductIds.forestTheme;
             break;
           default:
             return;

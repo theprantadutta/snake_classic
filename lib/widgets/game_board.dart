@@ -388,17 +388,17 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
       case TrailEffectType.electric:
         return TrailType.lightning;
       case TrailEffectType.star:
-        return TrailType.particles;
+        return TrailType.star;
       case TrailEffectType.cosmic:
-        return TrailType.glow;
+        return TrailType.cosmic;
       case TrailEffectType.neon:
-        return TrailType.glow;
+        return TrailType.neon;
       case TrailEffectType.shadow:
-        return TrailType.basic;
+        return TrailType.shadow;
       case TrailEffectType.crystal:
         return TrailType.ice;
       case TrailEffectType.dragon:
-        return TrailType.fire;
+        return TrailType.dragon;
     }
   }
 

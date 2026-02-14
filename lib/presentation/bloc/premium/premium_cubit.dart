@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -102,6 +103,25 @@ class PremiumCubit extends Cubit<PremiumState> {
         await _storageService.setSelectedTrailId(migratedSelectedTrail);
       }
 
+      // Reconcile bundle contents for existing bundle owners
+      for (final bundleId in state.ownedBundles) {
+        final bundle = CosmeticBundle.availableBundles
+            .where((b) => b.id == bundleId)
+            .firstOrNull;
+        if (bundle != null) {
+          for (final skin in bundle.skins) {
+            if (!state.ownedSkins.contains(skin.id)) {
+              await unlockSkin(skin.id);
+            }
+          }
+          for (final trail in bundle.trails) {
+            if (!state.ownedTrails.contains(trail.id)) {
+              await unlockTrail(trail.id);
+            }
+          }
+        }
+      }
+
       // Listen to purchase updates
       _setupPurchaseListener();
 
@@ -165,6 +185,28 @@ class PremiumCubit extends Cubit<PremiumState> {
     if (productId.contains('pro_monthly') ||
         productId.contains('pro_yearly')) {
       _handlePremiumPurchased();
+      return;
+    }
+
+    // Theme purchases
+    const themeProductMap = {
+      'crystal_theme': GameTheme.crystal,
+      'cyberpunk_theme': GameTheme.cyberpunk,
+      'space_theme': GameTheme.space,
+      'ocean_theme': GameTheme.ocean,
+      'desert_theme': GameTheme.desert,
+      'forest_theme': GameTheme.forest,
+    };
+    if (themeProductMap.containsKey(productId)) {
+      await unlockTheme(themeProductMap[productId]!);
+      return;
+    }
+
+    // Theme bundle — unlock all premium themes
+    if (productId == 'premium_themes_bundle') {
+      for (final theme in PremiumContent.premiumThemes) {
+        await unlockTheme(theme);
+      }
       return;
     }
 
@@ -311,6 +353,20 @@ class PremiumCubit extends Cubit<PremiumState> {
     final updatedBundles = {...state.ownedBundles, bundleId};
     emit(state.copyWith(ownedBundles: updatedBundles));
     await _storageService.setUnlockedBundles(updatedBundles.toList());
+
+    // Unlock all contained items
+    final bundle = CosmeticBundle.availableBundles
+        .where((b) => b.id == bundleId)
+        .firstOrNull;
+    if (bundle != null) {
+      for (final skin in bundle.skins) {
+        await unlockSkin(skin.id);
+      }
+      for (final trail in bundle.trails) {
+        await unlockTrail(trail.id);
+      }
+    }
+
     AppLogger.info('Bundle unlocked: $bundleId');
   }
 

@@ -899,13 +899,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
       // Purchase the bundle
       await purchaseService.purchaseProduct(bundle.id);
 
-      // Unlock all items in the bundle
-      for (final skin in bundle.skins) {
-        await premiumCubit.unlockSkin(skin.id);
-      }
-      for (final trail in bundle.trails) {
-        await premiumCubit.unlockTrail(trail.id);
-      }
+      // unlockBundle handles unlocking all contained skins and trails
       await premiumCubit.unlockBundle(bundle.id);
 
       if (mounted) {

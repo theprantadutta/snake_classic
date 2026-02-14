@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/constants.dart';
 
-enum TrailType { none, basic, glow, particles, lightning, rainbow, fire, ice }
+enum TrailType { none, basic, glow, particles, lightning, rainbow, fire, ice, star, cosmic, neon, shadow, dragon }
 
 class TrailSegment {
   final Offset position;
@@ -139,7 +139,15 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
         return 0.6;
       case TrailType.rainbow:
       case TrailType.ice:
+      case TrailType.star:
+      case TrailType.shadow:
         return 1.0;
+      case TrailType.cosmic:
+        return 1.2;
+      case TrailType.neon:
+        return 0.7;
+      case TrailType.dragon:
+        return 0.8;
       case TrailType.none:
         return 0.0;
     }
@@ -152,11 +160,18 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
     switch (widget.trailType) {
       case TrailType.glow:
       case TrailType.fire:
+      case TrailType.cosmic:
         return baseSize * sizeFactor * 1.5;
       case TrailType.particles:
+      case TrailType.star:
         return baseSize * sizeFactor * 0.8;
       case TrailType.lightning:
+      case TrailType.neon:
         return baseSize * sizeFactor * 0.6;
+      case TrailType.shadow:
+        return baseSize * sizeFactor * 1.4;
+      case TrailType.dragon:
+        return baseSize * sizeFactor * 1.6;
       case TrailType.basic:
       case TrailType.rainbow:
       case TrailType.ice:
@@ -199,6 +214,47 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
           Colors.lightBlueAccent,
           intensity,
         )!.withValues(alpha: intensity * 0.7);
+
+      case TrailType.star:
+        final twinkle = math.sin(_animationController.value * math.pi * 8) * 0.3 + 0.7;
+        return Color.lerp(
+          Colors.white,
+          const Color(0xFFFFD700),
+          math.sin(_animationController.value * math.pi * 4) * 0.5 + 0.5,
+        )!.withValues(alpha: intensity * twinkle);
+
+      case TrailType.cosmic:
+        return Color.lerp(
+          const Color(0xFF4B0082),
+          const Color(0xFFDA70D6),
+          math.sin(_animationController.value * math.pi * 2) * 0.5 + 0.5,
+        )!.withValues(alpha: intensity * 0.8);
+
+      case TrailType.neon:
+        final isEven = (intensity * 10).toInt() % 2 == 0;
+        return (isEven ? const Color(0xFF39FF14) : const Color(0xFFFF1493))
+            .withValues(alpha: intensity * 0.9);
+
+      case TrailType.shadow:
+        return Color.lerp(
+          const Color(0xFF2F2F2F),
+          Colors.black,
+          intensity,
+        )!.withValues(alpha: intensity * 0.8);
+
+      case TrailType.dragon:
+        final phase = (_animationController.value * 4 + intensity * 2) % 4;
+        Color dragonColor;
+        if (phase < 1) {
+          dragonColor = const Color(0xFF8B0000);
+        } else if (phase < 2) {
+          dragonColor = Colors.red[800]!;
+        } else if (phase < 3) {
+          dragonColor = Colors.orange;
+        } else {
+          dragonColor = const Color(0xFFFFD700);
+        }
+        return dragonColor.withValues(alpha: intensity * 0.85);
 
       case TrailType.none:
         return Colors.transparent;
@@ -260,6 +316,21 @@ class SnakeTrailPainter extends CustomPainter {
         break;
       case TrailType.ice:
         _paintIceTrail(canvas);
+        break;
+      case TrailType.star:
+        _paintStarTrail(canvas);
+        break;
+      case TrailType.cosmic:
+        _paintCosmicTrail(canvas);
+        break;
+      case TrailType.neon:
+        _paintNeonTrail(canvas);
+        break;
+      case TrailType.shadow:
+        _paintShadowTrail(canvas);
+        break;
+      case TrailType.dragon:
+        _paintDragonTrail(canvas);
         break;
       case TrailType.none:
         break;
@@ -499,6 +570,180 @@ class SnakeTrailPainter extends CustomPainter {
         );
 
         canvas.drawLine(start, end, spikePaint);
+      }
+    }
+  }
+
+  void _paintStarTrail(Canvas canvas) {
+    for (int i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+      final ageFactor = 1.0 - (segment.age / 1.0).clamp(0.0, 1.0);
+
+      // Twinkle alpha
+      final twinkle = 0.5 + 0.5 * math.sin(animationValue * math.pi * 8 + i * 2);
+      final rotation = animationValue * math.pi * 2;
+
+      // Draw gold glow halo
+      final glowPaint = Paint()
+        ..color = const Color(0xFFFFD700).withValues(alpha: ageFactor * twinkle * 0.4)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, segment.size * 0.5)
+        ..isAntiAlias = true;
+      canvas.drawCircle(segment.position, segment.size * 1.2, glowPaint);
+
+      // Draw 5-pointed star path
+      final starPath = _createStarPath(segment.position, segment.size * 0.6, segment.size * 0.3, rotation + i * 0.5);
+      final starPaint = Paint()
+        ..color = Colors.white.withValues(alpha: ageFactor * twinkle)
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true;
+      canvas.drawPath(starPath, starPaint);
+    }
+  }
+
+  Path _createStarPath(Offset center, double outerRadius, double innerRadius, double rotation) {
+    final path = Path();
+    for (int i = 0; i < 10; i++) {
+      final angle = rotation + (i * math.pi / 5) - math.pi / 2;
+      final radius = i.isEven ? outerRadius : innerRadius;
+      final point = Offset(
+        center.dx + math.cos(angle) * radius,
+        center.dy + math.sin(angle) * radius,
+      );
+      if (i == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  void _paintCosmicTrail(Canvas canvas) {
+    final random = math.Random(42);
+
+    for (int i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+      final ageFactor = 1.0 - (segment.age / 1.2).clamp(0.0, 1.0);
+
+      // 3-4 sub-particles per segment in spiral distribution
+      final particleCount = 3 + (i % 2);
+      for (int p = 0; p < particleCount; p++) {
+        final spiralAngle = animationValue * math.pi * 2 + i * 0.8 + p * (math.pi * 2 / particleCount);
+        final driftRadius = segment.size * (1.0 + segment.age * 0.5);
+        final particlePos = Offset(
+          segment.position.dx + math.cos(spiralAngle) * driftRadius * random.nextDouble(),
+          segment.position.dy + math.sin(spiralAngle) * driftRadius * random.nextDouble(),
+        );
+
+        // Indigo -> Orchid color shift
+        final color = Color.lerp(
+          const Color(0xFF4B0082),
+          const Color(0xFFDA70D6),
+          math.sin(animationValue * math.pi * 2 + i * 0.3) * 0.5 + 0.5,
+        )!.withValues(alpha: ageFactor * 0.7);
+
+        final paint = Paint()
+          ..color = color
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0)
+          ..isAntiAlias = true;
+
+        canvas.drawCircle(particlePos, segment.size * 0.4, paint);
+      }
+    }
+  }
+
+  void _paintNeonTrail(Canvas canvas) {
+    for (int i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+      final ageFactor = 1.0 - (segment.age / 0.7).clamp(0.0, 1.0);
+
+      // Alternate lime green / hot pink per segment
+      final color = i % 2 == 0
+          ? const Color(0xFF39FF14)
+          : const Color(0xFFFF1493);
+
+      final halfSize = segment.size * 0.5;
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: segment.position, width: halfSize * 2, height: halfSize * 2),
+        const Radius.circular(3.0),
+      );
+
+      // Hard neon fill — no blur
+      final fillPaint = Paint()
+        ..color = color.withValues(alpha: ageFactor * 0.9)
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true;
+      canvas.drawRRect(rect, fillPaint);
+
+      // Thin outline for neon sign effect
+      final outlinePaint = Paint()
+        ..color = Colors.white.withValues(alpha: ageFactor * 0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0
+        ..isAntiAlias = true;
+      canvas.drawRRect(rect, outlinePaint);
+    }
+  }
+
+  void _paintShadowTrail(Canvas canvas) {
+    for (int i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+      final ageFactor = 1.0 - (segment.age / 1.0).clamp(0.0, 1.0);
+
+      // Slight downward drift for smoke effect
+      final yOffset = segment.age * 3.0;
+
+      // 3 dark layers with increasing spread
+      for (int layer = 0; layer < 3; layer++) {
+        final spread = segment.size * (1.0 + layer * 0.4);
+        final color = Color.lerp(
+          const Color(0xFF2F2F2F),
+          Colors.black,
+          layer / 2.0,
+        )!.withValues(alpha: ageFactor * (0.5 - layer * 0.1));
+
+        final paint = Paint()
+          ..color = color
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0)
+          ..isAntiAlias = true;
+
+        final pos = Offset(segment.position.dx, segment.position.dy + yOffset);
+        canvas.drawCircle(pos, spread, paint);
+      }
+    }
+  }
+
+  void _paintDragonTrail(Canvas canvas) {
+    for (int i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+      final ageFactor = 1.0 - (segment.age / 0.8).clamp(0.0, 1.0);
+
+      // Sinuous S-curve distortion (higher freq than fire)
+      final sineOffset = math.sin(animationValue * math.pi * 12 + i) * segment.size * 0.5;
+      final cosOffset = math.cos(animationValue * math.pi * 4 + i) * segment.size * 0.3;
+
+      // 4 color layers: dark red -> crimson -> orange -> gold
+      final colors = [
+        const Color(0xFF8B0000).withValues(alpha: ageFactor * 0.8),
+        Colors.red[800]!.withValues(alpha: ageFactor * 0.65),
+        Colors.orange.withValues(alpha: ageFactor * 0.5),
+        const Color(0xFFFFD700).withValues(alpha: ageFactor * 0.35),
+      ];
+
+      for (int layer = 0; layer < colors.length; layer++) {
+        final layerSize = segment.size * (1.0 - layer * 0.2);
+        final flameOffset = Offset(
+          segment.position.dx + cosOffset * (1.0 - layer * 0.2),
+          segment.position.dy - layer * 2.5 + sineOffset * (1.0 - layer * 0.15),
+        );
+
+        final paint = Paint()
+          ..color = colors[layer]
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, layerSize * 0.25)
+          ..isAntiAlias = true;
+
+        canvas.drawCircle(flameOffset, layerSize, paint);
       }
     }
   }
