@@ -242,10 +242,10 @@ class GameConstants {
   static const Color oceanAccent = Color(0xFF4682B4); // Steel blue
 
   // Colors - Cyberpunk Theme
-  static const Color cyberpunkBackground = Color(0xFF0A0A0A); // Pure black
-  static const Color cyberpunkSnake = Color(0xFF00FFFF); // Electric cyan
-  static const Color cyberpunkFood = Color(0xFFFF1493); // Deep pink
-  static const Color cyberpunkAccent = Color(0xFF39FF14); // Electric lime
+  static const Color cyberpunkBackground = Color(0xFF0D0221); // Deep midnight purple
+  static const Color cyberpunkSnake = Color(0xFFFF003C); // Neon red/magenta
+  static const Color cyberpunkFood = Color(0xFFFCEE0A); // Electric yellow
+  static const Color cyberpunkAccent = Color(0xFFB537F2); // Vivid purple
 
   // Colors - Forest Theme
   static const Color forestBackground = Color(0xFF0D2818); // Dark forest green

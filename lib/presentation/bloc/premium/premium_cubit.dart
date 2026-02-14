@@ -484,7 +484,7 @@ class PremiumCubit extends Cubit<PremiumState> {
   }
 
   // Convenience checker methods (delegate to state)
-  bool isThemeUnlocked(GameTheme theme) => state.isThemeOwned(theme);
+  bool isThemeUnlocked(GameTheme theme) => state.isThemeUnlocked(theme);
   bool isSkinUnlocked(String skinId) => state.isSkinOwned(skinId);
   bool isTrailUnlocked(String trailId) => state.isTrailOwned(trailId);
   bool isPowerUpUnlocked(String powerUpId) =>

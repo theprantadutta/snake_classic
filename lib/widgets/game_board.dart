@@ -549,6 +549,8 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
       GameTheme.space,
       GameTheme.ocean,
       GameTheme.crystal,
+      GameTheme.forest,
+      GameTheme.desert,
     ].contains(theme);
   }
 }
@@ -742,8 +744,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     double cellWidth,
     double cellHeight,
   ) {
-    if (theme == GameTheme.neon) {
-      // Only draw grid for neon theme and optimize drawing
+    if (theme == GameTheme.neon || theme == GameTheme.cyberpunk) {
+      // Draw grid for neon and cyberpunk themes and optimize drawing
       final path = Path();
 
       // Draw vertical lines in one path

@@ -152,9 +152,9 @@ class PremiumState extends Equatable {
   /// Check if a theme is owned
   bool isThemeOwned(GameTheme theme) => ownedThemes.contains(theme);
 
-  /// Check if a theme is unlocked (alias for isThemeOwned, or true if premium)
+  /// Check if a theme is unlocked (free themes always unlocked, premium needs purchase or subscription)
   bool isThemeUnlocked(GameTheme theme) =>
-      hasPremium || ownedThemes.contains(theme);
+      !PremiumContent.isPremiumTheme(theme) || hasPremium || ownedThemes.contains(theme);
 
   /// Check if a skin is owned
   bool isSkinOwned(String skinId) => ownedSkins.contains(skinId);

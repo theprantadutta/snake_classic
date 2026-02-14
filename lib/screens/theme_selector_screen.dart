@@ -622,7 +622,7 @@ class ThemeSelectorScreen extends StatelessWidget {
                                 ],
                               ),
                               Text(
-                                'All 5 premium themes + future releases',
+                                'All 6 premium themes + future releases',
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.7),
                                   fontSize: 12,
@@ -642,7 +642,7 @@ class ThemeSelectorScreen extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                'Save \$2.00',
+                                'Save \$3.95',
                                 style: TextStyle(
                                   color: Colors.green.withValues(alpha: 0.8),
                                   fontSize: 10,

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_state.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
@@ -46,14 +47,15 @@ class ThemeCubit extends Cubit<ThemeState> {
     await _preferencesService.setTheme(theme);
   }
 
-  /// Cycle to the next theme
+  /// Cycle to the next theme (only free themes; premium themes require explicit selection)
   void cycleTheme() {
-    final themes = GameTheme.values;
+    final themes = GameTheme.values
+        .where((t) => !PremiumContent.isPremiumTheme(t))
+        .toList();
+    if (themes.isEmpty) return;
     final currentIndex = themes.indexOf(state.currentTheme);
-    final nextIndex = (currentIndex + 1) % themes.length;
-    final nextTheme = themes[nextIndex];
-
-    setTheme(nextTheme);
+    final nextIndex = currentIndex == -1 ? 0 : (currentIndex + 1) % themes.length;
+    setTheme(themes[nextIndex]);
   }
 
   /// Get the preferred transition type for a theme
