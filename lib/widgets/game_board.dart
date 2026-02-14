@@ -886,7 +886,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Use selected skin colors if available, otherwise fall back to theme colors
     final skinColors = _getSelectedSkinColors();
 
-    if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic') {
+    if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic' &&
+        premiumState.isSkinOwned(premiumState.selectedSkinId)) {
       // Use skin colors for premium skins
       if (skinColors.length == 1) {
         return [
@@ -1074,7 +1075,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Use selected skin colors if available, otherwise fall back to theme colors
     final skinColors = _getSelectedSkinColors();
 
-    if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic') {
+    if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic' &&
+        premiumState.isSkinOwned(premiumState.selectedSkinId)) {
       // For single color skins, use the color with opacity
       if (skinColors.length == 1) {
         return skinColors[0].withValues(alpha: opacity);

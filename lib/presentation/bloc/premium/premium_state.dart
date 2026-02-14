@@ -166,8 +166,13 @@ class PremiumState extends Equatable {
   bool isPowerUpUnlocked(String powerUpId) => ownedPowerUps.contains(powerUpId);
 
   /// Check if a board size is unlocked
-  bool isBoardSizeUnlocked(String boardSizeId) =>
-      ownedBoardSizes.contains(boardSizeId);
+  bool isBoardSizeUnlocked(String boardSizeId) {
+    final boardSize = GameConstants.availableBoardSizes
+        .where((b) => b.id == boardSizeId)
+        .firstOrNull;
+    if (boardSize == null) return false;
+    return !boardSize.isPremium || hasPremium || ownedBoardSizes.contains(boardSizeId);
+  }
 
   /// Check if a bundle is owned
   bool isBundleOwned(String bundleId) => ownedBundles.contains(bundleId);
