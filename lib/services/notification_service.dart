@@ -85,7 +85,7 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -265,10 +265,10 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch.remainder(100000),
-      title,
-      body,
-      details,
+      id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      title: title,
+      body: body,
+      notificationDetails: details,
       payload: payload,
     );
   }
@@ -388,11 +388,11 @@ class NotificationService {
     );
 
     await _localNotifications.periodicallyShow(
-      0, // notification id
-      '🐍 Daily Challenge Available!',
-      'Complete your daily challenge and compete with friends!',
-      RepeatInterval.daily,
-      details,
+      id: 0,
+      title: '🐍 Daily Challenge Available!',
+      body: 'Complete your daily challenge and compete with friends!',
+      repeatInterval: RepeatInterval.daily,
+      notificationDetails: details,
       payload: jsonEncode({'route': 'home'}),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
@@ -401,7 +401,7 @@ class NotificationService {
   }
 
   Future<void> cancelScheduledNotification(int id) async {
-    await _localNotifications.cancel(id);
+    await _localNotifications.cancel(id: id);
   }
 
   Future<void> cancelAllScheduledNotifications() async {
