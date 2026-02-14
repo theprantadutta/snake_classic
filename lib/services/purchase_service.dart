@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import '../utils/logger.dart';
 import 'backend_service.dart';
 
@@ -331,7 +333,13 @@ class PurchaseService {
       } else if (purchaseDetails.verificationData.source == 'google_play') {
         platform = 'android';
         receiptData = purchaseDetails.verificationData.serverVerificationData;
-        purchaseToken = purchaseDetails.purchaseID;
+        // Extract the real purchase token from GooglePlayPurchaseDetails
+        if (Platform.isAndroid && purchaseDetails is GooglePlayPurchaseDetails) {
+          purchaseToken =
+              purchaseDetails.billingClientPurchase.purchaseToken;
+        } else {
+          purchaseToken = purchaseDetails.purchaseID;
+        }
       }
 
       // Get current user ID

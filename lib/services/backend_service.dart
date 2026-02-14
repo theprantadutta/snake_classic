@@ -330,17 +330,13 @@ class BackendService {
             Uri.parse('$_baseUrl/purchases/verify'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
-              'receipt': {
-                'platform': platform,
-                'receipt_data': receiptData,
+              'purchase_data': {
                 'product_id': productId,
                 'transaction_id': transactionId,
+                'receipt_data': receiptData,
                 'purchase_token': purchaseToken,
-                'user_id': userId,
-                'purchase_time': DateTime.now().toIso8601String(),
               },
-              'user_id': userId,
-              'device_info': deviceInfo ?? {},
+              'platform': platform,
             }),
           )
           .timeout(_timeout);

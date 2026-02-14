@@ -76,3 +76,34 @@ assets/
 - Responsive touch controls (<50ms latency)
 - Fast game state updates
 - Efficient memory usage
+
+## In-App Purchase Setup (RTDN)
+
+### Google Play RTDN Setup
+1. Create a Google Cloud service account with Android Publisher API access
+2. Download the service account JSON and place it at `snake-classic-backend/google-play-service-account.json`
+3. In Google Cloud Console:
+   - Enable Cloud Pub/Sub API
+   - Create a Pub/Sub topic (e.g., `snake-classic-rtdn`)
+   - Create a push subscription pointing to: `https://snakeclassic.pranta.dev/api/v1/purchases/webhook/google-play?token=YOUR_TOKEN`
+4. In Google Play Console:
+   - Go to Monetization setup > Real-time developer notifications
+   - Set the topic to the Pub/Sub topic created above
+5. Set environment variables in backend `.env`:
+   - `GOOGLE_PLAY_SERVICE_ACCOUNT_PATH`
+   - `GOOGLE_PLAY_PACKAGE_NAME=com.pranta.snakeclassic`
+   - `GOOGLE_PLAY_PUBSUB_VERIFICATION_TOKEN`
+
+### Apple App Store Server Notifications V2
+1. In App Store Connect:
+   - Go to App > App Information > App Store Server Notifications
+   - Set Production URL: `https://snakeclassic.pranta.dev/api/v1/purchases/webhook/app-store`
+   - Set Sandbox URL: same but with sandbox backend
+2. Generate App Store Connect API key and set in backend `.env`:
+   - `APPLE_KEY_ID`, `APPLE_ISSUER_ID`, `APPLE_PRIVATE_KEY`, `APPLE_BUNDLE_ID`
+
+### Testing
+- Use Google Play Console test tracks for subscription testing
+- Use sandbox Apple ID for iOS testing
+- Monitor Hangfire dashboard at `/hangfire` for background job status
+- Check subscription events via `GET /api/v1/subscription/history`
