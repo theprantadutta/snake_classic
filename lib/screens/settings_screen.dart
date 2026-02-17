@@ -1802,30 +1802,30 @@ extension _SettingsPremium on _SettingsScreenState {
             Text('Snake Classic Pro', style: TextStyle(color: Colors.white)),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Upgrade to Pro and unlock:',
               style: TextStyle(color: Colors.white, fontSize: 16),
             ),
-            SizedBox(height: 16),
-            Text('✓ All premium themes', style: TextStyle(color: Colors.white)),
-            Text(
+            const SizedBox(height: 16),
+            const Text('✓ All premium themes', style: TextStyle(color: Colors.white)),
+            const Text(
               '✓ Exclusive snake skins',
               style: TextStyle(color: Colors.white),
             ),
-            Text('✓ Premium power-ups', style: TextStyle(color: Colors.white)),
-            Text(
+            const Text('✓ Premium power-ups', style: TextStyle(color: Colors.white)),
+            const Text(
               '✓ Battle Pass (Coming Soon)',
               style: TextStyle(color: Colors.white),
             ),
-            Text('✓ Priority support', style: TextStyle(color: Colors.white)),
-            SizedBox(height: 16),
+            const Text('✓ Priority support', style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 16),
             Text(
-              '\$4.99/month',
-              style: TextStyle(
+              '${PurchaseService().getStorePriceOrDefault(ProductIds.snakeClassicProMonthly, 4.99)}/month',
+              style: const TextStyle(
                 color: Colors.amber,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,

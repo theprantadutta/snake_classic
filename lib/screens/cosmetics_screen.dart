@@ -298,7 +298,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
               description: skin.description,
               icon: skin.icon,
               colors: skin.colors,
-              price: skin.price,
+              price: skin.isPremium
+                  ? PurchaseService().getStorePriceOrDefault(
+                      ProductIds.skinStoreId(skin.id), skin.price)
+                  : '',
               isUnlocked: isUnlocked,
               isSelected: isSelected,
               isPremium: skin.isPremium,
@@ -349,7 +352,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
               description: trail.description,
               icon: trail.icon,
               colors: trail.colors,
-              price: trail.price,
+              price: trail.isPremium
+                  ? PurchaseService().getStorePriceOrDefault(
+                      ProductIds.withPrefix(trail.id), trail.price)
+                  : '',
               isUnlocked: isUnlocked,
               isSelected: isSelected,
               isPremium: trail.isPremium,
@@ -527,7 +533,10 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                           const SizedBox(height: 4),
                         ],
                         Text(
-                          '\$${bundle.bundlePrice.toStringAsFixed(2)}',
+                          PurchaseService().getStorePriceOrDefault(
+                            ProductIds.withPrefix(bundle.id),
+                            bundle.bundlePrice,
+                          ),
                           style: TextStyle(
                             color: theme.accentColor,
                             fontWeight: FontWeight.bold,
@@ -572,7 +581,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     required String description,
     required String icon,
     required List<Color> colors,
-    required double price,
+    required String price,
     required bool isUnlocked,
     required bool isSelected,
     required bool isPremium,
@@ -708,8 +717,8 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                             ? 'SELECTED'
                             : isUnlocked
                             ? 'OWNED'
-                            : price > 0
-                            ? '\$${price.toStringAsFixed(2)}'
+                            : price.isNotEmpty
+                            ? price
                             : 'FREE',
                         style: const TextStyle(
                           color: Colors.white,
@@ -764,8 +773,8 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
           children: [
             Text(
               skin != null
-                  ? 'Unlock ${skin.displayName} for \$${skin.price.toStringAsFixed(2)}?'
-                  : 'Unlock ${trail!.displayName} for \$${trail.price.toStringAsFixed(2)}?',
+                  ? 'Unlock ${skin.displayName} for ${PurchaseService().getStorePriceOrDefault(ProductIds.skinStoreId(skin.id), skin.price)}?'
+                  : 'Unlock ${trail!.displayName} for ${PurchaseService().getStorePriceOrDefault(ProductIds.withPrefix(trail.id), trail.price)}?',
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
             ),
             const SizedBox(height: 12),
@@ -948,7 +957,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Price: \$${bundle.bundlePrice.toStringAsFixed(2)}',
+              'Price: ${PurchaseService().getStorePriceOrDefault(ProductIds.withPrefix(bundle.id), bundle.bundlePrice)}',
               style: TextStyle(
                 color: theme.primaryColor,
                 fontWeight: FontWeight.bold,

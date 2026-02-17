@@ -7,6 +7,7 @@ import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -542,8 +543,59 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
+  void _purchaseCoinPack(CoinPurchaseOption option, GameTheme theme) {
+    final price = PurchaseService().getStorePriceOrDefault(
+        ProductIds.withPrefix(option.id), option.price);
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Buy ${option.name}'),
+        content: Text('Purchase ${option.displayCoins} for $price?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final navigator = Navigator.of(dialogContext);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+
+              try {
+                await PurchaseService()
+                    .purchaseProduct(ProductIds.withPrefix(option.id));
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Initiating purchase for ${option.name}...'),
+                      backgroundColor: theme.accentColor,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('Product not available. Please try again later.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text('Buy - $price'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCoinPackCard(CoinPurchaseOption option, GameTheme theme) {
-    return Container(
+    return GestureDetector(
+      onTap: () => _purchaseCoinPack(option, theme),
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
@@ -642,7 +694,8 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           Text(
-            '\$${option.price.toStringAsFixed(2)}',
+            PurchaseService().getStorePriceOrDefault(
+                ProductIds.withPrefix(option.id), option.price),
             style: TextStyle(
               color: Colors.amber,
               fontSize: 20,
@@ -651,6 +704,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -821,25 +875,25 @@ class _StoreScreenState extends State<StoreScreen>
         'Speed Boost',
         'Enhanced speed with trail effects',
         Icons.speed,
-        '50 coins',
+        50,
       ),
       _PowerUpItem(
         'Invincibility',
         'Temporary invincibility shield',
         Icons.shield,
-        '75 coins',
+        75,
       ),
       _PowerUpItem(
         'Ghost Mode',
         'Phase through walls and yourself',
         Icons.visibility_off,
-        '100 coins',
+        100,
       ),
       _PowerUpItem(
         'Teleport',
         'Instantly move to a safe location',
         Icons.my_location,
-        '80 coins',
+        80,
       ),
     ];
 
@@ -887,8 +941,62 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
+  void _purchasePowerUp(_PowerUpItem powerUp, GameTheme theme) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Buy ${powerUp.name}'),
+        content: Text(
+            'Purchase ${powerUp.name} for ${powerUp.coinCost} coins?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final navigator = Navigator.of(dialogContext);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+
+              final success = await context.read<CoinsCubit>().spendCoins(
+                    powerUp.coinCost,
+                    CoinSpendingCategory.powerUps,
+                    itemName: powerUp.name,
+                  );
+
+              if (success) {
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('${powerUp.name} purchased successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } else {
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Insufficient coins!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text('Buy - ${powerUp.coinCost} coins'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPowerUpCard(_PowerUpItem powerUp, GameTheme theme) {
-    return Container(
+    return GestureDetector(
+      onTap: () => _purchasePowerUp(powerUp, theme),
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
@@ -935,7 +1043,7 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           Text(
-            powerUp.price,
+            '${powerUp.coinCost} coins',
             style: TextStyle(
               color: Colors.amber,
               fontSize: 16,
@@ -944,6 +1052,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -1255,14 +1364,22 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 16),
-          ...gameModes.map((mode) => _buildGameModeCard(mode, theme)),
+          ...gameModes.map(
+              (mode) => _buildGameModeCard(mode, theme, premiumState)),
         ],
       ),
     );
   }
 
-  Widget _buildGameModeCard(_GameModeItem mode, GameTheme theme) {
-    return Container(
+  Widget _buildGameModeCard(
+      _GameModeItem mode, GameTheme theme, PremiumState premiumState) {
+    return GestureDetector(
+      onTap: () {
+        if (mode.isPremium && !premiumState.hasPremium) {
+          context.push(AppRoutes.premiumBenefits);
+        }
+      },
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
@@ -1343,10 +1460,13 @@ class _StoreScreenState extends State<StoreScreen>
               ],
             ),
           ),
-          if (mode.isPremium)
-            Icon(Icons.lock, color: Colors.purple.shade400, size: 20),
+          if (mode.isPremium && !premiumState.hasPremium)
+            Icon(Icons.lock, color: Colors.purple.shade400, size: 20)
+          else if (mode.isPremium)
+            Icon(Icons.check_circle, color: Colors.green, size: 20),
         ],
       ),
+    ),
     );
   }
 
@@ -1382,7 +1502,8 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 16),
-          ...boards.map((board) => _buildBoardCard(board, theme)),
+          ...boards.map(
+              (board) => _buildBoardCard(board, theme, premiumState)),
         ],
       ),
     );
@@ -1398,8 +1519,15 @@ class _StoreScreenState extends State<StoreScreen>
     return Icons.monitor;
   }
 
-  Widget _buildBoardCard(_BoardItem board, GameTheme theme) {
-    return Container(
+  Widget _buildBoardCard(
+      _BoardItem board, GameTheme theme, PremiumState premiumState) {
+    return GestureDetector(
+      onTap: () {
+        if (!board.isFree && !premiumState.hasPremium) {
+          context.push(AppRoutes.premiumBenefits);
+        }
+      },
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
@@ -1478,10 +1606,13 @@ class _StoreScreenState extends State<StoreScreen>
               ],
             ),
           ),
-          if (!board.isFree)
-            Icon(Icons.lock, color: Colors.purple.shade400, size: 20),
+          if (!board.isFree && !premiumState.hasPremium)
+            Icon(Icons.lock, color: Colors.purple.shade400, size: 20)
+          else if (!board.isFree)
+            Icon(Icons.check_circle, color: Colors.green, size: 20),
         ],
       ),
+    ),
     );
   }
 }
@@ -1490,9 +1621,9 @@ class _PowerUpItem {
   final String name;
   final String description;
   final IconData icon;
-  final String price;
+  final int coinCost;
 
-  _PowerUpItem(this.name, this.description, this.icon, this.price);
+  _PowerUpItem(this.name, this.description, this.icon, this.coinCost);
 }
 
 class _GameModeItem {

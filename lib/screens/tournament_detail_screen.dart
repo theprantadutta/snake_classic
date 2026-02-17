@@ -1265,7 +1265,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                   purchaseService.buyProduct(product);
                 }
               },
-              child: Text('Buy $tierName Entry'),
+              child: Text('Buy $tierName Entry - ${PurchaseService().getStorePrice(productId) ?? ''}'),
             ),
           ],
         );

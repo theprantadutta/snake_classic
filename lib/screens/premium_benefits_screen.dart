@@ -291,7 +291,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       children: [
         _buildPricingCard(
           title: 'Monthly Plan',
-          price: '\$4.99',
+          price: PurchaseService().getStorePriceOrDefault(
+              ProductIds.snakeClassicProMonthly, 4.99),
           period: '/month',
           badge: '3-day free trial',
           accentColor: Colors.blue,
@@ -301,7 +302,11 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         const SizedBox(height: 12),
         _buildPricingCard(
           title: 'Yearly Plan',
-          price: _isYearly ? '\$39.99' : '\$4.99',
+          price: _isYearly
+              ? PurchaseService().getStorePriceOrDefault(
+                  ProductIds.snakeClassicProYearly, 39.99)
+              : PurchaseService().getStorePriceOrDefault(
+                  ProductIds.snakeClassicProMonthly, 4.99),
           period: _isYearly ? '/year' : '/month',
           badge: _isYearly ? 'Save 33% - Best Value!' : '3-day free trial',
           accentColor: Colors.green,

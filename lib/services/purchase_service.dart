@@ -563,6 +563,18 @@ class PurchaseService {
     }
   }
 
+  /// Get the store-formatted price for a product (e.g. "$1.99").
+  /// Returns null if the product hasn't been loaded from the store.
+  String? getStorePrice(String productId) {
+    return getProduct(productId)?.price;
+  }
+
+  /// Get the store price, falling back to a formatted default.
+  String getStorePriceOrDefault(String productId, double fallbackPrice) {
+    return getProduct(productId)?.price ??
+        '\$${fallbackPrice.toStringAsFixed(2)}';
+  }
+
   Future<bool> purchaseProduct(String productId) async {
     final product = getProduct(productId);
     if (product == null) {

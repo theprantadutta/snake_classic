@@ -411,17 +411,25 @@ class ThemeSelectorScreen extends StatelessWidget {
   }
 
   String _getThemePrice(GameTheme theme) {
+    final purchaseService = PurchaseService();
+    String? productId;
     switch (theme) {
       case GameTheme.crystal:
+        productId = ProductIds.crystalTheme;
       case GameTheme.cyberpunk:
+        productId = ProductIds.cyberpunkTheme;
       case GameTheme.space:
+        productId = ProductIds.spaceTheme;
       case GameTheme.ocean:
+        productId = ProductIds.oceanTheme;
       case GameTheme.desert:
+        productId = ProductIds.desertTheme;
       case GameTheme.forest:
-        return '\$1.99';
+        productId = ProductIds.forestTheme;
       default:
         return 'FREE';
     }
+    return purchaseService.getStorePrice(productId) ?? '\$1.99';
   }
 
   void _showPremiumThemeDialog(
@@ -634,7 +642,8 @@ class ThemeSelectorScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '\$7.99',
+                                PurchaseService().getStorePriceOrDefault(
+                                    ProductIds.themesBundle, 7.99),
                                 style: TextStyle(
                                   color: Colors.green,
                                   fontWeight: FontWeight.bold,
@@ -657,56 +666,62 @@ class ThemeSelectorScreen extends StatelessWidget {
                     const SizedBox(height: 12),
 
                     // Pro subscription option
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _handleThemePurchase(context, theme, 'subscription');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.diamond,
-                                    color: Colors.black,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Snake Classic Pro',
-                                    style: TextStyle(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.diamond,
                                       color: Colors.black,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                      size: 16,
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                'All themes + premium features',
-                                style: TextStyle(
-                                  color: Colors.black.withValues(alpha: 0.8),
-                                  fontSize: 12,
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Snake Classic Pro',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '\$4.99/mo',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                                Text(
+                                  'All themes + premium features',
+                                  style: TextStyle(
+                                    color: Colors.black.withValues(alpha: 0.8),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            Text(
+                              '${PurchaseService().getStorePriceOrDefault(ProductIds.snakeClassicProMonthly, 4.99)}/mo',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -742,7 +757,19 @@ class ThemeSelectorScreen extends StatelessWidget {
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
               ),
-              child: Text('Buy Bundle - \$7.99'),
+              child: Text('Buy Bundle - ${PurchaseService().getStorePriceOrDefault(ProductIds.themesBundle, 7.99)}'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context.pop();
+                _handleThemePurchase(context, theme, 'subscription');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black,
+              ),
+              child: Text(
+                  'Go Pro - ${PurchaseService().getStorePriceOrDefault(ProductIds.snakeClassicProMonthly, 4.99)}/mo'),
             ),
           ],
         );
@@ -785,6 +812,9 @@ class ThemeSelectorScreen extends StatelessWidget {
         break;
       case 'bundle':
         productId = ProductIds.themesBundle;
+        break;
+      case 'subscription':
+        productId = ProductIds.snakeClassicProMonthly;
         break;
       default:
         return;
