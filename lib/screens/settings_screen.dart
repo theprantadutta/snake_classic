@@ -1818,7 +1818,7 @@ extension _SettingsPremium on _SettingsScreenState {
             ),
             Text('✓ Premium power-ups', style: TextStyle(color: Colors.white)),
             Text(
-              '✓ Battle Pass included',
+              '✓ Battle Pass (Coming Soon)',
               style: TextStyle(color: Colors.white),
             ),
             Text('✓ Priority support', style: TextStyle(color: Colors.white)),
@@ -2024,28 +2024,31 @@ extension _SettingsPremium on _SettingsScreenState {
   }
 
   String _getTypeFromProductId(String productId) {
-    if (productId.contains('pro_monthly') || productId.contains('pro_yearly')) {
+    // Strip store prefix before checking
+    final bare = ProductIds.stripPrefix(productId);
+    if (bare.contains('pro_monthly') || bare.contains('pro_yearly')) {
       return 'subscription';
-    } else if (productId.contains('theme')) {
+    } else if (bare.contains('theme')) {
       return 'theme';
-    } else if (productId.contains('skin')) {
+    } else if (bare.contains('skin')) {
       return 'skin';
-    } else if (productId.contains('trail')) {
+    } else if (bare.contains('trail')) {
       return 'trail';
-    } else if (productId.contains('bundle')) {
+    } else if (bare.contains('bundle') || bare.contains('pack') || bare.contains('collection')) {
       return 'bundle';
-    } else if (productId.contains('battle_pass')) {
+    } else if (bare.contains('battle_pass')) {
       return 'battlepass';
-    } else if (productId.contains('tournament')) {
+    } else if (bare.contains('tournament') || bare.contains('championship') || bare.contains('vip')) {
       return 'tournament';
     }
     return 'unknown';
   }
 
   String _formatProductName(String productId) {
-    // Convert product ID to human-readable name
-    return productId
-        .replaceAll('snake_classic_', '')
+    // Strip store prefix before formatting
+    final bare = ProductIds.stripPrefix(productId);
+    return bare
+        .replaceAll('skin_', '')
         .replaceAll('_', ' ')
         .split(' ')
         .map(

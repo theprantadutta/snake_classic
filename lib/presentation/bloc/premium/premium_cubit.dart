@@ -181,9 +181,12 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> _handlePurchaseCompleted(String productId) async {
     AppLogger.info('Handling purchase completion: $productId');
 
+    // Strip store prefix — all comparisons below use internal IDs
+    final internalId = ProductIds.stripPrefix(productId);
+
     // Subscriptions
-    if (productId.contains('pro_monthly') ||
-        productId.contains('pro_yearly')) {
+    if (internalId.contains('pro_monthly') ||
+        internalId.contains('pro_yearly')) {
       _handlePremiumPurchased();
       return;
     }
@@ -197,13 +200,13 @@ class PremiumCubit extends Cubit<PremiumState> {
       'desert_theme': GameTheme.desert,
       'forest_theme': GameTheme.forest,
     };
-    if (themeProductMap.containsKey(productId)) {
-      await unlockTheme(themeProductMap[productId]!);
+    if (themeProductMap.containsKey(internalId)) {
+      await unlockTheme(themeProductMap[internalId]!);
       return;
     }
 
     // Theme bundle — unlock all premium themes
-    if (productId == 'premium_themes_bundle') {
+    if (internalId == 'premium_themes_bundle') {
       for (final theme in PremiumContent.premiumThemes) {
         await unlockTheme(theme);
       }
@@ -211,18 +214,21 @@ class PremiumCubit extends Cubit<PremiumState> {
     }
 
     // Trail effects (prefixed with 'trail_')
-    if (productId.startsWith('trail_')) {
-      await unlockTrail(productId);
+    if (internalId.startsWith('trail_')) {
+      await unlockTrail(internalId);
       return;
     }
 
-    // Snake skins (individual skin IDs without prefix)
-    const skinIds = {
+    // Snake skins (store IDs use skin_ prefix, strip it for internal ID)
+    const skinNames = {
       'golden', 'rainbow', 'galaxy', 'dragon', 'electric',
       'fire', 'ice', 'shadow', 'neon', 'crystal', 'cosmic',
     };
-    if (skinIds.contains(productId)) {
-      await unlockSkin(productId);
+    final skinInternalId = internalId.startsWith('skin_')
+        ? internalId.substring('skin_'.length)
+        : internalId;
+    if (skinNames.contains(skinInternalId)) {
+      await unlockSkin(skinInternalId);
       return;
     }
 
@@ -231,18 +237,18 @@ class PremiumCubit extends Cubit<PremiumState> {
       'starter_pack', 'elemental_pack', 'cosmic_collection',
       'ultimate_collection',
     };
-    if (bundleIds.contains(productId)) {
-      await unlockBundle(productId);
+    if (bundleIds.contains(internalId)) {
+      await unlockBundle(internalId);
       return;
     }
 
     // Tournament entries
-    if (productId.contains('tournament')) {
-      if (productId.contains('bronze')) {
+    if (internalId.contains('tournament')) {
+      if (internalId.contains('bronze')) {
         await addTournamentEntry('bronze');
-      } else if (productId.contains('silver')) {
+      } else if (internalId.contains('silver')) {
         await addTournamentEntry('silver');
-      } else if (productId.contains('gold')) {
+      } else if (internalId.contains('gold')) {
         await addTournamentEntry('gold');
       }
       return;
@@ -262,7 +268,7 @@ class PremiumCubit extends Cubit<PremiumState> {
     try {
       // Purchase the monthly subscription product
       final result = await _purchaseService.purchaseProduct(
-        'snake_classic_pro_monthly',
+        ProductIds.snakeClassicProMonthly,
       );
       if (result) {
         _handlePremiumPurchased();

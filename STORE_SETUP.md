@@ -9,101 +9,129 @@ Complete guide for setting up in-app purchases on Google Play Store and Apple Ap
 | Android (Google Play) | `com.pranta.snakeclassic` |
 | iOS (App Store) | `com.pranta.snakeclassic` |
 
+**Product ID Prefix:** All product IDs use the `com.pranta.snakeclassic.` prefix.
+
 ---
 
 ## All Products
 
-Snake Classic has **59 purchasable products** across 8 categories.
+Snake Classic has **44 active store products** across 7 categories.
 
-### Subscriptions (Auto-Renewable)
+### Subscriptions (Auto-Renewable) — 2 products
 
 | Product ID | Name | Price | Billing |
 |-----------|------|-------|---------|
-| `snake_classic_pro_monthly` | Pro Monthly | $4.99/mo | Monthly auto-renew |
-| `snake_classic_pro_yearly` | Pro Yearly | $49.99/yr | Yearly auto-renew |
-| `battle_pass_season` | Battle Pass Season | $9.99 | Seasonal (non-renewing) |
+| `com.pranta.snakeclassic.pro_monthly` | Pro Monthly | $4.99/mo | Monthly auto-renew |
+| `com.pranta.snakeclassic.pro_yearly` | Pro Yearly | $49.99/yr | Yearly auto-renew |
 
-### Premium Themes (Non-Consumable)
+### Battle Pass — Coming Soon
+
+> **Do not create in store yet.** Battle Pass will be enabled in a future release.
+
+| Product ID | Name | Price | Status |
+|-----------|------|-------|--------|
+| `com.pranta.snakeclassic.battle_pass_season` | Battle Pass Season | $9.99 | **Coming Soon** |
+
+### Premium Themes (Non-Consumable) — 7 products
 
 | Product ID | Name | Price |
 |-----------|------|-------|
-| `crystal_theme` | Crystal Theme | $1.99 |
-| `cyberpunk_theme` | Cyberpunk Theme | $1.99 |
-| `space_theme` | Space Theme | $1.99 |
-| `ocean_theme` | Ocean Theme | $1.99 |
-| `desert_theme` | Desert Theme | $1.99 |
-| `forest_theme` | Forest Theme | $1.99 |
-| `premium_themes_bundle` | All Themes Bundle | $7.99 |
+| `com.pranta.snakeclassic.crystal_theme` | Crystal Theme | $1.99 |
+| `com.pranta.snakeclassic.cyberpunk_theme` | Cyberpunk Theme | $1.99 |
+| `com.pranta.snakeclassic.space_theme` | Space Theme | $1.99 |
+| `com.pranta.snakeclassic.ocean_theme` | Ocean Theme | $1.99 |
+| `com.pranta.snakeclassic.desert_theme` | Desert Theme | $1.99 |
+| `com.pranta.snakeclassic.forest_theme` | Forest Theme | $1.99 |
+| `com.pranta.snakeclassic.premium_themes_bundle` | All Themes Bundle | $7.99 |
 
 > **Note:** Pro subscribers get access to all premium themes as part of their subscription.
 
-### Snake Coins (Consumable)
+### Snake Coins (Consumable) — 4 products
 
 | Product ID | Name | Coins | Bonus | Total | Price |
 |-----------|------|-------|-------|-------|-------|
-| `coin_pack_small` | Starter Pack | 100 | — | 100 | $0.99 |
-| `coin_pack_medium` | Value Pack | 500 | +50 | 550 | $4.99 |
-| `coin_pack_large` | Premium Pack | 1,200 | +200 | 1,400 | $9.99 |
-| `coin_pack_mega` | Ultimate Pack | 2,500 | +500 | 3,000 | $19.99 |
+| `com.pranta.snakeclassic.coin_pack_small` | Starter Pack | 100 | — | 100 | $0.99 |
+| `com.pranta.snakeclassic.coin_pack_medium` | Value Pack | 500 | +50 | 550 | $4.99 |
+| `com.pranta.snakeclassic.coin_pack_large` | Premium Pack | 1,200 | +200 | 1,400 | $9.99 |
+| `com.pranta.snakeclassic.coin_pack_mega` | Ultimate Pack | 2,500 | +500 | 3,000 | $19.99 |
 
-### Snake Skins (Non-Consumable)
+### Snake Skins (Non-Consumable) — 11 products
 
-| Product ID | Name | Price |
-|-----------|------|-------|
-| `golden` | Golden Snake | $1.99 |
-| `fire` | Fire Snake | $1.99 |
-| `ice` | Ice Snake | $1.99 |
-| `electric` | Electric Snake | $1.99 |
-| `rainbow` | Rainbow Snake | $2.99 |
-| `neon` | Neon Snake | $2.99 |
-| `shadow` | Shadow Snake | $2.99 |
-| `galaxy` | Galaxy Snake | $3.99 |
-| `crystal` | Crystal Snake | $3.99 |
-| `cosmic` | Cosmic Snake | $3.99 |
-| `dragon` | Dragon Snake | $4.99 |
-
-### Trail Effects (Non-Consumable)
+Skin IDs use the `skin_` category prefix.
 
 | Product ID | Name | Price |
 |-----------|------|-------|
-| `trail_particle` | Particle Trail | $0.99 |
-| `trail_glow` | Glow Trail | $0.99 |
-| `trail_rainbow` | Rainbow Trail | $1.99 |
-| `trail_neon` | Neon Trail | $1.99 |
-| `trail_shadow` | Shadow Trail | $1.99 |
-| `trail_fire` | Fire Trail | $2.99 |
-| `trail_electric` | Electric Trail | $2.99 |
-| `trail_star` | Star Trail | $2.99 |
-| `trail_cosmic` | Cosmic Trail | $3.99 |
-| `trail_crystal` | Crystal Trail | $3.99 |
-| `trail_dragon` | Dragon Trail | $3.99 |
+| `com.pranta.snakeclassic.skin_golden` | Golden Snake | $1.99 |
+| `com.pranta.snakeclassic.skin_fire` | Fire Snake | $1.99 |
+| `com.pranta.snakeclassic.skin_ice` | Ice Snake | $1.99 |
+| `com.pranta.snakeclassic.skin_electric` | Electric Snake | $1.99 |
+| `com.pranta.snakeclassic.skin_rainbow` | Rainbow Snake | $2.99 |
+| `com.pranta.snakeclassic.skin_neon` | Neon Snake | $2.99 |
+| `com.pranta.snakeclassic.skin_shadow` | Shadow Snake | $2.99 |
+| `com.pranta.snakeclassic.skin_galaxy` | Galaxy Snake | $3.99 |
+| `com.pranta.snakeclassic.skin_crystal` | Crystal Snake | $3.99 |
+| `com.pranta.snakeclassic.skin_cosmic` | Cosmic Snake | $3.99 |
+| `com.pranta.snakeclassic.skin_dragon` | Dragon Snake | $4.99 |
 
-### Cosmetic Bundles (Non-Consumable)
+### Trail Effects (Non-Consumable) — 11 products
+
+| Product ID | Name | Price |
+|-----------|------|-------|
+| `com.pranta.snakeclassic.trail_particle` | Particle Trail | $0.99 |
+| `com.pranta.snakeclassic.trail_glow` | Glow Trail | $0.99 |
+| `com.pranta.snakeclassic.trail_rainbow` | Rainbow Trail | $1.99 |
+| `com.pranta.snakeclassic.trail_neon` | Neon Trail | $1.99 |
+| `com.pranta.snakeclassic.trail_shadow` | Shadow Trail | $1.99 |
+| `com.pranta.snakeclassic.trail_fire` | Fire Trail | $2.99 |
+| `com.pranta.snakeclassic.trail_electric` | Electric Trail | $2.99 |
+| `com.pranta.snakeclassic.trail_star` | Star Trail | $2.99 |
+| `com.pranta.snakeclassic.trail_cosmic` | Cosmic Trail | $3.99 |
+| `com.pranta.snakeclassic.trail_crystal` | Crystal Trail | $3.99 |
+| `com.pranta.snakeclassic.trail_dragon` | Dragon Trail | $3.99 |
+
+### Cosmetic Bundles (Non-Consumable) — 4 products
 
 | Product ID | Name | Contents | Original | Price | Savings |
 |-----------|------|----------|----------|-------|---------|
-| `starter_pack` | Starter Pack | Golden + Fire skins, Particle + Glow trails | $5.96 | $3.99 | 33% |
-| `elemental_pack` | Elemental Pack | Fire + Ice + Electric skins, Fire + Electric trails | $11.94 | $7.99 | 33% |
-| `cosmic_collection` | Cosmic Collection | Galaxy + Cosmic + Crystal skins, Cosmic + Star + Crystal trails | $23.94 | $14.99 | 37% |
-| `ultimate_collection` | Ultimate Collection | All 11 skins + All 11 trails | $71.89 | $29.99 | 58% |
+| `com.pranta.snakeclassic.starter_pack` | Starter Pack | Golden + Fire skins, Particle + Glow trails | $5.96 | $3.99 | 33% |
+| `com.pranta.snakeclassic.elemental_pack` | Elemental Pack | Fire + Ice + Electric skins, Fire + Electric trails | $11.94 | $7.99 | 33% |
+| `com.pranta.snakeclassic.cosmic_collection` | Cosmic Collection | Galaxy + Cosmic + Crystal skins, Cosmic + Star + Crystal trails | $23.94 | $14.99 | 37% |
+| `com.pranta.snakeclassic.ultimate_collection` | Ultimate Collection | All 11 skins + All 11 trails | $71.89 | $29.99 | 58% |
 
-### Power-ups (Non-Consumable)
-
-| Product ID | Name | Contents | Price |
-|-----------|------|----------|-------|
-| `mega_powerups_pack` | Mega Power Pack | Mega Speed, Mega Invincibility, Mega Score, Mega Slow Motion | $4.99 |
-| `exclusive_powerups_pack` | Exclusive Power Pack | Teleport, Size Reducer, Score Shield, Ghost Mode, + more | $7.99 |
-| `premium_powerups_bundle` | Premium Powerups Bundle | All 14 premium power-ups | $12.99 |
-
-### Tournament Entries (Consumable)
+### Tournament Entries (Consumable) — 5 products
 
 | Product ID | Name | Price |
 |-----------|------|-------|
-| `tournament_bronze` | Bronze Tournament Entry | $0.99 |
-| `tournament_silver` | Silver Tournament Entry | $1.99 |
-| `tournament_gold` | Gold Tournament Entry | $4.99 |
-| `championship_entry` | Championship Entry | $9.99 |
-| `tournament_vip_entry` | VIP Tournament Entry | $14.99 |
+| `com.pranta.snakeclassic.tournament_bronze` | Bronze Tournament Entry | $0.99 |
+| `com.pranta.snakeclassic.tournament_silver` | Silver Tournament Entry | $1.99 |
+| `com.pranta.snakeclassic.tournament_gold` | Gold Tournament Entry | $4.99 |
+| `com.pranta.snakeclassic.championship_entry` | Championship Entry | $9.99 |
+| `com.pranta.snakeclassic.tournament_vip_entry` | VIP Tournament Entry | $14.99 |
+
+### Removed Products
+
+The following products have been removed from IAP (power-ups are now coin-purchased only):
+
+| Old Product ID | Name | Reason |
+|---------------|------|--------|
+| ~~`mega_powerups_pack`~~ | Mega Power Pack | Coin-purchased only |
+| ~~`exclusive_powerups_pack`~~ | Exclusive Power Pack | Coin-purchased only |
+| ~~`premium_powerups_bundle`~~ | Premium Powerups Bundle | Coin-purchased only |
+
+---
+
+## Product Count Summary
+
+| Category | Count |
+|----------|-------|
+| Subscriptions | 2 |
+| Themes | 7 |
+| Coins | 4 |
+| Skins | 11 |
+| Trails | 11 |
+| Bundles | 4 |
+| Tournaments | 5 |
+| **Total active store products** | **44** |
 
 ---
 
@@ -116,11 +144,10 @@ Snake Classic has **59 purchasable products** across 8 categories.
 | Premium themes (Crystal, Cyberpunk, Space, Ocean, Desert, Forest) | Purchase individually | All included |
 | Snake skins | Purchase individually | Purchase individually |
 | Trail effects | Purchase individually | Purchase individually |
-| Premium power-ups | Purchase individually | Purchase individually |
 | Premium board sizes | No | Yes |
 | Coin earning multiplier | 1x | 2x |
 | Ad-free experience | No | Yes |
-| Battle Pass premium track | No | With Battle Pass purchase |
+| Battle Pass premium track | Coming Soon | Coming Soon |
 
 ---
 
@@ -131,7 +158,7 @@ Snake Classic has **59 purchasable products** across 8 categories.
 Go to **Google Play Console > Your App > Monetize > Products > Subscriptions**.
 
 #### Pro Monthly
-- **Product ID:** `snake_classic_pro_monthly`
+- **Product ID:** `com.pranta.snakeclassic.pro_monthly`
 - **Name:** Snake Classic Pro (Monthly)
 - **Description:** Unlock all premium themes, ad-free gameplay, 2x coin earning, and premium board sizes.
 - **Default price:** $4.99
@@ -142,7 +169,7 @@ Go to **Google Play Console > Your App > Monetize > Products > Subscriptions**.
 - **Resubscribe:** Allow
 
 #### Pro Yearly
-- **Product ID:** `snake_classic_pro_yearly`
+- **Product ID:** `com.pranta.snakeclassic.pro_yearly`
 - **Name:** Snake Classic Pro (Yearly)
 - **Description:** Everything in Pro Monthly — save 17% with yearly billing.
 - **Default price:** $49.99
@@ -151,14 +178,6 @@ Go to **Google Play Console > Your App > Monetize > Products > Subscriptions**.
 - **Account hold:** 30 days
 - **Free trial:** 7 days (optional)
 - **Resubscribe:** Allow
-
-#### Battle Pass Season
-- **Product ID:** `battle_pass_season`
-- **Name:** Battle Pass Season
-- **Description:** Unlock the premium Battle Pass track with exclusive rewards, XP boosts, and seasonal cosmetics.
-- **Default price:** $9.99
-- **Billing period:** Seasonal (use a fixed duration, e.g. 90 days)
-- **Grace period:** 3 days
 
 ### 2. Create In-App Products (One-Time)
 
@@ -170,20 +189,20 @@ Create each product from the tables above. For each:
 - Set the price and localized name/description
 
 **Consumable products** (coins + tournament entries):
-`coin_pack_small`, `coin_pack_medium`, `coin_pack_large`, `coin_pack_mega`,
-`tournament_bronze`, `tournament_silver`, `tournament_gold`, `championship_entry`, `tournament_vip_entry`
+`com.pranta.snakeclassic.coin_pack_small`, `com.pranta.snakeclassic.coin_pack_medium`, `com.pranta.snakeclassic.coin_pack_large`, `com.pranta.snakeclassic.coin_pack_mega`,
+`com.pranta.snakeclassic.tournament_bronze`, `com.pranta.snakeclassic.tournament_silver`, `com.pranta.snakeclassic.tournament_gold`, `com.pranta.snakeclassic.championship_entry`, `com.pranta.snakeclassic.tournament_vip_entry`
 
 **Non-consumable products** (everything else):
-All themes, skins, trails, bundles, and power-up packs.
+All themes, skins, trails, and bundles.
 
 ### 3. Grace Period Settings
 
 For subscriptions, configure grace periods in **Google Play Console > Monetize > Subscriptions > [Product] > Grace period**:
 
-| Setting | Pro Monthly | Pro Yearly | Battle Pass |
-|---------|------------|------------|-------------|
-| Grace period | 7 days | 14 days | 3 days |
-| Account hold | 30 days | 30 days | — |
+| Setting | Pro Monthly | Pro Yearly |
+|---------|------------|------------|
+| Grace period | 7 days | 14 days |
+| Account hold | 30 days | 30 days |
 
 ### 4. Service Account Setup
 
@@ -252,7 +271,7 @@ In **App Store Connect > Your App > In-App Purchases > Manage**:
 2. Add subscriptions to the group:
 
 #### Pro Monthly
-- **Product ID:** `snake_classic_pro_monthly`
+- **Product ID:** `com.pranta.snakeclassic.pro_monthly`
 - **Reference Name:** Pro Monthly
 - **Subscription Duration:** 1 Month
 - **Price:** $4.99 (Tier 5)
@@ -260,18 +279,12 @@ In **App Store Connect > Your App > In-App Purchases > Manage**:
 - **Level:** 1 (highest)
 
 #### Pro Yearly
-- **Product ID:** `snake_classic_pro_yearly`
+- **Product ID:** `com.pranta.snakeclassic.pro_yearly`
 - **Reference Name:** Pro Yearly
 - **Subscription Duration:** 1 Year
 - **Price:** $49.99 (Tier 30)
 - **Subscription Group:** Snake Classic Pro
 - **Level:** 1 (same level — user chooses billing frequency)
-
-#### Battle Pass Season
-- **Product ID:** `battle_pass_season`
-- **Reference Name:** Battle Pass Season
-- Create as a separate subscription group **Battle Pass** or as a non-renewing subscription
-- **Price:** $9.99
 
 ### 2. Create In-App Purchase Products
 
@@ -324,6 +337,19 @@ NOTIFICATION_BACKEND_URL=https://snakeclassic.pranta.dev
 
 ---
 
+## ID Architecture
+
+**Two namespaces exist:**
+
+| Namespace | Format | Used By |
+|-----------|--------|---------|
+| Store IDs | `com.pranta.snakeclassic.{id}` | Google Play, App Store, `PurchaseService` |
+| Internal IDs | bare `{id}` | SharedPreferences, database, `PremiumCubit` state |
+
+The `ProductIds` class in `purchase_service.dart` provides `stripPrefix()` and `withPrefix()` helpers to convert between the two namespaces. The backend strips the prefix on incoming requests and stores bare IDs in the database for backward compatibility.
+
+---
+
 ## API Integration
 
 ### Verify Purchase
@@ -335,7 +361,7 @@ Content-Type: application/json
 {
   "platform": "android" | "ios",
   "receipt_data": "<server_verification_data>",
-  "product_id": "snake_classic_pro_monthly",
+  "product_id": "com.pranta.snakeclassic.pro_monthly",
   "transaction_id": "<transaction_id>",
   "user_id": "<user_id>",
   "purchase_token": "<google_play_purchase_token>",
@@ -395,8 +421,8 @@ Content-Type: application/json
 1. **License testers:** Add test accounts in **Google Play Console > Setup > License testing**
 2. **Internal testing track:** Upload a build to the internal track for real purchase testing
 3. **Test subscriptions:** Use license tester accounts — subscriptions renew quickly:
-   - Monthly → renews every 5 minutes
-   - Yearly → renews every 30 minutes
+   - Monthly -> renews every 5 minutes
+   - Yearly -> renews every 30 minutes
 4. **Test RTDN:** Monitor webhook endpoint logs for notification delivery
 5. **Cancel/refund:** Test through Google Play subscription settings
 
@@ -405,22 +431,23 @@ Content-Type: application/json
 1. **Sandbox accounts:** Create sandbox Apple IDs in **App Store Connect > Users and Access > Sandbox Testers**
 2. **StoreKit Testing in Xcode:** Use StoreKit Configuration files for local testing
 3. **Sandbox subscriptions:** Auto-renew at accelerated rates:
-   - Monthly → renews every 5 minutes
-   - Yearly → renews every 1 hour
+   - Monthly -> renews every 5 minutes
+   - Yearly -> renews every 1 hour
 4. **Server notifications:** Test sandbox notifications arrive at your sandbox URL
 
 ### Testing Checklist
 
-- [ ] All 59 products appear in the store
+- [ ] All 44 products appear in the store
 - [ ] Consumables (coins, tournament entries) can be purchased multiple times
 - [ ] Non-consumables (skins, trails, themes) show as purchased after buying
 - [ ] Pro subscription unlocks premium themes + ad-free + 2x coins
-- [ ] Battle Pass purchase unlocks premium track
 - [ ] Cosmetic bundles unlock all included items
 - [ ] RTDN/Server Notifications arrive at webhook endpoints
 - [ ] Purchase restore works on fresh install
 - [ ] Grace period keeps access when payment fails
 - [ ] Subscription cancellation removes access after expiry
+- [ ] Battle Pass nav shows "Coming Soon" snackbar
+- [ ] Existing user data (SharedPreferences with bare IDs) still loads correctly
 
 ---
 
@@ -430,7 +457,7 @@ Content-Type: application/json
 
 | Issue | Solution |
 |-------|---------|
-| Products not loading | Ensure all product IDs match exactly. Check `ProductIds.allProductIds` in `purchase_service.dart`. |
+| Products not loading | Ensure all product IDs match exactly with `com.pranta.snakeclassic.` prefix. Check `ProductIds.allProductIds` in `purchase_service.dart`. |
 | RTDN not received | Verify Pub/Sub topic permissions, push endpoint URL, and verification token. |
 | iOS purchase fails | Check sandbox account is signed in under Settings > App Store. |
 | "Item already owned" on Android | Call `restorePurchases()` or consume the purchase if it's consumable. |
@@ -449,15 +476,15 @@ Content-Type: application/json
 
 | File | Purpose |
 |------|---------|
-| `lib/services/purchase_service.dart` | Product IDs, purchase flow, store integration |
+| `lib/services/purchase_service.dart` | Product IDs (with prefix), purchase flow, store integration |
 | `lib/services/backend_service.dart` | Backend API calls for verification and sync |
-| `lib/presentation/bloc/premium/premium_cubit.dart` | Premium state management, purchase handling |
+| `lib/presentation/bloc/premium/premium_cubit.dart` | Premium state management, purchase handling (strips prefix) |
 | `lib/presentation/bloc/premium/premium_state.dart` | Premium tiers, owned content tracking |
 | `lib/presentation/bloc/premium/battle_pass_cubit.dart` | Battle Pass state and tier progression |
-| `lib/models/premium_cosmetics.dart` | Snake skins, trail effects, cosmetic bundles |
-| `lib/models/snake_coins.dart` | Coin packs, pricing, coin economy |
-| `lib/models/premium_power_up.dart` | Premium power-ups and power-up bundles |
+| `lib/models/premium_cosmetics.dart` | Snake skins, trail effects, cosmetic bundles (internal IDs) |
+| `lib/models/snake_coins.dart` | Coin packs, pricing, coin economy (internal IDs) |
+| `lib/models/premium_power_up.dart` | Power-ups (coin-purchased only, not IAP) |
 | `lib/models/tournament.dart` | Tournament model with entry system |
 | `lib/screens/theme_selector_screen.dart` | Theme purchase UI |
-| `lib/screens/cosmetics_screen.dart` | Cosmetics store UI |
-| `lib/screens/battle_pass_screen.dart` | Battle Pass purchase and progression UI |
+| `lib/screens/cosmetics_screen.dart` | Cosmetics store UI (maps to store IDs for purchases) |
+| `lib/screens/battle_pass_screen.dart` | Battle Pass display (Coming Soon banner) |

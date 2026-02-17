@@ -178,6 +178,40 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                         season: season,
                         theme: theme,
                       ),
+                      // Coming Soon banner
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.amber.withValues(alpha: 0.25),
+                              Colors.orange.withValues(alpha: 0.15),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.amber.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.construction, color: Colors.amber, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Coming Soon! Battle Pass is not yet available for purchase.',
+                                style: TextStyle(
+                                  color: theme.accentColor,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       _SeasonStrip(
                         season: season,
                         theme: theme,
@@ -205,13 +239,8 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                   ),
                 ),
               ),
-              bottomNavigationBar: !bpState.isActive
-                  ? _PremiumCTA(
-                      season: season,
-                      theme: theme,
-                      onTap: () => _showPurchaseSheet(theme, season),
-                    )
-                  : null,
+              // Battle Pass purchase is Coming Soon — disable CTA
+              bottomNavigationBar: null,
             );
           },
         );

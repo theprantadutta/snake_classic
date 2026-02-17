@@ -833,15 +833,14 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         ),
       );
 
-      String productId;
       if (skin != null) {
-        productId = skin.id;
-        await purchaseService.purchaseProduct(productId);
-        await premiumCubit.unlockSkin(productId);
+        // skin.id is the bare name (e.g. 'golden'), store needs prefix + skin_
+        await purchaseService.purchaseProduct(ProductIds.skinStoreId(skin.id));
+        await premiumCubit.unlockSkin(skin.id);
       } else if (trail != null) {
-        productId = trail.id;
-        await purchaseService.purchaseProduct(productId);
-        await premiumCubit.unlockTrail(productId);
+        // trail.id already has trail_ prefix, just add store prefix
+        await purchaseService.purchaseProduct(ProductIds.withPrefix(trail.id));
+        await premiumCubit.unlockTrail(trail.id);
       }
 
       if (mounted) {
@@ -896,8 +895,8 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         ),
       );
 
-      // Purchase the bundle
-      await purchaseService.purchaseProduct(bundle.id);
+      // Purchase the bundle — add store prefix for the IAP call
+      await purchaseService.purchaseProduct(ProductIds.withPrefix(bundle.id));
 
       // unlockBundle handles unlocking all contained skins and trails
       await premiumCubit.unlockBundle(bundle.id);

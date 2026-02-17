@@ -6,122 +6,122 @@ import '../utils/logger.dart';
 import 'backend_service.dart';
 
 // Product IDs for different categories
+// Store IDs use the com.pranta.snakeclassic. prefix for Google Play / App Store.
+// Internal IDs (SharedPreferences, database) stay unprefixed for backward compat.
 class ProductIds {
+  // Store product ID prefix
+  static const String prefix = 'com.pranta.snakeclassic.';
+
+  /// Strip the store prefix to get the internal ID.
+  static String stripPrefix(String id) {
+    if (id.startsWith(prefix)) return id.substring(prefix.length);
+    return id;
+  }
+
+  /// Add the store prefix to an internal ID.
+  static String withPrefix(String id) {
+    if (id.startsWith(prefix)) return id;
+    return '$prefix$id';
+  }
+
+  /// Convert a bare skin name (e.g. 'golden') to its store product ID.
+  static String skinStoreId(String skinId) => '${prefix}skin_$skinId';
+
   // Premium Themes
-  static const String crystalTheme = 'crystal_theme';
-  static const String cyberpunkTheme = 'cyberpunk_theme';
-  static const String spaceTheme = 'space_theme';
-  static const String oceanTheme = 'ocean_theme';
-  static const String desertTheme = 'desert_theme';
-  static const String forestTheme = 'forest_theme';
-  static const String themesBundle = 'premium_themes_bundle';
+  static const String crystalTheme = '${prefix}crystal_theme';
+  static const String cyberpunkTheme = '${prefix}cyberpunk_theme';
+  static const String spaceTheme = '${prefix}space_theme';
+  static const String oceanTheme = '${prefix}ocean_theme';
+  static const String desertTheme = '${prefix}desert_theme';
+  static const String forestTheme = '${prefix}forest_theme';
+  static const String themesBundle = '${prefix}premium_themes_bundle';
 
   // Snake Coins (Consumable)
-  static const String coinPackSmall = 'coin_pack_small';
-  static const String coinPackMedium = 'coin_pack_medium';
-  static const String coinPackLarge = 'coin_pack_large';
-  static const String coinPackMega = 'coin_pack_mega';
+  static const String coinPackSmall = '${prefix}coin_pack_small';
+  static const String coinPackMedium = '${prefix}coin_pack_medium';
+  static const String coinPackLarge = '${prefix}coin_pack_large';
+  static const String coinPackMega = '${prefix}coin_pack_mega';
 
-  // Premium Power-ups
-  static const String megaPowerupsPack = 'mega_powerups_pack';
-  static const String exclusivePowerupsPack = 'exclusive_powerups_pack';
-  static const String premiumPowerupsBundle = 'premium_powerups_bundle';
+  // Snake Skins (store IDs use skin_ category prefix)
+  static const String goldenSnake = '${prefix}skin_golden';
+  static const String rainbowSnake = '${prefix}skin_rainbow';
+  static const String galaxySnake = '${prefix}skin_galaxy';
+  static const String dragonSnake = '${prefix}skin_dragon';
+  static const String electricSnake = '${prefix}skin_electric';
+  static const String fireSnake = '${prefix}skin_fire';
+  static const String iceSnake = '${prefix}skin_ice';
+  static const String shadowSnake = '${prefix}skin_shadow';
+  static const String neonSnake = '${prefix}skin_neon';
+  static const String crystalSnake = '${prefix}skin_crystal';
+  static const String cosmicSnake = '${prefix}skin_cosmic';
 
-  // Snake Cosmetics
-  static const String goldenSnake = 'golden';
-  static const String rainbowSnake = 'rainbow';
-  static const String galaxySnake = 'galaxy';
-  static const String dragonSnake = 'dragon';
-  static const String electricSnake = 'electric';
-  static const String fireSnake = 'fire';
-  static const String iceSnake = 'ice';
-  static const String shadowSnake = 'shadow';
-  static const String neonSnake = 'neon';
-  static const String crystalSnake = 'crystal';
-  static const String cosmicSnake = 'cosmic';
-
-  // Trail Effects (prefixed to avoid duplicate IDs with skins)
-  static const String particleTrail = 'trail_particle';
-  static const String glowTrail = 'trail_glow';
-  static const String rainbowTrail = 'trail_rainbow';
-  static const String fireTrail = 'trail_fire';
-  static const String electricTrail = 'trail_electric';
-  static const String starTrail = 'trail_star';
-  static const String cosmicTrail = 'trail_cosmic';
-  static const String neonTrail = 'trail_neon';
-  static const String shadowTrail = 'trail_shadow';
-  static const String crystalTrail = 'trail_crystal';
-  static const String dragonTrail = 'trail_dragon';
+  // Trail Effects
+  static const String particleTrail = '${prefix}trail_particle';
+  static const String glowTrail = '${prefix}trail_glow';
+  static const String rainbowTrail = '${prefix}trail_rainbow';
+  static const String fireTrail = '${prefix}trail_fire';
+  static const String electricTrail = '${prefix}trail_electric';
+  static const String starTrail = '${prefix}trail_star';
+  static const String cosmicTrail = '${prefix}trail_cosmic';
+  static const String neonTrail = '${prefix}trail_neon';
+  static const String shadowTrail = '${prefix}trail_shadow';
+  static const String crystalTrail = '${prefix}trail_crystal';
+  static const String dragonTrail = '${prefix}trail_dragon';
 
   // Cosmetic Bundles
-  static const String starterCosmetics = 'starter_pack';
-  static const String elementalCosmetics = 'elemental_pack';
-  static const String cosmicCosmetics = 'cosmic_collection';
-  static const String ultimateCosmetics = 'ultimate_collection';
+  static const String starterCosmetics = '${prefix}starter_pack';
+  static const String elementalCosmetics = '${prefix}elemental_pack';
+  static const String cosmicCosmetics = '${prefix}cosmic_collection';
+  static const String ultimateCosmetics = '${prefix}ultimate_collection';
 
   // Subscriptions
-  static const String snakeClassicProMonthly = 'snake_classic_pro_monthly';
-  static const String snakeClassicProYearly = 'snake_classic_pro_yearly';
-  static const String battlePass = 'battle_pass_season';
+  static const String snakeClassicProMonthly = '${prefix}pro_monthly';
+  static const String snakeClassicProYearly = '${prefix}pro_yearly';
+
+  // Battle Pass — Coming Soon (not registered on stores yet)
+  static const String battlePass = '${prefix}battle_pass_season';
 
   // Tournament Entries (Consumable)
-  static const String tournamentBronze = 'tournament_bronze';
-  static const String tournamentSilver = 'tournament_silver';
-  static const String tournamentGold = 'tournament_gold';
-  static const String championshipEntry = 'championship_entry';
-  static const String tournamentVipEntry = 'tournament_vip_entry';
+  static const String tournamentBronze = '${prefix}tournament_bronze';
+  static const String tournamentSilver = '${prefix}tournament_silver';
+  static const String tournamentGold = '${prefix}tournament_gold';
+  static const String championshipEntry = '${prefix}championship_entry';
+  static const String tournamentVipEntry = '${prefix}tournament_vip_entry';
 
+  /// All active store product IDs (44 products).
+  /// Battle Pass and power-up IAPs are excluded.
   static List<String> get allProductIds => [
-    // Themes
-    crystalTheme,
-    cyberpunkTheme,
-    spaceTheme,
-    oceanTheme,
-    desertTheme,
-    forestTheme,
-    themesBundle,
-    // Coins
+    // Themes (7)
+    crystalTheme, cyberpunkTheme, spaceTheme,
+    oceanTheme, desertTheme, forestTheme, themesBundle,
+    // Coins (4)
     coinPackSmall, coinPackMedium, coinPackLarge, coinPackMega,
-    // Power-ups
-    megaPowerupsPack, exclusivePowerupsPack, premiumPowerupsBundle,
-    // Snake skins
-    goldenSnake,
-    rainbowSnake,
-    galaxySnake,
-    dragonSnake,
-    electricSnake,
-    fireSnake,
-    iceSnake, shadowSnake, neonSnake, crystalSnake, cosmicSnake,
-    // Trail effects
+    // Snake skins (11)
+    goldenSnake, rainbowSnake, galaxySnake, dragonSnake, electricSnake,
+    fireSnake, iceSnake, shadowSnake, neonSnake, crystalSnake, cosmicSnake,
+    // Trail effects (11)
     particleTrail, glowTrail, rainbowTrail, fireTrail, electricTrail, starTrail,
     cosmicTrail, neonTrail, shadowTrail, crystalTrail, dragonTrail,
-    // Bundles
+    // Bundles (4)
     starterCosmetics, elementalCosmetics, cosmicCosmetics, ultimateCosmetics,
-    // Subscriptions
-    snakeClassicProMonthly, snakeClassicProYearly, battlePass,
-    // Tournament entries
-    tournamentBronze,
-    tournamentSilver,
-    tournamentGold,
-    championshipEntry,
-    tournamentVipEntry,
+    // Subscriptions (2)
+    snakeClassicProMonthly, snakeClassicProYearly,
+    // Tournament entries (5)
+    tournamentBronze, tournamentSilver, tournamentGold,
+    championshipEntry, tournamentVipEntry,
   ];
 
   static List<String> get consumableIds => [
     // Coins
     coinPackSmall, coinPackMedium, coinPackLarge, coinPackMega,
     // Tournament entries
-    tournamentBronze,
-    tournamentSilver,
-    tournamentGold,
-    championshipEntry,
-    tournamentVipEntry,
+    tournamentBronze, tournamentSilver, tournamentGold,
+    championshipEntry, tournamentVipEntry,
   ];
 
   static List<String> get subscriptionIds => [
     snakeClassicProMonthly,
     snakeClassicProYearly,
-    battlePass,
   ];
 }
 
@@ -428,13 +428,6 @@ class PurchaseService {
           await _addCoins(purchaseDetails.productID);
           break;
 
-        // Power-ups
-        case ProductIds.megaPowerupsPack:
-        case ProductIds.exclusivePowerupsPack:
-        case ProductIds.premiumPowerupsBundle:
-          await _unlockPowerups(purchaseDetails.productID);
-          break;
-
         // Snake Skins
         case ProductIds.goldenSnake:
         case ProductIds.rainbowSnake:
@@ -476,7 +469,6 @@ class PurchaseService {
         // Subscriptions
         case ProductIds.snakeClassicProMonthly:
         case ProductIds.snakeClassicProYearly:
-        case ProductIds.battlePass:
           await _activateSubscription(purchaseDetails.productID);
           break;
 
@@ -510,12 +502,6 @@ class PurchaseService {
   Future<void> _addCoins(String productId) async {
     AppLogger.info('Adding coins: $productId');
     // The actual coin addition is handled by PremiumCubit via purchase completion event
-    // This method exists for future backend synchronization if needed
-  }
-
-  Future<void> _unlockPowerups(String productId) async {
-    AppLogger.info('Unlocking powerups: $productId');
-    // The actual unlocking is handled by PremiumCubit via purchase completion event
     // This method exists for future backend synchronization if needed
   }
 

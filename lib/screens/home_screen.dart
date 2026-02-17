@@ -1133,7 +1133,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         context.push(AppRoutes.tournaments);
       }),
       _NavItem(Icons.timeline, 'BATTLE', Colors.deepPurple, () {
-        context.push(AppRoutes.battlePass);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Coming Soon!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
       }),
       _NavItem(Icons.people, 'FRIENDS', Colors.blue, () {
         context.push(AppRoutes.friends);
