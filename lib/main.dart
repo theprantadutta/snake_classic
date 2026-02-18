@@ -17,7 +17,9 @@ import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/app_router.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
@@ -29,6 +31,9 @@ import 'package:snake_classic/utils/typography.dart';
 // import 'package:snake_classic/utils/performance_monitor.dart'; // temporarily disabled
 
 import 'firebase_options.dart';
+
+/// Whether critical init succeeded. If false, show an error screen.
+bool _initSucceeded = false;
 
 void main() async {
   // Ensure Flutter is initialized and preserve splash screen
@@ -76,6 +81,9 @@ void main() async {
     AppLogger.success('Dependencies configured');
 
     // Initialize independent services in parallel for faster startup
+    // Note: PurchaseService.initialize() is NOT called here because
+    // PremiumCubit.initialize() already calls it. Calling it twice would
+    // double-subscribe to the purchase stream.
     AppLogger.info('Initializing services in parallel...');
     await Future.wait([
       AudioService().initialize().then((_) {
@@ -84,43 +92,82 @@ void main() async {
       NotificationService().initialize().then((_) {
         AppLogger.success('Notification service initialized');
       }),
-      PurchaseService().initialize().then((_) {
-        AppLogger.success('Purchase service initialized');
-      }),
       InAppUpdateService().checkForUpdate().then((_) {
         AppLogger.success('In-app update check completed');
       }),
     ]);
     AppLogger.success('All services initialized');
 
+    // Wire up PurchaseService.setUserIdGetter so backend verification
+    // includes the real user ID instead of 'anonymous_user'.
+    PurchaseService().setUserIdGetter(() {
+      return ApiService().currentUserId;
+    });
+    AppLogger.info('Purchase service user ID getter wired');
+
+    // Wire ApiService.onUnauthorized to trigger re-authentication
+    ApiService().onUnauthorized = () {
+      AppLogger.warning('JWT expired — will re-authenticate on next API call');
+      // AuthService.ensureBackendAuthentication() is called on app resume
+      // and before critical API calls, so we just clear the token here.
+    };
+
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    // Start performance monitoring (temporarily disabled)
-    // if (kDebugMode) {
-    //   AppLogger.info('Starting performance monitoring...');
-    //   PerformanceMonitor().startMonitoring();
-    //   AppLogger.success('Performance monitoring started');
-    // }
-
+    _initSucceeded = true;
     AppLogger.success('Snake Classic ready to launch!');
   } catch (error, stackTrace) {
     AppLogger.error('Failed to initialize Snake Classic', error, stackTrace);
   }
 
-  // Setup global error handling
-  if (kDebugMode) {
-    FlutterError.onError = (details) {
-      AppLogger.error('Flutter Error', details.exception, details.stack);
+  // Setup global error handling — always, not just in debug mode
+  FlutterError.onError = (details) {
+    AppLogger.error('Flutter Error', details.exception, details.stack);
+    if (kDebugMode) {
       FlutterError.presentError(details);
-    };
-  }
+    }
+  };
 
-  runApp(
-    const riverpod.ProviderScope(
-      child: SnakeClassicApp(),
-    ),
-  ); // .withPerformanceMonitoring() temporarily disabled
+  if (_initSucceeded) {
+    runApp(
+      const riverpod.ProviderScope(
+        child: SnakeClassicApp(),
+      ),
+    );
+  } else {
+    // Critical init failed — show a minimal error screen instead of crashing
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          backgroundColor: Colors.black,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Failed to start Snake Classic',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Please restart the app. If this persists, try reinstalling.',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class SnakeClassicApp extends StatefulWidget {
@@ -152,12 +199,27 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       _setImmersiveMode();
       // Trigger sync when app comes back to foreground
       DataSyncService().forceSyncNow();
+      // Re-authenticate with backend if JWT expired and refresh premium state
+      _refreshOnResume();
     }
 
     // When app goes to background, attempt to sync pending data
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       DataSyncService().forceSyncNow();
+    }
+  }
+
+  /// Ensure backend auth is fresh and sync premium/subscription status.
+  Future<void> _refreshOnResume() async {
+    try {
+      await AuthService().ensureBackendAuthentication();
+      // Retry any pending offline purchases
+      await PurchaseService().retryPendingVerifications();
+      // Sync premium entitlements (catches subscription renewals/cancellations)
+      getIt<PremiumCubit>().syncWithBackend();
+    } catch (e) {
+      AppLogger.error('Error refreshing on resume', e);
     }
   }
 

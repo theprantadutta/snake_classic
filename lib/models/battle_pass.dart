@@ -361,6 +361,7 @@ class BattlePassSeason {
           tier: BattlePassTier.free,
           quantity: freeQty,
           icon: freeType.icon,
+          itemId: _getItemIdForReward(i, freeType, false),
         );
       }
 
@@ -378,6 +379,7 @@ class BattlePassSeason {
           isSpecial: isMilestone,
           icon: premType.icon,
           color: Colors.amber,
+          itemId: _getItemIdForReward(i, premType, true),
         );
       }
 
@@ -479,6 +481,35 @@ class BattlePassSeason {
   static String _getRewardDescription(BattlePassRewardType type, bool isPremium) {
     final prefix = isPremium ? 'Exclusive premium' : 'Free';
     return '$prefix ${type.displayName.toLowerCase()} reward';
+  }
+
+  /// Maps cosmetic reward types to actual item IDs from the catalog.
+  /// Returns null for non-cosmetic rewards (coins, XP, etc.) that don't need
+  /// an itemId to be claimed.
+  static String? _getItemIdForReward(
+    int level,
+    BattlePassRewardType type,
+    bool isPremium,
+  ) {
+    switch (type) {
+      case BattlePassRewardType.skin:
+        const skins = ['galaxy', 'cosmic', 'crystal', 'golden', 'rainbow'];
+        return skins[(level ~/ 25) % skins.length];
+      case BattlePassRewardType.trail:
+        const trails = [
+          'trail_cosmic', 'trail_neon', 'trail_crystal',
+          'trail_particle', 'trail_rainbow',
+        ];
+        return trails[(level ~/ 15) % trails.length];
+      case BattlePassRewardType.theme:
+        const themes = ['space', 'cyberpunk', 'crystal', 'ocean'];
+        return themes[(level ~/ 20) % themes.length];
+      case BattlePassRewardType.powerUp:
+        const powerUps = ['speed_boost', 'score_shield', 'ghost_mode'];
+        return powerUps[(level ~/ 10) % powerUps.length];
+      default:
+        return null; // XP, coins, titles, tournament entries, specials
+    }
   }
 }
 

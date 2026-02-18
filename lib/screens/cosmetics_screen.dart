@@ -813,7 +813,6 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
 
   void _processPurchase({SnakeSkinType? skin, TrailEffectType? trail}) async {
     final purchaseService = PurchaseService();
-    final premiumCubit = context.read<PremiumCubit>();
 
     try {
       // Show processing indicator
@@ -842,14 +841,14 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         ),
       );
 
+      // Only initiate the purchase flow — do NOT unlock locally.
+      // purchaseProduct() returns true when the billing UI is shown,
+      // NOT when the purchase is confirmed. The actual unlock happens
+      // asynchronously via the purchase stream in PremiumCubit.
       if (skin != null) {
-        // skin.id is the bare name (e.g. 'golden'), store needs prefix + skin_
         await purchaseService.purchaseProduct(ProductIds.skinStoreId(skin.id));
-        await premiumCubit.unlockSkin(skin.id);
       } else if (trail != null) {
-        // trail.id already has trail_ prefix, just add store prefix
         await purchaseService.purchaseProduct(ProductIds.withPrefix(trail.id));
-        await premiumCubit.unlockTrail(trail.id);
       }
 
       if (mounted) {
@@ -857,13 +856,12 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
           SnackBar(
             content: Text(
               skin != null
-                  ? '${skin.displayName} purchased successfully! ✓'
-                  : '${trail!.displayName} purchased successfully! ✓',
+                  ? '${skin.displayName} purchase initiated'
+                  : '${trail!.displayName} purchase initiated',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.blue,
           ),
         );
-        setState(() {}); // Refresh UI to show unlocked state
       }
     } catch (e) {
       if (mounted) {
@@ -879,7 +877,6 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
 
   void _processBundlePurchase(CosmeticBundle bundle) async {
     final purchaseService = PurchaseService();
-    final premiumCubit = context.read<PremiumCubit>();
 
     try {
       // Show processing indicator
@@ -904,22 +901,17 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
         ),
       );
 
-      // Purchase the bundle — add store prefix for the IAP call
+      // Only initiate the purchase flow — do NOT unlock locally.
+      // The actual unlock happens via the purchase stream in PremiumCubit.
       await purchaseService.purchaseProduct(ProductIds.withPrefix(bundle.id));
-
-      // unlockBundle handles unlocking all contained skins and trails
-      await premiumCubit.unlockBundle(bundle.id);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '${bundle.name} purchased successfully! All items unlocked! ✓',
-            ),
-            backgroundColor: Colors.green,
+            content: Text('${bundle.name} purchase initiated'),
+            backgroundColor: Colors.blue,
           ),
         );
-        setState(() {}); // Refresh UI to show unlocked states
       }
     } catch (e) {
       if (mounted) {

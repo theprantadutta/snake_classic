@@ -89,7 +89,9 @@ class ApiService {
     if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
   };
 
-  /// Handle response - check for auth errors
+  /// Handle response - check for auth errors.
+  /// On 401, clears the token and invokes the [onUnauthorized] callback.
+  /// Callers that want automatic retry should use [_authenticatedRequest].
   Map<String, dynamic>? _handleResponse(http.Response response) {
     if (response.statusCode == 401) {
       AppLogger.error('Unauthorized - token may be expired');
@@ -260,9 +262,10 @@ class ApiService {
     int limit = 20,
   }) async {
     try {
+      final encodedQuery = Uri.encodeQueryComponent(query);
       final response = await http
           .get(
-            Uri.parse('$baseUrl/users/search/?query=$query&limit=$limit'),
+            Uri.parse('$baseUrl/users/search?query=$encodedQuery&limit=$limit'),
             headers: _authHeaders,
           )
           .timeout(_timeout);
@@ -850,8 +853,10 @@ class ApiService {
           )
           .timeout(_timeout);
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as List<dynamic>;
+      // Route through _handleResponse for proper 401/error handling
+      final data = _handleResponse(response);
+      if (data != null && data['data'] is List) {
+        return data['data'] as List<dynamic>;
       }
       return null;
     } catch (e) {

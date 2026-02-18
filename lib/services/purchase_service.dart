@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
-import 'backend_service.dart';
+import 'api_service.dart';
 
 // Product IDs for different categories
 // Store IDs use the com.pranta.snakeclassic. prefix for Google Play / App Store.
@@ -131,14 +133,17 @@ class PurchaseService {
   PurchaseService._internal();
 
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
-  late StreamSubscription<List<PurchaseDetails>> _subscription;
+  StreamSubscription<List<PurchaseDetails>>? _subscription;
 
   bool _isAvailable = false;
+  bool _isInitialized = false;
   List<ProductDetails> _products = [];
   final List<PurchaseDetails> _purchases = [];
   bool _purchasePending = false;
   String? _queryProductError;
-  String? Function()? _getUserId;
+
+  /// SharedPreferences key for persisted pending verifications.
+  static const String _pendingVerificationsKey = 'pending_purchase_verifications';
 
   // Getters
   bool get isAvailable => _isAvailable;
@@ -159,12 +164,19 @@ class PurchaseService {
   Stream<List<ProductDetails>> get productsStream => _productsController.stream;
   Stream<String> get purchaseStatusStream => _purchaseStatusController.stream;
 
-  // Set user ID getter for accessing current user information
+  /// Set user ID getter. Previously used for BackendService verification.
+  /// Now purchase verification uses ApiService which carries the user identity
+  /// via JWT token, so this is retained only for backward compatibility.
   void setUserIdGetter(String? Function() getUserId) {
-    _getUserId = getUserId;
+    // No-op: ApiService.verifyPurchase uses JWT for user identification
   }
 
   Future<void> initialize() async {
+    // Idempotency guard — prevent double initialization when called from
+    // both main.dart and PremiumCubit.initialize().
+    if (_isInitialized) return;
+    _isInitialized = true;
+
     try {
       AppLogger.info('Initializing Purchase Service...');
 
@@ -174,12 +186,10 @@ class PurchaseService {
         return;
       }
 
-      // iOS delegate setup would go here when needed
-
       // Listen to purchase updates
       _subscription = _inAppPurchase.purchaseStream.listen(
         _listenToPurchaseUpdated,
-        onDone: () => _subscription.cancel(),
+        onDone: () => _subscription?.cancel(),
         onError: (error) => AppLogger.error('Purchase stream error', error),
       );
 
@@ -273,14 +283,26 @@ class PurchaseService {
           _purchaseStatusController.add('Purchase failed');
         } else if (purchaseDetails.status == PurchaseStatus.purchased ||
             purchaseDetails.status == PurchaseStatus.restored) {
-          // Verify purchase with backend
-          bool valid = await _verifyPurchase(purchaseDetails);
+          // Verify purchase with backend (via ApiService with JWT auth)
+          bool valid = await _verifyWithBackend(purchaseDetails);
           if (valid) {
             _purchases.add(purchaseDetails);
-            await _deliverProduct(purchaseDetails);
+            // Broadcast for PremiumCubit to handle content delivery
+            _purchaseStatusController.add(
+              'purchase_completed:${purchaseDetails.productID}',
+            );
             _purchaseStatusController.add('Purchase successful!');
           } else {
-            _purchaseStatusController.add('Purchase verification failed');
+            // Backend verification failed — queue for offline retry
+            await _queuePendingVerification(purchaseDetails);
+            // Still deliver locally so the user isn't stuck
+            _purchases.add(purchaseDetails);
+            _purchaseStatusController.add(
+              'purchase_completed:${purchaseDetails.productID}',
+            );
+            _purchaseStatusController.add(
+              'Purchase delivered (backend sync pending)',
+            );
           }
         }
 
@@ -294,46 +316,23 @@ class PurchaseService {
     }
   }
 
-  Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {
-    try {
-      AppLogger.info('Verifying purchase: ${purchaseDetails.productID}');
-
-      // In production, you should verify purchases with your backend
-      // For now, we'll implement a basic verification
-
-      // Send to backend for verification
-      final success = await _verifyWithBackend(purchaseDetails);
-
-      if (success) {
-        AppLogger.info('Purchase verified successfully');
-        return true;
-      } else {
-        AppLogger.error('Purchase verification failed');
-        return false;
-      }
-    } catch (e) {
-      AppLogger.error('Error verifying purchase', e);
-      return false;
-    }
-  }
+  // ==================== Backend Verification (via ApiService) ====================
 
   Future<bool> _verifyWithBackend(PurchaseDetails purchaseDetails) async {
     try {
-      final backendService = BackendService();
+      final apiService = ApiService();
 
       // Extract platform-specific data
       String platform = 'unknown';
       String receiptData = '';
       String? purchaseToken;
 
-      // Platform detection and receipt extraction
       if (purchaseDetails.verificationData.source == 'app_store') {
         platform = 'ios';
         receiptData = purchaseDetails.verificationData.serverVerificationData;
       } else if (purchaseDetails.verificationData.source == 'google_play') {
         platform = 'android';
         receiptData = purchaseDetails.verificationData.serverVerificationData;
-        // Extract the real purchase token from GooglePlayPurchaseDetails
         if (Platform.isAndroid && purchaseDetails is GooglePlayPurchaseDetails) {
           purchaseToken =
               purchaseDetails.billingClientPurchase.purchaseToken;
@@ -342,212 +341,126 @@ class PurchaseService {
         }
       }
 
-      // Get current user ID
-      String userId = _getUserId?.call() ?? 'anonymous_user';
-
-      final verificationResult = await backendService.verifyPurchase(
+      // Use ApiService (authenticated with JWT) instead of BackendService
+      final result = await apiService.verifyPurchase(
         platform: platform,
         receiptData: receiptData,
         productId: purchaseDetails.productID,
         transactionId: purchaseDetails.purchaseID ?? '',
-        userId: userId,
         purchaseToken: purchaseToken,
-        deviceInfo: {
-          'source': purchaseDetails.verificationData.source,
-          'local_verification_data':
-              purchaseDetails.verificationData.localVerificationData,
-        },
       );
 
-      if (verificationResult != null && verificationResult['valid'] == true) {
-        AppLogger.info('Purchase verified successfully by backend');
-
-        // Handle premium content unlocking based on backend response
-        if (verificationResult['premium_content_unlocked'] != null) {
-          await _unlockPremiumContent(
-            verificationResult['premium_content_unlocked'],
-          );
-        }
-
+      if (result != null && result['valid'] == true) {
+        AppLogger.info('Purchase verified via ApiService (JWT-authenticated)');
         return true;
-      } else {
-        AppLogger.error(
-          'Backend verification failed: ${verificationResult?['error_message'] ?? 'Unknown error'}',
-        );
-        return false;
       }
+
+      AppLogger.error(
+        'Backend verification failed: ${result?['error_message'] ?? 'null response'}',
+      );
+      return false;
     } catch (e) {
       AppLogger.error('Error verifying purchase with backend', e);
-      return false; // Fail securely - don't unlock content if verification fails
+      return false;
     }
   }
 
-  Future<void> _unlockPremiumContent(List<dynamic> contentList) async {
-    try {
-      AppLogger.info('Unlocking premium content: ${contentList.join(', ')}');
+  // ==================== Offline Retry Queue ====================
 
-      // Trigger a premium content sync with the backend
-      final userId = _getUserId?.call();
-      if (userId != null) {
-        final backendService = BackendService();
-        await backendService.syncPremiumStatus(userId: userId);
+  /// Persist a failed verification so it can be retried later.
+  Future<void> _queuePendingVerification(PurchaseDetails details) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final existing = prefs.getStringList(_pendingVerificationsKey) ?? [];
+
+      String? purchaseToken;
+      String platform = 'unknown';
+      String receiptData = '';
+
+      if (details.verificationData.source == 'app_store') {
+        platform = 'ios';
+        receiptData = details.verificationData.serverVerificationData;
+      } else if (details.verificationData.source == 'google_play') {
+        platform = 'android';
+        receiptData = details.verificationData.serverVerificationData;
+        if (Platform.isAndroid && details is GooglePlayPurchaseDetails) {
+          purchaseToken = details.billingClientPurchase.purchaseToken;
+        } else {
+          purchaseToken = details.purchaseID;
+        }
       }
 
-      // Content will be applied when PremiumCubit syncs with backend
-      AppLogger.info('Premium content unlock initiated');
+      final entry = jsonEncode({
+        'product_id': details.productID,
+        'transaction_id': details.purchaseID ?? '',
+        'platform': platform,
+        'receipt_data': receiptData,
+        'purchase_token': purchaseToken,
+        'queued_at': DateTime.now().toIso8601String(),
+      });
+
+      existing.add(entry);
+      await prefs.setStringList(_pendingVerificationsKey, existing);
+      AppLogger.info('Queued pending verification for ${details.productID}');
     } catch (e) {
-      AppLogger.error('Error unlocking premium content', e);
+      AppLogger.error('Error queuing pending verification', e);
     }
   }
 
-  Future<void> _deliverProduct(PurchaseDetails purchaseDetails) async {
+  /// Retry all pending verifications. Called on app resume and connectivity restore.
+  Future<void> retryPendingVerifications() async {
     try {
-      AppLogger.info('Delivering product: ${purchaseDetails.productID}');
+      final prefs = await SharedPreferences.getInstance();
+      final pending = prefs.getStringList(_pendingVerificationsKey) ?? [];
+      if (pending.isEmpty) return;
 
-      // Get PremiumCubit from the context if available
-      // This would normally be passed through dependency injection
-      // For now, we'll handle the logic here and the provider will sync later
+      AppLogger.info('Retrying ${pending.length} pending purchase verifications');
+      final apiService = ApiService();
+      if (!apiService.isAuthenticated) return;
 
-      switch (purchaseDetails.productID) {
-        // Premium Themes
-        case ProductIds.crystalTheme:
-        case ProductIds.cyberpunkTheme:
-        case ProductIds.spaceTheme:
-        case ProductIds.oceanTheme:
-        case ProductIds.desertTheme:
-        case ProductIds.forestTheme:
-        case ProductIds.themesBundle:
-          await _unlockPremiumTheme(purchaseDetails.productID);
-          break;
+      final remaining = <String>[];
 
-        // Coins (Consumable)
-        case ProductIds.coinPackSmall:
-        case ProductIds.coinPackMedium:
-        case ProductIds.coinPackLarge:
-        case ProductIds.coinPackMega:
-          await _addCoins(purchaseDetails.productID);
-          break;
+      for (final entryJson in pending) {
+        try {
+          final entry = jsonDecode(entryJson) as Map<String, dynamic>;
+          final result = await apiService.verifyPurchase(
+            platform: entry['platform'] as String,
+            receiptData: entry['receipt_data'] as String,
+            productId: entry['product_id'] as String,
+            transactionId: entry['transaction_id'] as String,
+            purchaseToken: entry['purchase_token'] as String?,
+          );
 
-        // Snake Skins
-        case ProductIds.goldenSnake:
-        case ProductIds.rainbowSnake:
-        case ProductIds.galaxySnake:
-        case ProductIds.dragonSnake:
-        case ProductIds.electricSnake:
-        case ProductIds.fireSnake:
-        case ProductIds.iceSnake:
-        case ProductIds.shadowSnake:
-        case ProductIds.neonSnake:
-        case ProductIds.crystalSnake:
-        case ProductIds.cosmicSnake:
-          await _unlockCosmetics(purchaseDetails.productID);
-          break;
-
-        // Trail Effects
-        case ProductIds.particleTrail:
-        case ProductIds.glowTrail:
-        case ProductIds.rainbowTrail:
-        case ProductIds.fireTrail:
-        case ProductIds.electricTrail:
-        case ProductIds.starTrail:
-        case ProductIds.cosmicTrail:
-        case ProductIds.neonTrail:
-        case ProductIds.shadowTrail:
-        case ProductIds.crystalTrail:
-        case ProductIds.dragonTrail:
-          await _unlockTrail(purchaseDetails.productID);
-          break;
-
-        // Cosmetic Bundles
-        case ProductIds.starterCosmetics:
-        case ProductIds.elementalCosmetics:
-        case ProductIds.cosmicCosmetics:
-        case ProductIds.ultimateCosmetics:
-          await _unlockCosmetics(purchaseDetails.productID);
-          break;
-
-        // Subscriptions
-        case ProductIds.snakeClassicProMonthly:
-        case ProductIds.snakeClassicProYearly:
-          await _activateSubscription(purchaseDetails.productID);
-          break;
-
-        // Tournament Entries
-        case ProductIds.tournamentBronze:
-        case ProductIds.tournamentSilver:
-        case ProductIds.tournamentGold:
-        case ProductIds.championshipEntry:
-        case ProductIds.tournamentVipEntry:
-          await _addTournamentEntry(purchaseDetails.productID);
-          break;
+          if (result != null && result['valid'] == true) {
+            AppLogger.info(
+              'Pending verification succeeded: ${entry['product_id']}',
+            );
+          } else {
+            // Still failing — keep in queue
+            remaining.add(entryJson);
+          }
+        } catch (e) {
+          remaining.add(entryJson);
+        }
       }
 
-      // Broadcast purchase completion event for PremiumCubit to handle
-      _purchaseStatusController.add(
-        'purchase_completed:${purchaseDetails.productID}',
-      );
-
-      AppLogger.info('Product delivered successfully');
+      await prefs.setStringList(_pendingVerificationsKey, remaining);
+      if (remaining.isEmpty) {
+        AppLogger.info('All pending verifications completed');
+      } else {
+        AppLogger.warning('${remaining.length} verifications still pending');
+      }
     } catch (e) {
-      AppLogger.error('Error delivering product', e);
+      AppLogger.error('Error retrying pending verifications', e);
     }
   }
 
-  Future<void> _unlockPremiumTheme(String productId) async {
-    AppLogger.info('Unlocking premium theme: $productId');
-    // The actual unlocking is handled by PremiumCubit via purchase completion event
-    // This method exists for future backend synchronization if needed
-  }
-
-  Future<void> _addCoins(String productId) async {
-    AppLogger.info('Adding coins: $productId');
-    // The actual coin addition is handled by PremiumCubit via purchase completion event
-    // This method exists for future backend synchronization if needed
-  }
-
-  Future<void> _unlockCosmetics(String productId) async {
-    AppLogger.info('Unlocking cosmetics: $productId');
-    // The actual unlocking is handled by PremiumCubit via purchase completion event
-    // This method exists for future backend synchronization if needed
-  }
-
-  Future<void> _unlockTrail(String productId) async {
-    AppLogger.info('Unlocking trail effect: $productId');
-    // The actual unlocking is handled by PremiumCubit via purchase completion event
-    // This method exists for future backend synchronization if needed
-  }
-
-  Future<void> _activateSubscription(String productId) async {
-    AppLogger.info('Activating subscription: $productId');
-    // The actual activation is handled by PremiumCubit via purchase completion event
-    // This method exists for future backend synchronization if needed
-  }
-
-  Future<void> _addTournamentEntry(String productId) async {
-    AppLogger.info('Adding tournament entry: $productId');
-    // The actual entry addition is handled by PremiumCubit via purchase completion event
-    // This method exists for future backend synchronization if needed
-  }
+  // ==================== Restore & Product Queries ====================
 
   Future<void> restorePurchases() async {
     try {
       AppLogger.info('Restoring purchases...');
-
-      // First, restore with the platform store
       await _inAppPurchase.restorePurchases();
-
-      // Then sync with backend to ensure premium status is up to date
-      final userId = _getUserId?.call();
-      if (userId != null) {
-        final backendService = BackendService();
-        final syncSuccess = await backendService.syncPremiumStatus(
-          userId: userId,
-        );
-        if (syncSuccess) {
-          AppLogger.info('Premium status synced with backend during restore');
-        }
-      }
-
       AppLogger.info('Purchases restored successfully');
     } catch (e) {
       AppLogger.error('Error restoring purchases', e);
@@ -597,13 +510,11 @@ class PurchaseService {
         .firstOrNull;
     if (purchase == null) return false;
 
-    // For subscriptions, check if still active
-    // This would need to be verified with the app store
     return purchase.status == PurchaseStatus.purchased;
   }
 
   void dispose() {
-    _subscription.cancel();
+    _subscription?.cancel();
     _purchasePendingController.close();
     _productsController.close();
     _purchaseStatusController.close();

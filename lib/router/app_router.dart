@@ -251,12 +251,19 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    // Multiplayer
+    // Multiplayer — order matters: /multiplayer/game MUST come before
+    // /multiplayer/:gameId, otherwise GoRouter matches "game" as a gameId.
     GoRoute(
       path: AppRoutes.multiplayerLobby,
       name: 'multiplayerLobby',
       pageBuilder: (context, state) =>
           _zoomPage(state, const MultiplayerLobbyScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.multiplayerGame,
+      name: 'multiplayerGame',
+      pageBuilder: (context, state) =>
+          _scalePage(state, const MultiplayerGameScreen()),
     ),
     GoRoute(
       path: AppRoutes.multiplayerLobbyWithId,
@@ -265,12 +272,6 @@ final GoRouter appRouter = GoRouter(
         final gameId = state.pathParameters['gameId'];
         return _zoomPage(state, MultiplayerLobbyScreen(gameId: gameId));
       },
-    ),
-    GoRoute(
-      path: AppRoutes.multiplayerGame,
-      name: 'multiplayerGame',
-      pageBuilder: (context, state) =>
-          _scalePage(state, const MultiplayerGameScreen()),
     ),
   ],
 );

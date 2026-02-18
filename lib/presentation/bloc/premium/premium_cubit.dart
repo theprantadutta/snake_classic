@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
@@ -125,6 +127,9 @@ class PremiumCubit extends Cubit<PremiumState> {
       // Listen to purchase updates
       _setupPurchaseListener();
 
+      // Merge entitlements from backend (non-blocking)
+      unawaited(syncWithBackend());
+
       AppLogger.info('PremiumCubit initialized. Premium: ${state.hasPremium}');
     } catch (e) {
       AppLogger.error('Error initializing PremiumCubit', e);
@@ -184,10 +189,37 @@ class PremiumCubit extends Cubit<PremiumState> {
     // Strip store prefix — all comparisons below use internal IDs
     final internalId = ProductIds.stripPrefix(productId);
 
-    // Subscriptions
-    if (internalId.contains('pro_monthly') ||
-        internalId.contains('pro_yearly')) {
-      _handlePremiumPurchased();
+    // Subscriptions — route monthly vs yearly for correct expiry
+    if (internalId.contains('pro_monthly')) {
+      _handlePremiumPurchased(isYearly: false);
+      return;
+    }
+    if (internalId.contains('pro_yearly')) {
+      _handlePremiumPurchased(isYearly: true);
+      return;
+    }
+
+    // Coin packs — credit coins via CoinsCubit
+    const coinPackOptions = {
+      'coin_pack_small': 'coin_pack_small',
+      'coin_pack_medium': 'coin_pack_medium',
+      'coin_pack_large': 'coin_pack_large',
+      'coin_pack_mega': 'coin_pack_mega',
+    };
+    if (coinPackOptions.containsKey(internalId)) {
+      final option = CoinPurchaseOption.availableOptions
+          .where((o) => o.id == internalId)
+          .firstOrNull;
+      if (option != null && _coinsCubit != null) {
+        await _coinsCubit.purchaseCoins(option, productId);
+        AppLogger.info(
+          'Coin pack delivered: ${option.totalCoins} coins for $internalId',
+        );
+      } else {
+        AppLogger.error(
+          'Failed to deliver coin pack: option=$option, coinsCubit=$_coinsCubit',
+        );
+      }
       return;
     }
 
@@ -242,21 +274,38 @@ class PremiumCubit extends Cubit<PremiumState> {
       return;
     }
 
-    // Tournament entries
-    if (internalId.contains('tournament')) {
+    // Tournament entries — handle all 5 types including championship & VIP
+    if (internalId.contains('tournament') ||
+        internalId.contains('championship')) {
       if (internalId.contains('bronze')) {
         await addTournamentEntry('bronze');
       } else if (internalId.contains('silver')) {
         await addTournamentEntry('silver');
       } else if (internalId.contains('gold')) {
         await addTournamentEntry('gold');
+      } else if (internalId.contains('championship')) {
+        await addTournamentEntry('gold'); // Championship maps to gold tier
+      } else if (internalId.contains('vip')) {
+        await addTournamentEntry('gold'); // VIP maps to gold tier
       }
       return;
     }
+
+    // Battle pass
+    if (internalId.contains('battle_pass')) {
+      emit(state.copyWith(hasBattlePass: true));
+      AppLogger.info('Battle pass activated via purchase');
+      return;
+    }
+
+    AppLogger.warning('Unhandled purchase product: $internalId');
   }
 
-  void _handlePremiumPurchased() {
-    final expiry = DateTime.now().add(const Duration(days: 30));
+  void _handlePremiumPurchased({bool isYearly = false}) {
+    final duration = isYearly
+        ? const Duration(days: 365)
+        : const Duration(days: 30);
+    final expiry = DateTime.now().add(duration);
     emit(state.copyWith(tier: PremiumTier.pro, subscriptionExpiry: expiry));
     _storageService.setPremiumActive(true);
     _storageService.setPremiumExpirationDate(expiry.toIso8601String());
@@ -264,15 +313,15 @@ class PremiumCubit extends Cubit<PremiumState> {
   }
 
   /// Purchase premium subscription (monthly)
+  /// Note: actual unlock happens via purchase stream in _handlePurchaseCompleted
   Future<bool> purchasePremium() async {
     try {
-      // Purchase the monthly subscription product
       final result = await _purchaseService.purchaseProduct(
         ProductIds.snakeClassicProMonthly,
       );
-      if (result) {
-        _handlePremiumPurchased();
-      }
+      // Do NOT call _handlePremiumPurchased() here — purchaseProduct() only
+      // initiates the billing flow. The actual completion arrives asynchronously
+      // via the purchase stream and is handled in _handlePurchaseCompleted().
       return result;
     } catch (e) {
       emit(state.copyWith(errorMessage: 'Purchase failed: $e'));
@@ -499,6 +548,79 @@ class PremiumCubit extends Cubit<PremiumState> {
       state.isBoardSizeUnlocked(boardSizeId);
   bool isBundleOwned(String bundleId) => state.isBundleOwned(bundleId);
   bool hasTournamentEntry(String type) => state.hasTournamentEntry(type);
+
+  /// Sync premium entitlements from backend.
+  /// Merges server-side entitlements into local state so purchases made on
+  /// other devices or granted server-side are reflected.
+  Future<void> syncWithBackend() async {
+    try {
+      final apiService = ApiService();
+      if (!apiService.isAuthenticated) return;
+
+      final data = await apiService.getPremiumContent();
+      if (data == null) return;
+
+      await _applyBackendEntitlements(data);
+      AppLogger.info('Premium state synced with backend');
+    } catch (e) {
+      AppLogger.error('Error syncing premium state with backend', e);
+    }
+  }
+
+  /// Apply entitlements returned by the backend to local state.
+  Future<void> _applyBackendEntitlements(Map<String, dynamic> data) async {
+    // Merge owned themes
+    if (data['owned_themes'] is List) {
+      for (final name in data['owned_themes']) {
+        final theme = GameTheme.values.where((t) => t.name == name).firstOrNull;
+        if (theme != null && !state.ownedThemes.contains(theme)) {
+          await unlockTheme(theme);
+        }
+      }
+    }
+
+    // Merge owned skins
+    if (data['owned_skins'] is List) {
+      for (final skinId in data['owned_skins']) {
+        if (!state.ownedSkins.contains(skinId)) {
+          await unlockSkin(skinId as String);
+        }
+      }
+    }
+
+    // Merge owned trails
+    if (data['owned_trails'] is List) {
+      for (final trailId in data['owned_trails']) {
+        if (!state.ownedTrails.contains(trailId)) {
+          await unlockTrail(trailId as String);
+        }
+      }
+    }
+
+    // Merge owned bundles
+    if (data['owned_bundles'] is List) {
+      for (final bundleId in data['owned_bundles']) {
+        if (!state.ownedBundles.contains(bundleId)) {
+          await unlockBundle(bundleId as String);
+        }
+      }
+    }
+
+    // Update subscription status from backend
+    if (data['is_premium'] == true) {
+      final expiryStr = data['subscription_expiry'] as String?;
+      final expiry = expiryStr != null ? DateTime.tryParse(expiryStr) : null;
+      if (expiry != null && (state.subscriptionExpiry == null ||
+          expiry.isAfter(state.subscriptionExpiry!))) {
+        emit(state.copyWith(
+          tier: PremiumTier.pro,
+          subscriptionExpiry: expiry,
+        ));
+        _storageService.setPremiumActive(true);
+        _storageService.setPremiumExpirationDate(expiry.toIso8601String());
+      }
+    }
+  }
 
   /// Clear error
   void clearError() {
