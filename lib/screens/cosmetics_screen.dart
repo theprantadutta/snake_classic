@@ -381,39 +381,29 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
     CoinsState coinsState,
     GameTheme theme,
   ) {
-    return Padding(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
-          final childAspectRatio = constraints.maxWidth > 600 ? 1.4 : 1.2;
+      itemCount: CosmeticBundle.availableBundles.length,
+      itemBuilder: (context, index) {
+        final bundle = CosmeticBundle.availableBundles[index];
+        final isUnlocked = premiumState.isBundleOwned(bundle.id);
 
-          return GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              childAspectRatio: childAspectRatio,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: CosmeticBundle.availableBundles.length,
-            itemBuilder: (context, index) {
-              final bundle = CosmeticBundle.availableBundles[index];
-              final isUnlocked = premiumState.isBundleOwned(bundle.id);
-
-              return _buildBundleCard(
-                bundle: bundle,
-                isUnlocked: isUnlocked,
-                theme: theme,
-                onTap: () {
-                  if (!isUnlocked) {
-                    _showBundlePurchaseDialog(bundle);
-                  }
-                },
-              );
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: index < CosmeticBundle.availableBundles.length - 1 ? 16 : 0,
+          ),
+          child: _buildBundleCard(
+            bundle: bundle,
+            isUnlocked: isUnlocked,
+            theme: theme,
+            onTap: () {
+              if (!isUnlocked) {
+                _showBundlePurchaseDialog(bundle);
+              }
             },
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -446,146 +436,138 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                 ]
               : null,
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
+        child: Stack(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                // Icon container with gradient background
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.accentColor.withValues(alpha: 0.3),
+                        theme.accentColor.withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    bundle.icon,
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Title
+                Text(
+                  bundle.name,
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 4),
+                // Description
+                Text(
+                  bundle.description,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.7),
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 6),
+                // Included items preview (skin + trail icons)
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 2,
+                  runSpacing: 2,
                   children: [
-                    // Icon container with gradient background
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.accentColor.withValues(alpha: 0.3),
-                            theme.accentColor.withValues(alpha: 0.1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        bundle.icon,
-                        style: const TextStyle(fontSize: 32),
-                      ),
+                    ...bundle.skins.map(
+                      (s) => Text(s.icon, style: const TextStyle(fontSize: 14)),
                     ),
-                    const SizedBox(height: 12),
-                    // Title
-                    Flexible(
-                      child: Text(
-                        bundle.name,
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Description
-                    Flexible(
-                      child: Text(
-                        bundle.description,
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                          fontSize: 10,
-                        ),
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    // Included items preview (skin + trail icons)
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 2,
-                      runSpacing: 2,
-                      children: [
-                        ...bundle.skins.map(
-                          (s) => Text(s.icon, style: const TextStyle(fontSize: 14)),
-                        ),
-                        ...bundle.trails.map(
-                          (t) => Text(t.icon, style: const TextStyle(fontSize: 14)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    // Price section
-                    Column(
-                      children: [
-                        if (bundle.originalPrice > bundle.bundlePrice) ...[
-                          Text(
-                            '\$${bundle.originalPrice.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              color: theme.accentColor.withValues(alpha: 0.5),
-                              fontSize: 10,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${bundle.savingsPercentage.toStringAsFixed(0)}% OFF',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                        ],
-                        Text(
-                          PurchaseService().getStorePriceOrDefault(
-                            ProductIds.withPrefix(bundle.id),
-                            bundle.bundlePrice,
-                          ),
-                          style: TextStyle(
-                            color: theme.accentColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
+                    ...bundle.trails.map(
+                      (t) => Text(t.icon, style: const TextStyle(fontSize: 14)),
                     ),
                   ],
                 ),
-                // Status indicator
-                if (isUnlocked)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(12),
-                          bottomLeft: Radius.circular(8),
+                const SizedBox(height: 6),
+                // Price section
+                Column(
+                  children: [
+                    if (bundle.originalPrice > bundle.bundlePrice) ...[
+                      Text(
+                        '\$${bundle.originalPrice.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.5),
+                          fontSize: 10,
+                          decoration: TextDecoration.lineThrough,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${bundle.savingsPercentage.toStringAsFixed(0)}% OFF',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    Text(
+                      PurchaseService().getStorePriceOrDefault(
+                        ProductIds.withPrefix(bundle.id),
+                        bundle.bundlePrice,
+                      ),
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
-                  ),
+                  ],
+                ),
               ],
-            );
-          },
+            ),
+            // Status indicator
+            if (isUnlocked)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(12),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -1025,7 +1007,7 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
             const SizedBox(height: 8),
             if (bundle.savings > 0)
               Text(
-                'Save: \$${bundle.savings.toStringAsFixed(2)} (${bundle.savingsPercentage.toStringAsFixed(0)}%)',
+                'Save ${bundle.savingsPercentage.toStringAsFixed(0)}%',
                 style: const TextStyle(
                   color: Colors.green,
                   fontWeight: FontWeight.w600,
