@@ -499,7 +499,22 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
                         maxLines: 2,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
+                    // Included items preview (skin + trail icons)
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 2,
+                      runSpacing: 2,
+                      children: [
+                        ...bundle.skins.map(
+                          (s) => Text(s.icon, style: const TextStyle(fontSize: 14)),
+                        ),
+                        ...bundle.trails.map(
+                          (t) => Text(t.icon, style: const TextStyle(fontSize: 14)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     // Price section
                     Column(
                       children: [
@@ -947,7 +962,58 @@ class _CosmeticsScreenState extends State<CosmeticsScreen>
               bundle.description,
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            // Included items
+            Text(
+              'Includes:',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 4),
+            ...bundle.skins.map(
+              (s) => Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  children: [
+                    Text(s.icon, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        s.displayName,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.8),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ...bundle.trails.map(
+              (t) => Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  children: [
+                    Text(t.icon, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        t.displayName,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.8),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Text(
               'Price: ${PurchaseService().getStorePriceOrDefault(ProductIds.withPrefix(bundle.id), bundle.bundlePrice)}',
               style: TextStyle(

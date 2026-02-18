@@ -7,6 +7,7 @@ import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
+import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -107,18 +108,31 @@ class PremiumCubit extends Cubit<PremiumState> {
 
       // Reconcile bundle contents for existing bundle owners
       for (final bundleId in state.ownedBundles) {
-        final bundle = CosmeticBundle.availableBundles
+        // Cosmetic bundles — skins + trails
+        final cosmeticBundle = CosmeticBundle.availableBundles
             .where((b) => b.id == bundleId)
             .firstOrNull;
-        if (bundle != null) {
-          for (final skin in bundle.skins) {
+        if (cosmeticBundle != null) {
+          for (final skin in cosmeticBundle.skins) {
             if (!state.ownedSkins.contains(skin.id)) {
               await unlockSkin(skin.id);
             }
           }
-          for (final trail in bundle.trails) {
+          for (final trail in cosmeticBundle.trails) {
             if (!state.ownedTrails.contains(trail.id)) {
               await unlockTrail(trail.id);
+            }
+          }
+        }
+
+        // Power-up bundles — power-ups
+        final powerUpBundle = PowerUpBundle.availableBundles
+            .where((b) => b.id == bundleId)
+            .firstOrNull;
+        if (powerUpBundle != null) {
+          for (final powerUp in powerUpBundle.powerUps) {
+            if (!state.ownedPowerUps.contains(powerUp.id)) {
+              await unlockPowerUp(powerUp.id);
             }
           }
         }
@@ -409,7 +423,7 @@ class PremiumCubit extends Cubit<PremiumState> {
     AppLogger.info('Board size unlocked: $boardSizeId');
   }
 
-  /// Unlock a bundle (and all its contents)
+  /// Unlock a bundle (and all its contents — cosmetic or power-up)
   Future<void> unlockBundle(String bundleId) async {
     if (state.ownedBundles.contains(bundleId)) return;
 
@@ -417,16 +431,26 @@ class PremiumCubit extends Cubit<PremiumState> {
     emit(state.copyWith(ownedBundles: updatedBundles));
     await _storageService.setUnlockedBundles(updatedBundles.toList());
 
-    // Unlock all contained items
-    final bundle = CosmeticBundle.availableBundles
+    // Unlock cosmetic bundle contents (skins + trails)
+    final cosmeticBundle = CosmeticBundle.availableBundles
         .where((b) => b.id == bundleId)
         .firstOrNull;
-    if (bundle != null) {
-      for (final skin in bundle.skins) {
+    if (cosmeticBundle != null) {
+      for (final skin in cosmeticBundle.skins) {
         await unlockSkin(skin.id);
       }
-      for (final trail in bundle.trails) {
+      for (final trail in cosmeticBundle.trails) {
         await unlockTrail(trail.id);
+      }
+    }
+
+    // Unlock power-up bundle contents
+    final powerUpBundle = PowerUpBundle.availableBundles
+        .where((b) => b.id == bundleId)
+        .firstOrNull;
+    if (powerUpBundle != null) {
+      for (final powerUp in powerUpBundle.powerUps) {
+        await unlockPowerUp(powerUp.id);
       }
     }
 
