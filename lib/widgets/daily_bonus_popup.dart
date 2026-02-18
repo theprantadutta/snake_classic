@@ -348,13 +348,15 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
             final isToday = day == currentDay;
             final isFuture = day > currentDay;
 
-            return _buildDayCircle(
-              day: day,
-              coins: reward.coins,
-              hasBonus: reward.bonusItem != null,
-              isClaimed: isClaimed,
-              isToday: isToday,
-              isFuture: isFuture,
+            return Expanded(
+              child: _buildDayCircle(
+                day: day,
+                coins: reward.coins,
+                hasBonus: reward.bonusItem != null,
+                isClaimed: isClaimed,
+                isToday: isToday,
+                isFuture: isFuture,
+              ),
             );
           }),
         ),
