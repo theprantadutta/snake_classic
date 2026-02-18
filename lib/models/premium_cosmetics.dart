@@ -426,7 +426,6 @@ class CosmeticBundle {
   final String description;
   final List<SnakeSkinType> skins;
   final List<TrailEffectType> trails;
-  final double originalPrice;
   final double bundlePrice;
   final String icon;
 
@@ -436,13 +435,25 @@ class CosmeticBundle {
     required this.description,
     required this.skins,
     required this.trails,
-    required this.originalPrice,
     required this.bundlePrice,
     required this.icon,
   });
 
+  /// Computed from the sum of individual skin and trail prices.
+  double get originalPrice {
+    double total = 0;
+    for (final skin in skins) {
+      total += skin.price;
+    }
+    for (final trail in trails) {
+      total += trail.price;
+    }
+    return total;
+  }
+
   double get savings => originalPrice - bundlePrice;
-  double get savingsPercentage => (savings / originalPrice) * 100;
+  double get savingsPercentage =>
+      originalPrice > 0 ? (savings / originalPrice) * 100 : 0;
 
   static const List<CosmeticBundle> availableBundles = [
     CosmeticBundle(
@@ -451,7 +462,6 @@ class CosmeticBundle {
       description: 'Perfect for new premium players',
       skins: [SnakeSkinType.golden, SnakeSkinType.fire],
       trails: [TrailEffectType.particle, TrailEffectType.glow],
-      originalPrice: 5.96, // $1.99 + $1.99 + $0.99 + $0.99
       bundlePrice: 3.99,
       icon: '🎁',
     ),
@@ -461,7 +471,6 @@ class CosmeticBundle {
       description: 'Master the elements with style',
       skins: [SnakeSkinType.fire, SnakeSkinType.ice, SnakeSkinType.electric],
       trails: [TrailEffectType.fire, TrailEffectType.electric],
-      originalPrice: 11.94, // $1.99 * 3 + $2.99 * 2
       bundlePrice: 7.99,
       icon: '🌊',
     ),
@@ -479,7 +488,6 @@ class CosmeticBundle {
         TrailEffectType.star,
         TrailEffectType.crystal,
       ],
-      originalPrice: 23.94, // $3.99 * 3 + $3.99 * 3
       bundlePrice: 14.99,
       icon: '🌌',
     ),
@@ -513,7 +521,6 @@ class CosmeticBundle {
         TrailEffectType.crystal,
         TrailEffectType.dragon,
       ],
-      originalPrice: 71.89, // Sum of all individual prices
       bundlePrice: 29.99,
       icon: '👑',
     ),

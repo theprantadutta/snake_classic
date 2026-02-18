@@ -2422,7 +2422,9 @@ class OptimizedGameBoardPainter extends CustomPainter {
         oldDelegate.premiumState.selectedSkinId !=
             premiumState.selectedSkinId ||
         oldDelegate.premiumState.selectedTrailId !=
-            premiumState.selectedTrailId;
+            premiumState.selectedTrailId ||
+        oldDelegate.premiumState.ownedSkins !=
+            premiumState.ownedSkins;
   }
 }
 

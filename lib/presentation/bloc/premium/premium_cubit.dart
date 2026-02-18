@@ -346,17 +346,25 @@ class PremiumCubit extends Cubit<PremiumState> {
     _coinsCubit?.updatePremiumMultiplier(state.hasPremium, isActive);
   }
 
-  /// Select skin
+  /// Select skin (validates ownership — classic is always allowed)
   Future<void> selectSkin(String skinId) async {
     if (state.selectedSkinId == skinId) return;
+    if (skinId != 'classic' && !state.isSkinOwned(skinId)) {
+      AppLogger.warning('Attempted to select unowned skin: $skinId');
+      return;
+    }
 
     emit(state.copyWith(selectedSkinId: skinId));
     await _storageService.setSelectedSkinId(skinId);
   }
 
-  /// Select trail
+  /// Select trail (validates ownership — 'none' is always allowed)
   Future<void> selectTrail(String trailId) async {
     if (state.selectedTrailId == trailId) return;
+    if (trailId != 'none' && !state.isTrailOwned(trailId)) {
+      AppLogger.warning('Attempted to select unowned trail: $trailId');
+      return;
+    }
 
     emit(state.copyWith(selectedTrailId: trailId));
     await _storageService.setSelectedTrailId(trailId);
