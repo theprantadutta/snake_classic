@@ -437,8 +437,9 @@ class GameCubit extends Cubit<GameCubitState> {
       newScore += multipliedPoints;
       _currentGameFoodPoints += multipliedPoints;
 
-      // Battle pass score milestones
-      _checkScoreMilestones(newScore);
+      // Battle pass score milestones - deferred to avoid event loop contention
+      // during the game tick (addXP can trigger HTTP calls on first invocation)
+      Future.microtask(() => _checkScoreMilestones(newScore));
 
       // Level up (unlimited levels with progressive difficulty)
       if (newScore >= previousState.targetScore) {
@@ -449,11 +450,12 @@ class GameCubit extends Cubit<GameCubitState> {
         _audioService.playSound('level_up');
         HapticFeedback.mediumImpact();
 
-        // Award coins for level up
-        _coinsCubit.earnCoins(
+        // Award coins for level up - deferred to avoid event loop contention
+        final levelForCoins = newLevel;
+        Future.microtask(() => _coinsCubit.earnCoins(
           CoinEarningSource.levelUp,
-          metadata: {'level': newLevel},
-        );
+          metadata: {'level': levelForCoins},
+        ));
       } else {
         _audioService.playSound('eat');
         HapticFeedback.lightImpact();
@@ -478,11 +480,11 @@ class GameCubit extends Cubit<GameCubitState> {
       _hapticService.powerUpCollected();
       _powerUpsCollectedThisGame++;
 
-      // Battle pass XP for power-up collection
-      _battlePassCubit.addXP(
+      // Battle pass XP for power-up collection - deferred to avoid event loop contention
+      Future.microtask(() => _battlePassCubit.addXP(
         BattlePassXpSource.getXpForAction('power_up_collected'),
         source: 'power_up_collected',
-      );
+      ));
 
       // Track power-up type for statistics
       _currentGamePowerUpTypes[currentPowerUp.type.name] =

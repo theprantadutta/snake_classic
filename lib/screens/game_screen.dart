@@ -1202,6 +1202,17 @@ class _ScorePopupLayerState extends State<_ScorePopupLayer> {
   Size? _boardSize;
   Offset? _boardOffset;
 
+  @override
+  void initState() {
+    super.initState();
+    // Pre-resolve board metrics after the first frame renders, so the
+    // expensive element tree walk happens before any food is eaten.
+    // Previously this was lazy (on first food), causing a visible pause.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _resolveBoardMetrics();
+    });
+  }
+
   void addPopup({
     required Food food,
     required int points,
@@ -1209,8 +1220,10 @@ class _ScorePopupLayerState extends State<_ScorePopupLayer> {
     required int boardHeight,
     double comboMultiplier = 1.0,
   }) {
-    // Lazily resolve board size/offset from the game board's render object
-    _resolveBoardMetrics();
+    // Ensure metrics are resolved (fast no-op if already cached)
+    if (_boardSize == null || _boardOffset == null) {
+      _resolveBoardMetrics();
+    }
     if (_boardSize == null || _boardOffset == null) return;
 
     final cellWidth = _boardSize!.width / boardWidth;
@@ -1239,17 +1252,9 @@ class _ScorePopupLayerState extends State<_ScorePopupLayer> {
   }
 
   void _resolveBoardMetrics() {
-    // Walk up to find the game board's render box via the parent context
-    // We find the SizedBox that wraps GameBoard by searching the element tree
     if (_boardSize != null && _boardOffset != null) return;
 
-    // Use our own context to find the nearest GameBoard ancestor's size
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.hasSize) return;
-
-    // The popup layer is a sibling of the game board in the Stack,
-    // so we use the Stack's constraints to estimate board position.
-    // Find the GameBoard render object via the tree.
+    // Find the GameBoard render object via the element tree.
     void visitor(Element element) {
       if (_boardSize != null && _boardOffset != null) return;
       if (element.widget is GameBoard) {
@@ -1264,12 +1269,11 @@ class _ScorePopupLayerState extends State<_ScorePopupLayer> {
     }
 
     context.visitAncestorElements((element) {
-      // Search from the Stack level to find the GameBoard
       if (element.widget is Stack) {
         element.visitChildren(visitor);
-        return _boardSize == null; // Stop if found
+        return _boardSize == null;
       }
-      return true; // Continue up
+      return true;
     });
   }
 
