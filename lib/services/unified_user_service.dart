@@ -193,6 +193,7 @@ class UnifiedUserService extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isLoadingUser = false; // Prevents concurrent user loading
   String? _loadingUserId; // Track which user is being loaded
+  bool _isInitializing = false; // Prevents auth listener from duplicating work during initialize()
 
   // Getters
   UnifiedUser? get currentUser => _currentUser;
@@ -238,7 +239,12 @@ class UnifiedUserService extends ChangeNotifier {
 
       if (currentFirebaseUser != null) {
         AppLogger.user('Found existing user: ${currentFirebaseUser.uid}');
-        await _loadOrCreateUser(currentFirebaseUser);
+        _isInitializing = true;
+        try {
+          await _loadOrCreateUser(currentFirebaseUser);
+        } finally {
+          _isInitializing = false;
+        }
       } else {
         // No Firebase user - try cached session first
         final cachedUser = await _loadCachedUserSession();
@@ -292,6 +298,13 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<void> _handleAuthStateChange(User? firebaseUser) async {
     if (firebaseUser != null) {
+      // Skip if initialize() is already handling the first load
+      if (_isInitializing) {
+        AppLogger.user(
+          'Skipping auth state change during initialization for ${firebaseUser.uid}',
+        );
+        return;
+      }
       // Skip if this user is already loaded or currently being loaded
       if (_currentUser != null && _currentUser!.uid == firebaseUser.uid) {
         return;

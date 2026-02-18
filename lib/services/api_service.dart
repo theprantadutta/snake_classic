@@ -1223,6 +1223,27 @@ class ApiService {
     }
   }
 
+  /// Batch subscribe to multiple notification topics in a single call
+  Future<bool> batchSubscribeToTopics(
+    String fcmToken,
+    List<String> topics,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/notifications/topics/subscribe-batch'),
+            headers: _authHeaders,
+            body: jsonEncode({'fcm_token': fcmToken, 'topics': topics}),
+          )
+          .timeout(_timeout);
+
+      return response.statusCode == 200;
+    } catch (e) {
+      AppLogger.error('Error batch subscribing to topics', e);
+      return false;
+    }
+  }
+
   /// Unsubscribe from notification topic
   Future<bool> unsubscribeFromTopic(String fcmToken, String topic) async {
     try {

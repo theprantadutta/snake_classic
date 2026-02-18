@@ -36,6 +36,7 @@ class NotificationService {
 
   String? _fcmToken;
   bool _initialized = false;
+  bool _backendIntegrationDone = false;
 
   // Notification preferences - stored in SharedPreferences via PreferencesService
   final Map<NotificationType, bool> _notificationPreferences = {
@@ -455,13 +456,21 @@ class NotificationService {
             _notificationPreferences[NotificationType.specialEvent] ?? true,
       );
 
-      // Use authenticated ApiService for topic subscriptions
+      // Use batch endpoint to subscribe to all topics in a single API call
       final apiService = ApiService();
-      for (final topic in topics) {
-        await apiService.subscribeToTopic(token, topic);
-      }
+      final success = await apiService.batchSubscribeToTopics(token, topics);
 
-      AppLogger.network('Topic subscriptions synced: ${topics.join(', ')}');
+      if (success) {
+        AppLogger.network(
+          'Topic subscriptions synced (batch): ${topics.join(', ')}',
+        );
+      } else {
+        AppLogger.warning('Batch topic subscription failed, trying individually');
+        // Fallback to individual subscriptions
+        for (final topic in topics) {
+          await apiService.subscribeToTopic(token, topic);
+        }
+      }
     } catch (e) {
       AppLogger.error('Error syncing topic subscriptions', e);
     }
@@ -470,6 +479,11 @@ class NotificationService {
   /// Initialize backend integration after user authentication
   Future<void> initializeBackendIntegration() async {
     try {
+      if (_backendIntegrationDone) {
+        AppLogger.info('Backend integration already completed, skipping');
+        return;
+      }
+
       if (_fcmToken == null) {
         AppLogger.warning(
           'Cannot initialize backend integration: No FCM token available',
@@ -501,6 +515,7 @@ class NotificationService {
       // Register token with backend (using authenticated ApiService)
       await _registerTokenWithBackend(_fcmToken!);
 
+      _backendIntegrationDone = true;
       AppLogger.info('✅ Backend integration initialized');
     } catch (e) {
       AppLogger.error('Failed to initialize backend integration', e);

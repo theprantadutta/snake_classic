@@ -120,6 +120,11 @@ class DataSyncService extends ChangeNotifier {
   static const int _maxRetries = 5;
   static const Duration _syncInterval = Duration(minutes: 2);
 
+  // Cached user profile to avoid redundant GET /auth/me calls
+  Map<String, dynamic>? _cachedProfile;
+  DateTime? _cachedProfileTime;
+  static const Duration _profileCacheTtl = Duration(seconds: 30);
+
   // Stream controller for sync state changes
   final StreamController<SyncState> _syncStateController =
       StreamController<SyncState>.broadcast();
@@ -677,14 +682,24 @@ class DataSyncService extends ChangeNotifier {
     }
   }
 
-  /// Get data from backend API
+  /// Get data from backend API (uses short-lived cache to avoid duplicate calls)
   Future<Map<String, dynamic>?> getData(String dataType) async {
     if (_currentUserId == null || !_connectivityService.isOnline) return null;
     if (!_apiService.isAuthenticated) return null;
 
     try {
+      // Use cached profile if still fresh
+      final now = DateTime.now();
+      if (_cachedProfile != null &&
+          _cachedProfileTime != null &&
+          now.difference(_cachedProfileTime!) < _profileCacheTtl) {
+        return _cachedProfile![dataType] as Map<String, dynamic>?;
+      }
+
       final profile = await _apiService.getCurrentUser();
       if (profile != null) {
+        _cachedProfile = profile;
+        _cachedProfileTime = DateTime.now();
         return profile[dataType] as Map<String, dynamic>?;
       }
       return null;
