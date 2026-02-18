@@ -145,6 +145,14 @@ class PurchaseService {
   /// SharedPreferences key for persisted pending verifications.
   static const String _pendingVerificationsKey = 'pending_purchase_verifications';
 
+  /// SharedPreferences key for delivered purchase IDs (deduplication).
+  /// Prevents double-delivery if the app crashes between coin delivery
+  /// and completePurchase().
+  static const String _deliveredPurchaseIdsKey = 'delivered_purchase_ids';
+
+  /// In-memory set of already-delivered purchase IDs.
+  final Set<String> _deliveredPurchaseIds = {};
+
   // Getters
   bool get isAvailable => _isAvailable;
   List<ProductDetails> get products => _products;
@@ -179,6 +187,9 @@ class PurchaseService {
 
     try {
       AppLogger.info('Initializing Purchase Service...');
+
+      // Load previously delivered purchase IDs for deduplication
+      await _loadDeliveredPurchaseIds();
 
       _isAvailable = await _inAppPurchase.isAvailable();
       if (!_isAvailable) {
@@ -283,26 +294,43 @@ class PurchaseService {
           _purchaseStatusController.add('Purchase failed');
         } else if (purchaseDetails.status == PurchaseStatus.purchased ||
             purchaseDetails.status == PurchaseStatus.restored) {
-          // Verify purchase with backend (via ApiService with JWT auth)
-          bool valid = await _verifyWithBackend(purchaseDetails);
-          if (valid) {
-            _purchases.add(purchaseDetails);
-            // Broadcast for PremiumCubit to handle content delivery
-            _purchaseStatusController.add(
-              'purchase_completed:${purchaseDetails.productID}',
+          // Deduplication: skip delivery if this purchase was already delivered
+          // (protects against double-credit if app crashes between delivery
+          // and completePurchase)
+          final purchaseId = purchaseDetails.purchaseID;
+          if (purchaseId != null &&
+              _deliveredPurchaseIds.contains(purchaseId)) {
+            AppLogger.info(
+              'Skipping already-delivered purchase: $purchaseId '
+              '(${purchaseDetails.productID})',
             );
-            _purchaseStatusController.add('Purchase successful!');
           } else {
-            // Backend verification failed — queue for offline retry
-            await _queuePendingVerification(purchaseDetails);
-            // Still deliver locally so the user isn't stuck
-            _purchases.add(purchaseDetails);
-            _purchaseStatusController.add(
-              'purchase_completed:${purchaseDetails.productID}',
-            );
-            _purchaseStatusController.add(
-              'Purchase delivered (backend sync pending)',
-            );
+            // Verify purchase with backend (via ApiService with JWT auth)
+            bool valid = await _verifyWithBackend(purchaseDetails);
+            if (valid) {
+              _purchases.add(purchaseDetails);
+              // Broadcast for PremiumCubit to handle content delivery
+              _purchaseStatusController.add(
+                'purchase_completed:${purchaseDetails.productID}',
+              );
+              _purchaseStatusController.add('Purchase successful!');
+            } else {
+              // Backend verification failed — queue for offline retry
+              await _queuePendingVerification(purchaseDetails);
+              // Still deliver locally so the user isn't stuck
+              _purchases.add(purchaseDetails);
+              _purchaseStatusController.add(
+                'purchase_completed:${purchaseDetails.productID}',
+              );
+              _purchaseStatusController.add(
+                'Purchase delivered (backend sync pending)',
+              );
+            }
+
+            // Mark as delivered AFTER broadcasting so PremiumCubit processes it
+            if (purchaseId != null) {
+              await _markAsDelivered(purchaseId);
+            }
           }
         }
 
@@ -452,6 +480,45 @@ class PurchaseService {
       }
     } catch (e) {
       AppLogger.error('Error retrying pending verifications', e);
+    }
+  }
+
+  // ==================== Deduplication ====================
+
+  /// Load previously delivered purchase IDs from SharedPreferences.
+  Future<void> _loadDeliveredPurchaseIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList(_deliveredPurchaseIdsKey) ?? [];
+      _deliveredPurchaseIds.addAll(ids);
+      if (ids.isNotEmpty) {
+        AppLogger.info('Loaded ${ids.length} delivered purchase IDs for dedup');
+      }
+    } catch (e) {
+      AppLogger.error('Error loading delivered purchase IDs', e);
+    }
+  }
+
+  /// Record a purchase ID as delivered so it won't be double-credited
+  /// if the purchase stream re-emits it (e.g. after a crash).
+  Future<void> _markAsDelivered(String purchaseId) async {
+    _deliveredPurchaseIds.add(purchaseId);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Keep only the last 500 IDs to avoid unbounded growth
+      final ids = _deliveredPurchaseIds.toList();
+      if (ids.length > 500) {
+        final trimmed = ids.sublist(ids.length - 500);
+        _deliveredPurchaseIds
+          ..clear()
+          ..addAll(trimmed);
+      }
+      await prefs.setStringList(
+        _deliveredPurchaseIdsKey,
+        _deliveredPurchaseIds.toList(),
+      );
+    } catch (e) {
+      AppLogger.error('Error persisting delivered purchase ID', e);
     }
   }
 

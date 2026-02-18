@@ -200,13 +200,13 @@ class PremiumCubit extends Cubit<PremiumState> {
     }
 
     // Coin packs — credit coins via CoinsCubit
-    const coinPackOptions = {
-      'coin_pack_small': 'coin_pack_small',
-      'coin_pack_medium': 'coin_pack_medium',
-      'coin_pack_large': 'coin_pack_large',
-      'coin_pack_mega': 'coin_pack_mega',
+    const coinPackIds = {
+      'coin_pack_small',
+      'coin_pack_medium',
+      'coin_pack_large',
+      'coin_pack_mega',
     };
-    if (coinPackOptions.containsKey(internalId)) {
+    if (coinPackIds.contains(internalId)) {
       final option = CoinPurchaseOption.availableOptions
           .where((o) => o.id == internalId)
           .firstOrNull;
