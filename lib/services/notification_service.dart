@@ -443,6 +443,7 @@ class NotificationService {
       AppLogger.network('Syncing topic subscriptions with backend');
 
       // Get recommended topics based on user preferences
+      // ignore: deprecated_member_use
       final topics = BackendService().getRecommendedTopics(
         tournamentsEnabled:
             _notificationPreferences[NotificationType.tournament] ?? true,
@@ -533,6 +534,7 @@ class NotificationService {
     }
 
     try {
+      // ignore: deprecated_member_use
       await BackendService().sendAchievementNotification(
         fcmToken: _fcmToken!,
         achievementName: achievementName,
@@ -557,6 +559,7 @@ class NotificationService {
     required String senderId,
   }) async {
     try {
+      // ignore: deprecated_member_use
       await BackendService().sendFriendRequestNotification(
         targetFcmToken: targetFcmToken,
         senderName: senderName,
@@ -580,6 +583,7 @@ class NotificationService {
     }
 
     try {
+      // ignore: deprecated_member_use
       final success = await BackendService().sendTestNotification(
         fcmToken: _fcmToken!,
         title: '🐍 Backend Test',

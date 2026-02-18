@@ -346,16 +346,25 @@ class DailyChallengeService extends ChangeNotifier {
   Future<void> _syncPendingProgress() async {
     if (_pendingProgress.isEmpty) return;
 
-    for (final entry in Map.from(_pendingProgress).entries) {
-      try {
-        await _apiService.updateChallengeProgress(
-          type: entry.key.apiValue,
-          value: entry.value,
-        );
-        _pendingProgress.remove(entry.key);
-      } catch (e) {
-        AppLogger.error('Error syncing pending progress for ${entry.key}', e);
+    // Use batch endpoint instead of individual calls
+    try {
+      final apiUpdates = _pendingProgress.entries
+          .map((entry) => <String, dynamic>{
+                'type': entry.key.apiValue,
+                'value': entry.value,
+              })
+          .toList();
+
+      final response =
+          await _apiService.batchUpdateChallengeProgress(apiUpdates);
+
+      if (response != null) {
+        // All synced successfully — clear pending
+        _pendingProgress.clear();
       }
+    } catch (e) {
+      AppLogger.error('Error batch syncing pending progress', e);
+      // Keep pending for next sync attempt
     }
 
     await _saveLocalProgress();
@@ -404,16 +413,54 @@ class DailyChallengeService extends ChangeNotifier {
     return true; // Always succeeds locally
   }
 
-  /// Claim all unclaimed rewards
+  /// Claim all unclaimed rewards in a single batch API call
   Future<int> claimAllRewards() async {
-    int totalClaimed = 0;
+    final claimable = _challenges.where((c) => c.canClaim).toList();
+    if (claimable.isEmpty) return 0;
 
-    for (final challenge in _challenges) {
-      if (challenge.canClaim) {
-        final success = await claimReward(challenge.id);
-        if (success) {
-          totalClaimed += challenge.coinReward;
+    // Optimistic local update for all claimable challenges
+    int totalClaimed = 0;
+    for (final challenge in claimable) {
+      final index = _challenges.indexWhere((c) => c.id == challenge.id);
+      if (index >= 0) {
+        _challenges[index] = challenge.copyWith(claimedReward: true);
+        totalClaimed += challenge.coinReward;
+      }
+    }
+    notifyListeners();
+
+    // Batch claim via backend
+    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
+      try {
+        final challengeIds = claimable.map((c) => c.id).toList();
+        final response =
+            await _apiService.batchClaimChallengeRewards(challengeIds);
+
+        if (response != null) {
+          final bonus = response['bonusCoins'] as int? ?? 0;
+          if (bonus > 0) {
+            _bonusCoins = bonus;
+            AppLogger.info('All challenges completed! Bonus: $bonus coins');
+          }
+          notifyListeners();
         }
+      } catch (e) {
+        AppLogger.error('Error batch claiming rewards', e);
+        // Queue individual claims for retry
+        for (final challenge in claimable) {
+          DataSyncService().queueSync('challenge_claim', {
+            'challengeId': challenge.id,
+            'claimed_at': DateTime.now().toIso8601String(),
+          }, priority: SyncPriority.high);
+        }
+      }
+    } else {
+      // Offline — queue for sync
+      for (final challenge in claimable) {
+        DataSyncService().queueSync('challenge_claim', {
+          'challengeId': challenge.id,
+          'claimed_at': DateTime.now().toIso8601String(),
+        }, priority: SyncPriority.high);
       }
     }
 

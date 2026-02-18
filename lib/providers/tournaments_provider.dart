@@ -88,7 +88,8 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
       state = state.copyWith(isOffline: !(next.value ?? false));
 
       if (wasOffline && isNowOnline) {
-        refresh();
+        // Stagger connectivity-restore refreshes to avoid API stampede
+        Future.delayed(const Duration(seconds: 3), () => refresh());
       }
     });
   }

@@ -364,38 +364,30 @@ class TournamentService {
     });
   }
 
-  /// Get user's tournament statistics
+  /// Get user's tournament statistics.
+  /// Computes stats from already-cached active + history tournaments
+  /// to avoid an extra uncached API call.
   Future<Map<String, dynamic>> getUserTournamentStats() async {
     try {
-      final response = await _apiService.listTournaments();
-      if (response == null || response['tournaments'] == null) return {};
-
-      final tournaments = List<Map<String, dynamic>>.from(
-        response['tournaments'],
-      );
+      // Use already-cached data instead of fetching ALL tournaments again
+      final active = await getActiveTournaments();
+      final history = await getTournamentHistory();
 
       int totalJoined = 0;
       int totalAttempts = 0;
       int bestScore = 0;
       int topThreeFinishes = 0;
 
-      for (final t in tournaments) {
-        final isJoined = t['is_joined'] ?? t['IsJoined'] ?? false;
-        if (!isJoined) continue;
+      for (final t in [...active, ...history]) {
+        // Only count tournaments the user has participated in
+        if (t.userAttempts == null || t.userAttempts == 0) continue;
 
         totalJoined++;
+        totalAttempts += t.userAttempts ?? 0;
 
-        final userAttempts = t['user_attempts'] ?? t['userAttempts'] ?? 0;
-        totalAttempts += userAttempts as int;
-
-        final userBest = t['user_best_score'] ?? t['userBestScore'] ?? 0;
-        if ((userBest as int) > bestScore) {
+        final userBest = t.userBestScore ?? 0;
+        if (userBest > bestScore) {
           bestScore = userBest;
-        }
-
-        final userRank = t['user_rank'] ?? t['userRank'];
-        if (userRank != null && (userRank as int) <= 3) {
-          topThreeFinishes++;
         }
       }
 

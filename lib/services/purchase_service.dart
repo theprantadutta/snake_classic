@@ -436,6 +436,7 @@ class PurchaseService {
   }
 
   /// Retry all pending verifications. Called on app resume and connectivity restore.
+  /// Uses batch endpoint when multiple verifications are pending.
   Future<void> retryPendingVerifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -446,11 +447,66 @@ class PurchaseService {
       final apiService = ApiService();
       if (!apiService.isAuthenticated) return;
 
-      final remaining = <String>[];
-
+      // Parse all pending entries
+      final entries = <Map<String, dynamic>>[];
       for (final entryJson in pending) {
         try {
-          final entry = jsonDecode(entryJson) as Map<String, dynamic>;
+          entries.add(jsonDecode(entryJson) as Map<String, dynamic>);
+        } catch (_) {}
+      }
+
+      if (entries.isEmpty) return;
+
+      // Use batch endpoint if multiple pending, individual for single
+      if (entries.length >= 2) {
+        final batchPayload = entries
+            .map((entry) => <String, dynamic>{
+                  'purchase_data': {
+                    'product_id': entry['product_id'],
+                    'transaction_id': entry['transaction_id'],
+                    'receipt_data': entry['receipt_data'],
+                    'purchase_token': entry['purchase_token'],
+                  },
+                  'platform': entry['platform'],
+                })
+            .toList();
+
+        final result = await apiService.batchVerifyPurchases(batchPayload);
+
+        if (result != null && result['results'] != null) {
+          final results = result['results'] as List;
+          final remaining = <String>[];
+
+          for (int i = 0; i < entries.length; i++) {
+            if (i < results.length) {
+              final r = results[i] as Map<String, dynamic>;
+              if (r['isValid'] == true) {
+                AppLogger.info(
+                  'Pending verification succeeded: ${entries[i]['product_id']}',
+                );
+              } else {
+                remaining.add(pending[i]);
+              }
+            } else {
+              remaining.add(pending[i]);
+            }
+          }
+
+          await prefs.setStringList(_pendingVerificationsKey, remaining);
+          if (remaining.isEmpty) {
+            AppLogger.info('All pending verifications completed (batch)');
+          } else {
+            AppLogger.warning('${remaining.length} verifications still pending');
+          }
+          return;
+        }
+      }
+
+      // Fallback: individual verification (single pending or batch failed)
+      final remaining = <String>[];
+      for (int i = 0; i < entries.length; i++) {
+        try {
+          final entry = entries[i];
           final result = await apiService.verifyPurchase(
             platform: entry['platform'] as String,
             receiptData: entry['receipt_data'] as String,
@@ -464,11 +520,10 @@ class PurchaseService {
               'Pending verification succeeded: ${entry['product_id']}',
             );
           } else {
-            // Still failing — keep in queue
-            remaining.add(entryJson);
+            remaining.add(pending[i]);
           }
         } catch (e) {
-          remaining.add(entryJson);
+          remaining.add(pending[i]);
         }
       }
 

@@ -3,6 +3,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../utils/logger.dart';
 
+/// Legacy service that duplicates ApiService endpoints without JWT auth.
+/// Only used for push notification triggers and topic recommendation logic.
+/// TODO: Migrate notification-sending methods to backend-initiated push
+/// notifications (server should send these, not the client). Once done,
+/// remove this class and its HTTP methods entirely. The [getRecommendedTopics]
+/// helper is pure logic and can be inlined into notification_service.dart.
+@Deprecated('Use ApiService for all authenticated API calls. '
+    'See TODO above for migration plan.')
 class BackendService {
   static final BackendService _instance = BackendService._internal();
   factory BackendService() => _instance;

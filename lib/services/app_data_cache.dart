@@ -53,11 +53,19 @@ class AppDataCache extends ChangeNotifier {
 
   bool _isFullyLoaded = false;
   bool _isLoading = false;
+  DateTime? _lastRefreshTime;
+  static const Duration _refreshThrottle = Duration(seconds: 60);
 
   // === Public Getters (instant access) ===
 
   bool get isFullyLoaded => _isFullyLoaded;
   bool get isLoading => _isLoading;
+  DateTime? get lastRefreshTime => _lastRefreshTime;
+
+  /// Returns true if data was refreshed recently (within throttle window)
+  bool get isRecentlyRefreshed =>
+      _lastRefreshTime != null &&
+      DateTime.now().difference(_lastRefreshTime!) < _refreshThrottle;
 
   Map<String, dynamic>? get statistics => _statistics;
   Map<String, dynamic>? get performanceTrends => _performanceTrends;
@@ -98,11 +106,13 @@ class AppDataCache extends ChangeNotifier {
       ]);
 
       _isFullyLoaded = true;
+      _lastRefreshTime = DateTime.now();
       AppLogger.success('AppDataCache: All data preloaded successfully');
     } catch (e) {
       AppLogger.error('AppDataCache: Error during preload', e);
       // Even if some fail, mark as loaded so screens can still function
       _isFullyLoaded = true;
+      _lastRefreshTime = DateTime.now();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -227,8 +237,12 @@ class AppDataCache extends ChangeNotifier {
     }
   }
 
-  /// Background refresh - call when entering a screen for silent updates
+  /// Background refresh - call when entering a screen for silent updates.
+  /// Throttled to avoid redundant refreshes within [_refreshThrottle].
   Future<void> refreshInBackground() async {
+    // Skip if we just refreshed recently
+    if (isRecentlyRefreshed) return;
+
     // Don't block - run in background
     Future.microtask(() async {
       try {
@@ -240,6 +254,7 @@ class AppDataCache extends ChangeNotifier {
           _loadSocialData(),
           _loadDailyChallenges(),
         ]);
+        _lastRefreshTime = DateTime.now();
         notifyListeners();
       } catch (e) {
         if (kDebugMode) print('AppDataCache: Background refresh warning: $e');

@@ -803,6 +803,8 @@ class UnifiedUserService extends ChangeNotifier {
     );
 
     // Update via backend API
+    // Note: Score submission is handled separately by GameCubit's post-game sync
+    // pipeline (via DataSyncService queue), so we only update the profile here.
     if (_apiService.isAuthenticated) {
       await _apiService.updateProfile({
         'high_score': _currentUser!.highScore,
@@ -810,11 +812,6 @@ class UnifiedUserService extends ChangeNotifier {
         'total_score': _currentUser!.totalScore,
         'level': _currentUser!.level,
       });
-
-      // Also submit the score
-      if (newHighScore != null) {
-        await _apiService.submitScore(score: newHighScore);
-      }
     }
 
     notifyListeners();

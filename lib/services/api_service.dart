@@ -57,6 +57,41 @@ class ApiService {
   /// Get stored access token
   String? get accessToken => _accessToken;
 
+  /// Check if the JWT token is expired or about to expire (within 5 minutes).
+  /// Returns true if the token should be refreshed.
+  bool get isTokenExpiredOrExpiring {
+    if (_accessToken == null) return true;
+    try {
+      // JWT format: header.payload.signature
+      final parts = _accessToken!.split('.');
+      if (parts.length != 3) return true;
+
+      // Decode the payload (base64url)
+      String payload = parts[1];
+      // Add padding if needed
+      switch (payload.length % 4) {
+        case 2:
+          payload += '==';
+          break;
+        case 3:
+          payload += '=';
+          break;
+      }
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final claims = jsonDecode(decoded) as Map<String, dynamic>;
+
+      final exp = claims['exp'] as int?;
+      if (exp == null) return true;
+
+      final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      // Consider expired if within 5 minutes of expiry
+      return DateTime.now().isAfter(expiry.subtract(const Duration(minutes: 5)));
+    } catch (e) {
+      // If we can't decode the token, treat as expired
+      return true;
+    }
+  }
+
   /// Store JWT token
   Future<void> _storeToken(String token, String userId) async {
     _accessToken = token;
@@ -234,6 +269,34 @@ class ApiService {
       return _handleResponse(response);
     } catch (e) {
       AppLogger.error('Error checking username', e);
+      return null;
+    }
+  }
+
+  /// Suggest available usernames based on desired username (server-side)
+  Future<List<String>?> suggestUsernames(
+    String desiredUsername, {
+    int count = 5,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/users/username/suggest'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'desired_username': desiredUsername,
+              'count': count,
+            }),
+          )
+          .timeout(_timeout);
+
+      final result = _handleResponse(response);
+      if (result != null && result['suggestions'] != null) {
+        return List<String>.from(result['suggestions']);
+      }
+      return null;
+    } catch (e) {
+      AppLogger.error('Error suggesting usernames', e);
       return null;
     }
   }
@@ -979,6 +1042,26 @@ class ApiService {
     }
   }
 
+  /// Batch verify multiple purchases in a single call
+  Future<Map<String, dynamic>?> batchVerifyPurchases(
+    List<Map<String, dynamic>> purchases,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/purchases/verify-batch'),
+            headers: _authHeaders,
+            body: jsonEncode({'purchases': purchases}),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error batch verifying purchases', e);
+      return null;
+    }
+  }
+
   /// Get premium content
   Future<Map<String, dynamic>?> getPremiumContent() async {
     try {
@@ -1178,6 +1261,26 @@ class ApiService {
       return _handleResponse(response);
     } catch (e) {
       AppLogger.error('Error claiming challenge reward', e);
+      return null;
+    }
+  }
+
+  /// Batch claim rewards for multiple completed challenges in a single call
+  Future<Map<String, dynamic>?> batchClaimChallengeRewards(
+    List<String> challengeIds,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/dailychallenges/claim-batch'),
+            headers: _authHeaders,
+            body: jsonEncode({'challenge_ids': challengeIds}),
+          )
+          .timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error batch claiming challenge rewards', e);
       return null;
     }
   }

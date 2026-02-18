@@ -271,32 +271,26 @@ class UsernameService {
     return username;
   }
 
-  /// Find available username similar to desired username
+  /// Find available username similar to desired username.
+  /// Uses a single server-side API call instead of looping through variations.
   Future<String> findAvailableUsername(String desiredUsername) async {
-    // First try the exact username
-    if ((await validateUsernameComplete(desiredUsername)).isValid) {
-      return desiredUsername;
-    }
-
-    // Try variations with numbers
-    for (int i = 1; i <= 999; i++) {
-      final variation = '${desiredUsername}_$i';
-      if (variation.length <= maxLength) {
-        if ((await validateUsernameComplete(variation)).isValid) {
-          return variation;
-        }
+    // Use server-side suggest endpoint — single API call replaces up to 1000 calls
+    try {
+      final suggestions = await _apiService.suggestUsernames(
+        desiredUsername,
+        count: 1,
+      );
+      if (suggestions != null && suggestions.isNotEmpty) {
+        return suggestions.first;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting username suggestions: $e');
       }
     }
 
-    // If all variations are taken, generate a random one
-    String randomUsername;
-    int attempts = 0;
-    do {
-      randomUsername = generateRandomUsername();
-      attempts++;
-    } while (!(await isUsernameAvailable(randomUsername)) && attempts < 10);
-
-    return randomUsername;
+    // Fallback: generate a random username locally (no API call)
+    return generateRandomUsername();
   }
 
   /// Update username via backend API

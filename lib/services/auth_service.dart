@@ -139,18 +139,17 @@ class AuthService {
     }
   }
 
-  /// Ensure user is authenticated with backend (call on app startup)
+  /// Ensure user is authenticated with backend (call on app startup / resume).
+  /// Uses local JWT expiry check to avoid unnecessary GET /auth/me calls.
   Future<bool> ensureBackendAuthentication() async {
     if (!isSignedIn) return false;
 
-    // If already authenticated with backend, we're good
-    if (_apiService.isAuthenticated) {
-      // Verify the token is still valid
-      final user = await _apiService.getCurrentUser();
-      if (user != null) return true;
+    // If we have a token and it's not expired, skip the network call
+    if (_apiService.isAuthenticated && !_apiService.isTokenExpiredOrExpiring) {
+      return true;
     }
 
-    // Need to re-authenticate
+    // Token is missing or expired — need to re-authenticate
     return await _authenticateWithBackend(currentUser!);
   }
 

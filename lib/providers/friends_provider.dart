@@ -102,7 +102,8 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
       final wasOffline = previous?.value == false;
       final isNowOnline = next.value == true;
       if (wasOffline && isNowOnline) {
-        refresh();
+        // Stagger connectivity-restore refreshes to avoid API stampede
+        Future.delayed(const Duration(seconds: 2), () => refresh());
       }
     });
   }
