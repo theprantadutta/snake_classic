@@ -567,6 +567,58 @@ class ApiService {
     }
   }
 
+  /// Batch update achievement progress (single HTTP call for multiple achievements)
+  Future<bool> batchUpdateAchievementProgress(
+    List<Map<String, dynamic>> updates,
+  ) async {
+    if (updates.isEmpty) return true;
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/achievements/progress/batch'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'achievements': updates.map((u) => {
+                'achievement_id': u['achievementId'],
+                'progress_increment': u['progressIncrement'],
+              }).toList(),
+            }),
+          )
+          .timeout(_timeout);
+
+      final result = _handleResponse(response);
+      return result != null;
+    } catch (e) {
+      AppLogger.error('Error batch updating achievement progress', e);
+      return false;
+    }
+  }
+
+  /// Batch update daily challenge progress (single HTTP call for multiple challenge types)
+  Future<Map<String, dynamic>?> batchUpdateChallengeProgress(
+    List<Map<String, dynamic>> updates,
+  ) async {
+    if (updates.isEmpty) return null;
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/dailychallenges/progress/batch'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'updates': updates,
+            }),
+          )
+          .timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error batch updating challenge progress', e);
+      return null;
+    }
+  }
+
   // ==================== Social ====================
 
   /// Get friends list

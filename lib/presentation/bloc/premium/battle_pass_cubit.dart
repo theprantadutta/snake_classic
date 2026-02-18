@@ -254,6 +254,35 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     );
   }
 
+  // ==================== XP Buffering ====================
+  // Buffer XP locally during gameplay, then flush once at game end.
+
+  int _bufferedXP = 0;
+  final List<String> _bufferedSources = [];
+
+  /// Buffer XP locally without any API call. Call [flushXP] once at game end.
+  void bufferXP(int xp, {String source = 'gameplay'}) {
+    if (xp <= 0 || state.currentTier >= state.maxTier) return;
+    _bufferedXP += xp;
+    if (!_bufferedSources.contains(source)) {
+      _bufferedSources.add(source);
+    }
+  }
+
+  /// Flush all buffered XP in a single API call, then clear the buffer.
+  Future<void> flushXP() async {
+    if (_bufferedXP <= 0) return;
+
+    final totalXP = _bufferedXP;
+    final combinedSource = _bufferedSources.join(',');
+
+    // Clear buffer immediately to avoid double-flush
+    _bufferedXP = 0;
+    _bufferedSources.clear();
+
+    await addXP(totalXP, source: combinedSource);
+  }
+
   /// Add XP to battle pass (syncs with backend if online)
   Future<void> addXP(int xp, {String source = 'gameplay'}) async {
     if (state.currentTier >= state.maxTier) return;

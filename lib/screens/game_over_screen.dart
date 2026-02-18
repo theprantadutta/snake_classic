@@ -10,7 +10,7 @@ import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/providers/daily_challenges_provider.dart';
+// daily_challenges_provider import removed — progress synced via batch in game_cubit
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -67,10 +67,8 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     // Load achievements data
     _loadAchievements();
 
-    // Refresh daily challenge data after game ends
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(dailyChallengesProvider.notifier).refresh();
-    });
+    // Daily challenge progress is now synced in _postGameSync batch call
+    // No need for a separate refresh — data is updated locally already
   }
 
   Future<void> _loadAchievements() async {

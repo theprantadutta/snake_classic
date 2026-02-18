@@ -233,6 +233,77 @@ class DailyChallengeService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Batch update progress for multiple challenge types in a single API call.
+  /// Each entry: {type: ChallengeType, value: int, gameMode: String?}
+  Future<void> updateProgressBatch(
+    List<({ChallengeType type, int value, String? gameMode})> updates,
+  ) async {
+    if (updates.isEmpty) return;
+
+    // Apply all local progress updates first (instant)
+    for (final update in updates) {
+      if (update.value <= 0) continue;
+      _pendingProgress[update.type] =
+          (_pendingProgress[update.type] ?? 0) + update.value;
+      _updateLocalProgress(update.type, update.value, gameMode: update.gameMode);
+    }
+    await _saveLocalProgress();
+
+    // Try batch sync with backend
+    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
+      try {
+        final apiUpdates = updates
+            .where((u) => u.value > 0)
+            .map((u) => <String, dynamic>{
+                  'type': u.type.apiValue,
+                  'value': u.value,
+                  if (u.gameMode != null) 'gameMode': u.gameMode,
+                })
+            .toList();
+
+        final response =
+            await _apiService.batchUpdateChallengeProgress(apiUpdates);
+
+        if (response != null) {
+          // Update challenges from response
+          final updatedChallenges = (response['updatedChallenges'] as List?)
+              ?.map((c) => DailyChallenge.fromJson(c as Map<String, dynamic>))
+              .toList();
+
+          if (updatedChallenges != null) {
+            for (final updated in updatedChallenges) {
+              final index = _challenges.indexWhere((c) => c.id == updated.id);
+              if (index >= 0) {
+                _challenges[index] = updated;
+              }
+            }
+          }
+
+          // Check for newly completed
+          final newlyCompleted = response['newlyCompletedIds'] as List?;
+          if (newlyCompleted != null && newlyCompleted.isNotEmpty) {
+            _completedCount = _challenges.where((c) => c.isCompleted).length;
+            _allCompleted = _completedCount == _totalCount && _totalCount > 0;
+            AppLogger.info(
+              'Daily challenges completed: ${newlyCompleted.length}',
+            );
+          }
+
+          // Clear pending progress for synced types
+          for (final update in updates) {
+            _pendingProgress.remove(update.type);
+          }
+          await _saveLocalProgress();
+        }
+      } catch (e) {
+        AppLogger.error('Error batch syncing challenge progress', e);
+        // Keep in pending for later sync
+      }
+    }
+
+    notifyListeners();
+  }
+
   void _updateLocalProgress(ChallengeType type, int value, {String? gameMode}) {
     for (int i = 0; i < _challenges.length; i++) {
       final challenge = _challenges[i];

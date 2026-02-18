@@ -141,26 +141,8 @@ class AchievementService extends ChangeNotifier {
   Future<void> _syncPendingUnlocks() async {
     if (_pendingUnlocks.isEmpty || !_connectivityService.isOnline) return;
 
-    final synced = <String>[];
-
-    for (final achievementId in _pendingUnlocks) {
-      final achievement = getAchievementById(achievementId);
-      if (achievement != null && achievement.isUnlocked) {
-        try {
-          await _apiService.updateAchievementProgress(
-            achievementId: achievementId,
-            progressIncrement: achievement.targetValue,
-          );
-          synced.add(achievementId);
-        } catch (e) {
-          if (kDebugMode) {
-            print('Failed to sync achievement $achievementId: $e');
-          }
-        }
-      }
-    }
-
-    _pendingUnlocks.removeWhere((id) => synced.contains(id));
+    // Use the batch sync method which handles both online and fallback
+    await syncUnlockedAchievements();
   }
 
   void _updateAchievementsFromBackend(
@@ -250,41 +232,65 @@ class AchievementService extends ChangeNotifier {
     }
   }
 
-  /// Unlock an achievement locally and queue for sync
-  Future<void> _unlockAchievement(int index, Achievement achievement) async {
+  /// Unlock an achievement locally only (no API call).
+  /// Call [syncUnlockedAchievements] after all checks to batch-sync to backend.
+  void _unlockAchievementLocal(int index, Achievement achievement) {
     _achievements[index] = achievement.copyWith(
       isUnlocked: true,
       currentProgress: achievement.targetValue,
       unlockedAt: DateTime.now(),
     );
 
+    if (!_pendingUnlocks.contains(achievement.id)) {
+      _pendingUnlocks.add(achievement.id);
+    }
+  }
+
+  /// Batch-sync all pending achievement unlocks to the backend in a single API call.
+  Future<void> syncUnlockedAchievements() async {
+    if (_pendingUnlocks.isEmpty) return;
+
     if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-      // Sync immediately
       try {
-        await _apiService.updateAchievementProgress(
-          achievementId: achievement.id,
-          progressIncrement: achievement.targetValue,
-        );
-      } catch (e) {
-        // Queue for later sync
-        if (!_pendingUnlocks.contains(achievement.id)) {
-          _pendingUnlocks.add(achievement.id);
+        final updates = <Map<String, dynamic>>[];
+        for (final achievementId in _pendingUnlocks) {
+          final achievement = getAchievementById(achievementId);
+          if (achievement != null) {
+            updates.add({
+              'achievementId': achievementId,
+              'progressIncrement': achievement.targetValue,
+            });
+          }
         }
-        // Also queue in sync service
-        await _syncService.queueSync('achievement_${achievement.id}', {
-          'achievementId': achievement.id,
+
+        if (updates.isNotEmpty) {
+          final success = await _apiService.batchUpdateAchievementProgress(updates);
+          if (success) {
+            _pendingUnlocks.clear();
+            return;
+          }
+        }
+      } catch (e) {
+        // Fall through to queue for later sync
+        if (kDebugMode) {
+          print('Batch achievement sync failed, queuing: $e');
+        }
+      }
+    }
+
+    // Offline or batch failed — queue each for later sync via DataSyncService
+    for (final achievementId in List<String>.from(_pendingUnlocks)) {
+      final achievement = getAchievementById(achievementId);
+      if (achievement != null) {
+        await _syncService.queueSync('achievement_$achievementId', {
+          'achievementId': achievementId,
           'progress': achievement.targetValue,
         }, priority: SyncPriority.high);
-      }
-    } else {
-      // Offline - queue for later sync
-      if (!_pendingUnlocks.contains(achievement.id)) {
-        _pendingUnlocks.add(achievement.id);
       }
     }
   }
 
-  Future<List<Achievement>> checkScoreAchievements(int score) async {
+  List<Achievement> checkScoreAchievements(int score) {
     final newUnlocks = <Achievement>[];
 
     for (int i = 0; i < _achievements.length; i++) {
@@ -293,7 +299,7 @@ class AchievementService extends ChangeNotifier {
       if (achievement.type == AchievementType.score &&
           !achievement.isUnlocked) {
         if (score >= achievement.targetValue) {
-          await _unlockAchievement(i, achievement);
+          _unlockAchievementLocal(i, achievement);
           newUnlocks.add(_achievements[i]);
         } else {
           _achievements[i] = achievement.copyWith(currentProgress: score);
@@ -303,14 +309,14 @@ class AchievementService extends ChangeNotifier {
 
     if (newUnlocks.isNotEmpty) {
       _recentUnlocks.addAll(newUnlocks);
-      await _saveProgress();
+      _saveProgress();
       notifyListeners();
     }
 
     return newUnlocks;
   }
 
-  Future<List<Achievement>> checkGamePlayedAchievements(int totalGames) async {
+  List<Achievement> checkGamePlayedAchievements(int totalGames) {
     final newUnlocks = <Achievement>[];
 
     for (int i = 0; i < _achievements.length; i++) {
@@ -319,7 +325,7 @@ class AchievementService extends ChangeNotifier {
       if (achievement.type == AchievementType.games &&
           !achievement.isUnlocked) {
         if (totalGames >= achievement.targetValue) {
-          await _unlockAchievement(i, achievement);
+          _unlockAchievementLocal(i, achievement);
           newUnlocks.add(_achievements[i]);
         } else {
           _achievements[i] = achievement.copyWith(currentProgress: totalGames);
@@ -329,14 +335,14 @@ class AchievementService extends ChangeNotifier {
 
     if (newUnlocks.isNotEmpty) {
       _recentUnlocks.addAll(newUnlocks);
-      await _saveProgress();
+      _saveProgress();
       notifyListeners();
     }
 
     return newUnlocks;
   }
 
-  Future<List<Achievement>> checkSurvivalAchievements(int survivalTime) async {
+  List<Achievement> checkSurvivalAchievements(int survivalTime) {
     final newUnlocks = <Achievement>[];
 
     for (int i = 0; i < _achievements.length; i++) {
@@ -345,7 +351,7 @@ class AchievementService extends ChangeNotifier {
       if (achievement.type == AchievementType.survival &&
           !achievement.isUnlocked) {
         if (survivalTime >= achievement.targetValue) {
-          await _unlockAchievement(i, achievement);
+          _unlockAchievementLocal(i, achievement);
           newUnlocks.add(_achievements[i]);
         } else if (survivalTime > achievement.currentProgress) {
           _achievements[i] = achievement.copyWith(
@@ -357,20 +363,20 @@ class AchievementService extends ChangeNotifier {
 
     if (newUnlocks.isNotEmpty) {
       _recentUnlocks.addAll(newUnlocks);
-      await _saveProgress();
+      _saveProgress();
       notifyListeners();
     }
 
     return newUnlocks;
   }
 
-  Future<List<Achievement>> checkSpecialAchievements({
+  List<Achievement> checkSpecialAchievements({
     int? level,
     bool? hitWall,
     bool? hitSelf,
     Set<String>? foodTypesEaten,
     int? noWallGames,
-  }) async {
+  }) {
     final newUnlocks = <Achievement>[];
 
     for (int i = 0; i < _achievements.length; i++) {
@@ -416,7 +422,7 @@ class AchievementService extends ChangeNotifier {
         }
 
         if (shouldUnlock) {
-          await _unlockAchievement(i, achievement);
+          _unlockAchievementLocal(i, achievement);
           newUnlocks.add(_achievements[i]);
         } else if (newProgress != achievement.currentProgress) {
           _achievements[i] = achievement.copyWith(currentProgress: newProgress);
@@ -426,7 +432,7 @@ class AchievementService extends ChangeNotifier {
 
     if (newUnlocks.isNotEmpty) {
       _recentUnlocks.addAll(newUnlocks);
-      await _saveProgress();
+      _saveProgress();
       notifyListeners();
     }
 

@@ -480,11 +480,11 @@ class GameCubit extends Cubit<GameCubitState> {
       _hapticService.powerUpCollected();
       _powerUpsCollectedThisGame++;
 
-      // Battle pass XP for power-up collection - deferred to avoid event loop contention
-      Future.microtask(() => _battlePassCubit.addXP(
+      // Buffer battle pass XP for power-up collection (flushed at game end)
+      _battlePassCubit.bufferXP(
         BattlePassXpSource.getXpForAction('power_up_collected'),
         source: 'power_up_collected',
-      ));
+      );
 
       // Track power-up type for statistics
       _currentGamePowerUpTypes[currentPowerUp.type.name] =
@@ -702,7 +702,9 @@ class GameCubit extends Cubit<GameCubitState> {
     });
   }
 
-  Future<void> _trackGameEnd() async {
+  /// Local-only game end processing: achievement checks + coin awards + recording.
+  /// No API calls — all syncing is deferred to [_postGameSync].
+  void _trackGameEndLocal() {
     // Calculate game duration
     final gameDurationSeconds = _gameStartTime != null
         ? DateTime.now().difference(_gameStartTime!).inSeconds
@@ -718,14 +720,14 @@ class GameCubit extends Cubit<GameCubitState> {
     final gameState = state.gameState;
     if (gameState == null) return;
 
-    // Check achievements and award coins for newly unlocked ones
-    final scoreUnlocks = await _achievementService.checkScoreAchievements(
+    // Check achievements locally (no API calls — _unlockAchievementLocal only)
+    final scoreUnlocks = _achievementService.checkScoreAchievements(
       gameState.score,
     );
-    final survivalUnlocks = await _achievementService.checkSurvivalAchievements(
+    final survivalUnlocks = _achievementService.checkSurvivalAchievements(
       gameDurationSeconds,
     );
-    final specialUnlocks = await _achievementService.checkSpecialAchievements(
+    final specialUnlocks = _achievementService.checkSpecialAchievements(
       level: gameState.level,
       hitWall: _hitWallThisGame,
       hitSelf: _hitSelfThisGame,
@@ -733,10 +735,10 @@ class GameCubit extends Cubit<GameCubitState> {
       noWallGames: _consecutiveGamesWithoutWallHits,
     );
 
-    // Award coins and battle pass XP for newly unlocked achievements
+    // Award coins locally and buffer battle pass XP for newly unlocked achievements
     final allNewUnlocks = [...scoreUnlocks, ...survivalUnlocks, ...specialUnlocks];
     for (final achievement in allNewUnlocks) {
-      await _coinsCubit.earnCoins(
+      _coinsCubit.earnCoins(
         CoinEarningSource.achievementUnlocked,
         customAmount: achievement.points,
         itemName: achievement.title,
@@ -747,11 +749,11 @@ class GameCubit extends Cubit<GameCubitState> {
         },
       );
 
-      // Battle pass XP based on achievement rarity
+      // Buffer battle pass XP based on achievement rarity
       final xpKey = 'achievement_unlocked_${achievement.rarity.name}';
       final xp = BattlePassXpSource.getXpForAction(xpKey);
       if (xp > 0) {
-        await _battlePassCubit.addXP(xp, source: xpKey);
+        _battlePassCubit.bufferXP(xp, source: xpKey);
       }
     }
 
@@ -760,28 +762,7 @@ class GameCubit extends Cubit<GameCubitState> {
         .map((p) => p.duration.inSeconds - p.remainingTime.inSeconds)
         .fold(0, (sum, time) => sum + time);
 
-    // Record game statistics
-    await _statisticsService.recordGameResult(
-      score: gameState.score,
-      gameTime: gameDurationSeconds,
-      level: gameState.level,
-      foodConsumed: _currentGameFoodTypes.values.fold(
-        0,
-        (sum, count) => sum + count,
-      ),
-      foodTypes: _currentGameFoodTypes,
-      foodPoints: _currentGameFoodPoints,
-      powerUpsCollected: _powerUpsCollectedThisGame,
-      powerUpTypes: _currentGamePowerUpTypes,
-      powerUpTime: _currentGamePowerUpTime,
-      hitWall: _hitWallThisGame,
-      hitSelf: _hitSelfThisGame,
-      isPerfectGame:
-          !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
-      unlockedAchievements: [],
-    );
-
-    // Finish game recording
+    // Finish game recording (local only)
     final crashReasonStr = _hitWallThisGame
         ? 'wall'
         : _hitSelfThisGame
@@ -807,62 +788,6 @@ class GameCubit extends Cubit<GameCubitState> {
         'gameDurationSeconds': gameDurationSeconds,
       },
     );
-
-    // Update daily challenge progress (awaited to ensure sync before game over screen)
-    await _updateDailyChallengeProgress(
-      score: gameState.score,
-      foodEaten: _currentGameFoodTypes.values.fold(
-        0,
-        (sum, count) => sum + count,
-      ),
-      survivalSeconds: gameDurationSeconds,
-      gameMode: 'classic',
-    );
-  }
-
-  /// Update daily challenge progress after game ends
-  Future<void> _updateDailyChallengeProgress({
-    required int score,
-    required int foodEaten,
-    required int survivalSeconds,
-    required String gameMode,
-  }) async {
-    try {
-      // Update score challenge (takes max value)
-      if (score > 0) {
-        await _dailyChallengeService.updateProgress(ChallengeType.score, score);
-      }
-
-      // Update food eaten challenge (accumulates)
-      if (foodEaten > 0) {
-        await _dailyChallengeService.updateProgress(
-          ChallengeType.foodEaten,
-          foodEaten,
-        );
-      }
-
-      // Update survival challenge (takes max value)
-      if (survivalSeconds > 0) {
-        await _dailyChallengeService.updateProgress(
-          ChallengeType.survival,
-          survivalSeconds,
-        );
-      }
-
-      // Update games played (always increment by 1)
-      await _dailyChallengeService.updateProgress(ChallengeType.gamesPlayed, 1);
-
-      // Update game mode specific challenge
-      await _dailyChallengeService.updateProgress(
-        ChallengeType.gameMode,
-        1,
-        gameMode: gameMode,
-      );
-
-      AppLogger.info('Daily challenge progress updated');
-    } catch (e) {
-      AppLogger.error('Error updating daily challenge progress', e);
-    }
   }
 
   /// Get game recording data (simplified)
@@ -944,11 +869,10 @@ class GameCubit extends Cubit<GameCubitState> {
       highScore = gameState.score;
     }
 
-    // Track game end statistics and achievements BEFORE emitting state
-    // This ensures achievements are populated when game over screen loads
-    await _trackGameEnd();
+    // Local-only achievement checks (no API calls) so game over screen has data
+    _trackGameEndLocal();
 
-    // EMIT STATE - UI updates (achievements are now ready)
+    // EMIT STATE immediately — UI transitions to game over screen INSTANTLY
     emit(
       state.copyWith(
         status: GamePlayStatus.gameOver,
@@ -959,51 +883,102 @@ class GameCubit extends Cubit<GameCubitState> {
       ),
     );
 
-    // Now do remaining async housekeeping (user already sees game over screen)
-    if (isNewHighScore) {
-      await _storageService.saveHighScore(highScore);
-      _settingsCubit.updateHighScore(highScore);
-      _audioService.playSound('high_score');
-      _enhancedAudioService.playSfx('high_score', volume: 1.0);
-    }
-
-    // Queue score for background sync (offline-first: non-blocking)
-    final gameDurationSeconds = _gameStartTime != null
-        ? DateTime.now().difference(_gameStartTime!).inSeconds
-        : 0;
-    final foodEaten = _currentGameFoodTypes.values.fold(
-      0,
-      (sum, count) => sum + count,
-    );
-
-    _dataSyncService.queueSync('score', {
-      'score': gameState.score,
-      'gameDuration': gameDurationSeconds,
-      'foodsEaten': foodEaten,
-      'gameMode': state.isTournamentMode ? 'tournament' : 'classic',
-      'difficulty': 'normal',
-      'playedAt': DateTime.now().toIso8601String(),
-      'idempotencyKey':
-          '${DateTime.now().millisecondsSinceEpoch}_${gameState.score}',
-    }, priority: SyncPriority.high);
-
-    // Award coins for game completion
-    await _awardGameCompletionCoins(
-      score: gameState.score,
-      level: gameState.level,
-      foodEaten: foodEaten,
-      gameDurationSeconds: gameDurationSeconds,
-    );
-
-    // Add battle pass XP based on game performance
-    await _addBattlePassXP(
-      score: gameState.score,
-      foodEaten: foodEaten,
-      survivalSeconds: gameDurationSeconds,
-    );
+    // All remaining work is fire-and-forget — user already sees game over screen
+    unawaited(_postGameSync(
+      gameState: gameState,
+      isNewHighScore: isNewHighScore,
+      highScore: highScore,
+    ));
 
     // Stop recording
     _gameRecorder.stopRecording();
+  }
+
+  /// Runs all post-game API syncs in the background (non-blocking).
+  Future<void> _postGameSync({
+    required model.GameState gameState,
+    required bool isNewHighScore,
+    required int highScore,
+  }) async {
+    try {
+      if (isNewHighScore) {
+        await _storageService.saveHighScore(highScore);
+        _settingsCubit.updateHighScore(highScore);
+        _audioService.playSound('high_score');
+        _enhancedAudioService.playSfx('high_score', volume: 1.0);
+      }
+
+      final gameDurationSeconds = _gameStartTime != null
+          ? DateTime.now().difference(_gameStartTime!).inSeconds
+          : 0;
+      final foodEaten = _currentGameFoodTypes.values.fold(
+        0,
+        (sum, count) => sum + count,
+      );
+
+      // Queue score sync (already non-blocking)
+      _dataSyncService.queueSync('score', {
+        'score': gameState.score,
+        'gameDuration': gameDurationSeconds,
+        'foodsEaten': foodEaten,
+        'gameMode': state.isTournamentMode ? 'tournament' : 'classic',
+        'difficulty': 'normal',
+        'playedAt': DateTime.now().toIso8601String(),
+        'idempotencyKey':
+            '${DateTime.now().millisecondsSinceEpoch}_${gameState.score}',
+      }, priority: SyncPriority.high);
+
+      // Award coins for game completion (local)
+      await _awardGameCompletionCoins(
+        score: gameState.score,
+        level: gameState.level,
+        foodEaten: foodEaten,
+        gameDurationSeconds: gameDurationSeconds,
+      );
+
+      // Buffer remaining battle pass XP and flush once
+      _bufferBattlePassXP(
+        score: gameState.score,
+        foodEaten: foodEaten,
+        survivalSeconds: gameDurationSeconds,
+      );
+
+      // Run all API syncs in parallel: achievements, daily challenges, battle pass XP
+      await Future.wait([
+        _achievementService.syncUnlockedAchievements(),
+        _dailyChallengeService.updateProgressBatch([
+          if (gameState.score > 0)
+            (type: ChallengeType.score, value: gameState.score, gameMode: null),
+          if (foodEaten > 0)
+            (type: ChallengeType.foodEaten, value: foodEaten, gameMode: null),
+          if (gameDurationSeconds > 0)
+            (type: ChallengeType.survival, value: gameDurationSeconds, gameMode: null),
+          (type: ChallengeType.gamesPlayed, value: 1, gameMode: null),
+          (type: ChallengeType.gameMode, value: 1, gameMode: 'classic'),
+        ]),
+        _battlePassCubit.flushXP(),
+      ]);
+
+      // Record statistics (queues PUT /users/me in background)
+      await _statisticsService.recordGameResult(
+        score: gameState.score,
+        gameTime: gameDurationSeconds,
+        level: gameState.level,
+        foodConsumed: foodEaten,
+        foodTypes: _currentGameFoodTypes,
+        foodPoints: _currentGameFoodPoints,
+        powerUpsCollected: _powerUpsCollectedThisGame,
+        powerUpTypes: _currentGamePowerUpTypes,
+        powerUpTime: _currentGamePowerUpTime,
+        hitWall: _hitWallThisGame,
+        hitSelf: _hitSelfThisGame,
+        isPerfectGame:
+            !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
+        unlockedAchievements: [],
+      );
+    } catch (e) {
+      debugPrint('🎮 [GameCubit] Post-game sync error: $e');
+    }
   }
 
   /// Award coins for completing a game based on performance
@@ -1057,16 +1032,17 @@ class GameCubit extends Cubit<GameCubitState> {
     }
   }
 
-  /// Calculate and add XP to battle pass based on game performance
-  Future<void> _addBattlePassXP({
+  /// Buffer battle pass XP locally based on game performance.
+  /// Called before [flushXP] sends everything in one API call.
+  void _bufferBattlePassXP({
     required int score,
     required int foodEaten,
     required int survivalSeconds,
-  }) async {
+  }) {
     // Game completed XP
     final gameCompletedXp = BattlePassXpSource.getXpForAction('game_completed');
     if (gameCompletedXp > 0) {
-      await _battlePassCubit.addXP(gameCompletedXp, source: 'game_completed');
+      _battlePassCubit.bufferXP(gameCompletedXp, source: 'game_completed');
     }
 
     // Survival milestone XP (only if not already awarded this game)
@@ -1074,14 +1050,14 @@ class GameCubit extends Cubit<GameCubitState> {
       _bpMilestonesThisGame.add('survival_300s');
       final xp = BattlePassXpSource.getXpForAction('survival_300s');
       if (xp > 0) {
-        await _battlePassCubit.addXP(xp, source: 'survival_300s');
+        _battlePassCubit.bufferXP(xp, source: 'survival_300s');
       }
     }
     if (survivalSeconds >= 60 && !_bpMilestonesThisGame.contains('survival_60s')) {
       _bpMilestonesThisGame.add('survival_60s');
       final xp = BattlePassXpSource.getXpForAction('survival_60s');
       if (xp > 0) {
-        await _battlePassCubit.addXP(xp, source: 'survival_60s');
+        _battlePassCubit.bufferXP(xp, source: 'survival_60s');
       }
     }
   }
@@ -1091,17 +1067,17 @@ class GameCubit extends Cubit<GameCubitState> {
     if (score >= 1000 && !_bpMilestonesThisGame.contains('score_1000')) {
       _bpMilestonesThisGame.add('score_1000');
       final xp = BattlePassXpSource.getXpForAction('score_milestone_1000');
-      if (xp > 0) _battlePassCubit.addXP(xp, source: 'score_milestone_1000');
+      if (xp > 0) _battlePassCubit.bufferXP(xp, source: 'score_milestone_1000');
     }
     if (score >= 500 && !_bpMilestonesThisGame.contains('score_500')) {
       _bpMilestonesThisGame.add('score_500');
       final xp = BattlePassXpSource.getXpForAction('score_milestone_500');
-      if (xp > 0) _battlePassCubit.addXP(xp, source: 'score_milestone_500');
+      if (xp > 0) _battlePassCubit.bufferXP(xp, source: 'score_milestone_500');
     }
     if (score >= 100 && !_bpMilestonesThisGame.contains('score_100')) {
       _bpMilestonesThisGame.add('score_100');
       final xp = BattlePassXpSource.getXpForAction('score_milestone_100');
-      if (xp > 0) _battlePassCubit.addXP(xp, source: 'score_milestone_100');
+      if (xp > 0) _battlePassCubit.bufferXP(xp, source: 'score_milestone_100');
     }
   }
 
@@ -1118,7 +1094,7 @@ class GameCubit extends Cubit<GameCubitState> {
       if (isFirstGameToday) {
         final xp = BattlePassXpSource.getXpForAction('daily_game');
         if (xp > 0) {
-          await _battlePassCubit.addXP(xp, source: 'daily_game');
+          _battlePassCubit.bufferXP(xp, source: 'daily_game');
         }
         await _storageService.saveLastPlayDate(today);
       }
