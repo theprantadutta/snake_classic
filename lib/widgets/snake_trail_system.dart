@@ -64,8 +64,26 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
     _animationController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
-    )..repeat();
+    );
     _animationController.addListener(_updateTrail);
+    if (widget.isPlaying && widget.trailType != TrailType.none) {
+      _animationController.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SnakeTrailSystem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final shouldRun = widget.isPlaying && widget.trailType != TrailType.none;
+    final wasRunning = oldWidget.isPlaying && oldWidget.trailType != TrailType.none;
+
+    if (shouldRun && !wasRunning) {
+      _animationController.repeat();
+    } else if (!shouldRun && wasRunning) {
+      _animationController.stop();
+      // Clear stale segments so they don't flash when play resumes
+      _trailSegments.clear();
+    }
   }
 
   @override

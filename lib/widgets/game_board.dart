@@ -42,6 +42,11 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
   GameState? _cachedGameState;
   GameTheme? _cachedTheme;
 
+  // Actual rendered cell dimensions — updated from LayoutBuilder so trails
+  // and particle positions align with the game painter.
+  double _actualCellW = GameConstants.cellSize;
+  double _actualCellH = GameConstants.cellSize;
+
   // Performance: Persistent Paint objects that survive across frames.
   // Previously, the painter recreated these 60 times/sec inside AnimatedBuilder.
   final Paint _persistentSnakeHeadPaint = Paint()..isAntiAlias = true;
@@ -249,130 +254,154 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
                         stops: const [0.0, 0.4, 0.8, 1.0],
                       ),
                     ),
-                    child: Stack(
-                      children: [
-                        // Subtle pattern overlay
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _GameBoardBackgroundPainter(theme),
-                          ),
-                        ),
-                        // Game content
-                        AspectRatio(
-                          aspectRatio:
-                              widget.gameState.boardWidth /
-                              widget.gameState.boardHeight,
-                          child: BlocBuilder<GameCubit, GameCubitState>(
-                            // CRITICAL: Only rebuild when actual game state changes
-                            // NOT on animation frame updates (moveProgress changes)
-                            // This reduces rebuilds from ~60/sec to ~3-5/sec
-                            buildWhen: (previous, current) =>
-                                !identical(
-                                  previous.gameState,
-                                  current.gameState,
-                                ) ||
-                                !identical(
-                                  previous.previousGameState,
-                                  current.previousGameState,
-                                ),
-                            builder: (context, cubitState) {
-                              // Use the gameState from cubit, not from widget!
-                              // This ensures we always have the latest state
-                              final currentGameState =
-                                  cubitState.gameState ?? widget.gameState;
+                    child: LayoutBuilder(
+                      builder: (context, boardConstraints) {
+                        // Compute actual cell dimensions from rendered size
+                        // so trails and particles align with the game painter
+                        // which also derives cell size from its paint Size.
+                        final boardW = widget.gameState.boardWidth;
+                        final boardH = widget.gameState.boardHeight;
+                        final aspect = boardW / boardH;
+                        final parentW = boardConstraints.maxWidth;
+                        final parentH = boardConstraints.maxHeight;
+                        // AspectRatio fits within parent — replicate its sizing
+                        double renderW, renderH;
+                        if (parentW / parentH > aspect) {
+                          renderH = parentH;
+                          renderW = parentH * aspect;
+                        } else {
+                          renderW = parentW;
+                          renderH = parentW / aspect;
+                        }
+                        _actualCellW = renderW / boardW;
+                        _actualCellH = renderH / boardH;
+                        final actualCellW = _actualCellW;
+                        final actualCellH = _actualCellH;
 
-                              // Track when game state changes for smooth animation
-                              if (!identical(
-                                _lastGameStateForAnimation,
-                                currentGameState,
-                              )) {
-                                // Reset animation cache when starting a fresh game
-                                // (previousGameState is null on new game start)
-                                if (cubitState.previousGameState == null) {
-                                  _lastGameStateForAnimation = null;
-                                }
-                                _lastGameStateChangeTime = DateTime.now();
-                                _lastGameStateForAnimation = currentGameState;
-                              }
-
-                              // AnimatedBuilder drives 60fps repaints for smooth snake movement
-                              // without causing BlocBuilder rebuilds
-                              return AnimatedBuilder(
-                                animation: _moveAnimationController,
-                                builder: (context, child) {
-                                  final gameSpeed = currentGameState.gameSpeed;
-                                  final moveProgress = _calculateMoveProgress(
-                                    gameSpeed,
-                                  );
-
-                                  return CustomPaint(
-                                    painter: OptimizedGameBoardPainter(
-                                      gameState: currentGameState,
-                                      theme: theme,
-                                      pulseAnimation: _pulseAnimation,
-                                      // Smooth movement calculated locally
-                                      moveProgress: moveProgress,
-                                      previousGameState:
-                                          cubitState.previousGameState,
-                                      premiumState: premiumState,
-                                      // Pass time once per frame to avoid DateTime.now() in paint loop
-                                      animationTimeMs:
-                                          DateTime.now().millisecondsSinceEpoch,
-                                      // Performance: Pass pre-allocated Paint objects
-                                      // to avoid creating 6+ paints per frame at 60fps
-                                      cachedSnakeHeadPaint: _persistentSnakeHeadPaint,
-                                      cachedSnakeBodyPaint: _persistentSnakeBodyPaint,
-                                      cachedFoodPaint: _persistentFoodPaint,
-                                      cachedGridPaint: _persistentGridPaint,
-                                      cachedCrashPaint: _persistentCrashPaint,
-                                      cachedCollisionPaint: _persistentCollisionPaint,
+                        return Stack(
+                          children: [
+                            // Subtle pattern overlay
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: _GameBoardBackgroundPainter(theme),
+                              ),
+                            ),
+                            // Game content
+                            AspectRatio(
+                              aspectRatio: aspect,
+                              child: BlocBuilder<GameCubit, GameCubitState>(
+                                // CRITICAL: Only rebuild when actual game state changes
+                                // NOT on animation frame updates (moveProgress changes)
+                                // This reduces rebuilds from ~60/sec to ~3-5/sec
+                                buildWhen: (previous, current) =>
+                                    !identical(
+                                      previous.gameState,
+                                      current.gameState,
+                                    ) ||
+                                    !identical(
+                                      previous.previousGameState,
+                                      current.previousGameState,
                                     ),
-                                    size: Size.infinite,
-                                    // Performance: Only repaint when needed
-                                    isComplex: false,
-                                    willChange: true,
+                                builder: (context, cubitState) {
+                                  // Use the gameState from cubit, not from widget!
+                                  // This ensures we always have the latest state
+                                  final currentGameState =
+                                      cubitState.gameState ?? widget.gameState;
+
+                                  // Track when game state changes for smooth animation
+                                  if (!identical(
+                                    _lastGameStateForAnimation,
+                                    currentGameState,
+                                  )) {
+                                    // Reset animation cache when starting a fresh game
+                                    // (previousGameState is null on new game start)
+                                    if (cubitState.previousGameState == null) {
+                                      _lastGameStateForAnimation = null;
+                                    }
+                                    _lastGameStateChangeTime = DateTime.now();
+                                    _lastGameStateForAnimation = currentGameState;
+                                  }
+
+                                  // AnimatedBuilder drives 60fps repaints for smooth snake movement
+                                  // without causing BlocBuilder rebuilds
+                                  return AnimatedBuilder(
+                                    animation: _moveAnimationController,
+                                    builder: (context, child) {
+                                      final gameSpeed = currentGameState.gameSpeed;
+                                      final moveProgress = _calculateMoveProgress(
+                                        gameSpeed,
+                                      );
+
+                                      return CustomPaint(
+                                        painter: OptimizedGameBoardPainter(
+                                          gameState: currentGameState,
+                                          theme: theme,
+                                          pulseAnimation: _pulseAnimation,
+                                          // Smooth movement calculated locally
+                                          moveProgress: moveProgress,
+                                          previousGameState:
+                                              cubitState.previousGameState,
+                                          premiumState: premiumState,
+                                          // Pass time once per frame to avoid DateTime.now() in paint loop
+                                          animationTimeMs:
+                                              DateTime.now().millisecondsSinceEpoch,
+                                          // Performance: Pass pre-allocated Paint objects
+                                          // to avoid creating 6+ paints per frame at 60fps
+                                          cachedSnakeHeadPaint: _persistentSnakeHeadPaint,
+                                          cachedSnakeBodyPaint: _persistentSnakeBodyPaint,
+                                          cachedFoodPaint: _persistentFoodPaint,
+                                          cachedGridPaint: _persistentGridPaint,
+                                          cachedCrashPaint: _persistentCrashPaint,
+                                          cachedCollisionPaint: _persistentCollisionPaint,
+                                        ),
+                                        size: Size.infinite,
+                                        // Performance: Only repaint when needed
+                                        isComplex: false,
+                                        willChange: true,
+                                      );
+                                    },
                                   );
                                 },
-                              );
-                            },
-                          ),
-                        ),
-                        // Snake trail system (shown when cosmetic trail selected OR theme trail enabled)
-                        Builder(
-                          builder: (context) {
-                            final effectiveTrailType = _getEffectiveTrailType(
-                              premiumState,
-                              themeState,
-                              theme,
-                            );
-                            if (effectiveTrailType == TrailType.none) {
-                              return const SizedBox.shrink();
-                            }
-                            return Positioned.fill(
-                              child: SnakeTrailSystem(
-                                snakeBody: widget.gameState.snake.body,
-                                trailType: effectiveTrailType,
-                                theme: theme,
-                                cellWidth: widget.cellSize,
-                                cellHeight: widget.cellSize,
-                                isPlaying:
-                                    widget.gameState.status ==
-                                    GameStatus.playing,
                               ),
-                            );
-                          },
-                        ),
-                        // Advanced particle system
-                        Positioned.fill(
-                          child: AdvancedParticleSystem(
-                            emissions: _particleManager.emissions,
-                            autoRemoveEmissions: true,
-                          ),
-                        ),
-                        // Performance: ShaderEnhancedBackground removed - shaders
-                        // never actually loaded (dead code) but the widget ran a
-                        // 60fps AnimationController. Eliminated to save CPU.
-                      ],
+                            ),
+                            // Snake trail system (shown when cosmetic trail selected OR theme trail enabled)
+                            Builder(
+                              builder: (context) {
+                                final effectiveTrailType = _getEffectiveTrailType(
+                                  premiumState,
+                                  themeState,
+                                  theme,
+                                );
+                                if (effectiveTrailType == TrailType.none) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Positioned.fill(
+                                  child: SnakeTrailSystem(
+                                    snakeBody: widget.gameState.snake.body,
+                                    trailType: effectiveTrailType,
+                                    theme: theme,
+                                    cellWidth: actualCellW,
+                                    cellHeight: actualCellH,
+                                    isPlaying:
+                                        widget.gameState.status ==
+                                        GameStatus.playing,
+                                  ),
+                                );
+                              },
+                            ),
+                            // Advanced particle system
+                            Positioned.fill(
+                              child: AdvancedParticleSystem(
+                                emissions: _particleManager.emissions,
+                                autoRemoveEmissions: true,
+                              ),
+                            ),
+                            // Performance: ShaderEnhancedBackground removed - shaders
+                            // never actually loaded (dead code) but the widget ran a
+                            // 60fps AnimationController. Eliminated to save CPU.
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -527,16 +556,13 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
     // Check if food was consumed (score increased)
     if (currentState.score > previousState.score &&
         previousState.food != null) {
-      // Calculate food position in screen coordinates accounting for container margin
-      const containerMargin = 8.0; // Match the margin in the Container
+      // Calculate food position using actual rendered cell dimensions
       final foodScreenX =
-          previousState.food!.position.x * widget.cellSize +
-          widget.cellSize / 2 +
-          containerMargin;
+          previousState.food!.position.x * _actualCellW +
+          _actualCellW / 2;
       final foodScreenY =
-          previousState.food!.position.y * widget.cellSize +
-          widget.cellSize / 2 +
-          containerMargin;
+          previousState.food!.position.y * _actualCellH +
+          _actualCellH / 2;
       final foodPosition = Offset(foodScreenX, foodScreenY);
 
       // Add food consumption particle effect with food type
@@ -545,16 +571,13 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
 
     // Check if power-up was collected
     if (previousState.powerUp != null && currentState.powerUp == null) {
-      // Calculate power-up position accounting for container margin
-      const containerMargin = 8.0; // Match the margin in the Container
+      // Calculate power-up position using actual rendered cell dimensions
       final powerUpScreenX =
-          previousState.powerUp!.position.x * widget.cellSize +
-          widget.cellSize / 2 +
-          containerMargin;
+          previousState.powerUp!.position.x * _actualCellW +
+          _actualCellW / 2;
       final powerUpScreenY =
-          previousState.powerUp!.position.y * widget.cellSize +
-          widget.cellSize / 2 +
-          containerMargin;
+          previousState.powerUp!.position.y * _actualCellH +
+          _actualCellH / 2;
       final powerUpPosition = Offset(powerUpScreenX, powerUpScreenY);
 
       // Add power-up collection effect with power-up type
@@ -566,11 +589,11 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
         previousState.status != GameStatus.crashed) {
       if (currentState.crashPosition != null) {
         final crashScreenX =
-            currentState.crashPosition!.x * widget.cellSize +
-            widget.cellSize / 2;
+            currentState.crashPosition!.x * _actualCellW +
+            _actualCellW / 2;
         final crashScreenY =
-            currentState.crashPosition!.y * widget.cellSize +
-            widget.cellSize / 2;
+            currentState.crashPosition!.y * _actualCellH +
+            _actualCellH / 2;
         final crashPosition = Offset(crashScreenX, crashScreenY);
 
         // Add crash explosion effect
@@ -2424,7 +2447,9 @@ class OptimizedGameBoardPainter extends CustomPainter {
         oldDelegate.premiumState.selectedTrailId !=
             premiumState.selectedTrailId ||
         oldDelegate.premiumState.ownedSkins !=
-            premiumState.ownedSkins;
+            premiumState.ownedSkins ||
+        oldDelegate.premiumState.ownedTrails !=
+            premiumState.ownedTrails;
   }
 }
 
