@@ -227,7 +227,7 @@ class TournamentService {
   }
 
   /// Join a tournament (requires online)
-  Future<bool> joinTournament(String tournamentId) async {
+  Future<bool> joinTournament(String tournamentId, {String? entryTier}) async {
     if (!_connectivityService.isOnline) {
       if (kDebugMode) {
         print('Cannot join tournament while offline');
@@ -236,7 +236,10 @@ class TournamentService {
     }
 
     try {
-      final result = await _apiService.joinTournament(tournamentId);
+      final result = await _apiService.joinTournament(
+        tournamentId,
+        entryTier: entryTier,
+      );
       if (result != null && result['success'] == true) {
         // Invalidate cache to get updated participant count
         await _cacheService.invalidateCache('tournament_$tournamentId');
@@ -479,6 +482,8 @@ class TournamentService {
       rewards: rewards,
       userBestScore: data['user_best_score'] ?? data['userBestScore'],
       userAttempts: data['user_attempts'] ?? data['userAttempts'],
+      requiresEntry: data['requires_entry'] ?? data['requiresEntry'] ?? false,
+      entryCost: data['entry_cost'] ?? data['entryCost'] ?? 0,
     );
   }
 

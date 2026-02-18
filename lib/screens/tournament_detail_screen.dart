@@ -1122,29 +1122,41 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
   Future<void> _joinTournament() async {
     final tournament = _tournament!;
+    final tier = _getTournamentTier(tournament.type);
+    final entryCost = tournament.entryCost.clamp(1, 99);
 
     // Check entry requirement
     if (tournament.requiresEntry) {
       final premiumCubit = context.read<PremiumCubit>();
-      final tier = _getTournamentTier(tournament.type);
 
       // Premium users bypass entry requirement
       if (!premiumCubit.state.hasPremium) {
-        if (!premiumCubit.hasTournamentEntry(tier)) {
+        final availableEntries =
+            premiumCubit.state.getTournamentEntryCount(tier);
+        if (availableEntries < entryCost) {
           _showNoEntryDialog(tier);
           return;
         }
-        // Consume an entry
-        await premiumCubit.useTournamentEntry(tier);
       }
     }
 
     setState(() => _isJoining = true);
 
     try {
-      final success = await _tournamentService.joinTournament(tournament.id);
+      final success = await _tournamentService.joinTournament(
+        tournament.id,
+        entryTier: tier,
+      );
 
       if (success && mounted) {
+        // Consume entries AFTER backend confirms the join succeeded
+        if (tournament.requiresEntry) {
+          final premiumCubit = context.read<PremiumCubit>();
+          if (!premiumCubit.state.hasPremium) {
+            await premiumCubit.useTournamentEntry(tier, count: entryCost);
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Successfully joined tournament!')),
         );
@@ -1265,12 +1277,25 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                   purchaseService.buyProduct(product);
                 }
               },
-              child: Text('Buy $tierName Entry - ${PurchaseService().getStorePrice(productId) ?? ''}'),
+              child: Text('Buy $tierName Entry - ${PurchaseService().getStorePrice(productId) ?? _getDefaultPrice(tier)}'),
             ),
           ],
         );
       },
     );
+  }
+
+  String _getDefaultPrice(String tier) {
+    switch (tier) {
+      case 'bronze':
+        return '\$0.99';
+      case 'silver':
+        return '\$1.99';
+      case 'gold':
+        return '\$4.99';
+      default:
+        return '\$0.99';
+    }
   }
 
   void _playTournament() {

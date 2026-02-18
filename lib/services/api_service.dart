@@ -715,12 +715,21 @@ class ApiService {
   }
 
   /// Join tournament
-  Future<Map<String, dynamic>?> joinTournament(String tournamentId) async {
+  Future<Map<String, dynamic>?> joinTournament(
+    String tournamentId, {
+    String? entryTier,
+  }) async {
     try {
+      final body = <String, dynamic>{};
+      if (entryTier != null) {
+        body['entry_tier'] = entryTier;
+      }
+
       final response = await http
           .post(
             Uri.parse('$baseUrl/tournaments/$tournamentId/join'),
             headers: _authHeaders,
+            body: body.isNotEmpty ? jsonEncode(body) : null,
           )
           .timeout(_timeout);
 

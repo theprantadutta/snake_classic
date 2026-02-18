@@ -528,38 +528,38 @@ class PremiumCubit extends Cubit<PremiumState> {
   }
 
   /// Use tournament entry
-  Future<void> useTournamentEntry(String tournamentType) async {
+  Future<void> useTournamentEntry(String tournamentType, {int count = 1}) async {
     switch (tournamentType.toLowerCase()) {
       case 'bronze':
-        if (state.bronzeTournamentEntries > 0) {
+        if (state.bronzeTournamentEntries >= count) {
           emit(
             state.copyWith(
-              bronzeTournamentEntries: state.bronzeTournamentEntries - 1,
+              bronzeTournamentEntries: state.bronzeTournamentEntries - count,
             ),
           );
         }
         break;
       case 'silver':
-        if (state.silverTournamentEntries > 0) {
+        if (state.silverTournamentEntries >= count) {
           emit(
             state.copyWith(
-              silverTournamentEntries: state.silverTournamentEntries - 1,
+              silverTournamentEntries: state.silverTournamentEntries - count,
             ),
           );
         }
         break;
       case 'gold':
-        if (state.goldTournamentEntries > 0) {
+        if (state.goldTournamentEntries >= count) {
           emit(
             state.copyWith(
-              goldTournamentEntries: state.goldTournamentEntries - 1,
+              goldTournamentEntries: state.goldTournamentEntries - count,
             ),
           );
         }
         break;
     }
     await _saveTournamentEntries();
-    AppLogger.info('Tournament entry used: $tournamentType');
+    AppLogger.info('Tournament entry used: $tournamentType x$count');
   }
 
   Future<void> _saveTournamentEntries() async {
@@ -634,6 +634,18 @@ class PremiumCubit extends Cubit<PremiumState> {
       for (final bundleId in data['owned_bundles']) {
         if (!state.ownedBundles.contains(bundleId)) {
           await unlockBundle(bundleId as String);
+        }
+      }
+    }
+
+    // Sync tournament entries from backend
+    if (data['tournament_entries'] is Map) {
+      final entries = data['tournament_entries'] as Map<String, dynamic>;
+      for (final tier in ['bronze', 'silver', 'gold']) {
+        final backendCount = (entries[tier] ?? 0) as int;
+        final localCount = state.getTournamentEntryCount(tier);
+        if (backendCount > localCount) {
+          await addTournamentEntry(tier, count: backendCount - localCount);
         }
       }
     }
