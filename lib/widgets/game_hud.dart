@@ -110,6 +110,14 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   void didUpdateWidget(GameHUD oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // Performance: Skip expensive work if nothing HUD-relevant changed.
+    // With Fix 1's buildWhen, this is largely a safety net, but protects
+    // against any remaining cases.
+    if (identical(widget.gameState, oldWidget.gameState) &&
+        widget.theme == oldWidget.theme) {
+      return;
+    }
+
     // Check for level up
     if (widget.gameState.level > _previousLevel) {
       _triggerLevelUpEffect();

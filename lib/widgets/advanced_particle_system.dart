@@ -458,7 +458,25 @@ class _AdvancedParticleSystemState extends State<AdvancedParticleSystem>
       widget.emissions.removeWhere((emission) => emission.shouldExpire);
     }
 
+    // Performance: Stop the controller when there are no particles to animate.
+    // This prevents 60fps setState calls when the particle system is idle.
+    // The controller is restarted in didUpdateWidget when new emissions arrive.
+    if (_particles.isEmpty) {
+      _controller.stop();
+      _lastUpdate = null;
+      return;
+    }
+
     setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(AdvancedParticleSystem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Restart the animation controller if new active emissions arrive while idle
+    if (widget.emissions.any((e) => e.isActive) && !_controller.isAnimating) {
+      _controller.repeat();
+    }
   }
 
   void _addParticlesFromEmission(ParticleEmission emission) {

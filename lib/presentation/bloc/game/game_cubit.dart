@@ -369,8 +369,8 @@ class GameCubit extends Cubit<GameCubitState> {
         (nextHeadPosition == currentPowerUp.position ||
          snake.head == currentPowerUp.position);
 
-    // Debug logging for power-up collision detection
-    if (currentPowerUp != null) {
+    // Debug logging for power-up collision detection (throttled to avoid perf impact)
+    if (currentPowerUp != null && (_updateCount <= 5 || _updateCount % 100 == 0)) {
       debugPrint('🎯 Power-up at: ${currentPowerUp.position} (type: ${currentPowerUp.type.name})');
       debugPrint('🐍 Snake head: ${snake.head}, next: $nextHeadPosition');
       debugPrint('✅ Will collect power-up: $willCollectPowerUp');
@@ -468,7 +468,11 @@ class GameCubit extends Cubit<GameCubitState> {
     }
 
     // Handle power-up collection
-    var activePowerUps = previousState.removeExpiredPowerUps().activePowerUps;
+    // Performance: inline filter instead of removeExpiredPowerUps() which
+    // creates a throwaway GameState copy with 20+ fields just to get a list
+    var activePowerUps = previousState.activePowerUps
+        .where((p) => !p.isExpired)
+        .toList();
     if (willCollectPowerUp) {
       debugPrint('🎁 Collecting power-up: ${currentPowerUp.type.name}');
       _hapticService.powerUpCollected();
@@ -504,7 +508,7 @@ class GameCubit extends Cubit<GameCubitState> {
       maxCombo: newMaxCombo,
       comboMultiplier: newComboMultiplier,
       activePowerUps: activePowerUps,
-      lastMoveTime: DateTime.now(),
+      lastMoveTime: now, // Reuse timestamp from start of tick instead of calling DateTime.now() again
     );
 
     final newCubitState = state.copyWith(

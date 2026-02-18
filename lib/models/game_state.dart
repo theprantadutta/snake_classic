@@ -61,7 +61,11 @@ class GameState {
   final int maxCombo; // Best streak this game
   final double comboMultiplier; // Score multiplier based on combo
 
-  const GameState({
+  // Performance: cached game speed to avoid recomputation on every access
+  // (previously a getter called 60+ times/sec from the renderer)
+  late final int _cachedGameSpeed;
+
+  GameState({
     required this.snake,
     this.food,
     this.foods = const [],
@@ -82,7 +86,9 @@ class GameState {
     this.currentCombo = 0,
     this.maxCombo = 0,
     this.comboMultiplier = 1.0,
-  });
+  }) {
+    _cachedGameSpeed = _computeGameSpeed();
+  }
 
   factory GameState.initial() {
     return GameState(
@@ -112,7 +118,11 @@ class GameState {
     return 1.0;
   }
 
-  int get gameSpeed {
+  /// Game speed in milliseconds per tick. Cached at construction time
+  /// to avoid recomputation (previously called 60+ times/sec from renderer).
+  int get gameSpeed => _cachedGameSpeed;
+
+  int _computeGameSpeed() {
     // Speed increases with level (lower milliseconds = faster)
     // Start at 300ms, decrease by game mode-specific amount per level
     final baseSpeed = 300;

@@ -8,7 +8,9 @@ enum TrailType { none, basic, glow, particles, lightning, rainbow, fire, ice, st
 class TrailSegment {
   final Offset position;
   final double intensity; // 0.0 to 1.0
-  final DateTime createdAt;
+  // Performance: Use monotonic double (seconds) instead of DateTime.
+  // Previously, DateTime.now() was called per-segment per-frame (100+ calls/frame).
+  final double createdAtSeconds;
   final double size;
   final Color color;
 
@@ -17,13 +19,13 @@ class TrailSegment {
     required this.intensity,
     required this.size,
     required this.color,
-  }) : createdAt = DateTime.now();
+    required this.createdAtSeconds,
+  });
 
-  double get age {
-    return DateTime.now().difference(createdAt).inMilliseconds / 1000.0;
-  }
+  double age(double currentTimeSeconds) => currentTimeSeconds - createdAtSeconds;
 
-  bool isExpired(double maxAge) => age > maxAge;
+  bool isExpired(double maxAge, double currentTimeSeconds) =>
+      age(currentTimeSeconds) > maxAge;
 }
 
 class SnakeTrailSystem extends StatefulWidget {
@@ -52,6 +54,9 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   final List<TrailSegment> _trailSegments = [];
+  // Performance: Monotonic time source - avoids 100+ DateTime.now() calls per frame
+  final Stopwatch _stopwatch = Stopwatch()..start();
+  double get _currentTimeSeconds => _stopwatch.elapsedMilliseconds / 1000.0;
 
   @override
   void initState() {
@@ -110,6 +115,7 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
             intensity: intensity,
             size: _getTrailSize(i),
             color: _getTrailColor(intensity),
+            createdAtSeconds: _currentTimeSeconds,
           ),
         );
       }
@@ -124,7 +130,8 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
 
   void _cleanupExpiredSegments() {
     final maxAge = _getTrailMaxAge();
-    _trailSegments.removeWhere((segment) => segment.isExpired(maxAge));
+    final currentTime = _currentTimeSeconds;
+    _trailSegments.removeWhere((segment) => segment.isExpired(maxAge, currentTime));
   }
 
   double _getTrailMaxAge() {
@@ -273,6 +280,7 @@ class _SnakeTrailSystemState extends State<SnakeTrailSystem>
           segments: _trailSegments,
           trailType: widget.trailType,
           animationValue: _animationController.value,
+          currentTimeSeconds: _currentTimeSeconds,
         ),
         size: Size.infinite,
       ),
@@ -284,11 +292,15 @@ class SnakeTrailPainter extends CustomPainter {
   final List<TrailSegment> segments;
   final TrailType trailType;
   final double animationValue;
+  // Performance: Pre-computed time passed once per frame instead of
+  // calling DateTime.now() per segment per trail type (100+ calls/frame).
+  final double currentTimeSeconds;
 
   SnakeTrailPainter({
     required this.segments,
     required this.trailType,
     required this.animationValue,
+    required this.currentTimeSeconds,
   });
 
   @override
@@ -349,7 +361,7 @@ class SnakeTrailPainter extends CustomPainter {
 
     for (int i = segments.length - 1; i >= 0; i--) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 0.5).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.5).clamp(0.0, 1.0);
 
       final paint = Paint()
         ..color = segment.color.withValues(alpha: segment.color.a * ageFactor)
@@ -366,7 +378,7 @@ class SnakeTrailPainter extends CustomPainter {
 
   void _paintGlowTrail(Canvas canvas) {
     for (final segment in segments) {
-      final ageFactor = 1.0 - (segment.age / 0.8).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.8).clamp(0.0, 1.0);
 
       // Draw multiple glow layers
       for (int layer = 3; layer > 0; layer--) {
@@ -395,7 +407,7 @@ class SnakeTrailPainter extends CustomPainter {
 
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 0.8).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.8).clamp(0.0, 1.0);
 
       // Draw multiple small particles around the segment
       for (int p = 0; p < 3; p++) {
@@ -433,7 +445,7 @@ class SnakeTrailPainter extends CustomPainter {
     for (int i = 1; i < segments.length; i++) {
       final current = segments[i];
       final previous = segments[i - 1];
-      final ageFactor = 1.0 - (current.age / 0.6).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (current.age(currentTimeSeconds) / 0.6).clamp(0.0, 1.0);
 
       paint.color = Colors.white.withValues(alpha: ageFactor);
 
@@ -468,7 +480,7 @@ class SnakeTrailPainter extends CustomPainter {
   void _paintRainbowTrail(Canvas canvas) {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 1.0).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 1.0).clamp(0.0, 1.0);
 
       // Create rainbow effect
       final hue = (animationValue * 360 + i * 10) % 360;
@@ -498,7 +510,7 @@ class SnakeTrailPainter extends CustomPainter {
   void _paintFireTrail(Canvas canvas) {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 0.6).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.6).clamp(0.0, 1.0);
 
       // Create flickering fire effect
       final flicker = 0.8 + 0.2 * math.sin(animationValue * math.pi * 8 + i);
@@ -532,7 +544,7 @@ class SnakeTrailPainter extends CustomPainter {
   void _paintIceTrail(Canvas canvas) {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 1.0).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 1.0).clamp(0.0, 1.0);
 
       // Create crystalline ice effect
       final sparkle =
@@ -577,7 +589,7 @@ class SnakeTrailPainter extends CustomPainter {
   void _paintStarTrail(Canvas canvas) {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 1.0).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 1.0).clamp(0.0, 1.0);
 
       // Twinkle alpha
       final twinkle = 0.5 + 0.5 * math.sin(animationValue * math.pi * 8 + i * 2);
@@ -624,13 +636,13 @@ class SnakeTrailPainter extends CustomPainter {
 
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 1.2).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 1.2).clamp(0.0, 1.0);
 
       // 3-4 sub-particles per segment in spiral distribution
       final particleCount = 3 + (i % 2);
       for (int p = 0; p < particleCount; p++) {
         final spiralAngle = animationValue * math.pi * 2 + i * 0.8 + p * (math.pi * 2 / particleCount);
-        final driftRadius = segment.size * (1.0 + segment.age * 0.5);
+        final driftRadius = segment.size * (1.0 + segment.age(currentTimeSeconds) * 0.5);
         final particlePos = Offset(
           segment.position.dx + math.cos(spiralAngle) * driftRadius * random.nextDouble(),
           segment.position.dy + math.sin(spiralAngle) * driftRadius * random.nextDouble(),
@@ -656,7 +668,7 @@ class SnakeTrailPainter extends CustomPainter {
   void _paintNeonTrail(Canvas canvas) {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 0.7).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.7).clamp(0.0, 1.0);
 
       // Alternate lime green / hot pink per segment
       final color = i % 2 == 0
@@ -689,10 +701,10 @@ class SnakeTrailPainter extends CustomPainter {
   void _paintShadowTrail(Canvas canvas) {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 1.0).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 1.0).clamp(0.0, 1.0);
 
       // Slight downward drift for smoke effect
-      final yOffset = segment.age * 3.0;
+      final yOffset = segment.age(currentTimeSeconds) * 3.0;
 
       // 3 dark layers with increasing spread
       for (int layer = 0; layer < 3; layer++) {
@@ -717,7 +729,7 @@ class SnakeTrailPainter extends CustomPainter {
   void _paintDragonTrail(Canvas canvas) {
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age / 0.8).clamp(0.0, 1.0);
+      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.8).clamp(0.0, 1.0);
 
       // Sinuous S-curve distortion (higher freq than fire)
       final sineOffset = math.sin(animationValue * math.pi * 12 + i) * segment.size * 0.5;

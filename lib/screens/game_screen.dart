@@ -37,10 +37,8 @@ class _GameScreenState extends State<GameScreen>
   late FocusNode _keyboardFocusNode;
   bool _hasNavigatedToGameOver = false;
 
-  // Score popup system
-  final ScorePopupManager _scorePopupManager = ScorePopupManager();
-  Size? _boardSize;
-  Offset? _boardOffset;
+  // Score popup system - extracted into separate widget to avoid full screen rebuilds
+  final GlobalKey<_ScorePopupLayerState> _scorePopupLayerKey = GlobalKey<_ScorePopupLayerState>();
 
   // Level-up corner popup
   bool _showLevelUpPopup = false;
@@ -210,10 +208,9 @@ class _GameScreenState extends State<GameScreen>
 
     context.read<GameCubit>().changeDirection(direction);
 
-    // Update last swipe direction and animate indicator
-    setState(() {
-      _lastSwipeDirection = direction;
-    });
+    // Update last swipe direction (no setState needed - the gesture indicator
+    // uses its own AnimatedBuilder with _gestureIndicatorController)
+    _lastSwipeDirection = direction;
 
     // Animate the gesture indicator
     _gestureIndicatorController.forward().then((_) {
@@ -386,6 +383,7 @@ class _GameScreenState extends State<GameScreen>
   }
 
   /// Spawns a score popup at the food position
+  /// Delegates to the _ScorePopupLayer widget to avoid full game screen rebuilds
   void _spawnScorePopup(
     Food food,
     int points,
@@ -393,34 +391,13 @@ class _GameScreenState extends State<GameScreen>
     int boardHeight, {
     double comboMultiplier = 1.0,
   }) {
-    if (_boardSize == null || _boardOffset == null) return;
-
-    // Calculate screen position from grid position
-    final cellWidth = _boardSize!.width / boardWidth;
-    final cellHeight = _boardSize!.height / boardHeight;
-
-    final screenX = _boardOffset!.dx + (food.position.x + 0.5) * cellWidth;
-    final screenY = _boardOffset!.dy + (food.position.y + 0.5) * cellHeight;
-
-    final color = switch (food.type) {
-      FoodType.normal => Colors.red,
-      FoodType.bonus => Colors.amber,
-      FoodType.special => Colors.purple,
-    };
-
-    // Show multiplier if combo is active (1.5x or higher)
-    final displayMultiplier = comboMultiplier >= 1.5
-        ? comboMultiplier.round()
-        : 1;
-
-    setState(() {
-      _scorePopupManager.addPopup(
-        points: points,
-        position: Offset(screenX, screenY),
-        color: color,
-        multiplier: displayMultiplier,
-      );
-    });
+    _scorePopupLayerKey.currentState?.addPopup(
+      food: food,
+      points: points,
+      boardWidth: boardWidth,
+      boardHeight: boardHeight,
+      comboMultiplier: comboMultiplier,
+    );
   }
 
   /// Shows the level-up corner popup
@@ -678,9 +655,29 @@ class _GameScreenState extends State<GameScreen>
           final theme = themeState.currentTheme;
 
           return BlocBuilder<GameCubit, GameCubitState>(
+            // Performance: Only rebuild when UI-visible state changes,
+            // NOT on every snake move tick. The GameBoard handles its own
+            // snake rendering via its internal BlocBuilder + AnimatedBuilder.
+            buildWhen: (previous, current) {
+              if (previous.status != current.status) return true;
+              if (previous.gameState == null || current.gameState == null) {
+                return true;
+              }
+              final prev = previous.gameState!;
+              final curr = current.gameState!;
+              return prev.score != curr.score ||
+                  prev.level != curr.level ||
+                  prev.status != curr.status ||
+                  prev.showCrashModal != curr.showCrashModal ||
+                  prev.currentCombo != curr.currentCombo ||
+                  prev.activePowerUps.length != curr.activePowerUps.length ||
+                  previous.tournamentId != current.tournamentId;
+            },
             builder: (context, gameCubitState) {
               final gameState = gameCubitState.gameState;
-              final settingsState = context.watch<GameSettingsCubit>().state;
+              // Performance: Use read instead of watch. Settings don't change
+              // during gameplay, so we don't need to subscribe to changes here.
+              final settingsState = context.read<GameSettingsCubit>().state;
 
               // Sync shake enabled state with controller to prevent background animation loops
               _juiceController.shakeEnabled = settingsState.screenShakeEnabled;
@@ -807,46 +804,16 @@ class _GameScreenState extends State<GameScreen>
                                                     boardConstraints.maxHeight,
                                                   );
 
-                                                  // Track board size for score popups
-                                                  WidgetsBinding.instance
-                                                      .addPostFrameCallback((_) {
-                                                    if (mounted) {
-                                                      _boardSize = Size(
-                                                        availableSize,
-                                                        availableSize,
-                                                      );
-                                                    }
-                                                  });
-
                                                   return Center(
-                                                    child: Builder(
-                                                      builder: (boardContext) {
-                                                        WidgetsBinding.instance
-                                                            .addPostFrameCallback((_) {
-                                                          if (mounted) {
-                                                            final box = boardContext
-                                                                    .findRenderObject()
-                                                                as RenderBox?;
-                                                            if (box != null) {
-                                                              _boardOffset =
-                                                                  box.localToGlobal(
-                                                                Offset.zero,
-                                                              );
-                                                            }
-                                                          }
-                                                        });
-
-                                                        return SizedBox(
-                                                          width: availableSize,
-                                                          height: availableSize,
-                                                          child: GameBoard(
-                                                            gameState: gameState,
-                                                            isTournamentMode:
-                                                                gameCubitState
-                                                                    .isTournamentMode,
-                                                          ),
-                                                        );
-                                                      },
+                                                    child: SizedBox(
+                                                      width: availableSize,
+                                                      height: availableSize,
+                                                      child: GameBoard(
+                                                        gameState: gameState,
+                                                        isTournamentMode:
+                                                            gameCubitState
+                                                                .isTournamentMode,
+                                                      ),
                                                     ),
                                                   );
                                                 },
@@ -889,25 +856,9 @@ class _GameScreenState extends State<GameScreen>
                                           _showExitConfirmation(context),
                                     ),
 
-                                  // Score Popups Layer
-                                  ..._scorePopupManager.activePopups.map((
-                                    popupData,
-                                  ) {
-                                    return ScorePopup(
-                                      key: ValueKey(popupData.id),
-                                      points: popupData.points,
-                                      multiplier: popupData.multiplier,
-                                      position: popupData.position,
-                                      color: popupData.color,
-                                      onComplete: () {
-                                        setState(() {
-                                          _scorePopupManager.removePopup(
-                                            popupData.id,
-                                          );
-                                        });
-                                      },
-                                    );
-                                  }),
+                                   // Score Popups Layer - isolated StatefulWidget
+                                  // to avoid full game screen rebuilds on popup add/remove
+                                  _ScorePopupLayer(key: _scorePopupLayerKey),
 
                                   // Level-Up Corner Popup
                                   if (_showLevelUpPopup)
@@ -1234,5 +1185,111 @@ class _GameBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
+  }
+}
+
+/// Isolated widget for score popups - its own setState only rebuilds
+/// the popup layer, not the entire game screen.
+class _ScorePopupLayer extends StatefulWidget {
+  const _ScorePopupLayer({super.key});
+
+  @override
+  State<_ScorePopupLayer> createState() => _ScorePopupLayerState();
+}
+
+class _ScorePopupLayerState extends State<_ScorePopupLayer> {
+  final ScorePopupManager _scorePopupManager = ScorePopupManager();
+  Size? _boardSize;
+  Offset? _boardOffset;
+
+  void addPopup({
+    required Food food,
+    required int points,
+    required int boardWidth,
+    required int boardHeight,
+    double comboMultiplier = 1.0,
+  }) {
+    // Lazily resolve board size/offset from the game board's render object
+    _resolveBoardMetrics();
+    if (_boardSize == null || _boardOffset == null) return;
+
+    final cellWidth = _boardSize!.width / boardWidth;
+    final cellHeight = _boardSize!.height / boardHeight;
+
+    final screenX = _boardOffset!.dx + (food.position.x + 0.5) * cellWidth;
+    final screenY = _boardOffset!.dy + (food.position.y + 0.5) * cellHeight;
+
+    final color = switch (food.type) {
+      FoodType.normal => Colors.red,
+      FoodType.bonus => Colors.amber,
+      FoodType.special => Colors.purple,
+    };
+
+    final displayMultiplier =
+        comboMultiplier >= 1.5 ? comboMultiplier.round() : 1;
+
+    setState(() {
+      _scorePopupManager.addPopup(
+        points: points,
+        position: Offset(screenX, screenY),
+        color: color,
+        multiplier: displayMultiplier,
+      );
+    });
+  }
+
+  void _resolveBoardMetrics() {
+    // Walk up to find the game board's render box via the parent context
+    // We find the SizedBox that wraps GameBoard by searching the element tree
+    if (_boardSize != null && _boardOffset != null) return;
+
+    // Use our own context to find the nearest GameBoard ancestor's size
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) return;
+
+    // The popup layer is a sibling of the game board in the Stack,
+    // so we use the Stack's constraints to estimate board position.
+    // Find the GameBoard render object via the tree.
+    void visitor(Element element) {
+      if (_boardSize != null && _boardOffset != null) return;
+      if (element.widget is GameBoard) {
+        final box = element.findRenderObject() as RenderBox?;
+        if (box != null && box.hasSize) {
+          _boardSize = box.size;
+          _boardOffset = box.localToGlobal(Offset.zero);
+        }
+        return;
+      }
+      element.visitChildren(visitor);
+    }
+
+    context.visitAncestorElements((element) {
+      // Search from the Stack level to find the GameBoard
+      if (element.widget is Stack) {
+        element.visitChildren(visitor);
+        return _boardSize == null; // Stop if found
+      }
+      return true; // Continue up
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: _scorePopupManager.activePopups.map((popupData) {
+        return ScorePopup(
+          key: ValueKey(popupData.id),
+          points: popupData.points,
+          multiplier: popupData.multiplier,
+          position: popupData.position,
+          color: popupData.color,
+          onComplete: () {
+            setState(() {
+              _scorePopupManager.removePopup(popupData.id);
+            });
+          },
+        );
+      }).toList(),
+    );
   }
 }

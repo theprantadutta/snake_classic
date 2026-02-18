@@ -13,7 +13,6 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/advanced_particle_system.dart';
 import 'package:snake_classic/widgets/snake_trail_system.dart';
-import 'package:snake_classic/widgets/shader_effects.dart';
 
 class GameBoard extends StatefulWidget {
   final GameState gameState;
@@ -43,6 +42,20 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
   GameState? _cachedGameState;
   GameTheme? _cachedTheme;
 
+  // Performance: Persistent Paint objects that survive across frames.
+  // Previously, the painter recreated these 60 times/sec inside AnimatedBuilder.
+  final Paint _persistentSnakeHeadPaint = Paint()..isAntiAlias = true;
+  final Paint _persistentSnakeBodyPaint = Paint()..isAntiAlias = true;
+  final Paint _persistentFoodPaint = Paint()..isAntiAlias = true;
+  Paint? _persistentGridPaint;
+  final Paint _persistentCrashPaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.fill;
+  final Paint _persistentCollisionPaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3.0;
+
   // Enhanced effects
   final ParticleManager _particleManager = ParticleManager();
 
@@ -66,7 +79,25 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
     _moveAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200), // Longer than game tick
-    )..repeat(); // Continuously animate
+    );
+    // Performance: Only start the movement animation if game is already playing.
+    // Otherwise, didUpdateWidget will start it when status becomes playing.
+    if (widget.gameState.status == GameStatus.playing) {
+      _moveAnimationController.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(GameBoard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Performance: Stop 60fps movement animation when game is not playing
+    // (pause, crash, game over). Start it when game resumes.
+    final isPlaying = widget.gameState.status == GameStatus.playing;
+    if (isPlaying && !_moveAnimationController.isAnimating) {
+      _moveAnimationController.repeat();
+    } else if (!isPlaying && _moveAnimationController.isAnimating) {
+      _moveAnimationController.stop();
+    }
   }
 
   @override
@@ -101,6 +132,15 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
             if (shouldRebuild) {
               _checkForGameEvents(_cachedGameState, widget.gameState, theme);
               _cachedGameState = widget.gameState;
+              // Update grid paint color when theme changes
+              if (_cachedTheme != theme || _persistentGridPaint == null) {
+                _persistentGridPaint = Paint()
+                  ..color = theme.accentColor.withValues(alpha: 0.08)
+                  ..strokeWidth = 0.5
+                  ..isAntiAlias = false;
+                _persistentCrashPaint.color = Colors.red.withValues(alpha: 0.3);
+                _persistentCollisionPaint.color = Colors.red.withValues(alpha: 0.8);
+              }
               _cachedTheme = theme;
             }
 
@@ -278,6 +318,14 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
                                       // Pass time once per frame to avoid DateTime.now() in paint loop
                                       animationTimeMs:
                                           DateTime.now().millisecondsSinceEpoch,
+                                      // Performance: Pass pre-allocated Paint objects
+                                      // to avoid creating 6+ paints per frame at 60fps
+                                      cachedSnakeHeadPaint: _persistentSnakeHeadPaint,
+                                      cachedSnakeBodyPaint: _persistentSnakeBodyPaint,
+                                      cachedFoodPaint: _persistentFoodPaint,
+                                      cachedGridPaint: _persistentGridPaint,
+                                      cachedCrashPaint: _persistentCrashPaint,
+                                      cachedCollisionPaint: _persistentCollisionPaint,
                                     ),
                                     size: Size.infinite,
                                     // Performance: Only repaint when needed
@@ -321,15 +369,9 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
                             autoRemoveEmissions: true,
                           ),
                         ),
-                        // Shader effects overlay
-                        if (_shouldUseShaderEffects(theme))
-                          Positioned.fill(
-                            child: ShaderEnhancedBackground(
-                              theme: theme,
-                              enabled: true,
-                              child: const SizedBox.expand(),
-                            ),
-                          ),
+                        // Performance: ShaderEnhancedBackground removed - shaders
+                        // never actually loaded (dead code) but the widget ran a
+                        // 60fps AnimationController. Eliminated to save CPU.
                       ],
                     ),
                   ),
@@ -541,18 +583,9 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
     }
   }
 
-  bool _shouldUseShaderEffects(GameTheme theme) {
-    // Enable shader effects for modern themes
-    return [
-      GameTheme.neon,
-      GameTheme.cyberpunk,
-      GameTheme.space,
-      GameTheme.ocean,
-      GameTheme.crystal,
-      GameTheme.forest,
-      GameTheme.desert,
-    ].contains(theme);
-  }
+  // Note: _shouldUseShaderEffects() removed - shaders never loaded (dead code).
+  // The ShaderEnhancedBackground widget ran a 60fps AnimationController
+  // that only returned widget.child. Removed to eliminate idle CPU usage.
 }
 
 class OptimizedGameBoardPainter extends CustomPainter {
@@ -565,13 +598,14 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final int
   animationTimeMs; // Passed once per frame to avoid DateTime.now() in paint
 
-  // Cache paint objects to avoid recreation
-  late final Paint _snakeHeadPaint;
-  late final Paint _snakeBodyPaint;
-  late final Paint _foodPaint;
-  late final Paint _gridPaint;
-  late final Paint _crashPaint;
-  late final Paint _collisionPaint;
+  // Performance: Paint objects are now passed from _GameBoardState where they
+  // persist across frames, instead of being recreated 60 times/sec.
+  final Paint _snakeHeadPaint;
+  final Paint _snakeBodyPaint;
+  final Paint _foodPaint;
+  final Paint _gridPaint;
+  final Paint _crashPaint;
+  final Paint _collisionPaint;
 
   OptimizedGameBoardPainter({
     required this.gameState,
@@ -581,29 +615,28 @@ class OptimizedGameBoardPainter extends CustomPainter {
     this.previousGameState,
     required this.premiumState,
     this.animationTimeMs = 0,
-  }) : super(repaint: pulseAnimation) {
-    _initializePaints();
-  }
-
-  void _initializePaints() {
-    _snakeHeadPaint = Paint()..isAntiAlias = true;
-    _snakeBodyPaint = Paint()..isAntiAlias = true;
-    _foodPaint = Paint()..isAntiAlias = true;
-    _gridPaint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.08)
-      ..strokeWidth = 0.5
-      ..isAntiAlias = false; // Grid doesn't need antialiasing
-
-    // Crash indicator paints
-    _crashPaint = Paint()
-      ..isAntiAlias = true
-      ..style = PaintingStyle.fill;
-
-    _collisionPaint = Paint()
-      ..isAntiAlias = true
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
-  }
+    // Cached paints from _GameBoardState
+    Paint? cachedSnakeHeadPaint,
+    Paint? cachedSnakeBodyPaint,
+    Paint? cachedFoodPaint,
+    Paint? cachedGridPaint,
+    Paint? cachedCrashPaint,
+    Paint? cachedCollisionPaint,
+  })  : _snakeHeadPaint = cachedSnakeHeadPaint ?? (Paint()..isAntiAlias = true),
+        _snakeBodyPaint = cachedSnakeBodyPaint ?? (Paint()..isAntiAlias = true),
+        _foodPaint = cachedFoodPaint ?? (Paint()..isAntiAlias = true),
+        _gridPaint = cachedGridPaint ?? (Paint()
+          ..color = theme.accentColor.withValues(alpha: 0.08)
+          ..strokeWidth = 0.5
+          ..isAntiAlias = false),
+        _crashPaint = cachedCrashPaint ?? (Paint()
+          ..isAntiAlias = true
+          ..style = PaintingStyle.fill),
+        _collisionPaint = cachedCollisionPaint ?? (Paint()
+          ..isAntiAlias = true
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.0),
+        super(repaint: pulseAnimation);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2292,13 +2325,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
     return selectedSkinType.colors;
   }
 
-  // Debug counter for shouldRepaint
-  static int _repaintCheckCount = 0;
-
   @override
   bool shouldRepaint(covariant OptimizedGameBoardPainter oldDelegate) {
-    final shouldRepaint =
-        oldDelegate.gameState != gameState ||
+    // Performance: Removed debug logging that ran on every shouldRepaint check
+    // (up to 60 times/sec). Keeping the comparison logic only.
+    return oldDelegate.gameState != gameState ||
         oldDelegate.theme != theme ||
         oldDelegate.pulseAnimation.value != pulseAnimation.value ||
         oldDelegate.moveProgress != moveProgress ||
@@ -2307,16 +2338,6 @@ class OptimizedGameBoardPainter extends CustomPainter {
             premiumState.selectedSkinId ||
         oldDelegate.premiumState.selectedTrailId !=
             premiumState.selectedTrailId;
-
-    _repaintCheckCount++;
-    if (_repaintCheckCount <= 10 || _repaintCheckCount % 100 == 0) {
-      final gameStateChanged = oldDelegate.gameState != gameState;
-      debugPrint(
-        '[GameBoard] shouldRepaint #$_repaintCheckCount: $shouldRepaint (gameStateChanged: $gameStateChanged, snake: ${gameState.snake.head})',
-      );
-    }
-
-    return shouldRepaint;
   }
 }
 
