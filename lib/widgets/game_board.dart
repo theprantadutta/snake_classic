@@ -804,55 +804,140 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final snakeLength = snake.body.length;
     final previousSnake = previousGameState?.snake;
 
-    // Draw snake body with enhanced visuals and smooth interpolation
+    // Phase 1: Collect interpolated center positions for all segments.
+    // These are needed for corner joint detection and drawing.
+    final List<Offset> segmentCenters = List.filled(snakeLength, Offset.zero);
+    final List<Rect> segmentRects = List.filled(snakeLength, Rect.zero);
+    final padding = cellWidth * 0.05;
+
     for (int i = 0; i < snakeLength; i++) {
       final currentPosition = snake.body[i];
-      final isHead = i == 0;
-      final isTail = i == snakeLength - 1;
-
-      // Calculate interpolated position for smooth movement
 
       if (previousSnake != null &&
           i < previousSnake.body.length &&
           moveProgress < 1.0) {
         final previousPosition = previousSnake.body[i];
-
-        // Linear interpolation between previous and current position
         final deltaX = currentPosition.x - previousPosition.x;
         final deltaY = currentPosition.y - previousPosition.y;
-
-        // For more precise interpolation, use floating point
         final exactX = previousPosition.x + deltaX * moveProgress;
         final exactY = previousPosition.y + deltaY * moveProgress;
 
-        // Calculate cell rect with smooth positioning
-        final padding = cellWidth * 0.05;
-        final rect = Rect.fromLTWH(
+        segmentCenters[i] = Offset(
+          exactX * cellWidth + cellWidth / 2,
+          exactY * cellHeight + cellHeight / 2,
+        );
+        segmentRects[i] = Rect.fromLTWH(
           exactX * cellWidth + padding,
           exactY * cellHeight + padding,
           cellWidth - padding * 2,
           cellHeight - padding * 2,
         );
-
-        if (isHead) {
-          _drawSnakeHead(canvas, rect, snake.currentDirection);
-        } else {
-          _drawSnakeBody(canvas, rect, i, snakeLength, isTail);
-        }
       } else {
-        // No interpolation needed, use standard positioning
-        final padding = cellWidth * 0.05;
-        final rect = Rect.fromLTWH(
+        segmentCenters[i] = Offset(
+          currentPosition.x * cellWidth + cellWidth / 2,
+          currentPosition.y * cellHeight + cellHeight / 2,
+        );
+        segmentRects[i] = Rect.fromLTWH(
           currentPosition.x * cellWidth + padding,
           currentPosition.y * cellHeight + padding,
           cellWidth - padding * 2,
           cellHeight - padding * 2,
         );
+      }
+    }
 
-        if (isHead) {
-          _drawSnakeHead(canvas, rect, snake.currentDirection);
-        } else {
-          _drawSnakeBody(canvas, rect, i, snakeLength, isTail);
+    // Phase 2: Draw corner joints BEFORE body segments so that the
+    // rounded-rect segments overlay the circle edges cleanly.
+    _drawCornerJoints(canvas, segmentCenters, cellWidth, cellHeight, snakeLength);
+
+    // Phase 3: Draw snake body segments with enhanced visuals
+    for (int i = 0; i < snakeLength; i++) {
+      final isHead = i == 0;
+      final isTail = i == snakeLength - 1;
+
+      if (isHead) {
+        _drawSnakeHead(canvas, segmentRects[i], snake.currentDirection);
+      } else {
+        _drawSnakeBody(canvas, segmentRects[i], i, snakeLength, isTail);
+      }
+    }
+  }
+
+  /// Draws filled circles at each corner/turn point between adjacent segments
+  /// to seamlessly fill the diagonal gaps left by the rounded-rect segments.
+  void _drawCornerJoints(
+    Canvas canvas,
+    List<Offset> centers,
+    double cellWidth,
+    double cellHeight,
+    int snakeLength,
+  ) {
+    if (centers.length < 3) return;
+
+    // Max distance (in pixels) for two segments to be considered adjacent.
+    // This prevents false corner detection when segments wrap around the board.
+    final maxAdjacentDistance = cellWidth * 1.6;
+    // Joint radius matches the body segment width (cell minus 10% padding)
+    final jointRadius = (cellWidth - cellWidth * 0.10) / 2;
+
+    for (int i = 1; i < centers.length - 1; i++) {
+      final prev = centers[i - 1];
+      final curr = centers[i];
+      final next = centers[i + 1];
+
+      // Skip if segments are too far apart (wrap-around in no-walls mode)
+      final distToPrev = (curr - prev).distance;
+      final distToNext = (curr - next).distance;
+      if (distToPrev > maxAdjacentDistance || distToNext > maxAdjacentDistance) {
+        continue;
+      }
+
+      // Direction vectors from prev→curr and curr→next
+      final dx1 = (curr.dx - prev.dx);
+      final dy1 = (curr.dy - prev.dy);
+      final dx2 = (next.dx - curr.dx);
+      final dy2 = (next.dy - curr.dy);
+
+      // A corner exists when the movement direction changes axis
+      // (horizontal→vertical or vertical→horizontal)
+      final isCorner = (dx1.abs() > 0.1 && dy2.abs() > 0.1) ||
+          (dy1.abs() > 0.1 && dx2.abs() > 0.1);
+
+      if (isCorner) {
+        // Match the body segment's color and style at this index
+        final fadeRatio = (snakeLength - i) / snakeLength;
+        final opacity = (0.6 + 0.4 * fadeRatio);
+        _snakeBodyPaint.color = _getBodyColor(opacity);
+        _snakeBodyPaint.maskFilter = _getBodyMaskFilter();
+
+        canvas.drawCircle(curr, jointRadius, _snakeBodyPaint);
+      }
+    }
+
+    // Also check the joint between head (index 0) and first body segment (index 1)
+    // to prevent a gap right behind the head during turns
+    if (centers.length >= 2) {
+      final head = centers[0];
+      final firstBody = centers[1];
+      final distHeadToBody = (firstBody - head).distance;
+
+      if (distHeadToBody <= maxAdjacentDistance && centers.length >= 3) {
+        final secondBody = centers[2];
+        final dx1 = (firstBody.dx - head.dx);
+        final dy1 = (firstBody.dy - head.dy);
+        final dx2 = (secondBody.dx - firstBody.dx);
+        final dy2 = (secondBody.dy - firstBody.dy);
+
+        final isCornerAtBody = (dx1.abs() > 0.1 && dy2.abs() > 0.1) ||
+            (dy1.abs() > 0.1 && dx2.abs() > 0.1);
+
+        if (isCornerAtBody) {
+          // Draw joint at first body segment position (behind head)
+          final fadeRatio = (snakeLength - 1) / snakeLength;
+          final opacity = (0.6 + 0.4 * fadeRatio);
+          _snakeBodyPaint.color = _getBodyColor(opacity);
+          _snakeBodyPaint.maskFilter = _getBodyMaskFilter();
+          canvas.drawCircle(firstBody, jointRadius, _snakeBodyPaint);
         }
       }
     }
