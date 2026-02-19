@@ -28,7 +28,8 @@ class InAppUpdateService {
 
     try {
       AppLogger.info('Checking for app updates...');
-      _updateInfo = await InAppUpdate.checkForUpdate();
+      _updateInfo = await InAppUpdate.checkForUpdate()
+          .timeout(const Duration(seconds: 5));
 
       if (_updateInfo == null) {
         AppLogger.info('No update info available');

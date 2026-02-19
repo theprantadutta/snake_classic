@@ -58,14 +58,21 @@ class NotificationService {
       _localNotifications = FlutterLocalNotificationsPlugin();
 
       await _initializeLocalNotifications();
-      await _initializeFirebaseMessaging();
+      await _initializeFirebaseMessaging().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          AppLogger.warning(
+            'Firebase messaging init timed out — continuing without FCM',
+          );
+        },
+      );
       await _loadNotificationPreferences();
 
       _initialized = true;
       AppLogger.success('Notification service initialized successfully');
     } catch (e) {
       AppLogger.error('Failed to initialize notification service', e);
-      rethrow;
+      // Don't rethrow — notification failure shouldn't crash the app
     }
   }
 

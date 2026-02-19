@@ -204,8 +204,18 @@ class PurchaseService {
         onError: (error) => AppLogger.error('Purchase stream error', error),
       );
 
-      await loadProducts();
-      await restorePurchases();
+      await loadProducts().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          AppLogger.warning('loadProducts timed out — continuing without product data');
+        },
+      );
+      await restorePurchases().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          AppLogger.warning('restorePurchases timed out — continuing without restore');
+        },
+      );
 
       AppLogger.info('Purchase Service initialized successfully');
     } catch (e) {

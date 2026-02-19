@@ -84,19 +84,27 @@ void main() async {
     // Note: PurchaseService.initialize() is NOT called here because
     // PremiumCubit.initialize() already calls it. Calling it twice would
     // double-subscribe to the purchase stream.
-    AppLogger.info('Initializing services in parallel...');
-    await Future.wait([
-      AudioService().initialize().then((_) {
-        AppLogger.success('Audio service initialized');
-      }),
-      NotificationService().initialize().then((_) {
-        AppLogger.success('Notification service initialized');
-      }),
-      InAppUpdateService().checkForUpdate().then((_) {
-        AppLogger.success('In-app update check completed');
-      }),
-    ]);
-    AppLogger.success('All services initialized');
+    AppLogger.info('Initializing services...');
+    await AudioService().initialize().timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        AppLogger.warning('Audio service init timed out — continuing without audio');
+      },
+    );
+    AppLogger.success('Audio service initialized');
+
+    // Fire-and-forget — don't block startup
+    NotificationService().initialize().then((_) {
+      AppLogger.success('Notification service initialized');
+    }).catchError((e) {
+      AppLogger.error('Notification service init failed', e);
+    });
+
+    InAppUpdateService().checkForUpdate().then((_) {
+      AppLogger.success('In-app update check completed');
+    });
+
+    AppLogger.success('All critical services initialized');
 
     // Wire up PurchaseService.setUserIdGetter so backend verification
     // includes the real user ID instead of 'anonymous_user'.

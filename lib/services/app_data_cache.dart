@@ -90,19 +90,23 @@ class AppDataCache extends ChangeNotifier {
     try {
       // Load ALL data in parallel using Future.wait
       await Future.wait([
-        // Group 1: Local data (fast)
+        // Group 1: Local data (fast, no timeout needed)
         _loadStatistics(),
         _loadRecentAchievements(),
         _loadReplayKeys(),
         _loadSettingsData(),
-
-        // Group 2: Services that need initialization
         _loadDailyChallenges(),
 
-        // Group 3: Network data (with fallback to cache)
-        _loadLeaderboards(),
-        _loadTournaments(),
-        _loadSocialData(),
+        // Group 2: Network data (with timeout + fallback)
+        _loadLeaderboards().timeout(const Duration(seconds: 8), onTimeout: () {
+          AppLogger.warning('AppDataCache: Leaderboards timed out');
+        }),
+        _loadTournaments().timeout(const Duration(seconds: 8), onTimeout: () {
+          AppLogger.warning('AppDataCache: Tournaments timed out');
+        }),
+        _loadSocialData().timeout(const Duration(seconds: 8), onTimeout: () {
+          AppLogger.warning('AppDataCache: Social data timed out');
+        }),
       ]);
 
       _isFullyLoaded = true;
