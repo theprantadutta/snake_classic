@@ -19,7 +19,7 @@ class BackendService {
   // Backend configuration
   static String get _baseUrl {
     final backendUrl =
-        dotenv.env['NOTIFICATION_BACKEND_URL'] ?? 'http://127.0.0.1:8393';
+        dotenv.env['API_BACKEND_URL'] ?? 'http://127.0.0.1:8393';
     return '$backendUrl/api/v1';
   }
 

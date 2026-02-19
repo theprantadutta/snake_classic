@@ -25,10 +25,12 @@ class ApiService {
 
   // Backend configuration
   static String get baseUrl {
-    final backendUrl =
-        dotenv.env['BACKEND_URL'] ??
-        dotenv.env['NOTIFICATION_BACKEND_URL'] ??
-        'http://127.0.0.1:8393';
+    final String backendUrl;
+    if (kDebugMode) {
+      backendUrl = dotenv.env['API_BACKEND_URL'] ?? 'http://192.168.0.141:8393';
+    } else {
+      backendUrl = 'https://snakeclassic.pranta.dev';
+    }
     return '$backendUrl/api/v1';
   }
 
@@ -85,7 +87,9 @@ class ApiService {
 
       final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
       // Consider expired if within 5 minutes of expiry
-      return DateTime.now().isAfter(expiry.subtract(const Duration(minutes: 5)));
+      return DateTime.now().isAfter(
+        expiry.subtract(const Duration(minutes: 5)),
+      );
     } catch (e) {
       // If we can't decode the token, treat as expired
       return true;
@@ -642,10 +646,14 @@ class ApiService {
             Uri.parse('$baseUrl/achievements/progress/batch'),
             headers: _authHeaders,
             body: jsonEncode({
-              'achievements': updates.map((u) => {
-                'achievement_id': u['achievementId'],
-                'progress_increment': u['progressIncrement'],
-              }).toList(),
+              'achievements': updates
+                  .map(
+                    (u) => {
+                      'achievement_id': u['achievementId'],
+                      'progress_increment': u['progressIncrement'],
+                    },
+                  )
+                  .toList(),
             }),
           )
           .timeout(_timeout);
@@ -669,9 +677,7 @@ class ApiService {
           .post(
             Uri.parse('$baseUrl/dailychallenges/progress/batch'),
             headers: _authHeaders,
-            body: jsonEncode({
-              'updates': updates,
-            }),
+            body: jsonEncode({'updates': updates}),
           )
           .timeout(_timeout);
 
@@ -1186,11 +1192,16 @@ class ApiService {
       if (response.statusCode == 400) {
         try {
           final body = jsonDecode(response.body);
-          final errorMsg = (body['error'] ?? body['message'] ?? '').toString().toLowerCase();
-          if (errorMsg.contains('already claimed') || errorMsg.contains('already collected')) {
+          final errorMsg = (body['error'] ?? body['message'] ?? '')
+              .toString()
+              .toLowerCase();
+          if (errorMsg.contains('already claimed') ||
+              errorMsg.contains('already collected')) {
             // Not an error - just means the bonus was already claimed
             // Return success with a flag so sync service knows not to retry
-            AppLogger.network('Daily bonus already claimed today (treating as success)');
+            AppLogger.network(
+              'Daily bonus already claimed today (treating as success)',
+            );
             return {'success': true, 'alreadyClaimed': true};
           }
         } catch (_) {

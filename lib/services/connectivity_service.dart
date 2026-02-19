@@ -32,10 +32,7 @@ class ConnectivityService extends ChangeNotifier {
 
   /// Backend health endpoint URL
   static String get _healthUrl {
-    final backendUrl =
-        dotenv.env['BACKEND_URL'] ??
-        dotenv.env['NOTIFICATION_BACKEND_URL'] ??
-        'http://127.0.0.1:8393';
+    final backendUrl = dotenv.env['API_BACKEND_URL'] ?? 'http://127.0.0.1:8393';
     return '$backendUrl/health/status';
   }
 
