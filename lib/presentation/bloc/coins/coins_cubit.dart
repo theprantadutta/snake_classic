@@ -404,6 +404,12 @@ class CoinsCubit extends Cubit<CoinsState> {
         emit(state.copyWith(dailyBonuses: updatedBonuses));
         await _saveData();
 
+        // Persist claim date for frontend gate
+        await _prefs?.setString(
+          'last_daily_bonus_claim_date',
+          DateTime.now().toIso8601String().substring(0, 10),
+        );
+
         AppLogger.info(
           'Collected daily bonus: Day ${bonus.day} - ${bonus.coins} coins',
         );
@@ -487,6 +493,14 @@ class CoinsCubit extends Cubit<CoinsState> {
     } catch (e) {
       AppLogger.error('Error resetting coin balance', e);
     }
+  }
+
+  /// Whether the daily bonus was already claimed today (calendar day)
+  bool get wasDailyBonusClaimedToday {
+    final lastClaim = _prefs?.getString('last_daily_bonus_claim_date');
+    if (lastClaim == null) return false;
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    return lastClaim == today;
   }
 
   /// Check if user can afford a purchase

@@ -114,6 +114,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     if (!mounted) return;
 
+    // Frontend gate: already claimed today, skip everything
+    final coinsCubit = context.read<CoinsCubit>();
+    if (coinsCubit.wasDailyBonusClaimedToday) return;
+
     try {
       DailyBonusStatus? status;
 
