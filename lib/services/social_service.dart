@@ -362,7 +362,7 @@ class SocialService {
     try {
       await _apiService.updateProfile({
         'status': status.name,
-        if (statusMessage != null) 'status_message': statusMessage,
+        'status_message': ?statusMessage,
       });
     } catch (e) {
       if (kDebugMode) {

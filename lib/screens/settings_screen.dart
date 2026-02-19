@@ -1302,6 +1302,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                           bool success = false;
                           final authCubit = context.read<AuthCubit>();
+                          final scaffoldMessenger =
+                              ScaffoldMessenger.of(context);
 
                           if (authState.isGuestUser) {
                             success = await authCubit.updateGuestUsername(
@@ -1333,7 +1335,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                           if (success && dialogContext.mounted) {
                             Navigator.of(dialogContext).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            scaffoldMessenger.showSnackBar(
                               SnackBar(
                                 content: Text(
                                   'Username updated to "$newUsername"',

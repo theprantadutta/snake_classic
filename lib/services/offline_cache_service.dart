@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/data/daos/sync_dao.dart';
+import '../utils/logger.dart';
 
 /// Cache entry with metadata for TTL management
 class CacheEntry<T> {
@@ -160,8 +161,8 @@ class OfflineCacheService extends ChangeNotifier {
 
     final cleanedCount = await _syncDao!.cleanExpiredCache();
 
-    if (kDebugMode && cleanedCount > 0) {
-      print('Cleaned $cleanedCount expired cache entries');
+    if (cleanedCount > 0) {
+      AppLogger.storage('Cleaned $cleanedCount expired cache entries');
     }
   }
 

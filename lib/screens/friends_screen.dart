@@ -510,7 +510,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                 ],
               ),
             ),
-            if (trailing != null) trailing,
+            ?trailing,
           ],
         ),
       ),

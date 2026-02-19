@@ -1157,6 +1157,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           }
         }
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Successfully joined tournament!')),
         );

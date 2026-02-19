@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/services/purchase_service.dart';
+// import 'package:snake_classic/services/purchase_service.dart'; // TODO: Re-enable with purchase flow
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/game_button.dart';
+// import 'package:snake_classic/widgets/game_button.dart'; // TODO: Re-enable with purchase flow
 
 // ---------------------------------------------------------------------------
 // Node state enum for reward cells
@@ -289,82 +289,84 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
     }
   }
 
-  void _showPurchaseSheet(GameTheme theme, BattlePassSeason season) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        builder: (ctx, scrollCtrl) => _PurchaseSheet(
-          season: season,
-          theme: theme,
-          scrollController: scrollCtrl,
-          onPurchase: _handlePurchase,
-          onDismiss: () => Navigator.of(ctx).pop(),
-        ),
-      ),
-    );
-  }
+  // TODO: Re-enable when purchase flow is implemented
+  // void _showPurchaseSheet(GameTheme theme, BattlePassSeason season) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     backgroundColor: Colors.transparent,
+  //     isScrollControlled: true,
+  //     builder: (_) => DraggableScrollableSheet(
+  //       initialChildSize: 0.75,
+  //       minChildSize: 0.5,
+  //       maxChildSize: 0.9,
+  //       builder: (ctx, scrollCtrl) => _PurchaseSheet(
+  //         season: season,
+  //         theme: theme,
+  //         scrollController: scrollCtrl,
+  //         onPurchase: _handlePurchase,
+  //         onDismiss: () => Navigator.of(ctx).pop(),
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Future<void> _handlePurchase() async {
-    final purchaseService = PurchaseService();
-    final cubit = context.read<BattlePassCubit>();
-
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(width: 14),
-              Text('Processing purchase...'),
-            ],
-          ),
-          backgroundColor: Colors.amber.shade700,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-
-      await purchaseService.purchaseProduct(ProductIds.battlePass);
-      await cubit.activate();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Text('Premium Battle Pass activated!'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Purchase failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  // TODO: Re-enable when purchase flow is implemented
+  // Future<void> _handlePurchase() async {
+  //   final purchaseService = PurchaseService();
+  //   final cubit = context.read<BattlePassCubit>();
+  //
+  //   try {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: const Row(
+  //           children: [
+  //             SizedBox(
+  //               width: 18,
+  //               height: 18,
+  //               child: CircularProgressIndicator(
+  //                 strokeWidth: 2,
+  //                 color: Colors.white,
+  //               ),
+  //             ),
+  //             SizedBox(width: 14),
+  //             Text('Processing purchase...'),
+  //           ],
+  //         ),
+  //         backgroundColor: Colors.amber.shade700,
+  //         duration: const Duration(seconds: 3),
+  //       ),
+  //     );
+  //
+  //     await purchaseService.purchaseProduct(ProductIds.battlePass);
+  //     await cubit.activate();
+  //
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Row(
+  //             children: [
+  //               Icon(Icons.check_circle, color: Colors.white),
+  //               SizedBox(width: 12),
+  //               Text('Premium Battle Pass activated!'),
+  //             ],
+  //           ),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Purchase failed: ${e.toString()}'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
 }
 
 // ===========================================================================
@@ -1135,469 +1137,458 @@ class _RewardNodeState extends State<_RewardNode> {
 // ===========================================================================
 // 5. _PremiumCTA (Kept from original, using gameBreathe)
 // ===========================================================================
-class _PremiumCTA extends StatelessWidget {
-  final BattlePassSeason season;
-  final GameTheme theme;
-  final VoidCallback onTap;
-
-  const _PremiumCTA({
-    required this.season,
-    required this.theme,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            theme.backgroundColor.withValues(alpha: 0),
-            theme.backgroundColor,
-          ],
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.amber.shade600,
-                  Colors.orange.shade700,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 16,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.workspace_premium,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'UNLOCK PREMIUM',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Get all exclusive rewards',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '\$${season.price.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        color: Colors.orange.shade800,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ).gameBreathe(intensity: 1.02),
-      ),
-    ).gameEntrance(delay: const Duration(milliseconds: 200));
-  }
-}
+// TODO: Re-enable when purchase flow is implemented
+// class _PremiumCTA extends StatelessWidget {
+//   final BattlePassSeason season;
+//   final GameTheme theme;
+//   final VoidCallback onTap;
+//
+//   const _PremiumCTA({
+//     required this.season,
+//     required this.theme,
+//     required this.onTap,
+//   });
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+//       decoration: BoxDecoration(
+//         gradient: LinearGradient(
+//           begin: Alignment.topCenter,
+//           end: Alignment.bottomCenter,
+//           colors: [
+//             theme.backgroundColor.withValues(alpha: 0),
+//             theme.backgroundColor,
+//           ],
+//         ),
+//       ),
+//       child: SafeArea(
+//         top: false,
+//         child: InkWell(
+//           onTap: onTap,
+//           borderRadius: BorderRadius.circular(16),
+//           child: Container(
+//             decoration: BoxDecoration(
+//               gradient: LinearGradient(
+//                 colors: [
+//                   Colors.amber.shade600,
+//                   Colors.orange.shade700,
+//                 ],
+//               ),
+//               borderRadius: BorderRadius.circular(16),
+//               boxShadow: [
+//                 BoxShadow(
+//                   color: Colors.amber.withValues(alpha: 0.3),
+//                   blurRadius: 20,
+//                   spreadRadius: 2,
+//                 ),
+//               ],
+//             ),
+//             child: Padding(
+//               padding: const EdgeInsets.symmetric(
+//                 horizontal: 24,
+//                 vertical: 16,
+//               ),
+//               child: Row(
+//                 children: [
+//                   Container(
+//                     padding: const EdgeInsets.all(10),
+//                     decoration: BoxDecoration(
+//                       color: Colors.white.withValues(alpha: 0.2),
+//                       shape: BoxShape.circle,
+//                     ),
+//                     child: const Icon(
+//                       Icons.workspace_premium,
+//                       color: Colors.white,
+//                       size: 24,
+//                     ),
+//                   ),
+//                   const SizedBox(width: 16),
+//                   Expanded(
+//                     child: Column(
+//                       mainAxisSize: MainAxisSize.min,
+//                       crossAxisAlignment: CrossAxisAlignment.start,
+//                       children: [
+//                         const Text(
+//                           'UNLOCK PREMIUM',
+//                           style: TextStyle(
+//                             color: Colors.white,
+//                             fontSize: 16,
+//                             fontWeight: FontWeight.w800,
+//                             letterSpacing: 0.5,
+//                           ),
+//                         ),
+//                         const SizedBox(height: 2),
+//                         Text(
+//                           'Get all exclusive rewards',
+//                           style: TextStyle(
+//                             color: Colors.white.withValues(alpha: 0.8),
+//                             fontSize: 13,
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                   Container(
+//                     padding: const EdgeInsets.symmetric(
+//                       horizontal: 16,
+//                       vertical: 10,
+//                     ),
+//                     decoration: BoxDecoration(
+//                       color: Colors.white,
+//                       borderRadius: BorderRadius.circular(12),
+//                     ),
+//                     child: Text(
+//                       '\$${season.price.toStringAsFixed(2)}',
+//                       style: TextStyle(
+//                         color: Colors.orange.shade800,
+//                         fontSize: 18,
+//                         fontWeight: FontWeight.w900,
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ),
+//         ).gameBreathe(intensity: 1.02),
+//       ),
+//     ).gameEntrance(delay: const Duration(milliseconds: 200));
+//   }
+// }
 
 // ===========================================================================
 // 6. _PurchaseSheet (Rebuilt)
 // ===========================================================================
-class _PurchaseSheet extends StatelessWidget {
-  final BattlePassSeason season;
-  final GameTheme theme;
-  final ScrollController scrollController;
-  final Future<void> Function() onPurchase;
-  final VoidCallback onDismiss;
-
-  const _PurchaseSheet({
-    required this.season,
-    required this.theme,
-    required this.scrollController,
-    required this.onPurchase,
-    required this.onDismiss,
-  });
-
-  List<BattlePassReward> get _featuredRewards {
-    final rewards = <BattlePassReward>[];
-    for (final level in season.levels) {
-      if (level.premiumReward != null && level.premiumReward!.isSpecial) {
-        rewards.add(level.premiumReward!);
-      }
-      if (rewards.length >= 6) break;
-    }
-    // Fill with other premium rewards if not enough special ones
-    if (rewards.length < 5) {
-      for (final level in season.levels) {
-        if (level.premiumReward != null &&
-            !rewards.contains(level.premiumReward)) {
-          rewards.add(level.premiumReward!);
-          if (rewards.length >= 6) break;
-        }
-      }
-    }
-    return rewards;
-  }
-
-  int get _premiumRewardCount =>
-      season.levels.where((l) => l.premiumReward != null).length;
-
-  int get _skinCount => season.levels
-      .where((l) =>
-          l.premiumReward?.type == BattlePassRewardType.skin ||
-          l.premiumReward?.type == BattlePassRewardType.theme)
-      .length;
-
-  int get _xpRewardCount => season.levels
-      .where((l) => l.premiumReward?.type == BattlePassRewardType.xp)
-      .length;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.backgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(
-          color: Colors.amber.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        children: [
-          // Drag handle
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Hero icon
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.amber, Colors.orange.shade600],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  spreadRadius: 4,
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.workspace_premium,
-              color: Colors.white,
-              size: 36,
-            ),
-          ).gameHero(),
-          const SizedBox(height: 16),
-          Text(
-            'Upgrade to Premium',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            season.name,
-            style: TextStyle(
-              color: season.themeColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Scrollable content
-          Expanded(
-            child: SingleChildScrollView(
-              controller: scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Featured rewards
-                  Text(
-                    'FEATURED REWARDS',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.6),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _featuredRewards.length,
-                      itemBuilder: (context, index) {
-                        final reward = _featuredRewards[index];
-                        return Container(
-                          width: 80,
-                          margin: const EdgeInsets.only(right: 10),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.amber.withValues(alpha: 0.25),
-                                Colors.orange.withValues(alpha: 0.12),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.amber.withValues(alpha: 0.35),
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(reward.icon,
-                                  style: const TextStyle(fontSize: 28)),
-                              const SizedBox(height: 4),
-                              Text(
-                                reward.name,
-                                style: TextStyle(
-                                  color: theme.accentColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ).gameGridItem(index);
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Value stats
-                  Row(
-                    children: [
-                      _buildStatCard(
-                        '$_premiumRewardCount',
-                        'Premium\nRewards',
-                      ),
-                      const SizedBox(width: 10),
-                      _buildStatCard(
-                        '$_skinCount',
-                        'Exclusive\nSkins',
-                      ),
-                      const SizedBox(width: 10),
-                      _buildStatCard(
-                        '$_xpRewardCount',
-                        'Bonus\nXP',
-                      ),
-                    ],
-                  ).gameEntrance(delay: const Duration(milliseconds: 100)),
-                  const SizedBox(height: 20),
-
-                  // Benefits list
-                  _buildBenefitRow(
-                    Icons.card_giftcard,
-                    'Exclusive Premium Rewards',
-                    0,
-                  ),
-                  _buildBenefitRow(
-                    Icons.palette,
-                    'Exclusive Themes & Skins',
-                    1,
-                  ),
-                  _buildBenefitRow(
-                    Icons.bolt,
-                    'Bonus XP Rewards',
-                    2,
-                  ),
-                  _buildBenefitRow(
-                    Icons.emoji_events,
-                    'Tournament Access',
-                    3,
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ),
-
-          // Sticky bottom
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-            child: Column(
-              children: [
-                GameButton(
-                  text: 'Purchase for \$${season.price.toStringAsFixed(2)}',
-                  theme: theme,
-                  variant: GameButtonVariant.premium,
-                  size: GameButtonSize.hero,
-                  expanded: true,
-                  onPressed: () {
-                    onDismiss();
-                    onPurchase();
-                  },
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: onDismiss,
-                  child: Text(
-                    'Maybe Later',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.6),
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String value, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: theme.accentColor.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                color: Colors.amber,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.6),
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBenefitRow(IconData icon, String text, int index) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.amber.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: Colors.amber, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Icon(
-            Icons.check_circle,
-            color: Colors.green.withValues(alpha: 0.7),
-            size: 20,
-          ),
-        ],
-      ),
-    ).gameListItem(index);
-  }
-}
+// TODO: Re-enable when purchase flow is implemented
+// class _PurchaseSheet extends StatelessWidget {
+//   final BattlePassSeason season;
+//   final GameTheme theme;
+//   final ScrollController scrollController;
+//   final Future<void> Function() onPurchase;
+//   final VoidCallback onDismiss;
+//
+//   const _PurchaseSheet({
+//     required this.season,
+//     required this.theme,
+//     required this.scrollController,
+//     required this.onPurchase,
+//     required this.onDismiss,
+//   });
+//
+//   List<BattlePassReward> get _featuredRewards {
+//     final rewards = <BattlePassReward>[];
+//     for (final level in season.levels) {
+//       if (level.premiumReward != null && level.premiumReward!.isSpecial) {
+//         rewards.add(level.premiumReward!);
+//       }
+//       if (rewards.length >= 6) break;
+//     }
+//     if (rewards.length < 5) {
+//       for (final level in season.levels) {
+//         if (level.premiumReward != null &&
+//             !rewards.contains(level.premiumReward)) {
+//           rewards.add(level.premiumReward!);
+//           if (rewards.length >= 6) break;
+//         }
+//       }
+//     }
+//     return rewards;
+//   }
+//
+//   int get _premiumRewardCount =>
+//       season.levels.where((l) => l.premiumReward != null).length;
+//
+//   int get _skinCount => season.levels
+//       .where((l) =>
+//           l.premiumReward?.type == BattlePassRewardType.skin ||
+//           l.premiumReward?.type == BattlePassRewardType.theme)
+//       .length;
+//
+//   int get _xpRewardCount => season.levels
+//       .where((l) => l.premiumReward?.type == BattlePassRewardType.xp)
+//       .length;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       decoration: BoxDecoration(
+//         color: theme.backgroundColor,
+//         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+//         border: Border.all(
+//           color: Colors.amber.withValues(alpha: 0.3),
+//           width: 1.5,
+//         ),
+//       ),
+//       child: Column(
+//         children: [
+//           Padding(
+//             padding: const EdgeInsets.only(top: 12),
+//             child: Container(
+//               width: 40,
+//               height: 4,
+//               decoration: BoxDecoration(
+//                 color: theme.accentColor.withValues(alpha: 0.3),
+//                 borderRadius: BorderRadius.circular(2),
+//               ),
+//             ),
+//           ),
+//           const SizedBox(height: 20),
+//           Container(
+//             width: 72,
+//             height: 72,
+//             decoration: BoxDecoration(
+//               gradient: LinearGradient(
+//                 colors: [Colors.amber, Colors.orange.shade600],
+//               ),
+//               shape: BoxShape.circle,
+//               boxShadow: [
+//                 BoxShadow(
+//                   color: Colors.amber.withValues(alpha: 0.4),
+//                   blurRadius: 20,
+//                   spreadRadius: 4,
+//                 ),
+//               ],
+//             ),
+//             child: const Icon(
+//               Icons.workspace_premium,
+//               color: Colors.white,
+//               size: 36,
+//             ),
+//           ).gameHero(),
+//           const SizedBox(height: 16),
+//           Text(
+//             'Upgrade to Premium',
+//             style: TextStyle(
+//               color: theme.accentColor,
+//               fontSize: 24,
+//               fontWeight: FontWeight.w800,
+//             ),
+//           ),
+//           const SizedBox(height: 4),
+//           Text(
+//             season.name,
+//             style: TextStyle(
+//               color: season.themeColor,
+//               fontSize: 16,
+//               fontWeight: FontWeight.w600,
+//             ),
+//           ),
+//           const SizedBox(height: 20),
+//           Expanded(
+//             child: SingleChildScrollView(
+//               controller: scrollController,
+//               padding: const EdgeInsets.symmetric(horizontal: 24),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     'FEATURED REWARDS',
+//                     style: TextStyle(
+//                       color: theme.accentColor.withValues(alpha: 0.6),
+//                       fontSize: 11,
+//                       fontWeight: FontWeight.w700,
+//                       letterSpacing: 1,
+//                     ),
+//                   ),
+//                   const SizedBox(height: 10),
+//                   SizedBox(
+//                     height: 100,
+//                     child: ListView.builder(
+//                       scrollDirection: Axis.horizontal,
+//                       itemCount: _featuredRewards.length,
+//                       itemBuilder: (context, index) {
+//                         final reward = _featuredRewards[index];
+//                         return Container(
+//                           width: 80,
+//                           margin: const EdgeInsets.only(right: 10),
+//                           padding: const EdgeInsets.all(8),
+//                           decoration: BoxDecoration(
+//                             gradient: LinearGradient(
+//                               begin: Alignment.topCenter,
+//                               end: Alignment.bottomCenter,
+//                               colors: [
+//                                 Colors.amber.withValues(alpha: 0.25),
+//                                 Colors.orange.withValues(alpha: 0.12),
+//                               ],
+//                             ),
+//                             borderRadius: BorderRadius.circular(12),
+//                             border: Border.all(
+//                               color: Colors.amber.withValues(alpha: 0.35),
+//                             ),
+//                           ),
+//                           child: Column(
+//                             mainAxisAlignment: MainAxisAlignment.center,
+//                             children: [
+//                               Text(reward.icon,
+//                                   style: const TextStyle(fontSize: 28)),
+//                               const SizedBox(height: 4),
+//                               Text(
+//                                 reward.name,
+//                                 style: TextStyle(
+//                                   color: theme.accentColor,
+//                                   fontSize: 10,
+//                                   fontWeight: FontWeight.w600,
+//                                 ),
+//                                 maxLines: 1,
+//                                 overflow: TextOverflow.ellipsis,
+//                                 textAlign: TextAlign.center,
+//                               ),
+//                             ],
+//                           ),
+//                         ).gameGridItem(index);
+//                       },
+//                     ),
+//                   ),
+//                   const SizedBox(height: 20),
+//                   Row(
+//                     children: [
+//                       _buildStatCard(
+//                         '$_premiumRewardCount',
+//                         'Premium\nRewards',
+//                       ),
+//                       const SizedBox(width: 10),
+//                       _buildStatCard(
+//                         '$_skinCount',
+//                         'Exclusive\nSkins',
+//                       ),
+//                       const SizedBox(width: 10),
+//                       _buildStatCard(
+//                         '$_xpRewardCount',
+//                         'Bonus\nXP',
+//                       ),
+//                     ],
+//                   ).gameEntrance(delay: const Duration(milliseconds: 100)),
+//                   const SizedBox(height: 20),
+//                   _buildBenefitRow(
+//                     Icons.card_giftcard,
+//                     'Exclusive Premium Rewards',
+//                     0,
+//                   ),
+//                   _buildBenefitRow(
+//                     Icons.palette,
+//                     'Exclusive Themes & Skins',
+//                     1,
+//                   ),
+//                   _buildBenefitRow(
+//                     Icons.bolt,
+//                     'Bonus XP Rewards',
+//                     2,
+//                   ),
+//                   _buildBenefitRow(
+//                     Icons.emoji_events,
+//                     'Tournament Access',
+//                     3,
+//                   ),
+//                   const SizedBox(height: 24),
+//                 ],
+//               ),
+//             ),
+//           ),
+//           Padding(
+//             padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+//             child: Column(
+//               children: [
+//                 GameButton(
+//                   text: 'Purchase for \$${season.price.toStringAsFixed(2)}',
+//                   theme: theme,
+//                   variant: GameButtonVariant.premium,
+//                   size: GameButtonSize.hero,
+//                   expanded: true,
+//                   onPressed: () {
+//                     onDismiss();
+//                     onPurchase();
+//                   },
+//                 ),
+//                 const SizedBox(height: 8),
+//                 TextButton(
+//                   onPressed: onDismiss,
+//                   child: Text(
+//                     'Maybe Later',
+//                     style: TextStyle(
+//                       color: theme.accentColor.withValues(alpha: 0.6),
+//                       fontSize: 14,
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//           SizedBox(height: MediaQuery.of(context).padding.bottom),
+//         ],
+//       ),
+//     );
+//   }
+//
+//   Widget _buildStatCard(String value, String label) {
+//     return Expanded(
+//       child: Container(
+//         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+//         decoration: BoxDecoration(
+//           color: theme.accentColor.withValues(alpha: 0.12),
+//           borderRadius: BorderRadius.circular(12),
+//           border: Border.all(
+//             color: theme.accentColor.withValues(alpha: 0.2),
+//           ),
+//         ),
+//         child: Column(
+//           children: [
+//             Text(
+//               value,
+//               style: TextStyle(
+//                 color: Colors.amber,
+//                 fontSize: 20,
+//                 fontWeight: FontWeight.w900,
+//               ),
+//             ),
+//             const SizedBox(height: 4),
+//             Text(
+//               label,
+//               textAlign: TextAlign.center,
+//               style: TextStyle(
+//                 color: theme.accentColor.withValues(alpha: 0.6),
+//                 fontSize: 11,
+//                 fontWeight: FontWeight.w500,
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+//
+//   Widget _buildBenefitRow(IconData icon, String text, int index) {
+//     return Padding(
+//       padding: const EdgeInsets.only(bottom: 12),
+//       child: Row(
+//         children: [
+//           Container(
+//             padding: const EdgeInsets.all(8),
+//             decoration: BoxDecoration(
+//               color: Colors.amber.withValues(alpha: 0.2),
+//               borderRadius: BorderRadius.circular(10),
+//             ),
+//             child: Icon(icon, color: Colors.amber, size: 20),
+//           ),
+//           const SizedBox(width: 14),
+//           Expanded(
+//             child: Text(
+//               text,
+//               style: TextStyle(
+//                 color: theme.accentColor,
+//                 fontSize: 15,
+//                 fontWeight: FontWeight.w600,
+//               ),
+//             ),
+//           ),
+//           Icon(
+//             Icons.check_circle,
+//             color: Colors.green.withValues(alpha: 0.7),
+//             size: 20,
+//           ),
+//         ],
+//       ),
+//     ).gameListItem(index);
+//   }
+// }

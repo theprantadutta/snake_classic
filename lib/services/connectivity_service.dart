@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../utils/logger.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
@@ -30,9 +31,16 @@ class ConnectivityService extends ChangeNotifier {
   bool get isBackendReachable => _isBackendReachable;
   DateTime? get lastOnlineTime => _lastOnlineTime;
 
+  static const String _prodFallbackUrl = 'https://snakeclassic.pranta.dev';
+
   /// Backend health endpoint URL
   static String get _healthUrl {
-    final backendUrl = dotenv.env['API_BACKEND_URL'] ?? 'http://127.0.0.1:8393';
+    final String backendUrl;
+    if (kDebugMode) {
+      backendUrl = dotenv.env['DEV_API_BACKEND_URL'] ?? 'http://127.0.0.1:8393';
+    } else {
+      backendUrl = dotenv.env['PROD_API_BACKEND_URL'] ?? _prodFallbackUrl;
+    }
     return '$backendUrl/health/status';
   }
 
@@ -86,8 +94,8 @@ class ConnectivityService extends ChangeNotifier {
     }
 
     // Log state change
-    if (kDebugMode && hadNetwork != _hasNetworkConnection) {
-      print(
+    if (hadNetwork != _hasNetworkConnection) {
+      AppLogger.network(
         'Network connection changed: $_hasNetworkConnection, '
         'Internet: $_hasInternetAccess, Backend: $_isBackendReachable',
       );

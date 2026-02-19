@@ -1323,7 +1323,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void _showCreditsDialog(BuildContext context, GameTheme theme) async {
     final currentYear = DateTime.now().year;
     final packageInfo = await PackageInfo.fromPlatform();
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     showDialog(
       context: context,

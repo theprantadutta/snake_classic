@@ -272,7 +272,7 @@ class MultiplayerService {
           'food_positions': foodPositions
               .map((p) => {'x': p.x, 'y': p.y})
               .toList(),
-        if (powerUps != null) 'power_ups': powerUps,
+        'power_ups': ?powerUps,
       };
 
       await _hubConnection?.invoke(
