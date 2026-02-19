@@ -27,9 +27,15 @@ class ApiService {
   static String get baseUrl {
     final String backendUrl;
     if (kDebugMode) {
-      backendUrl = dotenv.env['API_BACKEND_URL'] ?? 'http://192.168.0.141:8393';
+      if (dotenv.env['DEV_API_BACKEND_URL'] == null) {
+        throw Exception('DEV_API_BACKEND_URL not set in .env');
+      }
+      backendUrl = dotenv.env['DEV_API_BACKEND_URL']!;
     } else {
-      backendUrl = 'https://snakeclassic.pranta.dev';
+      if (dotenv.env['PROD_API_BACKEND_URL'] == null) {
+        throw Exception('PROD_API_BACKEND_URL not set in .env');
+      }
+      backendUrl = dotenv.env['PROD_API_BACKEND_URL']!;
     }
     return '$backendUrl/api/v1';
   }
