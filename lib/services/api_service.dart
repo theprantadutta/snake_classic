@@ -24,6 +24,8 @@ class ApiService {
   VoidCallback? onUnauthorized;
 
   // Backend configuration
+  static const String _prodFallbackUrl = 'https://snakeclassic.pranta.dev';
+
   static String get baseUrl {
     final String backendUrl;
     if (kDebugMode) {
@@ -32,10 +34,7 @@ class ApiService {
       }
       backendUrl = dotenv.env['DEV_API_BACKEND_URL']!;
     } else {
-      if (dotenv.env['PROD_API_BACKEND_URL'] == null) {
-        throw Exception('PROD_API_BACKEND_URL not set in .env');
-      }
-      backendUrl = dotenv.env['PROD_API_BACKEND_URL']!;
+      backendUrl = dotenv.env['PROD_API_BACKEND_URL'] ?? _prodFallbackUrl;
     }
     return '$backendUrl/api/v1';
   }

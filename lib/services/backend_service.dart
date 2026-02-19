@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../utils/logger.dart';
@@ -16,10 +17,16 @@ class BackendService {
   factory BackendService() => _instance;
   BackendService._internal();
 
+  static const String _prodFallbackUrl = 'https://snakeclassic.pranta.dev';
+
   // Backend configuration
   static String get _baseUrl {
-    final backendUrl =
-        dotenv.env['API_BACKEND_URL'] ?? 'http://127.0.0.1:8393';
+    final String backendUrl;
+    if (kDebugMode) {
+      backendUrl = dotenv.env['DEV_API_BACKEND_URL'] ?? 'http://127.0.0.1:8393';
+    } else {
+      backendUrl = dotenv.env['PROD_API_BACKEND_URL'] ?? _prodFallbackUrl;
+    }
     return '$backendUrl/api/v1';
   }
 
