@@ -684,7 +684,7 @@ class DataSyncService extends ChangeNotifier {
 
   /// Get data from backend API (uses short-lived cache to avoid duplicate calls)
   Future<Map<String, dynamic>?> getData(String dataType) async {
-    if (_currentUserId == null || !_connectivityService.isOnline) return null;
+    if (!_connectivityService.isOnline) return null;
     if (!_apiService.isAuthenticated) return null;
 
     try {

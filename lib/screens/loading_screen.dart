@@ -140,29 +140,29 @@ class _LoadingScreenState extends State<LoadingScreen>
       );
       await _initializePreferences();
 
-      // Step 4: Load ALL game data CONCURRENTLY (fast!)
+      // Step 4: Sync with cloud (must happen before data preload so DataSyncService is ready)
       await _updateProgress(
-        0.55,
+        0.50,
+        'Syncing with cloud...',
+        'Ensuring data is up to date',
+      );
+      await _performFinalSync();
+
+      // Step 5: Load ALL game data CONCURRENTLY (fast!)
+      await _updateProgress(
+        0.60,
         'Loading game data...',
         'Fetching Game Data',
       );
       await _preloadAllDataConcurrently();
 
-      // Step 5: Initialize Audio System
+      // Step 6: Initialize Audio System
       await _updateProgress(
-        0.85,
+        0.90,
         'Configuring audio system...',
         'Loading sound effects',
       );
       await _initializeAudio();
-
-      // Step 7: Final Sync
-      await _updateProgress(
-        0.95,
-        'Syncing with cloud...',
-        'Ensuring data is up to date',
-      );
-      await _performFinalSync();
 
       // Step 8: Check for first-time user
       await _updateProgress(0.98, 'Checking setup status...', 'Almost ready!');

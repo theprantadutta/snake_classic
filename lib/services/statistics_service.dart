@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/game_statistics.dart';
 import 'package:snake_classic/services/api_service.dart';
@@ -98,23 +100,37 @@ class StatisticsService {
     try {
       // Get cloud statistics
       final cloudStats = await _syncService.getData('statistics');
+      final localEmpty = _currentStatistics.totalGamesPlayed <= 0;
+      final cloudEmpty = cloudStats == null ||
+          (cloudStats['totalGamesPlayed'] ?? 0) <= 0;
 
-      if (cloudStats != null) {
-        // Merge local and cloud statistics (keep the most recent data)
-        final localStatsWithTimestamp = {
-          ..._currentStatistics.toJson(),
-          'lastUpdated': DateTime.now().toIso8601String(),
-        };
-
-        final mergedData = _syncService.mergeData(
-          localStatsWithTimestamp,
-          cloudStats,
+      if (localEmpty && !cloudEmpty) {
+        // Fresh device: restore entirely from cloud
+        _currentStatistics = GameStatistics.fromJson(cloudStats);
+        await _saveLocalStatistics();
+        if (kDebugMode) {
+          print('Statistics: restored from cloud (fresh device)');
+        }
+      } else if (!localEmpty && cloudEmpty) {
+        // Cloud empty, push local data up
+        await _uploadToCloud();
+        if (kDebugMode) {
+          print('Statistics: uploaded local to cloud (cloud was empty)');
+        }
+      } else if (!localEmpty && !cloudEmpty) {
+        // Both have data: per-field max-value merge
+        final cloudStatistics = GameStatistics.fromJson(cloudStats);
+        _currentStatistics = _mergeStatistics(
+          _currentStatistics,
+          cloudStatistics,
         );
-        _currentStatistics = GameStatistics.fromJson(mergedData);
+        await _saveLocalStatistics();
+        await _uploadToCloud();
+        if (kDebugMode) {
+          print('Statistics: merged local + cloud');
+        }
       }
-
-      // Upload current statistics to cloud
-      await _uploadToCloud();
+      // Both empty: nothing to do
     } catch (e) {
       if (kDebugMode) {
         print('Error syncing with cloud: $e');
@@ -123,8 +139,145 @@ class StatisticsService {
     }
   }
 
+  /// Merge two GameStatistics by taking max values for each field.
+  /// Cumulative and record fields use max; derived fields are recalculated.
+  GameStatistics _mergeStatistics(
+    GameStatistics a,
+    GameStatistics b,
+  ) {
+    // Cumulative fields: take max (both devices accumulate independently)
+    final totalGamesPlayed = max(a.totalGamesPlayed, b.totalGamesPlayed);
+    final totalScore = max(a.totalScore, b.totalScore);
+    final totalGameTime = max(a.totalGameTime, b.totalGameTime);
+    final totalFoodConsumed = max(a.totalFoodConsumed, b.totalFoodConsumed);
+    final totalFoodPoints = max(a.totalFoodPoints, b.totalFoodPoints);
+    final totalPowerUpsCollected = max(
+      a.totalPowerUpsCollected,
+      b.totalPowerUpsCollected,
+    );
+    final totalPowerUpTime = max(a.totalPowerUpTime, b.totalPowerUpTime);
+    final totalLevelsGained = max(a.totalLevelsGained, b.totalLevelsGained);
+    final wallCollisions = max(a.wallCollisions, b.wallCollisions);
+    final selfCollisions = max(a.selfCollisions, b.selfCollisions);
+    final totalCollisions = wallCollisions + selfCollisions;
+    final totalSessions = max(a.totalSessions, b.totalSessions);
+    final achievementsUnlocked = max(
+      a.achievementsUnlocked,
+      b.achievementsUnlocked,
+    );
+    final perfectGames = max(a.perfectGames, b.perfectGames);
+    final gamesWithoutWallHit = max(
+      a.gamesWithoutWallHit,
+      b.gamesWithoutWallHit,
+    );
+
+    // Record fields: take max
+    final highScore = max(a.highScore, b.highScore);
+    final longestSurvivalTime = max(
+      a.longestSurvivalTime,
+      b.longestSurvivalTime,
+    );
+    final highestLevel = max(a.highestLevel, b.highestLevel);
+    final longestWinStreak = max(a.longestWinStreak, b.longestWinStreak);
+    final currentWinStreak = max(a.currentWinStreak, b.currentWinStreak);
+
+    // Maps: merge by taking max per key
+    final foodTypeCount = _mergeMaps(a.foodTypeCount, b.foodTypeCount);
+    final powerUpTypeCount = _mergeMaps(a.powerUpTypeCount, b.powerUpTypeCount);
+    final dailyPlayTime = _mergeMaps(a.dailyPlayTime, b.dailyPlayTime);
+
+    // Lists: take whichever is longer (more history)
+    final recentScores = a.recentScores.length >= b.recentScores.length
+        ? a.recentScores
+        : b.recentScores;
+
+    // Dates: earliest first, latest last
+    final firstPlayedDate = _earlierDate(a.firstPlayedDate, b.firstPlayedDate);
+    final lastPlayedDate = _laterDate(a.lastPlayedDate, b.lastPlayedDate);
+
+    // Derived fields: recalculate from merged base values
+    final averageScore = totalGamesPlayed > 0
+        ? totalScore / totalGamesPlayed
+        : 0.0;
+    final averageGameTime = totalGamesPlayed > 0
+        ? (totalGameTime / totalGamesPlayed).round()
+        : 0;
+    final collisionRate = totalGamesPlayed > 0
+        ? totalCollisions / totalGamesPlayed
+        : 0.0;
+    final survivalRate = max(a.survivalRate, b.survivalRate);
+    final averageGamesPerSession = totalSessions > 0
+        ? (totalGamesPlayed / totalSessions).round()
+        : totalGamesPlayed;
+    final totalAchievements = max(a.totalAchievements, b.totalAchievements);
+    final achievementProgress = totalAchievements > 0
+        ? achievementsUnlocked / totalAchievements
+        : 0.0;
+
+    return GameStatistics(
+      totalGamesPlayed: totalGamesPlayed,
+      totalScore: totalScore,
+      highScore: highScore,
+      totalGameTime: totalGameTime,
+      averageGameTime: averageGameTime,
+      totalFoodConsumed: totalFoodConsumed,
+      foodTypeCount: foodTypeCount,
+      totalFoodPoints: totalFoodPoints,
+      totalPowerUpsCollected: totalPowerUpsCollected,
+      powerUpTypeCount: powerUpTypeCount,
+      totalPowerUpTime: totalPowerUpTime,
+      longestSurvivalTime: longestSurvivalTime,
+      highestLevel: highestLevel,
+      totalLevelsGained: totalLevelsGained,
+      averageScore: averageScore,
+      survivalRate: survivalRate,
+      wallCollisions: wallCollisions,
+      selfCollisions: selfCollisions,
+      totalCollisions: totalCollisions,
+      collisionRate: collisionRate,
+      currentWinStreak: currentWinStreak,
+      longestWinStreak: longestWinStreak,
+      gamesWithoutWallHit: gamesWithoutWallHit,
+      perfectGames: perfectGames,
+      totalSessions: totalSessions,
+      averageGamesPerSession: averageGamesPerSession,
+      lastPlayedDate: lastPlayedDate,
+      firstPlayedDate: firstPlayedDate,
+      recentScores: recentScores,
+      dailyPlayTime: dailyPlayTime,
+      achievementsUnlocked: achievementsUnlocked,
+      totalAchievements: totalAchievements,
+      achievementProgress: achievementProgress,
+    );
+  }
+
+  /// Merge two maps by taking the max value for each key.
+  Map<String, int> _mergeMaps(Map<String, int> a, Map<String, int> b) {
+    final merged = Map<String, int>.from(a);
+    for (final entry in b.entries) {
+      merged[entry.key] = max(merged[entry.key] ?? 0, entry.value);
+    }
+    return merged;
+  }
+
+  /// Return the earlier of two nullable DateTimes.
+  DateTime? _earlierDate(DateTime? a, DateTime? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a.isBefore(b) ? a : b;
+  }
+
+  /// Return the later of two nullable DateTimes.
+  DateTime? _laterDate(DateTime? a, DateTime? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a.isAfter(b) ? a : b;
+  }
+
   Future<void> _uploadToCloud() async {
     if (!_userService.isSignedIn) return;
+    // Never overwrite cloud data with empty local stats
+    if (_currentStatistics.totalGamesPlayed <= 0) return;
 
     try {
       final statisticsWithTimestamp = {
