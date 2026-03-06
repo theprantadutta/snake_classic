@@ -7,6 +7,8 @@ import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -32,10 +34,19 @@ class _StoreScreenState extends State<StoreScreen>
       vsync: this,
       initialIndex: widget.initialTab,
     );
+    _tabController.addListener(_onTabChanged);
+  }
+
+  static const _tabNames = ['Premium', 'Coins', 'Skins', 'Power-Ups', 'Game Modes', 'Boards'];
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) return;
+    getIt<AnalyticsFacade>().trackStoreTabViewed(_tabNames[_tabController.index]);
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }

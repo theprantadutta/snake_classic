@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
@@ -20,6 +21,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   final UnifiedUserService _userService;
   final AudioService _audioService;
   final HapticService _hapticService;
+  final AnalyticsFacade _analytics;
 
   // Stream subscriptions
   StreamSubscription? _gameSubscription;
@@ -39,10 +41,12 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     required UnifiedUserService userService,
     required AudioService audioService,
     required HapticService hapticService,
+    required AnalyticsFacade analytics,
   }) : _multiplayerService = multiplayerService,
        _userService = userService,
        _audioService = audioService,
        _hapticService = hapticService,
+       _analytics = analytics,
        super(MultiplayerState.initial()) {
     // Start listening to matchmaking stream
     _startMatchmakingListener();
@@ -366,6 +370,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         ),
       );
 
+      _analytics.trackMultiplayerQueueJoined();
+
       // Start the matchmaking timer
       _startMatchmakingTimer();
 
@@ -532,6 +538,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     try {
       _audioService.playSound('level_up');
       _hapticService.heavyImpact();
+      _analytics.trackMultiplayerGameEnded(score: finalScore, result: 'win');
     } catch (e) {
       if (kDebugMode) {
         print('Error handling game victory: $e');
@@ -544,6 +551,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     try {
       _audioService.playSound('game_over');
       _hapticService.mediumImpact();
+      _analytics.trackMultiplayerGameEnded(score: finalScore, result: 'loss');
     } catch (e) {
       if (kDebugMode) {
         print('Error handling game loss: $e');
@@ -633,6 +641,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _hapticService.mediumImpact();
 
       final success = await _multiplayerService.startGame();
+      if (success) {
+        _analytics.trackMultiplayerGameStarted();
+      }
       if (!success) {
         emit(
           state.copyWith(

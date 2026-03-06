@@ -11,6 +11,8 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -99,6 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
 
     if (!isComplete && mounted) {
+      getIt<AnalyticsFacade>().trackWalkthroughStarted();
       walkthroughNotifier.start(
         walkthroughId: WalkthroughService.homeWalkthroughId,
         steps: HomeWalkthrough.getSteps(),
@@ -176,6 +179,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           if (mounted) {
             await context.read<CoinsCubit>().collectDailyBonus();
           }
+
+          getIt<AnalyticsFacade>().trackDailyBonusCollected();
 
           // Queue the API call for background sync (fire and forget)
           DataSyncService().queueSync('daily_bonus_claim', {

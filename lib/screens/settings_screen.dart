@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -29,6 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final AudioService _audioService = AudioService();
   final StorageService _storageService = StorageService();
   late final AppDataCache _appCache;
+  late final AnalyticsFacade _analytics;
   bool _soundEnabled = true;
   bool _musicEnabled = true;
   bool _dPadEnabled = false;
@@ -43,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _appCache = getIt<AppDataCache>();
+    _analytics = getIt<AnalyticsFacade>();
     _loadSettingsFromCache();
   }
 
@@ -139,6 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         await context
                                             .read<GameSettingsCubit>()
                                             .updateDPadEnabled(value);
+                                        _analytics.trackSettingChanged(settingName: 'dpad_enabled', value: '$value');
                                       },
                                       theme,
                                     ),
@@ -190,6 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         await context
                                             .read<GameSettingsCubit>()
                                             .setScreenShakeEnabled(value);
+                                        _analytics.trackSettingChanged(settingName: 'screen_shake', value: '$value');
                                       },
                                       theme,
                                     ),
@@ -220,6 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         await _audioService.setSoundEnabled(
                                           value,
                                         );
+                                        _analytics.trackSettingChanged(settingName: 'sound_effects', value: '$value');
                                       },
                                       theme,
                                     ),
@@ -234,6 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         await _audioService.setMusicEnabled(
                                           value,
                                         );
+                                        _analytics.trackSettingChanged(settingName: 'background_music', value: '$value');
                                       },
                                       theme,
                                     ),
@@ -767,6 +774,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               await context
                                   .read<GameSettingsCubit>()
                                   .updateBoardSize(boardSize);
+                              _analytics.trackSettingChanged(settingName: 'board_size', value: boardSize.name);
                             }),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -925,6 +933,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await context
                     .read<GameSettingsCubit>()
                     .updateCrashFeedbackDuration(duration);
+                _analytics.trackSettingChanged(settingName: 'crash_feedback_duration', value: '${duration.inSeconds}');
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),

@@ -19,6 +19,7 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
@@ -46,6 +47,7 @@ class GameCubit extends Cubit<GameCubitState> {
   final GameSettingsCubit _settingsCubit;
   final CoinsCubit _coinsCubit;
   final BattlePassCubit _battlePassCubit;
+  final AnalyticsFacade _analytics;
   final DataSyncService _dataSyncService = DataSyncService();
   final DailyChallengeService _dailyChallengeService = DailyChallengeService();
 
@@ -84,6 +86,7 @@ class GameCubit extends Cubit<GameCubitState> {
     required GameSettingsCubit settingsCubit,
     required CoinsCubit coinsCubit,
     required BattlePassCubit battlePassCubit,
+    required AnalyticsFacade analytics,
   }) : _audioService = audioService,
        _enhancedAudioService = enhancedAudioService,
        _hapticService = hapticService,
@@ -93,6 +96,7 @@ class GameCubit extends Cubit<GameCubitState> {
        _settingsCubit = settingsCubit,
        _coinsCubit = coinsCubit,
        _battlePassCubit = battlePassCubit,
+       _analytics = analytics,
        super(GameCubitState.initial());
 
   /// Initialize the game cubit
@@ -178,6 +182,13 @@ class GameCubit extends Cubit<GameCubitState> {
 
     _audioService.playSound('game_start');
     _enhancedAudioService.playSfx('game_start', volume: 0.8);
+
+    _analytics.trackGameStarted(
+      boardWidth: gameState.boardWidth,
+      boardHeight: gameState.boardHeight,
+      gameMode: state.isTournamentMode ? 'tournament' : 'classic',
+    );
+
     debugPrint('🎮 [GameCubit] startGame() completed');
   }
 
@@ -205,6 +216,8 @@ class GameCubit extends Cubit<GameCubitState> {
         gameState: state.gameState?.copyWith(status: model.GameStatus.paused),
       ),
     );
+
+    _analytics.trackGamePaused();
   }
 
   /// Resume the game
@@ -221,6 +234,8 @@ class GameCubit extends Cubit<GameCubitState> {
     _startGameLoop();
     _startSmoothAnimation();
     _startPowerUpTimer();
+
+    _analytics.trackGameResumed();
   }
 
   /// Toggle pause
@@ -449,6 +464,7 @@ class GameCubit extends Cubit<GameCubitState> {
         );
         _audioService.playSound('level_up');
         HapticFeedback.mediumImpact();
+        _analytics.trackLevelUp(newLevel);
 
         // Award coins for level up - deferred to avoid event loop contention
         final levelForCoins = newLevel;
@@ -479,6 +495,7 @@ class GameCubit extends Cubit<GameCubitState> {
       debugPrint('🎁 Collecting power-up: ${currentPowerUp.type.name}');
       _hapticService.powerUpCollected();
       _powerUpsCollectedThisGame++;
+      _analytics.trackPowerUpUsed(currentPowerUp.type.name);
 
       // Buffer battle pass XP for power-up collection (flushed at game end)
       _battlePassCubit.bufferXP(
@@ -871,6 +888,27 @@ class GameCubit extends Cubit<GameCubitState> {
 
     // Local-only achievement checks (no API calls) so game over screen has data
     _trackGameEndLocal();
+
+    // Track game over analytics
+    final gameDuration = _gameStartTime != null
+        ? DateTime.now().difference(_gameStartTime!).inSeconds
+        : 0;
+    final totalFoodEaten = _currentGameFoodTypes.values.fold(0, (a, b) => a + b);
+    final cause = _hitWallThisGame
+        ? 'wall'
+        : _hitSelfThisGame
+            ? 'self'
+            : 'unknown';
+    _analytics.trackGameOver(
+      score: gameState.score,
+      level: gameState.level,
+      durationSeconds: gameDuration,
+      cause: cause,
+      foodEaten: totalFoodEaten,
+      powerUpsCollected: _powerUpsCollectedThisGame,
+      maxCombo: gameState.maxCombo,
+      isNewHighScore: isNewHighScore,
+    );
 
     // EMIT STATE immediately — UI transitions to game over screen INSTANTLY
     emit(

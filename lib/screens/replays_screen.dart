@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -231,7 +233,10 @@ class _ReplaysScreenState extends State<ReplaysScreen>
         side: BorderSide(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
       child: InkWell(
-        onTap: () => context.push(AppRoutes.replayViewerPath(replay.id), extra: replay),
+        onTap: () {
+          getIt<AnalyticsFacade>().trackReplayViewed();
+          context.push(AppRoutes.replayViewerPath(replay.id), extra: replay);
+        },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),

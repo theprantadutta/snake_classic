@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/providers/friends_provider.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -796,6 +798,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
   Future<void> _sendFriendRequest(String userId) async {
     final success = await ref.read(friendsProvider.notifier).sendFriendRequest(userId);
     if (success && mounted) {
+      getIt<AnalyticsFacade>().trackFriendAdded();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Friend request sent!')));
@@ -805,6 +808,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
   Future<void> _acceptFriendRequest(String fromUserId) async {
     final success = await ref.read(friendsProvider.notifier).acceptFriendRequest(fromUserId);
     if (success && mounted) {
+      getIt<AnalyticsFacade>().trackFriendAdded();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Friend request accepted!')));
@@ -919,6 +923,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               final scaffoldMessenger = ScaffoldMessenger.of(context);
               navigator.pop();
               final success = await ref.read(friendsProvider.notifier).removeFriend(friend.uid);
+              if (success) {
+                getIt<AnalyticsFacade>().trackFriendRemoved();
+              }
               if (success && mounted) {
                 scaffoldMessenger.showSnackBar(
                   SnackBar(

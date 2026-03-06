@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_state.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
@@ -11,8 +12,10 @@ export 'theme_state.dart';
 /// Cubit for managing app theme state
 class ThemeCubit extends Cubit<ThemeState> {
   final PreferencesService _preferencesService;
+  final AnalyticsFacade _analytics;
 
-  ThemeCubit(this._preferencesService) : super(ThemeState.initial());
+  ThemeCubit(this._preferencesService, this._analytics)
+      : super(ThemeState.initial());
 
   /// Initialize the theme cubit by loading saved preferences
   Future<void> initialize() async {
@@ -45,6 +48,7 @@ class ThemeCubit extends Cubit<ThemeState> {
 
     emit(state.copyWith(currentTheme: theme));
     await _preferencesService.setTheme(theme);
+    _analytics.trackThemeSelected(theme.name);
   }
 
   /// Cycle to the next theme (only free themes; premium themes require explicit selection)

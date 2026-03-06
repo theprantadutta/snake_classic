@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -16,14 +17,17 @@ export 'battle_pass_state.dart';
 class BattlePassCubit extends Cubit<BattlePassState> {
   final StorageService _storageService;
   final PremiumCubit? _premiumCubit;
+  final AnalyticsFacade _analytics;
   final DataSyncService _dataSyncService = DataSyncService();
   final ApiService _apiService = ApiService();
 
   BattlePassCubit({
     required StorageService storageService,
     PremiumCubit? premiumCubit,
+    required AnalyticsFacade analytics,
   }) : _storageService = storageService,
        _premiumCubit = premiumCubit,
+       _analytics = analytics,
        super(BattlePassState.initial());
 
   /// Initialize battle pass state — always load local first (instant), then background refresh
@@ -308,6 +312,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
             result['xp_to_next_level'] ??
             state.xpForNextTier;
 
+        final oldTier = state.currentTier;
         emit(
           state.copyWith(
             currentXP: newXp,
@@ -317,6 +322,9 @@ class BattlePassCubit extends Cubit<BattlePassState> {
         );
         await _saveState();
         _syncBattlePassToPremium();
+        if (newLevel > oldTier) {
+          _analytics.trackBattlePassTierReached(newLevel);
+        }
         AppLogger.info(
           'Added $xp XP via backend. New tier: $newLevel, XP: $newXp/$xpToNext',
         );
@@ -326,6 +334,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
 
     // Fallback to local calculation
     var newXP = state.currentXP + xp;
+    final oldTier = state.currentTier;
     var newTier = state.currentTier;
     var xpForNext = state.xpForNextTier;
 
@@ -345,6 +354,9 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     );
     await _saveState();
     _syncBattlePassToPremium();
+    if (newTier > oldTier) {
+      _analytics.trackBattlePassTierReached(newTier);
+    }
 
     // Queue for background sync if offline
     _dataSyncService.queueSync('battle_pass_xp', {
@@ -409,7 +421,12 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     // Grant the actual item
     final season = state.season;
     if (season != null && tier >= 1 && tier <= season.levels.length) {
-      _grantRewardItem(season.levels[tier - 1].freeReward);
+      final reward = season.levels[tier - 1].freeReward;
+      _grantRewardItem(reward);
+      _analytics.trackBattlePassRewardClaimed(
+        tier: tier,
+        rewardType: reward?.type.name ?? 'free',
+      );
     }
 
     // Try to sync with backend
@@ -449,7 +466,12 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     // Grant the actual item
     final season = state.season;
     if (season != null && tier >= 1 && tier <= season.levels.length) {
-      _grantRewardItem(season.levels[tier - 1].premiumReward);
+      final reward = season.levels[tier - 1].premiumReward;
+      _grantRewardItem(reward);
+      _analytics.trackBattlePassRewardClaimed(
+        tier: tier,
+        rewardType: reward?.type.name ?? 'premium',
+      );
     }
 
     // Try to sync with backend

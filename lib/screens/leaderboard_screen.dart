@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/providers/leaderboard_provider.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -23,14 +25,22 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
     // Calculate user rank once data is loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateUserRank();
     });
   }
 
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) return;
+    final type = _tabController.index == 0 ? 'global' : 'weekly';
+    getIt<AnalyticsFacade>().trackLeaderboardViewed(type);
+  }
+
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
@@ -20,15 +21,18 @@ class PremiumCubit extends Cubit<PremiumState> {
   final PurchaseService _purchaseService;
   final StorageService _storageService;
   final CoinsCubit? _coinsCubit;
+  final AnalyticsFacade _analytics;
   StreamSubscription<String>? _purchaseStatusSubscription;
 
   PremiumCubit({
     required PurchaseService purchaseService,
     required StorageService storageService,
     CoinsCubit? coinsCubit,
+    required AnalyticsFacade analytics,
   }) : _purchaseService = purchaseService,
        _storageService = storageService,
        _coinsCubit = coinsCubit,
+       _analytics = analytics,
        super(PremiumState.initial());
 
   /// Initialize premium status
@@ -324,6 +328,8 @@ class PremiumCubit extends Cubit<PremiumState> {
     _storageService.setPremiumActive(true);
     _storageService.setPremiumExpirationDate(expiry.toIso8601String());
     _coinsCubit?.updatePremiumMultiplier(true, state.hasBattlePass);
+    _analytics.trackPremiumSubscriptionStarted();
+    _analytics.setUserProperties(isPremium: true);
   }
 
   /// Purchase premium subscription (monthly)
@@ -370,6 +376,7 @@ class PremiumCubit extends Cubit<PremiumState> {
 
     emit(state.copyWith(selectedSkinId: skinId));
     await _storageService.setSelectedSkinId(skinId);
+    _analytics.trackCosmeticEquipped(cosmeticType: 'skin', cosmeticId: skinId);
   }
 
   /// Select trail (validates ownership — 'none' is always allowed)
@@ -382,6 +389,7 @@ class PremiumCubit extends Cubit<PremiumState> {
 
     emit(state.copyWith(selectedTrailId: trailId));
     await _storageService.setSelectedTrailId(trailId);
+    _analytics.trackCosmeticEquipped(cosmeticType: 'trail', cosmeticId: trailId);
   }
 
   /// Unlock a theme
@@ -484,6 +492,7 @@ class PremiumCubit extends Cubit<PremiumState> {
     );
 
     _coinsCubit?.updatePremiumMultiplier(true, state.hasBattlePass);
+    _analytics.trackPremiumTrialStarted();
     AppLogger.info('Free trial started, ends: ${trialEnd.toIso8601String()}');
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -17,6 +19,8 @@ import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/app_router.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/analytics/analytics_route_observer.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
@@ -79,6 +83,14 @@ void main() async {
     AppLogger.info('Configuring dependencies...');
     await configureDependencies();
     AppLogger.success('Dependencies configured');
+
+    // Initialize router with analytics observer
+    appRouter = createAppRouter(
+      observers: [AnalyticsRouteObserver(getIt<AnalyticsFacade>())],
+    );
+
+    // Track app open (fire-and-forget)
+    unawaited(getIt<AnalyticsFacade>().trackAppOpened());
 
     // Initialize independent services in parallel for faster startup
     // Note: PurchaseService.initialize() is NOT called here because

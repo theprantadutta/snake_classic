@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -1156,6 +1158,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             await premiumCubit.useTournamentEntry(tier, count: entryCost);
           }
         }
+
+        getIt<AnalyticsFacade>().trackTournamentEntered(
+          tournamentId: tournament.id,
+          tier: tier,
+        );
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

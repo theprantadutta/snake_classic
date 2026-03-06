@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 
 import 'auth_state.dart';
@@ -12,12 +13,13 @@ export 'auth_state.dart';
 /// Cubit for managing authentication state
 class AuthCubit extends Cubit<AuthState> {
   final UnifiedUserService _userService;
+  final AnalyticsFacade _analytics;
   VoidCallback? _userServiceListener;
 
   /// Completer that signals when local initialization is done
   final Completer<void> _localInitCompleter = Completer<void>();
 
-  AuthCubit(this._userService) : super(AuthState.initial());
+  AuthCubit(this._userService, this._analytics) : super(AuthState.initial());
 
   /// Wait for local initialization (SharedPreferences check) to complete.
   /// This is fast and does not depend on network.
@@ -108,7 +110,12 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final result = await _userService.signInWithGoogle();
 
-      if (!result) {
+      if (result) {
+        _analytics.trackSignInGoogle();
+        final uid = _userService.currentUser?.uid;
+        _analytics.setUserId(uid);
+        _analytics.setUserProperties(authMethod: 'google');
+      } else {
         emit(
           state.copyWith(
             isLoading: false,
@@ -131,7 +138,12 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final result = await _userService.signInAnonymously();
 
-      if (!result) {
+      if (result) {
+        _analytics.trackSignInAnonymous();
+        final uid = _userService.currentUser?.uid;
+        _analytics.setUserId(uid);
+        _analytics.setUserProperties(authMethod: 'anonymous');
+      } else {
         emit(
           state.copyWith(
             isLoading: false,
@@ -153,6 +165,8 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       await _userService.signOut();
+      _analytics.trackSignOut();
+      _analytics.setUserId(null);
       // User service listener will update the state
     } catch (e) {
       emit(state.copyWith(isLoading: false, errorMessage: e.toString()));

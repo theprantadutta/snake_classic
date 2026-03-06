@@ -1,9 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 // Database
 import 'package:snake_classic/data/database/app_database.dart';
 
 // Services
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/analytics/firebase_analytics_client.dart';
+import 'package:snake_classic/services/analytics/logger_analytics_client.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/offline_cache_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
@@ -94,6 +98,14 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<PurchaseService>(() => PurchaseService());
   getIt.registerLazySingleton<AppDataCache>(() => AppDataCache());
 
+  // ==================== Analytics ====================
+  getIt.registerLazySingleton<AnalyticsFacade>(() {
+    return AnalyticsFacade([
+      FirebaseAnalyticsClient(),
+      if (kDebugMode) LoggerAnalyticsClient(),
+    ]);
+  });
+
   // ==================== Core ====================
 
   getIt.registerLazySingleton<NetworkInfo>(
@@ -150,11 +162,11 @@ Future<void> configureDependencies() async {
   // This ensures fresh state when navigating to new screens
 
   getIt.registerFactory<ThemeCubit>(
-    () => ThemeCubit(getIt<PreferencesService>()),
+    () => ThemeCubit(getIt<PreferencesService>(), getIt<AnalyticsFacade>()),
   );
 
   getIt.registerFactory<AuthCubit>(
-    () => AuthCubit(getIt<UnifiedUserService>()),
+    () => AuthCubit(getIt<UnifiedUserService>(), getIt<AnalyticsFacade>()),
   );
 
   getIt.registerFactory<MultiplayerCubit>(
@@ -163,6 +175,7 @@ Future<void> configureDependencies() async {
       userService: getIt<UnifiedUserService>(),
       audioService: getIt<AudioService>(),
       hapticService: getIt<HapticService>(),
+      analytics: getIt<AnalyticsFacade>(),
     ),
   );
 
@@ -184,6 +197,7 @@ Future<void> configureDependencies() async {
       settingsCubit: getIt<GameSettingsCubit>(),
       coinsCubit: getIt<CoinsCubit>(),
       battlePassCubit: getIt<BattlePassCubit>(),
+      analytics: getIt<AnalyticsFacade>(),
     ),
   );
 
@@ -192,6 +206,7 @@ Future<void> configureDependencies() async {
       purchaseService: getIt<PurchaseService>(),
       storageService: getIt<StorageService>(),
       coinsCubit: getIt<CoinsCubit>(),
+      analytics: getIt<AnalyticsFacade>(),
     ),
   );
 
@@ -199,6 +214,7 @@ Future<void> configureDependencies() async {
     () => BattlePassCubit(
       storageService: getIt<StorageService>(),
       premiumCubit: getIt<PremiumCubit>(),
+      analytics: getIt<AnalyticsFacade>(),
     ),
   );
 }

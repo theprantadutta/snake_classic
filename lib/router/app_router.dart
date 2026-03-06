@@ -71,10 +71,14 @@ CustomTransitionPage<void> _scalePage(GoRouterState state, Widget child) {
   );
 }
 
-/// Global GoRouter instance for the application.
-final GoRouter appRouter = GoRouter(
+/// Late-initialized global GoRouter instance.
+late final GoRouter appRouter;
+
+/// Creates a [GoRouter] with optional [NavigatorObserver]s for analytics.
+GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
   initialLocation: AppRoutes.loading,
   debugLogDiagnostics: true,
+  observers: observers ?? [],
   routes: [
     // Core routes
     GoRoute(

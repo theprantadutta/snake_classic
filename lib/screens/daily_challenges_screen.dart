@@ -10,6 +10,8 @@ import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -31,6 +33,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   Future<void> _claimReward(DailyChallenge challenge) async {
     final success = await ref.read(dailyChallengesProvider.notifier).claimReward(challenge.id);
     if (success) {
+      getIt<AnalyticsFacade>().trackDailyChallengeRewardClaimed();
       // Actually earn the coins via CoinsCubit
       if (mounted) {
         context.read<CoinsCubit>().earnCoins(
