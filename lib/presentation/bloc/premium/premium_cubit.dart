@@ -233,6 +233,11 @@ class PremiumCubit extends Cubit<PremiumState> {
         AppLogger.info(
           'Coin pack delivered: ${option.totalCoins} coins for $internalId',
         );
+        // Pull the authoritative balance from the server. Backend's
+        // VerifyPurchaseCommandHandler increments User.Coins on a successful
+        // verify; this sync keeps local in step with the server-side total
+        // (and is a no-op if local is already ahead).
+        unawaited(_coinsCubit.syncWithBackend());
       } else {
         AppLogger.error(
           'Failed to deliver coin pack: option=$option, coinsCubit=$_coinsCubit',

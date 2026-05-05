@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 import 'coins_state.dart';
@@ -29,11 +31,59 @@ class CoinsCubit extends Cubit<CoinsState> {
 
       emit(state.copyWith(status: CoinsStatus.ready));
       AppLogger.info('CoinsCubit initialized. Balance: ${state.balance.total}');
+
+      // Reconcile with server-side balance once loaded. Non-blocking — local
+      // balance is already usable for gameplay; server sync is best-effort.
+      unawaited(syncWithBackend());
     } catch (e) {
       AppLogger.error('Error initializing CoinsCubit', e);
       emit(
         state.copyWith(status: CoinsStatus.error, errorMessage: e.toString()),
       );
+    }
+  }
+
+  /// Pull `User.Coins` from the backend and reconcile with local balance.
+  ///
+  /// Strategy: take max(local, server). The backend coin field gets incremented
+  /// on every successful purchase verify (VerifyPurchaseCommandHandler), so on
+  /// fresh installs the server will be the source of truth. For existing users
+  /// whose verify calls failed before the contract fix, local will still be
+  /// higher and we don't want to overwrite it with 0.
+  Future<void> syncWithBackend() async {
+    try {
+      final apiService = ApiService();
+      if (!apiService.isAuthenticated) return;
+
+      final data = await apiService.getCurrentUser();
+      if (data == null) return;
+
+      final serverCoins = (data['coins'] as int?) ?? 0;
+      final localTotal = state.balance.total;
+      if (serverCoins <= localTotal) {
+        // Local is already at or above server — nothing to do.
+        AppLogger.info(
+          'Coin sync: local=$localTotal, server=$serverCoins (no change)',
+        );
+        return;
+      }
+
+      // Server is ahead — credit the difference as a "purchased" delta so the
+      // CoinBalance.purchased subtotal reflects server-side IAP grants.
+      final delta = serverCoins - localTotal;
+      final newBalance = state.balance.copyWith(
+        total: serverCoins,
+        purchased: state.balance.purchased + delta,
+        lastUpdated: DateTime.now(),
+      );
+      emit(state.copyWith(balance: newBalance));
+      await _saveData();
+
+      AppLogger.info(
+        'Coin sync: local=$localTotal, server=$serverCoins (synced +$delta)',
+      );
+    } catch (e) {
+      AppLogger.error('Error syncing coins with backend', e);
     }
   }
 
