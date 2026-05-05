@@ -27,6 +27,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _appCache = getIt<AppDataCache>();
     // Trigger background refresh for fresh data (non-blocking)
     _appCache.refreshInBackground();
+
+    // Edge case: if the screen is opened while already unauthenticated
+    // (token expired, race during nav), the BlocListener won't fire because
+    // there's no state transition. Schedule a redirect for the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final authState = context.read<AuthCubit>().state;
+      if (authState.status == AuthStatus.unauthenticated) {
+        context.go(AppRoutes.firstTimeAuth);
+      }
+    });
   }
 
   // Convenience getters using cached data
@@ -42,118 +53,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthCubit>().state;
     final themeState = context.watch<ThemeCubit>().state;
     final theme = themeState.currentTheme;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(
-          'Profile',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-            color: theme.primaryColor,
-            shadows: [
-              Shadow(
-                offset: const Offset(0, 2),
-                blurRadius: 4,
-                color: Colors.black.withValues(alpha: 0.3),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-          ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back_rounded, color: theme.primaryColor),
-            onPressed: () => context.pop(),
-          ),
-        ),
-      ),
-      body: AnimatedAppBackground(
-        theme: theme,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: authState.isSignedIn
-                ? _buildProfileContent(context, authState, themeState)
-                : _buildSignInContent(context, authState, themeState),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSignInContent(
-    BuildContext context,
-    AuthState authState,
-    ThemeState themeState,
-  ) {
-    final theme = themeState.currentTheme;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Enhanced profile icon with glow
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                theme.accentColor.withValues(alpha: 0.3),
-                theme.accentColor.withValues(alpha: 0.1),
-                Colors.transparent,
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                blurRadius: 30,
-                spreadRadius: 10,
-              ),
-            ],
-          ),
-          child: Icon(
-            Icons.person_outline_rounded,
-            size: 80,
-            color: theme.primaryColor,
-          ),
-        ),
-        const SizedBox(height: 40),
-
-        // Enhanced welcome text
-        Container(
-          padding: const EdgeInsets.all(24),
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Text(
-                'Join Snake Classic',
+    // BlocListener routes the user to the sign-in screen as soon as they
+    // become unauthenticated (i.e. after a successful sign-out). This is the
+    // sole place the redirect happens — the build path below is responsible
+    // for the loader UI during the transition itself.
+    return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) =>
+          current.status == AuthStatus.unauthenticated &&
+          previous.status != AuthStatus.unauthenticated,
+      listener: (context, state) {
+        if (mounted) {
+          // .go (not .push) so the back stack doesn't preserve the stale
+          // profile screen behind the auth screen.
+          context.go(AppRoutes.firstTimeAuth);
+        }
+      },
+      child: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, authState) {
+          return Scaffold(
+            extendBodyBehindAppBar: true,
+            appBar: AppBar(
+              title: Text(
+                'Profile',
                 style: TextStyle(
-                  fontSize: 28,
                   fontWeight: FontWeight.bold,
+                  fontSize: 24,
                   color: theme.primaryColor,
                   shadows: [
                     Shadow(
@@ -163,95 +90,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-
-              Text(
-                'Track high scores • Unlock achievements\nCompete globally • Save your progress',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white.withValues(alpha: 0.9),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 40),
-
-        // Enhanced buttons with loading state
-        if (authState.isLoading)
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                CircularProgressIndicator(
-                  color: theme.accentColor,
-                  strokeWidth: 3,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Signing in...',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 16,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.backgroundColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.3),
                   ),
                 ),
-              ],
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    color: theme.primaryColor,
+                  ),
+                  onPressed: () => context.pop(),
+                ),
+              ),
             ),
-          )
-        else ...[
-          _buildEnhancedButton(
-            context,
-            'Sign in with Google',
-            Icons.login_rounded,
-            theme.accentColor,
-            theme.primaryColor,
-            () async {
-              final authCubit = context.read<AuthCubit>();
-              final success = await authCubit.signInWithGoogle();
-              if (success && context.mounted) {
-                _showStyledSnackBar(
-                  context,
-                  'Welcome to Snake Classic! 🎉',
-                  Colors.green,
-                  theme,
-                );
-              } else if (context.mounted) {
-                _showStyledSnackBar(
-                  context,
-                  'Sign in failed. Please try again.',
-                  Colors.red,
-                  theme,
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 16),
+            body: AnimatedAppBackground(
+              theme: theme,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: _buildBody(context, authState, themeState),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-          _buildEnhancedButton(
-            context,
-            'Continue as Guest',
-            Icons.person_rounded,
-            theme.primaryColor,
-            theme.accentColor,
-            () async {
-              final authCubit = context.read<AuthCubit>();
-              await authCubit.signInAnonymously();
-              if (context.mounted) {
-                _showStyledSnackBar(
-                  context,
-                  'Playing as guest 👤',
-                  Colors.blue,
-                  theme,
-                );
-              }
-            },
-          ),
+  /// Pick the right body view for the current auth state. Loading takes
+  /// priority over content so we never render a half-rendered profile
+  /// (with stale name/badge/sections) while sign-out is in flight.
+  Widget _buildBody(
+    BuildContext context,
+    AuthState authState,
+    ThemeState themeState,
+  ) {
+    if (authState.isLoading) {
+      return _buildFullScreenLoader(themeState, message: 'Signing out...');
+    }
+    if (authState.isSignedIn) {
+      return _buildProfileContent(context, authState, themeState);
+    }
+    // Unauthenticated and not loading — the BlocListener will navigate us
+    // away on the next frame, but show a clean spinner so we don't flash
+    // the inline sign-in content during the redirect.
+    return _buildFullScreenLoader(themeState);
+  }
+
+  Widget _buildFullScreenLoader(ThemeState themeState, {String? message}) {
+    final theme = themeState.currentTheme;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: theme.accentColor, strokeWidth: 3),
+          if (message != null) ...[
+            const SizedBox(height: 20),
+            Text(
+              message,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 

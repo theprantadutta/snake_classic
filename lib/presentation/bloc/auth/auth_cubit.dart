@@ -160,16 +160,48 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Sign out
+  ///
+  /// Eagerly clears the local user object so screens that branch on
+  /// [AuthState.isSignedIn] / [AuthState.isAnonymous] stop showing stale
+  /// data the moment the user confirms sign-out. Navigation to the sign-in
+  /// screen is the responsibility of whichever screen initiated logout
+  /// (typically the profile screen via a BlocListener watching for the
+  /// transition to AuthStatus.unauthenticated).
   Future<void> signOut() async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(
+      status: AuthStatus.loading,
+      isLoading: true,
+      clearUser: true,
+      clearError: true,
+    ));
 
     try {
       await _userService.signOut();
       _analytics.trackSignOut();
       _analytics.setUserId(null);
-      // User service listener will update the state
+
+      // Reset the first-time-setup flag so a closed-and-reopened app routes
+      // back through FirstTimeAuthScreen instead of silently re-creating a
+      // guest user via initialize()'s offline-guest fallback. The user
+      // explicitly asked to be signed out — they should re-pick Guest vs
+      // Google on next launch.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('first_time_setup_complete', false);
+      } catch (_) {
+        // Best-effort; not critical if it fails.
+      }
+      emit(state.copyWith(isFirstTimeUser: true));
+      // The user service listener will emit the final unauthenticated state.
     } catch (e) {
-      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      // Even on error, finalise as unauthenticated so the UI can navigate
+      // away — a half-signed-out state is worse than an explicit sign-out.
+      emit(state.copyWith(
+        status: AuthStatus.unauthenticated,
+        clearUser: true,
+        isLoading: false,
+        errorMessage: e.toString(),
+      ));
     }
   }
 

@@ -835,23 +835,36 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<void> signOut() async {
     try {
-      // Logout from backend
-      await _apiService.logout();
+      // Logout from backend (clears JWT). Keep going even on failure so
+      // local state still gets cleared.
+      try {
+        await _apiService.logout();
+      } catch (e) {
+        AppLogger.user('Backend logout failed (continuing)', e);
+      }
 
-      // Sign out from Google Sign-In as well
+      // Sign out from Google + Firebase. The Firebase auth listener will
+      // fire with firebaseUser=null and clear _currentUser; we also clear
+      // it explicitly to handle the edge case where the listener is slow.
       await _googleSignIn.signOut();
       await _auth.signOut();
       _currentUser = null;
 
-      // Clear cached session
+      // Clear cached session so a stale UnifiedUser doesn't get restored
+      // on next launch.
       await _clearCachedUserSession();
 
-      // Create new anonymous user
-      await _signInAnonymously();
-
+      // Notify listeners so AuthCubit emits unauthenticated and the UI
+      // can route the user to the sign-in screen. Do NOT auto-create an
+      // anonymous account here — the user explicitly asked to sign out
+      // and should be the one to choose how to continue (guest vs Google).
       notifyListeners();
     } catch (e) {
       AppLogger.user('Error signing out', e);
+      // Even on failure, ensure local state reflects signed-out so the UI
+      // can route to the sign-in screen instead of getting stuck.
+      _currentUser = null;
+      notifyListeners();
     }
   }
 
