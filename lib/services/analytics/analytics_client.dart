@@ -74,6 +74,26 @@ abstract class AnalyticsClient {
     required String itemType,
     required String price,
   });
+
+  /// User tapped a buy button — Google Play sheet is about to open.
+  /// Fires before [trackItemPurchased] succeeds; gap between the two events
+  /// is the IAP-sheet abandonment funnel stage.
+  Future<void> trackPurchaseInitiated({
+    required String productId,
+    required String productType,
+  });
+
+  /// User cancelled the IAP sheet (Google Play returned `userCancelled`).
+  Future<void> trackPurchaseCancelled({required String productId});
+
+  /// IAP failed for a reason other than user cancellation (network, billing
+  /// error, item unavailable, etc.). [errorCode] is the platform error code
+  /// when available.
+  Future<void> trackPurchaseFailed({
+    required String productId,
+    String? errorCode,
+  });
+
   Future<void> trackPremiumSubscriptionStarted();
   Future<void> trackPremiumTrialStarted();
   Future<void> trackCosmeticEquipped({

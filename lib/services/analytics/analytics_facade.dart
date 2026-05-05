@@ -194,6 +194,31 @@ class AnalyticsFacade implements AnalyticsClient {
       );
 
   @override
+  Future<void> trackPurchaseInitiated({
+    required String productId,
+    required String productType,
+  }) async =>
+      _fire(
+        (c) => c.trackPurchaseInitiated(
+          productId: productId,
+          productType: productType,
+        ),
+      );
+
+  @override
+  Future<void> trackPurchaseCancelled({required String productId}) async =>
+      _fire((c) => c.trackPurchaseCancelled(productId: productId));
+
+  @override
+  Future<void> trackPurchaseFailed({
+    required String productId,
+    String? errorCode,
+  }) async =>
+      _fire(
+        (c) => c.trackPurchaseFailed(productId: productId, errorCode: errorCode),
+      );
+
+  @override
   Future<void> trackPremiumSubscriptionStarted() async =>
       _fire((c) => c.trackPremiumSubscriptionStarted());
 

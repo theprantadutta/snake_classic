@@ -476,7 +476,6 @@ class ApiDataSource {
     required String productId,
     required String transactionId,
     String? purchaseToken,
-    DateTime? purchaseTime,
   }) async {
     final result = await _apiService.verifyPurchase(
       platform: platform,
@@ -484,7 +483,6 @@ class ApiDataSource {
       productId: productId,
       transactionId: transactionId,
       purchaseToken: purchaseToken,
-      purchaseTime: purchaseTime,
     );
     if (result == null) {
       throw ApiException('Failed to verify purchase');

@@ -167,6 +167,31 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackPurchaseInitiated({
+    required String productId,
+    required String productType,
+  }) async {
+    AppLogger.info(
+      '$_tag purchase_initiated: id=$productId, type=$productType',
+    );
+  }
+
+  @override
+  Future<void> trackPurchaseCancelled({required String productId}) async {
+    AppLogger.info('$_tag purchase_cancelled: id=$productId');
+  }
+
+  @override
+  Future<void> trackPurchaseFailed({
+    required String productId,
+    String? errorCode,
+  }) async {
+    AppLogger.info(
+      '$_tag purchase_failed: id=$productId, error=${errorCode ?? "unknown"}',
+    );
+  }
+
+  @override
   Future<void> trackPremiumSubscriptionStarted() async {
     AppLogger.info('$_tag premium_subscription_started');
   }

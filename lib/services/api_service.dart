@@ -1024,7 +1024,6 @@ class ApiService {
     required String productId,
     required String transactionId,
     String? purchaseToken,
-    DateTime? purchaseTime,
   }) async {
     try {
       final response = await http
@@ -1032,16 +1031,13 @@ class ApiService {
             Uri.parse('$baseUrl/purchases/verify'),
             headers: _authHeaders,
             body: jsonEncode({
-              'receipt': {
-                'platform': platform,
-                'receipt_data': receiptData,
+              'purchase_data': {
                 'product_id': productId,
                 'transaction_id': transactionId,
+                'receipt_data': receiptData,
                 'purchase_token': purchaseToken,
-                'purchase_time': (purchaseTime ?? DateTime.now())
-                    .toIso8601String(),
               },
-              'device_info': {},
+              'platform': platform,
             }),
           )
           .timeout(_timeout);

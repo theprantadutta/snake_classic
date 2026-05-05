@@ -208,6 +208,42 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackPurchaseInitiated({
+    required String productId,
+    required String productType,
+  }) {
+    return _analytics.logEvent(
+      name: 'purchase_initiated',
+      parameters: {
+        'product_id': productId,
+        'product_type': productType,
+      },
+    );
+  }
+
+  @override
+  Future<void> trackPurchaseCancelled({required String productId}) {
+    return _analytics.logEvent(
+      name: 'purchase_cancelled',
+      parameters: {'product_id': productId},
+    );
+  }
+
+  @override
+  Future<void> trackPurchaseFailed({
+    required String productId,
+    String? errorCode,
+  }) {
+    return _analytics.logEvent(
+      name: 'purchase_failed',
+      parameters: {
+        'product_id': productId,
+        'error_code': ?errorCode,
+      },
+    );
+  }
+
+  @override
   Future<void> trackPremiumSubscriptionStarted() {
     return _analytics.logEvent(name: 'premium_subscription_started');
   }

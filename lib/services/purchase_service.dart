@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:get_it/get_it.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
+import 'analytics/analytics_facade.dart';
 import 'api_service.dart';
 
 // Product IDs for different categories
@@ -168,6 +170,33 @@ class PurchaseService {
   final StreamController<String> _purchaseStatusController =
       StreamController<String>.broadcast();
 
+  /// Lazily resolve [AnalyticsFacade] from GetIt — null-safe so the service
+  /// stays usable in tests / before DI bootstrap completes.
+  AnalyticsFacade? get _analytics {
+    if (!GetIt.I.isRegistered<AnalyticsFacade>()) return null;
+    return GetIt.I<AnalyticsFacade>();
+  }
+
+  /// Categorise a product ID for analytics. Falls back to "other" so we never
+  /// drop an event because of a product ID we forgot to map.
+  String _productTypeFor(String productId) {
+    final id = ProductIds.stripPrefix(productId);
+    if (ProductIds.subscriptionIds.any(
+      (s) => ProductIds.stripPrefix(s) == id,
+    )) {
+      return 'subscription';
+    }
+    if (id.startsWith('coin_pack_')) return 'coins';
+    if (id.startsWith('skin_')) return 'skin';
+    if (id.startsWith('trail_')) return 'trail';
+    if (id.endsWith('_theme') || id == 'premium_themes_bundle') return 'theme';
+    if (id.contains('tournament') || id.contains('championship')) {
+      return 'tournament_entry';
+    }
+    if (id.endsWith('_pack') || id.endsWith('_collection')) return 'bundle';
+    return 'other';
+  }
+
   Stream<bool> get purchasePendingStream => _purchasePendingController.stream;
   Stream<List<ProductDetails>> get productsStream => _productsController.stream;
   Stream<String> get purchaseStatusStream => _purchaseStatusController.stream;
@@ -261,6 +290,14 @@ class PurchaseService {
       _purchasePending = true;
       _purchasePendingController.add(true);
 
+      // Funnel event — fired BEFORE the IAP sheet opens. Combined with
+      // item_purchased / purchase_cancelled / purchase_failed, this gives
+      // us the IAP-sheet abandonment rate.
+      _analytics?.trackPurchaseInitiated(
+        productId: productDetails.id,
+        productType: _productTypeFor(productDetails.id),
+      );
+
       final PurchaseParam purchaseParam = PurchaseParam(
         productDetails: productDetails,
       );
@@ -280,6 +317,10 @@ class PurchaseService {
         _purchasePending = false;
         _purchasePendingController.add(false);
         _purchaseStatusController.add('Failed to initiate purchase');
+        _analytics?.trackPurchaseFailed(
+          productId: productDetails.id,
+          errorCode: 'init_returned_false',
+        );
       }
 
       return success;
@@ -288,6 +329,10 @@ class PurchaseService {
       _purchasePending = false;
       _purchasePendingController.add(false);
       _purchaseStatusController.add('Purchase failed: ${e.toString()}');
+      _analytics?.trackPurchaseFailed(
+        productId: productDetails.id,
+        errorCode: 'exception',
+      );
       return false;
     }
   }
@@ -302,6 +347,17 @@ class PurchaseService {
         if (purchaseDetails.status == PurchaseStatus.error) {
           AppLogger.error('Purchase error: ${purchaseDetails.error}');
           _purchaseStatusController.add('Purchase failed');
+          _analytics?.trackPurchaseFailed(
+            productId: purchaseDetails.productID,
+            errorCode: purchaseDetails.error?.code,
+          );
+        } else if (purchaseDetails.status == PurchaseStatus.canceled) {
+          AppLogger.info(
+            'Purchase canceled by user: ${purchaseDetails.productID}',
+          );
+          _analytics?.trackPurchaseCancelled(
+            productId: purchaseDetails.productID,
+          );
         } else if (purchaseDetails.status == PurchaseStatus.purchased ||
             purchaseDetails.status == PurchaseStatus.restored) {
           // Deduplication: skip delivery if this purchase was already delivered
@@ -341,6 +397,17 @@ class PurchaseService {
             if (purchaseId != null) {
               await _markAsDelivered(purchaseId);
             }
+
+            // Funnel terminal event — fires once per fulfilled purchase
+            // (restored re-emissions are skipped above).
+            // Restore events also fire here on the first delivery; subsequent
+            // restores hit the dedup branch and don't double-log.
+            final productDetails = getProduct(purchaseDetails.productID);
+            _analytics?.trackItemPurchased(
+              itemId: purchaseDetails.productID,
+              itemType: _productTypeFor(purchaseDetails.productID),
+              price: productDetails?.price ?? 'unknown',
+            );
           }
         }
 
@@ -388,13 +455,13 @@ class PurchaseService {
         purchaseToken: purchaseToken,
       );
 
-      if (result != null && result['valid'] == true) {
+      if (result != null && result['is_valid'] == true) {
         AppLogger.info('Purchase verified via ApiService (JWT-authenticated)');
         return true;
       }
 
       AppLogger.error(
-        'Backend verification failed: ${result?['error_message'] ?? 'null response'}',
+        'Backend verification failed: ${result?['message'] ?? 'null response'}',
       );
       return false;
     } catch (e) {
@@ -490,7 +557,7 @@ class PurchaseService {
           for (int i = 0; i < entries.length; i++) {
             if (i < results.length) {
               final r = results[i] as Map<String, dynamic>;
-              if (r['isValid'] == true) {
+              if (r['is_valid'] == true) {
                 AppLogger.info(
                   'Pending verification succeeded: ${entries[i]['product_id']}',
                 );
@@ -525,7 +592,7 @@ class PurchaseService {
             purchaseToken: entry['purchase_token'] as String?,
           );
 
-          if (result != null && result['valid'] == true) {
+          if (result != null && result['is_valid'] == true) {
             AppLogger.info(
               'Pending verification succeeded: ${entry['product_id']}',
             );
