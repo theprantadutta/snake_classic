@@ -588,6 +588,17 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildBottomButton(GameTheme theme, PremiumState premiumState) {
+    final productId = _isYearly
+        ? ProductIds.snakeClassicProYearly
+        : ProductIds.snakeClassicProMonthly;
+    final price = PurchaseService().getStorePriceOrDefault(
+      productId,
+      _isYearly ? 39.99 : 4.99,
+    );
+    final period = _isYearly ? '/year' : '/month';
+    final canStartInAppTrial =
+        !premiumState.hasUsedTrial && !premiumState.isOnTrial;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -603,11 +614,12 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Primary CTA — honest about payment
             SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: _startFreeTrial,
+                onPressed: _subscribe,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
@@ -632,13 +644,58 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                     ],
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
-                    'Start 3-Day Free Trial',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Subscribe — $price$period',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        '3-day free trial via Google Play',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
+            // Secondary CTA — in-app trial, no payment. Hidden once trial used.
+            if (canStartInAppTrial) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: _startInAppTrial,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: theme.accentColor.withValues(alpha: 0.5),
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    'Try 3 days free, no payment',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: theme.accentColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Text(
               'No commitment • Cancel anytime • Secure payment',
@@ -654,7 +711,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     );
   }
 
-  void _startFreeTrial() {
+  /// Real subscription purchase — opens the Google Play sheet.
+  void _subscribe() {
     final purchaseService = PurchaseService();
     final productId = _isYearly
         ? ProductIds.snakeClassicProYearly
@@ -665,12 +723,25 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       purchaseService.buyProduct(product);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Premium subscription not available'),
+        const SnackBar(
+          content: Text('Premium subscription not available'),
           backgroundColor: Colors.red,
         ),
       );
     }
+  }
+
+  /// In-app 3-day trial — no payment, no Google Play sheet. One-shot per user
+  /// (PremiumCubit.startFreeTrial enforces single-use via state.hasUsedTrial).
+  void _startInAppTrial() {
+    final messenger = ScaffoldMessenger.of(context);
+    context.read<PremiumCubit>().startFreeTrial();
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('3-day free trial started — enjoy premium!'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 }
 
