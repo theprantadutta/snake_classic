@@ -18,7 +18,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.snake_classic"
+    namespace = "com.pranta.snakeclassic"
     // compileSdk = flutter.compileSdkVersion
     compileSdk = 36
     // ndkVersion = flutter.ndkVersion

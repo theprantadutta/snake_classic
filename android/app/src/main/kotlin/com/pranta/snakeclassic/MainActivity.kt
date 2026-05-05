@@ -1,4 +1,4 @@
-package com.example.snake_classic
+package com.pranta.snakeclassic
 
 import io.flutter.embedding.android.FlutterActivity
 
