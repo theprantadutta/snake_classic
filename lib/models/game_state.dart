@@ -65,6 +65,10 @@ class GameState {
   final int livesRemaining;
   final int initialLives;
 
+  // TimeAttack mode: when the current game started. Null in modes without a
+  // time limit so the HUD knows to skip the countdown chip.
+  final DateTime? gameStartTime;
+
   GameState({
     required this.snake,
     this.food,
@@ -88,6 +92,7 @@ class GameState {
     this.comboMultiplier = 1.0,
     this.livesRemaining = 1,
     this.initialLives = 1,
+    this.gameStartTime,
   });
 
   factory GameState.initial() {
@@ -283,6 +288,7 @@ class GameState {
     double? comboMultiplier,
     int? livesRemaining,
     int? initialLives,
+    DateTime? gameStartTime,
   }) {
     return GameState(
       snake: snake ?? this.snake,
@@ -307,7 +313,17 @@ class GameState {
       comboMultiplier: comboMultiplier ?? this.comboMultiplier,
       livesRemaining: livesRemaining ?? this.livesRemaining,
       initialLives: initialLives ?? this.initialLives,
+      gameStartTime: gameStartTime ?? this.gameStartTime,
     );
+  }
+
+  /// Seconds remaining in TimeAttack mode (0 if not a timed mode).
+  int get timeAttackSecondsRemaining {
+    final limit = gameMode.timeLimit;
+    if (limit == null || gameStartTime == null) return 0;
+    final elapsed = DateTime.now().difference(gameStartTime!);
+    final remaining = limit - elapsed;
+    return remaining.isNegative ? 0 : remaining.inSeconds;
   }
 
   GameState clearFood() {

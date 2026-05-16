@@ -54,6 +54,8 @@ class GameCubit extends Cubit<GameCubitState> {
   Timer? _gameTimer;
   Timer? _animationTimer;
   Timer? _powerUpTimer;
+  Timer? _timeAttackTimer;
+  Duration? _timeAttackRemaining;
 
   final GameRecorder _gameRecorder = GameRecorder();
 
@@ -128,6 +130,7 @@ class GameCubit extends Cubit<GameCubitState> {
     );
 
     final initialLives = settings.gameMode.initialLives;
+    final startTime = DateTime.now();
     final gameState = model.GameState.initial().copyWith(
       highScore: settings.highScore,
       boardWidth: settings.boardSize.width,
@@ -139,6 +142,7 @@ class GameCubit extends Cubit<GameCubitState> {
       comboMultiplier: 1.0,
       initialLives: initialLives,
       livesRemaining: initialLives,
+      gameStartTime: startTime,
     );
 
     // Reset tracking
@@ -184,6 +188,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _startGameLoop();
     _startSmoothAnimation();
     _startPowerUpTimer();
+    _startTimeAttackTimer(settings.gameMode);
 
     _audioService.playSound('game_start');
     _enhancedAudioService.playSfx('game_start', volume: 0.8);
@@ -215,6 +220,16 @@ class GameCubit extends Cubit<GameCubitState> {
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
 
+    // TimeAttack: snapshot how much time is left so resume can re-arm.
+    if (_timeAttackTimer != null && _timeAttackScheduledAt != null) {
+      final elapsed = DateTime.now().difference(_timeAttackScheduledAt!);
+      final remaining = (_timeAttackRemaining ?? Duration.zero) - elapsed;
+      _timeAttackRemaining =
+          remaining.isNegative ? Duration.zero : remaining;
+      _timeAttackTimer?.cancel();
+      _timeAttackTimer = null;
+    }
+
     emit(
       state.copyWith(
         status: GamePlayStatus.paused,
@@ -239,6 +254,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _startGameLoop();
     _startSmoothAnimation();
     _startPowerUpTimer();
+    _scheduleTimeAttackTimer();
 
     _analytics.trackGameResumed();
   }
@@ -312,6 +328,37 @@ class GameCubit extends Cubit<GameCubitState> {
       (_) => _trySpawnPowerUp(),
     );
   }
+
+  /// TimeAttack mode: schedule a one-shot timer that ends the game when
+  /// the mode's timeLimit elapses. _timeAttackRemaining tracks the
+  /// outstanding duration so pause/resume can re-arm with the leftover.
+  void _startTimeAttackTimer(GameMode mode) {
+    _timeAttackTimer?.cancel();
+    final limit = mode.timeLimit;
+    if (limit == null) {
+      _timeAttackRemaining = null;
+      return;
+    }
+    _timeAttackRemaining = limit;
+    _scheduleTimeAttackTimer();
+  }
+
+  void _scheduleTimeAttackTimer() {
+    final remaining = _timeAttackRemaining;
+    if (remaining == null || remaining <= Duration.zero) return;
+    final scheduledAt = DateTime.now();
+    _timeAttackTimer?.cancel();
+    _timeAttackTimer = Timer(remaining, () async {
+      if (state.status == GamePlayStatus.playing) {
+        _timeAttackRemaining = Duration.zero;
+        await _gameOver();
+      }
+    });
+    // Remember the scheduling moment so resumeGame can compute leftover.
+    _timeAttackScheduledAt = scheduledAt;
+  }
+
+  DateTime? _timeAttackScheduledAt;
 
   // Note: _updateAnimation removed - animation is now handled locally in GameBoard widget
 
@@ -698,6 +745,9 @@ class GameCubit extends Cubit<GameCubitState> {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
+    _timeAttackTimer?.cancel();
+    _timeAttackTimer = null;
+    _timeAttackRemaining = null;
 
     // Play crash sound and haptic feedback immediately
     _audioService.playSound('game_over');
@@ -885,6 +935,9 @@ class GameCubit extends Cubit<GameCubitState> {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
+    _timeAttackTimer?.cancel();
+    _timeAttackTimer = null;
+    _timeAttackRemaining = null;
     _gameRecorder.stopRecording();
 
     final highScore =
@@ -911,6 +964,9 @@ class GameCubit extends Cubit<GameCubitState> {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
+    _timeAttackTimer?.cancel();
+    _timeAttackTimer = null;
+    _timeAttackRemaining = null;
     _gameRecorder.stopRecording();
 
     emit(
@@ -1215,6 +1271,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
+    _timeAttackTimer?.cancel();
     return super.close();
   }
 }

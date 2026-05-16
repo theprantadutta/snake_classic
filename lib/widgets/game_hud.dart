@@ -309,12 +309,19 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
 
   Widget _buildSecondaryRow() {
     final hasMultipleLives = gameState.initialLives > 1;
+    final hasTimeLimit = gameState.gameMode.timeLimit != null;
     return Row(
       children: [
         // Level progress
         Expanded(flex: 2, child: _buildLevelCard()),
 
         const SizedBox(width: 8),
+
+        // TimeAttack countdown
+        if (hasTimeLimit) ...[
+          _buildTimeAttackChip(),
+          const SizedBox(width: 8),
+        ],
 
         // Lives indicator (survival mode)
         if (hasMultipleLives) ...[
@@ -332,6 +339,48 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         if (gameState.activePowerUps.isNotEmpty)
           Expanded(flex: 2, child: _buildPowerUpsCard()),
       ],
+    );
+  }
+
+  Widget _buildTimeAttackChip() {
+    final seconds = gameState.timeAttackSecondsRemaining;
+    final mm = (seconds ~/ 60).toString().padLeft(2, '0');
+    final ss = (seconds % 60).toString().padLeft(2, '0');
+    final isLow = seconds <= 30;
+    final accent = isLow ? Colors.redAccent : Colors.amber;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 8 : 10,
+        vertical: isSmallScreen ? 6 : 8,
+      ),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: accent.withValues(alpha: isLow ? 0.7 : 0.4),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.timer_outlined,
+            size: isSmallScreen ? 14 : 16,
+            color: accent,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$mm:$ss',
+            style: TextStyle(
+              color: accent,
+              fontSize: isSmallScreen ? 12 : 13,
+              fontWeight: FontWeight.bold,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
