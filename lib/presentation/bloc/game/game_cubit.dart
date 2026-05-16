@@ -456,22 +456,29 @@ class GameCubit extends Cubit<GameCubitState> {
       // during the game tick (addXP can trigger HTTP calls on first invocation)
       Future.microtask(() => _checkScoreMilestones(newScore));
 
-      // Level up (unlimited levels with progressive difficulty)
-      if (newScore >= previousState.targetScore) {
+      // Level up (unlimited levels with progressive difficulty).
+      // Loop so that a high-combo or multiplied bite can cross multiple
+      // level thresholds in a single tick.
+      final previousLevel = newLevel;
+      while (newScore >= model.GameState.getTargetScoreForLevel(newLevel + 1)) {
         newLevel++;
+      }
+      if (newLevel > previousLevel) {
         debugPrint(
-          '🎮 [GameCubit] LEVEL UP! Now level $newLevel (target was ${previousState.targetScore}, next target: ${model.GameState.getTargetScoreForLevel(newLevel + 1)})',
+          '🎮 [GameCubit] LEVEL UP! $previousLevel -> $newLevel (next target: ${model.GameState.getTargetScoreForLevel(newLevel + 1)})',
         );
         _audioService.playSound('level_up');
         HapticFeedback.mediumImpact();
         _analytics.trackLevelUp(newLevel);
 
-        // Award coins for level up - deferred to avoid event loop contention
-        final levelForCoins = newLevel;
-        Future.microtask(() => _coinsCubit.earnCoins(
-          CoinEarningSource.levelUp,
-          metadata: {'level': levelForCoins},
-        ));
+        // Award coins for every level gained this tick.
+        for (var lvl = previousLevel + 1; lvl <= newLevel; lvl++) {
+          final levelForCoins = lvl;
+          Future.microtask(() => _coinsCubit.earnCoins(
+            CoinEarningSource.levelUp,
+            metadata: {'level': levelForCoins},
+          ));
+        }
       } else {
         _audioService.playSound('eat');
         HapticFeedback.lightImpact();

@@ -61,10 +61,6 @@ class GameState {
   final int maxCombo; // Best streak this game
   final double comboMultiplier; // Score multiplier based on combo
 
-  // Performance: cached game speed to avoid recomputation on every access
-  // (previously a getter called 60+ times/sec from the renderer)
-  late final int _cachedGameSpeed;
-
   GameState({
     required this.snake,
     this.food,
@@ -86,9 +82,7 @@ class GameState {
     this.currentCombo = 0,
     this.maxCombo = 0,
     this.comboMultiplier = 1.0,
-  }) {
-    _cachedGameSpeed = _computeGameSpeed();
-  }
+  });
 
   factory GameState.initial() {
     return GameState(
@@ -118,18 +112,17 @@ class GameState {
     return 1.0;
   }
 
-  /// Game speed in milliseconds per tick. Cached at construction time
-  /// to avoid recomputation (previously called 60+ times/sec from renderer).
-  int get gameSpeed => _cachedGameSpeed;
-
-  int _computeGameSpeed() {
-    // Speed increases with level (lower milliseconds = faster)
-    // Start at 300ms, decrease by game mode-specific amount per level
+  /// Game speed in milliseconds per tick. Recomputed on each access so that
+  /// power-up expiry (which doesn't always trigger a new state emit) is
+  /// reflected immediately. Called on the game-tick scheduling path, not the
+  /// 60fps render path, so the cost is negligible.
+  int get gameSpeed {
+    // Speed increases with level (lower milliseconds = faster).
+    // Start at 300ms, decrease by game mode-specific amount per level.
     final baseSpeed = 300;
     final speedDecrease = (level - 1) * gameMode.speedIncreaseRate;
     int speed = (baseSpeed - speedDecrease).clamp(50, 300);
 
-    // Apply power-up effects
     final hasSpeedBoost = activePowerUps.any(
       (p) => p.type == PowerUpType.speedBoost && !p.isExpired,
     );
@@ -138,10 +131,10 @@ class GameState {
     );
 
     if (hasSpeedBoost) {
-      speed = (speed * 0.5).round(); // 50% faster
+      speed = (speed * 0.5).round();
     }
     if (hasSlowMotion) {
-      speed = (speed * 1.5).round(); // 50% slower
+      speed = (speed * 1.5).round();
     }
 
     return speed.clamp(50, 600);
