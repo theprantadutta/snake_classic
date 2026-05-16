@@ -33,6 +33,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       final dPadEnabled = await _storageService.isDPadEnabled();
       final dPadPosition = await _storageService.getDPadPosition();
       final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
+      final gameMode = await _storageService.getGameMode();
+      final gameModePrompted = await _storageService.hasGameModeBeenPrompted();
 
       // Convert saved board size to BoardSize object
       final boardSize = _convertToBoardSize(savedBoardSize);
@@ -46,6 +48,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           dPadEnabled: dPadEnabled,
           dPadPosition: dPadPosition,
           screenShakeEnabled: screenShakeEnabled,
+          gameMode: gameMode,
+          gameModeFirstLaunchPrompted: gameModePrompted,
         ),
       );
 
@@ -114,6 +118,24 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
 
   /// Alias for setBoardSize
   Future<void> updateBoardSize(BoardSize size) => setBoardSize(size);
+
+  /// Update single-player game mode
+  Future<void> setGameMode(GameMode mode) async {
+    if (state.gameMode == mode) return;
+
+    emit(state.copyWith(gameMode: mode));
+    await _storageService.saveGameMode(mode);
+  }
+
+  /// Alias for setGameMode
+  Future<void> updateGameMode(GameMode mode) => setGameMode(mode);
+
+  /// Mark the first-launch game mode prompt as shown.
+  Future<void> markGameModePrompted() async {
+    if (state.gameModeFirstLaunchPrompted) return;
+    emit(state.copyWith(gameModeFirstLaunchPrompted: true));
+    await _storageService.markGameModePrompted();
+  }
 
   /// Update crash feedback duration
   Future<void> setCrashFeedbackDuration(Duration duration) async {

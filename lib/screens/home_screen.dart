@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -43,6 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late Animation<double> _playButtonPulseAnimation;
   bool _dailyBonusChecked = false;
   bool _walkthroughChecked = false;
+  bool _gameModePromptChecked = false;
 
   @override
   void initState() {
@@ -88,6 +90,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         _checkWalkthrough();
       }
     });
+
+    // First-launch game-mode prompt — shows once per device.
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        _maybeShowGameModePrompt();
+      }
+    });
+  }
+
+  Future<void> _maybeShowGameModePrompt() async {
+    if (_gameModePromptChecked) return;
+    _gameModePromptChecked = true;
+
+    if (!mounted) return;
+    final settingsCubit = context.read<GameSettingsCubit>();
+    if (settingsCubit.state.gameModeFirstLaunchPrompted) return;
+
+    final premiumState = context.read<PremiumCubit>().state;
+    final selected = await showModalBottomSheet<GameMode>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _GameModeFirstLaunchSheet(
+        hasPremium: premiumState.hasPremium,
+        initialMode: settingsCubit.state.gameMode,
+      ),
+    );
+
+    if (!mounted) return;
+    if (selected != null) {
+      await settingsCubit.setGameMode(selected);
+    }
+    await settingsCubit.markGameModePrompted();
   }
 
   /// Check if home walkthrough should be shown
@@ -1780,4 +1817,171 @@ class _NavItem {
     this.badge,
     this.widgetKey,
   });
+}
+
+/// First-launch bottom sheet that asks the user to pick a default game mode.
+/// Returns the selected GameMode, or null if dismissed without confirming.
+class _GameModeFirstLaunchSheet extends StatefulWidget {
+  const _GameModeFirstLaunchSheet({
+    required this.hasPremium,
+    required this.initialMode,
+  });
+
+  final bool hasPremium;
+  final GameMode initialMode;
+
+  @override
+  State<_GameModeFirstLaunchSheet> createState() =>
+      _GameModeFirstLaunchSheetState();
+}
+
+class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
+  late GameMode _selected = widget.initialMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.backgroundColor.withValues(alpha: 0.98),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(
+            color: theme.accentColor.withValues(alpha: 0.4),
+            width: 2,
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'Pick a Game Mode',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'You can change this anytime in Settings',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...GameMode.values.map((mode) {
+              final isLocked = mode.isPremium && !widget.hasPremium;
+              final isSelected = _selected == mode;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: isLocked
+                      ? null
+                      : () => setState(() => _selected = mode),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.accentColor.withValues(alpha: 0.18)
+                          : Colors.white.withValues(alpha: 0.04),
+                      border: Border.all(
+                        color: isSelected
+                            ? theme.accentColor
+                            : Colors.white.withValues(alpha: 0.1),
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(mode.icon, style: const TextStyle(fontSize: 24)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    mode.name,
+                                    style: TextStyle(
+                                      color: isLocked
+                                          ? Colors.purple.shade200
+                                          : Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  if (isLocked) ...[
+                                    const SizedBox(width: 6),
+                                    Icon(Icons.lock,
+                                        size: 14,
+                                        color: Colors.purple.shade300),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                mode.description,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.65),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          Icon(Icons.check_circle,
+                              color: theme.accentColor, size: 22),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.accentColor,
+                  foregroundColor: theme.backgroundColor,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () => Navigator.of(context).pop(_selected),
+                child: const Text(
+                  'START PLAYING',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

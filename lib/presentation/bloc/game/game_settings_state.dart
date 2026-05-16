@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:snake_classic/utils/constants.dart';
 
-// Re-export DPadPosition and BoardSize from constants
+// Re-export DPadPosition, BoardSize, and GameMode from constants
 export 'package:snake_classic/utils/constants.dart'
-    show DPadPosition, BoardSize;
+    show DPadPosition, BoardSize, GameMode;
 
 /// Status of the game settings cubit
 enum GameSettingsStatus { initial, loading, ready }
@@ -14,6 +14,8 @@ class GameSettingsState extends Equatable {
   final bool dPadEnabled;
   final DPadPosition dPadPosition;
   final BoardSize boardSize;
+  final GameMode gameMode;
+  final bool gameModeFirstLaunchPrompted;
   final Duration crashFeedbackDuration;
   final int highScore;
   final bool screenShakeEnabled;
@@ -23,6 +25,8 @@ class GameSettingsState extends Equatable {
     this.dPadEnabled = false,
     this.dPadPosition = DPadPosition.bottomCenter,
     this.boardSize = BoardSize.classic,
+    this.gameMode = GameMode.classic,
+    this.gameModeFirstLaunchPrompted = false,
     this.crashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration,
     this.highScore = 0,
     this.screenShakeEnabled = false, // Disabled by default
@@ -37,6 +41,8 @@ class GameSettingsState extends Equatable {
     bool? dPadEnabled,
     DPadPosition? dPadPosition,
     BoardSize? boardSize,
+    GameMode? gameMode,
+    bool? gameModeFirstLaunchPrompted,
     Duration? crashFeedbackDuration,
     int? highScore,
     bool? screenShakeEnabled,
@@ -46,6 +52,9 @@ class GameSettingsState extends Equatable {
       dPadEnabled: dPadEnabled ?? this.dPadEnabled,
       dPadPosition: dPadPosition ?? this.dPadPosition,
       boardSize: boardSize ?? this.boardSize,
+      gameMode: gameMode ?? this.gameMode,
+      gameModeFirstLaunchPrompted:
+          gameModeFirstLaunchPrompted ?? this.gameModeFirstLaunchPrompted,
       crashFeedbackDuration:
           crashFeedbackDuration ?? this.crashFeedbackDuration,
       highScore: highScore ?? this.highScore,
@@ -62,6 +71,8 @@ class GameSettingsState extends Equatable {
     dPadEnabled,
     dPadPosition,
     boardSize,
+    gameMode,
+    gameModeFirstLaunchPrompted,
     crashFeedbackDuration,
     highScore,
     screenShakeEnabled,

@@ -349,6 +349,36 @@ class StorageService {
     return DateTime.tryParse(dateStr);
   }
 
+  // ==================== Game Mode ====================
+
+  static const String _gameModeKey = 'selected_game_mode';
+  static const String _gameModePromptedKey = 'game_mode_first_launch_prompted';
+
+  Future<GameMode> getGameMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_gameModeKey);
+    if (raw == null) return GameMode.classic;
+    for (final mode in GameMode.values) {
+      if (mode.name == raw) return mode;
+    }
+    return GameMode.classic;
+  }
+
+  Future<void> saveGameMode(GameMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_gameModeKey, mode.name);
+  }
+
+  Future<bool> hasGameModeBeenPrompted() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_gameModePromptedKey) ?? false;
+  }
+
+  Future<void> markGameModePrompted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_gameModePromptedKey, true);
+  }
+
   Future<void> saveLastPlayDate(DateTime date) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('last_play_date', date.toIso8601String());

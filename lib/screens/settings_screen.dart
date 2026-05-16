@@ -38,6 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   DPadPosition _dPadPosition = DPadPosition.bottomCenter;
   BoardSize _selectedBoardSize =
       GameConstants.availableBoardSizes[1]; // Default to Classic
+  GameMode _selectedGameMode = GameMode.classic;
   Duration _selectedCrashFeedbackDuration =
       GameConstants.defaultCrashFeedbackDuration;
 
@@ -62,6 +63,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _selectedBoardSize = settingsData['boardSize'] ?? GameConstants.availableBoardSizes[1];
         _selectedCrashFeedbackDuration = settingsData['crashFeedbackDuration'] ?? GameConstants.defaultCrashFeedbackDuration;
       });
+      // Game mode lives in SharedPreferences, not the cached settings map.
+      _storageService.getGameMode().then((mode) {
+        if (mounted) setState(() => _selectedGameMode = mode);
+      });
     } else {
       // Fallback to direct load if cache not available
       _loadSettingsDirectly();
@@ -76,6 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final dPadEnabled = await _storageService.isDPadEnabled();
     final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
     final dPadPosition = await _storageService.getDPadPosition();
+    final gameMode = await _storageService.getGameMode();
     setState(() {
       _soundEnabled = _audioService.isSoundEnabled;
       _musicEnabled = _audioService.isMusicEnabled;
@@ -84,6 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _dPadPosition = dPadPosition;
       _selectedBoardSize = boardSize;
       _selectedCrashFeedbackDuration = crashFeedbackDuration;
+      _selectedGameMode = gameMode;
     });
   }
 
@@ -171,8 +178,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                                   const SizedBox(height: 32),
 
-                                  // 2. Gameplay Section (board size + crash feedback + effects)
+                                  // 2. Gameplay Section (mode + board size + crash feedback + effects)
                                   _buildSection('GAMEPLAY', [
+                                    _buildGameModeSelector(gameState, theme),
+                                    const SizedBox(height: 24),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 24),
                                     _buildBoardSizeSelector(gameState, theme),
                                     const SizedBox(height: 24),
                                     const Divider(height: 1),
@@ -675,6 +686,144 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGameModeSelector(GameCubitState gameState, GameTheme theme) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Game Mode',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_selectedGameMode.icon} ${_selectedGameMode.name}',
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          _selectedGameMode.description,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 12,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        BlocBuilder<PremiumCubit, PremiumState>(
+          builder: (context, premiumState) {
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: GameMode.values.map((mode) {
+                final isSelected = _selectedGameMode == mode;
+                final isCurrentlyPlaying = gameState.isPlaying;
+                final isPremiumLocked =
+                    mode.isPremium && !premiumState.hasPremium;
+
+                return GestureDetector(
+                  onTap: isCurrentlyPlaying
+                      ? null
+                      : (isPremiumLocked
+                          ? _showPremiumDialog
+                          : () async {
+                              setState(() => _selectedGameMode = mode);
+                              await context
+                                  .read<GameSettingsCubit>()
+                                  .updateGameMode(mode);
+                              _analytics.trackSettingChanged(
+                                  settingName: 'game_mode',
+                                  value: mode.name);
+                            }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isPremiumLocked
+                          ? Colors.purple.shade900.withValues(alpha: 0.15)
+                          : (isSelected
+                              ? theme.accentColor.withValues(alpha: 0.2)
+                              : Colors.transparent),
+                      border: Border.all(
+                        color: isPremiumLocked
+                            ? Colors.purple.shade400.withValues(alpha: 0.5)
+                            : (isSelected
+                                ? theme.accentColor
+                                : theme.accentColor.withValues(alpha: 0.3)),
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isPremiumLocked) ...[
+                          Icon(
+                            Icons.lock,
+                            size: 12,
+                            color: Colors.purple.shade400,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        Text(
+                          '${mode.icon} ${mode.name}',
+                          style: TextStyle(
+                            color: isCurrentlyPlaying
+                                ? theme.accentColor.withValues(alpha: 0.5)
+                                : (isPremiumLocked
+                                    ? Colors.purple.shade300
+                                    : (isSelected
+                                        ? theme.accentColor
+                                        : Colors.white.withValues(alpha: 0.8))),
+                            fontSize: 11,
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+        if (gameState.isPlaying) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Complete current game to change game mode',
+            style: TextStyle(
+              color: Colors.orange.withValues(alpha: 0.8),
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
     );
   }
 

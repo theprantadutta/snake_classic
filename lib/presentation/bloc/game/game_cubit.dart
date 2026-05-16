@@ -112,6 +112,7 @@ class GameCubit extends Cubit<GameCubitState> {
       highScore: _settingsCubit.state.highScore,
       boardWidth: _settingsCubit.state.boardSize.width,
       boardHeight: _settingsCubit.state.boardSize.height,
+      gameMode: _settingsCubit.state.gameMode,
     );
 
     emit(state.copyWith(status: GamePlayStatus.ready, gameState: gameState));
@@ -123,13 +124,14 @@ class GameCubit extends Cubit<GameCubitState> {
 
     final settings = _settingsCubit.state;
     debugPrint(
-      '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, highScore=${settings.highScore}',
+      '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, gameMode=${settings.gameMode.name}, highScore=${settings.highScore}',
     );
 
     final gameState = model.GameState.initial().copyWith(
       highScore: settings.highScore,
       boardWidth: settings.boardSize.width,
       boardHeight: settings.boardSize.height,
+      gameMode: settings.gameMode,
       status: model.GameStatus.playing,
       currentCombo: 0,
       maxCombo: 0,
@@ -186,7 +188,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _analytics.trackGameStarted(
       boardWidth: gameState.boardWidth,
       boardHeight: gameState.boardHeight,
-      gameMode: state.isTournamentMode ? 'tournament' : 'classic',
+      gameMode: state.isTournamentMode ? 'tournament' : gameState.gameMode.name,
     );
 
     debugPrint('🎮 [GameCubit] startGame() completed');
@@ -795,7 +797,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _gameRecorder.finishRecording(
       playerName: 'Player',
       finalScore: gameState.score,
-      gameMode: 'classic',
+      gameMode: gameState.gameMode.name,
       gameSettings: {
         'boardWidth': gameState.boardWidth,
         'boardHeight': gameState.boardHeight,
@@ -842,6 +844,7 @@ class GameCubit extends Cubit<GameCubitState> {
       highScore: highScore,
       boardWidth: _settingsCubit.state.boardSize.width,
       boardHeight: _settingsCubit.state.boardSize.height,
+      gameMode: _settingsCubit.state.gameMode,
     );
 
     emit(
@@ -966,7 +969,8 @@ class GameCubit extends Cubit<GameCubitState> {
         'score': gameState.score,
         'gameDuration': gameDurationSeconds,
         'foodsEaten': foodEaten,
-        'gameMode': state.isTournamentMode ? 'tournament' : 'classic',
+        'gameMode':
+            state.isTournamentMode ? 'tournament' : gameState.gameMode.name,
         'difficulty': 'normal',
         'playedAt': DateTime.now().toIso8601String(),
         'idempotencyKey':
@@ -999,7 +1003,11 @@ class GameCubit extends Cubit<GameCubitState> {
           if (gameDurationSeconds > 0)
             (type: ChallengeType.survival, value: gameDurationSeconds, gameMode: null),
           (type: ChallengeType.gamesPlayed, value: 1, gameMode: null),
-          (type: ChallengeType.gameMode, value: 1, gameMode: 'classic'),
+          (
+            type: ChallengeType.gameMode,
+            value: 1,
+            gameMode: gameState.gameMode.name,
+          ),
         ]),
         _battlePassCubit.flushXP(),
       ]);
