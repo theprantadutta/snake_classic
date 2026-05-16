@@ -127,6 +127,7 @@ class GameCubit extends Cubit<GameCubitState> {
       '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, gameMode=${settings.gameMode.name}, highScore=${settings.highScore}',
     );
 
+    final initialLives = settings.gameMode.initialLives;
     final gameState = model.GameState.initial().copyWith(
       highScore: settings.highScore,
       boardWidth: settings.boardSize.width,
@@ -136,6 +137,8 @@ class GameCubit extends Cubit<GameCubitState> {
       currentCombo: 0,
       maxCombo: 0,
       comboMultiplier: 1.0,
+      initialLives: initialLives,
+      livesRemaining: initialLives,
     );
 
     // Reset tracking
@@ -627,6 +630,43 @@ class GameCubit extends Cubit<GameCubitState> {
     }
   }
 
+  /// Survival-mode respawn: rebuild snake at spawn, regenerate food, keep
+  /// the current score and level, and decrement livesRemaining by one.
+  /// Plays a softer "crash" cue rather than the full game-over flow.
+  void _respawnAfterCrash(model.GameState current) {
+    _audioService.playSound('game_over');
+    _enhancedAudioService.playSfx('game_over', volume: 0.6);
+    HapticFeedback.heavyImpact();
+
+    final newSnake = Snake.initial();
+    final newFood = Food.generateRandom(
+      current.boardWidth,
+      current.boardHeight,
+      newSnake,
+    );
+
+    emit(
+      state.copyWith(
+        gameState: current.copyWith(
+          snake: newSnake,
+          food: newFood,
+          activePowerUps: const [],
+          clearPowerUp: true,
+          currentCombo: 0,
+          comboMultiplier: 1.0,
+          livesRemaining: current.livesRemaining - 1,
+          status: model.GameStatus.playing,
+          crashReason: null,
+          crashPosition: null,
+          collisionBodyPart: null,
+          showCrashModal: false,
+        ),
+        previousGameState: current,
+        moveProgress: 0.0,
+      ),
+    );
+  }
+
   void _handleCrash(
     model.CrashReason reason,
     Position? crashPosition, {
@@ -643,6 +683,15 @@ class GameCubit extends Cubit<GameCubitState> {
     } else if (reason == model.CrashReason.selfCollision) {
       _hitSelfThisGame = true;
       _hapticService.selfCollision();
+    }
+
+    // Survival mode: consume a life and respawn instead of ending the game.
+    final currentGameState = state.gameState;
+    if (currentGameState != null &&
+        currentGameState.gameMode.initialLives > 1 &&
+        currentGameState.livesRemaining > 1) {
+      _respawnAfterCrash(currentGameState);
+      return;
     }
 
     // Cancel all timers

@@ -61,6 +61,10 @@ class GameState {
   final int maxCombo; // Best streak this game
   final double comboMultiplier; // Score multiplier based on combo
 
+  // Survival mode lives. Defaults to 1 so non-survival modes behave as before.
+  final int livesRemaining;
+  final int initialLives;
+
   GameState({
     required this.snake,
     this.food,
@@ -82,6 +86,8 @@ class GameState {
     this.currentCombo = 0,
     this.maxCombo = 0,
     this.comboMultiplier = 1.0,
+    this.livesRemaining = 1,
+    this.initialLives = 1,
   });
 
   factory GameState.initial() {
@@ -275,6 +281,8 @@ class GameState {
     int? currentCombo,
     int? maxCombo,
     double? comboMultiplier,
+    int? livesRemaining,
+    int? initialLives,
   }) {
     return GameState(
       snake: snake ?? this.snake,
@@ -297,6 +305,8 @@ class GameState {
       currentCombo: currentCombo ?? this.currentCombo,
       maxCombo: maxCombo ?? this.maxCombo,
       comboMultiplier: comboMultiplier ?? this.comboMultiplier,
+      livesRemaining: livesRemaining ?? this.livesRemaining,
+      initialLives: initialLives ?? this.initialLives,
     );
   }
 

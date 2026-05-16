@@ -308,12 +308,19 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   }
 
   Widget _buildSecondaryRow() {
+    final hasMultipleLives = gameState.initialLives > 1;
     return Row(
       children: [
         // Level progress
         Expanded(flex: 2, child: _buildLevelCard()),
 
         const SizedBox(width: 8),
+
+        // Lives indicator (survival mode)
+        if (hasMultipleLives) ...[
+          _buildLivesChip(),
+          const SizedBox(width: 8),
+        ],
 
         // Food indicator
         if (gameState.food != null) ...[
@@ -325,6 +332,39 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         if (gameState.activePowerUps.isNotEmpty)
           Expanded(flex: 2, child: _buildPowerUpsCard()),
       ],
+    );
+  }
+
+  Widget _buildLivesChip() {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 8 : 10,
+        vertical: isSmallScreen ? 6 : 8,
+      ),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.redAccent.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(gameState.initialLives, (i) {
+          final isAlive = i < gameState.livesRemaining;
+          return Padding(
+            padding: EdgeInsets.only(right: i < gameState.initialLives - 1 ? 2 : 0),
+            child: Icon(
+              isAlive ? Icons.favorite : Icons.favorite_border,
+              size: isSmallScreen ? 14 : 16,
+              color: isAlive
+                  ? Colors.redAccent
+                  : Colors.redAccent.withValues(alpha: 0.35),
+            ),
+          );
+        }),
+      ),
     );
   }
 
