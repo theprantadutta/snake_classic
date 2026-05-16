@@ -161,18 +161,31 @@ class GameCubit extends Cubit<GameCubitState> {
     // Daily first game XP
     _awardDailyFirstGameXP();
 
-    // Generate initial food
+    // Generate initial food. MultiFood mode spawns 3 simultaneously.
     final food = Food.generateRandom(
       gameState.boardWidth,
       gameState.boardHeight,
       gameState.snake,
     );
+    final List<Food> extraFoods = [];
+    if (gameState.gameMode.hasMultipleFood) {
+      for (var i = 0; i < 2; i++) {
+        extraFoods.add(
+          _generateNonOverlappingFood(
+            gameState.boardWidth,
+            gameState.boardHeight,
+            gameState.snake,
+            existing: [food, ...extraFoods],
+          ),
+        );
+      }
+    }
 
     _gameRecorder.startRecording();
 
     final newState = state.copyWith(
       status: GamePlayStatus.playing,
-      gameState: gameState.copyWith(food: food),
+      gameState: gameState.copyWith(food: food, foods: extraFoods),
       moveProgress: 0.0,
       clearPreviousGameState: true,
     );
@@ -404,6 +417,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
     final previousState = state.gameState!;
     final snake = previousState.snake.copy();
+    final isMultiFood = previousState.gameMode.hasMultipleFood;
 
     // Check for expired food
     var currentFood = previousState.food;
@@ -413,6 +427,25 @@ class GameCubit extends Cubit<GameCubitState> {
         previousState.boardHeight,
         snake,
       );
+    }
+
+    // MultiFood: refresh any expired extras so the board always has the
+    // target count of simultaneously-visible foods.
+    var extraFoods = List<Food>.from(previousState.foods);
+    if (isMultiFood) {
+      for (var i = 0; i < extraFoods.length; i++) {
+        if (extraFoods[i].isExpired) {
+          extraFoods[i] = _generateNonOverlappingFood(
+            previousState.boardWidth,
+            previousState.boardHeight,
+            snake,
+            existing: [
+              ?currentFood,
+              ...extraFoods.where((f) => f != extraFoods[i]),
+            ],
+          );
+        }
+      }
     }
 
     // Check for expired power-up
@@ -425,9 +458,21 @@ class GameCubit extends Cubit<GameCubitState> {
 
     // Check collisions before moving
     final nextHeadPosition = snake.head.move(snake.currentDirection);
-    final willEatFood =
+    final willEatPrimaryFood =
         currentFood != null &&
         nextHeadPosition == currentFood.position;
+    // MultiFood: also check the extras list. Track which index was eaten
+    // so we can regenerate just that slot.
+    int eatenExtraIndex = -1;
+    if (!willEatPrimaryFood && isMultiFood) {
+      for (var i = 0; i < extraFoods.length; i++) {
+        if (extraFoods[i].position == nextHeadPosition) {
+          eatenExtraIndex = i;
+          break;
+        }
+      }
+    }
+    final willEatFood = willEatPrimaryFood || eatenExtraIndex >= 0;
 
     // Check power-up collision: both current position AND next position
     // This ensures we don't miss collection if snake spawned on or passed through
@@ -490,15 +535,18 @@ class GameCubit extends Cubit<GameCubitState> {
     var newComboMultiplier = previousState.comboMultiplier;
 
     if (willEatFood) {
-      _foodTypesEatenThisGame.add(currentFood.type.name);
-      _currentGameFoodTypes[currentFood.type.name] =
-          (_currentGameFoodTypes[currentFood.type.name] ?? 0) + 1;
+      // Identify which food was actually consumed (primary vs an extra).
+      final eatenFood = willEatPrimaryFood ? currentFood : extraFoods[eatenExtraIndex];
+
+      _foodTypesEatenThisGame.add(eatenFood.type.name);
+      _currentGameFoodTypes[eatenFood.type.name] =
+          (_currentGameFoodTypes[eatenFood.type.name] ?? 0) + 1;
 
       newCombo++;
       newMaxCombo = max(newMaxCombo, newCombo);
       newComboMultiplier = model.GameState.calculateComboMultiplier(newCombo);
 
-      final basePoints = currentFood.type.points;
+      final basePoints = eatenFood.type.points;
       final comboBonus = (basePoints * newComboMultiplier).round();
       final multipliedPoints = comboBonus * previousState.scoreMultiplier;
       newScore += multipliedPoints;
@@ -536,12 +584,27 @@ class GameCubit extends Cubit<GameCubitState> {
         HapticFeedback.lightImpact();
       }
 
-      // Generate new food
-      currentFood = Food.generateRandom(
-        previousState.boardWidth,
-        previousState.boardHeight,
-        snake,
-      );
+      // Regenerate only the eaten food slot. In single-food mode this just
+      // replaces currentFood; in multi-food mode it preserves the other
+      // visible foods so the board stays populated.
+      if (willEatPrimaryFood) {
+        currentFood = _generateNonOverlappingFood(
+          previousState.boardWidth,
+          previousState.boardHeight,
+          snake,
+          existing: extraFoods,
+        );
+      } else {
+        extraFoods[eatenExtraIndex] = _generateNonOverlappingFood(
+          previousState.boardWidth,
+          previousState.boardHeight,
+          snake,
+          existing: [
+            ?currentFood,
+            ...extraFoods.where((f) => f != extraFoods[eatenExtraIndex]),
+          ],
+        );
+      }
     }
 
     // Handle power-up collection
@@ -578,6 +641,7 @@ class GameCubit extends Cubit<GameCubitState> {
     final newGameState = previousState.copyWith(
       snake: snake,
       food: currentFood,
+      foods: extraFoods,
       powerUp: currentPowerUp,
       clearPowerUp: shouldClearPowerUp,
       score: newScore,
@@ -654,6 +718,28 @@ class GameCubit extends Cubit<GameCubitState> {
     );
   }
 
+  /// Generate a Food whose position doesn't overlap the snake or any of the
+  /// already-placed foods. Used by MultiFood mode so the simultaneous foods
+  /// don't stack onto the same cell.
+  Food _generateNonOverlappingFood(
+    int boardWidth,
+    int boardHeight,
+    Snake snake, {
+    Iterable<Food> existing = const [],
+  }) {
+    final taken = existing.map((f) => f.position).toSet();
+    // Bounded retry: at most 32 attempts. If everything collides (effectively
+    // never on a normal-size board) fall back to the unguarded generator so
+    // we never deadlock the game tick.
+    for (var attempt = 0; attempt < 32; attempt++) {
+      final candidate = Food.generateRandom(boardWidth, boardHeight, snake);
+      if (!taken.contains(candidate.position)) {
+        return candidate;
+      }
+    }
+    return Food.generateRandom(boardWidth, boardHeight, snake);
+  }
+
   void _trySpawnPowerUp() {
     if (state.status != GamePlayStatus.playing) return;
     if (state.gameState?.powerUp != null) return;
@@ -691,12 +777,27 @@ class GameCubit extends Cubit<GameCubitState> {
       current.boardHeight,
       newSnake,
     );
+    // Re-seed extras list if the active mode wants multiple simultaneous foods.
+    final extras = <Food>[];
+    if (current.gameMode.hasMultipleFood) {
+      for (var i = 0; i < 2; i++) {
+        extras.add(
+          _generateNonOverlappingFood(
+            current.boardWidth,
+            current.boardHeight,
+            newSnake,
+            existing: [newFood, ...extras],
+          ),
+        );
+      }
+    }
 
     emit(
       state.copyWith(
         gameState: current.copyWith(
           snake: newSnake,
           food: newFood,
+          foods: extras,
           activePowerUps: const [],
           clearPowerUp: true,
           currentCombo: 0,
@@ -947,6 +1048,7 @@ class GameCubit extends Cubit<GameCubitState> {
       boardWidth: _settingsCubit.state.boardSize.width,
       boardHeight: _settingsCubit.state.boardSize.height,
       gameMode: _settingsCubit.state.gameMode,
+      foods: const [],
     );
 
     emit(

@@ -1943,9 +1943,22 @@ class OptimizedGameBoardPainter extends CustomPainter {
   }
 
   void _drawFood(Canvas canvas, double cellWidth, double cellHeight) {
-    final food = gameState.food;
-    if (food == null) return;
+    // Draw the canonical "primary" food, then any extras populated by
+    // MultiFood mode. In single-food modes, gameState.foods is empty.
+    if (gameState.food != null) {
+      _drawSingleFood(canvas, cellWidth, cellHeight, gameState.food!);
+    }
+    for (final extra in gameState.foods) {
+      _drawSingleFood(canvas, cellWidth, cellHeight, extra);
+    }
+  }
 
+  void _drawSingleFood(
+    Canvas canvas,
+    double cellWidth,
+    double cellHeight,
+    Food food,
+  ) {
     // Force square food by using the smaller dimension
     final cellSize = math.min(cellWidth, cellHeight);
     final padding = _getFoodPadding(cellSize, food.type);
