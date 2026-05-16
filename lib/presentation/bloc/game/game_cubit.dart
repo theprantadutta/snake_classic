@@ -718,16 +718,20 @@ class GameCubit extends Cubit<GameCubitState> {
     );
   }
 
-  /// Generate a Food whose position doesn't overlap the snake or any of the
-  /// already-placed foods. Used by MultiFood mode so the simultaneous foods
-  /// don't stack onto the same cell.
+  /// Generate a Food whose position doesn't overlap the snake, any of the
+  /// already-placed foods, or the active power-up. Used by MultiFood mode so
+  /// the simultaneous foods don't stack onto the same cell or land on a
+  /// power-up that the player would then "eat" instead of collect.
   Food _generateNonOverlappingFood(
     int boardWidth,
     int boardHeight,
     Snake snake, {
     Iterable<Food> existing = const [],
   }) {
-    final taken = existing.map((f) => f.position).toSet();
+    final taken = <Position>{
+      ...existing.map((f) => f.position),
+      ?state.gameState?.powerUp?.position,
+    };
     // Bounded retry: at most 32 attempts. If everything collides (effectively
     // never on a normal-size board) fall back to the unguarded generator so
     // we never deadlock the game tick.
@@ -746,11 +750,15 @@ class GameCubit extends Cubit<GameCubitState> {
 
     final random = Random();
     if (random.nextDouble() < 0.5) {
+      final current = state.gameState!;
+      // Avoid every visible food (primary + multi-food extras) so the new
+      // power-up doesn't share a cell with an eatable target.
       final powerUp = PowerUp.generateRandom(
-        state.gameState!.boardWidth,
-        state.gameState!.boardHeight,
-        state.gameState!.snake,
-        foodPosition: state.gameState?.food?.position,
+        current.boardWidth,
+        current.boardHeight,
+        current.snake,
+        foodPosition: current.food?.position,
+        foodPositions: current.foods.map((f) => f.position),
       );
 
       if (powerUp != null) {

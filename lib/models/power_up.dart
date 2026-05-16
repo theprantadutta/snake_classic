@@ -101,19 +101,28 @@ class PowerUp {
     int boardHeight,
     Snake snake, {
     Position? foodPosition,
+    Iterable<Position> foodPositions = const [],
   }) {
     final random = Random();
+    final blocked = <Position>{
+      ?foodPosition,
+      ...foodPositions,
+    };
     Position newPosition;
 
-    do {
+    // Bounded retries — on a fully-occupied board, fall through and accept
+    // whatever was generated so the caller doesn't deadlock.
+    for (var attempt = 0; attempt < 64; attempt++) {
       newPosition = Position(
         random.nextInt(boardWidth),
         random.nextInt(boardHeight),
       );
-    } while (snake.occupiesPosition(newPosition) ||
-        (foodPosition != null && newPosition == foodPosition));
-
-    return newPosition;
+      if (!snake.occupiesPosition(newPosition) &&
+          !blocked.contains(newPosition)) {
+        return newPosition;
+      }
+    }
+    return Position(random.nextInt(boardWidth), random.nextInt(boardHeight));
   }
 
   static PowerUp? generateRandom(
@@ -121,6 +130,7 @@ class PowerUp {
     int boardHeight,
     Snake snake, {
     Position? foodPosition,
+    Iterable<Position> foodPositions = const [],
   }) {
     final random = Random();
 
@@ -129,6 +139,7 @@ class PowerUp {
       boardHeight,
       snake,
       foodPosition: foodPosition,
+      foodPositions: foodPositions,
     );
 
     // Select power-up type based on rarity
