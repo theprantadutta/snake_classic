@@ -41,7 +41,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
+    // Subscribe to AppDataCache so a post-game refreshStatistics() call
+    // rebuilds this screen with the updated high score / totals instead of
+    // leaving the user staring at the snapshot captured at first paint.
+    return ListenableBuilder(
+      listenable: _appCache,
+      builder: (context, _) => BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, state) {
         final theme = state.currentTheme;
 
@@ -125,6 +130,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
         );
       },
+    ),
     );
   }
 

@@ -71,7 +71,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           context.go(AppRoutes.firstTimeAuth);
         }
       },
-      child: BlocBuilder<AuthCubit, AuthState>(
+      // Subscribe to AppDataCache so a post-game refreshStatistics() call
+      // rebuilds the stat row with the updated high score / totals. Without
+      // this, the cached snapshot from app startup stays visible.
+      child: ListenableBuilder(
+        listenable: _appCache,
+        builder: (context, _) => BlocBuilder<AuthCubit, AuthState>(
         builder: (context, authState) {
           return Scaffold(
             extendBodyBehindAppBar: true,
@@ -122,6 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
         },
+      ),
       ),
     );
   }

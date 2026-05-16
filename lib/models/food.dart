@@ -55,9 +55,13 @@ class Food {
     FoodType type = FoodType.normal;
     final chance = random.nextDouble();
 
-    if (chance < 0.05) {
+    // Roughly: 8% special (50pt star), 10% bonus (25pt), 82% normal (10pt).
+    // Bumped special from 5% to 8% so players see a special target every
+    // ~12 foods on average instead of every ~20 — still rare enough to feel
+    // like a reward but no longer feels random-luck-only.
+    if (chance < 0.08) {
       type = FoodType.special;
-    } else if (chance < 0.15) {
+    } else if (chance < 0.18) {
       type = FoodType.bonus;
     }
 

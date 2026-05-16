@@ -4,7 +4,9 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/models/food.dart';
+import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/models/game_state.dart' as model;
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
@@ -1244,6 +1246,12 @@ class GameCubit extends Cubit<GameCubitState> {
             !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
         unlockedAchievements: [],
       );
+
+      // Refresh the AppDataCache snapshot so the Statistics and Profile
+      // screens see the new high score / totals immediately. Without this
+      // the cache holds a frozen copy from app startup and shows stale
+      // data until the next cold launch.
+      await getIt<AppDataCache>().refreshStatistics();
     } catch (e) {
       debugPrint('🎮 [GameCubit] Post-game sync error: $e');
     }
