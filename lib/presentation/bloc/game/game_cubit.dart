@@ -303,7 +303,7 @@ class GameCubit extends Cubit<GameCubitState> {
   void _startPowerUpTimer() {
     _powerUpTimer?.cancel();
     _powerUpTimer = Timer.periodic(
-      const Duration(seconds: 10),
+      const Duration(seconds: GameConstants.powerUpSpawnIntervalSeconds),
       (_) => _trySpawnPowerUp(),
     );
   }
@@ -600,7 +600,7 @@ class GameCubit extends Cubit<GameCubitState> {
     if (state.gameState?.powerUp != null) return;
 
     final random = Random();
-    if (random.nextDouble() < 0.3) {
+    if (random.nextDouble() < 0.5) {
       final powerUp = PowerUp.generateRandom(
         state.gameState!.boardWidth,
         state.gameState!.boardHeight,

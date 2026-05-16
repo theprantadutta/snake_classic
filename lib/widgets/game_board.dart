@@ -2003,15 +2003,18 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Apple body - perfect circle for clean look
     final appleRadius = radius * 0.85; // Slightly smaller than the full rect
 
-    // Apple gradient - red to darker red
+    // Apple gradient derived from theme.foodColor (lighter → base → darker)
+    final baseHsl = HSLColor.fromColor(theme.foodColor);
+    final lightShade = baseHsl
+        .withLightness((baseHsl.lightness + 0.18).clamp(0.0, 1.0))
+        .toColor();
+    final darkShade = baseHsl
+        .withLightness((baseHsl.lightness - 0.25).clamp(0.0, 1.0))
+        .toColor();
     final appleGradient = RadialGradient(
       center: const Alignment(-0.3, -0.4),
       radius: 0.8,
-      colors: [
-        const Color(0xFFFF6B6B), // Light red
-        const Color(0xFFDC143C), // Crimson
-        const Color(0xFF8B0000), // Dark red
-      ],
+      colors: [lightShade, theme.foodColor, darkShade],
       stops: const [0.0, 0.6, 1.0],
     );
 

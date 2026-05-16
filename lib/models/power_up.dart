@@ -124,11 +124,6 @@ class PowerUp {
   }) {
     final random = Random();
 
-    // Power-ups have a 3% chance to spawn
-    if (random.nextDouble() > 0.03) {
-      return null;
-    }
-
     final position = generateRandomPosition(
       boardWidth,
       boardHeight,
