@@ -15,7 +15,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
-import 'package:snake_classic/services/daily_challenge_service.dart';
+import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -1792,10 +1792,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return 56.0;
   }
 
-  /// Get the badge count for daily challenges (unclaimed rewards)
+  /// Get the badge count for daily challenges (unclaimed rewards).
+  /// Watches the Riverpod provider so the home screen rebuilds and the
+  /// badge updates the moment a reward is claimed elsewhere — previously
+  /// the value was read once from the singleton DailyChallengeService
+  /// (a ChangeNotifier the home screen didn't subscribe to), leaving
+  /// the badge stale until a manual rebuild.
   int? _getDailyChallengesBadge() {
-    final service = DailyChallengeService();
-    final count = service.unclaimedRewardsCount;
+    final count = ref.watch(unclaimedRewardsCountProvider);
     return count > 0 ? count : null;
   }
 }

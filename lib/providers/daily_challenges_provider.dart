@@ -248,3 +248,10 @@ final dailyChallengesLoadingProvider = Provider<bool>((ref) {
 final hasUnclaimedRewardsProvider = Provider<bool>((ref) {
   return ref.watch(dailyChallengesProvider).hasUnclaimedRewards;
 });
+
+/// Number of completed challenges whose reward hasn't been claimed yet.
+/// Watch this to keep badges in sync with claim/state changes.
+final unclaimedRewardsCountProvider = Provider<int>((ref) {
+  final challenges = ref.watch(dailyChallengesProvider).challenges;
+  return challenges.where((c) => c.isCompleted && !c.claimedReward).length;
+});
