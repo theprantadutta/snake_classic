@@ -90,7 +90,13 @@ class AppDataCache extends ChangeNotifier {
     _isLoading = true;
 
     try {
-      // Load ALL data in parallel using Future.wait
+      // Load ALL data in parallel using Future.wait. Network groups use a
+      // 4-second per-call timeout; if a backend group is slower than that
+      // the loading screen no longer waits for it. The screen-level TTL
+      // refresh on each provider will pick up the data later in the
+      // background. Trade-off: a flaky connection might leave a cache miss
+      // on first paint (skeletons / loading text shown) but the user reaches
+      // the home screen up to ~4s sooner per slow endpoint.
       await Future.wait([
         // Group 1: Local data (fast, no timeout needed)
         _loadStatistics(),
@@ -100,13 +106,13 @@ class AppDataCache extends ChangeNotifier {
         _loadDailyChallenges(),
 
         // Group 2: Network data (with timeout + fallback)
-        _loadLeaderboards().timeout(const Duration(seconds: 8), onTimeout: () {
+        _loadLeaderboards().timeout(const Duration(seconds: 4), onTimeout: () {
           AppLogger.warning('AppDataCache: Leaderboards timed out');
         }),
-        _loadTournaments().timeout(const Duration(seconds: 8), onTimeout: () {
+        _loadTournaments().timeout(const Duration(seconds: 4), onTimeout: () {
           AppLogger.warning('AppDataCache: Tournaments timed out');
         }),
-        _loadSocialData().timeout(const Duration(seconds: 8), onTimeout: () {
+        _loadSocialData().timeout(const Duration(seconds: 4), onTimeout: () {
           AppLogger.warning('AppDataCache: Social data timed out');
         }),
       ]);

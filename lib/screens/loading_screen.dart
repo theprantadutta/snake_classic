@@ -140,21 +140,29 @@ class _LoadingScreenState extends State<LoadingScreen>
       );
       await _initializePreferences();
 
-      // Step 4: Sync with cloud (must happen before data preload so DataSyncService is ready)
+      // Step 4a: Bootstrap DataSyncService — fast local op, needed before
+      // preload because preload paths call into the sync service.
       await _updateProgress(
         0.50,
         'Syncing with cloud...',
         'Ensuring data is up to date',
       );
-      await _performFinalSync();
+      await _initializeDataSyncService();
 
-      // Step 5: Load ALL game data CONCURRENTLY (fast!)
+      // Step 4b + 5: Drain the outgoing sync queue AND fetch fresh data
+      // concurrently. Previously the drain ran sequentially before the
+      // preload, adding its full duration to the loading screen even
+      // though the two operations don't depend on each other (drain is
+      // POST-to-server, preload is GET-from-server).
       await _updateProgress(
         0.60,
         'Loading game data...',
         'Fetching Game Data',
       );
-      await _preloadAllDataConcurrently();
+      await Future.wait([
+        _preloadAllDataConcurrently(),
+        _drainSyncQueue(),
+      ]);
 
       // Step 6: Initialize Audio System
       await _updateProgress(
@@ -357,43 +365,62 @@ class _LoadingScreenState extends State<LoadingScreen>
     }
   }
 
-  Future<void> _performFinalSync() async {
+  /// Fast, local-only initialization of DataSyncService. Must run before
+  /// _preloadAllDataConcurrently because preload paths call into the sync
+  /// service for cloud reads. This is just Drift bootstrap + connectivity
+  /// listener wiring — typically <100ms.
+  Future<void> _initializeDataSyncService() async {
     try {
-      AppLogger.sync('Performing final sync operations');
-
       if (!mounted) return;
 
-      // Get the user ID for DataSyncService initialization
       final unifiedUserService = Provider.of<UnifiedUserService>(
         context,
         listen: false,
       );
-
-      // Use real user ID or fallback to local placeholder
-      // This ensures DataSyncService initializes even without a real user
       final userId = unifiedUserService.currentUser?.uid ?? 'local_pending';
-      final isPlaceholder = userId.startsWith('local_') || userId.startsWith('offline_');
 
       final syncService = Provider.of<DataSyncService>(
         context,
         listen: false,
       );
 
-      // Initialize DataSyncService - works with local queue even without real user
       await syncService.initialize(userId);
       AppLogger.success('DataSyncService initialized with userId: $userId');
+    } catch (e) {
+      AppLogger.sync('DataSyncService init warning', e);
+    }
+  }
 
-      // Attempt sync only if we have a real user (not placeholder)
-      if (!isPlaceholder && unifiedUserService.currentUser != null) {
-        await syncService.forceSyncNow();
-        AppLogger.success('Force sync completed');
-      } else {
-        AppLogger.info('Skipping force sync - using placeholder user or offline');
+  /// Slow, network-bearing drain of the pending sync queue. Independent of
+  /// the data preload, so it runs in parallel with _preloadAllDataConcurrently.
+  /// Skips entirely for placeholder / offline users.
+  Future<void> _drainSyncQueue() async {
+    try {
+      if (!mounted) return;
+
+      final unifiedUserService = Provider.of<UnifiedUserService>(
+        context,
+        listen: false,
+      );
+      final userId = unifiedUserService.currentUser?.uid ?? 'local_pending';
+      final isPlaceholder =
+          userId.startsWith('local_') || userId.startsWith('offline_');
+
+      if (isPlaceholder || unifiedUserService.currentUser == null) {
+        AppLogger.info(
+          'Skipping force sync — placeholder user or offline session',
+        );
+        return;
       }
 
-      AppLogger.success('Final sync operations completed');
+      final syncService = Provider.of<DataSyncService>(
+        context,
+        listen: false,
+      );
+      await syncService.forceSyncNow();
+      AppLogger.success('Force sync completed');
     } catch (e) {
-      AppLogger.sync('Final sync warning', e);
+      AppLogger.sync('Force sync warning', e);
     }
   }
 
