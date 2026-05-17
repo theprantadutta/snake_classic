@@ -60,6 +60,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _analytics = getIt<AnalyticsFacade>();
     _loadSettingsFromCache();
     _loadNotificationPreferences();
+    // Pull fresh user data so the USER PROFILE row shows the live
+    // username (handles the case where the local UnifiedUser was
+    // cached pre-backfill / pre-rename and is missing the value).
+    // Fire-and-forget — the screen renders from current state and
+    // updates if anything changed.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<AuthCubit>().refreshUserFromBackend();
+      }
+    });
   }
 
   void _loadNotificationPreferences() {
@@ -1218,6 +1228,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildUserProfileSettings(AuthState authState, GameTheme theme) {
+    // Resolve the username explicitly so the row labels it as "Username"
+    // and shows the same value the change-username dialog pre-fills.
+    // Falls back to displayName / 'Not set' so the row never goes blank.
+    final username = authState.user?.username;
+    final hasRealUsername = username != null && username.isNotEmpty;
+    final usernameLabel = hasRealUsername
+        ? username
+        : (authState.user?.displayName.isNotEmpty == true
+              ? authState.user!.displayName
+              : 'Not set');
+
     return Column(
       children: [
         // Current username display
@@ -1230,11 +1251,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     'Username',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Icon(
@@ -1244,15 +1266,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: authState.isGuestUser
                             ? Colors.orange
                             : Colors.green,
-                        size: 16,
+                        size: 18,
                       ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          authState.publicLabel,
+                          '@$usernameLabel',
                           style: TextStyle(
                             color: theme.accentColor,
-                            fontSize: 18,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -1260,14 +1282,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     authState.isGuestUser
                         ? 'Guest Account'
                         : 'Authenticated Account',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -1445,7 +1467,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showUsernameDialog(AuthState authState, GameTheme theme) {
-    final TextEditingController usernameController = TextEditingController();
+    // Pre-fill with the current username so the user can see what it is
+    // before editing. Previously the field opened empty, which made it
+    // unclear what the existing value was and forced users to retype
+    // their full username just to make a small tweak.
+    final currentUsername = authState.user?.username ?? '';
+    final TextEditingController usernameController = TextEditingController(
+      text: currentUsername,
+    );
     final UsernameService usernameService = UsernameService();
     String? errorMessage;
     bool isLoading = false;
@@ -1473,6 +1502,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (currentUsername.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.accentColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: theme.accentColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.person,
+                            size: 14,
+                            color: theme.accentColor.withValues(alpha: 0.7),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Current: ',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 12,
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              currentUsername,
+                              style: TextStyle(
+                                color: theme.accentColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   Text(
                     'Choose a unique username that represents you in the game.',
                     style: TextStyle(

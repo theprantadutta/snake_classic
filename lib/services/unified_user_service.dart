@@ -794,6 +794,42 @@ class UnifiedUserService extends ChangeNotifier {
     }
   }
 
+  /// Pull the latest user profile from the backend and overlay it onto
+  /// the local `_currentUser`. Useful when the cached UnifiedUser is
+  /// known to be stale — e.g. right after the backend backfilled a
+  /// previously-NULL username, or after any server-side admin edit.
+  /// No-op for guest users (no backend identity).
+  Future<bool> refreshFromBackend() async {
+    if (_currentUser == null) return false;
+    if (_currentUser!.userType == UserType.guest) return false;
+    if (!_apiService.isAuthenticated) return false;
+
+    try {
+      final fresh = await _apiService.getCurrentUser();
+      if (fresh == null) return false;
+
+      // Update the in-memory user with the freshly-fetched fields. Keep
+      // the local userType (Firebase/auth provider) since the backend
+      // doesn't return it in a form we map; everything else is overlay.
+      _currentUser = _currentUser!.copyWith(
+        username: fresh['username'] ?? _currentUser!.username,
+        displayName: fresh['display_name'] ?? fresh['displayName'] ?? _currentUser!.displayName,
+        photoURL: fresh['photo_url'] ?? fresh['photoURL'] ?? _currentUser!.photoURL,
+        email: fresh['email'] ?? _currentUser!.email,
+        highScore: fresh['high_score'] ?? fresh['highScore'] ?? _currentUser!.highScore,
+        totalGamesPlayed: fresh['total_games_played'] ?? fresh['totalGamesPlayed'] ?? _currentUser!.totalGamesPlayed,
+        totalScore: fresh['total_score'] ?? fresh['totalScore'] ?? _currentUser!.totalScore,
+        level: fresh['level'] ?? _currentUser!.level,
+      );
+      await _cacheUserSession(_currentUser!);
+      notifyListeners();
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.user('Error refreshing user from backend', e, stackTrace);
+      return false;
+    }
+  }
+
   /// Update username for authenticated users (via backend)
   Future<bool> updateAuthenticatedUsername(String newUsername) async {
     if (_currentUser == null) return false;

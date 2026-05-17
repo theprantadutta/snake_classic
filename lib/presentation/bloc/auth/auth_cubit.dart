@@ -259,10 +259,27 @@ class AuthCubit extends Cubit<AuthState> {
       final result = await _userService.updateAuthenticatedUsername(
         newUsername,
       );
+      if (result) {
+        // Re-emit state so widgets bound to AuthState see the new
+        // username immediately. The service updated _currentUser in
+        // memory but Bloc state needs a copyWith to push through.
+        emit(state.copyWith(user: _userService.currentUser));
+      }
       return result;
     } catch (e) {
       emit(state.copyWith(errorMessage: e.toString()));
       return false;
+    }
+  }
+
+  /// Pull the latest profile from the backend and re-emit AuthState.
+  /// Useful when entering screens that depend on fresh user data — e.g.
+  /// after a deploy that backfilled NULL usernames, the cached
+  /// UnifiedUser would still show a missing username until this is called.
+  Future<void> refreshUserFromBackend() async {
+    final ok = await _userService.refreshFromBackend();
+    if (ok && _userService.currentUser != null) {
+      emit(state.copyWith(user: _userService.currentUser));
     }
   }
 
