@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
 import 'api_service.dart';
 import 'backend_service.dart';
+import 'data_sync_service.dart';
 import 'navigation_service.dart';
 
 enum NotificationType {
@@ -417,22 +418,32 @@ class NotificationService {
   }
 
   // Backend integration methods
-  Future<void> _registerTokenWithBackend(String token) async {
+  /// Register the FCM token with the backend. Returns true on confirmed
+  /// success, false on failure. When auth isn't ready yet (common during
+  /// first-launch race with FirebaseAuth) the call is queued via
+  /// DataSyncService so it retries automatically when auth + connectivity
+  /// catch up. Previously this method silently dropped the call.
+  Future<bool> _registerTokenWithBackend(String token) async {
+    final tzOffsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
+
     try {
       final apiService = ApiService();
 
-      // Only register if authenticated with backend
       if (!apiService.isAuthenticated) {
         AppLogger.warning(
-          'Cannot register FCM token: Not authenticated with backend',
+          'Auth not ready — queueing FCM token registration for later',
         );
-        return;
+        await DataSyncService().queueSync(
+          'fcm_token_register',
+          {
+            'fcmToken': token,
+            'platform': 'flutter',
+            'timezoneOffsetMinutes': tzOffsetMinutes,
+          },
+          priority: SyncPriority.high,
+        );
+        return false;
       }
-
-      // Send the device's UTC offset along with the token so the backend
-      // can target this user's local 9 AM for the daily notification.
-      // Fresh on every register/refresh = automatic DST correction.
-      final tzOffsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
 
       final success = await apiService.registerFcmToken(
         fcmToken: token,
@@ -443,11 +454,25 @@ class NotificationService {
       if (success) {
         AppLogger.network('FCM token registered with backend successfully');
         await _syncTopicSubscriptions(token);
+        return true;
       } else {
-        AppLogger.error('Failed to register FCM token with backend');
+        AppLogger.error(
+          'Failed to register FCM token with backend — queueing for retry',
+        );
+        await DataSyncService().queueSync(
+          'fcm_token_register',
+          {
+            'fcmToken': token,
+            'platform': 'flutter',
+            'timezoneOffsetMinutes': tzOffsetMinutes,
+          },
+          priority: SyncPriority.high,
+        );
+        return false;
       }
     } catch (e) {
       AppLogger.error('Error registering token with backend', e);
+      return false;
     }
   }
 
@@ -490,7 +515,14 @@ class NotificationService {
     }
   }
 
-  /// Initialize backend integration after user authentication
+  /// Initialize backend integration after user authentication.
+  ///
+  /// Idempotent — safe to call multiple times. The `_backendIntegrationDone`
+  /// latch only flips to true on **confirmed** registration success. Earlier
+  /// versions flipped it unconditionally after the call, which permanently
+  /// blocked retries when the first attempt failed (auth not ready, offline,
+  /// 5xx, etc.) — the symptom the user described as "offline functionality
+  /// silently killing notifications."
   Future<void> initializeBackendIntegration() async {
     try {
       if (_backendIntegrationDone) {
@@ -505,35 +537,42 @@ class NotificationService {
         return;
       }
 
-      final apiService = ApiService();
-      if (!apiService.isAuthenticated) {
-        AppLogger.warning(
-          'Cannot initialize backend integration: Not authenticated',
-        );
-        return;
-      }
-
       AppLogger.info('🔗 Initializing backend integration');
 
-      // Development-only: Print token for backend testing
       if (kDebugMode) {
         debugPrint('');
         debugPrint('🔗 ======== BACKEND INTEGRATION ========');
         debugPrint('📱 FCM Token being registered with backend:');
         debugPrint(_fcmToken!);
-        debugPrint('🧪 This token will be sent to the notification backend');
         debugPrint('🔗 =====================================');
         debugPrint('');
       }
 
-      // Register token with backend (using authenticated ApiService)
-      await _registerTokenWithBackend(_fcmToken!);
+      // Register token with backend. _registerTokenWithBackend now queues
+      // on auth-not-ready / failure, so we don't need to gate on
+      // ApiService.isAuthenticated here.
+      final success = await _registerTokenWithBackend(_fcmToken!);
 
-      _backendIntegrationDone = true;
-      AppLogger.info('✅ Backend integration initialized');
+      // CRITICAL: only set the latch on real success. A failed attempt
+      // gets retried via the DataSyncService queue OR on the next
+      // initializeBackendIntegration() call.
+      if (success) {
+        _backendIntegrationDone = true;
+        AppLogger.info('✅ Backend integration initialized');
+      } else {
+        AppLogger.warning(
+          '⚠️ Backend integration deferred (queued for retry)',
+        );
+      }
     } catch (e) {
       AppLogger.error('Failed to initialize backend integration', e);
     }
+  }
+
+  /// Reset the integration latch so a subsequent login / re-init can
+  /// re-register the token. Call from auth flow on logout.
+  void resetBackendIntegration() {
+    _backendIntegrationDone = false;
   }
 
   /// Send achievement notification via backend

@@ -451,6 +451,19 @@ class DataSyncService extends ChangeNotifier {
           final challengeId = item.data['challengeId'] as String;
           return await _apiService.claimChallengeReward(challengeId) != null;
 
+        case 'fcm_token_register':
+          // Late-register the FCM token (queued when auth wasn't ready
+          // at the time the token was obtained). Forwards the timezone
+          // offset too so the morning-reminder cron knows the user's
+          // local 9 AM.
+          final fcmToken = item.data['fcmToken'] as String?;
+          if (fcmToken == null || fcmToken.isEmpty) return true; // nothing to send
+          return await _apiService.registerFcmToken(
+            fcmToken: fcmToken,
+            platform: (item.data['platform'] as String?) ?? 'flutter',
+            timezoneOffsetMinutes: item.data['timezoneOffsetMinutes'] as int?,
+          );
+
         default:
           // Generic profile update
           final result = await _apiService.updateProfile({

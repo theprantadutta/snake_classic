@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 
 import 'auth_state.dart';
@@ -179,6 +180,12 @@ class AuthCubit extends Cubit<AuthState> {
       await _userService.signOut();
       _analytics.trackSignOut();
       _analytics.setUserId(null);
+
+      // Reset the notification backend-integration latch so that the next
+      // sign-in re-registers the FCM token under the new user identity.
+      // Without this, the latch (set true after the previous session's
+      // successful registration) blocks the re-init path entirely.
+      NotificationService().resetBackendIntegration();
 
       // Reset the first-time-setup flag so a closed-and-reopened app routes
       // back through FirstTimeAuthScreen instead of silently re-creating a
