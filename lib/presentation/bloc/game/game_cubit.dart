@@ -1000,7 +1000,12 @@ class GameCubit extends Cubit<GameCubitState> {
       noWallGames: _consecutiveGamesWithoutWallHits,
     );
 
-    // Award coins locally and buffer battle pass XP for newly unlocked achievements
+    // Buffer battle pass XP for newly unlocked achievements. (Coin and
+    // backend-XP rewards are NOT credited locally — the backend's
+    // ClaimAchievementRewardCommand grants them atomically into User.Coins
+    // and User.Experience, then the next CoinsCubit.syncWithBackend pulls
+    // the new balance. Crediting locally too would double-grant for online
+    // players; offline players will see the credit appear on next sync.)
     final allNewUnlocks = [
       ...scoreUnlocks,
       ...gamesUnlocks,
@@ -1008,18 +1013,6 @@ class GameCubit extends Cubit<GameCubitState> {
       ...specialUnlocks,
     ];
     for (final achievement in allNewUnlocks) {
-      _coinsCubit.earnCoins(
-        CoinEarningSource.achievementUnlocked,
-        customAmount: achievement.points,
-        itemName: achievement.title,
-        metadata: {
-          'achievementId': achievement.id,
-          'type': achievement.type.name,
-          'rarity': achievement.rarity.name,
-        },
-      );
-
-      // Buffer battle pass XP based on achievement rarity
       final xpKey = 'achievement_unlocked_${achievement.rarity.name}';
       final xp = BattlePassXpSource.getXpForAction(xpKey);
       if (xp > 0) {
@@ -1303,9 +1296,15 @@ class GameCubit extends Cubit<GameCubitState> {
 
       // Refetch achievements so any server-derived unlocks (score / games /
       // survival auto-evaluated during the queued score submit) replace the
-      // local-only state. Fire-and-forget — the next refresh cycle will pick
-      // up anything missed if the score POST is still queued.
-      unawaited(_achievementService.syncWithBackend());
+      // local-only state. The sync also auto-claims pending rewards, which
+      // increments User.Coins / User.Experience server-side — so chase it
+      // with a coin balance refresh to pull the new total client-side.
+      // Fire-and-forget — next refresh cycle catches anything missed if
+      // the score POST is still queued.
+      unawaited(() async {
+        await _achievementService.syncWithBackend();
+        await _coinsCubit.syncWithBackend();
+      }());
     } catch (e) {
       debugPrint('🎮 [GameCubit] Post-game sync error: $e');
     }

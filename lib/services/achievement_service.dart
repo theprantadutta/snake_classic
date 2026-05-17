@@ -149,10 +149,49 @@ class AchievementService extends ChangeNotifier {
 
       // Sync any pending offline unlocks
       await _syncPendingUnlocks();
+
+      // Claim XP + coin rewards for any unlocks the server confirmed but
+      // hasn't yet credited. The backend's ClaimAchievementRewardCommand
+      // increments user.coins and user.experience atomically.
+      await _claimUnclaimedRewards();
     } catch (e) {
       if (kDebugMode) {
         print('Error syncing achievements with backend: $e');
       }
+    }
+  }
+
+  /// POST /achievements/claim for every achievement that is server-unlocked
+  /// but not yet reward-claimed. Idempotent — the server rejects repeat
+  /// claims, and our local `rewardClaimed` flag is updated only on success
+  /// so a failed claim retries on the next sync.
+  Future<void> _claimUnclaimedRewards() async {
+    if (!_connectivityService.isOnline || !_apiService.isAuthenticated) {
+      return;
+    }
+
+    bool anyClaimed = false;
+    for (int i = 0; i < _achievements.length; i++) {
+      final a = _achievements[i];
+      if (!a.isUnlocked || a.rewardClaimed) continue;
+
+      try {
+        final result = await _apiService.claimAchievementReward(a.id);
+        if (result != null) {
+          _achievements[i] = a.copyWith(rewardClaimed: true);
+          anyClaimed = true;
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error claiming achievement ${a.id}: $e');
+        }
+        // Don't break — try the next one. Failed claims retry next sync.
+      }
+    }
+
+    if (anyClaimed) {
+      await _saveProgress();
+      notifyListeners();
     }
   }
 
@@ -189,6 +228,10 @@ class AchievementService extends ChangeNotifier {
             : backendData['unlockedAt'] != null
             ? DateTime.tryParse(backendData['unlockedAt'].toString())
             : null;
+        final backendRewardClaimed =
+            backendData['reward_claimed'] ??
+            backendData['rewardClaimed'] ??
+            false;
 
         // Use the most up-to-date data (local wins if unlocked locally but not synced yet)
         final shouldUseLocal = achievement.isUnlocked && !backendUnlocked;
@@ -198,6 +241,7 @@ class AchievementService extends ChangeNotifier {
             isUnlocked: backendUnlocked,
             currentProgress: backendProgress,
             unlockedAt: backendUnlockedAt,
+            rewardClaimed: backendRewardClaimed,
           );
         }
       }
@@ -216,6 +260,7 @@ class AchievementService extends ChangeNotifier {
           unlockedAt: savedData['unlockedAt'] != null
               ? DateTime.parse(savedData['unlockedAt'])
               : null,
+          rewardClaimed: savedData['rewardClaimed'] ?? false,
         );
       }
     }
@@ -238,6 +283,7 @@ class AchievementService extends ChangeNotifier {
           'isUnlocked': achievement.isUnlocked,
           'currentProgress': achievement.currentProgress,
           'unlockedAt': achievement.unlockedAt?.toIso8601String(),
+          'rewardClaimed': achievement.rewardClaimed,
         };
       }
 

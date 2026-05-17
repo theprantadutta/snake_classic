@@ -607,6 +607,27 @@ class ApiService {
     }
   }
 
+  /// Claim the XP + coin reward for an unlocked achievement. Returns the
+  /// server-confirmed reward payload (xp, coins) or `null` on failure /
+  /// already-claimed. Idempotent at the handler level — repeat calls after
+  /// success return a server-side "Reward already claimed" failure.
+  Future<Map<String, dynamic>?> claimAchievementReward(String achievementId) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/achievements/claim'),
+            headers: _authHeaders,
+            body: jsonEncode({'achievement_id': achievementId}),
+          )
+          .timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error claiming achievement reward', e);
+      return null;
+    }
+  }
+
   /// Update achievement progress
   Future<Map<String, dynamic>?> updateAchievementProgress({
     required String achievementId,

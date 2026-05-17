@@ -16,6 +16,12 @@ class Achievement {
   final bool isUnlocked;
   final DateTime? unlockedAt;
   final int currentProgress;
+  /// True once the backend has granted the XP + coin reward for this
+  /// unlock. Independent of [isUnlocked]: an achievement can be unlocked
+  /// locally but unclaimed until the next online sync flushes a POST to
+  /// /achievements/claim. Used to drive the auto-claim flow and to gate
+  /// the "Claim" UX surface.
+  final bool rewardClaimed;
 
   const Achievement({
     required this.id,
@@ -29,6 +35,7 @@ class Achievement {
     this.isUnlocked = false,
     this.unlockedAt,
     this.currentProgress = 0,
+    this.rewardClaimed = false,
   });
 
   Achievement copyWith({
@@ -43,6 +50,7 @@ class Achievement {
     bool? isUnlocked,
     DateTime? unlockedAt,
     int? currentProgress,
+    bool? rewardClaimed,
   }) {
     return Achievement(
       id: id ?? this.id,
@@ -56,6 +64,7 @@ class Achievement {
       isUnlocked: isUnlocked ?? this.isUnlocked,
       unlockedAt: unlockedAt ?? this.unlockedAt,
       currentProgress: currentProgress ?? this.currentProgress,
+      rewardClaimed: rewardClaimed ?? this.rewardClaimed,
     );
   }
 
@@ -103,6 +112,7 @@ class Achievement {
       'isUnlocked': isUnlocked,
       'unlockedAt': unlockedAt?.toIso8601String(),
       'currentProgress': currentProgress,
+      'rewardClaimed': rewardClaimed,
     };
   }
 
@@ -130,6 +140,7 @@ class Achievement {
           ? DateTime.parse(json['unlockedAt'])
           : null,
       currentProgress: json['currentProgress'] ?? 0,
+      rewardClaimed: json['rewardClaimed'] ?? false,
     );
   }
 
