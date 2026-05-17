@@ -378,8 +378,13 @@ class DailyChallengeService extends ChangeNotifier {
     final challenge = _challenges[index];
     if (!challenge.isCompleted || challenge.claimedReward) return false;
 
-    // Optimistic local update FIRST
+    // Optimistic local update FIRST — and persist it to disk before the
+    // network attempt so a crash between the claim and the sync queue
+    // draining can't lose the flag. _saveLocalProgress serializes the full
+    // _challenges list to Drift; the existing initialize() path re-loads
+    // it on next launch, so the UI stays consistent across restarts.
     _challenges[index] = challenge.copyWith(claimedReward: true);
+    await _saveLocalProgress();
     notifyListeners();
 
     // Sync with backend in background
@@ -418,7 +423,9 @@ class DailyChallengeService extends ChangeNotifier {
     final claimable = _challenges.where((c) => c.canClaim).toList();
     if (claimable.isEmpty) return 0;
 
-    // Optimistic local update for all claimable challenges
+    // Optimistic local update for all claimable challenges — persist the
+    // batch to disk before the network attempt so a crash between the tap
+    // and the sync draining can't revert these flags.
     int totalClaimed = 0;
     for (final challenge in claimable) {
       final index = _challenges.indexWhere((c) => c.id == challenge.id);
@@ -427,6 +434,7 @@ class DailyChallengeService extends ChangeNotifier {
         totalClaimed += challenge.coinReward;
       }
     }
+    await _saveLocalProgress();
     notifyListeners();
 
     // Batch claim via backend
