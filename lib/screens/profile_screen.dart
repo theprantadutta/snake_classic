@@ -10,6 +10,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/themed_loading.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -460,11 +461,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 15),
 
                 if (_isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(),
-                    ),
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: ThemedLoading(theme: theme, label: 'Loading stats...'),
                   )
                 else ...[
                   Row(

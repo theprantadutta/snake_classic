@@ -10,6 +10,7 @@ import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/themed_loading.dart';
 
 class ReplaysScreen extends StatefulWidget {
   const ReplaysScreen({super.key});
@@ -159,7 +160,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
       body: AppBackground(
         theme: theme,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? ThemedLoading(theme: theme, label: 'Loading replays...')
             : TabBarView(
                 controller: _tabController,
                 children: [

@@ -8,6 +8,7 @@ import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/themed_loading.dart';
 // import 'package:snake_classic/widgets/game_button.dart'; // TODO: Re-enable with purchase flow
 
 // ---------------------------------------------------------------------------
@@ -108,9 +109,10 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                             ],
                           ),
                         ),
-                        const Expanded(
-                          child: Center(
-                            child: CircularProgressIndicator(),
+                        Expanded(
+                          child: ThemedLoading(
+                            theme: theme,
+                            label: 'Loading battle pass...',
                           ),
                         ),
                       ],

@@ -10,6 +10,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/themed_loading.dart';
 
 class FriendsScreen extends ConsumerStatefulWidget {
   const FriendsScreen({super.key});
@@ -371,11 +372,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     }
 
     if (isSearching) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
-        ),
-      );
+      return ThemedLoading(theme: theme, label: 'Searching...');
     }
 
     if (searchResults.isEmpty) {

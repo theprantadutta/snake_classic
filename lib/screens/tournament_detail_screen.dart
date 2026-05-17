@@ -13,6 +13,7 @@ import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/themed_loading.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
   /// The tournament ID for deep link support.
@@ -160,24 +161,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   Widget _buildContent(GameTheme theme) {
     // Show loading state when fetching tournament from deep link
     if (_isLoadingTournament) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Loading tournament...',
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.8),
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      );
+      return ThemedLoading(theme: theme, label: 'Loading tournament...');
     }
 
     // Show error state
@@ -514,11 +498,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
   Widget _buildLeaderboardTab(GameTheme theme) {
     if (_isLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
-        ),
-      );
+      return ThemedLoading(theme: theme, label: 'Loading leaderboard...');
     }
 
     if (_leaderboard.isEmpty) {
