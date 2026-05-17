@@ -263,9 +263,15 @@ class AppDataCache extends ChangeNotifier {
   Future<void> _loadSocialData() async {
     try {
       final service = SocialService();
-      // Load friends and requests separately to avoid type issues
-      _friendsList = await service.getFriends().catchError((_) => <UserProfile>[]);
-      _friendRequests = await service.getFriendRequests().catchError((_) => <FriendRequest>[]);
+      // Load friends list + pending requests concurrently. Previously these
+      // ran sequentially, which doubled the social-load duration during the
+      // loading screen and pushed up against the 4-second group timeout.
+      final results = await Future.wait([
+        service.getFriends().catchError((_) => <UserProfile>[]),
+        service.getFriendRequests().catchError((_) => <FriendRequest>[]),
+      ]);
+      _friendsList = results[0] as List<UserProfile>;
+      _friendRequests = results[1] as List<FriendRequest>;
     } catch (e) {
       if (kDebugMode) print('AppDataCache: Social data load warning: $e');
     }
