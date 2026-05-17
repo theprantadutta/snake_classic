@@ -622,14 +622,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 children: [
                   Center(
                     child: CircularProgressIndicator(
+                      // The display value comes through as 'X%' (a string).
+                      // Strip the percent sign, parse, default to 0, THEN
+                      // divide by 100 so the indicator (which expects 0.0–1.0)
+                      // shows the right fill. The previous expression
+                      // missed parentheses and ended up passing the raw
+                      // 0–100 number, which the indicator clamps to 1.0 —
+                      // a full ring at any non-zero progress.
                       value:
-                          double.tryParse(
-                            _displayStats['achievementProgress']
-                                    ?.toString()
-                                    .replaceAll('%', '') ??
-                                '0',
-                          ) ??
-                          0 / 100,
+                          ((double.tryParse(
+                                    _displayStats['achievementProgress']
+                                            ?.toString()
+                                            .replaceAll('%', '') ??
+                                        '0',
+                                  ) ??
+                                  0) /
+                              100)
+                              .clamp(0.0, 1.0),
                       strokeWidth: 4,
                       backgroundColor: Colors.amber.withValues(alpha: 0.3),
                       valueColor: const AlwaysStoppedAnimation<Color>(

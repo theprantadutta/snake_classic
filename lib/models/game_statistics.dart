@@ -23,7 +23,13 @@ class GameStatistics {
   final int highestLevel;
   final int totalLevelsGained;
   final double averageScore;
-  final double survivalRate; // percentage of games that lasted > 30 seconds
+  /// Count of games whose duration was >= 30s. Used to derive the
+  /// `survivalRate` getter below. Previously survivalRate was a stored
+  /// double computed from the bounded `recentScores` window (last 10 games),
+  /// which capped the numerator and made the rate meaningless for long-time
+  /// players. Tracking the count gives us an accurate ratio across the
+  /// entire history.
+  final int gamesSurvived30s;
 
   // Collision statistics
   final int wallCollisions;
@@ -66,7 +72,7 @@ class GameStatistics {
     this.highestLevel = 1,
     this.totalLevelsGained = 0,
     this.averageScore = 0.0,
-    this.survivalRate = 0.0,
+    this.gamesSurvived30s = 0,
     this.wallCollisions = 0,
     this.selfCollisions = 0,
     this.totalCollisions = 0,
@@ -140,6 +146,13 @@ class GameStatistics {
     return (totalGameTime / 3600).round();
   }
 
+  /// Percentage (0.0–1.0) of all games whose duration was >= 30 seconds.
+  /// Derived from `gamesSurvived30s` so it stays accurate across the
+  /// player's entire history rather than the last-10 window.
+  double get survivalRate {
+    return totalGamesPlayed > 0 ? gamesSurvived30s / totalGamesPlayed : 0.0;
+  }
+
   int get gamesPlayedToday {
     final today = DateTime.now();
     final todayKey = '${today.year}-${today.month}-${today.day}';
@@ -189,6 +202,8 @@ class GameStatistics {
     final newLongestStreak = newCurrentStreak > longestWinStreak
         ? newCurrentStreak
         : longestWinStreak;
+    final newGamesSurvived30s =
+        survived30Seconds ? gamesSurvived30s + 1 : gamesSurvived30s;
 
     final newGamesWithoutWallHit = hitWall ? 0 : gamesWithoutWallHit + 1;
     final newPerfectGames = isPerfectGame ? perfectGames + 1 : perfectGames;
@@ -202,10 +217,6 @@ class GameStatistics {
     final todayKey = '${today.year}-${today.month}-${today.day}';
     final newDailyPlayTime = Map<String, int>.from(dailyPlayTime);
     newDailyPlayTime[todayKey] = (newDailyPlayTime[todayKey] ?? 0) + gameTime;
-
-    final survivedGames =
-        recentScores.where((s) => s > 0).length + (survived30Seconds ? 1 : 0);
-    final newSurvivalRate = survivedGames / newTotalGames;
 
     final newAchievementsUnlocked =
         achievementsUnlocked + unlockedAchievements.length;
@@ -229,7 +240,7 @@ class GameStatistics {
       highestLevel: level > highestLevel ? level : highestLevel,
       totalLevelsGained: totalLevelsGained + (level - 1),
       averageScore: newTotalScore / newTotalGames,
-      survivalRate: newSurvivalRate,
+      gamesSurvived30s: newGamesSurvived30s,
       wallCollisions: newWallCollisions,
       selfCollisions: newSelfCollisions,
       totalCollisions: newTotalCollisions,
@@ -269,7 +280,7 @@ class GameStatistics {
       highestLevel: highestLevel,
       totalLevelsGained: totalLevelsGained,
       averageScore: averageScore,
-      survivalRate: survivalRate,
+      gamesSurvived30s: gamesSurvived30s,
       wallCollisions: wallCollisions,
       selfCollisions: selfCollisions,
       totalCollisions: totalCollisions,
@@ -308,7 +319,7 @@ class GameStatistics {
       highestLevel: highestLevel,
       totalLevelsGained: totalLevelsGained,
       averageScore: averageScore,
-      survivalRate: survivalRate,
+      gamesSurvived30s: gamesSurvived30s,
       wallCollisions: wallCollisions,
       selfCollisions: selfCollisions,
       totalCollisions: totalCollisions,
@@ -347,6 +358,11 @@ class GameStatistics {
       'highestLevel': highestLevel,
       'totalLevelsGained': totalLevelsGained,
       'averageScore': averageScore,
+      // Persist both the new counter and the derived rate. The rate field
+      // stays in the payload for backward compatibility with any external
+      // consumers that might read the JSON (e.g. cloud sync), but the
+      // counter is the source of truth on read-back.
+      'gamesSurvived30s': gamesSurvived30s,
       'survivalRate': survivalRate,
       'wallCollisions': wallCollisions,
       'selfCollisions': selfCollisions,
@@ -385,7 +401,18 @@ class GameStatistics {
       highestLevel: json['highestLevel'] ?? 1,
       totalLevelsGained: json['totalLevelsGained'] ?? 0,
       averageScore: (json['averageScore'] ?? 0.0).toDouble(),
-      survivalRate: (json['survivalRate'] ?? 0.0).toDouble(),
+      // Prefer the new counter when present; otherwise back-fill from the
+      // legacy (broken) survivalRate so an existing user's displayed rate
+      // doesn't suddenly drop to 0% on the upgrade. The back-fill is a
+      // one-time estimate; the next game played will increment the counter
+      // toward the true value.
+      gamesSurvived30s: () {
+        final stored = json['gamesSurvived30s'];
+        if (stored is int) return stored;
+        final legacyRate = (json['survivalRate'] ?? 0.0).toDouble();
+        final games = (json['totalGamesPlayed'] ?? 0) as int;
+        return (legacyRate * games).round();
+      }(),
       wallCollisions: json['wallCollisions'] ?? 0,
       selfCollisions: json['selfCollisions'] ?? 0,
       totalCollisions: json['totalCollisions'] ?? 0,

@@ -205,7 +205,9 @@ class StatisticsService {
     final collisionRate = totalGamesPlayed > 0
         ? totalCollisions / totalGamesPlayed
         : 0.0;
-    final survivalRate = max(a.survivalRate, b.survivalRate);
+    // survivalRate is now a derived getter on GameStatistics, so the
+    // merged value comes from the merged gamesSurvived30s counter below.
+    final gamesSurvived30s = max(a.gamesSurvived30s, b.gamesSurvived30s);
     final averageGamesPerSession = totalSessions > 0
         ? (totalGamesPlayed / totalSessions).round()
         : totalGamesPlayed;
@@ -230,7 +232,7 @@ class StatisticsService {
       highestLevel: highestLevel,
       totalLevelsGained: totalLevelsGained,
       averageScore: averageScore,
-      survivalRate: survivalRate,
+      gamesSurvived30s: gamesSurvived30s,
       wallCollisions: wallCollisions,
       selfCollisions: selfCollisions,
       totalCollisions: totalCollisions,

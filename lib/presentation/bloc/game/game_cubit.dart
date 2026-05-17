@@ -1231,7 +1231,7 @@ class GameCubit extends Cubit<GameCubitState> {
         hitWall: _hitWallThisGame,
         hitSelf: _hitSelfThisGame,
         isPerfectGame:
-            !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
+            !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds >= 30,
         unlockedAchievements: [],
       );
       await getIt<AppDataCache>().refreshStatistics();
@@ -1279,10 +1279,12 @@ class GameCubit extends Cubit<GameCubitState> {
         metadata: {'score': score, 'level': level, 'foodEaten': foodEaten},
       );
 
-      // Bonus for perfect game (no wall/self hits, played > 30 seconds)
+      // Bonus for perfect game (no wall/self hits, played >= 30 seconds).
+      // Threshold matches GameStatistics.updateWithGameResult so the
+      // perfect-game counter and the coin-bonus award are consistent.
       final isPerfectGame = !_hitWallThisGame &&
           !_hitSelfThisGame &&
-          gameDurationSeconds > 30;
+          gameDurationSeconds >= 30;
 
       if (isPerfectGame) {
         await _coinsCubit.earnCoins(
