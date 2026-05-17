@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -148,6 +149,17 @@ class NotificationService {
         debugPrint('🧪 Copy this token to Firebase Console > Cloud Messaging');
         debugPrint('🔥 =========================================');
         debugPrint('');
+      }
+
+      // Race fix: if the initial getToken() resolves AFTER
+      // _initializeNotificationIntegration() has already run, the
+      // backend integration call would have bailed with "no token" and
+      // never retry. Treat the first-token arrival like a refresh so
+      // _registerTokenWithBackend fires immediately (which queues via
+      // DataSyncService if auth isn't ready yet — see Phase 2).
+      // Anonymous + Google users both benefit.
+      if (_fcmToken != null) {
+        unawaited(_registerTokenWithBackend(_fcmToken!));
       }
 
       // Subscribe to token refresh
