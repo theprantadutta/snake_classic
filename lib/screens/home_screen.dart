@@ -1385,10 +1385,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
           content: SizedBox(
             width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // App Icon
+            // SingleChildScrollView: the About content (icon + name + tagline
+            // + version + description block with chips + developer block +
+            // copyright) is taller than the dialog's max content height on
+            // short screens / when font scaling is up, causing a RenderFlex
+            // overflow. Scrolling preserves the full content without clipping.
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // App Icon
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -1594,6 +1600,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   textAlign: TextAlign.center,
                 ),
               ],
+            ),
             ),
           ),
           actions: [
