@@ -12,6 +12,7 @@ class StatisticsService {
   final StorageService _storageService = StorageService();
   final DataSyncService _syncService = DataSyncService();
   final UnifiedUserService _userService = UnifiedUserService();
+  final ApiService _apiService = ApiService();
 
   GameStatistics _currentStatistics = GameStatistics.initial();
   bool _initialized = false;
@@ -98,27 +99,47 @@ class StatisticsService {
     if (!_userService.isSignedIn) return;
 
     try {
-      // Get cloud statistics
+      // Step 1: pull authoritative cumulative aggregates from the server.
+      // The /scores/me/stats endpoint aggregates over the user's full
+      // score history across every device, so totals are correct even
+      // when the player has played on multiple devices. This is the new
+      // path; the legacy max-merge below is retained for fields the
+      // server doesn't aggregate (food/powerup breakdowns, achievement
+      // progress, streaks, dailyPlayTime).
+      final serverStats = await _apiService.getUserScoreStats();
+      if (serverStats != null && (serverStats['totalGamesPlayed'] ?? 0) > 0) {
+        _currentStatistics = _applyServerAggregates(
+          _currentStatistics,
+          serverStats,
+        );
+        await _saveLocalStatistics();
+        if (kDebugMode) {
+          print('Statistics: cumulative fields refreshed from server');
+        }
+      }
+
+      // Step 2: existing JSON-snapshot merge for the locally-derived
+      // fields (food/powerup breakdowns, streaks, etc.). These aren't
+      // aggregated server-side, so we still need the legacy path. The
+      // cumulative fields will be re-overwritten by step 1's result on
+      // the next sync, so any drift here is bounded.
       final cloudStats = await _syncService.getData('statistics');
       final localEmpty = _currentStatistics.totalGamesPlayed <= 0;
       final cloudEmpty = cloudStats == null ||
           (cloudStats['totalGamesPlayed'] ?? 0) <= 0;
 
       if (localEmpty && !cloudEmpty) {
-        // Fresh device: restore entirely from cloud
         _currentStatistics = GameStatistics.fromJson(cloudStats);
         await _saveLocalStatistics();
         if (kDebugMode) {
           print('Statistics: restored from cloud (fresh device)');
         }
       } else if (!localEmpty && cloudEmpty) {
-        // Cloud empty, push local data up
         await _uploadToCloud();
         if (kDebugMode) {
           print('Statistics: uploaded local to cloud (cloud was empty)');
         }
       } else if (!localEmpty && !cloudEmpty) {
-        // Both have data: per-field max-value merge
         final cloudStatistics = GameStatistics.fromJson(cloudStats);
         _currentStatistics = _mergeStatistics(
           _currentStatistics,
@@ -130,13 +151,80 @@ class StatisticsService {
           print('Statistics: merged local + cloud');
         }
       }
-      // Both empty: nothing to do
     } catch (e) {
       if (kDebugMode) {
         print('Error syncing with cloud: $e');
       }
-      // Continue with local statistics
     }
+  }
+
+  /// Overlay server-aggregated cumulative fields onto a local GameStatistics
+  /// snapshot. Server values win for additive metrics (totalGamesPlayed,
+  /// totalScore, highScore, totalGameTime, totalFoodConsumed,
+  /// gamesSurvived30s). Local-only metrics (food/powerup breakdowns,
+  /// streaks, dailyPlayTime, achievement progress) are preserved.
+  GameStatistics _applyServerAggregates(
+    GameStatistics local,
+    Map<String, dynamic> server,
+  ) {
+    final serverGames = (server['totalGamesPlayed'] ?? 0) as int;
+    if (serverGames <= 0) return local;
+
+    final serverScore = (server['totalScore'] ?? 0) as int;
+    final serverHigh = (server['highScore'] ?? 0) as int;
+    final serverTime = (server['totalPlayTimeSeconds'] ?? 0) as int;
+    final serverFoods = (server['totalFoodsEaten'] ?? 0) as int;
+    // gamesSurvived30s only present after Phase 6a backend deploy. Older
+    // backends won't include the field; fall back to the local count so
+    // we don't zero out the survival numerator pre-deploy.
+    final serverSurvived = (server['gamesSurvived30s'] is int)
+        ? server['gamesSurvived30s'] as int
+        : local.gamesSurvived30s;
+
+    // Take max() of server vs local for each cumulative field so a brief
+    // backend lag (e.g. local just played a game whose score-submit hasn't
+    // landed yet) doesn't visibly decrement a number on the screen.
+    return GameStatistics(
+      totalGamesPlayed:
+          serverGames > local.totalGamesPlayed ? serverGames : local.totalGamesPlayed,
+      totalScore: serverScore > local.totalScore ? serverScore : local.totalScore,
+      highScore: serverHigh > local.highScore ? serverHigh : local.highScore,
+      totalGameTime:
+          serverTime > local.totalGameTime ? serverTime : local.totalGameTime,
+      averageGameTime: local.averageGameTime,
+      totalFoodConsumed: serverFoods > local.totalFoodConsumed
+          ? serverFoods
+          : local.totalFoodConsumed,
+      foodTypeCount: local.foodTypeCount,
+      totalFoodPoints: local.totalFoodPoints,
+      totalPowerUpsCollected: local.totalPowerUpsCollected,
+      powerUpTypeCount: local.powerUpTypeCount,
+      totalPowerUpTime: local.totalPowerUpTime,
+      longestSurvivalTime: local.longestSurvivalTime,
+      highestLevel: local.highestLevel,
+      totalLevelsGained: local.totalLevelsGained,
+      averageScore: local.averageScore,
+      gamesSurvived30s: serverSurvived > local.gamesSurvived30s
+          ? serverSurvived
+          : local.gamesSurvived30s,
+      wallCollisions: local.wallCollisions,
+      selfCollisions: local.selfCollisions,
+      totalCollisions: local.totalCollisions,
+      collisionRate: local.collisionRate,
+      currentWinStreak: local.currentWinStreak,
+      longestWinStreak: local.longestWinStreak,
+      gamesWithoutWallHit: local.gamesWithoutWallHit,
+      perfectGames: local.perfectGames,
+      totalSessions: local.totalSessions,
+      averageGamesPerSession: local.averageGamesPerSession,
+      lastPlayedDate: local.lastPlayedDate,
+      firstPlayedDate: local.firstPlayedDate,
+      recentScores: local.recentScores,
+      dailyPlayTime: local.dailyPlayTime,
+      achievementsUnlocked: local.achievementsUnlocked,
+      totalAchievements: local.totalAchievements,
+      achievementProgress: local.achievementProgress,
+    );
   }
 
   /// Merge two GameStatistics by taking max values for each field.
