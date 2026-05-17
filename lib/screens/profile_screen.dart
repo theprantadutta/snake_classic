@@ -494,7 +494,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Expanded(
                         child: _buildStatItem(
                           'Play Time',
-                          '${_displayStats['totalPlayTime']}h',
+                          '${_displayStats['totalPlayTime'] ?? '0s'}',
                           Icons.access_time,
                           themeState,
                           isCompact: true,

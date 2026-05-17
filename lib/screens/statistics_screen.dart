@@ -251,7 +251,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Expanded(
                 child: _buildStatCard(
                   'Play Time',
-                  '${_displayStats['totalPlayTime'] ?? 0}h',
+                  '${_displayStats['totalPlayTime'] ?? '0s'}',
                   Icons.access_time,
                   Colors.blue,
                   theme,

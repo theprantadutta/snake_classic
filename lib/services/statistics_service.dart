@@ -368,7 +368,11 @@ class StatisticsService {
     return {
       'totalGames': _currentStatistics.totalGamesPlayed,
       'highScore': _currentStatistics.highScore,
-      'totalPlayTime': _currentStatistics.totalPlayTimeHours,
+      // Use _formatDuration (already used for longestSurvival) instead of
+      // the rounded integer hours so users with sub-hour totals don't see
+      // a confusing '0h'. The formatter emits 'Xs' / 'Xm Ys' / 'Xh Ym'
+      // depending on magnitude; the screen drops the inline 'h' suffix.
+      'totalPlayTime': _formatDuration(_currentStatistics.totalGameTime),
       'averageScore': _currentStatistics.averageScore.round(),
       'totalFood': _currentStatistics.totalFoodConsumed,
       'totalPowerUps': _currentStatistics.totalPowerUpsCollected,
@@ -425,6 +429,15 @@ class StatisticsService {
 
     final recentAvg = recent.reduce((a, b) => a + b) / recent.length;
     final olderAvg = older.reduce((a, b) => a + b) / older.length;
+
+    // Guard against divide-by-zero. If the older window averaged 0 (a
+    // fresh account where the player scored 0 in their first few games)
+    // any later non-zero score would yield Infinity here and always
+    // return 'improving'. With olderAvg == 0 we just compare recentAvg
+    // directly to 0.
+    if (olderAvg == 0) {
+      return recentAvg > 0 ? 'improving' : 'stable';
+    }
 
     const threshold = 0.1; // 10% change threshold
 
