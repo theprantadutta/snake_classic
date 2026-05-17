@@ -1209,7 +1209,36 @@ class GameCubit extends Cubit<GameCubitState> {
         survivalSeconds: gameDurationSeconds,
       );
 
-      // Run all API syncs in parallel: achievements, daily challenges, battle pass XP
+      // STEP A — Local stats update + cache refresh first. These are all
+      // fast local writes (Drift + in-memory snapshot copy). Doing this
+      // before the network-bearing Future.wait below guarantees that when
+      // the user navigates to the Profile or Statistics screen right after
+      // game-over, the AppDataCache snapshot already reflects the new high
+      // score. Previously the refresh fired after the Future.wait, which
+      // could take 200ms–1.5s online (and used to take ~15s offline before
+      // the BattlePass connectivity gate landed), producing a visible
+      // stale-then-fresh flash on those screens.
+      await _statisticsService.recordGameResult(
+        score: gameState.score,
+        gameTime: gameDurationSeconds,
+        level: gameState.level,
+        foodConsumed: foodEaten,
+        foodTypes: _currentGameFoodTypes,
+        foodPoints: _currentGameFoodPoints,
+        powerUpsCollected: _powerUpsCollectedThisGame,
+        powerUpTypes: _currentGamePowerUpTypes,
+        powerUpTime: _currentGamePowerUpTime,
+        hitWall: _hitWallThisGame,
+        hitSelf: _hitSelfThisGame,
+        isPerfectGame:
+            !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
+        unlockedAchievements: [],
+      );
+      await getIt<AppDataCache>().refreshStatistics();
+
+      // STEP B — Network-bearing syncs. _postGameSync is already wrapped in
+      // unawaited(...) by the caller, so even if these block on slow API
+      // calls the user-visible game-over flow doesn't wait on them.
       await Future.wait([
         _achievementService.syncUnlockedAchievements(),
         _dailyChallengeService.updateProgressBatch([
@@ -1228,30 +1257,6 @@ class GameCubit extends Cubit<GameCubitState> {
         ]),
         _battlePassCubit.flushXP(),
       ]);
-
-      // Record statistics (queues PUT /users/me in background)
-      await _statisticsService.recordGameResult(
-        score: gameState.score,
-        gameTime: gameDurationSeconds,
-        level: gameState.level,
-        foodConsumed: foodEaten,
-        foodTypes: _currentGameFoodTypes,
-        foodPoints: _currentGameFoodPoints,
-        powerUpsCollected: _powerUpsCollectedThisGame,
-        powerUpTypes: _currentGamePowerUpTypes,
-        powerUpTime: _currentGamePowerUpTime,
-        hitWall: _hitWallThisGame,
-        hitSelf: _hitSelfThisGame,
-        isPerfectGame:
-            !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds > 30,
-        unlockedAchievements: [],
-      );
-
-      // Refresh the AppDataCache snapshot so the Statistics and Profile
-      // screens see the new high score / totals immediately. Without this
-      // the cache holds a frozen copy from app startup and shows stale
-      // data until the next cold launch.
-      await getIt<AppDataCache>().refreshStatistics();
     } catch (e) {
       debugPrint('🎮 [GameCubit] Post-game sync error: $e');
     }
