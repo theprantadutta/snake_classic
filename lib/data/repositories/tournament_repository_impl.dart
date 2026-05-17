@@ -7,6 +7,7 @@ import 'package:snake_classic/data/datasources/local/cache_datasource.dart';
 import 'package:snake_classic/data/datasources/remote/api_datasource.dart';
 import 'package:snake_classic/domain/repositories/tournament_repository.dart';
 import 'package:snake_classic/models/tournament.dart';
+import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 /// Implementation of TournamentRepository with caching
@@ -229,8 +230,22 @@ class TournamentRepositoryImpl implements TournamentRepository {
     int gameDuration = 0,
     int foodsEaten = 0,
   }) async {
+    // Offline path — queue the submission via DataSyncService. The sync
+    // service already has a 'tournament_score' handler wired
+    // (data_sync_service.dart:402-411) that calls the same remote endpoint
+    // when the device comes back online. Surface success to the caller so
+    // the post-game UI doesn't show an error for what is recoverable.
     if (!await _network.isConnected) {
-      return Left(NetworkFailure('No internet connection'));
+      DataSyncService().queueSync('tournament_score', {
+        'tournamentId': tournamentId,
+        'score': score,
+        'gameDuration': gameDuration,
+        'foodsEaten': foodsEaten,
+      }, priority: SyncPriority.high);
+      AppLogger.info(
+        'Tournament score queued offline (tournament=$tournamentId, score=$score)',
+      );
+      return const Right(null);
     }
 
     try {
@@ -249,8 +264,16 @@ class TournamentRepositoryImpl implements TournamentRepository {
 
       return const Right(null);
     } catch (e) {
-      AppLogger.error('Failed to submit tournament score', e);
-      return Left(ServerFailure('Failed to submit score'));
+      // Network errors mid-submission also fall back to the queue so a
+      // transient failure isn't surfaced as a permanent error.
+      AppLogger.error('Failed to submit tournament score, queuing for retry', e);
+      DataSyncService().queueSync('tournament_score', {
+        'tournamentId': tournamentId,
+        'score': score,
+        'gameDuration': gameDuration,
+        'foodsEaten': foodsEaten,
+      }, priority: SyncPriority.high);
+      return const Right(null);
     }
   }
 
