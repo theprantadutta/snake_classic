@@ -998,6 +998,9 @@ class GameCubit extends Cubit<GameCubitState> {
       hitSelf: _hitSelfThisGame,
       foodTypesEaten: _foodTypesEatenThisGame,
       noWallGames: _consecutiveGamesWithoutWallHits,
+      maxCombo: gameState.maxCombo,
+      snakeLength: gameState.snake.body.length,
+      gameEndTime: DateTime.now(),
     );
 
     // Buffer battle pass XP for newly unlocked achievements. (Coin and
@@ -1270,6 +1273,20 @@ class GameCubit extends Cubit<GameCubitState> {
             !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds >= 30,
         unlockedAchievements: [],
       );
+
+      // Now that lifetime stats include this game, check the catalog's
+      // lifetime-driven achievements (power-ups, food variety, perfect
+      // games, streaks, weekend days).
+      final stats = _statisticsService.statistics;
+      _achievementService.checkLifetimeAchievements(
+        totalPowerUps: stats.totalPowerUpsCollected,
+        powerUpTypeCount: stats.powerUpTypeCount,
+        foodTypeCount: stats.foodTypeCount,
+        perfectGames: stats.perfectGames,
+        currentWinStreak: stats.currentWinStreak,
+        dailyPlayTime: stats.dailyPlayTime,
+      );
+
       await getIt<AppDataCache>().refreshStatistics();
 
       // STEP B — Network-bearing syncs. _postGameSync is already wrapped in
