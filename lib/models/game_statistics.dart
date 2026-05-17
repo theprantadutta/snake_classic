@@ -44,6 +44,10 @@ class GameStatistics {
   // Streak and consistency metrics
   final int currentWinStreak; // games without dying quickly (>30s)
   final int longestWinStreak;
+  /// Current streak of consecutive games without any wall hit. RESET to 0
+  /// when a game ends with a wall hit; otherwise incremented by 1 per
+  /// game. Read by AchievementService.checkSpecialAchievements via the
+  /// `noWallGames` parameter for the no-wall-hit-streak achievement.
   final int gamesWithoutWallHit;
   final int perfectGames; // games with no collisions
 
@@ -157,7 +161,11 @@ class GameStatistics {
     return totalGamesPlayed > 0 ? gamesSurvived30s / totalGamesPlayed : 0.0;
   }
 
-  int get gamesPlayedToday {
+  /// Seconds of play time accumulated today. NOT a games-count — the
+  /// underlying `dailyPlayTime` map values are seconds, not game counts.
+  /// Previously named `gamesPlayedToday`, which was misleading. No
+  /// current caller; kept for future per-day play-time displays.
+  int get playTimeTodaySeconds {
     final today = DateTime.now();
     final todayKey = '${today.year}-${today.month}-${today.day}';
     return dailyPlayTime[todayKey] ?? 0;
@@ -225,6 +233,19 @@ class GameStatistics {
     final todayKey = '${today.year}-${today.month}-${today.day}';
     final newDailyPlayTime = Map<String, int>.from(dailyPlayTime);
     newDailyPlayTime[todayKey] = (newDailyPlayTime[todayKey] ?? 0) + gameTime;
+
+    // Cap the daily-playtime map at the most recent 30 day-keys. Without
+    // this the map grows unbounded across the player's lifetime and the
+    // full set is JSON-serialized on every save.
+    const maxDailyPlayTimeEntries = 30;
+    if (newDailyPlayTime.length > maxDailyPlayTimeEntries) {
+      final sortedKeys = newDailyPlayTime.keys.toList()..sort();
+      for (final key in sortedKeys.take(
+        newDailyPlayTime.length - maxDailyPlayTimeEntries,
+      )) {
+        newDailyPlayTime.remove(key);
+      }
+    }
 
     final newAchievementsUnlocked =
         achievementsUnlocked + unlockedAchievements.length;
