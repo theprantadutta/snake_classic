@@ -5,6 +5,7 @@ import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -20,6 +21,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   final AnalyticsFacade _analytics;
   final DataSyncService _dataSyncService = DataSyncService();
   final ApiService _apiService = ApiService();
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   BattlePassCubit({
     required StorageService storageService,
@@ -291,8 +293,12 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   Future<void> addXP(int xp, {String source = 'gameplay'}) async {
     if (state.currentTier >= state.maxTier) return;
 
-    // Try to sync with backend first
-    if (_apiService.isAuthenticated) {
+    // Try to sync with backend first. Gate on connectivity so offline games
+    // don't wait the full 15s HTTP timeout per addXP call — _postGameSync
+    // calls this synchronously inside Future.wait, and that wait was
+    // delaying every downstream step (notably AppDataCache.refreshStatistics)
+    // by the timeout duration when the device was offline.
+    if (_apiService.isAuthenticated && _connectivityService.isOnline) {
       final result = await _apiService.addBattlePassXP(xp: xp, source: source);
       if (result != null) {
         // Check if no active season - this is not an error, just skip
