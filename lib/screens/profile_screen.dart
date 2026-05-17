@@ -1125,6 +1125,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Colors.purple;
       case AchievementRarity.legendary:
         return Colors.amber;
+      case AchievementRarity.diamond:
+        return Colors.cyanAccent;
     }
   }
 
@@ -1138,6 +1140,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return 'Epic';
       case AchievementRarity.legendary:
         return 'Legendary';
+      case AchievementRarity.diamond:
+        return 'Diamond';
     }
   }
 
