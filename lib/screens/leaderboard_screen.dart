@@ -108,6 +108,30 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
+  /// Themed loading state matching the other data screens — a centered
+  /// spinner over a 'Loading…' label so users perceive the network fetch
+  /// as work-in-progress rather than an empty/broken screen.
+  Widget _buildLoadingState(GameTheme theme, String label) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            label,
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.8),
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(GameTheme theme) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -233,7 +257,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   Widget _buildGlobalLeaderboard(GameTheme theme, AuthState authState, CombinedLeaderboardState leaderboardState) {
     if (leaderboardState.isLoadingGlobal) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildLoadingState(theme, 'Loading global leaderboard...');
     }
 
     if (leaderboardState.globalError != null) {
@@ -316,7 +340,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   Widget _buildWeeklyLeaderboard(GameTheme theme, AuthState authState, CombinedLeaderboardState leaderboardState) {
     if (leaderboardState.isLoadingWeekly) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildLoadingState(theme, 'Loading weekly leaderboard...');
     }
 
     if (leaderboardState.weeklyError != null) {

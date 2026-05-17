@@ -41,6 +41,7 @@ class AppDataCache extends ChangeNotifier {
   // Leaderboards
   List<Map<String, dynamic>>? _globalLeaderboard;
   List<Map<String, dynamic>>? _weeklyLeaderboard;
+  List<Map<String, dynamic>>? _dailyLeaderboard;
   List<Map<String, dynamic>>? _friendsLeaderboard;
 
   // Tournaments
@@ -76,6 +77,7 @@ class AppDataCache extends ChangeNotifier {
   List<DailyChallenge>? get dailyChallenges => _dailyChallenges;
   List<Map<String, dynamic>>? get globalLeaderboard => _globalLeaderboard;
   List<Map<String, dynamic>>? get weeklyLeaderboard => _weeklyLeaderboard;
+  List<Map<String, dynamic>>? get dailyLeaderboard => _dailyLeaderboard;
   List<Map<String, dynamic>>? get friendsLeaderboard => _friendsLeaderboard;
   List<Tournament>? get activeTournaments => _activeTournaments;
   List<Tournament>? get historyTournaments => _historyTournaments;
@@ -214,7 +216,9 @@ class AppDataCache extends ChangeNotifier {
   Future<void> _loadLeaderboards() async {
     try {
       final service = LeaderboardService();
-      // Load global and weekly leaderboards concurrently
+      // Load all three time-scoped leaderboards concurrently. Daily was
+      // previously omitted, which made the Daily tab fall through to a
+      // network fetch on every open and flash a spinner-then-empty state.
       final results = await Future.wait([
         service
             .getGlobalLeaderboard(limit: 100)
@@ -222,10 +226,14 @@ class AppDataCache extends ChangeNotifier {
         service
             .getWeeklyLeaderboard(limit: 100)
             .catchError((_) => <Map<String, dynamic>>[]),
+        service
+            .getDailyLeaderboard(limit: 100)
+            .catchError((_) => <Map<String, dynamic>>[]),
       ]);
       _globalLeaderboard = results[0];
       _weeklyLeaderboard = results[1];
-      // Note: Friends leaderboard requires friend IDs and will be loaded on-demand
+      _dailyLeaderboard = results[2];
+      // Friends leaderboard requires friend IDs and is loaded on-demand.
       _friendsLeaderboard = [];
     } catch (e) {
       if (kDebugMode) print('AppDataCache: Leaderboards load warning: $e');

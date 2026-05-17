@@ -61,8 +61,9 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
   }
 
   /// Pull the matching preloaded leaderboard out of AppDataCache, if any.
-  /// Only Global and Weekly are preloaded today; Daily and Friends still
-  /// fall back to a network load on first open.
+  /// Global / Weekly / Daily are preloaded; Friends still falls back to a
+  /// network load on first open because it depends on the user's friend
+  /// list which isn't fixed at preload time.
   List<Map<String, dynamic>>? _cachedEntries() {
     if (!_appCache.isFullyLoaded) return null;
     switch (_type) {
@@ -71,6 +72,7 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
       case LeaderboardType.weekly:
         return _appCache.weeklyLeaderboard;
       case LeaderboardType.daily:
+        return _appCache.dailyLeaderboard;
       case LeaderboardType.friends:
         return null;
     }
