@@ -503,7 +503,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 Row(
                   children: [
                     Text(
-                      player['displayName'] ?? 'Anonymous',
+                      // Prefer the stable username (now backfilled for
+                      // every user post-Phase-1) over the display name,
+                      // which can be null/missing for anonymous users
+                      // and changes when the user updates their Google
+                      // profile.
+                      player['username'] ??
+                          player['displayName'] ??
+                          'Anonymous',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

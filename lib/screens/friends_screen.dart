@@ -423,8 +423,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               onBackgroundImageError: user.photoUrl != null ? (e, s) {} : null,
               child: user.photoUrl == null
                   ? Text(
-                      user.displayName.isNotEmpty
-                          ? user.displayName[0].toUpperCase()
+                      user.publicLabel.isNotEmpty
+                          ? user.publicLabel[0].toUpperCase()
                           : 'U',
                       style: TextStyle(
                         color: theme.accentColor,
@@ -443,7 +443,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                     children: [
                       Expanded(
                         child: Text(
-                          user.displayName,
+                          user.publicLabel,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

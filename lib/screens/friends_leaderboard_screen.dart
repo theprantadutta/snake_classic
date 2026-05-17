@@ -333,8 +333,8 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           onBackgroundImageError: user.photoUrl != null ? (e, s) {} : null,
           child: user.photoUrl == null
               ? Text(
-                  user.displayName.isNotEmpty
-                      ? user.displayName[0].toUpperCase()
+                  user.publicLabel.isNotEmpty
+                      ? user.publicLabel[0].toUpperCase()
                       : 'U',
                   style: TextStyle(
                     color: theme.accentColor,
@@ -372,7 +372,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
 
         // User name
         Text(
-          user.displayName,
+          user.publicLabel,
           style: TextStyle(
             color: theme.accentColor,
             fontSize: 12,
@@ -486,8 +486,8 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               onBackgroundImageError: user.photoUrl != null ? (e, s) {} : null,
               child: user.photoUrl == null
                   ? Text(
-                      user.displayName.isNotEmpty
-                          ? user.displayName[0].toUpperCase()
+                      user.publicLabel.isNotEmpty
+                          ? user.publicLabel[0].toUpperCase()
                           : 'U',
                       style: TextStyle(
                         color: theme.accentColor,
@@ -509,7 +509,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                     children: [
                       Expanded(
                         child: Text(
-                          user.displayName,
+                          user.publicLabel,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

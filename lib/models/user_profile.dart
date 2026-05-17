@@ -67,6 +67,15 @@ class UserProfile {
     this.statusMessage,
   });
 
+  /// The label to surface in lists, leaderboards, and friend rows.
+  /// Prefers the (now backend-backfilled) username; falls back to the
+  /// display name; finally 'Anonymous' if both are empty.
+  String get publicLabel {
+    if (username.isNotEmpty && username != 'Anonymous') return username;
+    if (displayName.isNotEmpty && displayName != 'Anonymous') return displayName;
+    return 'Anonymous';
+  }
+
   UserProfile copyWith({
     String? uid,
     String? displayName,
