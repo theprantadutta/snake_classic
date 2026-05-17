@@ -8,6 +8,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
+import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 
@@ -35,6 +36,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   // Start game timeout
   Timer? _startGameTimeoutTimer;
+
+  // Per-match stat tracking. Multiplayer doesn't have per-tick food/power-up
+  // counts available to the client (server-authoritative), so the minimum
+  // we record is game duration + final score + whether the player was
+  // eliminated by a crash. Better than the previous total miss.
+  final Stopwatch _matchTimer = Stopwatch();
+  bool _matchStatsRecorded = false;
+  final StatisticsService _statisticsService = StatisticsService();
 
   MultiplayerCubit({
     required MultiplayerService multiplayerService,
@@ -726,9 +735,17 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           newStatus = MultiplayerStatus.playing;
           shouldClearLoading = true;
           _startGameTimeoutTimer?.cancel();
+          // Start the per-match stat timer on the playing transition.
+          if (!_matchTimer.isRunning) {
+            _matchTimer
+              ..reset()
+              ..start();
+            _matchStatsRecorded = false;
+          }
         } else if (game.isFinished) {
           newStatus = MultiplayerStatus.finished;
           shouldClearLoading = true;
+          _recordMatchStats(game);
         } else if (game.status == MultiplayerGameStatus.waiting) {
           newStatus = MultiplayerStatus.inLobby;
         }
@@ -764,14 +781,69 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       MultiplayerStatus newStatus = state.status;
       if (currentGame.status == MultiplayerGameStatus.playing) {
         newStatus = MultiplayerStatus.playing;
+        if (!_matchTimer.isRunning) {
+          _matchTimer
+            ..reset()
+            ..start();
+          _matchStatsRecorded = false;
+        }
       } else if (currentGame.isFinished) {
         newStatus = MultiplayerStatus.finished;
+        _recordMatchStats(currentGame);
       } else if (currentGame.status == MultiplayerGameStatus.waiting) {
         newStatus = MultiplayerStatus.inLobby;
       }
 
       emit(state.copyWith(status: newStatus, currentGame: currentGame));
     }
+  }
+
+  /// Record a finished multiplayer match into the per-user statistics.
+  /// Multiplayer doesn't expose per-tick food/power-up counts on the
+  /// client side, so this records the minimum that the screen actually
+  /// surfaces: score, game duration, and a wall/self-hit flag derived
+  /// from the player's elimination state. Idempotent within a single
+  /// match — `_matchStatsRecorded` guards against the multiple
+  /// game-state-finished events the SignalR stream can emit.
+  void _recordMatchStats(MultiplayerGame game) {
+    if (_matchStatsRecorded) return;
+    final userId = _userService.currentUser?.uid;
+    if (userId == null) return;
+
+    MultiplayerPlayer? me;
+    for (final p in game.players) {
+      if (p.userId == userId) {
+        me = p;
+        break;
+      }
+    }
+    if (me == null) return;
+
+    if (_matchTimer.isRunning) _matchTimer.stop();
+    final gameTimeSeconds = _matchTimer.elapsed.inSeconds;
+    _matchStatsRecorded = true;
+
+    // Treat any non-null eliminationRank as "the player crashed at some
+    // point". We can't differentiate wall vs self from this info; bucket
+    // into selfHits since multiplayer modes rarely have walls.
+    final eliminated = me.eliminationRank != null;
+    final selfHits = eliminated ? 1 : 0;
+
+    _statisticsService.recordGameResult(
+      score: me.score,
+      gameTime: gameTimeSeconds,
+      level: 1,
+      foodConsumed: 0,
+      foodTypes: const <String, int>{},
+      foodPoints: 0,
+      powerUpsCollected: 0,
+      powerUpTypes: const <String, int>{},
+      powerUpTime: 0,
+      wallHits: 0,
+      selfHits: selfHits,
+      isPerfectGame: !eliminated && gameTimeSeconds >= 30,
+      unlockedAchievements: const [],
+    );
   }
 
   void _stopListening() {
