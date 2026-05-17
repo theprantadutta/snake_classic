@@ -205,7 +205,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  authState.displayName,
+                  authState.publicLabel,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

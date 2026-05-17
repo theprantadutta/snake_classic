@@ -242,6 +242,9 @@ extension MultiplayerGameModeExtensions on MultiplayerGameMode {
 class MultiplayerPlayer {
   final String userId;
   final String displayName;
+  /// Stable username (from backend), prefer this for player-facing labels.
+  /// Falls back to displayName via [publicLabel] when null/empty.
+  final String? username;
   final String? photoUrl;
   final PlayerStatus status;
   final List<Position> snake;
@@ -262,6 +265,7 @@ class MultiplayerPlayer {
   const MultiplayerPlayer({
     required this.userId,
     required this.displayName,
+    this.username,
     this.photoUrl,
     required this.status,
     this.snake = const [],
@@ -276,11 +280,24 @@ class MultiplayerPlayer {
     this.eliminatedAt,
   });
 
+  /// Best label to show on the multiplayer board, lobby, and elimination
+  /// banners. Prefers the backend-assigned username (stable, fits the
+  /// 20-char column, matches the leaderboard rendering) and falls back
+  /// to the Google display name then 'Player'.
+  String get publicLabel {
+    if (username != null && username!.isNotEmpty) return username!;
+    if (displayName.isNotEmpty && displayName != 'Unknown Player') {
+      return displayName;
+    }
+    return 'Player';
+  }
+
   factory MultiplayerPlayer.fromJson(Map<String, dynamic> json) {
     return MultiplayerPlayer(
       userId: json['userId'] ?? json['user_id'] ?? '',
       displayName:
           json['displayName'] ?? json['display_name'] ?? 'Unknown Player',
+      username: json['username'] as String?,
       photoUrl: json['photoUrl'] ?? json['photo_url'],
       status: PlayerStatus.values.firstWhere(
         (status) => status.name == json['status'],

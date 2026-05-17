@@ -944,9 +944,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                             Text(
                               isMe
                                   ? 'You'
-                                  : (player.displayName.length > 8
-                                        ? '${player.displayName.substring(0, 8)}...'
-                                        : player.displayName),
+                                  : (player.publicLabel.length > 8
+                                        ? '${player.publicLabel.substring(0, 8)}...'
+                                        : player.publicLabel),
                               style: TextStyle(
                                 color: player.isAlive
                                     ? theme.accentColor

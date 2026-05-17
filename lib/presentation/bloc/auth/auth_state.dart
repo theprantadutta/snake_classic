@@ -62,11 +62,27 @@ class AuthState extends Equatable {
   /// Whether user signed in with Google
   bool get isGoogleUser => user?.userType == UserType.google;
 
-  /// User's display name
+  /// User's display name (legal name from Google profile, or 'Player'
+  /// fallback). Prefer [publicLabel] for any UI surface that identifies
+  /// the player to themselves or others — usernames are stable across
+  /// Google profile renames and present consistently on leaderboards.
   String get displayName => user?.displayName ?? 'Player';
 
-  /// User's username
+  /// User's username (auto-generated `Adjective_Noun_NNNN` for new
+  /// accounts; user-editable via Settings → Change Username).
   String get username => user?.username ?? 'Guest';
+
+  /// The label every player-facing surface should use: username if
+  /// present, then display name, then 'Player'. Mirrors
+  /// `UserProfile.publicLabel` for non-self surfaces. Stable across
+  /// Google profile renames; aligns with how the leaderboard renders.
+  String get publicLabel {
+    final u = user?.username;
+    if (u != null && u.isNotEmpty && u != 'Guest' && u != 'Anonymous') return u;
+    final d = user?.displayName;
+    if (d != null && d.isNotEmpty && d != 'Anonymous') return d;
+    return 'Player';
+  }
 
   /// User's photo URL
   String? get photoURL => user?.photoURL;

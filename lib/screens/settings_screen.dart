@@ -1249,7 +1249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          authState.displayName,
+                          authState.publicLabel,
                           style: TextStyle(
                             color: theme.accentColor,
                             fontSize: 18,

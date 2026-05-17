@@ -257,13 +257,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Enhanced name with gradient text effect
+                // Enhanced name with gradient text effect.
+                // Uses publicLabel so it matches the leaderboard rendering —
+                // your profile shows the same name everyone else sees.
                 ShaderMask(
                   shaderCallback: (bounds) => LinearGradient(
                     colors: [theme.primaryColor, theme.accentColor],
                   ).createShader(bounds),
                   child: Text(
-                    authState.displayName,
+                    authState.publicLabel,
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,

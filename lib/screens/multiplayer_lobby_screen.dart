@@ -1229,7 +1229,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 Row(
                   children: [
                     Text(
-                      player.displayName,
+                      player.publicLabel,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

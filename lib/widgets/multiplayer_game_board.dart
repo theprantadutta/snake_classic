@@ -386,7 +386,7 @@ class _MultiplayerBoardPainter extends CustomPainter {
 
       final textPainter = TextPainter(
         text: TextSpan(
-          text: isCurrentPlayer ? 'You' : player.displayName,
+          text: isCurrentPlayer ? 'You' : player.publicLabel,
           style: TextStyle(
             color: Colors.white,
             fontSize: 10,

@@ -388,7 +388,7 @@ class _MultiplayerBoardPainter extends CustomPainter {
             cellWidth,
             cellHeight,
             isCurrentPlayer: false,
-            playerName: player.displayName,
+            playerName: player.publicLabel,
           );
         }
       }
