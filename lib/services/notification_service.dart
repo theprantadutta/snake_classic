@@ -429,9 +429,15 @@ class NotificationService {
         return;
       }
 
+      // Send the device's UTC offset along with the token so the backend
+      // can target this user's local 9 AM for the daily notification.
+      // Fresh on every register/refresh = automatic DST correction.
+      final tzOffsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
+
       final success = await apiService.registerFcmToken(
         fcmToken: token,
         platform: 'flutter',
+        timezoneOffsetMinutes: tzOffsetMinutes,
       );
 
       if (success) {

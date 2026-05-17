@@ -1320,17 +1320,27 @@ class ApiService {
 
   // ==================== Notifications ====================
 
-  /// Register FCM token
+  /// Register FCM token. Also forwards the device's UTC offset so the
+  /// backend can land the daily notification at each user's local 9 AM.
   Future<bool> registerFcmToken({
     required String fcmToken,
     String platform = 'flutter',
+    int? timezoneOffsetMinutes,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'fcm_token': fcmToken,
+        'platform': platform,
+      };
+      if (timezoneOffsetMinutes != null) {
+        body['time_zone_offset_minutes'] = timezoneOffsetMinutes;
+      }
+
       final response = await http
           .post(
             Uri.parse('$baseUrl/users/register-token'),
             headers: _authHeaders,
-            body: jsonEncode({'fcm_token': fcmToken, 'platform': platform}),
+            body: jsonEncode(body),
           )
           .timeout(_timeout);
 
