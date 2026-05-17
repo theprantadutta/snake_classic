@@ -550,30 +550,49 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       FoodType.special => Colors.purple,
     };
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 8 : 10,
-        vertical: isSmallScreen ? 6 : 8,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji, style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
-          const SizedBox(width: 4),
-          Text(
-            '+${food.type.points}',
-            style: TextStyle(
-              color: color,
-              fontSize: isSmallScreen ? 11 : 12,
-              fontWeight: FontWeight.w700,
+    // Pin the chip to a fixed height so the secondary HUD row doesn't
+    // re-layout when the food type changes (apple/star/diamond emojis
+    // rasterize at slightly different heights on Android, and the parent
+    // Row was matching whichever chip happened to be tallest — pushing
+    // the game board down a couple of pixels each time).
+    //
+    // Heights chosen to match the neighbouring Lives/TimeAttack chips
+    // (icon 14/16 + vertical padding 6/8 ≈ 26/32).
+    final chipHeight = isSmallScreen ? 26.0 : 32.0;
+
+    return SizedBox(
+      height: chipHeight,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // `height: 1.0` clamps the text-box to its glyph height so
+            // emoji-font-metric variance doesn't sneak extra pixels in.
+            Text(
+              emoji,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 12 : 14,
+                height: 1.0,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 4),
+            Text(
+              '+${food.type.points}',
+              style: TextStyle(
+                color: color,
+                fontSize: isSmallScreen ? 11 : 12,
+                fontWeight: FontWeight.w700,
+                height: 1.0,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
