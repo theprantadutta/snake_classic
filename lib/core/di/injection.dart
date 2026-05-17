@@ -32,11 +32,9 @@ import 'package:snake_classic/data/datasources/remote/api_datasource.dart';
 
 // Repositories
 import 'package:snake_classic/domain/repositories/leaderboard_repository.dart';
-import 'package:snake_classic/domain/repositories/achievement_repository.dart';
 import 'package:snake_classic/domain/repositories/social_repository.dart';
 import 'package:snake_classic/domain/repositories/tournament_repository.dart';
 import 'package:snake_classic/data/repositories/leaderboard_repository_impl.dart';
-import 'package:snake_classic/data/repositories/achievement_repository_impl.dart';
 import 'package:snake_classic/data/repositories/social_repository_impl.dart';
 import 'package:snake_classic/data/repositories/tournament_repository_impl.dart';
 
@@ -127,14 +125,6 @@ Future<void> configureDependencies() async {
 
   getIt.registerLazySingleton<LeaderboardRepository>(
     () => LeaderboardRepositoryImpl(
-      remote: getIt<ApiDataSource>(),
-      cache: getIt<CacheDataSource>(),
-      network: getIt<NetworkInfo>(),
-    ),
-  );
-
-  getIt.registerLazySingleton<AchievementRepository>(
-    () => AchievementRepositoryImpl(
       remote: getIt<ApiDataSource>(),
       cache: getIt<CacheDataSource>(),
       network: getIt<NetworkInfo>(),
