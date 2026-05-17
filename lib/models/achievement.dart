@@ -22,6 +22,13 @@ class Achievement {
   /// /achievements/claim. Used to drive the auto-claim flow and to gate
   /// the "Claim" UX surface.
   final bool rewardClaimed;
+  /// Backend-side XP reward credited to User.Experience by the claim
+  /// endpoint. Distinct from the frontend BattlePass XP buffered on unlock.
+  /// Defaults match the seeded backend catalog; sync overlays the
+  /// authoritative values from GetUserAchievementsQuery.
+  final int xpReward;
+  /// Backend-side coin reward credited to User.Coins by the claim endpoint.
+  final int coinReward;
 
   const Achievement({
     required this.id,
@@ -36,6 +43,8 @@ class Achievement {
     this.unlockedAt,
     this.currentProgress = 0,
     this.rewardClaimed = false,
+    this.xpReward = 0,
+    this.coinReward = 0,
   });
 
   Achievement copyWith({
@@ -51,6 +60,8 @@ class Achievement {
     DateTime? unlockedAt,
     int? currentProgress,
     bool? rewardClaimed,
+    int? xpReward,
+    int? coinReward,
   }) {
     return Achievement(
       id: id ?? this.id,
@@ -65,6 +76,8 @@ class Achievement {
       unlockedAt: unlockedAt ?? this.unlockedAt,
       currentProgress: currentProgress ?? this.currentProgress,
       rewardClaimed: rewardClaimed ?? this.rewardClaimed,
+      xpReward: xpReward ?? this.xpReward,
+      coinReward: coinReward ?? this.coinReward,
     );
   }
 
@@ -113,6 +126,8 @@ class Achievement {
       'unlockedAt': unlockedAt?.toIso8601String(),
       'currentProgress': currentProgress,
       'rewardClaimed': rewardClaimed,
+      'xpReward': xpReward,
+      'coinReward': coinReward,
     };
   }
 
@@ -141,14 +156,20 @@ class Achievement {
           : null,
       currentProgress: json['currentProgress'] ?? 0,
       rewardClaimed: json['rewardClaimed'] ?? false,
+      xpReward: json['xpReward'] ?? 0,
+      coinReward: json['coinReward'] ?? 0,
     );
   }
 
   static List<Achievement> getDefaultAchievements() {
+    // XP / coin rewards mirror SeedAchievementsCommandHandler so the UI
+    // shows accurate values before the first backend sync. Backend remains
+    // authoritative — _updateAchievementsFromBackend overlays server values
+    // when they arrive.
     return [
       // Score Achievements (IDs match backend)
       const Achievement(
-        id: 'first_bite', // Backend: first_bite
+        id: 'first_bite',
         title: 'First Bite',
         description: 'Score your first point',
         icon: Icons.star,
@@ -156,9 +177,11 @@ class Achievement {
         rarity: AchievementRarity.common,
         targetValue: 1,
         points: 10,
+        xpReward: 10,
+        coinReward: 5,
       ),
       const Achievement(
-        id: 'getting_started', // Backend: getting_started
+        id: 'getting_started',
         title: 'Getting Started',
         description: 'Score 100 points',
         icon: Icons.emoji_events,
@@ -166,9 +189,11 @@ class Achievement {
         rarity: AchievementRarity.common,
         targetValue: 100,
         points: 25,
+        xpReward: 25,
+        coinReward: 10,
       ),
       const Achievement(
-        id: 'high_scorer', // Backend: high_scorer
+        id: 'high_scorer',
         title: 'High Scorer',
         description: 'Score 500 points in a single game',
         icon: Icons.trending_up,
@@ -176,9 +201,11 @@ class Achievement {
         rarity: AchievementRarity.rare,
         targetValue: 500,
         points: 50,
+        xpReward: 50,
+        coinReward: 25,
       ),
       const Achievement(
-        id: 'master_scorer', // Backend: master_scorer
+        id: 'master_scorer',
         title: 'Master Scorer',
         description: 'Score 1000 points in a single game',
         icon: Icons.military_tech,
@@ -186,9 +213,11 @@ class Achievement {
         rarity: AchievementRarity.epic,
         targetValue: 1000,
         points: 100,
+        xpReward: 100,
+        coinReward: 50,
       ),
       const Achievement(
-        id: 'legendary_scorer', // Backend: legendary_scorer
+        id: 'legendary_scorer',
         title: 'Legendary Scorer',
         description: 'Score 2000 points in a single game',
         icon: Icons.diamond,
@@ -196,11 +225,13 @@ class Achievement {
         rarity: AchievementRarity.legendary,
         targetValue: 2000,
         points: 200,
+        xpReward: 200,
+        coinReward: 100,
       ),
 
       // Games Played Achievements (IDs match backend)
       const Achievement(
-        id: 'first_game', // Backend: first_game
+        id: 'first_game',
         title: 'First Game',
         description: 'Play your first game',
         icon: Icons.play_arrow,
@@ -208,9 +239,11 @@ class Achievement {
         rarity: AchievementRarity.common,
         targetValue: 1,
         points: 10,
+        xpReward: 10,
+        coinReward: 5,
       ),
       const Achievement(
-        id: 'regular_player', // Backend: regular_player
+        id: 'regular_player',
         title: 'Regular Player',
         description: 'Play 10 games',
         icon: Icons.videogame_asset,
@@ -218,9 +251,11 @@ class Achievement {
         rarity: AchievementRarity.common,
         targetValue: 10,
         points: 25,
+        xpReward: 25,
+        coinReward: 10,
       ),
       const Achievement(
-        id: 'dedicated_player', // Backend: dedicated_player
+        id: 'dedicated_player',
         title: 'Dedicated Player',
         description: 'Play 50 games',
         icon: Icons.sports_esports,
@@ -228,9 +263,11 @@ class Achievement {
         rarity: AchievementRarity.rare,
         targetValue: 50,
         points: 50,
+        xpReward: 50,
+        coinReward: 25,
       ),
       const Achievement(
-        id: 'snake_enthusiast', // Backend: snake_enthusiast
+        id: 'snake_enthusiast',
         title: 'Snake Enthusiast',
         description: 'Play 100 games',
         icon: Icons.gamepad,
@@ -238,9 +275,11 @@ class Achievement {
         rarity: AchievementRarity.epic,
         targetValue: 100,
         points: 100,
+        xpReward: 100,
+        coinReward: 50,
       ),
       const Achievement(
-        id: 'snake_addict', // Backend: snake_addict
+        id: 'snake_addict',
         title: 'Snake Addict',
         description: 'Play 500 games',
         icon: Icons.sports_esports,
@@ -248,11 +287,13 @@ class Achievement {
         rarity: AchievementRarity.legendary,
         targetValue: 500,
         points: 250,
+        xpReward: 250,
+        coinReward: 125,
       ),
 
       // Survival Achievements (IDs match backend)
       const Achievement(
-        id: 'survivor', // Backend: survivor
+        id: 'survivor',
         title: 'Survivor',
         description: 'Survive for 60 seconds',
         icon: Icons.timer,
@@ -260,29 +301,35 @@ class Achievement {
         rarity: AchievementRarity.common,
         targetValue: 60,
         points: 15,
+        xpReward: 15,
+        coinReward: 8,
       ),
       const Achievement(
-        id: 'endurance', // Backend: endurance
+        id: 'endurance',
         title: 'Endurance',
         description: 'Survive for 2 minutes',
         icon: Icons.schedule,
         type: AchievementType.survival,
         rarity: AchievementRarity.rare,
-        targetValue: 120, // 2 minutes = 120 seconds
+        targetValue: 120,
         points: 30,
+        xpReward: 30,
+        coinReward: 15,
       ),
       const Achievement(
-        id: 'marathon', // Backend: marathon
+        id: 'marathon',
         title: 'Marathon',
         description: 'Survive for 5 minutes',
         icon: Icons.hourglass_full,
         type: AchievementType.survival,
         rarity: AchievementRarity.epic,
-        targetValue: 300, // 5 minutes = 300 seconds
+        targetValue: 300,
         points: 75,
+        xpReward: 75,
+        coinReward: 40,
       ),
 
-      // Special Achievements (local only - not synced with backend)
+      // Special Achievements
       const Achievement(
         id: 'no_walls',
         title: 'Wall Avoider',
@@ -292,6 +339,8 @@ class Achievement {
         rarity: AchievementRarity.rare,
         targetValue: 5,
         points: 60,
+        xpReward: 60,
+        coinReward: 30,
       ),
       const Achievement(
         id: 'speedster',
@@ -302,6 +351,8 @@ class Achievement {
         rarity: AchievementRarity.epic,
         targetValue: 10,
         points: 80,
+        xpReward: 80,
+        coinReward: 40,
       ),
       const Achievement(
         id: 'perfectionist',
@@ -312,6 +363,8 @@ class Achievement {
         rarity: AchievementRarity.epic,
         targetValue: 1,
         points: 90,
+        xpReward: 90,
+        coinReward: 45,
       ),
       const Achievement(
         id: 'all_food_types',
@@ -322,6 +375,8 @@ class Achievement {
         rarity: AchievementRarity.rare,
         targetValue: 1,
         points: 40,
+        xpReward: 40,
+        coinReward: 20,
       ),
     ];
   }

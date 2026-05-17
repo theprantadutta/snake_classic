@@ -379,15 +379,44 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
                 const SizedBox(width: 16),
 
-                // Points and Status
+                // Rewards and Status
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     if (isUnlocked) ...[
-                      Icon(Icons.check_circle, color: Colors.green, size: 20),
+                      Icon(
+                        achievement.rewardClaimed
+                            ? Icons.check_circle
+                            : Icons.hourglass_top,
+                        color: achievement.rewardClaimed
+                            ? Colors.green
+                            : Colors.amber,
+                        size: 20,
+                      ),
                       const SizedBox(height: 4),
                     ],
 
+                    // XP badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.lightBlueAccent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '+${achievement.xpReward} XP',
+                        style: const TextStyle(
+                          color: Colors.lightBlueAccent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Coin badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -398,7 +427,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${achievement.points} pts',
+                        '+${achievement.coinReward} coins',
                         style: const TextStyle(
                           color: Colors.amber,
                           fontSize: 12,

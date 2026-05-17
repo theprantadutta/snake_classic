@@ -205,14 +205,32 @@ class AchievementService extends ChangeNotifier {
   void _updateAchievementsFromBackend(
     List<Map<String, dynamic>> backendAchievements,
   ) {
+    // The /achievements/me payload shape is:
+    //   { achievements: [{ id, achievement: { achievement_id, xp_reward,
+    //     coin_reward, ... }, current_progress, is_unlocked, unlocked_at,
+    //     reward_claimed }] }
+    // Earlier this method looked for `achievement_id` at the top level —
+    // which never matched, so the merge silently no-op'd. Fixed below to
+    // read the nested catalog object.
+    String? idOf(Map<String, dynamic> entry) {
+      final nested = entry['achievement'];
+      if (nested is Map) {
+        return (nested['achievement_id'] ?? nested['achievementId'])?.toString();
+      }
+      return (entry['achievement_id'] ?? entry['achievementId'])?.toString();
+    }
+
+    Map<String, dynamic> catalogOf(Map<String, dynamic> entry) {
+      final nested = entry['achievement'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return entry;
+    }
+
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
 
-      // Find matching backend achievement
       final backendData = backendAchievements.firstWhere(
-        (a) =>
-            a['achievement_id'] == achievement.id ||
-            a['achievementId'] == achievement.id,
+        (a) => idOf(a) == achievement.id,
         orElse: () => {},
       );
 
@@ -233,6 +251,10 @@ class AchievementService extends ChangeNotifier {
             backendData['rewardClaimed'] ??
             false;
 
+        final catalog = catalogOf(backendData);
+        final backendXp = catalog['xp_reward'] ?? catalog['xpReward'];
+        final backendCoins = catalog['coin_reward'] ?? catalog['coinReward'];
+
         // Use the most up-to-date data (local wins if unlocked locally but not synced yet)
         final shouldUseLocal = achievement.isUnlocked && !backendUnlocked;
 
@@ -242,6 +264,10 @@ class AchievementService extends ChangeNotifier {
             currentProgress: backendProgress,
             unlockedAt: backendUnlockedAt,
             rewardClaimed: backendRewardClaimed,
+            // Overlay backend reward values when present so the UI shows
+            // authoritative amounts; fall back to the seeded defaults.
+            xpReward: backendXp is int ? backendXp : null,
+            coinReward: backendCoins is int ? backendCoins : null,
           );
         }
       }

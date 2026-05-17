@@ -163,7 +163,7 @@ class AchievementNotification extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${achievement.points} pts',
+                                '+${achievement.xpReward} XP / +${achievement.coinReward} coins',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
