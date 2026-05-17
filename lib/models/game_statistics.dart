@@ -1,6 +1,12 @@
 import 'dart:convert';
 
 class GameStatistics {
+  /// Catalog size used for the local `achievementProgress` ratio.
+  /// Keep in sync with Achievement.getDefaultAchievements() in
+  /// `lib/models/achievement.dart`. Used as both the default and the
+  /// fallback when reading legacy JSON.
+  static const int kTotalAchievements = 17;
+
   // Basic game metrics
   final int totalGamesPlayed;
   final int totalScore;
@@ -96,7 +102,7 @@ class GameStatistics {
     this.recentScores = const [],
     this.dailyPlayTime = const {},
     this.achievementsUnlocked = 0,
-    this.totalAchievements = 16, // We have 16 achievements
+    this.totalAchievements = kTotalAchievements,
     this.achievementProgress = 0.0,
   });
 
@@ -461,7 +467,7 @@ class GameStatistics {
       recentScores: List<int>.from(json['recentScores'] ?? []),
       dailyPlayTime: Map<String, int>.from(json['dailyPlayTime'] ?? {}),
       achievementsUnlocked: json['achievementsUnlocked'] ?? 0,
-      totalAchievements: json['totalAchievements'] ?? 16,
+      totalAchievements: json['totalAchievements'] ?? kTotalAchievements,
       achievementProgress: (json['achievementProgress'] ?? 0.0).toDouble(),
     );
   }

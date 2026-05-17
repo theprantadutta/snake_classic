@@ -22,13 +22,31 @@ class AchievementService extends ChangeNotifier {
   static const String _achievementsKey = 'user_achievements';
   static const String _achievementsMetadataKey = 'achievements_metadata';
 
+  /// Reserved key inside the saved progress JSON for persisting
+  /// `_pendingUnlocks` across app restarts. Without this the list lives
+  /// in memory only, so an unlock-then-crash flow loses the backend sync.
+  static const String _pendingUnlocksJsonKey = '__pendingUnlocks';
+  static const int _recentUnlocksMaxLength = 20;
+
   List<Achievement> _achievements = [];
   final List<Achievement> _recentUnlocks = [];
   final List<String> _pendingUnlocks = []; // Achievements unlocked offline
+  /// Achievements unlocked during the most recent gameplay session.
+  /// Reset by [resetLastGameUnlocks] at game start; populated by
+  /// [_unlockAchievementLocal]. The game-over screen reads this to show
+  /// celebration toasts only for the current game's unlocks.
+  final List<Achievement> _lastGameUnlocks = [];
 
   List<Achievement> get achievements => _achievements;
   List<Achievement> get recentUnlocks => _recentUnlocks;
+  List<Achievement> get lastGameUnlocks => List.unmodifiable(_lastGameUnlocks);
   bool get hasPendingUnlocks => _pendingUnlocks.isNotEmpty;
+
+  /// Clear the per-game unlock list. Call at game start so that
+  /// `lastGameUnlocks` only reflects this game's unlocks.
+  void resetLastGameUnlocks() {
+    _lastGameUnlocks.clear();
+  }
 
   int get totalAchievementPoints => _achievements
       .where((a) => a.isUnlocked)
@@ -201,6 +219,14 @@ class AchievementService extends ChangeNotifier {
         );
       }
     }
+
+    // Restore pending offline unlocks so a crashed sync resumes on next launch.
+    final pending = data[_pendingUnlocksJsonKey];
+    if (pending is List) {
+      _pendingUnlocks
+        ..clear()
+        ..addAll(pending.whereType<String>());
+    }
   }
 
   Future<void> _saveProgress() async {
@@ -213,6 +239,12 @@ class AchievementService extends ChangeNotifier {
           'currentProgress': achievement.currentProgress,
           'unlockedAt': achievement.unlockedAt?.toIso8601String(),
         };
+      }
+
+      // Persist pending offline unlocks so they survive an app crash before
+      // syncUnlockedAchievements() flushes to the backend.
+      if (_pendingUnlocks.isNotEmpty) {
+        progressData[_pendingUnlocksJsonKey] = List<String>.from(_pendingUnlocks);
       }
 
       // Save to cache
@@ -244,6 +276,15 @@ class AchievementService extends ChangeNotifier {
     if (!_pendingUnlocks.contains(achievement.id)) {
       _pendingUnlocks.add(achievement.id);
     }
+    _lastGameUnlocks.add(_achievements[index]);
+  }
+
+  /// Trim `_recentUnlocks` so it never exceeds [_recentUnlocksMaxLength].
+  /// Called after each check method adds new unlocks.
+  void _trimRecentUnlocks() {
+    while (_recentUnlocks.length > _recentUnlocksMaxLength) {
+      _recentUnlocks.removeAt(0);
+    }
   }
 
   /// Batch-sync all pending achievement unlocks to the backend in a single API call.
@@ -267,6 +308,9 @@ class AchievementService extends ChangeNotifier {
           final success = await _apiService.batchUpdateAchievementProgress(updates);
           if (success) {
             _pendingUnlocks.clear();
+            // Persist the cleared state so a crash after this point doesn't
+            // resurrect already-synced unlocks on next launch.
+            await _saveProgress();
             return;
           }
         }
@@ -309,6 +353,7 @@ class AchievementService extends ChangeNotifier {
 
     if (newUnlocks.isNotEmpty) {
       _recentUnlocks.addAll(newUnlocks);
+      _trimRecentUnlocks();
       _saveProgress();
       notifyListeners();
     }
@@ -335,6 +380,7 @@ class AchievementService extends ChangeNotifier {
 
     if (newUnlocks.isNotEmpty) {
       _recentUnlocks.addAll(newUnlocks);
+      _trimRecentUnlocks();
       _saveProgress();
       notifyListeners();
     }
@@ -363,6 +409,7 @@ class AchievementService extends ChangeNotifier {
 
     if (newUnlocks.isNotEmpty) {
       _recentUnlocks.addAll(newUnlocks);
+      _trimRecentUnlocks();
       _saveProgress();
       notifyListeners();
     }
@@ -432,6 +479,7 @@ class AchievementService extends ChangeNotifier {
 
     if (newUnlocks.isNotEmpty) {
       _recentUnlocks.addAll(newUnlocks);
+      _trimRecentUnlocks();
       _saveProgress();
       notifyListeners();
     }

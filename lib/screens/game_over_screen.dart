@@ -15,6 +15,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/widgets/achievement_notification.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/particle_effect.dart';
 
@@ -75,8 +76,10 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     // Use cached achievements immediately - don't re-initialize (which makes slow API calls)
     // The achievement service is a singleton and should already have data from gameplay
     try {
-      // Get recent unlocks from the service (already in memory)
-      _recentAchievements = _achievementService.recentUnlocks;
+      // Only this game's unlocks — `recentUnlocks` accumulates across the
+      // whole session, which would show stale entries for games that didn't
+      // actually unlock anything.
+      _recentAchievements = _achievementService.lastGameUnlocks;
 
       // Get some in-progress achievements to show progress
       _progressAchievements = _achievementService.achievements
@@ -96,10 +99,29 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
           }
         });
       }
+
+      // Fire animated overlay toasts for this game's unlocks, staggered so
+      // multiple unlocks don't stack on top of each other.
+      _showUnlockToasts(_recentAchievements);
     } catch (e) {
       // Handle error gracefully
       setState(() {
         _achievementsLoaded = true;
+      });
+    }
+  }
+
+  void _showUnlockToasts(List<Achievement> unlocks) {
+    if (unlocks.isEmpty) return;
+    // First toast lands after the explosion settles; later toasts stagger
+    // by 600ms (300ms slide + 300ms read time before the next slides in).
+    const initialDelay = Duration(milliseconds: 1200);
+    const staggerStep = Duration(milliseconds: 600);
+    for (int i = 0; i < unlocks.length; i++) {
+      final achievement = unlocks[i];
+      Future.delayed(initialDelay + staggerStep * i, () {
+        if (!mounted) return;
+        AchievementNotification.show(context, achievement);
       });
     }
   }

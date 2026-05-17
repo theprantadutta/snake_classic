@@ -167,6 +167,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _currentGamePowerUpTime = 0;
     _updateCount = 0;
     _bpMilestonesThisGame.clear();
+    _achievementService.resetLastGameUnlocks();
 
     // Daily first game XP
     _awardDailyFirstGameXP();
@@ -977,9 +978,16 @@ class GameCubit extends Cubit<GameCubitState> {
     final gameState = state.gameState;
     if (gameState == null) return;
 
-    // Check achievements locally (no API calls — _unlockAchievementLocal only)
+    // Check achievements locally (no API calls — _unlockAchievementLocal only).
+    // `totalGamesPlayed` is the count BEFORE this game is recorded, so +1
+    // reflects the game we're finishing right now.
+    final projectedTotalGames =
+        _statisticsService.statistics.totalGamesPlayed + 1;
     final scoreUnlocks = _achievementService.checkScoreAchievements(
       gameState.score,
+    );
+    final gamesUnlocks = _achievementService.checkGamePlayedAchievements(
+      projectedTotalGames,
     );
     final survivalUnlocks = _achievementService.checkSurvivalAchievements(
       gameDurationSeconds,
@@ -993,7 +1001,12 @@ class GameCubit extends Cubit<GameCubitState> {
     );
 
     // Award coins locally and buffer battle pass XP for newly unlocked achievements
-    final allNewUnlocks = [...scoreUnlocks, ...survivalUnlocks, ...specialUnlocks];
+    final allNewUnlocks = [
+      ...scoreUnlocks,
+      ...gamesUnlocks,
+      ...survivalUnlocks,
+      ...specialUnlocks,
+    ];
     for (final achievement in allNewUnlocks) {
       _coinsCubit.earnCoins(
         CoinEarningSource.achievementUnlocked,
