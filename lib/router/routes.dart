@@ -3,6 +3,7 @@ abstract class AppRoutes {
   // Core routes
   static const String loading = '/';
   static const String firstTimeAuth = '/first-time-auth';
+  static const String usernameSetup = '/username-setup';
   static const String home = '/home';
 
   // Game flow

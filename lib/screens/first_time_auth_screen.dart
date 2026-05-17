@@ -705,9 +705,16 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
         // Mark first-time setup as complete
         await authCubit.markFirstTimeSetupComplete();
 
-        // Navigate directly to home screen
+        // If the backend just created a fresh account, divert through the
+        // username-setup screen so the user can keep or edit the
+        // auto-generated name before landing on home. For returning users
+        // (cross-device Google login etc.), needsUsernameSetup is false
+        // and we go straight home.
         if (mounted) {
-          context.go(AppRoutes.home);
+          final route = authCubit.state.needsUsernameSetup
+              ? AppRoutes.usernameSetup
+              : AppRoutes.home;
+          context.go(route);
         }
       } else if (mounted) {
         _showError('Failed to sign in with Google. Please try again.');
@@ -733,7 +740,13 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
       await authCubit.markFirstTimeSetupComplete();
 
       if (mounted) {
-        context.go(AppRoutes.home);
+        // Same username-setup divert applies to anonymous sign-ins —
+        // anonymous users get a generated username server-side too and
+        // benefit from picking their own.
+        final route = authCubit.state.needsUsernameSetup
+            ? AppRoutes.usernameSetup
+            : AppRoutes.home;
+        context.go(route);
       }
     } catch (e) {
       if (mounted) {

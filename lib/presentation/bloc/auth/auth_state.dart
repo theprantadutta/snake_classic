@@ -11,6 +11,10 @@ class AuthState extends Equatable {
   final String? errorMessage;
   final bool isLoading;
   final bool isFirstTimeUser;
+  /// Transient signal: the most recent sign-in created a brand-new backend
+  /// account, so the username-setup screen should be shown before the
+  /// home screen. Cleared as soon as the screen is dismissed (or skipped).
+  final bool needsUsernameSetup;
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -19,6 +23,7 @@ class AuthState extends Equatable {
     this.isLoading = false,
     this.isFirstTimeUser =
         true, // Default to true - assume first time until checked
+    this.needsUsernameSetup = false,
   });
 
   /// Initial state
@@ -31,6 +36,7 @@ class AuthState extends Equatable {
     String? errorMessage,
     bool? isLoading,
     bool? isFirstTimeUser,
+    bool? needsUsernameSetup,
     bool clearUser = false,
     bool clearError = false,
   }) {
@@ -40,6 +46,7 @@ class AuthState extends Equatable {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isLoading: isLoading ?? this.isLoading,
       isFirstTimeUser: isFirstTimeUser ?? this.isFirstTimeUser,
+      needsUsernameSetup: needsUsernameSetup ?? this.needsUsernameSetup,
     );
   }
 
@@ -83,5 +90,6 @@ class AuthState extends Equatable {
     errorMessage,
     isLoading,
     isFirstTimeUser,
+    needsUsernameSetup,
   ];
 }

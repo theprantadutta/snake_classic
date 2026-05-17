@@ -8,6 +8,7 @@ import 'package:snake_classic/screens/battle_pass_screen.dart';
 import 'package:snake_classic/screens/cosmetics_screen.dart';
 import 'package:snake_classic/screens/daily_challenges_screen.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
+import 'package:snake_classic/screens/username_setup_screen.dart';
 import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
 import 'package:snake_classic/screens/game_over_screen.dart';
@@ -91,6 +92,12 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       name: 'firstTimeAuth',
       pageBuilder: (context, state) =>
           _zoomPage(state, const FirstTimeAuthScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.usernameSetup,
+      name: 'usernameSetup',
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const UsernameSetupScreen()),
     ),
     GoRoute(
       path: AppRoutes.home,

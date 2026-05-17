@@ -116,6 +116,12 @@ class AuthCubit extends Cubit<AuthState> {
         final uid = _userService.currentUser?.uid;
         _analytics.setUserId(uid);
         _analytics.setUserProperties(authMethod: 'google');
+
+        // Consume the IsNewUser flag from the auth response. The
+        // FirstTimeAuthScreen reads this off state and routes to
+        // /username-setup before /home for brand-new accounts.
+        final needsSetup = _userService.consumeJustLoadedNewUser();
+        emit(state.copyWith(needsUsernameSetup: needsSetup));
       } else {
         emit(
           state.copyWith(
@@ -144,6 +150,12 @@ class AuthCubit extends Cubit<AuthState> {
         final uid = _userService.currentUser?.uid;
         _analytics.setUserId(uid);
         _analytics.setUserProperties(authMethod: 'anonymous');
+
+        // Same first-time-account path applies to anonymous sign-in —
+        // anonymous users get a generated username too and benefit
+        // from picking their own.
+        final needsSetup = _userService.consumeJustLoadedNewUser();
+        emit(state.copyWith(needsUsernameSetup: needsSetup));
       } else {
         emit(
           state.copyWith(
@@ -157,6 +169,13 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
       return false;
+    }
+  }
+
+  /// Clear the needs-username-setup flag once the setup screen is done.
+  void clearNeedsUsernameSetup() {
+    if (state.needsUsernameSetup) {
+      emit(state.copyWith(needsUsernameSetup: false));
     }
   }
 

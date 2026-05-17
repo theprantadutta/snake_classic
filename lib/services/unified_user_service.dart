@@ -195,6 +195,22 @@ class UnifiedUserService extends ChangeNotifier {
   String? _loadingUserId; // Track which user is being loaded
   bool _isInitializing = false; // Prevents auth listener from duplicating work during initialize()
 
+  /// True if the most recent `_loadOrCreateUser` call corresponded to a
+  /// brand-new backend account (backend's AuthResponse.IsNewUser=true).
+  /// Consumed by the first-time-username flow to decide whether to show
+  /// the username-setup screen. Reset to false on every consumption via
+  /// [consumeJustLoadedNewUser].
+  bool _justLoadedNewUser = false;
+
+  /// Read-and-clear the new-user flag. The caller (AuthCubit after
+  /// signInWithGoogle/signInAnonymously) gets exactly one chance to see
+  /// it true; subsequent reads return false.
+  bool consumeJustLoadedNewUser() {
+    final v = _justLoadedNewUser;
+    _justLoadedNewUser = false;
+    return v;
+  }
+
   // Getters
   UnifiedUser? get currentUser => _currentUser;
   bool get isInitialized => _isInitialized;
@@ -352,6 +368,12 @@ class UnifiedUserService extends ChangeNotifier {
 
         if (authResult != null) {
           AppLogger.success('Backend authentication successful');
+
+          // Capture the IsNewUser flag for the first-time username flow.
+          // The auth response is snake-cased server-side; accept both
+          // shapes for forward compatibility.
+          _justLoadedNewUser =
+              (authResult['is_new_user'] ?? authResult['isNewUser']) == true;
 
           // Load user profile from backend
           final userProfile = await _apiService.getCurrentUser();
