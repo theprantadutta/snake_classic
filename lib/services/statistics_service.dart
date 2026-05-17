@@ -305,8 +305,8 @@ class StatisticsService {
     required int powerUpsCollected,
     required Map<String, int> powerUpTypes,
     required int powerUpTime,
-    required bool hitWall,
-    required bool hitSelf,
+    required int wallHits,
+    required int selfHits,
     required bool isPerfectGame,
     required List<String> unlockedAchievements,
   }) async {
@@ -325,8 +325,8 @@ class StatisticsService {
       powerUpsCollected: powerUpsCollected,
       powerUpTypes: powerUpTypes,
       powerUpTime: powerUpTime,
-      hitWall: hitWall,
-      hitSelf: hitSelf,
+      wallHits: wallHits,
+      selfHits: selfHits,
       isPerfectGame: isPerfectGame,
       unlockedAchievements: unlockedAchievements,
     );

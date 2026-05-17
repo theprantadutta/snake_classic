@@ -66,8 +66,14 @@ class GameCubit extends Cubit<GameCubitState> {
   // Achievement tracking
   DateTime? _gameStartTime;
   final Set<String> _foodTypesEatenThisGame = {};
+  // Per-game collision tracking. The booleans answer "did this game have
+  // any wall/self hits at all" (used by achievements + cause-of-death
+  // reporting). The int counters accumulate each crash so Survival mode's
+  // multi-respawn games record the true number of collisions instead of 1.
   bool _hitWallThisGame = false;
   bool _hitSelfThisGame = false;
+  int _wallHitsThisGame = 0;
+  int _selfHitsThisGame = 0;
   int _powerUpsCollectedThisGame = 0;
   int _consecutiveGamesWithoutWallHits = 0;
 
@@ -152,6 +158,8 @@ class GameCubit extends Cubit<GameCubitState> {
     _foodTypesEatenThisGame.clear();
     _hitWallThisGame = false;
     _hitSelfThisGame = false;
+    _wallHitsThisGame = 0;
+    _selfHitsThisGame = 0;
     _powerUpsCollectedThisGame = 0;
     _currentGameFoodTypes.clear();
     _currentGameFoodPoints = 0;
@@ -631,6 +639,15 @@ class GameCubit extends Cubit<GameCubitState> {
       _currentGamePowerUpTypes[currentPowerUp.type.name] =
           (_currentGamePowerUpTypes[currentPowerUp.type.name] ?? 0) + 1;
 
+      // Pre-credit the full duration to the power-up-time counter. At
+      // game-end (_trackGameEndLocal) we subtract any leftover time on
+      // power-ups that are still active. Net effect: every expired
+      // power-up contributes its full duration; active-at-end power-ups
+      // contribute the time actually spent under the effect. Previously
+      // the counter was computed only from active-at-end power-ups,
+      // erasing every expired one entirely.
+      _currentGamePowerUpTime += currentPowerUp.type.duration.inSeconds;
+
       activePowerUps = [
         ...activePowerUps,
         ActivePowerUp(type: currentPowerUp.type),
@@ -834,12 +851,16 @@ class GameCubit extends Cubit<GameCubitState> {
       '🎮 [GameCubit] _handleCrash called: reason=$reason, crashPosition=$crashPosition',
     );
 
-    // Track what type of crash for achievements
+    // Track what type of crash for achievements + per-game counts. In
+    // Survival mode this method fires once per life lost; the int counters
+    // accumulate while the booleans stay true after the first hit.
     if (reason == model.CrashReason.wallCollision) {
       _hitWallThisGame = true;
+      _wallHitsThisGame++;
       _hapticService.wallHit();
     } else if (reason == model.CrashReason.selfCollision) {
       _hitSelfThisGame = true;
+      _selfHitsThisGame++;
       _hapticService.selfCollision();
     }
 
@@ -993,10 +1014,16 @@ class GameCubit extends Cubit<GameCubitState> {
       }
     }
 
-    // Calculate power-up time
-    _currentGamePowerUpTime = gameState.activePowerUps
-        .map((p) => p.duration.inSeconds - p.remainingTime.inSeconds)
-        .fold(0, (sum, time) => sum + time);
+    // Calculate power-up time. `_currentGamePowerUpTime` was pre-credited
+    // with each collected power-up's full duration at collection time.
+    // Subtract any time that wasn't actually spent — the remaining time
+    // on power-ups still active when the game ended.
+    final unspentPowerUpSeconds = gameState.activePowerUps.fold<int>(
+      0,
+      (sum, p) => sum + p.remainingTime.inSeconds,
+    );
+    _currentGamePowerUpTime = (_currentGamePowerUpTime - unspentPowerUpSeconds)
+        .clamp(0, 1 << 30);
 
     // Finish game recording (local only)
     final crashReasonStr = _hitWallThisGame
@@ -1228,8 +1255,11 @@ class GameCubit extends Cubit<GameCubitState> {
         powerUpsCollected: _powerUpsCollectedThisGame,
         powerUpTypes: _currentGamePowerUpTypes,
         powerUpTime: _currentGamePowerUpTime,
-        hitWall: _hitWallThisGame,
-        hitSelf: _hitSelfThisGame,
+        wallHits: _wallHitsThisGame,
+        selfHits: _selfHitsThisGame,
+        // Perfect game = no wall/self hits + lasted >= 30 seconds. The
+        // original spec; TimeAttack timeouts naturally satisfy this since
+        // surviving the full 3 minutes without crashing IS impressive.
         isPerfectGame:
             !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds >= 30,
         unlockedAchievements: [],

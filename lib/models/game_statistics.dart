@@ -11,6 +11,10 @@ class GameStatistics {
   // Food consumption stats
   final int totalFoodConsumed;
   final Map<String, int> foodTypeCount; // normal, bonus, special
+  /// Sum of *scored* points from food across all games — includes combo
+  /// multipliers and active score-multiplier power-ups. NOT the sum of
+  /// raw food values (10/25/50). Used by `averagePointsPerFood` which
+  /// is currently not surfaced on any screen.
   final int totalFoodPoints;
 
   // Power-up statistics
@@ -159,7 +163,10 @@ class GameStatistics {
     return dailyPlayTime[todayKey] ?? 0;
   }
 
-  // Update statistics with new game data
+  // Update statistics with new game data. `wallHits` and `selfHits` are
+  // per-game COUNTS, not booleans — a Survival-mode game that crashes
+  // multiple times before final game-over correctly increments
+  // wallCollisions/selfCollisions by the actual number of crashes.
   GameStatistics updateWithGameResult({
     required int score,
     required int gameTime,
@@ -170,8 +177,8 @@ class GameStatistics {
     required int powerUpsCollected,
     required Map<String, int> powerUpTypes,
     required int powerUpTime,
-    required bool hitWall,
-    required bool hitSelf,
+    required int wallHits,
+    required int selfHits,
     required bool isPerfectGame,
     required List<String> unlockedAchievements,
   }) {
@@ -193,8 +200,8 @@ class GameStatistics {
       newPowerUpTypeCount[key] = (newPowerUpTypeCount[key] ?? 0) + value;
     });
 
-    final newWallCollisions = hitWall ? wallCollisions + 1 : wallCollisions;
-    final newSelfCollisions = hitSelf ? selfCollisions + 1 : selfCollisions;
+    final newWallCollisions = wallCollisions + wallHits;
+    final newSelfCollisions = selfCollisions + selfHits;
     final newTotalCollisions = newWallCollisions + newSelfCollisions;
 
     final survived30Seconds = gameTime >= 30;
@@ -205,7 +212,8 @@ class GameStatistics {
     final newGamesSurvived30s =
         survived30Seconds ? gamesSurvived30s + 1 : gamesSurvived30s;
 
-    final newGamesWithoutWallHit = hitWall ? 0 : gamesWithoutWallHit + 1;
+    final newGamesWithoutWallHit =
+        wallHits > 0 ? 0 : gamesWithoutWallHit + 1;
     final newPerfectGames = isPerfectGame ? perfectGames + 1 : perfectGames;
 
     final newRecentScores = [...recentScores, score];
