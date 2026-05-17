@@ -11,6 +11,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -42,12 +43,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Duration _selectedCrashFeedbackDuration =
       GameConstants.defaultCrashFeedbackDuration;
 
+  // Notification preferences. Mirrored from NotificationService at init
+  // and on every toggle; service is the source of truth (persists to
+  // SharedPreferences + triggers backend topic (un)subscribe).
+  final NotificationService _notificationService = NotificationService();
+  bool _notifDailyReminder = true;
+  bool _notifTournament = true;
+  bool _notifAchievement = true;
+  bool _notifSocial = true;
+  bool _notifSpecialEvent = true;
+
   @override
   void initState() {
     super.initState();
     _appCache = getIt<AppDataCache>();
     _analytics = getIt<AnalyticsFacade>();
     _loadSettingsFromCache();
+    _loadNotificationPreferences();
+  }
+
+  void _loadNotificationPreferences() {
+    final prefs = _notificationService.notificationPreferences;
+    setState(() {
+      _notifDailyReminder = prefs[NotificationType.dailyReminder] ?? true;
+      _notifTournament = prefs[NotificationType.tournament] ?? true;
+      _notifAchievement = prefs[NotificationType.achievement] ?? true;
+      _notifSocial = prefs[NotificationType.social] ?? true;
+      _notifSpecialEvent = prefs[NotificationType.specialEvent] ?? true;
+    });
+  }
+
+  Future<void> _toggleNotification(
+    NotificationType type,
+    bool value,
+    void Function(bool) localSetter,
+  ) async {
+    setState(() => localSetter(value));
+    await _notificationService.setNotificationEnabled(type, value);
+    _analytics.trackSettingChanged(
+      settingName: 'notification_${type.key}',
+      value: '$value',
+    );
   }
 
   void _loadSettingsFromCache() {
@@ -291,6 +327,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   const SizedBox(height: 32),
 
                                   // 5. User Profile Section
+                                  _buildSection('NOTIFICATIONS', [
+                                    _buildAudioSwitch(
+                                      'Daily Reminder',
+                                      _notifDailyReminder,
+                                      (v) => _toggleNotification(
+                                        NotificationType.dailyReminder,
+                                        v,
+                                        (val) => _notifDailyReminder = val,
+                                      ),
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildAudioSwitch(
+                                      'Tournament Alerts',
+                                      _notifTournament,
+                                      (v) => _toggleNotification(
+                                        NotificationType.tournament,
+                                        v,
+                                        (val) => _notifTournament = val,
+                                      ),
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildAudioSwitch(
+                                      'Achievement Unlocks',
+                                      _notifAchievement,
+                                      (v) => _toggleNotification(
+                                        NotificationType.achievement,
+                                        v,
+                                        (val) => _notifAchievement = val,
+                                      ),
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildAudioSwitch(
+                                      'Social Updates',
+                                      _notifSocial,
+                                      (v) => _toggleNotification(
+                                        NotificationType.social,
+                                        v,
+                                        (val) => _notifSocial = val,
+                                      ),
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildAudioSwitch(
+                                      'Special Events',
+                                      _notifSpecialEvent,
+                                      (v) => _toggleNotification(
+                                        NotificationType.specialEvent,
+                                        v,
+                                        (val) => _notifSpecialEvent = val,
+                                      ),
+                                      theme,
+                                    ),
+                                  ], theme),
+
+                                  const SizedBox(height: 32),
+
                                   _buildSection('USER PROFILE', [
                                     _buildUserProfileSettings(authState, theme),
                                   ], theme),
