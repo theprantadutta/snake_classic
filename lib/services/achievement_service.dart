@@ -266,6 +266,12 @@ class AchievementService extends ChangeNotifier {
 
   /// Unlock an achievement locally only (no API call).
   /// Call [syncUnlockedAchievements] after all checks to batch-sync to backend.
+  ///
+  /// Only `special` achievements queue for explicit backend sync. Score /
+  /// games / survival unlocks are derived server-side from the score submit
+  /// (see AchievementAutoEvaluator on the backend); the local check just
+  /// drives immediate UI feedback. Posting them anyway would be redundant
+  /// and re-opens the self-report exploit the server-side eval closes.
   void _unlockAchievementLocal(int index, Achievement achievement) {
     _achievements[index] = achievement.copyWith(
       isUnlocked: true,
@@ -273,7 +279,8 @@ class AchievementService extends ChangeNotifier {
       unlockedAt: DateTime.now(),
     );
 
-    if (!_pendingUnlocks.contains(achievement.id)) {
+    if (achievement.type == AchievementType.special &&
+        !_pendingUnlocks.contains(achievement.id)) {
       _pendingUnlocks.add(achievement.id);
     }
     _lastGameUnlocks.add(_achievements[index]);
@@ -288,7 +295,20 @@ class AchievementService extends ChangeNotifier {
   }
 
   /// Batch-sync all pending achievement unlocks to the backend in a single API call.
+  ///
+  /// Only special-category achievements are eligible to be pushed. Score /
+  /// games / survival unlocks are evaluated authoritatively by the backend
+  /// from the score submission (see AchievementAutoEvaluator). Any non-special
+  /// IDs in [_pendingUnlocks] (e.g. stale state from before this constraint
+  /// was added) are stripped here and not retried.
   Future<void> syncUnlockedAchievements() async {
+    // Filter out any non-special IDs that may have been persisted before
+    // the special-only invariant was enforced in [_unlockAchievementLocal].
+    _pendingUnlocks.removeWhere((id) {
+      final a = getAchievementById(id);
+      return a == null || a.type != AchievementType.special;
+    });
+
     if (_pendingUnlocks.isEmpty) return;
 
     if (_connectivityService.isOnline && _apiService.isAuthenticated) {

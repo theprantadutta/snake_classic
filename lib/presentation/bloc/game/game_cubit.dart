@@ -1300,6 +1300,12 @@ class GameCubit extends Cubit<GameCubitState> {
         ]),
         _battlePassCubit.flushXP(),
       ]);
+
+      // Refetch achievements so any server-derived unlocks (score / games /
+      // survival auto-evaluated during the queued score submit) replace the
+      // local-only state. Fire-and-forget — the next refresh cycle will pick
+      // up anything missed if the score POST is still queued.
+      unawaited(_achievementService.syncWithBackend());
     } catch (e) {
       debugPrint('🎮 [GameCubit] Post-game sync error: $e');
     }
