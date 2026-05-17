@@ -189,6 +189,22 @@ class AppDataCache extends ChangeNotifier {
     try {
       final service = DailyChallengeService();
       await service.initialize();
+      // service.initialize() reads from the local Drift cache and fires a
+      // network refresh in the background. The refresh wasn't being awaited
+      // here, so on a fresh install or after a new day rolled over we'd
+      // capture an empty _challenges list and every screen would fall back
+      // to its loading path. Explicitly await one refresh attempt with a
+      // tight timeout so the cache holds real data on first paint, but
+      // never block the loading screen for more than 4 s if the server is
+      // slow or unreachable.
+      try {
+        await service
+            .refreshChallenges()
+            .timeout(const Duration(seconds: 4));
+      } catch (_) {
+        // Fall through with whatever the local cache + ongoing background
+        // refresh produced. The provider can still skeleton/retry later.
+      }
       _dailyChallenges = service.challenges;
     } catch (e) {
       if (kDebugMode) print('AppDataCache: Daily challenges load warning: $e');
