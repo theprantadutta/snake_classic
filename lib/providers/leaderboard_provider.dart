@@ -42,6 +42,7 @@ class LeaderboardState {
 class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
   final Ref _ref;
   final LeaderboardService _service;
+  final AppDataCache _appCache;
   final LeaderboardType _type;
   Timer? _ttlTimer;
 
@@ -59,15 +60,41 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
     }
   }
 
+  /// Pull the matching preloaded leaderboard out of AppDataCache, if any.
+  /// Only Global and Weekly are preloaded today; Daily and Friends still
+  /// fall back to a network load on first open.
+  List<Map<String, dynamic>>? _cachedEntries() {
+    if (!_appCache.isFullyLoaded) return null;
+    switch (_type) {
+      case LeaderboardType.global:
+        return _appCache.globalLeaderboard;
+      case LeaderboardType.weekly:
+        return _appCache.weeklyLeaderboard;
+      case LeaderboardType.daily:
+      case LeaderboardType.friends:
+        return null;
+    }
+  }
+
   LeaderboardNotifier(this._ref, this._type)
     : _service = LeaderboardService(),
+      _appCache = AppDataCache(),
       super(const LeaderboardState(isLoading: true)) {
     _initialize();
   }
 
   void _initialize() {
-    // Initial load
-    _loadData();
+    // Use preloaded cache for the first paint when available, then refresh
+    // in the background. Removes the empty-state flash users see on
+    // global/weekly tabs. Daily and Friends still go through _loadData
+    // since they aren't preloaded — those will get skeletons in Commit C.
+    final cached = _cachedEntries();
+    if (cached != null) {
+      state = LeaderboardState(entries: cached, isLoading: false);
+      _refreshInBackground();
+    } else {
+      _loadData();
+    }
 
     // Set up TTL-based refresh
     _startTtlTimer();
@@ -104,6 +131,18 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
         isLoading: false,
         error: 'Failed to load leaderboard',
       );
+    }
+  }
+
+  /// Silent network refresh — does not toggle isLoading, so the cached
+  /// entries stay on screen until the fetch lands.
+  Future<void> _refreshInBackground() async {
+    try {
+      final entries = await _fetchEntries();
+      state = state.copyWith(entries: entries);
+    } catch (_) {
+      // Background refresh failures stay silent — the cached data is still
+      // good enough to show; the next TTL tick will retry.
     }
   }
 
