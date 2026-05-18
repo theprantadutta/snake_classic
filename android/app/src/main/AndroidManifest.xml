@@ -1,12 +1,28 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <uses-permission android:name="com.android.vending.BILLING" />
+
+    <!-- Defensive: tell the Android manifest merger to STRIP any merged-in
+         exact-alarm permissions that come from plugin dependencies. Google
+         Play requires a special-use declaration for these (restricted to
+         Calendar/Alarm/Health categories), so we never want them in our
+         merged manifest. flutter_local_notifications' periodicallyShow
+         API uses inexact scheduling and doesn't need either of these. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"
+        tools:node="remove" />
+    <!-- Same defence for the special-use foreground-service permission.
+         We removed the FOREGROUND_SERVICE permission below; the merger
+         removal here covers SDK additions that auto-add the variant. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
+        tools:node="remove" />
 
     <application
         android:label="Snake Classic"
@@ -43,15 +59,14 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
             
-        <!-- Local notifications service -->
-        <service
-            android:name="com.dexterous.flutterlocalnotifications.ForegroundService"        
-            android:exported="false"
-            android:stopWithTask="false"
-            android:foregroundServiceType="specialUse">
-            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="To demonstrate how to use foreground services to show notifications"/>
-        </service>
-        
+        <!-- flutter_local_notifications ForegroundService block intentionally
+             omitted — that's only used by showWithForegroundService() which
+             this app does not call. Declaring it would force a Play Console
+             "special-use foreground service" justification, which Google
+             scrutinises closely and rejects for general-purpose games.
+             The daily reminder uses periodicallyShow() which schedules via
+             AlarmManager with no foreground service involved. -->
+
         <!-- Notification receivers -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
