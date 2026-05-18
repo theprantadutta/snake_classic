@@ -27,6 +27,14 @@ class _StoreScreenState extends State<StoreScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  // Tracks productIds whose purchase was just initiated but whose ownership
+  // hasn't reflected back from the backend yet. The card switches from
+  // "BUY" to a "Verifying..." spinner during this window (typically 2-15s
+  // for Play Store → webhook → entitlement → cubit). Auto-cleared once
+  // the PremiumCubit reports the item as owned, or after a safety timeout
+  // so the spinner never spins forever if a webhook is genuinely lost.
+  final Set<String> _pendingProductIds = {};
+
   // Tab order: Pro / Coins / Themes / Skins / Trails / Power-Ups.
   // Keeps Coins at index 1 so existing `?tab=1` deep links still land on
   // coins. Themes replaces the old Boards tab (boards aren't products).
@@ -918,7 +926,8 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
 
   Widget _buildThemesTab(GameTheme theme, PremiumState premiumState) {
-    final themesInOrder = const [
+    // Premium themes — listed as products in the Play Store catalog.
+    const premiumThemes = [
       GameTheme.crystal,
       GameTheme.cyberpunk,
       GameTheme.space,
@@ -926,6 +935,21 @@ class _StoreScreenState extends State<StoreScreen>
       GameTheme.desert,
       GameTheme.forest,
     ];
+    // Free themes — included with every install. Surfaced here so the
+    // user has an obvious way to switch back to their previous theme
+    // after trying a premium one. The home/settings theme selector
+    // still works, but this tab is the canonical store + switcher.
+    const freeThemes = [
+      GameTheme.classic,
+      GameTheme.modern,
+      GameTheme.neon,
+      GameTheme.retro,
+    ];
+
+    // Once a pending purchase reflects as owned, drop it from the pending
+    // set on the next frame so we don't trigger a build-during-build.
+    _reconcilePendingPurchases(premiumState);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -934,7 +958,7 @@ class _StoreScreenState extends State<StoreScreen>
           _buildThemesBundleCard(theme, premiumState),
           const SizedBox(height: 20),
           Text(
-            'Individual themes',
+            'Premium themes',
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 18,
@@ -945,31 +969,107 @@ class _StoreScreenState extends State<StoreScreen>
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: themesInOrder.length,
+            itemCount: premiumThemes.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 0.72,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
-            itemBuilder: (context, index) {
-              final t = themesInOrder[index];
-              return _buildThemeCard(t, theme, premiumState);
-            },
+            itemBuilder: (context, index) =>
+                _buildThemeCard(premiumThemes[index], theme, premiumState),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Free themes',
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Always available — switch back any time.',
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.65),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: freeThemes.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.72,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) =>
+                _buildThemeCard(freeThemes[index], theme, premiumState),
           ),
         ],
       ),
     );
   }
 
+  /// Drop any pendingProductIds that the backend now reports as owned.
+  /// Scheduled post-frame to avoid setState-during-build crashes.
+  void _reconcilePendingPurchases(PremiumState premiumState) {
+    if (_pendingProductIds.isEmpty) return;
+    final justOwned = <String>[];
+    for (final productId in _pendingProductIds) {
+      if (_isProductOwned(productId, premiumState)) {
+        justOwned.add(productId);
+      }
+    }
+    if (justOwned.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _pendingProductIds.removeAll(justOwned));
+    });
+  }
+
+  /// Resolve "is this productId now owned" across themes / skins / trails /
+  /// bundles so the pending spinner clears regardless of the cosmetic type.
+  bool _isProductOwned(String productId, PremiumState premiumState) {
+    // Themes — including the all-themes bundle. Pro subscribers also have
+    // all premium themes implicitly.
+    if (productId == ProductIds.themesBundle) {
+      return premiumState.isBundleOwned('premium_themes_bundle');
+    }
+    for (final t in GameTheme.values) {
+      if (_productIdForTheme(t) == productId) {
+        return premiumState.isThemeUnlocked(t);
+      }
+    }
+    // Skins: store ID is `${prefix}skin_<id>`
+    final stripped = productId.startsWith(ProductIds.prefix)
+        ? productId.substring(ProductIds.prefix.length)
+        : productId;
+    if (stripped.startsWith('skin_')) {
+      return premiumState.isSkinOwned(stripped.substring('skin_'.length));
+    }
+    // Trails: store ID is `${prefix}trail_<id>` — kept with the prefix in
+    // PremiumState.ownedTrails per the existing convention.
+    if (stripped.startsWith('trail_')) {
+      return premiumState.isTrailOwned(stripped);
+    }
+    // Cosmetic bundles (starter_pack etc.) — owned set uses bare ID.
+    return premiumState.isBundleOwned(stripped);
+  }
+
   Widget _buildThemesBundleCard(GameTheme theme, PremiumState premiumState) {
     final bundleOwned = premiumState.isBundleOwned('premium_themes_bundle');
+    final isPending = _pendingProductIds.contains(ProductIds.themesBundle);
     final price = PurchaseService().getStorePriceOrDefault(
       ProductIds.themesBundle,
       7.99,
     );
     return GestureDetector(
-      onTap: bundleOwned
+      onTap: (bundleOwned || isPending)
           ? null
           : () => _purchaseThemeProduct(
                 ProductIds.themesBundle,
@@ -1028,23 +1128,65 @@ class _StoreScreenState extends State<StoreScreen>
                 ],
               ),
             ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: bundleOwned ? Colors.green : Colors.amber,
-                borderRadius: BorderRadius.circular(10),
+            _buildBundleStatusPill(
+              isOwned: bundleOwned,
+              isPending: isPending,
+              priceLabel: price,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBundleStatusPill({
+    required bool isOwned,
+    required bool isPending,
+    required String priceLabel,
+  }) {
+    if (isPending) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.blueGrey,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
-              child: Text(
-                bundleOwned ? 'OWNED' : price,
-                style: TextStyle(
-                  color: bundleOwned ? Colors.white : Colors.black,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
+            ),
+            SizedBox(width: 6),
+            Text(
+              'VERIFYING',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isOwned ? Colors.green : Colors.amber,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        isOwned ? 'OWNED' : priceLabel,
+        style: TextStyle(
+          color: isOwned ? Colors.white : Colors.black,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -1058,17 +1200,21 @@ class _StoreScreenState extends State<StoreScreen>
     final isOwned = premiumState.isThemeUnlocked(target);
     final isActive = currentTheme == target;
     final productId = _productIdForTheme(target);
+    final isPending =
+        productId != null && _pendingProductIds.contains(productId);
     final price = productId == null
         ? 'FREE'
         : PurchaseService().getStorePriceOrDefault(productId, 1.99);
     return GestureDetector(
-      onTap: () {
-        if (isOwned) {
-          context.read<ThemeCubit>().setTheme(target);
-        } else if (productId != null) {
-          _purchaseThemeProduct(productId, target.name);
-        }
-      },
+      onTap: isPending
+          ? null
+          : () {
+              if (isOwned) {
+                context.read<ThemeCubit>().setTheme(target);
+              } else if (productId != null) {
+                _purchaseThemeProduct(productId, target.name);
+              }
+            },
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -1103,38 +1249,99 @@ class _StoreScreenState extends State<StoreScreen>
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 6),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? currentTheme.accentColor
-                    : isOwned
-                        ? Colors.green
-                        : Colors.amber,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                isActive
-                    ? 'ACTIVE'
-                    : isOwned
-                        ? 'APPLY'
-                        : price,
-                style: TextStyle(
-                  color: isActive
-                      ? currentTheme.backgroundColor
-                      : isOwned
-                          ? Colors.white
-                          : Colors.black,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            _buildStatusPill(
+              currentTheme: currentTheme,
+              isActive: isActive,
+              isOwned: isOwned,
+              isPending: isPending,
+              fallbackPriceLabel: price,
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// The bottom-of-card pill that toggles between ACTIVE / APPLY / price /
+  /// VERIFYING (with spinner). Centralized so the bundle card and theme
+  /// cards stay visually consistent.
+  Widget _buildStatusPill({
+    required GameTheme currentTheme,
+    required bool isActive,
+    required bool isOwned,
+    required bool isPending,
+    required String fallbackPriceLabel,
+  }) {
+    final Color background;
+    final Color foreground;
+    Widget child;
+    if (isPending) {
+      background = Colors.blueGrey;
+      foreground = Colors.white;
+      child = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 10,
+            height: 10,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              valueColor: AlwaysStoppedAnimation<Color>(foreground),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'VERIFYING',
+            style: TextStyle(
+              color: foreground,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      );
+    } else if (isActive) {
+      background = currentTheme.accentColor;
+      foreground = currentTheme.backgroundColor;
+      child = Text(
+        'ACTIVE',
+        style: TextStyle(
+          color: foreground,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    } else if (isOwned) {
+      background = Colors.green;
+      foreground = Colors.white;
+      child = Text(
+        'APPLY',
+        style: TextStyle(
+          color: foreground,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    } else {
+      background = Colors.amber;
+      foreground = Colors.black;
+      child = Text(
+        fallbackPriceLabel,
+        style: TextStyle(
+          color: foreground,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      alignment: Alignment.center,
+      child: child,
     );
   }
 
@@ -1196,14 +1403,14 @@ class _StoreScreenState extends State<StoreScreen>
 
     try {
       await PurchaseService().purchaseProduct(productId);
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('$displayName purchase initiated'),
-            backgroundColor: Colors.blue,
-          ),
-        );
-      }
+      if (!mounted) return;
+      _markPending(productId);
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Verifying $displayName purchase…'),
+          backgroundColor: Colors.blue,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
@@ -1216,11 +1423,26 @@ class _StoreScreenState extends State<StoreScreen>
     }
   }
 
+  /// Mark a productId as "purchase pending" so its card shows the
+  /// verifying spinner. Auto-cleared once ownership reflects in
+  /// PremiumState (see _reconcilePendingPurchases), or after 45s as a
+  /// safety net so a dropped Play Store callback doesn't leave the UI
+  /// stuck in a verifying state forever.
+  void _markPending(String productId) {
+    setState(() => _pendingProductIds.add(productId));
+    Future.delayed(const Duration(seconds: 45), () {
+      if (!mounted) return;
+      if (!_pendingProductIds.contains(productId)) return;
+      setState(() => _pendingProductIds.remove(productId));
+    });
+  }
+
   // ===========================================================================
   // SKINS TAB
   // ===========================================================================
 
   Widget _buildSkinsTab(GameTheme theme, PremiumState premiumState) {
+    _reconcilePendingPurchases(premiumState);
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -1234,6 +1456,7 @@ class _StoreScreenState extends State<StoreScreen>
         final skin = SnakeSkinType.values[index];
         final isUnlocked = !skin.isPremium || premiumState.isSkinOwned(skin.id);
         final isSelected = premiumState.selectedSkinId == skin.id;
+        final productId = ProductIds.skinStoreId(skin.id);
         return _buildCosmeticCard(
           title: skin.displayName,
           description: skin.description,
@@ -1241,11 +1464,12 @@ class _StoreScreenState extends State<StoreScreen>
           colors: skin.colors,
           price: skin.isPremium
               ? PurchaseService()
-                  .getStorePriceOrDefault(ProductIds.skinStoreId(skin.id), skin.price)
+                  .getStorePriceOrDefault(productId, skin.price)
               : 'FREE',
           isUnlocked: isUnlocked,
           isSelected: isSelected,
           isPremium: skin.isPremium,
+          isPending: _pendingProductIds.contains(productId),
           theme: theme,
           onTap: () {
             if (isUnlocked) {
@@ -1259,7 +1483,7 @@ class _StoreScreenState extends State<StoreScreen>
               );
             } else {
               _purchaseCosmetic(
-                productId: ProductIds.skinStoreId(skin.id),
+                productId: productId,
                 displayName: skin.displayName,
                 fallbackPrice: skin.price,
               );
@@ -1275,6 +1499,7 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
 
   Widget _buildTrailsTab(GameTheme theme, PremiumState premiumState) {
+    _reconcilePendingPurchases(premiumState);
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -1289,6 +1514,7 @@ class _StoreScreenState extends State<StoreScreen>
         final isUnlocked =
             !trail.isPremium || premiumState.isTrailOwned(trail.id);
         final isSelected = premiumState.selectedTrailId == trail.id;
+        final productId = ProductIds.withPrefix(trail.id);
         return _buildCosmeticCard(
           title: trail.displayName,
           description: trail.description,
@@ -1296,11 +1522,12 @@ class _StoreScreenState extends State<StoreScreen>
           colors: trail.colors,
           price: trail.isPremium
               ? PurchaseService()
-                  .getStorePriceOrDefault(ProductIds.withPrefix(trail.id), trail.price)
+                  .getStorePriceOrDefault(productId, trail.price)
               : 'FREE',
           isUnlocked: isUnlocked,
           isSelected: isSelected,
           isPremium: trail.isPremium,
+          isPending: _pendingProductIds.contains(productId),
           theme: theme,
           onTap: () {
             if (isUnlocked) {
@@ -1314,7 +1541,7 @@ class _StoreScreenState extends State<StoreScreen>
               );
             } else {
               _purchaseCosmetic(
-                productId: ProductIds.withPrefix(trail.id),
+                productId: productId,
                 displayName: trail.displayName,
                 fallbackPrice: trail.price,
               );
@@ -1334,11 +1561,12 @@ class _StoreScreenState extends State<StoreScreen>
     required bool isUnlocked,
     required bool isSelected,
     required bool isPremium,
+    required bool isPending,
     required GameTheme theme,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isPending ? null : onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -1418,33 +1646,12 @@ class _StoreScreenState extends State<StoreScreen>
                     ),
                   ),
                 const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? theme.accentColor
-                        : isUnlocked
-                            ? Colors.green
-                            : Colors.amber,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    isSelected
-                        ? 'EQUIPPED'
-                        : isUnlocked
-                            ? 'EQUIP'
-                            : price,
-                    style: TextStyle(
-                      color: isSelected
-                          ? theme.backgroundColor
-                          : isUnlocked
-                              ? Colors.white
-                              : Colors.black,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                _buildCosmeticStatusPill(
+                  theme: theme,
+                  isSelected: isSelected,
+                  isUnlocked: isUnlocked,
+                  isPending: isPending,
+                  priceLabel: price,
                 ),
               ],
             ),
@@ -1459,6 +1666,73 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCosmeticStatusPill({
+    required GameTheme theme,
+    required bool isSelected,
+    required bool isUnlocked,
+    required bool isPending,
+    required String priceLabel,
+  }) {
+    if (isPending) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.blueGrey,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 9,
+              height: 9,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.3,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            SizedBox(width: 4),
+            Text(
+              'VERIFYING',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? theme.accentColor
+            : isUnlocked
+                ? Colors.green
+                : Colors.amber,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        isSelected
+            ? 'EQUIPPED'
+            : isUnlocked
+                ? 'EQUIP'
+                : priceLabel,
+        style: TextStyle(
+          color: isSelected
+              ? theme.backgroundColor
+              : isUnlocked
+                  ? Colors.white
+                  : Colors.black,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -1508,14 +1782,14 @@ class _StoreScreenState extends State<StoreScreen>
 
     try {
       await PurchaseService().purchaseProduct(productId);
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('$displayName purchase initiated'),
-            backgroundColor: Colors.blue,
-          ),
-        );
-      }
+      if (!mounted) return;
+      _markPending(productId);
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Verifying $displayName purchase…'),
+          backgroundColor: Colors.blue,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
