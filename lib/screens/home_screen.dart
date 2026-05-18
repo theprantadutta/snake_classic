@@ -1449,285 +1449,288 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: theme.backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(
-              color: theme.accentColor.withValues(alpha: 0.3),
-              width: 2,
-            ),
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            // SingleChildScrollView: the About content (icon + name + tagline
-            // + version + description block with chips + developer block +
-            // copyright) is taller than the dialog's max content height on
-            // short screens / when font scaling is up, causing a RenderFlex
-            // overflow. Scrolling preserves the full content without clipping.
-            child: SingleChildScrollView(
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.backgroundColor,
+                    Color.alphaBlend(
+                      theme.primaryColor.withValues(alpha: 0.10),
+                      theme.backgroundColor,
+                    ),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: theme.accentColor.withValues(alpha: 0.35),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.accentColor.withValues(alpha: 0.18),
+                    blurRadius: 24,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App Icon
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.primaryColor.withValues(alpha: 0.2),
-                        theme.accentColor.withValues(alpha: 0.1),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.videogame_asset,
-                    color: theme.accentColor,
-                    size: 48,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // App Name
-                Text(
-                  'Snake Classic',
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-
-                const SizedBox(height: 4),
-
-                // Tagline
-                SizedBox(
-                  width: double.infinity,
-                  child: Center(
-                    child: Text(
-                      'The classic snake game, reimagined',
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Version
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'v${packageInfo.version} (${packageInfo.buildNumber})',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.8),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Description section
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.primaryColor.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        'Relive the nostalgia of the iconic snake game with a modern twist. Challenge yourself across multiple game modes, unlock achievements, complete daily challenges, and climb the global leaderboard.',
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.8),
-                          fontSize: 13,
-                          height: 1.5,
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            colors: [
+                              theme.primaryColor.withValues(alpha: 0.28),
+                              theme.accentColor.withValues(alpha: 0.08),
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.accentColor.withValues(alpha: 0.25),
+                          ),
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _buildFeatureChip(
-                            'Multiple Modes',
-                            Icons.sports_esports,
-                            theme,
-                          ),
-                          _buildFeatureChip(
-                            'Achievements',
-                            Icons.emoji_events,
-                            theme,
-                          ),
-                          _buildFeatureChip(
-                            'Daily Challenges',
-                            Icons.today,
-                            theme,
-                          ),
-                          _buildFeatureChip(
-                            'Leaderboards',
-                            Icons.leaderboard,
-                            theme,
-                          ),
-                          _buildFeatureChip(
-                            'Customization',
-                            Icons.palette,
-                            theme,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Developer section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Developed by',
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.6),
-                          fontSize: 12,
+                        padding: const EdgeInsets.all(6),
+                        child: Image.asset(
+                          'assets/images/snake_classic_transparent.png',
+                          fit: BoxFit.contain,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () async {
-                          final url = Uri.parse('https://pranta.dev');
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(
-                              url,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          }
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Pranta Dutta',
-                              style: TextStyle(
-                                color: theme.accentColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                            ShaderMask(
+                              shaderCallback: (bounds) => LinearGradient(
+                                colors: [
+                                  theme.primaryColor,
+                                  theme.accentColor,
+                                ],
+                              ).createShader(bounds),
+                              child: const Text(
+                                'Snake Classic',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 22,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.open_in_new,
-                              color: theme.accentColor.withValues(alpha: 0.7),
-                              size: 16,
+                            const SizedBox(height: 2),
+                            Text(
+                              'v${packageInfo.version} · build ${packageInfo.buildNumber}',
+                              style: TextStyle(
+                                color: theme.accentColor.withValues(alpha: 0.65),
+                                fontSize: 11,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'pranta.dev',
-                        style: TextStyle(
-                          color: theme.primaryColor,
-                          fontSize: 12,
-                          decoration: TextDecoration.underline,
+                      InkResponse(
+                        onTap: () => Navigator.of(dialogContext).pop(),
+                        radius: 20,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: theme.accentColor.withValues(alpha: 0.10),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: theme.accentColor.withValues(alpha: 0.8),
+                            size: 16,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
-                // Copyright
-                Text(
-                  '$currentYear Pranta Dutta. All rights reserved.',
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.5),
-                    fontSize: 11,
+                  Text(
+                    'The classic snake game, reimagined.',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.75),
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+
+                  const SizedBox(height: 14),
+
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _buildAboutChip('Modes', Icons.sports_esports, theme),
+                      _buildAboutChip('Achievements', Icons.emoji_events, theme),
+                      _buildAboutChip('Daily', Icons.today, theme),
+                      _buildAboutChip('Leaderboards', Icons.leaderboard, theme),
+                      _buildAboutChip('Cosmetics', Icons.palette, theme),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: theme.accentColor.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: theme.accentColor.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: theme.primaryColor.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.code_rounded,
+                            color: theme.accentColor,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Crafted by',
+                                style: TextStyle(
+                                  color: theme.accentColor.withValues(alpha: 0.55),
+                                  fontSize: 10,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              Text(
+                                'Pranta Dutta',
+                                style: TextStyle(
+                                  color: theme.accentColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () async {
+                            final url = Uri.parse('https://pranta.dev');
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.primaryColor.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: theme.primaryColor.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'pranta.dev',
+                                  style: TextStyle(
+                                    color: theme.accentColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.open_in_new_rounded,
+                                  color: theme.accentColor.withValues(alpha: 0.8),
+                                  size: 12,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    '© $currentYear Pranta Dutta · All rights reserved',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.45),
+                      fontSize: 10,
+                      letterSpacing: 0.3,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                backgroundColor: theme.accentColor.withValues(alpha: 0.1),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: theme.accentColor.withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-              child: Text(
-                'Close',
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
         );
       },
     );
   }
 
-  Widget _buildFeatureChip(String label, IconData icon, GameTheme theme) {
+  Widget _buildAboutChip(String label, IconData icon, GameTheme theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
+        color: theme.accentColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.22),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: theme.accentColor.withValues(alpha: 0.8)),
+          Icon(icon, size: 12, color: theme.accentColor.withValues(alpha: 0.85)),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.9),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
