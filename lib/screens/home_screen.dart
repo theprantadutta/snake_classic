@@ -878,9 +878,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                     ),
                   ),
-                  // Inner content
+                  // Inner content. mainAxisSize: min + Stack's
+                  // Alignment.center keeps the icon+text block precisely
+                  // in the middle of the circle. Transform.translate on
+                  // the text counteracts the icon glyph's intrinsic
+                  // bottom padding (Material icons leave ~15% empty
+                  // space below the visible symbol). Text height: 1.0
+                  // strips the default 1.2 line-height multiplier so
+                  // the text's own glyph box doesn't add extra padding
+                  // on top.
                   Column(
+                    mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.play_arrow_rounded,
@@ -900,27 +910,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           ),
                         ],
                       ),
-                      SizedBox(height: isSmallButton ? 5 : 7),
-                      Text(
-                        'PLAY',
-                        style: TextStyle(
-                          fontSize: isSmallButton
-                              ? 14
-                              : buttonSize < 180
-                              ? 18
-                              : buttonSize < 220
-                              ? 22
-                              : 26,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 2,
-                          shadows: [
-                            Shadow(
-                              offset: const Offset(0, 2),
-                              blurRadius: 6,
-                              color: Colors.black.withValues(alpha: 0.4),
-                            ),
-                          ],
+                      Transform.translate(
+                        // Pull the text upward by ~12-18% of the icon
+                        // size so it sits flush against the icon's
+                        // visible baseline rather than under its
+                        // bounding-box bottom edge.
+                        offset: Offset(0, isSmallButton ? -8 : -14),
+                        child: Text(
+                          'PLAY',
+                          style: TextStyle(
+                            fontSize: isSmallButton
+                                ? 14
+                                : buttonSize < 180
+                                ? 18
+                                : buttonSize < 220
+                                ? 22
+                                : 26,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 2,
+                            height: 1.0,
+                            shadows: [
+                              Shadow(
+                                offset: const Offset(0, 2),
+                                blurRadius: 6,
+                                color: Colors.black.withValues(alpha: 0.4),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
