@@ -61,8 +61,14 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
   }
 
   void _initialize() {
-    // Check cache first - use preloaded data if available
-    if (_appCache.isFullyLoaded && _appCache.activeTournaments != null) {
+    // Check cache first - use preloaded data if available.
+    // Critical: require non-null AND non-empty. If startup preload's
+    // fetch failed, AppDataCache stores an empty [] — those still pass
+    // `!= null` but rendering empty would lock the screen on its
+    // 'No active tournaments' state until a manual refresh.
+    if (_appCache.isFullyLoaded &&
+        _appCache.activeTournaments != null &&
+        _appCache.activeTournaments!.isNotEmpty) {
       // Use cached data immediately - no loading state!
       state = TournamentsState(
         activeTournaments: _appCache.activeTournaments!,
@@ -73,7 +79,7 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
       // Refresh in background (silent, no loading indicator)
       _refreshInBackground();
     } else {
-      // No cache - load normally
+      // No useful cache - load fresh from network with proper UX.
       _loadData();
     }
 

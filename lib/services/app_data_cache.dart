@@ -220,60 +220,61 @@ class AppDataCache extends ChangeNotifier {
   }
 
   Future<void> _loadLeaderboards() async {
+    // Critical: per-list try/catch leaves the field NULL on fetch failure
+    // (not []). Per-screen providers distinguish 'preload got data' from
+    // 'preload failed' by checking `!= null`, and storing [] disguises
+    // failure as success — which is why the leaderboard tabs were
+    // showing 'No scores yet' permanently on a slow first launch.
+    final service = LeaderboardService();
     try {
-      final service = LeaderboardService();
-      // Load all three time-scoped leaderboards concurrently. Daily was
-      // previously omitted, which made the Daily tab fall through to a
-      // network fetch on every open and flash a spinner-then-empty state.
-      final results = await Future.wait([
-        service
-            .getGlobalLeaderboard(limit: 100)
-            .catchError((_) => <Map<String, dynamic>>[]),
-        service
-            .getWeeklyLeaderboard(limit: 100)
-            .catchError((_) => <Map<String, dynamic>>[]),
-        service
-            .getDailyLeaderboard(limit: 100)
-            .catchError((_) => <Map<String, dynamic>>[]),
-      ]);
-      _globalLeaderboard = results[0];
-      _weeklyLeaderboard = results[1];
-      _dailyLeaderboard = results[2];
-      // Friends leaderboard requires friend IDs and is loaded on-demand.
-      _friendsLeaderboard = [];
+      _globalLeaderboard = await service.getGlobalLeaderboard(limit: 100);
     } catch (e) {
-      if (kDebugMode) print('AppDataCache: Leaderboards load warning: $e');
+      if (kDebugMode) print('AppDataCache: Global leaderboard load failed: $e');
+      // Leave _globalLeaderboard as null so the provider falls through
+      // to a fresh fetch with proper loading + error UX.
     }
+    try {
+      _weeklyLeaderboard = await service.getWeeklyLeaderboard(limit: 100);
+    } catch (e) {
+      if (kDebugMode) print('AppDataCache: Weekly leaderboard load failed: $e');
+    }
+    try {
+      _dailyLeaderboard = await service.getDailyLeaderboard(limit: 100);
+    } catch (e) {
+      if (kDebugMode) print('AppDataCache: Daily leaderboard load failed: $e');
+    }
+    // Friends leaderboard requires friend IDs and is loaded on-demand.
+    _friendsLeaderboard = [];
   }
 
   Future<void> _loadTournaments() async {
+    // Same pattern as leaderboards: per-list try/catch so a failure on
+    // one doesn't poison the cache for the other, and a failure leaves
+    // the field NULL so the provider knows to refetch.
+    final service = TournamentService();
     try {
-      final service = TournamentService();
-      final results = await Future.wait([
-        service.getActiveTournaments().catchError((_) => <Tournament>[]),
-        service.getTournamentHistory().catchError((_) => <Tournament>[]),
-      ]);
-      _activeTournaments = results[0];
-      _historyTournaments = results[1];
+      _activeTournaments = await service.getActiveTournaments();
     } catch (e) {
-      if (kDebugMode) print('AppDataCache: Tournaments load warning: $e');
+      if (kDebugMode) print('AppDataCache: Active tournaments load failed: $e');
+    }
+    try {
+      _historyTournaments = await service.getTournamentHistory();
+    } catch (e) {
+      if (kDebugMode) print('AppDataCache: Tournament history load failed: $e');
     }
   }
 
   Future<void> _loadSocialData() async {
+    final service = SocialService();
     try {
-      final service = SocialService();
-      // Load friends list + pending requests concurrently. Previously these
-      // ran sequentially, which doubled the social-load duration during the
-      // loading screen and pushed up against the 4-second group timeout.
-      final results = await Future.wait([
-        service.getFriends().catchError((_) => <UserProfile>[]),
-        service.getFriendRequests().catchError((_) => <FriendRequest>[]),
-      ]);
-      _friendsList = results[0] as List<UserProfile>;
-      _friendRequests = results[1] as List<FriendRequest>;
+      _friendsList = await service.getFriends();
     } catch (e) {
-      if (kDebugMode) print('AppDataCache: Social data load warning: $e');
+      if (kDebugMode) print('AppDataCache: Friends load failed: $e');
+    }
+    try {
+      _friendRequests = await service.getFriendRequests();
+    } catch (e) {
+      if (kDebugMode) print('AppDataCache: Friend requests load failed: $e');
     }
   }
 

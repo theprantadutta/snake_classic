@@ -156,10 +156,28 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
   Future<void> _loadData() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
+      // initialize() hydrates from local Drift cache and FIRES a
+      // network refresh in the background — but doesn't await it. On a
+      // fresh install or after a stale-cache eviction, this means the
+      // service holds an empty list right after initialize returns and
+      // the screen renders its empty state.
+      //
+      // Await refreshChallenges() explicitly so this code path returns
+      // with real network data (or a real error). The 8s timeout is
+      // generous enough for cold-start networks but bounded so the
+      // loading state doesn't hang forever.
       await _service.initialize();
+      try {
+        await _service
+            .refreshChallenges()
+            .timeout(const Duration(seconds: 8));
+      } catch (_) {
+        // refresh failed — keep going with whatever the local cache had.
+        // _syncStateFromService below picks up cached challenges or an
+        // empty list, and the UI can still pull-to-refresh.
+      }
       _lastRefreshDate = DateTime.now().toIso8601String().split('T')[0];
       _syncStateFromService();
-      // initialize() no longer blocks on API — set loading false immediately
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(

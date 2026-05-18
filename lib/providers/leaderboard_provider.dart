@@ -269,10 +269,17 @@ class CombinedLeaderboardNotifier
   }
 
   void _initialize() {
-    // Check cache first - use preloaded data if available
+    // Check cache first - use preloaded data if available.
+    // Critical: require BOTH fields to be non-null AND non-empty. If the
+    // startup preload's network fetch failed, AppDataCache stores empty
+    // [] lists — those still pass `!= null` but rendering them would
+    // permanently show the empty 'No scores yet' state on first open
+    // since the screen has no reason to refetch.
     if (_appCache.isFullyLoaded &&
         _appCache.globalLeaderboard != null &&
-        _appCache.weeklyLeaderboard != null) {
+        _appCache.globalLeaderboard!.isNotEmpty &&
+        _appCache.weeklyLeaderboard != null &&
+        _appCache.weeklyLeaderboard!.isNotEmpty) {
       // Use cached data immediately - no loading state!
       state = CombinedLeaderboardState(
         globalEntries: _appCache.globalLeaderboard!,
@@ -283,7 +290,9 @@ class CombinedLeaderboardNotifier
       // Refresh in background (silent, no loading indicator)
       _refreshInBackground();
     } else {
-      // No cache - load normally
+      // No useful cache - load fresh from network. _loadData sets
+      // isLoading=true, fetches via the service, and updates state with
+      // the real data (or error + retry UI).
       _loadData();
     }
 
