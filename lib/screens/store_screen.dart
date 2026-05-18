@@ -965,21 +965,24 @@ class _StoreScreenState extends State<StoreScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: premiumThemes.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.72,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              // Closer to square so the preview + label + pill don't
+              // leave the card visually empty. Was 0.72 (tall portrait),
+              // 0.92 keeps the preview prominent without dead air.
+              childAspectRatio: 0.92,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
             ),
             itemBuilder: (context, index) =>
                 _buildThemeCard(premiumThemes[index], theme, premiumState),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
           Text(
             'Free themes',
             style: TextStyle(
@@ -988,7 +991,7 @@ class _StoreScreenState extends State<StoreScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             'Always available — switch back any time.',
             style: TextStyle(
@@ -996,16 +999,16 @@ class _StoreScreenState extends State<StoreScreen>
               fontSize: 12,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: freeThemes.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.72,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              childAspectRatio: 0.92,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
             ),
             itemBuilder: (context, index) =>
                 _buildThemeCard(freeThemes[index], theme, premiumState),
@@ -2345,9 +2348,12 @@ class _ThemePreviewPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.12)
+      ..color = theme.accentColor.withValues(alpha: 0.18)
       ..strokeWidth = 0.6;
-    const cells = 8;
+    // 6×6 grid + a longer 6-segment coiled snake + 2 food items. Denser
+    // than the original 8×8/4-segment preview so the card visibly
+    // represents "snake game" rather than a near-empty backdrop.
+    const cells = 6;
     final cellW = size.width / cells;
     final cellH = size.height / cells;
     for (int i = 1; i < cells; i++) {
@@ -2362,22 +2368,39 @@ class _ThemePreviewPainter extends CustomPainter {
         gridPaint,
       );
     }
-    // Snake + food preview
-    final snakePaint = Paint()..color = theme.snakeColor;
-    final foodPaint = Paint()..color = theme.foodColor;
-    final r = (cellW < cellH ? cellW : cellH) * 0.42;
-    for (int i = 0; i < 4; i++) {
+
+    // Coiled snake path (head → tail). Index 0 is the head.
+    const snakeCells = <(int, int)>[
+      (4, 2), (3, 2), (2, 2), (2, 3), (2, 4), (3, 4),
+    ];
+    final r = (cellW < cellH ? cellW : cellH) * 0.40;
+    for (int i = 0; i < snakeCells.length; i++) {
+      final fade = 1.0 - (i / snakeCells.length) * 0.55;
+      final paint = Paint()
+        ..color = theme.snakeColor.withValues(alpha: fade);
+      final (col, row) = snakeCells[i];
       canvas.drawCircle(
-        Offset(cellW * (2 + i) + cellW / 2, cellH * 4 + cellH / 2),
-        r,
-        snakePaint,
+        Offset(cellW * col + cellW / 2, cellH * row + cellH / 2),
+        i == 0 ? r * 1.05 : r,
+        paint,
       );
     }
+    // Head highlight — small accent dot so the head is unmistakable.
     canvas.drawCircle(
-      Offset(cellW * 6 + cellW / 2, cellH * 2 + cellH / 2),
-      r,
-      foodPaint,
+      Offset(cellW * 4 + cellW / 2, cellH * 2 + cellH / 2),
+      r * 0.30,
+      Paint()..color = theme.accentColor,
     );
+
+    // Two food pickups to fill the empty quadrants.
+    final foodPaint = Paint()..color = theme.foodColor;
+    for (final (col, row) in const <(int, int)>[(0, 0), (5, 4)]) {
+      canvas.drawCircle(
+        Offset(cellW * col + cellW / 2, cellH * row + cellH / 2),
+        r * 0.85,
+        foodPaint,
+      );
+    }
   }
 
   @override
