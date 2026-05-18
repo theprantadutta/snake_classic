@@ -954,17 +954,43 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
   Widget _buildActionButtons(GameTheme theme) {
     final tournament = _tournament!;
+    // Bottom CTA bar — anchored full-width with a subtle top divider so
+    // it reads as a sticky action bar rather than a centered chip
+    // floating under the tab view. Previously the Container had no width
+    // constraint, so its child Column shrank to the GradientButton's
+    // default 160px and the "JOIN TOURNAMENT" label got clipped.
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.6),
+        border: Border(
+          top: BorderSide(
+            color: theme.accentColor.withValues(alpha: 0.18),
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (!tournament.hasJoined && tournament.status.canJoin)
             GradientButton(
               onPressed: _isJoining ? null : () => _joinTournament(),
-              text: _isJoining ? 'JOINING...' : 'JOIN TOURNAMENT',
+              text: _isJoining ? 'JOINING…' : 'JOIN TOURNAMENT',
               primaryColor: Colors.blue,
               secondaryColor: Colors.cyan,
               icon: Icons.person_add,
+              width: double.infinity,
+              height: 56,
             )
           else if (tournament.status.canSubmitScore)
             GradientButton(
@@ -973,50 +999,79 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               primaryColor: theme.accentColor,
               secondaryColor: theme.foodColor,
               icon: Icons.play_arrow,
+              width: double.infinity,
+              height: 56,
             ),
 
           if (tournament.requiresEntry) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Builder(
               builder: (context) {
                 final premiumCubit = context.read<PremiumCubit>();
                 if (premiumCubit.state.hasPremium) {
-                  return Text(
-                    'Pro: Unlimited entries',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.amber.withValues(alpha: 0.8),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+                  return _buildEntryStatusChip(
+                    icon: Icons.diamond,
+                    label: 'Pro · Unlimited entries',
+                    color: Colors.amber,
                   );
                 }
                 final tier = _getTournamentTier(tournament.type);
                 final count = premiumCubit.state.getTournamentEntryCount(tier);
-                return Text(
-                  'Entries remaining: $count',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: count > 0 ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+                return _buildEntryStatusChip(
+                  icon: count > 0
+                      ? Icons.confirmation_number
+                      : Icons.error_outline,
+                  label: count > 0
+                      ? 'Entries remaining: $count'
+                      : 'No entries — tap JOIN to buy',
+                  color: count > 0 ? Colors.green : Colors.redAccent,
                 );
               },
             ),
           ],
 
           if (tournament.status == TournamentStatus.upcoming) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Tournament starts ${tournament.timeRemainingFormatted}',
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.accentColor.withValues(alpha: 0.6),
-              ),
-              textAlign: TextAlign.center,
+            const SizedBox(height: 10),
+            _buildEntryStatusChip(
+              icon: Icons.schedule,
+              label: 'Starts ${tournament.timeRemainingFormatted}',
+              color: theme.accentColor,
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEntryStatusChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
