@@ -9,6 +9,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
+import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 enum UserType { guest, anonymous, google }
@@ -932,8 +933,23 @@ class UnifiedUserService extends ChangeNotifier {
       // Use a brief delay to ensure notification service is fully initialized
       await Future.delayed(const Duration(seconds: 1));
 
-      // Initialize backend integration
+      // Initialize backend integration (FCM token register + topic subscribe)
       await NotificationService().initializeBackendIntegration();
+
+      // Schedule the local daily reminder. This replaces the old
+      // server-side daily-challenge-morning-reminder cron — each device
+      // now owns its own daily ping at OS level, naturally local-time
+      // aware and reachable even when the backend is unreachable.
+      final stats = StatisticsService().statistics;
+      await NotificationService().scheduleSmartDailyReminder(
+        currentWinStreak: stats.currentWinStreak,
+        // hasIncompleteDailyChallenge is wired in once the next game ends
+        // (we don't synchronously know the per-user challenge state at
+        // launch). Falling back to the streak/high-score branches keeps
+        // the message meaningful in the meantime.
+        hasIncompleteDailyChallenge: false,
+        highScore: stats.highScore,
+      );
     } catch (e) {
       AppLogger.user('Error initializing notification integration', e);
     }

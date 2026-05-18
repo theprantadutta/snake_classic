@@ -334,6 +334,14 @@ class NotificationService {
     } catch (e) {
       AppLogger.error('Failed to save notification preference: $e');
     }
+
+    // Side-effect: when the user toggles the Daily Reminder off, cancel
+    // the pending OS-scheduled notification so they aren't pinged again
+    // until they re-enable. The next scheduleSmartDailyReminder call
+    // (on app launch or game end) will rebuild it if re-enabled.
+    if (type == NotificationType.dailyReminder && !enabled) {
+      await cancelDailyReminder();
+    }
   }
 
   Map<NotificationType, bool> get notificationPreferences =>
@@ -390,35 +398,125 @@ class NotificationService {
     );
   }
 
-  // Scheduled notifications
-  Future<void> scheduleDailyReminder(TimeOfDay time) async {
-    // Schedule daily reminder at specified time
-    // This uses flutter_local_notifications scheduling
+  // Reserved notification ID for the recurring daily reminder so we can
+  // cancel + reschedule on every app launch without piling up duplicates.
+  static const int _dailyReminderNotificationId = 1001;
+
+  /// Schedule (or refresh) the daily player reminder.
+  ///
+  /// Replaces the server-side cron that was supposed to fire once a day
+  /// at each user's local 9 AM but was misbehaving and firing hourly.
+  /// The OS-level scheduler is naturally timezone-aware (it uses the
+  /// device clock) and fires even when the app is closed, so this is
+  /// strictly simpler than the FCM round-trip.
+  ///
+  /// Behaviour:
+  ///   * Cancels any previously-scheduled daily reminder.
+  ///   * If the user has the Daily Reminder preference toggled off,
+  ///     leaves them alone.
+  ///   * Otherwise schedules a daily-repeating notification with content
+  ///     personalized from local game state (current streak, today's
+  ///     daily challenge availability, high score). Picked in priority
+  ///     order, same logic the now-deleted backend job used.
+  ///
+  /// Should be called on app launch (after the local cache is hydrated)
+  /// and after each game ends so the streak/state stays fresh.
+  Future<void> scheduleSmartDailyReminder({
+    required int currentWinStreak,
+    required bool hasIncompleteDailyChallenge,
+    required int highScore,
+  }) async {
+    // Always cancel first so a stale schedule from yesterday doesn't pile
+    // on top of today's. Idempotent — no-op if there's nothing pending.
+    await _localNotifications.cancel(id: _dailyReminderNotificationId);
+
+    if (!(_notificationPreferences[NotificationType.dailyReminder] ?? true)) {
+      AppLogger.info('🔕 Daily reminder disabled by user preference');
+      return;
+    }
+
+    // Pick the most relevant message. Streak-at-risk wins because losing
+    // a streak is the most urgent reason to come back.
+    String title;
+    String body;
+    if (currentWinStreak >= 3) {
+      title = '🔥 Your streak is on the line!';
+      body =
+          "You're on a $currentWinStreak-day streak. One game keeps it alive.";
+    } else if (hasIncompleteDailyChallenge) {
+      title = '🎯 Today\'s challenge is waiting';
+      body = 'Complete it before midnight to claim your rewards.';
+    } else if (highScore > 0) {
+      title = 'Can you beat your best?';
+      body = 'Your high score is $highScore. One round, one chance.';
+    } else {
+      title = '🐍 Snake Classic';
+      body = 'Pick up where you left off.';
+    }
+
     const androidDetails = AndroidNotificationDetails(
       _channelId,
       _channelName,
       channelDescription: _channelDescription,
       importance: Importance.high,
       priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      playSound: true,
     );
 
-    const iosDetails = DarwinNotificationDetails();
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
     const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
-    await _localNotifications.periodicallyShow(
-      id: 0,
-      title: '🐍 Daily Challenge Available!',
-      body: 'Complete your daily challenge and compete with friends!',
-      repeatInterval: RepeatInterval.daily,
-      notificationDetails: details,
-      payload: jsonEncode({'route': 'home'}),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
+    try {
+      // RepeatInterval.daily fires the same notification ~24 hours after
+      // each schedule call. Calling this on every app launch effectively
+      // shifts the fire time toward the user's typical play window — a
+      // reasonable approximation of "when they'd want to be reminded"
+      // without needing the timezone package's TZDateTime plumbing.
+      //
+      // inexactAllowWhileIdle skips the Android 12+ SCHEDULE_EXACT_ALARM
+      // permission requirement (a daily reminder doesn't need
+      // second-precision firing).
+      await _localNotifications.periodicallyShow(
+        id: _dailyReminderNotificationId,
+        title: title,
+        body: body,
+        repeatInterval: RepeatInterval.daily,
+        notificationDetails: details,
+        payload: jsonEncode({'route': 'home', 'source': 'daily_reminder'}),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+      AppLogger.info('⏰ Daily reminder scheduled: $title');
+    } catch (e) {
+      AppLogger.error('Failed to schedule daily reminder', e);
+    }
+  }
 
-    AppLogger.info('⏰ Daily reminder scheduled');
+  /// Cancel any pending daily reminder. Called from the settings UI when
+  /// the user toggles the Daily Reminder preference off, so they aren't
+  /// pinged again until they re-enable + the next schedule call.
+  Future<void> cancelDailyReminder() async {
+    await _localNotifications.cancel(id: _dailyReminderNotificationId);
+    AppLogger.info('🔕 Daily reminder cancelled');
+  }
+
+  // Legacy entry point kept for callers that still hand in a TimeOfDay;
+  // routes through the smart scheduler with neutral content. New code
+  // should call scheduleSmartDailyReminder directly.
+  Future<void> scheduleDailyReminder(TimeOfDay time) async {
+    await scheduleSmartDailyReminder(
+      currentWinStreak: 0,
+      hasIncompleteDailyChallenge: false,
+      highScore: 0,
+    );
   }
 
   Future<void> cancelScheduledNotification(int id) async {
