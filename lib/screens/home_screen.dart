@@ -662,7 +662,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       )
                       .gameHero(),
             ),
-            SizedBox(height: screenHeight < 650 ? 4 : 8),
+            // Tight gap so the logo + "Snake Classic" text read as a
+            // single unit. The wider gap between this title block and
+            // the play button below comes from _buildGameTitle's outer
+            // vertical padding + _buildMainPlayArea's top padding,
+            // creating the desired hierarchy: tight logo+text, looser
+            // text→play-button.
+            SizedBox(height: screenHeight < 650 ? 0 : 2),
             // "Snake Classic" title — gradient-shaded text styled to
             // match the game's hero look. ShaderMask gives it the same
             // primary→accent gradient used elsewhere in the app
