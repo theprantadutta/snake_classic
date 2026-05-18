@@ -911,11 +911,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ],
                       ),
                       Transform.translate(
-                        // Pull the text upward by ~12-18% of the icon
-                        // size so it sits flush against the icon's
-                        // visible baseline rather than under its
-                        // bounding-box bottom edge.
-                        offset: Offset(0, isSmallButton ? -8 : -14),
+                        // Pull text up just enough to neutralize most of
+                        // the icon's intrinsic bottom padding, leaving a
+                        // small (~4-5px) visible gap instead of either
+                        // a big space OR an overlap.
+                        offset: Offset(
+                          0,
+                          isSmallButton
+                              ? -4.0
+                              : buttonSize < 180
+                              ? -6.0
+                              : buttonSize < 220
+                              ? -8.0
+                              : -10.0,
+                        ),
                         child: Text(
                           'PLAY',
                           style: TextStyle(
