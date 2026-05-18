@@ -6,6 +6,21 @@ import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/offline_cache_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 
+/// Server-authoritative leaderboard result. [userRank] reflects the
+/// caller's position across ALL entries (not the 50-item slice the
+/// client fetched), so a user outside the top-N still sees the
+/// correct rank — the screen no longer has to compute it locally
+/// from an incomplete leaderboard.
+class TournamentLeaderboardResult {
+  final List<TournamentParticipant> entries;
+  final int? userRank;
+
+  const TournamentLeaderboardResult({
+    required this.entries,
+    required this.userRank,
+  });
+}
+
 class TournamentService {
   static TournamentService? _instance;
   final ApiService _apiService = ApiService();
@@ -284,45 +299,58 @@ class TournamentService {
     return true;
   }
 
-  /// Get tournament leaderboard with caching
-  Future<List<TournamentParticipant>> getTournamentLeaderboard(
+  /// Get tournament leaderboard with caching. Returns BOTH the
+  /// entries list AND the server-authoritative rank of the current
+  /// user — important because the rank computed locally from a 50-item
+  /// slice is wildly wrong for users outside the top 50.
+  Future<TournamentLeaderboardResult> getTournamentLeaderboard(
     String tournamentId, {
     int limit = 50,
   }) async {
     final cacheKey = 'tournament_leaderboard_$tournamentId';
 
     // 1. Try to get cached data first
-    final cached = await _cacheService.getCached<List<Map<String, dynamic>>>(
+    final cached = await _cacheService.getCached<Map<String, dynamic>>(
       cacheKey,
-      (data) => List<Map<String, dynamic>>.from(
-        (data as List).map((e) => Map<String, dynamic>.from(e)),
-      ),
+      (data) => Map<String, dynamic>.from(data as Map),
     );
 
     if (cached != null) {
       if (_connectivityService.isOnline) {
         _refreshTournamentLeaderboardInBackground(tournamentId, limit);
       }
-      return cached.map((data) => _mapToParticipant(data)).toList();
+      return _cachedToResult(cached);
     }
 
     // 2. No fresh cache - check if we're offline
     if (!_connectivityService.isOnline) {
       final fallback = await _cacheService
-          .getCachedFallback<List<Map<String, dynamic>>>(
+          .getCachedFallback<Map<String, dynamic>>(
             cacheKey,
-            (data) => List<Map<String, dynamic>>.from(
-              (data as List).map((e) => Map<String, dynamic>.from(e)),
-            ),
+            (data) => Map<String, dynamic>.from(data as Map),
           );
-      return fallback?.map((data) => _mapToParticipant(data)).toList() ?? [];
+      if (fallback == null) {
+        return const TournamentLeaderboardResult(entries: [], userRank: null);
+      }
+      return _cachedToResult(fallback);
     }
 
     // 3. Online with no cache - fetch fresh data
     return await _fetchAndCacheTournamentLeaderboard(tournamentId, limit);
   }
 
-  Future<List<TournamentParticipant>> _fetchAndCacheTournamentLeaderboard(
+  TournamentLeaderboardResult _cachedToResult(Map<String, dynamic> cached) {
+    final entriesList = (cached['entries'] as List?) ?? [];
+    final entries = entriesList
+        .map((e) => _mapToParticipant(Map<String, dynamic>.from(e as Map)))
+        .toList();
+    return TournamentLeaderboardResult(
+      entries: entries,
+      userRank: cached['current_user_rank'] as int?,
+    );
+  }
+
+  Future<TournamentLeaderboardResult> _fetchAndCacheTournamentLeaderboard(
     String tournamentId,
     int limit,
   ) async {
@@ -332,23 +360,39 @@ class TournamentService {
         limit: limit,
       );
 
-      if (response == null || response['entries'] == null) return [];
+      if (response == null || response['entries'] == null) {
+        return const TournamentLeaderboardResult(entries: [], userRank: null);
+      }
 
       final entries = List<Map<String, dynamic>>.from(response['entries']);
+      final userRank = response['current_user_rank'] as int?;
 
-      await _cacheService.setCache<List<Map<String, dynamic>>>(
+      // Cache the FULL response (entries + rank) so a re-hydrate after
+      // an offline period gets the same rank as the original fetch.
+      await _cacheService.setCache<Map<String, dynamic>>(
         'tournament_leaderboard_$tournamentId',
-        entries,
+        {
+          'entries': entries,
+          'current_user_rank': userRank,
+        },
         (data) => data,
-        customTtl: const Duration(minutes: 2), // Short TTL for leaderboards
+        customTtl: const Duration(minutes: 2),
       );
 
-      return entries.map((data) => _mapToParticipant(data)).toList();
+      return TournamentLeaderboardResult(
+        entries: entries.map((data) => _mapToParticipant(data)).toList(),
+        userRank: userRank,
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error getting tournament leaderboard: $e');
       }
-      return [];
+      // Propagate failure as null userRank but signal the error to the
+      // caller via a sentinel — empty entries + null rank. The detail
+      // screen distinguishes "load failed" from "no participants" via
+      // a separate error state (set by the screen when this returns
+      // empty AND we know the tournament has CurrentParticipants > 0).
+      return const TournamentLeaderboardResult(entries: [], userRank: null);
     }
   }
 
@@ -360,7 +404,7 @@ class TournamentService {
       if (kDebugMode) {
         print('Background refresh failed: $e');
       }
-      return <TournamentParticipant>[];
+      return const TournamentLeaderboardResult(entries: [], userRank: null);
     });
   }
 
@@ -433,7 +477,11 @@ class TournamentService {
     int limit = 50,
   }) {
     return Stream.periodic(const Duration(seconds: 10), (_) => null)
-        .asyncMap((_) => getTournamentLeaderboard(tournamentId, limit: limit))
+        .asyncMap((_) async {
+          final result =
+              await getTournamentLeaderboard(tournamentId, limit: limit);
+          return result.entries;
+        })
         .distinct();
   }
 

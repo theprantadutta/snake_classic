@@ -41,7 +41,16 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   late TabController _tabController;
   Tournament? _tournament;
   List<TournamentParticipant> _leaderboard = [];
+  // Server-authoritative rank for the current user — set from the
+  // leaderboard response's current_user_rank. Preferred over the
+  // local Tournament.userRank computation, which only sees the 50-item
+  // slice and is wrong for users outside the top 50.
+  int? _serverUserRank;
   bool _isLoading = false;
+  // Distinguishes "leaderboard load actually failed" from "load returned
+  // empty list" so the UI can show a retry button instead of pretending
+  // the tournament has no participants.
+  bool _leaderboardLoadFailed = false;
   bool _isLoadingTournament = false;
   bool _isJoining = false;
   String? _loadError;
@@ -104,18 +113,32 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   Future<void> _loadLeaderboard() async {
     if (_tournament == null) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _leaderboardLoadFailed = false;
+    });
 
     try {
-      final leaderboard = await _tournamentService.getTournamentLeaderboard(
+      final result = await _tournamentService.getTournamentLeaderboard(
         _tournament!.id,
       );
+      // Detect "real failure" vs "actually empty": if the tournament
+      // says it has participants but we got an empty list back, the
+      // fetch must have failed silently in the service layer.
+      final isLegitimatelyEmpty = result.entries.isEmpty &&
+          _tournament!.currentParticipants == 0;
       setState(() {
-        _leaderboard = leaderboard;
+        _leaderboard = result.entries;
+        _serverUserRank = result.userRank;
         _isLoading = false;
+        _leaderboardLoadFailed =
+            result.entries.isEmpty && !isLegitimatelyEmpty;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _leaderboardLoadFailed = true;
+      });
     }
   }
 
@@ -437,7 +460,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                       ],
                     ),
                   ),
-                  if (tournament.userRank > 0)
+                  // Prefer the server-authoritative rank when we have it;
+                  // fall back to the local heuristic only as a degraded
+                  // mode (e.g. leaderboard wasn't loaded yet).
+                  if ((_serverUserRank ?? 0) > 0 || tournament.userRank > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -448,7 +474,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Rank #${tournament.userRank}',
+                        'Rank #${_serverUserRank ?? tournament.userRank}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.amber,
@@ -501,6 +527,59 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   Widget _buildLeaderboardTab(GameTheme theme) {
     if (_isLoading) {
       return ThemedLoading(theme: theme, label: 'Loading leaderboard...');
+    }
+
+    // Explicit load-failure state. Distinguishes "fetch crashed" from
+    // "genuinely empty tournament" so the user sees a retry button
+    // instead of a misleading "no participants" screen.
+    if (_leaderboardLoadFailed) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.cloud_off,
+                size: 64,
+                color: theme.accentColor.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Couldn't load the leaderboard",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.accentColor.withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Check your connection and try again.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.accentColor.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: _loadLeaderboard,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.accentColor,
+                  foregroundColor: theme.backgroundColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     if (_leaderboard.isEmpty) {

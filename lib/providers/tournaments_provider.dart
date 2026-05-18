@@ -205,12 +205,17 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
     return await _service.getTournament(tournamentId);
   }
 
-  /// Get tournament leaderboard
+  /// Get tournament leaderboard. Returns just the entries — callers
+  /// that need the server-authoritative current_user_rank should call
+  /// the TournamentService directly so they receive the full
+  /// TournamentLeaderboardResult.
   Future<List<TournamentParticipant>> getTournamentLeaderboard(
     String tournamentId, {
     int limit = 50,
   }) async {
-    return await _service.getTournamentLeaderboard(tournamentId, limit: limit);
+    final result =
+        await _service.getTournamentLeaderboard(tournamentId, limit: limit);
+    return result.entries;
   }
 
   @override
