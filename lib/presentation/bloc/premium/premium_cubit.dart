@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -371,7 +373,8 @@ class PremiumCubit extends Cubit<PremiumState> {
     _coinsCubit?.updatePremiumMultiplier(state.hasPremium, isActive);
   }
 
-  /// Select skin (validates ownership — classic is always allowed)
+  /// Select skin (validates ownership — classic is always allowed).
+  /// Pushes the choice to the backend so it survives reinstall/device-switch.
   Future<void> selectSkin(String skinId) async {
     if (state.selectedSkinId == skinId) return;
     if (skinId != 'classic' && !state.isSkinOwned(skinId)) {
@@ -382,9 +385,11 @@ class PremiumCubit extends Cubit<PremiumState> {
     emit(state.copyWith(selectedSkinId: skinId));
     await _storageService.setSelectedSkinId(skinId);
     _analytics.trackCosmeticEquipped(cosmeticType: 'skin', cosmeticId: skinId);
+    unawaited(ApiService().setEquippedCosmetics(skinId: skinId));
   }
 
-  /// Select trail (validates ownership — 'none' is always allowed)
+  /// Select trail (validates ownership — 'none' is always allowed).
+  /// Pushes the choice to the backend so it survives reinstall/device-switch.
   Future<void> selectTrail(String trailId) async {
     if (state.selectedTrailId == trailId) return;
     if (trailId != 'none' && !state.isTrailOwned(trailId)) {
@@ -395,6 +400,14 @@ class PremiumCubit extends Cubit<PremiumState> {
     emit(state.copyWith(selectedTrailId: trailId));
     await _storageService.setSelectedTrailId(trailId);
     _analytics.trackCosmeticEquipped(cosmeticType: 'trail', cosmeticId: trailId);
+    unawaited(ApiService().setEquippedCosmetics(trailId: trailId));
+  }
+
+  /// Push the currently-applied theme to the backend so it survives
+  /// reinstall/device-switch. The actual local theme state lives in
+  /// ThemeCubit — this is a fire-and-forget passthrough for sync.
+  Future<void> syncSelectedTheme(String themeName) async {
+    unawaited(ApiService().setEquippedCosmetics(themeId: themeName));
   }
 
   /// Unlock a theme
@@ -676,6 +689,36 @@ class PremiumCubit extends Cubit<PremiumState> {
         ));
         _storageService.setPremiumActive(true);
         _storageService.setPremiumExpirationDate(expiry.toIso8601String());
+      }
+    }
+
+    // Restore equipped cosmetics from backend if the local choice is still
+    // at the default. Covers the reinstall/device-switch scenario where
+    // ownership is restored but SelectedXxxId was never re-pushed locally.
+    // If the user has explicitly picked a non-default value locally, we
+    // keep it — the backend may be stale relative to the local choice.
+    final backendSkinId = data['selected_skin_id'] as String?;
+    if (backendSkinId != null &&
+        backendSkinId.isNotEmpty &&
+        state.selectedSkinId == 'classic' &&
+        backendSkinId != 'classic') {
+      await selectSkin(backendSkinId);
+    }
+    final backendTrailId = data['selected_trail_id'] as String?;
+    if (backendTrailId != null &&
+        backendTrailId.isNotEmpty &&
+        state.selectedTrailId == 'none' &&
+        backendTrailId != 'none') {
+      await selectTrail(backendTrailId);
+    }
+    final backendThemeId = data['selected_theme_id'] as String?;
+    if (backendThemeId != null && backendThemeId.isNotEmpty) {
+      // ThemeCubit decides whether to apply (only if local is at default,
+      // avoiding override of a deliberate local pick).
+      try {
+        await getIt<ThemeCubit>().applyEquippedThemeFromBackend(backendThemeId);
+      } catch (e) {
+        AppLogger.warning('Failed to apply backend theme: $e');
       }
     }
   }

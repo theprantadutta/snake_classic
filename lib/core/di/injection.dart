@@ -151,7 +151,7 @@ Future<void> configureDependencies() async {
   // Cubits are registered as factories (new instance each time)
   // This ensures fresh state when navigating to new screens
 
-  getIt.registerFactory<ThemeCubit>(
+  getIt.registerLazySingleton<ThemeCubit>(
     () => ThemeCubit(getIt<PreferencesService>(), getIt<AnalyticsFacade>()),
   );
 

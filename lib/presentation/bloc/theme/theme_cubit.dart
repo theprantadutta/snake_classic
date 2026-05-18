@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_state.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
@@ -49,6 +52,24 @@ class ThemeCubit extends Cubit<ThemeState> {
     emit(state.copyWith(currentTheme: theme));
     await _preferencesService.setTheme(theme);
     _analytics.trackThemeSelected(theme.name);
+
+    // Push the choice to the backend so it survives reinstall/device-switch.
+    // Premium themes are the typical case worth syncing, but we sync all
+    // applied themes (including free ones) for simplicity — the value is
+    // tiny and the API call is fire-and-forget.
+    unawaited(ApiService().setEquippedCosmetics(themeId: theme.name));
+  }
+
+  /// Apply a theme from the backend ONLY if the local choice is still the
+  /// default (classic). Called by PremiumCubit during sync to restore
+  /// the equipped theme after reinstall/device-switch without overriding
+  /// a deliberate local pick. No backend push — the value came FROM there.
+  Future<void> applyEquippedThemeFromBackend(String themeName) async {
+    if (state.currentTheme != GameTheme.classic) return;
+    final target = GameTheme.values.where((t) => t.name == themeName).firstOrNull;
+    if (target == null || target == GameTheme.classic) return;
+    emit(state.copyWith(currentTheme: target));
+    await _preferencesService.setTheme(target);
   }
 
   /// Cycle to the next theme (only free themes; premium themes require explicit selection)

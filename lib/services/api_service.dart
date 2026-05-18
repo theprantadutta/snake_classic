@@ -1107,6 +1107,35 @@ class ApiService {
     }
   }
 
+  /// Persist the user's equipped cosmetic IDs so they survive reinstall
+  /// and device-switch. Pass null for any slot you don't want to change.
+  /// Returns the updated PremiumContent DTO, or null on failure (caller
+  /// can ignore — local SharedPreferences already has the chosen value).
+  Future<Map<String, dynamic>?> setEquippedCosmetics({
+    String? skinId,
+    String? trailId,
+    String? themeId,
+  }) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/purchases/equipped-cosmetics'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'skinId': ?skinId,
+              'trailId': ?trailId,
+              'themeId': ?themeId,
+            }),
+          )
+          .timeout(_timeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error setting equipped cosmetics', e);
+      return null;
+    }
+  }
+
   // ==================== Battle Pass ====================
 
   /// Get current battle pass season
