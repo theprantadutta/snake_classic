@@ -108,6 +108,25 @@ Skin IDs use the `skin_` category prefix.
 | `com.pranta.snakeclassic.championship_entry` | Championship Entry | $9.99 |
 | `com.pranta.snakeclassic.tournament_vip_entry` | VIP Tournament Entry | $14.99 |
 
+#### Tournament tickets — how they're wired today
+
+The 5 entry SKUs above are sold as consumables. On the client side they
+track in `PremiumState.bronzeTournamentEntries` etc.; on the backend
+they accumulate in `UserPremiumContent.TournamentEntries` (a JSONB
+dictionary keyed by tier). The `tournament_detail_screen` join flow
+checks the local counter before allowing a join — if zero, it opens a
+purchase dialog.
+
+**Known gap (out of scope for the current tournament-audit commit):**
+the backend's `JoinTournamentCommandHandler` does NOT inspect the
+ticket inventory. It only deducts `EntryFee` coins from the tournament
+definition (e.g. 100 coins for weekly, 250 for monthly). So today the
+tickets are a CLIENT-SIDE gate but never enforced server-side — a
+client that bypasses the gate (e.g. tampered build) could join without
+spending a ticket. Fixing this is a dedicated commit: decide whether
+tickets gate access, replace the coin fee, or both, then plumb the
+choice through `JoinTournamentCommand` + `TournamentEntry` audit.
+
 ### Removed Products
 
 The following products have been removed from IAP (power-ups are now coin-purchased only):
