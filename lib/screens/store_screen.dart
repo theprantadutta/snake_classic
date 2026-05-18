@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -1539,7 +1541,9 @@ class _StoreScreenState extends State<StoreScreen>
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.70,
+        // Slightly more vertical room than the skins tab so the painted
+        // trail preview has space to breathe.
+        childAspectRatio: 0.78,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -1550,19 +1554,15 @@ class _StoreScreenState extends State<StoreScreen>
             !trail.isPremium || premiumState.isTrailOwned(trail.id);
         final isSelected = premiumState.selectedTrailId == trail.id;
         final productId = ProductIds.withPrefix(trail.id);
-        return _buildCosmeticCard(
-          title: trail.displayName,
-          description: trail.description,
-          icon: trail.icon,
-          colors: trail.colors,
+        return _buildTrailCard(
+          trail: trail,
+          isUnlocked: isUnlocked,
+          isSelected: isSelected,
+          isPending: _pendingProductIds.contains(productId),
           price: trail.isPremium
               ? PurchaseService()
                   .getStorePriceOrDefault(productId, trail.price)
               : 'FREE',
-          isUnlocked: isUnlocked,
-          isSelected: isSelected,
-          isPremium: trail.isPremium,
-          isPending: _pendingProductIds.contains(productId),
           theme: theme,
           onTap: () {
             if (isUnlocked) {
@@ -1584,6 +1584,182 @@ class _StoreScreenState extends State<StoreScreen>
           },
         );
       },
+    );
+  }
+
+  /// Modernized trail card — replaces the generic emoji-in-circle layout
+  /// for the Trails tab. Each card paints a custom preview that uses the
+  /// trail's actual colors and a type-specific signature (sparkles for
+  /// particle, lightning for electric, flames for fire, etc.) so the
+  /// twelve trails read as visually distinct at a glance rather than
+  /// twelve near-identical chip variations.
+  Widget _buildTrailCard({
+    required TrailEffectType trail,
+    required bool isUnlocked,
+    required bool isSelected,
+    required bool isPending,
+    required String price,
+    required GameTheme theme,
+    required VoidCallback onTap,
+  }) {
+    // Header palette for the gradient backdrop. Use the trail's own
+    // colors when it has them; fall back to theme accent for the
+    // "No Trail" entry.
+    final palette = trail.colors.isNotEmpty
+        ? trail.colors
+        : [
+            theme.accentColor.withValues(alpha: 0.35),
+            theme.backgroundColor.withValues(alpha: 0.6),
+          ];
+    final headerStart = palette.first.withValues(alpha: 0.85);
+    final headerEnd = palette.last.withValues(alpha: 0.35);
+
+    return GestureDetector(
+      onTap: isPending ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: theme.backgroundColor.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? theme.accentColor
+                : isUnlocked
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : palette.last.withValues(alpha: 0.45),
+            width: isSelected ? 2 : 1,
+          ),
+          // Soft outer glow for the active trail so the selection state
+          // pops without flooding the surrounding grid.
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: theme.accentColor.withValues(alpha: 0.30),
+                    blurRadius: 14,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Preview band — custom-painted trail signature on a
+            // gradient backdrop pulled from the trail's color palette.
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [headerStart, headerEnd],
+                  ),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Faint radial highlight that gives every card a
+                    // shared "lit from upper-left" feel and prevents
+                    // dark palettes (shadow) from looking flat.
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: const Alignment(-0.6, -0.6),
+                          radius: 1.0,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.18),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                    CustomPaint(
+                      painter: _TrailPreviewPainter(
+                        trail: trail,
+                        accentColor: theme.accentColor,
+                      ),
+                    ),
+                    if (!isUnlocked && trail.isPremium)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.lock,
+                                  color: Colors.white, size: 11),
+                              SizedBox(width: 4),
+                              Text(
+                                'PRO',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            // Info plate underneath — name, one-line description, status pill.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    trail.displayName,
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    trail.description,
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.65),
+                      fontSize: 10,
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildCosmeticStatusPill(
+                    theme: theme,
+                    isSelected: isSelected,
+                    isUnlocked: isUnlocked,
+                    isPending: isPending,
+                    priceLabel: price,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -2450,4 +2626,344 @@ class _PowerUpCatalogItem {
     required this.icon,
     required this.coinCost,
   });
+}
+
+/// Paints a stylized snake-trail preview specific to each trail type.
+/// The shared element is a 5-segment serpentine head with a fading
+/// tail; the per-trail signature (sparkles, lightning, flame, stars,
+/// crystal facets, etc.) draws on top using the trail's own color
+/// palette. The painter never animates — these are still previews —
+/// but the geometric variation is rich enough to make twelve trails
+/// visually distinct at glance.
+class _TrailPreviewPainter extends CustomPainter {
+  final TrailEffectType trail;
+  final Color accentColor;
+
+  _TrailPreviewPainter({required this.trail, required this.accentColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final width = size.width;
+    final height = size.height;
+    final palette = trail.colors;
+
+    // 5-segment serpentine head, curving down-right across the card.
+    // Coordinates are normalized inside the preview band so the
+    // composition stays consistent across grid cell sizes.
+    final segmentCenters = <Offset>[
+      Offset(width * 0.18, height * 0.62), // tail
+      Offset(width * 0.34, height * 0.52),
+      Offset(width * 0.50, height * 0.45),
+      Offset(width * 0.66, height * 0.42),
+      Offset(width * 0.82, height * 0.45), // head
+    ];
+    final segmentRadius = (width < height ? width : height) * 0.08;
+
+    // Trail-specific overlays — drawn BEHIND the snake so the head
+    // reads cleanly on top.
+    switch (trail) {
+      case TrailEffectType.none:
+        // Empty band, just the base gradient backdrop.
+        break;
+      case TrailEffectType.particle:
+        _drawSparkles(canvas, size, palette, density: 14);
+        break;
+      case TrailEffectType.glow:
+        _drawHalos(canvas, segmentCenters, palette, segmentRadius);
+        break;
+      case TrailEffectType.rainbow:
+        _drawRainbowArc(canvas, segmentCenters, palette, segmentRadius);
+        break;
+      case TrailEffectType.fire:
+        _drawFlames(canvas, segmentCenters, palette);
+        break;
+      case TrailEffectType.electric:
+        _drawLightning(canvas, segmentCenters, palette);
+        break;
+      case TrailEffectType.star:
+        _drawStars(canvas, size, palette);
+        break;
+      case TrailEffectType.cosmic:
+        _drawNebula(canvas, size, palette);
+        break;
+      case TrailEffectType.neon:
+        _drawNeonGlow(canvas, segmentCenters, palette, segmentRadius);
+        break;
+      case TrailEffectType.shadow:
+        _drawShadowSmoke(canvas, segmentCenters, palette);
+        break;
+      case TrailEffectType.crystal:
+        _drawCrystalShards(canvas, segmentCenters, palette, segmentRadius);
+        break;
+      case TrailEffectType.dragon:
+        _drawDragonBreath(canvas, segmentCenters, palette);
+        break;
+    }
+
+    // Snake head + body. Color picked from the trail palette so the
+    // snake itself reads as part of the trail's identity. Tail fades
+    // by alpha so the serpentine reads directionally.
+    for (var i = 0; i < segmentCenters.length; i++) {
+      final t = i / (segmentCenters.length - 1);
+      final color = palette.isEmpty
+          ? accentColor
+          : Color.lerp(palette.first, palette.last, t) ?? palette.first;
+      final fade = 0.45 + 0.55 * t;
+      final paint = Paint()
+        ..color = color.withValues(alpha: fade)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(
+        segmentCenters[i],
+        segmentRadius * (0.7 + 0.3 * t),
+        paint,
+      );
+    }
+
+    // Snake-head highlight — small bright dot on the leading segment
+    // so the eye picks up direction immediately.
+    canvas.drawCircle(
+      segmentCenters.last,
+      segmentRadius * 0.25,
+      Paint()..color = Colors.white.withValues(alpha: 0.85),
+    );
+  }
+
+  // ------------- Per-trail signature helpers -------------
+
+  void _drawSparkles(Canvas canvas, Size size, List<Color> palette,
+      {required int density}) {
+    final paint = Paint()
+      ..color = (palette.isEmpty ? Colors.white : palette.first)
+          .withValues(alpha: 0.9);
+    final rng = math.Random(7);
+    for (var i = 0; i < density; i++) {
+      final cx = rng.nextDouble() * size.width;
+      final cy = rng.nextDouble() * size.height;
+      final r = 0.8 + rng.nextDouble() * 1.6;
+      canvas.drawCircle(Offset(cx, cy), r, paint);
+    }
+  }
+
+  void _drawHalos(Canvas canvas, List<Offset> centers, List<Color> palette,
+      double r) {
+    for (var i = 0; i < centers.length; i++) {
+      final paint = Paint()
+        ..color = (palette.isEmpty
+                ? Colors.cyan
+                : Color.lerp(palette.first, palette.last,
+                    i / centers.length)!)
+            .withValues(alpha: 0.30)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawCircle(centers[i], r * 2.0, paint);
+    }
+  }
+
+  void _drawRainbowArc(Canvas canvas, List<Offset> centers,
+      List<Color> palette, double r) {
+    if (palette.isEmpty) return;
+    final path = Path()..moveTo(centers.first.dx, centers.first.dy);
+    for (var i = 1; i < centers.length; i++) {
+      path.lineTo(centers[i].dx, centers[i].dy);
+    }
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: palette,
+      ).createShader(
+          Rect.fromPoints(centers.first, centers.last))
+      ..strokeWidth = r * 1.8
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawFlames(Canvas canvas, List<Offset> centers, List<Color> palette) {
+    if (palette.length < 2) return;
+    final tail = centers.first;
+    for (var i = 0; i < 6; i++) {
+      final t = i / 5;
+      final flameTip = Offset(
+        tail.dx - 10 - i * 3,
+        tail.dy + 8 - i * 2.5,
+      );
+      final flameBase = Offset(tail.dx + (i % 2 == 0 ? -2 : 2), tail.dy);
+      final path = Path()
+        ..moveTo(flameBase.dx - 4, flameBase.dy + 4)
+        ..quadraticBezierTo(
+          flameTip.dx - 2, flameTip.dy + 4, flameTip.dx, flameTip.dy)
+        ..quadraticBezierTo(
+          flameTip.dx + 2, flameTip.dy + 4, flameBase.dx + 4, flameBase.dy + 4)
+        ..close();
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = Color.lerp(palette.last, palette.first, t)!
+              .withValues(alpha: 0.55 - t * 0.4)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      );
+    }
+  }
+
+  void _drawLightning(
+      Canvas canvas, List<Offset> centers, List<Color> palette) {
+    if (palette.isEmpty) return;
+    final paint = Paint()
+      ..color = palette.first.withValues(alpha: 0.85)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+    for (var i = 0; i < centers.length - 1; i++) {
+      final mid = Offset(
+        (centers[i].dx + centers[i + 1].dx) / 2,
+        (centers[i].dy + centers[i + 1].dy) / 2 + (i.isEven ? 6 : -6),
+      );
+      final path = Path()
+        ..moveTo(centers[i].dx, centers[i].dy)
+        ..lineTo(mid.dx, mid.dy)
+        ..lineTo(centers[i + 1].dx, centers[i + 1].dy);
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawStars(Canvas canvas, Size size, List<Color> palette) {
+    if (palette.isEmpty) return;
+    final rng = math.Random(42);
+    for (var i = 0; i < 8; i++) {
+      final cx = rng.nextDouble() * size.width;
+      final cy = rng.nextDouble() * size.height;
+      final r = 2 + rng.nextDouble() * 3;
+      _drawStarGlyph(
+        canvas,
+        Offset(cx, cy),
+        r,
+        Paint()
+          ..color = palette[i % palette.length]
+              .withValues(alpha: 0.85),
+      );
+    }
+  }
+
+  void _drawStarGlyph(Canvas canvas, Offset c, double r, Paint paint) {
+    final path = Path();
+    for (var i = 0; i < 4; i++) {
+      final angle = (math.pi / 2) * i;
+      final tip = Offset(c.dx + math.cos(angle) * r, c.dy + math.sin(angle) * r);
+      final inner = Offset(
+        c.dx + math.cos(angle + math.pi / 4) * r * 0.35,
+        c.dy + math.sin(angle + math.pi / 4) * r * 0.35,
+      );
+      if (i == 0) path.moveTo(tip.dx, tip.dy);
+      path.lineTo(inner.dx, inner.dy);
+      if (i < 3) {
+        final nextTip = Offset(
+          c.dx + math.cos(angle + math.pi / 2) * r,
+          c.dy + math.sin(angle + math.pi / 2) * r,
+        );
+        path.lineTo(nextTip.dx, nextTip.dy);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawNebula(Canvas canvas, Size size, List<Color> palette) {
+    if (palette.length < 2) return;
+    for (var i = 0; i < 5; i++) {
+      final rng = math.Random(i * 11);
+      final c = Offset(
+        rng.nextDouble() * size.width,
+        rng.nextDouble() * size.height,
+      );
+      final paint = Paint()
+        ..color = palette[i % palette.length].withValues(alpha: 0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+      canvas.drawCircle(c, 8 + rng.nextDouble() * 12, paint);
+    }
+  }
+
+  void _drawNeonGlow(Canvas canvas, List<Offset> centers, List<Color> palette,
+      double r) {
+    if (palette.isEmpty) return;
+    for (var i = 0; i < centers.length; i++) {
+      final color = palette[i % palette.length];
+      canvas.drawCircle(
+        centers[i],
+        r * 2.5,
+        Paint()
+          ..color = color.withValues(alpha: 0.40)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+      );
+    }
+  }
+
+  void _drawShadowSmoke(
+      Canvas canvas, List<Offset> centers, List<Color> palette) {
+    if (palette.isEmpty) return;
+    final rng = math.Random(99);
+    for (var i = 0; i < 9; i++) {
+      final base = centers[i % centers.length];
+      final puff = Offset(
+        base.dx - rng.nextDouble() * 24,
+        base.dy + (rng.nextDouble() - 0.3) * 18,
+      );
+      canvas.drawCircle(
+        puff,
+        4 + rng.nextDouble() * 5,
+        Paint()
+          ..color = palette.first.withValues(alpha: 0.35)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+    }
+  }
+
+  void _drawCrystalShards(Canvas canvas, List<Offset> centers,
+      List<Color> palette, double r) {
+    if (palette.isEmpty) return;
+    final rng = math.Random(13);
+    for (var i = 0; i < 6; i++) {
+      final base = centers[i % centers.length];
+      final tip = Offset(
+        base.dx + (rng.nextDouble() - 0.5) * 26,
+        base.dy - 4 - rng.nextDouble() * 10,
+      );
+      final left = Offset(tip.dx - 3, tip.dy + 6);
+      final right = Offset(tip.dx + 3, tip.dy + 6);
+      final path = Path()
+        ..moveTo(tip.dx, tip.dy)
+        ..lineTo(left.dx, left.dy)
+        ..lineTo(right.dx, right.dy)
+        ..close();
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = palette[i % palette.length].withValues(alpha: 0.75),
+      );
+    }
+  }
+
+  void _drawDragonBreath(
+      Canvas canvas, List<Offset> centers, List<Color> palette) {
+    if (palette.length < 2) return;
+    // Curving plume from the head, fanning out as it trails.
+    final head = centers.last;
+    for (var i = 0; i < 8; i++) {
+      final t = i / 7;
+      final cx = head.dx + 8 + i * 4.0;
+      final cy = head.dy - 6 + (i % 2 == 0 ? 0 : 4);
+      final r = 6.0 - t * 4.0;
+      canvas.drawCircle(
+        Offset(cx, cy),
+        r,
+        Paint()
+          ..color = Color.lerp(palette.last, palette.first, t)!
+              .withValues(alpha: 0.65 - t * 0.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrailPreviewPainter old) =>
+      old.trail != trail || old.accentColor != accentColor;
 }
