@@ -759,7 +759,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     int rank,
     GameTheme theme,
   ) {
-    final authService = context.read<AuthService>();
+    // AuthService is a singleton (factory pattern in auth_service.dart),
+    // NOT a registered Provider. The previous context.read<AuthService>()
+    // threw ProviderNotFoundException because nothing in the widget tree
+    // exposes it. Call the singleton factory directly.
+    final authService = AuthService();
     final isCurrentUser = participant.userId == authService.currentUser?.uid;
 
     return Container(
