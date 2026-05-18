@@ -46,6 +46,7 @@ import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.da
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart'; // Also exports game_settings_cubit
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
+import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 
 /// Global GetIt instance for dependency injection
 final getIt = GetIt.instance;
@@ -206,6 +207,10 @@ Future<void> configureDependencies() async {
       premiumCubit: getIt<PremiumCubit>(),
       analytics: getIt<AnalyticsFacade>(),
     ),
+  );
+
+  getIt.registerLazySingleton<PowerUpCubit>(
+    () => PowerUpCubit(api: getIt<ApiService>()),
   );
 }
 

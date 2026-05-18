@@ -1136,6 +1136,56 @@ class ApiService {
     }
   }
 
+  // ==================== Power-Ups (pre-game inventory) ====================
+
+  Future<Map<String, dynamic>?> getPowerUpInventory() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/PowerUps/inventory'), headers: _authHeaders)
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error getting power-up inventory', e);
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> purchasePowerUp(
+      String powerUpType, int coinCost) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/PowerUps/purchase'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'powerUpType': powerUpType,
+              'coinCost': coinCost,
+            }),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error purchasing power-up', e);
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> consumePowerUp(String powerUpType) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/PowerUps/consume'),
+            headers: _authHeaders,
+            body: jsonEncode({'powerUpType': powerUpType}),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error consuming power-up', e);
+      return null;
+    }
+  }
+
   // ==================== Battle Pass ====================
 
   /// Get current battle pass season

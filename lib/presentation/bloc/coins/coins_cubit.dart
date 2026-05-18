@@ -326,6 +326,23 @@ class CoinsCubit extends Cubit<CoinsState> {
     return true;
   }
 
+  /// Set the coin balance to a server-authoritative value. Used after a
+  /// backend mutation (e.g. coin-purchased power-up) returns the new
+  /// total — keeps local state aligned with the server without a full
+  /// sync round-trip. The delta is recorded as a `spent` adjustment when
+  /// the server total is lower than local.
+  Future<void> setServerBalance(int serverTotal) async {
+    if (state.balance.total == serverTotal) return;
+    final delta = state.balance.total - serverTotal;
+    final newBalance = state.balance.copyWith(
+      total: serverTotal,
+      spent: delta > 0 ? state.balance.spent + delta : state.balance.spent,
+      lastUpdated: DateTime.now(),
+    );
+    emit(state.copyWith(balance: newBalance));
+    await _saveData();
+  }
+
   /// Spend coins on an item
   Future<bool> spendCoins(
     int amount,

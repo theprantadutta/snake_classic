@@ -15,6 +15,7 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
+import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -292,6 +293,10 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
         ),
         BlocProvider<BattlePassCubit>.value(
           value: getIt<BattlePassCubit>()..initialize(),
+        ),
+        // Pre-game power-up inventory (coin-purchased, server-backed)
+        BlocProvider<PowerUpCubit>.value(
+          value: getIt<PowerUpCubit>()..loadInventory(),
         ),
       ],
       // MultiProvider for core services that are not Cubits

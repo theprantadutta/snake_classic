@@ -5,6 +5,7 @@ import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/core/di/injection.dart';
@@ -1530,119 +1531,136 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
   // POWER-UPS TAB
   // ===========================================================================
-  //
-  // Commit 1: informational catalog. Buying a power-up still debits coins
-  // via CoinsCubit.spendCoins() — actual inventory storage and pre-game
-  // activation land in Commit 4 (which adds backend PowerUpInventory + a
-  // pre-game activation flow). For now the snackbar says "Coming soon" so
-  // users aren't misled into spending coins for nothing.
+  // Power-ups now have a real coin-purchased inventory backed by the
+  // /api/v1/PowerUps/{inventory,purchase,consume} endpoints. The 4 types
+  // here match the PowerUpType enum used by the gameplay engine, so each
+  // purchase produces a usable stockpile entry (activation UI lands in a
+  // follow-up — for now the inventory accrues server-side and the user
+  // can see their count).
 
   Widget _buildPowerUpsTab(
     GameTheme theme,
     PremiumState premiumState,
     CoinsState coinsState,
   ) {
+    // Power-up types use snake_case to match the JSON dictionary keys
+    // returned by the backend (ASP.NET applies DictionaryKeyPolicy =
+    // SnakeCaseLower to outgoing dicts). Mapping back to PowerUpType for
+    // activation lives in the game cubit (next commit).
     final powerUps = const [
       _PowerUpCatalogItem(
         type: 'speed_boost',
         name: 'Speed Boost',
-        description: 'Doubles your speed for 5 seconds.',
+        description: 'Increases snake speed for 7 seconds.',
         icon: Icons.speed,
         coinCost: 50,
       ),
       _PowerUpCatalogItem(
         type: 'invincibility',
         name: 'Invincibility',
-        description: 'Pass through walls and yourself for 5 seconds.',
+        description: 'Pass through walls and yourself for 6 seconds.',
         icon: Icons.shield,
         coinCost: 75,
       ),
       _PowerUpCatalogItem(
-        type: 'ghost_mode',
-        name: 'Ghost Mode',
-        description: 'Phase through obstacles for 4 seconds.',
-        icon: Icons.visibility_off,
-        coinCost: 100,
+        type: 'score_multiplier',
+        name: 'Score Multiplier',
+        description: 'Double points for 10 seconds.',
+        icon: Icons.star,
+        coinCost: 60,
       ),
       _PowerUpCatalogItem(
-        type: 'teleport',
-        name: 'Teleport',
-        description: 'Instantly jump to a safe location.',
-        icon: Icons.my_location,
-        coinCost: 80,
+        type: 'slow_motion',
+        name: 'Slow Motion',
+        description: 'Slows the game for precision (8 seconds).',
+        icon: Icons.slow_motion_video,
+        coinCost: 50,
       ),
     ];
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.18),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: theme.accentColor, size: 18),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Power-ups spawn naturally during gameplay. '
-                    'Pre-game inventory & activation arriving soon.',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.85),
-                      fontSize: 12,
-                      height: 1.3,
-                    ),
+
+    return BlocBuilder<PowerUpCubit, PowerUpState>(
+      builder: (context, powerUpState) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.18),
                   ),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline,
+                        color: theme.accentColor, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Buy power-ups with coins to stockpile them. '
+                        'Pre-game activation arriving soon.',
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.85),
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Power-Ups',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...powerUps.map(
+                (p) => _buildPowerUpCatalogCard(p, theme, powerUpState),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Power-Up Bundles',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Unlock multiple power-up types at a discount.',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.7),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...PowerUpBundle.availableBundles.map(
+                (bundle) => _buildPowerUpBundleCard(
+                    bundle, theme, premiumState, coinsState),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Power-Ups',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...powerUps.map((p) => _buildPowerUpCatalogCard(p, theme)),
-          const SizedBox(height: 24),
-          Text(
-            'Power-Up Bundles',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Unlock multiple power-up types at a discount.',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.7),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...PowerUpBundle.availableBundles.map(
-            (bundle) =>
-                _buildPowerUpBundleCard(bundle, theme, premiumState, coinsState),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildPowerUpCatalogCard(_PowerUpCatalogItem item, GameTheme theme) {
+  Widget _buildPowerUpCatalogCard(
+    _PowerUpCatalogItem item,
+    GameTheme theme,
+    PowerUpState powerUpState,
+  ) {
+    final owned = powerUpState.countFor(item.type);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -1656,13 +1674,42 @@ class _StoreScreenState extends State<StoreScreen>
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(item.icon, color: theme.accentColor, size: 22),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(item.icon, color: theme.accentColor, size: 22),
+              ),
+              if (owned > 0)
+                Positioned(
+                  top: -6,
+                  right: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Text(
+                      'x$owned',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1688,37 +1735,27 @@ class _StoreScreenState extends State<StoreScreen>
               ],
             ),
           ),
-          // Buy button — disabled until Commit 4 wires the inventory.
-          OutlinedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Pre-game power-up inventory coming soon!',
-                  ),
-                  backgroundColor: Colors.blueGrey,
-                ),
-              );
-            },
-            style: OutlinedButton.styleFrom(
+          ElevatedButton(
+            onPressed: () => _purchasePowerUpWithCoins(item, theme),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor.withValues(alpha: 0.85),
+              foregroundColor: Colors.white,
               padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              side: BorderSide(
-                color: theme.accentColor.withValues(alpha: 0.35),
-              ),
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
+              elevation: 0,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.monetization_on, size: 14, color: Colors.amber),
+                const Icon(Icons.monetization_on,
+                    size: 14, color: Colors.amber),
                 const SizedBox(width: 4),
                 Text(
                   '${item.coinCost}',
-                  style: TextStyle(
-                    color: theme.accentColor,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1727,6 +1764,78 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _purchasePowerUpWithCoins(
+      _PowerUpCatalogItem item, GameTheme theme) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final coinsCubit = context.read<CoinsCubit>();
+    final powerUpCubit = context.read<PowerUpCubit>();
+    final coinsBalance = coinsCubit.state.balance.total;
+    if (coinsBalance < item.coinCost) {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Insufficient coins!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(item.icon, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(item.name, style: TextStyle(color: theme.accentColor)),
+          ],
+        ),
+        content: Text(
+          'Buy 1 ${item.name} for ${item.coinCost} coins?',
+          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('Buy - ${item.coinCost} coins'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final newBalance =
+        await powerUpCubit.purchaseWithCoins(item.type, item.coinCost);
+    if (!mounted) return;
+    if (newBalance == null) {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Purchase failed. Try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    // Reflect the server-authoritative coin balance locally so the
+    // CoinsCubit and any other UI stays in sync without an extra round-trip.
+    await coinsCubit.setServerBalance(newBalance);
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Text('${item.name} added to your loadout!'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
