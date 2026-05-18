@@ -365,56 +365,111 @@ class Tournament {
   }
 
   factory Tournament.fromJson(Map<String, dynamic> json) {
+    // Pull a value tolerantly: try snake_case (ASP.NET wire format)
+    // first, then camelCase (legacy / non-API), then null.
+    T? pick<T>(String snake, String camel) {
+      return (json[snake] as T?) ?? (json[camel] as T?);
+    }
+
+    // Enum lookup that matches both wire formats. Backend sends
+    // SnakeCaseLower ("speed_run", "completed"); Flutter names are
+    // camelCase ("speedRun") or sometimes different ("ended" vs
+    // "completed"). Match by snake-case-equivalent of the enum name.
+    String snakeFromCamel(String camel) {
+      final buf = StringBuffer();
+      for (var i = 0; i < camel.length; i++) {
+        final c = camel[i];
+        if (c == c.toUpperCase() && c != c.toLowerCase()) {
+          if (i > 0) buf.write('_');
+          buf.write(c.toLowerCase());
+        } else {
+          buf.write(c);
+        }
+      }
+      return buf.toString();
+    }
+
     return Tournament(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
+      id: pick<String>('id', 'id') ?? '',
+      name: pick<String>('name', 'name') ?? '',
+      description: pick<String>('description', 'description') ?? '',
       type: TournamentType.values.firstWhere(
-        (type) => type.name == json['type'],
+        (t) => t.name == json['type'] || snakeFromCamel(t.name) == json['type'],
         orElse: () => TournamentType.daily,
       ),
-      status: TournamentStatus.values.firstWhere(
-        (status) => status.name == json['status'],
-        orElse: () => TournamentStatus.upcoming,
-      ),
+      status: () {
+        // Special-case backend's "completed" → Flutter's "ended".
+        final raw = json['status'] as String?;
+        if (raw == 'completed' || raw == 'ended') return TournamentStatus.ended;
+        if (raw == 'active') return TournamentStatus.active;
+        return TournamentStatus.upcoming;
+      }(),
       gameMode: TournamentGameMode.values.firstWhere(
-        (mode) => mode.name == json['gameMode'],
+        (m) =>
+            m.name == json['game_mode'] ||
+            m.name == json['gameMode'] ||
+            snakeFromCamel(m.name) == json['game_mode'] ||
+            snakeFromCamel(m.name) == json['gameMode'],
         orElse: () => TournamentGameMode.classic,
       ),
       startDate: DateTime.parse(
-        json['startDate'] ?? DateTime.now().toIso8601String(),
+        pick<String>('start_date', 'startDate') ??
+            DateTime.now().toIso8601String(),
       ),
       endDate: DateTime.parse(
-        json['endDate'] ??
+        pick<String>('end_date', 'endDate') ??
             DateTime.now().add(const Duration(days: 1)).toIso8601String(),
       ),
-      maxParticipants: json['maxParticipants'] ?? 1000,
-      currentParticipants: json['currentParticipants'] ?? 0,
-      rewards:
-          (json['rewards'] as Map<String, dynamic>?)?.map(
-            (k, v) => MapEntry(int.parse(k), TournamentReward.fromJson(v)),
+      maxParticipants:
+          pick<int>('max_participants', 'maxParticipants') ?? 1000,
+      currentParticipants:
+          pick<int>('current_participants', 'currentParticipants') ?? 0,
+      rewards: (pick<Map>('prize_distribution', 'rewards'))?.map(
+            (k, v) {
+              final rankKey = int.tryParse(k.toString().split('-').first) ?? 0;
+              if (v is Map<String, dynamic>) {
+                return MapEntry(rankKey, TournamentReward.fromJson(v));
+              }
+              // Backend's PrizeDistribution stores a flat
+              // {"1": 40000, "6-10": 2000} dict where values are coin
+              // amounts. Synthesize a TournamentReward so the Flutter
+              // detail screen can render it directly.
+              return MapEntry(
+                rankKey,
+                TournamentReward(
+                  id: 'r$k',
+                  name: 'Rank $k',
+                  description: 'Coin reward for rank $k',
+                  type: 'coins',
+                  coins: v is int ? v : (v is num ? v.toInt() : 0),
+                ),
+              );
+            },
           ) ??
           {},
-      gameSettings: Map<String, dynamic>.from(json['gameSettings'] ?? {}),
-      rules: Map<String, dynamic>.from(json['rules'] ?? {}),
-      imageUrl: json['imageUrl'],
-      requiresEntry: json['requiresEntry'] ?? false,
-      entryCost: json['entryCost'] ?? 0,
-      leaderboard:
-          (json['leaderboard'] as List?)
+      gameSettings: Map<String, dynamic>.from(
+          pick<Map>('game_settings', 'gameSettings') ?? {}),
+      rules: Map<String, dynamic>.from(pick<Map>('rules', 'rules') ?? {}),
+      imageUrl: pick<String>('image_url', 'imageUrl'),
+      // Server now derives requires_entry from EntryFee>0; trust it.
+      requiresEntry: pick<bool>('requires_entry', 'requiresEntry') ?? false,
+      // Backend uses entry_fee; Flutter callers historically passed
+      // entry_cost. Accept either.
+      entryCost: pick<int>('entry_fee', 'entryCost') ??
+          pick<int>('entry_cost', 'entryCost') ??
+          0,
+      leaderboard: (json['leaderboard'] as List?)
               ?.map((p) => TournamentParticipant.fromJson(p))
               .toList() ??
           [],
-      userLastAttempt: json['userLastAttempt'] != null
-          ? DateTime.parse(json['userLastAttempt'])
+      userLastAttempt: pick<String>('user_last_attempt', 'userLastAttempt') !=
+              null
+          ? DateTime.parse(
+              pick<String>('user_last_attempt', 'userLastAttempt')!)
           : null,
-      userBestScore: json['userBestScore'],
-      userAttempts: json['userAttempts'],
-      // Backend TournamentDto.IsJoined → snake_case `is_joined`. Accept
-      // the camelCase variant too so the model handles both ASP.NET's
-      // SnakeCaseLower output and any older/non-API JSON payloads.
-      isJoinedServer:
-          (json['is_joined'] as bool?) ?? (json['isJoined'] as bool?) ?? false,
+      userBestScore: pick<int>('user_best_score', 'userBestScore'),
+      userAttempts: pick<int>('user_attempts', 'userAttempts'),
+      isJoinedServer: pick<bool>('is_joined', 'isJoined') ?? false,
     );
   }
 
