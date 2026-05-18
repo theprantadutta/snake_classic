@@ -236,6 +236,11 @@ class Tournament {
   final DateTime? userLastAttempt;
   final int? userBestScore;
   final int? userAttempts;
+  // Server-authoritative "did this user join the tournament" flag.
+  // Backend (TournamentDto.IsJoined) sets this when the JoinTournament
+  // command succeeded. Distinct from userBestScore/userAttempts which
+  // only become non-null AFTER the user has played at least once.
+  final bool isJoinedServer;
 
   const Tournament({
     required this.id,
@@ -258,6 +263,7 @@ class Tournament {
     this.userLastAttempt,
     this.userBestScore,
     this.userAttempts,
+    this.isJoinedServer = false,
   });
 
   Duration get timeRemaining {
@@ -297,8 +303,14 @@ class Tournament {
     return rank;
   }
 
+  // Prefer the explicit server flag (set on JoinTournament success).
+  // Fall back to the score-based heuristic for older endpoints that
+  // don't return is_joined yet — a user with a non-null best score
+  // or any attempts has definitionally joined.
   bool get hasJoined =>
-      userBestScore != null || (userAttempts != null && userAttempts! > 0);
+      isJoinedServer ||
+      userBestScore != null ||
+      (userAttempts != null && userAttempts! > 0);
 
   TournamentReward? get userReward {
     if (!hasJoined || status != TournamentStatus.ended) return null;
@@ -345,6 +357,10 @@ class Tournament {
       'userLastAttempt': userLastAttempt?.toIso8601String(),
       'userBestScore': userBestScore,
       'userAttempts': userAttempts,
+      // Persist the server-authoritative flag in cache so a re-hydrated
+      // Tournament keeps reporting hasJoined correctly without needing
+      // another network round-trip.
+      'is_joined': isJoinedServer,
     };
   }
 
@@ -394,6 +410,11 @@ class Tournament {
           : null,
       userBestScore: json['userBestScore'],
       userAttempts: json['userAttempts'],
+      // Backend TournamentDto.IsJoined → snake_case `is_joined`. Accept
+      // the camelCase variant too so the model handles both ASP.NET's
+      // SnakeCaseLower output and any older/non-API JSON payloads.
+      isJoinedServer:
+          (json['is_joined'] as bool?) ?? (json['isJoined'] as bool?) ?? false,
     );
   }
 
@@ -424,6 +445,7 @@ class Tournament {
     DateTime? userLastAttempt,
     int? userBestScore,
     int? userAttempts,
+    bool? isJoinedServer,
   }) {
     return Tournament(
       id: id ?? this.id,
@@ -446,6 +468,7 @@ class Tournament {
       userLastAttempt: userLastAttempt ?? this.userLastAttempt,
       userBestScore: userBestScore ?? this.userBestScore,
       userAttempts: userAttempts ?? this.userAttempts,
+      isJoinedServer: isJoinedServer ?? this.isJoinedServer,
     );
   }
 }

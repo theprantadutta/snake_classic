@@ -1202,6 +1202,14 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
       );
 
       if (success && mounted) {
+        // Optimistically mark the local tournament as joined so the
+        // CTA button flips from JOIN → PLAY NOW immediately, before
+        // the network refresh below completes. The backend's
+        // TournamentDto.IsJoined will confirm it on the next fetch.
+        setState(() {
+          _tournament = _tournament!.copyWith(isJoinedServer: true);
+        });
+
         // Consume entries AFTER backend confirms the join succeeded
         if (tournament.requiresEntry) {
           final premiumCubit = context.read<PremiumCubit>();
