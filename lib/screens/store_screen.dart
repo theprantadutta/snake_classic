@@ -966,22 +966,15 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 10),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: premiumThemes.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              // Closer to square so the preview + label + pill don't
-              // leave the card visually empty. Was 0.72 (tall portrait),
-              // 0.92 keeps the preview prominent without dead air.
-              childAspectRatio: 0.92,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+          // Horizontal-row list layout — replaces the grid that was
+          // leaving dead space below each card. One row per theme is
+          // more readable and packs more info per pixel of vertical
+          // space.
+          for (final t in premiumThemes)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _buildThemeRow(t, theme, premiumState),
             ),
-            itemBuilder: (context, index) =>
-                _buildThemeCard(premiumThemes[index], theme, premiumState),
-          ),
           const SizedBox(height: 18),
           Text(
             'Free themes',
@@ -1000,19 +993,11 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 10),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: freeThemes.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.92,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+          for (final t in freeThemes)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _buildThemeRow(t, theme, premiumState),
             ),
-            itemBuilder: (context, index) =>
-                _buildThemeCard(freeThemes[index], theme, premiumState),
-          ),
         ],
       ),
     );
@@ -1195,7 +1180,7 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildThemeCard(
+  Widget _buildThemeRow(
     GameTheme target,
     GameTheme currentTheme,
     PremiumState premiumState,
@@ -1219,7 +1204,7 @@ class _StoreScreenState extends State<StoreScreen>
               }
             },
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: currentTheme.accentColor.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(14),
@@ -1230,31 +1215,50 @@ class _StoreScreenState extends State<StoreScreen>
             width: isActive ? 2 : 1,
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Row(
           children: [
-            // Preview takes the rest of the cell — fills the empty
-            // bottom space that used to appear when the card was taller
-            // than its content. The painter draws to whatever rect it
-            // gets, so a taller preview is fine visually.
-            Expanded(
+            // Preview swatch — fixed height row makes this a small
+            // landscape rectangle, plenty of pixels for the painter
+            // without a tall card.
+            SizedBox(
+              width: 84,
+              height: 56,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 child: _ThemePreview(theme: target),
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              target.name,
-              style: TextStyle(
-                color: currentTheme.accentColor,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    target.name,
+                    style: TextStyle(
+                      color: currentTheme.accentColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _shortThemeDescription(target),
+                    style: TextStyle(
+                      color:
+                          currentTheme.accentColor.withValues(alpha: 0.65),
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(width: 10),
             _buildStatusPill(
               currentTheme: currentTheme,
               isActive: isActive,
@@ -1266,6 +1270,31 @@ class _StoreScreenState extends State<StoreScreen>
         ),
       ),
     );
+  }
+
+  String _shortThemeDescription(GameTheme target) {
+    switch (target) {
+      case GameTheme.classic:
+        return 'The original look';
+      case GameTheme.modern:
+        return 'Clean and minimal';
+      case GameTheme.neon:
+        return 'Glowing neon nights';
+      case GameTheme.retro:
+        return 'Warm 80s arcade';
+      case GameTheme.space:
+        return 'Cosmic starfield';
+      case GameTheme.ocean:
+        return 'Deep-sea blues';
+      case GameTheme.cyberpunk:
+        return 'Electric cyan & pink';
+      case GameTheme.forest:
+        return 'Lush green canopy';
+      case GameTheme.desert:
+        return 'Warm sand tones';
+      case GameTheme.crystal:
+        return 'Prismatic shimmer';
+    }
   }
 
   /// The bottom-of-card pill that toggles between ACTIVE / APPLY / price /
