@@ -310,35 +310,48 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   Widget _buildSecondaryRow() {
     final hasMultipleLives = gameState.initialLives > 1;
     final hasTimeLimit = gameState.gameMode.timeLimit != null;
-    return Row(
-      children: [
-        // Level progress
-        Expanded(flex: 2, child: _buildLevelCard()),
+    // Lock the secondary row to a fixed height so adding/removing the
+    // power-ups card mid-game doesn't reflow the layout and shove the
+    // game board up/down. The height accommodates the chip-style cards
+    // (food / lives / time / level) AND the slightly taller power-up
+    // progress-ring indicator — chosen to match so both render
+    // identically when present.
+    final rowHeight = isSmallScreen ? 32.0 : 38.0;
+    return SizedBox(
+      height: rowHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Level progress
+          Expanded(flex: 2, child: _buildLevelCard()),
 
-        const SizedBox(width: 8),
-
-        // TimeAttack countdown
-        if (hasTimeLimit) ...[
-          _buildTimeAttackChip(),
           const SizedBox(width: 8),
-        ],
 
-        // Lives indicator (survival mode)
-        if (hasMultipleLives) ...[
-          _buildLivesChip(),
-          const SizedBox(width: 8),
-        ],
+          // TimeAttack countdown
+          if (hasTimeLimit) ...[
+            _buildTimeAttackChip(),
+            const SizedBox(width: 8),
+          ],
 
-        // Food indicator
-        if (gameState.food != null) ...[
-          _buildFoodChip(gameState.food!),
-          const SizedBox(width: 8),
-        ],
+          // Lives indicator (survival mode)
+          if (hasMultipleLives) ...[
+            _buildLivesChip(),
+            const SizedBox(width: 8),
+          ],
 
-        // Power-ups
-        if (gameState.activePowerUps.isNotEmpty)
-          Expanded(flex: 2, child: _buildPowerUpsCard()),
-      ],
+          // Food indicator
+          if (gameState.food != null) ...[
+            _buildFoodChip(gameState.food!),
+            const SizedBox(width: 8),
+          ],
+
+          // Power-ups — clipped to the row's fixed height so the
+          // indicator doesn't push past the chip line. The card sizes
+          // to its children but the SizedBox above bounds it.
+          if (gameState.activePowerUps.isNotEmpty)
+            Expanded(flex: 2, child: _buildPowerUpsCard()),
+        ],
+      ),
     );
   }
 
@@ -645,14 +658,15 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
 
     if (activePowerUps.isEmpty) return const SizedBox.shrink();
 
+    // Fill the parent's fixed-height slot completely so the indicators
+    // can center inside it without nudging the row taller. Padding kept
+    // tight horizontal-only; the SizedBox-bounded parent provides the
+    // vertical room.
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 8 : 10,
-        vertical: isSmallScreen ? 4 : 6,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 6 : 8),
       decoration: BoxDecoration(
         color: theme.accentColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: theme.accentColor.withValues(alpha: 0.2),
           width: 1,
@@ -669,7 +683,12 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   }
 
   Widget _buildPowerUpIndicator(ActivePowerUp powerUp) {
-    final size = isSmallScreen ? 28.0 : 34.0;
+    // Indicator footprint sized to fit cleanly inside the secondary-row
+    // fixed height (32 small / 38 normal) minus a tiny breathing margin.
+    // Was 28/34 — pushed the row taller than the chip-style siblings
+    // and caused the game board to shift down whenever a power-up
+    // activated mid-game.
+    final size = isSmallScreen ? 22.0 : 28.0;
     final progress = 1.0 - powerUp.progress;
     final remainingTime = powerUp.remainingTime;
     final isUrgent = remainingTime.inSeconds <= 3;
