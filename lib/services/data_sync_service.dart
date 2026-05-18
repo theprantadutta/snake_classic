@@ -400,12 +400,15 @@ class DataSyncService extends ChangeNotifier {
           return result['success'] == true || result['alreadyClaimed'] == true;
 
         case 'tournament_score':
-          // Submit tournament score to backend
+          // Submit tournament score to backend. Forward the idempotency
+          // key so a retried sync replays cleanly on the server side
+          // instead of double-incrementing GamesPlayed.
           final tournamentResult = await _apiService.submitTournamentScore(
             tournamentId: item.data['tournamentId'],
             score: item.data['score'] ?? 0,
             gameDuration: item.data['gameDuration'] ?? 0,
             foodsEaten: item.data['foodsEaten'] ?? 0,
+            idempotencyKey: item.data['idempotencyKey'] as String?,
           );
           return tournamentResult != null &&
               tournamentResult['success'] == true;

@@ -1261,7 +1261,9 @@ class GameCubit extends Cubit<GameCubitState> {
         (sum, count) => sum + count,
       );
 
-      // Queue score sync (already non-blocking)
+      // Queue regular score sync (counts toward the global leaderboard +
+      // high-score + lifetime stats, regardless of tournament mode).
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
       _dataSyncService.queueSync('score', {
         'score': gameState.score,
         'gameDuration': gameDurationSeconds,
@@ -1270,9 +1272,26 @@ class GameCubit extends Cubit<GameCubitState> {
             state.isTournamentMode ? 'tournament' : gameState.gameMode.name,
         'difficulty': 'normal',
         'playedAt': DateTime.now().toIso8601String(),
-        'idempotencyKey':
-            '${DateTime.now().millisecondsSinceEpoch}_${gameState.score}',
+        'idempotencyKey': '${nowMs}_${gameState.score}',
       }, priority: SyncPriority.high);
+
+      // Tournament dual-write: when a tournament-mode game ends, ALSO
+      // submit to the tournament-specific endpoint so the tournament
+      // leaderboard receives the score. Without this the score only
+      // lands on the global leaderboard and the user never appears in
+      // the tournament's standings. Distinct idempotency key keeps the
+      // two paths' retries from colliding on the server.
+      if (state.isTournamentMode && state.tournamentId != null) {
+        _dataSyncService.queueSync('tournament_score', {
+          'tournamentId': state.tournamentId,
+          'score': gameState.score,
+          'gameDuration': gameDurationSeconds,
+          'foodsEaten': foodEaten,
+          'playedAt': DateTime.now().toIso8601String(),
+          'idempotencyKey':
+              'tour_${state.tournamentId}_${nowMs}_${gameState.score}',
+        }, priority: SyncPriority.critical);
+      }
 
       // Award coins for game completion (local)
       await _awardGameCompletionCoins(

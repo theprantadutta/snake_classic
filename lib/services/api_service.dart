@@ -887,12 +887,15 @@ class ApiService {
     }
   }
 
-  /// Submit tournament score
+  /// Submit tournament score. The optional [idempotencyKey] lets a queued
+  /// retry replay the same submit without double-incrementing
+  /// GamesPlayed on the server (the backend short-circuits on the key).
   Future<Map<String, dynamic>?> submitTournamentScore({
     required String tournamentId,
     required int score,
     int gameDuration = 0,
     int foodsEaten = 0,
+    String? idempotencyKey,
   }) async {
     try {
       final response = await http
@@ -903,6 +906,7 @@ class ApiService {
               'score': score,
               'game_duration_seconds': gameDuration,
               'foods_eaten': foodsEaten,
+              'idempotency_key': ?idempotencyKey,
             }),
           )
           .timeout(_timeout);
