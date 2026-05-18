@@ -223,11 +223,12 @@ class GameConstants {
   static const Color neonFood = Color(0xFFff1493); // Deep pink
   static const Color neonGlow = Color(0xFF00ff00); // Pure lime green
 
-  // Colors - Retro Theme
-  static const Color retroBackground = Color(0xFF2C1810); // Dark brown
-  static const Color retroSnake = Color(0xFFD2691E); // Chocolate/orange
-  static const Color retroFood = Color(0xFFFFD700); // Gold
-  static const Color retroAccent = Color(0xFFCD853F); // Peru/tan
+  // Colors - Retro Theme (80s arcade — bright neon-orange on near-black,
+  // intentionally distinct from Desert's earthy palette).
+  static const Color retroBackground = Color(0xFF1A0808); // Almost-black with red undertone
+  static const Color retroSnake = Color(0xFFFF6A00); // Bright neon orange
+  static const Color retroFood = Color(0xFFFFFF00); // Pure arcade yellow
+  static const Color retroAccent = Color(0xFFFF1F4F); // Hot pink — arcade marquee glow
 
   // Colors - Space Theme
   static const Color spaceBackground = Color(0xFF0B0C2A); // Deep space blue
@@ -247,23 +248,27 @@ class GameConstants {
   static const Color cyberpunkFood = Color(0xFFFCEE0A); // Electric yellow
   static const Color cyberpunkAccent = Color(0xFFB537F2); // Vivid purple
 
-  // Colors - Forest Theme
-  static const Color forestBackground = Color(0xFF0D2818); // Dark forest green
-  static const Color forestSnake = Color(0xFF228B22); // Forest green
+  // Colors - Forest Theme (rich emerald jungle — vivid green snake on
+  // deep forest, distinct from Classic's pale Game Boy yellow-green).
+  static const Color forestBackground = Color(0xFF0D2818); // Dark forest floor
+  static const Color forestSnake = Color(0xFF2ECC71); // Vivid emerald
   static const Color forestFood = Color(0xFFDC143C); // Crimson berry
-  static const Color forestAccent = Color(0xFF32CD32); // Lime green
+  static const Color forestAccent = Color(0xFFF1C40F); // Sunlit-canopy gold
 
-  // Colors - Desert Theme
-  static const Color desertBackground = Color(0xFF2F1B14); // Dark brown sand
-  static const Color desertSnake = Color(0xFFDAA520); // Goldenrod
-  static const Color desertFood = Color(0xFFFF4500); // Orange red cactus fruit
-  static const Color desertAccent = Color(0xFFF4A460); // Sandy brown
+  // Colors - Desert Theme (Southwestern — terracotta canyon with cactus
+  // teal food, intentionally separated from Retro's arcade orange).
+  static const Color desertBackground = Color(0xFF3D1F0E); // Warm terracotta canyon
+  static const Color desertSnake = Color(0xFFCD853F); // Peru — sand-rattlesnake brown
+  static const Color desertFood = Color(0xFF5FCBC9); // Cactus turquoise (prickly pear bloom)
+  static const Color desertAccent = Color(0xFFE8B894); // Sun-bleached sandy peach
 
-  // Colors - Crystal Theme
-  static const Color crystalBackground = Color(0xFF1A0033); // Deep purple
-  static const Color crystalSnake = Color(0xFF9370DB); // Medium orchid
-  static const Color crystalFood = Color(0xFFDA70D6); // Orchid
-  static const Color crystalAccent = Color(0xFF8A2BE2); // Blue violet
+  // Colors - Crystal Theme (icy prismatic — pale crystalline snake on
+  // deep amethyst with a rose-quartz food, distinct from Space's cosmic
+  // purple-on-navy palette).
+  static const Color crystalBackground = Color(0xFF1A0033); // Deep amethyst
+  static const Color crystalSnake = Color(0xFFB0E0E6); // Powder-blue ice crystal
+  static const Color crystalFood = Color(0xFFFFB6C1); // Rose quartz pink
+  static const Color crystalAccent = Color(0xFFE6E6FA); // Lavender shimmer
 
   // Animation durations
   static const Duration shortAnimation = Duration(milliseconds: 150);

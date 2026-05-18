@@ -1281,7 +1281,7 @@ class _StoreScreenState extends State<StoreScreen>
       case GameTheme.neon:
         return 'Glowing neon nights';
       case GameTheme.retro:
-        return 'Warm 80s arcade';
+        return '80s neon arcade';
       case GameTheme.space:
         return 'Cosmic starfield';
       case GameTheme.ocean:
@@ -1289,11 +1289,11 @@ class _StoreScreenState extends State<StoreScreen>
       case GameTheme.cyberpunk:
         return 'Electric cyan & pink';
       case GameTheme.forest:
-        return 'Lush green canopy';
+        return 'Vivid emerald jungle';
       case GameTheme.desert:
-        return 'Warm sand tones';
+        return 'Canyon + cactus teal';
       case GameTheme.crystal:
-        return 'Prismatic shimmer';
+        return 'Icy crystalline blue';
     }
   }
 

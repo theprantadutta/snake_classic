@@ -394,7 +394,7 @@ class ThemeSelectorScreen extends StatelessWidget {
       case GameTheme.neon:
         return 'Electric cyberpunk vibes with glowing colors';
       case GameTheme.retro:
-        return 'Warm earth tones with vintage gaming feel';
+        return 'Neon-orange arcade marquee with hot-pink glow';
       case GameTheme.space:
         return 'Cosmic purple hues for interstellar adventures';
       case GameTheme.ocean:
@@ -402,11 +402,11 @@ class ThemeSelectorScreen extends StatelessWidget {
       case GameTheme.cyberpunk:
         return 'Digital matrix with electric cyan and hot pink';
       case GameTheme.forest:
-        return 'Natural greens with organic leaf patterns';
+        return 'Vivid emerald snake on a deep jungle floor';
       case GameTheme.desert:
-        return 'Warm sand tones with desert wind effects';
+        return 'Terracotta canyon with cactus-turquoise blooms';
       case GameTheme.crystal:
-        return 'Prismatic purples with crystalline light rays';
+        return 'Icy prismatic snake on deep amethyst';
     }
   }
 
