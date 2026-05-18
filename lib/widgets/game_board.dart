@@ -930,7 +930,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
         // Match the body segment's color and style at this index
         final fadeRatio = (snakeLength - i) / snakeLength;
         final opacity = (0.6 + 0.4 * fadeRatio);
-        _snakeBodyPaint.color = _getBodyColor(opacity);
+        _snakeBodyPaint.color = _getBodyColor(opacity, i, snakeLength);
         _snakeBodyPaint.maskFilter = _getBodyMaskFilter();
 
         canvas.drawCircle(curr, jointRadius, _snakeBodyPaint);
@@ -958,7 +958,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
           // Draw joint at first body segment position (behind head)
           final fadeRatio = (snakeLength - 1) / snakeLength;
           final opacity = (0.6 + 0.4 * fadeRatio);
-          _snakeBodyPaint.color = _getBodyColor(opacity);
+          _snakeBodyPaint.color = _getBodyColor(opacity, 1, snakeLength);
           _snakeBodyPaint.maskFilter = _getBodyMaskFilter();
           canvas.drawCircle(firstBody, jointRadius, _snakeBodyPaint);
         }
@@ -1183,7 +1183,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     }
 
     // Theme-specific body styling
-    _snakeBodyPaint.color = _getBodyColor(opacity);
+    _snakeBodyPaint.color = _getBodyColor(opacity, index, totalLength);
     _snakeBodyPaint.maskFilter = _getBodyMaskFilter();
 
     // Draw neon glow for body segments with breathing effect
@@ -1212,22 +1212,36 @@ class OptimizedGameBoardPainter extends CustomPainter {
     );
   }
 
-  Color _getBodyColor(double opacity) {
+  Color _getBodyColor(double opacity, int index, int totalLength) {
     // Use selected skin colors if available, otherwise fall back to theme colors
     final skinColors = _getSelectedSkinColors();
 
     if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic' &&
         premiumState.isSkinOwned(premiumState.selectedSkinId)) {
-      // For single color skins, use the color with opacity
+      // Single-color skin → just apply alpha by segment fade.
       if (skinColors.length == 1) {
         return skinColors[0].withValues(alpha: opacity);
-      } else {
-        // For multi-color skins, cycle through colors using passed animation time
-        final colorIndex =
-            (animationTimeMs ~/ GameConstants.colorCycleIntervalMs) %
-            skinColors.length;
-        return skinColors[colorIndex].withValues(alpha: opacity);
       }
+
+      // Multi-color skin → render a gradient ACROSS the body so the snake
+      // visually wears its skin (e.g. Fire shows red→orange→yellow head-
+      // to-tail), not just its head. Animation time rotates the gradient
+      // origin so the colors visibly flow along the body — same vibe as
+      // the previous cycling behavior but distributed spatially.
+      final safeLength = totalLength <= 1 ? 1 : totalLength - 1;
+      final rotation = (animationTimeMs /
+              GameConstants.colorCycleIntervalMs.toDouble()) %
+          1.0;
+      final position =
+          ((index / safeLength) + rotation) % 1.0; // 0.0..1.0
+      final scaled = position * (skinColors.length - 1);
+      final lower = scaled.floor();
+      final upper = (lower + 1) % skinColors.length;
+      final t = scaled - lower;
+      final blended =
+          Color.lerp(skinColors[lower], skinColors[upper], t) ??
+              skinColors[lower];
+      return blended.withValues(alpha: opacity);
     }
 
     // Fall back to original theme-based colors for classic skin
