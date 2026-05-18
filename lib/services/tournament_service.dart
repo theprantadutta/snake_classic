@@ -28,6 +28,18 @@ class TournamentService {
   final OfflineCacheService _cacheService = OfflineCacheService();
   final DataSyncService _dataSyncService = DataSyncService();
 
+  // Broadcasts the tournamentId on every successful join. The
+  // TournamentsNotifier subscribes to this and triggers refresh(), so
+  // any join — from the detail screen, deep link, any call site —
+  // automatically invalidates the in-memory tournaments list state.
+  // Previously the detail screen had to grab ProviderScope.containerOf
+  // and manually call .refresh() inside a brittle try/catch; the
+  // try/catch swallowed failures silently when the container couldn't
+  // be obtained.
+  final StreamController<String> _joinedController =
+      StreamController<String>.broadcast();
+  Stream<String> get onTournamentJoined => _joinedController.stream;
+
   TournamentService._internal();
 
   factory TournamentService() {
@@ -259,6 +271,10 @@ class TournamentService {
         // Invalidate cache to get updated participant count
         await _cacheService.invalidateCache('tournament_$tournamentId');
         await _cacheService.invalidateCache(_activeTournamentsKey);
+        // Broadcast so the TournamentsNotifier (or any other observer)
+        // can refresh in-memory state without the detail screen having
+        // to know about Riverpod scope.
+        _joinedController.add(tournamentId);
         return true;
       }
       return false;

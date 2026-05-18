@@ -50,6 +50,7 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
   final TournamentService _service;
   final AppDataCache _appCache;
   Timer? _ttlTimer;
+  StreamSubscription<String>? _joinSubscription;
 
   static const _ttl = Duration(minutes: 5);
 
@@ -85,6 +86,14 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
 
     // Set up TTL-based refresh
     _startTtlTimer();
+
+    // Auto-refresh whenever ANY caller successfully joins a tournament.
+    // The service broadcasts onTournamentJoined regardless of who
+    // initiated the join (detail screen, deep link, anywhere), so the
+    // list stays in sync without each call site reaching into Riverpod.
+    _joinSubscription = _service.onTournamentJoined.listen((_) {
+      _refreshInBackground();
+    });
 
     // Listen for connectivity changes - refresh when coming online
     _ref.listen<AsyncValue<bool>>(isOnlineProvider, (previous, next) {
@@ -221,6 +230,7 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
   @override
   void dispose() {
     _ttlTimer?.cancel();
+    _joinSubscription?.cancel();
     super.dispose();
   }
 }

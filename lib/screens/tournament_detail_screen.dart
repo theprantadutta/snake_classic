@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
-import 'package:snake_classic/providers/tournaments_provider.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/core/di/injection.dart';
@@ -1264,16 +1262,6 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
     setState(() => _isJoining = true);
 
-    // Capture the Riverpod container before any awaits so we can call
-    // it safely after the async join — `context` is not allowed to
-    // straddle an await (use_build_context_synchronously).
-    ProviderContainer? riverpodContainer;
-    try {
-      riverpodContainer = ProviderScope.containerOf(context, listen: false);
-    } catch (_) {
-      riverpodContainer = null;
-    }
-
     try {
       final success = await _tournamentService.joinTournament(
         tournament.id,
@@ -1302,22 +1290,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           tier: tier,
         );
 
-        // Force the tournaments list to refresh so when the user pops
-        // back, the affected tournament's row shows the new "Joined"
-        // state immediately instead of waiting for the 5-minute cache
-        // TTL. TournamentService already invalidates the underlying
-        // cache, but the Riverpod TournamentsNotifier holds an
-        // in-memory list that won't reload until something asks it to.
-        // Container was captured before the await above to avoid
-        // use_build_context_synchronously.
-        try {
-          riverpodContainer
-              ?.read(tournamentsProvider.notifier)
-              .refresh();
-        } catch (_) {
-          // Safe-failover: if the refresh throws, the next list view
-          // load will still get fresh data via the invalidated cache.
-        }
+        // TournamentService.onTournamentJoined broadcast (subscribed by
+        // TournamentsNotifier in its constructor) handles the list
+        // refresh — no more brittle ProviderScope.containerOf dance.
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
