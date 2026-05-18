@@ -556,18 +556,9 @@ enum GameMode {
     }
   }
 
-  bool get isPremium {
-    switch (this) {
-      case GameMode.classic:
-        return false;
-      case GameMode.zen:
-      case GameMode.speedChallenge:
-      case GameMode.multiFood:
-      case GameMode.survival:
-      case GameMode.timeAttack:
-        return true;
-    }
-  }
+  // Game modes are uniformly free — premium subscription does not gate any
+  // specific mode. Selection lives in Settings; the store no longer surfaces
+  // a "Modes" tab.
 
   Duration? get timeLimit {
     switch (this) {

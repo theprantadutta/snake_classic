@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
-import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -107,7 +106,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final settingsCubit = context.read<GameSettingsCubit>();
     if (settingsCubit.state.gameModeFirstLaunchPrompted) return;
 
-    final premiumState = context.read<PremiumCubit>().state;
     final selected = await showModalBottomSheet<GameMode>(
       context: context,
       isDismissible: false,
@@ -115,7 +113,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => _GameModeFirstLaunchSheet(
-        hasPremium: premiumState.hasPremium,
         initialMode: settingsCubit.state.gameMode,
       ),
     );
@@ -1913,11 +1910,9 @@ class _NavItem {
 /// Returns the selected GameMode, or null if dismissed without confirming.
 class _GameModeFirstLaunchSheet extends StatefulWidget {
   const _GameModeFirstLaunchSheet({
-    required this.hasPremium,
     required this.initialMode,
   });
 
-  final bool hasPremium;
   final GameMode initialMode;
 
   @override
@@ -1977,15 +1972,12 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
             ),
             const SizedBox(height: 16),
             ...GameMode.values.map((mode) {
-              final isLocked = mode.isPremium && !widget.hasPremium;
               final isSelected = _selected == mode;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: isLocked
-                      ? null
-                      : () => setState(() => _selected = mode),
+                  onTap: () => setState(() => _selected = mode),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
@@ -2009,25 +2001,13 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    mode.name,
-                                    style: TextStyle(
-                                      color: isLocked
-                                          ? Colors.purple.shade200
-                                          : Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  if (isLocked) ...[
-                                    const SizedBox(width: 6),
-                                    Icon(Icons.lock,
-                                        size: 14,
-                                        color: Colors.purple.shade300),
-                                  ],
-                                ],
+                              Text(
+                                mode.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(

@@ -835,86 +835,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
-        BlocBuilder<PremiumCubit, PremiumState>(
-          builder: (context, premiumState) {
-            return Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: GameMode.values.map((mode) {
-                final isSelected = _selectedGameMode == mode;
-                final isCurrentlyPlaying = gameState.isPlaying;
-                final isPremiumLocked =
-                    mode.isPremium && !premiumState.hasPremium;
-
-                return GestureDetector(
-                  onTap: isCurrentlyPlaying
-                      ? null
-                      : (isPremiumLocked
-                          ? _showPremiumDialog
-                          : () async {
-                              setState(() => _selectedGameMode = mode);
-                              await context
-                                  .read<GameSettingsCubit>()
-                                  .updateGameMode(mode);
-                              _analytics.trackSettingChanged(
-                                  settingName: 'game_mode',
-                                  value: mode.name);
-                            }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isPremiumLocked
-                          ? Colors.purple.shade900.withValues(alpha: 0.15)
-                          : (isSelected
-                              ? theme.accentColor.withValues(alpha: 0.2)
-                              : Colors.transparent),
-                      border: Border.all(
-                        color: isPremiumLocked
-                            ? Colors.purple.shade400.withValues(alpha: 0.5)
-                            : (isSelected
-                                ? theme.accentColor
-                                : theme.accentColor.withValues(alpha: 0.3)),
-                        width: isSelected ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isPremiumLocked) ...[
-                          Icon(
-                            Icons.lock,
-                            size: 12,
-                            color: Colors.purple.shade400,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(
-                          '${mode.icon} ${mode.name}',
-                          style: TextStyle(
-                            color: isCurrentlyPlaying
-                                ? theme.accentColor.withValues(alpha: 0.5)
-                                : (isPremiumLocked
-                                    ? Colors.purple.shade300
-                                    : (isSelected
-                                        ? theme.accentColor
-                                        : Colors.white.withValues(alpha: 0.8))),
-                            fontSize: 11,
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: GameMode.values.map((mode) {
+            final isSelected = _selectedGameMode == mode;
+            final isCurrentlyPlaying = gameState.isPlaying;
+            return GestureDetector(
+              onTap: isCurrentlyPlaying
+                  ? null
+                  : () async {
+                      setState(() => _selectedGameMode = mode);
+                      await context
+                          .read<GameSettingsCubit>()
+                          .updateGameMode(mode);
+                      _analytics.trackSettingChanged(
+                          settingName: 'game_mode', value: mode.name);
+                    },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.accentColor.withValues(alpha: 0.2)
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: isSelected
+                        ? theme.accentColor
+                        : theme.accentColor.withValues(alpha: 0.3),
+                    width: isSelected ? 2 : 1,
                   ),
-                );
-              }).toList(),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${mode.icon} ${mode.name}',
+                  style: TextStyle(
+                    color: isCurrentlyPlaying
+                        ? theme.accentColor.withValues(alpha: 0.5)
+                        : (isSelected
+                            ? theme.accentColor
+                            : Colors.white.withValues(alpha: 0.8)),
+                    fontSize: 11,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
             );
-          },
+          }).toList(),
         ),
         if (gameState.isPlaying) ...[
           const SizedBox(height: 12),

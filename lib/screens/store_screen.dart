@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/models/premium_cosmetics.dart';
+import 'package:snake_classic/models/premium_power_up.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
-import 'package:snake_classic/models/snake_coins.dart';
-import 'package:snake_classic/models/premium_power_up.dart';
-import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -26,18 +26,29 @@ class _StoreScreenState extends State<StoreScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  // Tab order: Pro / Coins / Themes / Skins / Trails / Power-Ups.
+  // Keeps Coins at index 1 so existing `?tab=1` deep links still land on
+  // coins. Themes replaces the old Boards tab (boards aren't products).
+  // Modes tab removed entirely — modes are uniformly free now.
+  static const _tabNames = [
+    'Pro',
+    'Coins',
+    'Themes',
+    'Skins',
+    'Trails',
+    'Power-Ups',
+  ];
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 6,
+      length: _tabNames.length,
       vsync: this,
-      initialIndex: widget.initialTab,
+      initialIndex: widget.initialTab.clamp(0, _tabNames.length - 1),
     );
     _tabController.addListener(_onTabChanged);
   }
-
-  static const _tabNames = ['Premium', 'Coins', 'Skins', 'Power-Ups', 'Game Modes', 'Boards'];
 
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) return;
@@ -60,7 +71,6 @@ class _StoreScreenState extends State<StoreScreen>
             return BlocBuilder<CoinsCubit, CoinsState>(
               builder: (context, coinsState) {
                 final theme = themeState.currentTheme;
-
                 return Scaffold(
                   extendBodyBehindAppBar: true,
                   appBar: AppBar(
@@ -82,71 +92,52 @@ class _StoreScreenState extends State<StoreScreen>
                     theme: theme,
                     child: Column(
                       children: [
-                        // Add top padding to account for AppBar
                         SizedBox(
-                          height:
-                              MediaQuery.of(context).padding.top +
+                          height: MediaQuery.of(context).padding.top +
                               kToolbarHeight,
                         ),
-
-                        // Coins display header
                         _buildCoinsHeader(theme, coinsState),
-
-                        // Tab Bar
-                        Container(
-                          color: Colors.transparent,
-                          child: TabBar(
-                            controller: _tabController,
-                            indicatorColor: theme.accentColor,
-                            labelColor: theme.accentColor,
-                            unselectedLabelColor: theme.accentColor.withValues(
-                              alpha: 0.6,
+                        TabBar(
+                          controller: _tabController,
+                          indicatorColor: theme.accentColor,
+                          labelColor: theme.accentColor,
+                          unselectedLabelColor:
+                              theme.accentColor.withValues(alpha: 0.6),
+                          isScrollable: true,
+                          tabs: const [
+                            Tab(text: 'Pro', icon: Icon(Icons.diamond, size: 16)),
+                            Tab(
+                              text: 'Coins',
+                              icon: Icon(Icons.monetization_on, size: 16),
                             ),
-                            isScrollable: true,
-                            tabs: const [
-                              Tab(
-                                text: 'Premium',
-                                icon: Icon(Icons.diamond, size: 16),
-                              ),
-                              Tab(
-                                text: 'Coins',
-                                icon: Icon(Icons.monetization_on, size: 16),
-                              ),
-                              Tab(
-                                text: 'Skins',
-                                icon: Icon(Icons.palette, size: 16),
-                              ),
-                              Tab(
-                                text: 'Power-ups',
-                                icon: Icon(Icons.flash_on, size: 16),
-                              ),
-                              Tab(
-                                text: 'Modes',
-                                icon: Icon(Icons.games, size: 16),
-                              ),
-                              Tab(
-                                text: 'Boards',
-                                icon: Icon(Icons.grid_on, size: 16),
-                              ),
-                            ],
-                          ),
+                            Tab(
+                              text: 'Themes',
+                              icon: Icon(Icons.color_lens, size: 16),
+                            ),
+                            Tab(
+                              text: 'Skins',
+                              icon: Icon(Icons.pets, size: 16),
+                            ),
+                            Tab(
+                              text: 'Trails',
+                              icon: Icon(Icons.auto_awesome, size: 16),
+                            ),
+                            Tab(
+                              text: 'Power-Ups',
+                              icon: Icon(Icons.flash_on, size: 16),
+                            ),
+                          ],
                         ),
-
-                        // Tab content
                         Expanded(
                           child: TabBarView(
                             controller: _tabController,
                             children: [
-                              _buildPremiumTab(theme, premiumState),
+                              _buildProTab(theme, premiumState),
                               _buildCoinsTab(theme, coinsState),
-                              _buildSkinsTab(theme, premiumState, coinsState),
-                              _buildPowerUpsTab(
-                                theme,
-                                premiumState,
-                                coinsState,
-                              ),
-                              _buildGameModesTab(theme, premiumState),
-                              _buildBoardsTab(theme, premiumState),
+                              _buildThemesTab(theme, premiumState),
+                              _buildSkinsTab(theme, premiumState),
+                              _buildTrailsTab(theme, premiumState),
+                              _buildPowerUpsTab(theme, premiumState, coinsState),
                             ],
                           ),
                         ),
@@ -161,6 +152,10 @@ class _StoreScreenState extends State<StoreScreen>
       },
     );
   }
+
+  // ===========================================================================
+  // Coins header (top of every tab)
+  // ===========================================================================
 
   Widget _buildCoinsHeader(GameTheme theme, CoinsState coinsState) {
     return Container(
@@ -194,7 +189,9 @@ class _StoreScreenState extends State<StoreScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.amber, Colors.orange]),
+                gradient: const LinearGradient(
+                  colors: [Colors.amber, Colors.orange],
+                ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -225,7 +222,7 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                   Text(
                     '${coinsState.balance.total}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.amber,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -236,10 +233,14 @@ class _StoreScreenState extends State<StoreScreen>
             ),
             if (coinsState.hasPremiumBonus)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.purple.shade400, Colors.indigo.shade400],
+                    colors: [
+                      Colors.purple.shade400,
+                      Colors.indigo.shade400,
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -258,68 +259,20 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildPremiumTab(GameTheme theme, PremiumState premiumState) {
+  // ===========================================================================
+  // PRO TAB
+  // ===========================================================================
+
+  Widget _buildProTab(GameTheme theme, PremiumState premiumState) {
     if (premiumState.hasPremium) {
-      return Center(
-        child: Container(
-          margin: const EdgeInsets.all(20),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.green.withValues(alpha: 0.15),
-                Colors.teal.withValues(alpha: 0.08),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.green.withValues(alpha: 0.3),
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [Colors.green, Colors.teal]),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.green.withValues(alpha: 0.4),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.verified,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Premium Active!',
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Enjoying all premium features',
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildProActiveBanner(theme, premiumState),
+            const SizedBox(height: 16),
+            _buildProFeatureGrid(theme),
+          ],
         ),
       );
     }
@@ -327,18 +280,63 @@ class _StoreScreenState extends State<StoreScreen>
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildPremiumPromoCard(theme),
-          const SizedBox(height: 16),
-          _buildQuickPremiumFeatures(theme),
+          _buildProHero(theme),
           const SizedBox(height: 20),
-          _buildPremiumCTA(theme),
+          Text(
+            'Choose your plan',
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildProPlanCard(
+                  theme: theme,
+                  title: 'Monthly',
+                  productId: ProductIds.snakeClassicProMonthly,
+                  fallbackPrice: 4.99,
+                  cadence: '/month',
+                  savingsLabel: null,
+                  highlight: false,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildProPlanCard(
+                  theme: theme,
+                  title: 'Yearly',
+                  productId: ProductIds.snakeClassicProYearly,
+                  fallbackPrice: 49.99,
+                  cadence: '/year',
+                  savingsLabel: 'Save 17%',
+                  highlight: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            "What you get",
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildProFeatureGrid(theme),
         ],
       ),
     );
   }
 
-  Widget _buildPremiumPromoCard(GameTheme theme) {
+  Widget _buildProHero(GameTheme theme) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -347,156 +345,311 @@ class _StoreScreenState extends State<StoreScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.purple.shade400.withValues(alpha: 0.15),
-            Colors.indigo.shade400.withValues(alpha: 0.08),
+            Colors.purple.shade400.withValues(alpha: 0.18),
+            Colors.indigo.shade400.withValues(alpha: 0.10),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.purple.shade400.withValues(alpha: 0.3),
+          color: Colors.purple.shade400.withValues(alpha: 0.35),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.shade400.withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+            color: Colors.purple.shade400.withValues(alpha: 0.18),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.purple.shade400, Colors.indigo.shade400],
               ),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.purple.shade400.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             child: const Icon(Icons.diamond, color: Colors.white, size: 32),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Text(
-            'Go Premium!',
+            'Snake Classic Pro',
             style: TextStyle(
               color: theme.accentColor,
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
-            'Unlock everything Snake Classic has to offer',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.7),
-              fontSize: 16,
-            ),
+            'All premium themes · large boards · 2× coins · ad-free',
             textAlign: TextAlign.center,
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.75),
+              fontSize: 13,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickPremiumFeatures(GameTheme theme) {
-    final features = [
-      'All Premium Themes',
-      'Large Game Boards',
-      'Exclusive Game Modes',
-      'Premium Power-ups',
-      '2x Coin Rewards',
-      'VIP Tournaments',
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final itemWidth = (constraints.maxWidth - 8) / 2;
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: features.map((feature) {
-            return SizedBox(
-              width: itemWidth,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.2),
-                    width: 1,
+  Widget _buildProPlanCard({
+    required GameTheme theme,
+    required String title,
+    required String productId,
+    required double fallbackPrice,
+    required String cadence,
+    required String? savingsLabel,
+    required bool highlight,
+  }) {
+    final price =
+        PurchaseService().getStorePriceOrDefault(productId, fallbackPrice);
+    final borderColor = highlight
+        ? Colors.amber.withValues(alpha: 0.6)
+        : theme.accentColor.withValues(alpha: 0.25);
+    return GestureDetector(
+      onTap: () => _purchaseSubscription(productId, '$title plan'),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.accentColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: highlight ? 2 : 1),
+          boxShadow: highlight
+              ? [
+                  BoxShadow(
+                    color: Colors.amber.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: theme.accentColor, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        feature,
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                if (savingsLabel != null) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      savingsLabel,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              price,
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Text(
+              cadence,
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.6),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () =>
+                    _purchaseSubscription(productId, '$title plan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: highlight
+                      ? Colors.amber
+                      : theme.primaryColor.withValues(alpha: 0.9),
+                  foregroundColor:
+                      highlight ? Colors.black : Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Subscribe',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-
-  Widget _buildPremiumCTA(GameTheme theme) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: () => context.push(AppRoutes.premiumBenefits),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.purple.shade400, Colors.indigo.shade400],
             ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.purple.shade400.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'Upgrade to Premium',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          ],
         ),
       ),
     );
   }
+
+  Widget _buildProActiveBanner(GameTheme theme, PremiumState premiumState) {
+    final expiry = premiumState.subscriptionExpiry;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.green.withValues(alpha: 0.18),
+            Colors.teal.withValues(alpha: 0.10),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.green.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(colors: [Colors.green, Colors.teal]),
+              shape: BoxShape.circle,
+            ),
+            child:
+                const Icon(Icons.verified, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "You're Pro!",
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (expiry != null)
+                  Text(
+                    'Renews ${_formatDate(expiry)}',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProFeatureGrid(GameTheme theme) {
+    final features = const [
+      (Icons.color_lens, 'All 6 premium themes'),
+      (Icons.grid_4x4, 'Premium board sizes (35×35, 40×40, 50×50)'),
+      (Icons.monetization_on, '2× coin earnings'),
+      (Icons.block, 'Ad-free gameplay'),
+      (Icons.flash_on, 'Power-up perks'),
+      (Icons.leaderboard, 'VIP tournaments'),
+    ];
+    return Column(
+      children: features
+          .map(
+            (f) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.accentColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.accentColor.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(f.$1, color: theme.accentColor, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      f.$2,
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green.withValues(alpha: 0.8),
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  String _formatDate(DateTime d) {
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _purchaseSubscription(String productId, String displayName) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    try {
+      await PurchaseService().purchaseProduct(productId);
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Initiating $displayName purchase...'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content:
+                Text('Subscription not available. Please try again later.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // ===========================================================================
+  // COINS TAB
+  // ===========================================================================
 
   Widget _buildCoinsTab(GameTheme theme, CoinsState coinsState) {
     return SingleChildScrollView(
@@ -573,14 +726,14 @@ class _StoreScreenState extends State<StoreScreen>
               final navigator = Navigator.of(dialogContext);
               final scaffoldMessenger = ScaffoldMessenger.of(context);
               navigator.pop();
-
               try {
                 await PurchaseService()
                     .purchaseProduct(ProductIds.withPrefix(option.id));
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
-                      content: Text('Initiating purchase for ${option.name}...'),
+                      content:
+                          Text('Initiating purchase for ${option.name}...'),
                       backgroundColor: theme.accentColor,
                     ),
                   );
@@ -589,8 +742,8 @@ class _StoreScreenState extends State<StoreScreen>
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
                     const SnackBar(
-                      content:
-                          Text('Product not available. Please try again later.'),
+                      content: Text(
+                          'Product not available. Please try again later.'),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -608,115 +761,103 @@ class _StoreScreenState extends State<StoreScreen>
     return GestureDetector(
       onTap: () => _purchaseCoinPack(option, theme),
       child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.amber.withValues(alpha: 0.15),
-            Colors.orange.withValues(alpha: 0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: option.isPopular
-              ? Colors.red.withValues(alpha: 0.4)
-              : Colors.amber.withValues(alpha: 0.3),
-          width: option.isPopular ? 2 : 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.amber.withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.amber.withValues(alpha: 0.15),
+              Colors.orange.withValues(alpha: 0.08),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.amber, Colors.orange]),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withValues(alpha: 0.4),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: option.isPopular
+                ? Colors.red.withValues(alpha: 0.4)
+                : Colors.amber.withValues(alpha: 0.3),
+            width: option.isPopular ? 2 : 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.amber, Colors.orange],
                 ),
-              ],
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.monetization_on,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
-            child: const Icon(
-              Icons.monetization_on,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      option.name,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        option.name,
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    if (option.isPopular) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'POPULAR',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      if (option.isPopular) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'POPULAR',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  option.displayCoins,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 14,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    option.displayCoins,
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            PurchaseService().getStorePriceOrDefault(
-                ProductIds.withPrefix(option.id), option.price),
-            style: TextStyle(
-              color: Colors.amber,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+            Text(
+              PurchaseService().getStorePriceOrDefault(
+                  ProductIds.withPrefix(option.id), option.price),
+              style: const TextStyle(
+                color: Colors.amber,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -735,7 +876,6 @@ class _StoreScreenState extends State<StoreScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: theme.accentColor.withValues(alpha: 0.2),
-          width: 1,
         ),
       ),
       child: Row(
@@ -761,7 +901,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           Text(
             reward,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.amber,
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -772,303 +912,826 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildSkinsTab(
-    GameTheme theme,
-    PremiumState premiumState,
-    CoinsState coinsState,
-  ) {
+  // ===========================================================================
+  // THEMES TAB
+  // ===========================================================================
+
+  Widget _buildThemesTab(GameTheme theme, PremiumState premiumState) {
+    final themesInOrder = const [
+      GameTheme.crystal,
+      GameTheme.cyberpunk,
+      GameTheme.space,
+      GameTheme.ocean,
+      GameTheme.desert,
+      GameTheme.forest,
+    ];
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildThemesBundleCard(theme, premiumState),
+          const SizedBox(height: 20),
           Text(
-            'Snake Skins & Trails',
+            'Individual themes',
             style: TextStyle(
               color: theme.accentColor,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Customize your snake with unique skins and trail effects!',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.8),
-              fontSize: 16,
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: themesInOrder.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.72,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: () => context.push(AppRoutes.cosmetics),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.accentColor,
-                foregroundColor: theme.backgroundColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.palette, size: 20),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Open Cosmetics Store',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: theme.accentColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'What\'s Available',
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '• 12 unique snake skins with different colors and patterns\n'
-                  '• 12 trail effects for visual flair\n'
-                  '• 4 cosmetic bundles with discounted pricing\n'
-                  '• Premium and coin-based options available',
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.8),
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
+            itemBuilder: (context, index) {
+              final t = themesInOrder[index];
+              return _buildThemeCard(t, theme, premiumState);
+            },
           ),
         ],
       ),
     );
   }
+
+  Widget _buildThemesBundleCard(GameTheme theme, PremiumState premiumState) {
+    final bundleOwned = premiumState.isBundleOwned('premium_themes_bundle');
+    final price = PurchaseService().getStorePriceOrDefault(
+      ProductIds.themesBundle,
+      7.99,
+    );
+    return GestureDetector(
+      onTap: bundleOwned
+          ? null
+          : () => _purchaseThemeProduct(
+                ProductIds.themesBundle,
+                'All Themes Bundle',
+              ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.purple.shade400.withValues(alpha: 0.18),
+              Colors.indigo.shade400.withValues(alpha: 0.10),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.amber.withValues(alpha: 0.5),
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple.shade400, Colors.indigo.shade400],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child:
+                  const Icon(Icons.card_giftcard, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'All Themes Bundle',
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'All 6 premium themes · save 33%',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: bundleOwned ? Colors.green : Colors.amber,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                bundleOwned ? 'OWNED' : price,
+                style: TextStyle(
+                  color: bundleOwned ? Colors.white : Colors.black,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeCard(
+    GameTheme target,
+    GameTheme currentTheme,
+    PremiumState premiumState,
+  ) {
+    final isOwned = premiumState.isThemeUnlocked(target);
+    final isActive = currentTheme == target;
+    final productId = _productIdForTheme(target);
+    final price = productId == null
+        ? 'FREE'
+        : PurchaseService().getStorePriceOrDefault(productId, 1.99);
+    return GestureDetector(
+      onTap: () {
+        if (isOwned) {
+          context.read<ThemeCubit>().setTheme(target);
+        } else if (productId != null) {
+          _purchaseThemeProduct(productId, target.name);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: currentTheme.accentColor.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isActive
+                ? currentTheme.accentColor
+                : currentTheme.accentColor.withValues(alpha: 0.2),
+            width: isActive ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 10,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: _ThemePreview(theme: target),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              target.name,
+              style: TextStyle(
+                color: currentTheme.accentColor,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? currentTheme.accentColor
+                    : isOwned
+                        ? Colors.green
+                        : Colors.amber,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                isActive
+                    ? 'ACTIVE'
+                    : isOwned
+                        ? 'APPLY'
+                        : price,
+                style: TextStyle(
+                  color: isActive
+                      ? currentTheme.backgroundColor
+                      : isOwned
+                          ? Colors.white
+                          : Colors.black,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _productIdForTheme(GameTheme target) {
+    switch (target) {
+      case GameTheme.crystal:
+        return ProductIds.crystalTheme;
+      case GameTheme.cyberpunk:
+        return ProductIds.cyberpunkTheme;
+      case GameTheme.space:
+        return ProductIds.spaceTheme;
+      case GameTheme.ocean:
+        return ProductIds.oceanTheme;
+      case GameTheme.desert:
+        return ProductIds.desertTheme;
+      case GameTheme.forest:
+        return ProductIds.forestTheme;
+      default:
+        return null;
+    }
+  }
+
+  Future<void> _purchaseThemeProduct(String productId, String displayName) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    final price = PurchaseService().getStorePriceOrDefault(productId, 1.99);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.color_lens, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(displayName, style: TextStyle(color: theme.accentColor)),
+          ],
+        ),
+        content: Text(
+          'Unlock $displayName for $price?',
+          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('Buy - $price'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await PurchaseService().purchaseProduct(productId);
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('$displayName purchase initiated'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('Theme not available. Please try again later.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // ===========================================================================
+  // SKINS TAB
+  // ===========================================================================
+
+  Widget _buildSkinsTab(GameTheme theme, PremiumState premiumState) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.70,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: SnakeSkinType.values.length,
+      itemBuilder: (context, index) {
+        final skin = SnakeSkinType.values[index];
+        final isUnlocked = !skin.isPremium || premiumState.isSkinOwned(skin.id);
+        final isSelected = premiumState.selectedSkinId == skin.id;
+        return _buildCosmeticCard(
+          title: skin.displayName,
+          description: skin.description,
+          icon: skin.icon,
+          colors: skin.colors,
+          price: skin.isPremium
+              ? PurchaseService()
+                  .getStorePriceOrDefault(ProductIds.skinStoreId(skin.id), skin.price)
+              : 'FREE',
+          isUnlocked: isUnlocked,
+          isSelected: isSelected,
+          isPremium: skin.isPremium,
+          theme: theme,
+          onTap: () {
+            if (isUnlocked) {
+              context.read<PremiumCubit>().selectSkin(skin.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${skin.displayName} equipped'),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            } else {
+              _purchaseCosmetic(
+                productId: ProductIds.skinStoreId(skin.id),
+                displayName: skin.displayName,
+                fallbackPrice: skin.price,
+              );
+            }
+          },
+        );
+      },
+    );
+  }
+
+  // ===========================================================================
+  // TRAILS TAB
+  // ===========================================================================
+
+  Widget _buildTrailsTab(GameTheme theme, PremiumState premiumState) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.70,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: TrailEffectType.values.length,
+      itemBuilder: (context, index) {
+        final trail = TrailEffectType.values[index];
+        final isUnlocked =
+            !trail.isPremium || premiumState.isTrailOwned(trail.id);
+        final isSelected = premiumState.selectedTrailId == trail.id;
+        return _buildCosmeticCard(
+          title: trail.displayName,
+          description: trail.description,
+          icon: trail.icon,
+          colors: trail.colors,
+          price: trail.isPremium
+              ? PurchaseService()
+                  .getStorePriceOrDefault(ProductIds.withPrefix(trail.id), trail.price)
+              : 'FREE',
+          isUnlocked: isUnlocked,
+          isSelected: isSelected,
+          isPremium: trail.isPremium,
+          theme: theme,
+          onTap: () {
+            if (isUnlocked) {
+              context.read<PremiumCubit>().selectTrail(trail.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${trail.displayName} equipped'),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            } else {
+              _purchaseCosmetic(
+                productId: ProductIds.withPrefix(trail.id),
+                displayName: trail.displayName,
+                fallbackPrice: trail.price,
+              );
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCosmeticCard({
+    required String title,
+    required String description,
+    required String icon,
+    required List<Color> colors,
+    required String price,
+    required bool isUnlocked,
+    required bool isSelected,
+    required bool isPremium,
+    required GameTheme theme,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.accentColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? theme.accentColor
+                : isUnlocked
+                    ? Colors.green.withValues(alpha: 0.35)
+                    : isPremium
+                        ? Colors.purple.shade400.withValues(alpha: 0.35)
+                        : theme.accentColor.withValues(alpha: 0.2),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isUnlocked
+                        ? (isSelected
+                            ? theme.accentColor
+                            : Colors.green.withValues(alpha: 0.18))
+                        : Colors.purple.shade400.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    icon,
+                    style: TextStyle(
+                      fontSize: 28,
+                      color: isUnlocked
+                          ? (isSelected ? Colors.white : Colors.green)
+                          : Colors.purple.shade400,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Flexible(
+                  child: Text(
+                    description,
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 10,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (colors.length > 1)
+                  Container(
+                    height: 5,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: colors),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.accentColor
+                        : isUnlocked
+                            ? Colors.green
+                            : Colors.amber,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isSelected
+                        ? 'EQUIPPED'
+                        : isUnlocked
+                            ? 'EQUIP'
+                            : price,
+                    style: TextStyle(
+                      color: isSelected
+                          ? theme.backgroundColor
+                          : isUnlocked
+                              ? Colors.white
+                              : Colors.black,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (!isUnlocked && isPremium)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Icon(
+                  Icons.lock,
+                  color: Colors.purple.shade300,
+                  size: 16,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _purchaseCosmetic({
+    required String productId,
+    required String displayName,
+    required double fallbackPrice,
+  }) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    final price =
+        PurchaseService().getStorePriceOrDefault(productId, fallbackPrice);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.shopping_cart, color: theme.accentColor),
+            const SizedBox(width: 8),
+            Text(displayName, style: TextStyle(color: theme.accentColor)),
+          ],
+        ),
+        content: Text(
+          'Unlock $displayName for $price?',
+          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('Buy - $price'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await PurchaseService().purchaseProduct(productId);
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('$displayName purchase initiated'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('Item not available. Please try again later.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // ===========================================================================
+  // POWER-UPS TAB
+  // ===========================================================================
+  //
+  // Commit 1: informational catalog. Buying a power-up still debits coins
+  // via CoinsCubit.spendCoins() — actual inventory storage and pre-game
+  // activation land in Commit 4 (which adds backend PowerUpInventory + a
+  // pre-game activation flow). For now the snackbar says "Coming soon" so
+  // users aren't misled into spending coins for nothing.
 
   Widget _buildPowerUpsTab(
     GameTheme theme,
     PremiumState premiumState,
     CoinsState coinsState,
   ) {
-    final powerUps = [
-      _PowerUpItem(
-        'Speed Boost',
-        'Enhanced speed with trail effects',
-        Icons.speed,
-        50,
+    final powerUps = const [
+      _PowerUpCatalogItem(
+        type: 'speed_boost',
+        name: 'Speed Boost',
+        description: 'Doubles your speed for 5 seconds.',
+        icon: Icons.speed,
+        coinCost: 50,
       ),
-      _PowerUpItem(
-        'Invincibility',
-        'Temporary invincibility shield',
-        Icons.shield,
-        75,
+      _PowerUpCatalogItem(
+        type: 'invincibility',
+        name: 'Invincibility',
+        description: 'Pass through walls and yourself for 5 seconds.',
+        icon: Icons.shield,
+        coinCost: 75,
       ),
-      _PowerUpItem(
-        'Ghost Mode',
-        'Phase through walls and yourself',
-        Icons.visibility_off,
-        100,
+      _PowerUpCatalogItem(
+        type: 'ghost_mode',
+        name: 'Ghost Mode',
+        description: 'Phase through obstacles for 4 seconds.',
+        icon: Icons.visibility_off,
+        coinCost: 100,
       ),
-      _PowerUpItem(
-        'Teleport',
-        'Instantly move to a safe location',
-        Icons.my_location,
-        80,
+      _PowerUpCatalogItem(
+        type: 'teleport',
+        name: 'Teleport',
+        description: 'Instantly jump to a safe location.',
+        icon: Icons.my_location,
+        coinCost: 80,
       ),
     ];
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Premium Power-ups',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...powerUps.map((powerUp) => _buildPowerUpCard(powerUp, theme)),
-
-          const SizedBox(height: 24),
-
-          // Power-up Bundles Section
-          Text(
-            'Power-up Bundles',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            'Get multiple power-ups at discounted prices!',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.7),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...PowerUpBundle.availableBundles.map(
-            (bundle) =>
-                _buildBundleCard(bundle, theme, premiumState, coinsState),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _purchasePowerUp(_PowerUpItem powerUp, GameTheme theme) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Buy ${powerUp.name}'),
-        content: Text(
-            'Purchase ${powerUp.name} for ${powerUp.coinCost} coins?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final navigator = Navigator.of(dialogContext);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              navigator.pop();
-
-              final success = await context.read<CoinsCubit>().spendCoins(
-                    powerUp.coinCost,
-                    CoinSpendingCategory.powerUps,
-                    itemName: powerUp.name,
-                  );
-
-              if (success) {
-                if (mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content:
-                          Text('${powerUp.name} purchased successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } else {
-                if (mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Insufficient coins!'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: Text('Buy - ${powerUp.coinCost} coins'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPowerUpCard(_PowerUpItem powerUp, GameTheme theme) {
-    return GestureDetector(
-      onTap: () => _purchasePowerUp(powerUp, theme),
-      child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: theme.accentColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.18),
+              ),
             ),
-            child: Icon(powerUp.icon, color: theme.accentColor, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  powerUp.name,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  powerUp.description,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 14,
+                Icon(Icons.info_outline, color: theme.accentColor, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Power-ups spawn naturally during gameplay. '
+                    'Pre-game inventory & activation arriving soon.',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.85),
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 16),
           Text(
-            '${powerUp.coinCost} coins',
+            'Power-Ups',
             style: TextStyle(
-              color: Colors.amber,
-              fontSize: 16,
+              color: theme.accentColor,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...powerUps.map((p) => _buildPowerUpCatalogCard(p, theme)),
+          const SizedBox(height: 24),
+          Text(
+            'Power-Up Bundles',
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Unlock multiple power-up types at a discount.',
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.7),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...PowerUpBundle.availableBundles.map(
+            (bundle) =>
+                _buildPowerUpBundleCard(bundle, theme, premiumState, coinsState),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPowerUpCatalogCard(_PowerUpCatalogItem item, GameTheme theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: theme.accentColor.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(item.icon, color: theme.accentColor, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  item.description,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Buy button — disabled until Commit 4 wires the inventory.
+          OutlinedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Pre-game power-up inventory coming soon!',
+                  ),
+                  backgroundColor: Colors.blueGrey,
+                ),
+              );
+            },
+            style: OutlinedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              side: BorderSide(
+                color: theme.accentColor.withValues(alpha: 0.35),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.monetization_on, size: 14, color: Colors.amber),
+                const SizedBox(width: 4),
+                Text(
+                  '${item.coinCost}',
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    ),
     );
   }
 
-  Widget _buildBundleCard(
+  Widget _buildPowerUpBundleCard(
     PowerUpBundle bundle,
     GameTheme theme,
     PremiumState premiumState,
@@ -1076,21 +1739,18 @@ class _StoreScreenState extends State<StoreScreen>
   ) {
     final isOwned = premiumState.isBundleOwned(bundle.id);
     final canAfford = coinsState.balance.total >= bundle.bundlePrice;
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
           colors: [
-            Colors.purple.withValues(alpha: 0.15),
+            Colors.purple.withValues(alpha: 0.14),
             Colors.indigo.withValues(alpha: 0.08),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isOwned
               ? Colors.green.withValues(alpha: 0.4)
@@ -1104,16 +1764,16 @@ class _StoreScreenState extends State<StoreScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [Colors.purple, Colors.indigo],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(bundle.icon, style: const TextStyle(fontSize: 24)),
+                child: Text(bundle.icon, style: const TextStyle(fontSize: 22)),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1122,16 +1782,16 @@ class _StoreScreenState extends State<StoreScreen>
                       bundle.name,
                       style: TextStyle(
                         color: theme.accentColor,
-                        fontSize: 18,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       bundle.description,
                       style: TextStyle(
                         color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -1139,29 +1799,26 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          // Power-ups included
+          const SizedBox(height: 10),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 6,
+            runSpacing: 6,
             children: bundle.powerUps
                 .map(
-                  (powerUp) => Container(
+                  (p) => Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 7,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.purple.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${powerUp.icon} ${powerUp.displayName}',
+                      '${p.icon} ${p.displayName}',
                       style: TextStyle(
                         color: theme.accentColor,
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1169,83 +1826,52 @@ class _StoreScreenState extends State<StoreScreen>
                 )
                 .toList(),
           ),
-
-          const SizedBox(height: 16),
-
+          const SizedBox(height: 12),
           Row(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '${bundle.originalPrice.toInt()} coins',
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.5),
-                          fontSize: 14,
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${bundle.savingsPercentage.toInt()}% OFF',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+              if (bundle.originalPrice > bundle.bundlePrice)
+                Text(
+                  '${bundle.originalPrice.toInt()} coins',
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.5),
+                    fontSize: 12,
+                    decoration: TextDecoration.lineThrough,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${bundle.bundlePrice.toInt()} coins',
-                    style: TextStyle(
-                      color: Colors.amber,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+                ),
+              const SizedBox(width: 8),
+              Text(
+                '${bundle.bundlePrice.toInt()} coins',
+                style: const TextStyle(
+                  color: Colors.amber,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const Spacer(),
               ElevatedButton(
                 onPressed: isOwned
                     ? null
-                    : (canAfford ? () => _purchaseBundle(bundle) : null),
+                    : () => _purchaseCoinBundle(bundle, canAfford),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isOwned
                       ? Colors.green
-                      : (canAfford ? Colors.purple : Colors.grey),
+                      : canAfford
+                          ? theme.primaryColor
+                          : Colors.grey.shade600,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                    horizontal: 14,
+                    vertical: 8,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: Text(
-                  isOwned
-                      ? 'OWNED'
-                      : (canAfford ? 'BUY NOW' : 'NOT ENOUGH COINS'),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text(isOwned
+                    ? 'OWNED'
+                    : canAfford
+                        ? 'BUY'
+                        : 'NEED COINS'),
               ),
             ],
           ),
@@ -1254,412 +1880,136 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  void _purchaseBundle(PowerUpBundle bundle) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Purchase ${bundle.name}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('You will get:'),
-            const SizedBox(height: 8),
-            ...bundle.powerUps.map(
-              (powerUp) => Padding(
-                padding: const EdgeInsets.only(left: 16, bottom: 4),
-                child: Text('• ${powerUp.displayName}'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Price: ${bundle.bundlePrice.toInt()} coins'),
-            Text(
-              'You save: ${bundle.savings.toInt()} coins (${bundle.savingsPercentage.toInt()}% off)',
-            ),
+  Future<void> _purchaseCoinBundle(PowerUpBundle bundle, bool canAfford) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    if (!canAfford) {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Insufficient coins!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    final success = await context.read<CoinsCubit>().spendCoins(
+          bundle.bundlePrice.toInt(),
+          CoinSpendingCategory.powerUps,
+          itemName: bundle.name,
+        );
+    if (!mounted) return;
+    if (success) {
+      await context.read<PremiumCubit>().unlockBundle(bundle.id);
+      if (!mounted) return;
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('${bundle.name} unlocked!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Purchase failed. Try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
+// =============================================================================
+// Helpers
+// =============================================================================
+
+class _ThemePreview extends StatelessWidget {
+  final GameTheme theme;
+  const _ThemePreview({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.backgroundColor,
+            theme.backgroundColor.withValues(alpha: 0.7),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final navigator = Navigator.of(dialogContext);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              navigator.pop();
-
-              final coinsCubit = context.read<CoinsCubit>();
-              final premiumCubit = context.read<PremiumCubit>();
-
-              // Deduct coins and unlock bundle
-              final success = await coinsCubit.spendCoins(
-                bundle.bundlePrice.toInt(),
-                CoinSpendingCategory.powerUps,
-                itemName: bundle.name,
-              );
-
-              if (success) {
-                await premiumCubit.unlockBundle(bundle.id);
-
-                // Show success message
-                if (mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text('${bundle.name} purchased successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } else {
-                // Show error message
-                if (mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Purchase failed: Insufficient coins'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Purchase'),
-          ),
-        ],
       ),
-    );
-  }
-
-  Widget _buildGameModesTab(GameTheme theme, PremiumState premiumState) {
-    final gameModes = [
-      _GameModeItem(
-        'Classic',
-        'Traditional snake gameplay',
-        Icons.straighten,
-        true,
-        false,
-      ),
-      _GameModeItem(
-        'Zen Mode',
-        'No walls, peaceful gameplay',
-        Icons.spa,
-        false,
-        true,
-      ),
-      _GameModeItem(
-        'Speed Challenge',
-        'Fast-paced action mode',
-        Icons.speed,
-        false,
-        true,
-      ),
-      _GameModeItem(
-        'Multi-Food',
-        'Multiple food items at once',
-        Icons.fastfood,
-        false,
-        true,
-      ),
-    ];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(
-            'Game Modes',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          // Faint grid hint
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _ThemePreviewPainter(theme: theme),
             ),
           ),
-          const SizedBox(height: 16),
-          ...gameModes.map(
-              (mode) => _buildGameModeCard(mode, theme, premiumState)),
         ],
       ),
-    );
-  }
-
-  Widget _buildGameModeCard(
-      _GameModeItem mode, GameTheme theme, PremiumState premiumState) {
-    return GestureDetector(
-      onTap: () {
-        if (mode.isPremium && !premiumState.hasPremium) {
-          context.push(AppRoutes.premiumBenefits);
-        }
-      },
-      child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: mode.isPremium
-              ? Colors.purple.shade400.withValues(alpha: 0.4)
-              : theme.accentColor.withValues(alpha: 0.2),
-          width: mode.isPremium ? 1.5 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: mode.isPremium
-                  ? Colors.purple.shade400.withValues(alpha: 0.2)
-                  : theme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              mode.icon,
-              color: mode.isPremium
-                  ? Colors.purple.shade400
-                  : theme.accentColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      mode.name,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (mode.isPremium) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.shade400,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  mode.description,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (mode.isPremium && !premiumState.hasPremium)
-            Icon(Icons.lock, color: Colors.purple.shade400, size: 20)
-          else if (mode.isPremium)
-            Icon(Icons.check_circle, color: Colors.green, size: 20),
-        ],
-      ),
-    ),
-    );
-  }
-
-  Widget _buildBoardsTab(GameTheme theme, PremiumState premiumState) {
-    // Generate board items from GameConstants
-    final boards = GameConstants.availableBoardSizes.map((size) => _BoardItem(
-      size.name,
-      '${size.width}x${size.height}',
-      size.description,
-      _getBoardIcon(size.width),
-      !size.isPremium, // isFree = !isPremium
-    )).toList();
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Board Sizes',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Unlock premium boards with a Premium subscription',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.7),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...boards.map(
-              (board) => _buildBoardCard(board, theme, premiumState)),
-        ],
-      ),
-    );
-  }
-
-  IconData _getBoardIcon(int width) {
-    if (width <= 15) return Icons.smartphone;
-    if (width <= 20) return Icons.tablet;
-    if (width <= 25) return Icons.computer;
-    if (width <= 30) return Icons.laptop;
-    if (width <= 35) return Icons.tv;
-    if (width <= 40) return Icons.desktop_windows;
-    return Icons.monitor;
-  }
-
-  Widget _buildBoardCard(
-      _BoardItem board, GameTheme theme, PremiumState premiumState) {
-    return GestureDetector(
-      onTap: () {
-        if (!board.isFree && !premiumState.hasPremium) {
-          context.push(AppRoutes.premiumBenefits);
-        }
-      },
-      child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: !board.isFree
-              ? Colors.purple.shade400.withValues(alpha: 0.4)
-              : theme.accentColor.withValues(alpha: 0.2),
-          width: !board.isFree ? 1.5 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: !board.isFree
-                  ? Colors.purple.shade400.withValues(alpha: 0.2)
-                  : theme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              board.icon,
-              color: !board.isFree ? Colors.purple.shade400 : theme.accentColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '${board.name} (${board.size})',
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (!board.isFree) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.shade400,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  board.description,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!board.isFree && !premiumState.hasPremium)
-            Icon(Icons.lock, color: Colors.purple.shade400, size: 20)
-          else if (!board.isFree)
-            Icon(Icons.check_circle, color: Colors.green, size: 20),
-        ],
-      ),
-    ),
     );
   }
 }
 
-class _PowerUpItem {
+class _ThemePreviewPainter extends CustomPainter {
+  final GameTheme theme;
+  _ThemePreviewPainter({required this.theme});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final gridPaint = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.12)
+      ..strokeWidth = 0.6;
+    const cells = 8;
+    final cellW = size.width / cells;
+    final cellH = size.height / cells;
+    for (int i = 1; i < cells; i++) {
+      canvas.drawLine(
+        Offset(cellW * i, 0),
+        Offset(cellW * i, size.height),
+        gridPaint,
+      );
+      canvas.drawLine(
+        Offset(0, cellH * i),
+        Offset(size.width, cellH * i),
+        gridPaint,
+      );
+    }
+    // Snake + food preview
+    final snakePaint = Paint()..color = theme.snakeColor;
+    final foodPaint = Paint()..color = theme.foodColor;
+    final r = (cellW < cellH ? cellW : cellH) * 0.42;
+    for (int i = 0; i < 4; i++) {
+      canvas.drawCircle(
+        Offset(cellW * (2 + i) + cellW / 2, cellH * 4 + cellH / 2),
+        r,
+        snakePaint,
+      );
+    }
+    canvas.drawCircle(
+      Offset(cellW * 6 + cellW / 2, cellH * 2 + cellH / 2),
+      r,
+      foodPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ThemePreviewPainter old) =>
+      old.theme != theme;
+}
+
+class _PowerUpCatalogItem {
+  final String type;
   final String name;
   final String description;
   final IconData icon;
   final int coinCost;
-
-  _PowerUpItem(this.name, this.description, this.icon, this.coinCost);
-}
-
-class _GameModeItem {
-  final String name;
-  final String description;
-  final IconData icon;
-  final bool isFree;
-  final bool isPremium;
-
-  _GameModeItem(
-    this.name,
-    this.description,
-    this.icon,
-    this.isFree,
-    this.isPremium,
-  );
-}
-
-class _BoardItem {
-  final String name;
-  final String size;
-  final String description;
-  final IconData icon;
-  final bool isFree;
-
-  _BoardItem(this.name, this.size, this.description, this.icon, this.isFree);
+  const _PowerUpCatalogItem({
+    required this.type,
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.coinCost,
+  });
 }

@@ -5,7 +5,6 @@ import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/battle_pass_screen.dart';
-import 'package:snake_classic/screens/cosmetics_screen.dart';
 import 'package:snake_classic/screens/daily_challenges_screen.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
 import 'package:snake_classic/screens/username_setup_screen.dart';
@@ -205,11 +204,14 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       pageBuilder: (context, state) =>
           _zoomPage(state, const PremiumBenefitsScreen()),
     ),
+    // Cosmetics route is preserved as a redirect to the store's Skins tab.
+    // The standalone CosmeticsScreen was removed when the store screen
+    // inlined its content. Deep links from older builds (or in-game prompts)
+    // still resolve cleanly through this redirect.
     GoRoute(
       path: AppRoutes.cosmetics,
       name: 'cosmetics',
-      pageBuilder: (context, state) =>
-          _zoomPage(state, const CosmeticsScreen()),
+      redirect: (context, state) => '${AppRoutes.store}?tab=3',
     ),
     GoRoute(
       path: AppRoutes.battlePass,
