@@ -1484,7 +1484,9 @@ class _StoreScreenState extends State<StoreScreen>
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.70,
+        // Match the Trails tab aspect ratio so the painted preview
+        // band has room to render the snake silhouette + signature.
+        childAspectRatio: 0.78,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -1494,19 +1496,15 @@ class _StoreScreenState extends State<StoreScreen>
         final isUnlocked = !skin.isPremium || premiumState.isSkinOwned(skin.id);
         final isSelected = premiumState.selectedSkinId == skin.id;
         final productId = ProductIds.skinStoreId(skin.id);
-        return _buildCosmeticCard(
-          title: skin.displayName,
-          description: skin.description,
-          icon: skin.icon,
-          colors: skin.colors,
+        return _buildSkinCard(
+          skin: skin,
+          isUnlocked: isUnlocked,
+          isSelected: isSelected,
+          isPending: _pendingProductIds.contains(productId),
           price: skin.isPremium
               ? PurchaseService()
                   .getStorePriceOrDefault(productId, skin.price)
               : 'FREE',
-          isUnlocked: isUnlocked,
-          isSelected: isSelected,
-          isPremium: skin.isPremium,
-          isPending: _pendingProductIds.contains(productId),
           theme: theme,
           onTap: () {
             if (isUnlocked) {
@@ -1528,6 +1526,171 @@ class _StoreScreenState extends State<StoreScreen>
           },
         );
       },
+    );
+  }
+
+  /// Modernized skin card — mirrors the Trails tab redesign. Each card
+  /// paints a small snake-silhouette preview using the skin's actual
+  /// colors and its per-skin signature (golden shimmer, fire embers,
+  /// galaxy stars, etc.) so users see what the skin will look like
+  /// in-game without leaving the store.
+  Widget _buildSkinCard({
+    required SnakeSkinType skin,
+    required bool isUnlocked,
+    required bool isSelected,
+    required bool isPending,
+    required String price,
+    required GameTheme theme,
+    required VoidCallback onTap,
+  }) {
+    final palette = skin.colors.isNotEmpty
+        ? skin.colors
+        : [
+            theme.snakeColor,
+            theme.snakeColor.withValues(alpha: 0.6),
+          ];
+    final headerStart = palette.first.withValues(alpha: 0.85);
+    final headerEnd = palette.last.withValues(alpha: 0.35);
+
+    return GestureDetector(
+      onTap: isPending ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: theme.backgroundColor.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? theme.accentColor
+                : isUnlocked
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : palette.last.withValues(alpha: 0.45),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: theme.accentColor.withValues(alpha: 0.30),
+                    blurRadius: 14,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Preview band — painted snake silhouette with the skin's
+            // own colors + a stylized signature so each skin reads
+            // instantly distinct from its grid neighbors.
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [headerStart, headerEnd],
+                  ),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: const Alignment(-0.6, -0.6),
+                          radius: 1.0,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.18),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                    CustomPaint(
+                      painter: _SkinPreviewPainter(
+                        skin: skin,
+                        accentColor: theme.accentColor,
+                      ),
+                    ),
+                    if (!isUnlocked && skin.isPremium)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.lock,
+                                  color: Colors.white, size: 11),
+                              SizedBox(width: 4),
+                              Text(
+                                'PRO',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    skin.displayName,
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    skin.description,
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.65),
+                      fontSize: 10,
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildCosmeticStatusPill(
+                    theme: theme,
+                    isSelected: isSelected,
+                    isUnlocked: isUnlocked,
+                    isPending: isPending,
+                    priceLabel: price,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1757,125 +1920,6 @@ class _StoreScreenState extends State<StoreScreen>
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCosmeticCard({
-    required String title,
-    required String description,
-    required String icon,
-    required List<Color> colors,
-    required String price,
-    required bool isUnlocked,
-    required bool isSelected,
-    required bool isPremium,
-    required bool isPending,
-    required GameTheme theme,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: isPending ? null : onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.accentColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected
-                ? theme.accentColor
-                : isUnlocked
-                    ? Colors.green.withValues(alpha: 0.35)
-                    : isPremium
-                        ? Colors.purple.shade400.withValues(alpha: 0.35)
-                        : theme.accentColor.withValues(alpha: 0.2),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isUnlocked
-                        ? (isSelected
-                            ? theme.accentColor
-                            : Colors.green.withValues(alpha: 0.18))
-                        : Colors.purple.shade400.withValues(alpha: 0.18),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    icon,
-                    style: TextStyle(
-                      fontSize: 28,
-                      color: isUnlocked
-                          ? (isSelected ? Colors.white : Colors.green)
-                          : Colors.purple.shade400,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Flexible(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Flexible(
-                  child: Text(
-                    description,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 10,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (colors.length > 1)
-                  Container(
-                    height: 5,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: colors),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                _buildCosmeticStatusPill(
-                  theme: theme,
-                  isSelected: isSelected,
-                  isUnlocked: isUnlocked,
-                  isPending: isPending,
-                  priceLabel: price,
-                ),
-              ],
-            ),
-            if (!isUnlocked && isPremium)
-              Positioned(
-                top: 4,
-                right: 4,
-                child: Icon(
-                  Icons.lock,
-                  color: Colors.purple.shade300,
-                  size: 16,
-                ),
-              ),
           ],
         ),
       ),
@@ -2966,4 +3010,275 @@ class _TrailPreviewPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _TrailPreviewPainter old) =>
       old.trail != trail || old.accentColor != accentColor;
+}
+
+/// Paints a stylized snake silhouette for the store's Skins tab, using
+/// the skin's own color palette plus a per-skin signature overlay
+/// (shimmer for golden, ember dots for fire, scale ridges for dragon,
+/// etc.) so each skin card visually previews what the in-game snake
+/// will look like with that skin equipped.
+class _SkinPreviewPainter extends CustomPainter {
+  final SnakeSkinType skin;
+  final Color accentColor;
+
+  _SkinPreviewPainter({required this.skin, required this.accentColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final width = size.width;
+    final height = size.height;
+    final palette = skin.colors.isNotEmpty
+        ? skin.colors
+        : <Color>[accentColor, accentColor.withValues(alpha: 0.5)];
+
+    // S-curve snake silhouette, 7 segments. Curving more dramatically
+    // than the trail card's 5-segment line so the skin's colors get a
+    // proper showcase across multiple body positions.
+    final centers = <Offset>[
+      Offset(width * 0.14, height * 0.70),
+      Offset(width * 0.26, height * 0.58),
+      Offset(width * 0.38, height * 0.50),
+      Offset(width * 0.50, height * 0.48),
+      Offset(width * 0.62, height * 0.50),
+      Offset(width * 0.74, height * 0.42),
+      Offset(width * 0.86, height * 0.36), // head
+    ];
+    final r = (width < height ? width : height) * 0.085;
+
+    // Base body — color lerp across segments using the skin's palette.
+    for (var i = 0; i < centers.length; i++) {
+      final t = i / (centers.length - 1);
+      Color color;
+      if (palette.length == 1) {
+        color = palette.first;
+      } else if (palette.length == 2) {
+        color = Color.lerp(palette.first, palette.last, t)!;
+      } else {
+        // Multi-color: pick across the palette by index position.
+        final scaled = t * (palette.length - 1);
+        final lower = scaled.floor();
+        final upper = math.min(lower + 1, palette.length - 1);
+        color = Color.lerp(palette[lower], palette[upper], scaled - lower)!;
+      }
+      final fade = 0.55 + 0.45 * t;
+      canvas.drawCircle(
+        centers[i],
+        r * (0.78 + 0.22 * t),
+        Paint()
+          ..color = color.withValues(alpha: fade)
+          ..isAntiAlias = true,
+      );
+    }
+
+    // Per-skin signature overlay — same direction as the in-game
+    // _drawSkinSignature so the store preview matches gameplay.
+    switch (skin) {
+      case SnakeSkinType.classic:
+        break;
+      case SnakeSkinType.golden:
+        _shimmerStripe(canvas, centers, r);
+        break;
+      case SnakeSkinType.rainbow:
+        _whiteSparkles(canvas, centers, r, count: 4);
+        break;
+      case SnakeSkinType.galaxy:
+        _starSpecks(canvas, size, 12);
+        break;
+      case SnakeSkinType.dragon:
+        _scaleRidges(canvas, centers, r);
+        break;
+      case SnakeSkinType.electric:
+        _sparkBolts(canvas, centers);
+        break;
+      case SnakeSkinType.fire:
+        _emberRising(canvas, centers);
+        break;
+      case SnakeSkinType.ice:
+        _frostSpecks(canvas, centers, r);
+        break;
+      case SnakeSkinType.shadow:
+        _smokyHalos(canvas, centers, r);
+        break;
+      case SnakeSkinType.neon:
+        _neonHalos(canvas, centers, r);
+        break;
+      case SnakeSkinType.crystal:
+        _facetHighlights(canvas, centers, r);
+        break;
+      case SnakeSkinType.cosmic:
+        _cosmicHaze(canvas, centers, r);
+        _starSpecks(canvas, size, 6);
+        break;
+    }
+
+    // Head highlight — small bright dot on the leading segment so the
+    // eye picks up direction immediately.
+    canvas.drawCircle(
+      centers.last,
+      r * 0.28,
+      Paint()..color = Colors.white.withValues(alpha: 0.9),
+    );
+  }
+
+  void _shimmerStripe(Canvas canvas, List<Offset> centers, double r) {
+    for (final c in centers) {
+      canvas.drawCircle(
+        Offset(c.dx - r * 0.25, c.dy - r * 0.25),
+        r * 0.32,
+        Paint()
+          ..color = const Color(0xFFFFF6C4).withValues(alpha: 0.55)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2),
+      );
+    }
+  }
+
+  void _whiteSparkles(Canvas canvas, List<Offset> centers, double r,
+      {required int count}) {
+    final rng = math.Random(3);
+    final paint = Paint()..color = Colors.white.withValues(alpha: 0.85);
+    for (var i = 0; i < count; i++) {
+      final c = centers[i % centers.length];
+      canvas.drawCircle(
+        Offset(c.dx + (rng.nextDouble() - 0.5) * r * 0.8,
+            c.dy + (rng.nextDouble() - 0.5) * r * 0.8),
+        1.4,
+        paint,
+      );
+    }
+  }
+
+  void _starSpecks(Canvas canvas, Size size, int count) {
+    final rng = math.Random(42);
+    final paint = Paint()..color = Colors.white.withValues(alpha: 0.75);
+    for (var i = 0; i < count; i++) {
+      final cx = rng.nextDouble() * size.width;
+      final cy = rng.nextDouble() * size.height * 0.7; // upper portion
+      canvas.drawCircle(Offset(cx, cy), 0.9, paint);
+    }
+  }
+
+  void _scaleRidges(Canvas canvas, List<Offset> centers, double r) {
+    final paint = Paint()
+      ..color = const Color(0xFFFFD700).withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round;
+    for (final c in centers) {
+      final rect =
+          Rect.fromCenter(center: Offset(c.dx, c.dy - r * 0.1), width: r * 1.4, height: r * 0.9);
+      canvas.drawArc(rect, math.pi, math.pi, false, paint);
+    }
+  }
+
+  void _sparkBolts(Canvas canvas, List<Offset> centers) {
+    final paint = Paint()
+      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2);
+    for (var i = 0; i < centers.length; i += 2) {
+      final c = centers[i];
+      final path = Path()
+        ..moveTo(c.dx - 4, c.dy - 5)
+        ..lineTo(c.dx, c.dy)
+        ..lineTo(c.dx + 1, c.dy + 1)
+        ..lineTo(c.dx + 4, c.dy + 5);
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _emberRising(Canvas canvas, List<Offset> centers) {
+    final rng = math.Random(7);
+    for (var i = 0; i < centers.length; i++) {
+      final c = centers[i];
+      for (var s = 0; s < 2; s++) {
+        final dy = -4 - rng.nextDouble() * 8 - s * 3.0;
+        final dx = (rng.nextDouble() - 0.5) * 8;
+        canvas.drawCircle(
+          Offset(c.dx + dx, c.dy + dy),
+          1.2 + rng.nextDouble(),
+          Paint()
+            ..color = Color.lerp(
+                    const Color(0xFFFFD86A), const Color(0xFFFF4500), s / 2)!
+                .withValues(alpha: 0.8)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
+        );
+      }
+    }
+  }
+
+  void _frostSpecks(Canvas canvas, List<Offset> centers, double r) {
+    final paint = Paint()
+      ..color = const Color(0xFFE0FBFF).withValues(alpha: 0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8
+      ..strokeCap = StrokeCap.round;
+    for (final c in centers) {
+      const s = 2.2;
+      final fx = c.dx + r * 0.3;
+      final fy = c.dy - r * 0.5;
+      canvas.drawLine(Offset(fx - s, fy - s), Offset(fx + s, fy + s), paint);
+      canvas.drawLine(Offset(fx - s, fy + s), Offset(fx + s, fy - s), paint);
+      canvas.drawLine(Offset(fx, fy - s * 1.4), Offset(fx, fy + s * 1.4),
+          paint);
+    }
+  }
+
+  void _smokyHalos(Canvas canvas, List<Offset> centers, double r) {
+    for (final c in centers) {
+      canvas.drawCircle(
+        c,
+        r * 1.8,
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.4)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+      );
+    }
+  }
+
+  void _neonHalos(Canvas canvas, List<Offset> centers, double r) {
+    for (var i = 0; i < centers.length; i++) {
+      final color = i.isEven
+          ? const Color(0xFF39FF14)
+          : const Color(0xFFFF1493);
+      canvas.drawCircle(
+        centers[i],
+        r * 1.6,
+        Paint()
+          ..color = color.withValues(alpha: 0.40)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+      );
+    }
+  }
+
+  void _facetHighlights(Canvas canvas, List<Offset> centers, double r) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.5)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.6);
+    for (final c in centers) {
+      final path = Path()
+        ..moveTo(c.dx - r * 0.55, c.dy - r * 0.55)
+        ..lineTo(c.dx - r * 0.15, c.dy - r * 0.55)
+        ..lineTo(c.dx - r * 0.55, c.dy - r * 0.15)
+        ..close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _cosmicHaze(Canvas canvas, List<Offset> centers, double r) {
+    for (final c in centers) {
+      canvas.drawCircle(
+        c,
+        r * 1.6,
+        Paint()
+          ..color = const Color(0xFFB46AFF).withValues(alpha: 0.45)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SkinPreviewPainter old) =>
+      old.skin != skin || old.accentColor != accentColor;
 }
