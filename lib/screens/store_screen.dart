@@ -1601,8 +1601,8 @@ class _StoreScreenState extends State<StoreScreen>
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Buy power-ups with coins to stockpile them. '
-                        'Pre-game activation arriving soon.',
+                        'Buy with coins, then arm one from the home screen '
+                        'loadout chip — it activates 5s into your next game.',
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.85),
                           fontSize: 12,

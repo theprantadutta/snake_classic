@@ -2,22 +2,35 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
-/// Pre-game power-up inventory state. Keys are Flutter PowerUpType enum
-/// names (speedBoost / invincibility / scoreMultiplier / slowMotion) and
-/// values are remaining uses. The backend is the source of truth — local
-/// state mirrors it after each round-trip.
+/// Pre-game power-up inventory state. Keys are snake_case identifiers
+/// matching the JSON wire format (the backend ASP.NET pipeline applies
+/// SnakeCaseLower to outgoing dictionary keys). The `armed` field holds
+/// the inventory key the user has chosen to pre-load for their next
+/// game — consumed automatically when GameCubit.startGame fires.
 class PowerUpState extends Equatable {
   final Map<String, int> inventory;
+  final String? armed;
   final bool loading;
 
-  const PowerUpState({this.inventory = const {}, this.loading = false});
+  const PowerUpState({
+    this.inventory = const {},
+    this.armed,
+    this.loading = false,
+  });
 
-  PowerUpState copyWith({Map<String, int>? inventory, bool? loading}) {
+  PowerUpState copyWith({
+    Map<String, int>? inventory,
+    String? armed,
+    bool clearArmed = false,
+    bool? loading,
+  }) {
     return PowerUpState(
       inventory: inventory ?? this.inventory,
+      armed: clearArmed ? null : (armed ?? this.armed),
       loading: loading ?? this.loading,
     );
   }
@@ -27,7 +40,7 @@ class PowerUpState extends Equatable {
       inventory.values.fold(0, (sum, count) => sum + count);
 
   @override
-  List<Object?> get props => [inventory, loading];
+  List<Object?> get props => [inventory, armed, loading];
 }
 
 class PowerUpCubit extends Cubit<PowerUpState> {
@@ -79,7 +92,10 @@ class PowerUpCubit extends Cubit<PowerUpState> {
   }
 
   /// Consume one use of a power-up. Called by the pre-game activation
-  /// flow at the moment the power-up activates in-game.
+  /// flow at the moment the power-up activates in-game. Also clears the
+  /// armed slot — once a power-up is used the user must re-arm if they
+  /// want another one on their next game (matches the "single-use"
+  /// expectation: you pay to use, you don't auto-rearm).
   Future<bool> consume(String powerUpType) async {
     if (!_api.isAuthenticated) return false;
     if (state.countFor(powerUpType) <= 0) return false;
@@ -88,11 +104,49 @@ class PowerUpCubit extends Cubit<PowerUpState> {
       if (data == null) return false;
       emit(state.copyWith(
         inventory: _parseInventory(data['inventory']),
+        clearArmed: true,
       ));
       return true;
     } catch (e) {
       AppLogger.error('Failed to consume power-up', e);
       return false;
+    }
+  }
+
+  /// Arm a power-up for the next game. Validates that the user has at
+  /// least one in inventory — UI should already gate this, but defensive
+  /// to prevent state corruption.
+  void arm(String powerUpType) {
+    if (state.countFor(powerUpType) <= 0) {
+      AppLogger.warning('Attempted to arm power-up not in inventory: $powerUpType');
+      return;
+    }
+    if (state.armed == powerUpType) return;
+    emit(state.copyWith(armed: powerUpType));
+  }
+
+  /// Clear the armed slot without consuming inventory. Called by the
+  /// loadout sheet "Unarm" action.
+  void unarm() {
+    if (state.armed == null) return;
+    emit(state.copyWith(clearArmed: true));
+  }
+
+  /// Map the snake_case inventory key to the gameplay PowerUpType enum.
+  /// Returns null for unknown keys so a corrupted server response or a
+  /// future power-up type doesn't crash the engine.
+  static PowerUpType? typeFromInventoryKey(String key) {
+    switch (key) {
+      case 'speed_boost':
+        return PowerUpType.speedBoost;
+      case 'invincibility':
+        return PowerUpType.invincibility;
+      case 'score_multiplier':
+        return PowerUpType.scoreMultiplier;
+      case 'slow_motion':
+        return PowerUpType.slowMotion;
+      default:
+        return null;
     }
   }
 

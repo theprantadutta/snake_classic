@@ -15,6 +15,7 @@ import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/game_replay.dart' show GameRecorder;
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
@@ -215,6 +216,12 @@ class GameCubit extends Cubit<GameCubitState> {
     _startPowerUpTimer();
     _startTimeAttackTimer(settings.gameMode);
 
+    // Pre-game power-up activation: if the user armed a power-up via the
+    // home-screen loadout, fire it 5 seconds into the game so they have
+    // time to settle into the run before the effect kicks in. Consuming
+    // from inventory + clearing the armed slot is handled by the cubit.
+    _activateArmedPowerUpIfAny();
+
     _audioService.playSound('game_start');
     _enhancedAudioService.playSfx('game_start', volume: 0.8);
 
@@ -225,6 +232,42 @@ class GameCubit extends Cubit<GameCubitState> {
     );
 
     debugPrint('🎮 [GameCubit] startGame() completed');
+  }
+
+  /// Consume the user's armed pre-game power-up (if any) and schedule its
+  /// in-game activation 5 seconds in. The PowerUpCubit handles the
+  /// server round-trip + inventory decrement; we just inject the
+  /// ActivePowerUp into the game state once the delay elapses.
+  void _activateArmedPowerUpIfAny() {
+    final powerUpCubit = getIt<PowerUpCubit>();
+    final armedKey = powerUpCubit.state.armed;
+    if (armedKey == null) return;
+    final type = PowerUpCubit.typeFromInventoryKey(armedKey);
+    if (type == null) {
+      AppLogger.warning('Armed power-up key has no PowerUpType mapping: $armedKey');
+      return;
+    }
+    // Consume eagerly so the user can't double-spend by exiting and
+    // restarting before the timer fires. consume() also clears the armed
+    // slot — re-arming for the next game is intentional.
+    unawaited(powerUpCubit.consume(armedKey));
+    Future.delayed(const Duration(seconds: 5), () {
+      // If the game ended (game over / quit) before the activation
+      // window, silently drop. Inventory was already consumed — that's
+      // a deliberate "you paid for it" cost.
+      if (state.status != GamePlayStatus.playing) return;
+      final gameState = state.gameState;
+      if (gameState == null) return;
+      final updated = gameState.copyWith(
+        activePowerUps: [
+          ...gameState.activePowerUps,
+          ActivePowerUp(type: type),
+        ],
+      );
+      emit(state.copyWith(gameState: updated));
+      _audioService.playSound('power_up_collect');
+      _enhancedAudioService.playSfx('power_up_collect', volume: 0.8);
+    });
   }
 
   /// Set tournament mode

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -741,6 +742,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              // Power-up loadout chip — only renders when the user has
+              // any inventory. Sits directly above the play button so
+              // it's the last thing they see before tapping PLAY.
+              _buildPowerUpLoadoutChip(theme),
+
               // Hero Play Button - Main focal point, now at the top so
               // the user's eye lands on the call-to-action first.
               Flexible(
@@ -958,6 +964,116 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPowerUpLoadoutChip(GameTheme theme) {
+    return BlocBuilder<PowerUpCubit, PowerUpState>(
+      builder: (context, powerUpState) {
+        // Hide entirely when the user has no inventory — keeps the home
+        // screen uncluttered for free users / users who haven't bought
+        // power-ups yet.
+        if (powerUpState.totalOwned == 0) return const SizedBox.shrink();
+
+        final armed = powerUpState.armed;
+        final armedLabel = armed == null ? null : _loadoutLabelFor(armed);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: GestureDetector(
+            onTap: () => _openLoadoutSheet(theme, powerUpState),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: armed != null
+                    ? theme.accentColor.withValues(alpha: 0.18)
+                    : theme.accentColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: armed != null
+                      ? theme.accentColor
+                      : theme.accentColor.withValues(alpha: 0.25),
+                  width: armed != null ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    armed != null ? Icons.flash_on : Icons.flash_on_outlined,
+                    color: armed != null ? Colors.amber : theme.accentColor,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    armed != null
+                        ? 'Armed: $armedLabel'
+                        : 'Loadout (${powerUpState.totalOwned})',
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    color: theme.accentColor.withValues(alpha: 0.7),
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _loadoutLabelFor(String inventoryKey) {
+    switch (inventoryKey) {
+      case 'speed_boost':
+        return 'Speed Boost';
+      case 'invincibility':
+        return 'Invincibility';
+      case 'score_multiplier':
+        return 'Score Multiplier';
+      case 'slow_motion':
+        return 'Slow Motion';
+      default:
+        return inventoryKey;
+    }
+  }
+
+  IconData _loadoutIconFor(String inventoryKey) {
+    switch (inventoryKey) {
+      case 'speed_boost':
+        return Icons.speed;
+      case 'invincibility':
+        return Icons.shield;
+      case 'score_multiplier':
+        return Icons.star;
+      case 'slow_motion':
+        return Icons.slow_motion_video;
+      default:
+        return Icons.flash_on;
+    }
+  }
+
+  void _openLoadoutSheet(GameTheme theme, PowerUpState state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return _LoadoutBottomSheet(
+          theme: theme,
+          labelFor: _loadoutLabelFor,
+          iconFor: _loadoutIconFor,
         );
       },
     );
@@ -2052,6 +2168,220 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Pre-game power-up loadout sheet. Lists every type the user owns,
+/// highlights the currently armed one, and lets them switch / unarm.
+/// Closing the sheet without picking leaves the previous selection
+/// intact — the sheet is a passive viewer/editor, not a wizard.
+class _LoadoutBottomSheet extends StatelessWidget {
+  final GameTheme theme;
+  final String Function(String key) labelFor;
+  final IconData Function(String key) iconFor;
+
+  const _LoadoutBottomSheet({
+    required this.theme,
+    required this.labelFor,
+    required this.iconFor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<PowerUpCubit, PowerUpState>(
+      builder: (context, state) {
+        final entries = state.inventory.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+        return SafeArea(
+          top: false,
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.backgroundColor.withValues(alpha: 0.98),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.4),
+                width: 2,
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.flash_on, color: theme.accentColor, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Power-Up Loadout',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Pre-load one power-up — it activates 5 seconds into your next game.',
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.7),
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (entries.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Text(
+                        'You have no power-ups.\nVisit the store to buy some!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  ...entries.map((e) {
+                    final key = e.key;
+                    final count = e.value;
+                    final isArmed = state.armed == key;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          if (isArmed) {
+                            context.read<PowerUpCubit>().unarm();
+                          } else {
+                            context.read<PowerUpCubit>().arm(key);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isArmed
+                                ? theme.accentColor.withValues(alpha: 0.20)
+                                : Colors.white.withValues(alpha: 0.04),
+                            border: Border.all(
+                              color: isArmed
+                                  ? theme.accentColor
+                                  : Colors.white.withValues(alpha: 0.10),
+                              width: isArmed ? 2 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: theme.accentColor
+                                      .withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  iconFor(key),
+                                  color: theme.accentColor,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      labelFor(key),
+                                      style: TextStyle(
+                                        color: theme.accentColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Owned: $count',
+                                      style: TextStyle(
+                                        color: theme.accentColor
+                                            .withValues(alpha: 0.65),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isArmed)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: theme.accentColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    'ARMED',
+                                    style: TextStyle(
+                                      color: theme.backgroundColor,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                )
+                              else
+                                Icon(
+                                  Icons.add_circle_outline,
+                                  color: theme.accentColor
+                                      .withValues(alpha: 0.7),
+                                  size: 22,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.accentColor,
+                      foregroundColor: theme.backgroundColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'DONE',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
