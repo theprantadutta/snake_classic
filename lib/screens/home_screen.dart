@@ -602,12 +602,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildGameTitle(GameTheme theme, double screenHeight) {
-    // Smaller logo size
+    // Tighter logo sizes (~30% smaller than before) so the new title
+    // text below has room to breathe without pushing the play button
+    // off the bottom on small screens.
     final logoSize = screenHeight < 650
-        ? 100.0
+        ? 70.0
         : screenHeight < 750
-        ? 120.0
-        : 140.0;
+        ? 85.0
+        : 100.0;
+
+    // Title font scales with the logo so they read as a unit.
+    final titleSize = screenHeight < 650
+        ? 28.0
+        : screenHeight < 750
+        ? 32.0
+        : 36.0;
 
     return Container(
       width: double.infinity,
@@ -616,38 +625,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         horizontal: 16,
       ),
       child: Center(
-        child: Container(
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                blurRadius: 30,
-                spreadRadius: 5,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.accentColor.withValues(alpha: 0.3),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                ],
               ),
-            ],
-          ),
-          child:
-              Image.asset(
-                    'assets/images/snake_classic_transparent.png',
-                    width: logoSize,
-                    height: logoSize,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.games,
-                        size: logoSize * 0.5,
-                        color: theme.accentColor,
-                      );
-                    },
-                  )
-                  .animate(
-                    onPlay: (controller) => controller.repeat(reverse: true),
-                  )
-                  .shimmer(
-                    duration: 2500.ms,
-                    color: theme.accentColor.withValues(alpha: 0.25),
-                  )
-                  .gameHero(),
+              child:
+                  Image.asset(
+                        'assets/images/snake_classic_transparent.png',
+                        width: logoSize,
+                        height: logoSize,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.games,
+                            size: logoSize * 0.5,
+                            color: theme.accentColor,
+                          );
+                        },
+                      )
+                      .animate(
+                        onPlay: (controller) =>
+                            controller.repeat(reverse: true),
+                      )
+                      .shimmer(
+                        duration: 2500.ms,
+                        color: theme.accentColor.withValues(alpha: 0.25),
+                      )
+                      .gameHero(),
+            ),
+            SizedBox(height: screenHeight < 650 ? 4 : 8),
+            // "Snake Classic" title — gradient-shaded text styled to
+            // match the game's hero look. ShaderMask gives it the same
+            // primary→accent gradient used elsewhere in the app
+            // (game-over screen, About dialog).
+            ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [theme.primaryColor, theme.accentColor],
+              ).createShader(bounds),
+              child: Text(
+                'Snake Classic',
+                style: TextStyle(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white, // base for ShaderMask
+                  letterSpacing: 1.5,
+                  shadows: [
+                    Shadow(
+                      color: theme.accentColor.withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
