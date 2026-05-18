@@ -1013,6 +1013,13 @@ class OptimizedGameBoardPainter extends CustomPainter {
       _snakeHeadPaint,
     );
 
+    // Per-skin signature overlay — paints fire/electric/galaxy/etc.
+    // signature on top of the base head before eyes go in, so the
+    // eyes remain the focal point. Head index = 0, special-cased
+    // inside the helper for slightly punchier head variants.
+    _drawSkinSignature(canvas, breathingRect, isHead: true,
+        segmentIndex: 0, totalLength: 1);
+
     // Draw enhanced snake eyes with breathing
     _drawSnakeEyes(canvas, breathingRect, direction);
 
@@ -1210,6 +1217,13 @@ class OptimizedGameBoardPainter extends CustomPainter {
       isTail,
       fadeRatio * breathingScale,
     );
+
+    // Per-skin signature overlay — adds the distinctive look that
+    // makes Fire Snake feel like fire, Galaxy feel cosmic, etc.,
+    // beyond just the base color gradient. Drawn last so it sits on
+    // top of the body paint + highlight.
+    _drawSkinSignature(canvas, breathingRect, isHead: false,
+        segmentIndex: index, totalLength: totalLength);
   }
 
   Color _getBodyColor(double opacity, int index, int totalLength) {
@@ -2461,6 +2475,279 @@ class OptimizedGameBoardPainter extends CustomPainter {
       orElse: () => SnakeSkinType.classic,
     );
     return selectedSkinType.colors;
+  }
+
+  /// Resolve the active skin type once per call. Centralized so the
+  /// signature painter and the existing color helpers stay in sync.
+  SnakeSkinType _getSelectedSkinType() {
+    return SnakeSkinType.values.firstWhere(
+      (type) => type.id == premiumState.selectedSkinId,
+      orElse: () => SnakeSkinType.classic,
+    );
+  }
+
+  /// Per-skin signature overlay. Drawn ON TOP of the base segment so
+  /// each premium skin gets a distinctive in-game look beyond just
+  /// a different color palette. Classic, owned/unowned/locked checks
+  /// short-circuit early so this is zero-cost for the default snake.
+  void _drawSkinSignature(
+    Canvas canvas,
+    Rect rect, {
+    required bool isHead,
+    required int segmentIndex,
+    required int totalLength,
+  }) {
+    if (premiumState.selectedSkinId == 'classic') return;
+    if (!premiumState.isSkinOwned(premiumState.selectedSkinId)) return;
+    final skin = _getSelectedSkinType();
+    final t = pulseAnimation.value; // 0..1 breathing
+    final timeSec = animationTimeMs / 1000.0;
+
+    switch (skin) {
+      case SnakeSkinType.classic:
+        return;
+
+      case SnakeSkinType.golden:
+        // Animated metallic specular band sliding diagonally across
+        // the segment. Mimics light catching a polished surface.
+        _drawDiagonalShimmer(canvas, rect,
+            phase: (timeSec * 0.6) % 1.0,
+            color: const Color(0xFFFFF6C4));
+        break;
+
+      case SnakeSkinType.rainbow:
+        // Small white sparkle that pops on the leading edge — the
+        // body color already cycles via _getBodyColor's rotation.
+        _drawCenterSparkle(canvas, rect,
+            intensity: (math.sin(timeSec * 6 + segmentIndex) + 1) * 0.5,
+            color: Colors.white);
+        break;
+
+      case SnakeSkinType.galaxy:
+        // Tiny starfield dots scattered on the segment.
+        _drawStarSpecks(canvas, rect, seed: segmentIndex * 11);
+        break;
+
+      case SnakeSkinType.dragon:
+        // Curved scale ridge across the segment top — gives a hint
+        // of reptilian armor without overwhelming the base color.
+        _drawScaleRidge(canvas, rect,
+            color: const Color(0xFFFFD700).withValues(alpha: 0.75));
+        break;
+
+      case SnakeSkinType.electric:
+        // Tiny lightning zigzag on every 2nd-3rd segment, intensity
+        // pulsing with breathing animation. Heads get a bright spark.
+        if (isHead || segmentIndex % 3 == 0) {
+          _drawSparkBolt(canvas, rect,
+              flashOn: t > 0.55 || isHead,
+              color: const Color(0xFF00E5FF));
+        }
+        break;
+
+      case SnakeSkinType.fire:
+        // Small ember dots above the segment with orange-yellow glow.
+        // Position drifts upward with time to feel like rising heat.
+        _drawEmberDots(canvas, rect,
+            phase: timeSec + segmentIndex * 0.15,
+            colorHot: const Color(0xFFFFD27A),
+            colorCool: const Color(0xFFFF6A00));
+        break;
+
+      case SnakeSkinType.ice:
+        // Tiny frost specks (X-shaped crystals) near top edges.
+        _drawFrostSpecks(canvas, rect, seed: segmentIndex);
+        break;
+
+      case SnakeSkinType.shadow:
+        // Smoky outer halo — a soft dark blur ringing the segment.
+        _drawSmokyHalo(canvas, rect);
+        break;
+
+      case SnakeSkinType.neon:
+        // Strong outer glow halo, color cycling between lime/pink.
+        final phase = (math.sin(timeSec * 3 + segmentIndex * 0.4) + 1) * 0.5;
+        final glow = Color.lerp(
+            const Color(0xFF39FF14), const Color(0xFFFF1493), phase)!;
+        _drawSoftHalo(canvas, rect, color: glow, radiusMul: 1.4);
+        break;
+
+      case SnakeSkinType.crystal:
+        // Triangular facet highlight on top-left of the segment.
+        _drawFacetHighlight(canvas, rect);
+        break;
+
+      case SnakeSkinType.cosmic:
+        // Purple nebula haze halo + 1-2 tiny stars per segment.
+        _drawSoftHalo(canvas, rect,
+            color: const Color(0xFFB46AFF).withValues(alpha: 0.45),
+            radiusMul: 1.2);
+        _drawStarSpecks(canvas, rect, seed: segmentIndex * 7, count: 2);
+        break;
+    }
+  }
+
+  void _drawDiagonalShimmer(Canvas canvas, Rect rect,
+      {required double phase, required Color color}) {
+    // Diagonal band: animate `phase` from 0..1, mapping to a thin
+    // bright stripe sliding from top-left to bottom-right.
+    final w = rect.width;
+    final shimmerX = rect.left - w * 0.4 + (w * 1.8) * phase;
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          color.withValues(alpha: 0.0),
+          color.withValues(alpha: 0.55),
+          color.withValues(alpha: 0.0),
+        ],
+        stops: const [0.45, 0.5, 0.55],
+      ).createShader(Rect.fromLTWH(
+          shimmerX - w * 0.5, rect.top, w * 1.0, rect.height));
+    final r = Radius.circular(rect.width * 0.3);
+    canvas.save();
+    canvas.clipRRect(RRect.fromRectAndRadius(rect, r));
+    canvas.drawRect(rect, paint);
+    canvas.restore();
+  }
+
+  void _drawCenterSparkle(Canvas canvas, Rect rect,
+      {required double intensity, required Color color}) {
+    if (intensity < 0.3) return;
+    final r = rect.width * 0.10 * intensity;
+    canvas.drawCircle(
+      rect.center,
+      r,
+      Paint()
+        ..color = color.withValues(alpha: intensity * 0.85)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+    );
+  }
+
+  void _drawStarSpecks(Canvas canvas, Rect rect,
+      {required int seed, int count = 3}) {
+    final rng = math.Random(seed);
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.78)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.6);
+    for (var i = 0; i < count; i++) {
+      final x = rect.left + rect.width * (0.2 + rng.nextDouble() * 0.6);
+      final y = rect.top + rect.height * (0.2 + rng.nextDouble() * 0.6);
+      canvas.drawCircle(Offset(x, y), 0.9, paint);
+    }
+  }
+
+  void _drawScaleRidge(Canvas canvas, Rect rect, {required Color color}) {
+    // Two stacked thin arcs that read as a scale outline running
+    // across the segment.
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeCap = StrokeCap.round;
+    final pad = rect.width * 0.18;
+    final rect1 = Rect.fromLTWH(
+        rect.left + pad, rect.top + rect.height * 0.10,
+        rect.width - 2 * pad, rect.height * 0.45);
+    canvas.drawArc(rect1, math.pi, math.pi, false, paint);
+    paint.color = color.withValues(alpha: 0.35);
+    final rect2 = Rect.fromLTWH(
+        rect.left + pad * 1.6, rect.top + rect.height * 0.25,
+        rect.width - 2 * pad * 1.6, rect.height * 0.40);
+    canvas.drawArc(rect2, math.pi, math.pi, false, paint);
+  }
+
+  void _drawSparkBolt(Canvas canvas, Rect rect,
+      {required bool flashOn, required Color color}) {
+    if (!flashOn) return;
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.8);
+    final cx = rect.center.dx;
+    final cy = rect.center.dy;
+    final w = rect.width * 0.5;
+    final h = rect.height * 0.5;
+    final path = Path()
+      ..moveTo(cx - w * 0.4, cy - h * 0.35)
+      ..lineTo(cx - w * 0.05, cy - h * 0.05)
+      ..lineTo(cx + w * 0.05, cy + h * 0.05)
+      ..lineTo(cx + w * 0.4, cy + h * 0.35);
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawEmberDots(Canvas canvas, Rect rect,
+      {required double phase,
+      required Color colorHot,
+      required Color colorCool}) {
+    // 2 ember dots drifting upward; phase advances => dots move up
+    // and fade out, then re-spawn at the bottom.
+    for (var i = 0; i < 2; i++) {
+      final local = (phase + i * 0.5) % 1.0;
+      final cx = rect.center.dx + (i == 0 ? -rect.width * 0.18 : rect.width * 0.16);
+      final cy = rect.bottom - rect.height * local * 0.55 - 2;
+      if (cy < rect.top - 2) continue;
+      final alpha = (1.0 - local).clamp(0.0, 1.0);
+      final c = Color.lerp(colorHot, colorCool, local)!
+          .withValues(alpha: alpha * 0.85);
+      canvas.drawCircle(
+        Offset(cx, cy),
+        1.4,
+        Paint()
+          ..color = c
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
+      );
+    }
+  }
+
+  void _drawFrostSpecks(Canvas canvas, Rect rect, {required int seed}) {
+    final rng = math.Random(seed);
+    final paint = Paint()
+      ..color = const Color(0xFFE0FBFF).withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 2; i++) {
+      final cx = rect.left + rect.width * (0.18 + rng.nextDouble() * 0.6);
+      final cy = rect.top + rect.height * (0.10 + rng.nextDouble() * 0.30);
+      const s = 1.5;
+      canvas.drawLine(Offset(cx - s, cy - s), Offset(cx + s, cy + s), paint);
+      canvas.drawLine(Offset(cx - s, cy + s), Offset(cx + s, cy - s), paint);
+      canvas.drawLine(Offset(cx, cy - s * 1.4), Offset(cx, cy + s * 1.4), paint);
+    }
+  }
+
+  void _drawSmokyHalo(Canvas canvas, Rect rect) {
+    final paint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.5)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawCircle(rect.center, rect.width * 0.62, paint);
+  }
+
+  void _drawSoftHalo(Canvas canvas, Rect rect,
+      {required Color color, required double radiusMul}) {
+    final paint = Paint()
+      ..color = color
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawCircle(rect.center, rect.width * 0.5 * radiusMul, paint);
+  }
+
+  void _drawFacetHighlight(Canvas canvas, Rect rect) {
+    // Triangular highlight on the top-left for a crystalline feel.
+    final path = Path()
+      ..moveTo(rect.left + rect.width * 0.18, rect.top + rect.height * 0.16)
+      ..lineTo(rect.left + rect.width * 0.46, rect.top + rect.height * 0.16)
+      ..lineTo(rect.left + rect.width * 0.18, rect.top + rect.height * 0.50)
+      ..close();
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.40)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.6),
+    );
   }
 
   @override
