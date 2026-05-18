@@ -225,57 +225,75 @@ class AppDataCache extends ChangeNotifier {
     // 'preload failed' by checking `!= null`, and storing [] disguises
     // failure as success — which is why the leaderboard tabs were
     // showing 'No scores yet' permanently on a slow first launch.
+    //
+    // Parallel-execute the three independent fetches so the wall-clock
+    // cost is the SLOWEST of the three, not their sum. Previously they
+    // ran serially under a 4-second outer timeout, giving each call only
+    // ~1.3s budget — borderline on every connection and the source of
+    // the "Leaderboards timed out" warning users saw on every launch.
     final service = LeaderboardService();
-    try {
-      _globalLeaderboard = await service.getGlobalLeaderboard(limit: 100);
-    } catch (e) {
-      if (kDebugMode) print('AppDataCache: Global leaderboard load failed: $e');
-      // Leave _globalLeaderboard as null so the provider falls through
-      // to a fresh fetch with proper loading + error UX.
-    }
-    try {
-      _weeklyLeaderboard = await service.getWeeklyLeaderboard(limit: 100);
-    } catch (e) {
-      if (kDebugMode) print('AppDataCache: Weekly leaderboard load failed: $e');
-    }
-    try {
-      _dailyLeaderboard = await service.getDailyLeaderboard(limit: 100);
-    } catch (e) {
-      if (kDebugMode) print('AppDataCache: Daily leaderboard load failed: $e');
-    }
+    await Future.wait([
+      _safeLoad(
+        () async => _globalLeaderboard =
+            await service.getGlobalLeaderboard(limit: 100),
+        'Global leaderboard',
+      ),
+      _safeLoad(
+        () async => _weeklyLeaderboard =
+            await service.getWeeklyLeaderboard(limit: 100),
+        'Weekly leaderboard',
+      ),
+      _safeLoad(
+        () async => _dailyLeaderboard =
+            await service.getDailyLeaderboard(limit: 100),
+        'Daily leaderboard',
+      ),
+    ]);
     // Friends leaderboard requires friend IDs and is loaded on-demand.
     _friendsLeaderboard = [];
   }
 
+  /// Run a per-list loader, swallowing exceptions so one failure in a
+  /// parallel batch doesn't tank the whole Future.wait. Leaves the
+  /// matching cache field NULL on error so the per-screen provider
+  /// re-fetches cleanly.
+  Future<void> _safeLoad(Future<void> Function() load, String label) async {
+    try {
+      await load();
+    } catch (e) {
+      if (kDebugMode) print('AppDataCache: $label load failed: $e');
+    }
+  }
+
   Future<void> _loadTournaments() async {
-    // Same pattern as leaderboards: per-list try/catch so a failure on
-    // one doesn't poison the cache for the other, and a failure leaves
-    // the field NULL so the provider knows to refetch.
+    // Same pattern as leaderboards: parallel fetches under the outer
+    // 4s timeout so the budget covers the slowest call, not the sum.
+    // Per-list try/catch ensures one failure doesn't poison the other.
     final service = TournamentService();
-    try {
-      _activeTournaments = await service.getActiveTournaments();
-    } catch (e) {
-      if (kDebugMode) print('AppDataCache: Active tournaments load failed: $e');
-    }
-    try {
-      _historyTournaments = await service.getTournamentHistory();
-    } catch (e) {
-      if (kDebugMode) print('AppDataCache: Tournament history load failed: $e');
-    }
+    await Future.wait([
+      _safeLoad(
+        () async => _activeTournaments = await service.getActiveTournaments(),
+        'Active tournaments',
+      ),
+      _safeLoad(
+        () async => _historyTournaments = await service.getTournamentHistory(),
+        'Tournament history',
+      ),
+    ]);
   }
 
   Future<void> _loadSocialData() async {
     final service = SocialService();
-    try {
-      _friendsList = await service.getFriends();
-    } catch (e) {
-      if (kDebugMode) print('AppDataCache: Friends load failed: $e');
-    }
-    try {
-      _friendRequests = await service.getFriendRequests();
-    } catch (e) {
-      if (kDebugMode) print('AppDataCache: Friend requests load failed: $e');
-    }
+    await Future.wait([
+      _safeLoad(
+        () async => _friendsList = await service.getFriends(),
+        'Friends',
+      ),
+      _safeLoad(
+        () async => _friendRequests = await service.getFriendRequests(),
+        'Friend requests',
+      ),
+    ]);
   }
 
   /// Background refresh - call when entering a screen for silent updates.
