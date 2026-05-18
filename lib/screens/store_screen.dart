@@ -1230,8 +1230,11 @@ class _StoreScreenState extends State<StoreScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AspectRatio(
-              aspectRatio: 16 / 10,
+            // Preview takes the rest of the cell — fills the empty
+            // bottom space that used to appear when the card was taller
+            // than its content. The painter draws to whatever rect it
+            // gets, so a taller preview is fine visually.
+            Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: _ThemePreview(theme: target),
