@@ -395,57 +395,85 @@ class SnakeTrailPainter extends CustomPainter {
   }
 
   void _paintGlowTrail(Canvas canvas) {
+    // Modernized: 4 halo layers with proper falloff (outer wider/dimmer,
+    // inner tighter/brighter), capped by a bright white-tinted core for
+    // a "lit from within" look. The previous version had thin halos and
+    // a low-saturation core; this reads as actual luminance.
     for (final segment in segments) {
-      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.8).clamp(0.0, 1.0);
+      final ageFactor =
+          1.0 - (segment.age(currentTimeSeconds) / 0.8).clamp(0.0, 1.0);
 
-      // Draw multiple glow layers
-      for (int layer = 3; layer > 0; layer--) {
-        final layerSize = segment.size * layer * 0.8;
-        final layerAlpha = (segment.color.a * ageFactor * 0.3) / layer;
-
+      // Outer-to-inner halo layers: wider radius + softer alpha at outer,
+      // tighter radius + stronger alpha inward.
+      const layerCount = 4;
+      for (int layer = layerCount; layer > 0; layer--) {
+        final ringFrac = layer / layerCount; // 1.0 outer → 0.25 inner
+        final layerSize = segment.size * (0.6 + ringFrac * 1.6);
+        final layerAlpha = segment.color.a * ageFactor *
+            (0.18 + (1 - ringFrac) * 0.42); // brighter inside
         final paint = Paint()
           ..color = segment.color.withValues(alpha: layerAlpha)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, layerSize * 0.3)
+          ..maskFilter = MaskFilter.blur(
+              BlurStyle.normal, layerSize * (0.20 + ringFrac * 0.30))
           ..isAntiAlias = true;
-
         canvas.drawCircle(segment.position, layerSize, paint);
       }
 
-      // Draw core
-      final corePaint = Paint()
-        ..color = segment.color.withValues(alpha: segment.color.a * ageFactor)
-        ..isAntiAlias = true;
-
-      canvas.drawCircle(segment.position, segment.size * 0.4, corePaint);
+      // Bright inner core — slightly white-mixed to give the
+      // signature "incandescent" pop instead of pure-color flatness.
+      final core = Color.lerp(segment.color, Colors.white, 0.35)!
+          .withValues(alpha: ageFactor * 0.95);
+      canvas.drawCircle(
+        segment.position,
+        segment.size * 0.32,
+        Paint()
+          ..color = core
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.6)
+          ..isAntiAlias = true,
+      );
     }
   }
 
   void _paintParticleTrail(Canvas canvas) {
-    final random = math.Random(42); // Fixed seed for consistent pattern
-
+    // Modernized: particles drift OUTWARD as they age (instead of orbiting
+    // a static radius), size shrinks with age, brightness falls off with
+    // distance. The previous version had particles glued to the segment;
+    // this gives a real "leaving a sparkle trail" feel.
+    final random = math.Random(42);
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.8).clamp(0.0, 1.0);
+      final age = segment.age(currentTimeSeconds);
+      final ageFactor = 1.0 - (age / 0.8).clamp(0.0, 1.0);
 
-      // Draw multiple small particles around the segment
-      for (int p = 0; p < 3; p++) {
-        final angle = (i + p) * 0.5 + animationValue * math.pi * 2;
-        final radius = segment.size * 0.8;
-        final particlePos = Offset(
-          segment.position.dx + math.cos(angle) * radius * random.nextDouble(),
-          segment.position.dy + math.sin(angle) * radius * random.nextDouble(),
+      // 4 particles per segment with deterministic angular offsets so
+      // each segment has its own spawn pattern.
+      for (int p = 0; p < 4; p++) {
+        final baseAngle = (i + p) * (math.pi * 2 / 5) +
+            animationValue * math.pi * 1.4;
+        // Drift radius scales with the segment's age — particles
+        // expand away from the snake as they fade.
+        final drift = segment.size * (0.4 + age * 6.0) *
+            (0.6 + random.nextDouble() * 0.5);
+        final px = segment.position.dx + math.cos(baseAngle) * drift;
+        final py = segment.position.dy + math.sin(baseAngle) * drift;
+        final particleSize = segment.size * (0.35 - age * 0.6).clamp(0.05, 0.4);
+
+        // Bright white-tinted spark on a colored halo for sparkle pop.
+        final hot = Color.lerp(segment.color, Colors.white, 0.55)!
+            .withValues(alpha: ageFactor * 0.95);
+        canvas.drawCircle(
+          Offset(px, py),
+          particleSize * 1.6,
+          Paint()
+            ..color = segment.color.withValues(alpha: ageFactor * 0.45)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5)
+            ..isAntiAlias = true,
         );
-
-        final paint = Paint()
-          ..color = segment.color.withValues(
-            alpha:
-                segment.color.a *
-                ageFactor *
-                (0.5 + 0.5 * math.sin(animationValue * math.pi * 4)),
-          )
-          ..isAntiAlias = true;
-
-        canvas.drawCircle(particlePos, segment.size * 0.3, paint);
+        canvas.drawCircle(
+          Offset(px, py),
+          particleSize,
+          Paint()..color = hot..isAntiAlias = true,
+        );
       }
     }
   }
@@ -496,65 +524,117 @@ class SnakeTrailPainter extends CustomPainter {
   }
 
   void _paintRainbowTrail(Canvas canvas) {
+    // Modernized: 3-layer rainbow halo, color shifts faster across the
+    // body so the user sees a moving prism, plus a bright white core
+    // on each segment so the trail reads as an energetic flowing arc.
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 1.0).clamp(0.0, 1.0);
+      final ageFactor =
+          1.0 - (segment.age(currentTimeSeconds) / 1.0).clamp(0.0, 1.0);
 
-      // Create rainbow effect
-      final hue = (animationValue * 360 + i * 10) % 360;
-      final rainbowColor = HSVColor.fromAHSV(
-        ageFactor * 0.8,
-        hue,
-        1.0,
-        1.0,
-      ).toColor();
+      final hue = (animationValue * 540 + i * 22) % 360;
+      final rainbowColor =
+          HSVColor.fromAHSV(ageFactor, hue, 1.0, 1.0).toColor();
 
-      // Draw with glow
-      final glowPaint = Paint()
-        ..color = rainbowColor.withValues(alpha: rainbowColor.a * 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8.0)
-        ..isAntiAlias = true;
-
-      canvas.drawCircle(segment.position, segment.size * 1.5, glowPaint);
-
-      final corePaint = Paint()
-        ..color = rainbowColor
-        ..isAntiAlias = true;
-
-      canvas.drawCircle(segment.position, segment.size * 0.6, corePaint);
+      // Outer wide halo — soft saturated bloom.
+      canvas.drawCircle(
+        segment.position,
+        segment.size * 2.0,
+        Paint()
+          ..color = rainbowColor.withValues(alpha: ageFactor * 0.30)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+      );
+      // Mid halo — punchier.
+      canvas.drawCircle(
+        segment.position,
+        segment.size * 1.2,
+        Paint()
+          ..color = rainbowColor.withValues(alpha: ageFactor * 0.55)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+      // Hard color body.
+      canvas.drawCircle(
+        segment.position,
+        segment.size * 0.7,
+        Paint()..color = rainbowColor..isAntiAlias = true,
+      );
+      // Bright white core — gives every segment a sparkle highlight.
+      canvas.drawCircle(
+        segment.position,
+        segment.size * 0.28,
+        Paint()
+          ..color = Colors.white.withValues(alpha: ageFactor * 0.95)
+          ..isAntiAlias = true,
+      );
     }
   }
 
   void _paintFireTrail(Canvas canvas) {
+    // Modernized: 4-layer flame (deep red → orange → gold → white-hot
+    // tip) with stronger flicker, PLUS independent ember sparks that
+    // drift upward from each segment with their own lifecycle. The
+    // upward drift comes from the segment's age, so the older the
+    // segment the higher its embers — gives the trail a true rising-
+    // heat feel instead of a static-positioned flame stack.
+    final emberRng = math.Random(99);
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.6).clamp(0.0, 1.0);
-
-      // Create flickering fire effect
-      final flicker = 0.8 + 0.2 * math.sin(animationValue * math.pi * 8 + i);
+      final age = segment.age(currentTimeSeconds);
+      final ageFactor = 1.0 - (age / 0.6).clamp(0.0, 1.0);
+      final flicker =
+          0.85 + 0.15 * math.sin(animationValue * math.pi * 12 + i * 1.7);
       final fireSize = segment.size * flicker * ageFactor;
 
-      // Draw fire layers (red, orange, yellow)
-      final colors = [
-        Colors.red.withValues(alpha: ageFactor * 0.8),
-        Colors.orange.withValues(alpha: ageFactor * 0.6),
-        Colors.yellow.withValues(alpha: ageFactor * 0.4),
+      // Flame layers — innermost is brightest, outermost is most
+      // saturated red. Each layer offsets slightly upward for the
+      // teardrop flame shape.
+      final layers = <(Color, double)>[
+        (const Color(0xFFB00000).withValues(alpha: ageFactor * 0.85), 1.10),
+        (const Color(0xFFFF6A00).withValues(alpha: ageFactor * 0.78), 0.85),
+        (const Color(0xFFFFB400).withValues(alpha: ageFactor * 0.70), 0.60),
+        (const Color(0xFFFFF1B0).withValues(alpha: ageFactor * 0.90), 0.32),
       ];
-
-      for (int layer = 0; layer < colors.length; layer++) {
-        final layerSize = fireSize * (1.0 - layer * 0.3);
+      for (var layer = 0; layer < layers.length; layer++) {
+        final (color, sizeMul) = layers[layer];
+        final layerSize = fireSize * sizeMul;
         final paint = Paint()
-          ..color = colors[layer]
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, layerSize * 0.2)
+          ..color = color
+          ..maskFilter = MaskFilter.blur(
+              BlurStyle.normal, math.max(0.8, layerSize * 0.22))
           ..isAntiAlias = true;
-
-        // Add some vertical offset for flame shape
-        final flameOffset = Offset(
-          segment.position.dx,
-          segment.position.dy - layer * 2,
+        canvas.drawCircle(
+          Offset(segment.position.dx, segment.position.dy - layer * 2.5),
+          layerSize,
+          paint,
         );
+      }
 
-        canvas.drawCircle(flameOffset, layerSize, paint);
+      // Rising ember sparks — drift upward with age, scatter
+      // horizontally. Older segments emit higher embers; newest
+      // segments emit none yet (so the snake head looks clean).
+      if (age > 0.05) {
+        for (var s = 0; s < 2; s++) {
+          final emberAge = (age * 1.3 + s * 0.18).clamp(0.0, 1.0);
+          final emberFade = (1.0 - emberAge).clamp(0.0, 1.0);
+          final wobble =
+              math.sin(animationValue * math.pi * 6 + i * 2 + s) * 3.0;
+          final dx = segment.position.dx +
+              wobble +
+              (emberRng.nextDouble() - 0.5) * 4;
+          final dy = segment.position.dy - emberAge * 22 - 4;
+          canvas.drawCircle(
+            Offset(dx, dy),
+            (1.4 - emberAge * 0.7).clamp(0.4, 1.4),
+            Paint()
+              ..color = Color.lerp(
+                      const Color(0xFFFFD86A),
+                      const Color(0xFFFF4500),
+                      emberAge)!
+                  .withValues(alpha: emberFade * 0.85)
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5)
+              ..isAntiAlias = true,
+          );
+        }
       }
     }
   }
@@ -684,35 +764,49 @@ class SnakeTrailPainter extends CustomPainter {
   }
 
   void _paintNeonTrail(Canvas canvas) {
+    // Modernized: each segment now has a colored outer halo + a hard
+    // bright core. Color smoothly lerps along the snake (lime→pink)
+    // instead of hard-alternating, and the halo size pulses with the
+    // animation. Reads as a neon-sign "buzz" instead of a stiff
+    // checker pattern.
     for (int i = 0; i < segments.length; i++) {
       final segment = segments[i];
-      final ageFactor = 1.0 - (segment.age(currentTimeSeconds) / 0.7).clamp(0.0, 1.0);
+      final ageFactor =
+          1.0 - (segment.age(currentTimeSeconds) / 0.7).clamp(0.0, 1.0);
 
-      // Alternate lime green / hot pink per segment
-      final color = i % 2 == 0
-          ? const Color(0xFF39FF14)
-          : const Color(0xFFFF1493);
+      // Smooth color lerp using a sine-shifted t per segment so the
+      // gradient flows along the snake instead of strict alternation.
+      final t = (math.sin(i * 0.45 + animationValue * math.pi * 2) + 1) * 0.5;
+      final color = Color.lerp(
+          const Color(0xFF39FF14), const Color(0xFFFF1493), t)!;
 
-      final halfSize = segment.size * 0.5;
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: segment.position, width: halfSize * 2, height: halfSize * 2),
-        const Radius.circular(3.0),
+      final pulse =
+          0.85 + 0.15 * math.sin(animationValue * math.pi * 6 + i * 0.7);
+
+      // Wide colored halo — the buzz.
+      canvas.drawCircle(
+        segment.position,
+        segment.size * 1.6 * pulse,
+        Paint()
+          ..color = color.withValues(alpha: ageFactor * 0.55)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
       );
-
-      // Hard neon fill — no blur
-      final fillPaint = Paint()
-        ..color = color.withValues(alpha: ageFactor * 0.9)
-        ..style = PaintingStyle.fill
-        ..isAntiAlias = true;
-      canvas.drawRRect(rect, fillPaint);
-
-      // Thin outline for neon sign effect
-      final outlinePaint = Paint()
-        ..color = Colors.white.withValues(alpha: ageFactor * 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0
-        ..isAntiAlias = true;
-      canvas.drawRRect(rect, outlinePaint);
+      // Tight saturated body — the tube.
+      canvas.drawCircle(
+        segment.position,
+        segment.size * 0.55,
+        Paint()
+          ..color = color.withValues(alpha: ageFactor * 0.95)
+          ..isAntiAlias = true,
+      );
+      // White-hot inner filament.
+      canvas.drawCircle(
+        segment.position,
+        segment.size * 0.22,
+        Paint()
+          ..color = Colors.white.withValues(alpha: ageFactor * 0.95)
+          ..isAntiAlias = true,
+      );
     }
   }
 
