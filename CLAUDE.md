@@ -32,6 +32,9 @@ Create a classic Snake game in Flutter with premium game-quality UI/UX, running 
 - Focus on smooth performance and responsive controls
 - No tests required for this project
 
+### Store Layout
+The unified store screen (`lib/screens/store_screen.dart`) has exactly 6 tabs in this order: **Pro / Coins / Themes / Skins / Trails / Power-Ups**. Modes and Boards are NOT sold as standalone products — modes are uniformly free, premium board sizes unlock with the Pro subscription. See `STORE_SETUP.md` for the full Play Store catalog (44 products).
+
 ### Development Commands
 - `flutter pub get` - Install dependencies
 - `flutter run` - Run the app (ask user for platform preference first)

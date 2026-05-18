@@ -118,6 +118,16 @@ The following products have been removed from IAP (power-ups are now coin-purcha
 | ~~`exclusive_powerups_pack`~~ | Exclusive Power Pack | Coin-purchased only |
 | ~~`premium_powerups_bundle`~~ | Premium Powerups Bundle | Coin-purchased only |
 
+### What Is NOT a Product
+
+These exist in the app but are NOT listed in the Play Store catalog and have no associated SKU:
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Game modes (Zen, Speed Challenge, Multi-Food, Survival, Time Attack) | **Free for everyone** | The `GameMode.isPremium` flag was removed. All modes are selectable in Settings without a premium check. |
+| Board sizes (15×15 through 50×50) | **Free or Pro-gated** | The 3 premium sizes (35×35, 40×40, 50×50) unlock with the Pro subscription — see the "Feature Comparison" table. Not sold as standalone products. |
+| Individual power-ups (Speed Boost, Invincibility, etc.) | **Coin-purchased only** | Backed by the `/api/v1/PowerUps` inventory endpoints. Each buy adds one use to the user's stockpile. Not an IAP. |
+
 ---
 
 ## Product Count Summary
@@ -438,10 +448,15 @@ Content-Type: application/json
 ### Testing Checklist
 
 - [ ] All 44 products appear in the store
+- [ ] Store screen has exactly 6 tabs: Pro / Coins / Themes / Skins / Trails / Power-Ups (no Modes tab, no Boards tab)
 - [ ] Consumables (coins, tournament entries) can be purchased multiple times
 - [ ] Non-consumables (skins, trails, themes) show as purchased after buying
-- [ ] Pro subscription unlocks premium themes + ad-free + 2x coins
+- [ ] Pro subscription unlocks premium themes + ad-free + 2× coins + premium board sizes
 - [ ] Cosmetic bundles unlock all included items
+- [ ] All 6 game modes are playable for free (no premium gate)
+- [ ] Snake skin applies to entire body (head + body segments), not just head
+- [ ] Equip a skin → uninstall → reinstall → equipped skin is restored from backend
+- [ ] Coin-purchased power-ups debit coins server-side and increment inventory count
 - [ ] RTDN/Server Notifications arrive at webhook endpoints
 - [ ] Purchase restore works on fresh install
 - [ ] Grace period keeps access when payment fails
@@ -476,15 +491,17 @@ Content-Type: application/json
 
 | File | Purpose |
 |------|---------|
+| `lib/screens/store_screen.dart` | Unified store UI — 6 tabs: Pro / Coins / Themes / Skins / Trails / Power-Ups. Themes, skins, trails are inline (no separate cosmetics screen). |
 | `lib/services/purchase_service.dart` | Product IDs (with prefix), purchase flow, store integration |
-| `lib/services/backend_service.dart` | Backend API calls for verification and sync |
-| `lib/presentation/bloc/premium/premium_cubit.dart` | Premium state management, purchase handling (strips prefix) |
+| `lib/services/api_service.dart` | Backend API calls — IAP verification, equipped-cosmetics PUT, PowerUps endpoints |
+| `lib/presentation/bloc/premium/premium_cubit.dart` | Premium state management, purchase handling, equip push/pull to backend |
 | `lib/presentation/bloc/premium/premium_state.dart` | Premium tiers, owned content tracking |
 | `lib/presentation/bloc/premium/battle_pass_cubit.dart` | Battle Pass state and tier progression |
+| `lib/presentation/bloc/power_up/power_up_cubit.dart` | Coin-purchased pre-game power-up inventory (server-backed) |
+| `lib/presentation/bloc/theme/theme_cubit.dart` | Active theme, pushes selected theme to backend on apply |
 | `lib/models/premium_cosmetics.dart` | Snake skins, trail effects, cosmetic bundles (internal IDs) |
 | `lib/models/snake_coins.dart` | Coin packs, pricing, coin economy (internal IDs) |
-| `lib/models/premium_power_up.dart` | Power-ups (coin-purchased only, not IAP) |
+| `lib/models/premium_power_up.dart` | Power-up bundles (coin-purchased unlock flags) |
 | `lib/models/tournament.dart` | Tournament model with entry system |
-| `lib/screens/theme_selector_screen.dart` | Theme purchase UI |
-| `lib/screens/cosmetics_screen.dart` | Cosmetics store UI (maps to store IDs for purchases) |
+| `lib/screens/theme_selector_screen.dart` | Standalone theme picker (used outside the store) |
 | `lib/screens/battle_pass_screen.dart` | Battle Pass display (Coming Soon banner) |
