@@ -738,7 +738,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // Compact stats row with score and quick actions
+              // Hero Play Button - Main focal point, now at the top so
+              // the user's eye lands on the call-to-action first.
+              Flexible(
+                flex: 5,
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: availableHeight > 0
+                        ? availableHeight * 0.4
+                        : 200,
+                    maxWidth: availableWidth * 0.8,
+                  ),
+                  child: _buildHeroPlayButton(
+                    context,
+                    theme,
+                    screenHeight,
+                    screenWidth,
+                  ),
+                ),
+              ),
+
+              SizedBox(height: spacing),
+
+              // Compact stats row (high score + quick actions) — moved
+              // under the play button so it reads as 'your best so far'
+              // commentary on the primary CTA above.
               Flexible(
                 flex: 3,
                 child: Container(
@@ -755,27 +779,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     screenWidth: screenWidth,
                     isSmallScreen: isSmallScreen,
                     hasSync: authState.isSignedIn,
-                  ),
-                ),
-              ),
-
-              SizedBox(height: spacing),
-
-              // Hero Play Button - Main focal point
-              Flexible(
-                flex: 5,
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxHeight: availableHeight > 0
-                        ? availableHeight * 0.4
-                        : 200,
-                    maxWidth: availableWidth * 0.8,
-                  ),
-                  child: _buildHeroPlayButton(
-                    context,
-                    theme,
-                    screenHeight,
-                    screenWidth,
                   ),
                 ),
               ),
