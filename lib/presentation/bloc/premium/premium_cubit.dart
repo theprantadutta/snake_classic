@@ -627,45 +627,67 @@ class PremiumCubit extends Cubit<PremiumState> {
   }
 
   /// Apply entitlements returned by the backend to local state.
+  ///
+  /// AUTHORITATIVE sync: the server is the source of truth for ownership.
+  /// If a refund/chargeback/revocation removes an item server-side, the
+  /// local owned-set is pruned to match, and any currently-equipped item
+  /// that's no longer owned falls back to the default (Classic skin /
+  /// "none" trail / Classic theme). Without this, a user whose payment
+  /// was reversed would keep using premium cosmetics indefinitely.
+  ///
+  /// Defensive: only prune a list if the server actually sent it. A
+  /// missing key (network error reading one section) leaves the local
+  /// set alone rather than wiping everything.
   Future<void> _applyBackendEntitlements(Map<String, dynamic> data) async {
-    // Merge owned themes
+    // ---- Owned themes ----
     if (data['owned_themes'] is List) {
-      for (final name in data['owned_themes']) {
-        final theme = GameTheme.values.where((t) => t.name == name).firstOrNull;
-        if (theme != null && !state.ownedThemes.contains(theme)) {
-          await unlockTheme(theme);
-        }
+      final serverThemeNames =
+          (data['owned_themes'] as List).whereType<String>().toSet();
+      final serverThemes = serverThemeNames
+          .map((name) =>
+              GameTheme.values.where((t) => t.name == name).firstOrNull)
+          .whereType<GameTheme>()
+          .toSet();
+      if (serverThemes != state.ownedThemes) {
+        emit(state.copyWith(ownedThemes: serverThemes));
+        await _storageService.setUnlockedThemes(
+          serverThemes.map((t) => t.name).toList(),
+        );
       }
     }
 
-    // Merge owned skins
+    // ---- Owned skins ----
     if (data['owned_skins'] is List) {
-      for (final skinId in data['owned_skins']) {
-        if (!state.ownedSkins.contains(skinId)) {
-          await unlockSkin(skinId as String);
-        }
+      final serverSkins =
+          (data['owned_skins'] as List).whereType<String>().toSet();
+      if (serverSkins != state.ownedSkins) {
+        emit(state.copyWith(ownedSkins: serverSkins));
+        await _storageService.setUnlockedSkins(serverSkins.toList());
       }
     }
 
-    // Merge owned trails
+    // ---- Owned trails ----
     if (data['owned_trails'] is List) {
-      for (final trailId in data['owned_trails']) {
-        if (!state.ownedTrails.contains(trailId)) {
-          await unlockTrail(trailId as String);
-        }
+      final serverTrails =
+          (data['owned_trails'] as List).whereType<String>().toSet();
+      if (serverTrails != state.ownedTrails) {
+        emit(state.copyWith(ownedTrails: serverTrails));
+        await _storageService.setUnlockedTrails(serverTrails.toList());
       }
     }
 
-    // Merge owned bundles
+    // ---- Owned bundles ----
     if (data['owned_bundles'] is List) {
-      for (final bundleId in data['owned_bundles']) {
-        if (!state.ownedBundles.contains(bundleId)) {
-          await unlockBundle(bundleId as String);
-        }
+      final serverBundles =
+          (data['owned_bundles'] as List).whereType<String>().toSet();
+      if (serverBundles != state.ownedBundles) {
+        emit(state.copyWith(ownedBundles: serverBundles));
+        await _storageService.setUnlockedBundles(serverBundles.toList());
       }
     }
 
-    // Sync tournament entries from backend
+    // ---- Tournament entries (additive — counts can't be "revoked" in
+    // the same sense, they're consumed) ----
     if (data['tournament_entries'] is Map) {
       final entries = data['tournament_entries'] as Map<String, dynamic>;
       for (final tier in ['bronze', 'silver', 'gold']) {
@@ -677,7 +699,7 @@ class PremiumCubit extends Cubit<PremiumState> {
       }
     }
 
-    // Update subscription status from backend
+    // ---- Subscription tier ----
     if (data['is_premium'] == true) {
       final expiryStr = data['subscription_expiry'] as String?;
       final expiry = expiryStr != null ? DateTime.tryParse(expiryStr) : null;
@@ -690,13 +712,16 @@ class PremiumCubit extends Cubit<PremiumState> {
         _storageService.setPremiumActive(true);
         _storageService.setPremiumExpirationDate(expiry.toIso8601String());
       }
+    } else if (data['is_premium'] == false && state.tier == PremiumTier.pro) {
+      // Subscription was revoked — downgrade locally so paywall gating
+      // reactivates immediately instead of waiting for cached expiry.
+      emit(state.copyWith(tier: PremiumTier.free));
+      _storageService.setPremiumActive(false);
     }
 
-    // Restore equipped cosmetics from backend if the local choice is still
-    // at the default. Covers the reinstall/device-switch scenario where
-    // ownership is restored but SelectedXxxId was never re-pushed locally.
-    // If the user has explicitly picked a non-default value locally, we
-    // keep it — the backend may be stale relative to the local choice.
+    // ---- Equipped-cosmetic restore (reinstall / device-switch) ----
+    // Same rules as before: only adopt backend's selection if the local
+    // choice is still at the default.
     final backendSkinId = data['selected_skin_id'] as String?;
     if (backendSkinId != null &&
         backendSkinId.isNotEmpty &&
@@ -713,13 +738,35 @@ class PremiumCubit extends Cubit<PremiumState> {
     }
     final backendThemeId = data['selected_theme_id'] as String?;
     if (backendThemeId != null && backendThemeId.isNotEmpty) {
-      // ThemeCubit decides whether to apply (only if local is at default,
-      // avoiding override of a deliberate local pick).
       try {
         await getIt<ThemeCubit>().applyEquippedThemeFromBackend(backendThemeId);
       } catch (e) {
         AppLogger.warning('Failed to apply backend theme: $e');
       }
+    }
+
+    // ---- Revocation fallback ----
+    // If the user was equipped on a cosmetic they no longer own (refund,
+    // chargeback, etc.), drop back to the default so the game doesn't
+    // keep rendering a paid item they shouldn't have. Pro subscribers
+    // implicitly own all premium themes, so the theme fallback only
+    // applies to free-tier users.
+    if (state.selectedSkinId != 'classic' &&
+        !state.isSkinOwned(state.selectedSkinId)) {
+      AppLogger.info(
+          'Equipped skin "${state.selectedSkinId}" no longer owned — falling back to classic');
+      await selectSkin('classic');
+    }
+    if (state.selectedTrailId != 'none' &&
+        !state.isTrailOwned(state.selectedTrailId)) {
+      AppLogger.info(
+          'Equipped trail "${state.selectedTrailId}" no longer owned — falling back to none');
+      await selectTrail('none');
+    }
+    try {
+      await getIt<ThemeCubit>().applyFallbackIfThemeRevoked(state);
+    } catch (e) {
+      AppLogger.warning('Failed to evaluate theme revocation fallback: $e');
     }
   }
 

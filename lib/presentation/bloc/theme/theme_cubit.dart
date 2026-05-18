@@ -72,6 +72,19 @@ class ThemeCubit extends Cubit<ThemeState> {
     await _preferencesService.setTheme(target);
   }
 
+  /// Drop back to Classic if the currently-applied premium theme is no
+  /// longer in the user's owned set (refund / chargeback / sub lapse).
+  /// Pro subscribers get all premium themes implicitly, so this only
+  /// fires for free-tier users with a previously-purchased theme that
+  /// got revoked.
+  Future<void> applyFallbackIfThemeRevoked(PremiumState premiumState) async {
+    final current = state.currentTheme;
+    if (!PremiumContent.isPremiumTheme(current)) return;
+    if (premiumState.isThemeUnlocked(current)) return;
+    emit(state.copyWith(currentTheme: GameTheme.classic));
+    await _preferencesService.setTheme(GameTheme.classic);
+  }
+
   /// Cycle to the next theme (only free themes; premium themes require explicit selection)
   void cycleTheme() {
     final themes = GameTheme.values
