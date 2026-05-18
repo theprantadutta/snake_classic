@@ -121,6 +121,25 @@ class Statistics extends Table {
   DateTimeColumn get lastPlayedAt => dateTime().nullable()();
   DateTimeColumn get lastUpdated =>
       dateTime().withDefault(currentDateAndTime)();
+
+  // Full GameStatistics model serialized as JSON.
+  //
+  // Background: this table's typed columns were designed independently of
+  // the GameStatistics Dart model and use different field names
+  // (highestScore vs highScore, totalFoodsEaten vs totalFoodConsumed,
+  // totalGameTimeSeconds vs totalGameTime, longestGameSeconds vs
+  // longestSurvivalTime, ...). The old JSON serializer translated between
+  // those names lossily — every game-end save dropped most of the model
+  // and every app-launch load returned zeros, which is why the stats
+  // screen kept showing 0 for win streak / play time / perfect games /
+  // highest level / etc.
+  //
+  // Rather than maintain a brittle name-translation layer, this column
+  // stores the full model JSON verbatim. The DAO writes/reads it; the
+  // typed columns above stay as-is for any code that already uses them
+  // (none in production, but kept to avoid breaking change). All new
+  // statistics persistence goes through this column.
+  TextColumn get modelJson => text().withDefault(const Constant('{}'))();
 }
 
 // =====================================================
@@ -371,7 +390,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -384,6 +403,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         // Add indexes for frequently queried columns
         await _createIndexes();
+      }
+      if (from < 3) {
+        // v3: add the modelJson catch-all column to Statistics so the full
+        // GameStatistics model can round-trip without the per-field name
+        // translation that lost data on every save/load cycle.
+        await m.addColumn(statistics, statistics.modelJson);
       }
     },
   );

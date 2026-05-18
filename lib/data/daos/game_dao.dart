@@ -80,56 +80,50 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
     );
   }
 
-  /// Update full statistics from JSON (for sync)
+  /// Persist the full GameStatistics model as a JSON blob.
+  ///
+  /// Previously this method tried to translate the model's JSON into the
+  /// table's typed columns, but the field names didn't match
+  /// (highScore vs highestScore, totalGameTime vs totalGameTimeSeconds,
+  /// totalFoodConsumed vs totalFoodsEaten, etc.) so most fields were
+  /// silently dropped on save and zero'd on load. The statistics screen
+  /// kept showing 0 for win streak, play time, perfect games, high score,
+  /// and everything else as a result.
+  ///
+  /// New approach: round-trip the model verbatim through the dedicated
+  /// `modelJson` column. The typed columns aren't read anywhere — they
+  /// stay zero'd and inert.
   Future<void> updateStatisticsFromJson(String jsonData) async {
-    final data = json.decode(jsonData) as Map<String, dynamic>;
-    await (update(statistics)..where((t) => t.id.equals(1))).write(
-      StatisticsCompanion(
-        totalGamesPlayed: Value(data['totalGamesPlayed'] ?? 0),
-        totalScore: Value(data['totalScore'] ?? 0),
-        highestScore: Value(data['highestScore'] ?? 0),
-        totalFoodsEaten: Value(data['totalFoodsEaten'] ?? 0),
-        totalGameTimeSeconds: Value(data['totalGameTimeSeconds'] ?? 0),
-        maxSnakeLength: Value(data['maxSnakeLength'] ?? 0),
-        lastUpdated: Value(DateTime.now()),
-      ),
-    );
+    // Upsert: insert the singleton row if missing, otherwise update.
+    final existing = await getStatistics();
+    if (existing == null) {
+      await into(statistics).insert(
+        StatisticsCompanion(
+          modelJson: Value(jsonData),
+          lastUpdated: Value(DateTime.now()),
+        ),
+      );
+    } else {
+      await (update(statistics)..where((t) => t.id.equals(1))).write(
+        StatisticsCompanion(
+          modelJson: Value(jsonData),
+          lastUpdated: Value(DateTime.now()),
+        ),
+      );
+    }
   }
 
-  /// Get statistics as JSON string
+  /// Read the full GameStatistics JSON. Returns '{}' if no row exists yet
+  /// (StatisticsService treats that as 'fresh install' and loads
+  /// GameStatistics.initial()).
   Future<String> getStatisticsAsJson() async {
     final stats = await getStatistics();
     if (stats == null) return '{}';
-
-    return json.encode({
-      'totalGamesPlayed': stats.totalGamesPlayed,
-      'totalScore': stats.totalScore,
-      'highestScore': stats.highestScore,
-      'totalFoodsEaten': stats.totalFoodsEaten,
-      'totalGameTimeSeconds': stats.totalGameTimeSeconds,
-      'maxSnakeLength': stats.maxSnakeLength,
-      'totalSnakeLength': stats.totalSnakeLength,
-      'averageSnakeLength': stats.averageSnakeLength,
-      'deathsByWall': stats.deathsByWall,
-      'deathsBySelf': stats.deathsBySelf,
-      'totalDeaths': stats.totalDeaths,
-      'longestSessionSeconds': stats.longestSessionSeconds,
-      'shortestGameSeconds': stats.shortestGameSeconds,
-      'longestGameSeconds': stats.longestGameSeconds,
-      'averageGameDuration': stats.averageGameDuration,
-      'currentWinStreak': stats.currentWinStreak,
-      'longestWinStreak': stats.longestWinStreak,
-      'currentPlayStreak': stats.currentPlayStreak,
-      'longestPlayStreak': stats.longestPlayStreak,
-      'powerUpsCollected': stats.powerUpsCollected,
-      'perfectGames': stats.perfectGames,
-      'multiplayerGamesPlayed': stats.multiplayerGamesPlayed,
-      'multiplayerWins': stats.multiplayerWins,
-      'tournamentsEntered': stats.tournamentsEntered,
-      'tournamentsWon': stats.tournamentsWon,
-      'lastPlayedAt': stats.lastPlayedAt?.toIso8601String(),
-      'lastUpdated': stats.lastUpdated.toIso8601String(),
-    });
+    // modelJson defaults to '{}' on legacy rows from the pre-v3 schema,
+    // so a player who upgraded the app will get a clean reset rather
+    // than zeros for everything (the typed columns were never populated
+    // correctly either). New games will populate modelJson going forward.
+    return stats.modelJson;
   }
 
   // ==================== Achievements ====================
