@@ -124,6 +124,7 @@ class _DPadButtonState extends State<_DPadButton> {
 
   @override
   Widget build(BuildContext context) {
+    final ringSize = widget.size * 1.15;
     return GestureDetector(
       onTapDown: (_) {
         setState(() => _isPressed = true);
@@ -131,40 +132,62 @@ class _DPadButtonState extends State<_DPadButton> {
       },
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        width: widget.size,
-        height: widget.size,
-        decoration: BoxDecoration(
-          color: _isPressed
-              ? widget.theme.accentColor.withValues(alpha: widget.opacity * 0.5)
-              : widget.theme.accentColor.withValues(
-                  alpha: widget.opacity * 0.2,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Always-visible affordance ring at 115% — communicates the touch
+          // region before the player has pressed. Subtle (~8% alpha) so it
+          // doesn't compete with the active button fill.
+          Container(
+            width: ringSize,
+            height: ringSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: widget.theme.accentColor.withValues(
+                  alpha: widget.opacity * 0.18,
                 ),
-          borderRadius: BorderRadius.circular(widget.size * 0.25),
-          border: Border.all(
-            color: widget.theme.accentColor.withValues(
-              alpha: widget.opacity * 0.4,
+                width: 1,
+              ),
             ),
-            width: _isPressed ? 2 : 1,
           ),
-          boxShadow: _isPressed
-              ? [
-                  BoxShadow(
-                    color: widget.theme.accentColor.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : null,
-        ),
-        child: Icon(
-          widget.icon,
-          size: widget.size * 0.6,
-          color: widget.theme.accentColor.withValues(
-            alpha: _isPressed ? widget.opacity : widget.opacity * 0.8,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            width: widget.size,
+            height: widget.size,
+            decoration: BoxDecoration(
+              color: _isPressed
+                  ? widget.theme.accentColor.withValues(alpha: widget.opacity * 0.5)
+                  : widget.theme.accentColor.withValues(
+                      alpha: widget.opacity * 0.2,
+                    ),
+              borderRadius: BorderRadius.circular(widget.size * 0.25),
+              border: Border.all(
+                color: widget.theme.accentColor.withValues(
+                  alpha: widget.opacity * 0.4,
+                ),
+                width: _isPressed ? 2 : 1,
+              ),
+              boxShadow: _isPressed
+                  ? [
+                      BoxShadow(
+                        color: widget.theme.accentColor.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Icon(
+              widget.icon,
+              size: widget.size * 0.6,
+              color: widget.theme.accentColor.withValues(
+                alpha: _isPressed ? widget.opacity : widget.opacity * 0.8,
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

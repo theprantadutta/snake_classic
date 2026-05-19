@@ -141,13 +141,17 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       _foodPulseController.forward(from: 0.0);
     }
 
-    // Pulse driver — shared between urgent power-up indicator and combo
-    // chip heat. Either is enough to keep the controller running.
+    // Pulse driver — shared between urgent power-up indicator, combo chip
+    // heat, and the time-attack critical (<10s) throb. Any of those signals
+    // is enough to keep the controller running.
     final hasUrgentPowerUp = widget.gameState.activePowerUps.any(
       (p) => !p.isExpired && p.remainingTime.inSeconds <= 3,
     );
     final hasComboHeat = widget.gameState.currentCombo >= 5;
-    final shouldPulse = hasUrgentPowerUp || hasComboHeat;
+    final hasCriticalTime = widget.gameState.gameMode.timeLimit != null &&
+        widget.gameState.timeAttackSecondsRemaining <= 10 &&
+        widget.gameState.timeAttackSecondsRemaining > 0;
+    final shouldPulse = hasUrgentPowerUp || hasComboHeat || hasCriticalTime;
     if (shouldPulse && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
     } else if (!shouldPulse && _pulseController.isAnimating) {
@@ -304,13 +308,28 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 duration: const Duration(milliseconds: 300),
                 onEnd: () => _displayedScore = gameState.score,
                 builder: (context, value, child) {
-                  return Text(
-                    '$value',
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: isSmallScreen ? 26 : 32,
-                      fontWeight: FontWeight.w900,
-                      height: 1.0,
+                  return Semantics(
+                    label: 'Score $value',
+                    child: Text(
+                      '$value',
+                      // Force white for the primary score number — the
+                      // accent-tinted gradient background dropped contrast
+                      // below WCAG AA on several themes (notably the neon
+                      // and pastel palettes). The "SCORE" label keeps the
+                      // accent tint since it's small caps and decorative.
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isSmallScreen ? 26 : 32,
+                        fontWeight: FontWeight.w900,
+                        height: 1.0,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            offset: const Offset(0.5, 1),
+                            blurRadius: 2,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -381,8 +400,9 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     final mm = (seconds ~/ 60).toString().padLeft(2, '0');
     final ss = (seconds % 60).toString().padLeft(2, '0');
     final isLow = seconds <= 30;
+    final isCritical = seconds <= 10;
     final accent = isLow ? Colors.redAccent : Colors.amber;
-    return Container(
+    final chip = Container(
       padding: EdgeInsets.symmetric(
         horizontal: isSmallScreen ? 8 : 10,
         vertical: isSmallScreen ? 6 : 8,
@@ -415,6 +435,19 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+    // <10s remaining: drive a 0.95–1.05 throb off _pulseController so the
+    // urgency reads at a glance for players who aren't watching the timer.
+    // The controller is already kept running by the combo-heat / urgent-
+    // power-up shared logic in didUpdateWidget.
+    if (!isCritical) return chip;
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        final scale = 0.95 + 0.10 * _pulseController.value;
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: chip,
     );
   }
 
