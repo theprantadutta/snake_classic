@@ -36,16 +36,27 @@ class Food {
     Snake snake,
   ) {
     final random = Random();
-    Position newPosition;
-
-    do {
-      newPosition = Position(
+    // Bounded retry mirrors PowerUp.generateRandom — on a near-full late-game
+    // board the random walk could theoretically spin forever; cap attempts
+    // then deterministically scan for the first free cell.
+    for (var attempt = 0; attempt < 64; attempt++) {
+      final candidate = Position(
         random.nextInt(boardWidth),
         random.nextInt(boardHeight),
       );
-    } while (snake.occupiesPosition(newPosition));
-
-    return newPosition;
+      if (!snake.occupiesPosition(candidate)) {
+        return candidate;
+      }
+    }
+    for (var x = 0; x < boardWidth; x++) {
+      for (var y = 0; y < boardHeight; y++) {
+        final fallback = Position(x, y);
+        if (!snake.occupiesPosition(fallback)) {
+          return fallback;
+        }
+      }
+    }
+    return Position(0, 0);
   }
 
   static Food generateRandom(int boardWidth, int boardHeight, Snake snake) {

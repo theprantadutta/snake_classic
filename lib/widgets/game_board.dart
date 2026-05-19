@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -2763,10 +2764,14 @@ class OptimizedGameBoardPainter extends CustomPainter {
             premiumState.selectedSkinId ||
         oldDelegate.premiumState.selectedTrailId !=
             premiumState.selectedTrailId ||
-        oldDelegate.premiumState.ownedSkins !=
-            premiumState.ownedSkins ||
-        oldDelegate.premiumState.ownedTrails !=
-            premiumState.ownedTrails;
+        !setEquals(
+          oldDelegate.premiumState.ownedSkins,
+          premiumState.ownedSkins,
+        ) ||
+        !setEquals(
+          oldDelegate.premiumState.ownedTrails,
+          premiumState.ownedTrails,
+        );
   }
 }
 

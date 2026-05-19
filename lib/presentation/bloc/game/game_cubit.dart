@@ -908,8 +908,11 @@ class GameCubit extends Cubit<GameCubitState> {
           foods: extras,
           activePowerUps: const [],
           clearPowerUp: true,
-          currentCombo: 0,
-          comboMultiplier: 1.0,
+          // Survival respawn: preserve combo across lives instead of zeroing
+          // it. Resetting punished the player twice — once with the lost life,
+          // once by dropping their multiplier — which felt unfair.
+          currentCombo: current.currentCombo,
+          comboMultiplier: current.comboMultiplier,
           livesRemaining: current.livesRemaining - 1,
           status: model.GameStatus.playing,
           crashReason: null,
