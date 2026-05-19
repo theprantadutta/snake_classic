@@ -11,6 +11,10 @@ class HomeWalkthrough {
   static final storeKey = GlobalKey();
   static final profileKey = GlobalKey();
   static final settingsKey = GlobalKey();
+  /// Tournaments nav item (EVENTS in the bottom nav).
+  static final eventsKey = GlobalKey();
+  /// Cosmetics nav item (skins + trails).
+  static final cosmeticsKey = GlobalKey();
 
   /// Get the list of walkthrough steps
   /// Call this after the keys have been assigned to their widgets
@@ -56,7 +60,7 @@ class HomeWalkthrough {
       WalkthroughStep(
         id: 'home_store',
         title: 'The Store',
-        message: 'Visit the store to unlock new themes, snake skins, and power-ups with your coins!',
+        message: 'Buy themes, snake skins, trails, and power-ups with your coins. Unlock Pro for premium boards and exclusive cosmetics.',
         targetKey: storeKey,
         position: TooltipPosition.above,
         icon: Icons.store,
@@ -64,11 +68,35 @@ class HomeWalkthrough {
         spotlightBorderRadius: 14,
       ),
 
-      // Step 5: Profile
+      // Step 5: Tournaments
+      WalkthroughStep(
+        id: 'home_events',
+        title: 'Tournaments',
+        message: "Compete in daily, weekly, and monthly tournaments. Each tournament locks a mode (Classic, Survival, PerfectGame, etc.) — your score lands on the leaderboard.",
+        targetKey: eventsKey,
+        position: TooltipPosition.above,
+        icon: Icons.emoji_events,
+        spotlightPadding: 6,
+        spotlightBorderRadius: 14,
+      ),
+
+      // Step 6: Cosmetics
+      WalkthroughStep(
+        id: 'home_cosmetics',
+        title: 'Skins & Trails',
+        message: 'Customize your snake here. Skins change how the snake itself looks; trails leave a glow behind it. Earn with coins or unlock with Pro.',
+        targetKey: cosmeticsKey,
+        position: TooltipPosition.above,
+        icon: Icons.palette,
+        spotlightPadding: 6,
+        spotlightBorderRadius: 14,
+      ),
+
+      // Step 7: Profile
       WalkthroughStep(
         id: 'home_profile',
         title: 'Your Profile',
-        message: 'View your stats, achievements, and high scores. Sign in to sync across devices!',
+        message: "Stats, achievements, and high scores live here. Achievements unlock as you hit milestones — some require a specific mode (Classic, Hard, etc.). Sign in to sync across devices.",
         targetKey: profileKey,
         position: TooltipPosition.below,
         icon: Icons.account_circle,
@@ -76,7 +104,7 @@ class HomeWalkthrough {
         spotlightBorderRadius: 20,
       ),
 
-      // Step 6: Settings
+      // Step 8: Settings
       WalkthroughStep(
         id: 'home_settings',
         title: 'Settings',

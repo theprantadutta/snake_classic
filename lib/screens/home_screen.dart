@@ -1364,9 +1364,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         badge: _getDailyChallengesBadge(),
         widgetKey: HomeWalkthrough.dailyChallengesKey,
       ),
-      _NavItem(Icons.emoji_events, 'EVENTS', Colors.purple, () {
-        context.push(AppRoutes.tournaments);
-      }),
+      _NavItem(
+        Icons.emoji_events,
+        'EVENTS',
+        Colors.purple,
+        () {
+          context.push(AppRoutes.tournaments);
+        },
+        widgetKey: HomeWalkthrough.eventsKey,
+      ),
       _NavItem(Icons.timeline, 'BATTLE', Colors.deepPurple, () {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1381,9 +1387,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _NavItem(Icons.analytics, 'STATS', Colors.teal, () {
         context.push(AppRoutes.statistics);
       }),
-      _NavItem(Icons.palette, 'COSMETICS', Colors.indigo, () {
-        context.push(AppRoutes.cosmetics);
-      }),
+      _NavItem(
+        Icons.palette,
+        'COSMETICS',
+        Colors.indigo,
+        () {
+          context.push(AppRoutes.cosmetics);
+        },
+        widgetKey: HomeWalkthrough.cosmeticsKey,
+      ),
       _NavItem(Icons.military_tech, 'AWARDS', Colors.orange, () {
         context.push(AppRoutes.achievements);
       }),
