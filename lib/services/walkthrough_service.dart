@@ -40,6 +40,7 @@ class WalkthroughService {
   Future<void> resetAll() async {
     await reset('home');
     await reset('game_tutorial');
+    await reset('control_choice');
   }
 
   // ==================== Walkthrough IDs ====================
@@ -49,4 +50,8 @@ class WalkthroughService {
 
   /// Game tutorial walkthrough ID
   static const String gameTutorialId = 'game_tutorial';
+
+  /// First-time control method choice (D-Pad vs Gestures). Asked before
+  /// the game tutorial runs so the tutorial demos the right input.
+  static const String controlChoiceId = 'control_choice';
 }
