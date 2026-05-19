@@ -712,58 +712,97 @@ class _GameScreenState extends State<GameScreen>
 
   /// Builds the D-Pad control bar with stats on either side
   /// Layout: [Length] [D-Pad] [Speed]
-  Widget _buildDPadControlBar(
+  /// The bottom bar reserves a fixed footprint regardless of whether the
+  /// D-Pad is enabled or the current game status. Previous build had two
+  /// completely separate widgets here (a tall D-Pad bar vs a short compact-
+  /// stats footer) and switched between them based on
+  /// `dPadEnabled && status == playing`, which caused:
+  ///   - The board to shift up/down whenever the D-Pad setting toggled.
+  ///   - The D-Pad to vanish entirely the moment the snake crashed,
+  ///     because status went from playing → crashed.
+  ///
+  /// Now we always render the same Row skeleton (left stat / center / right
+  /// stat) at a fixed height. The center swaps:
+  ///   - dPadEnabled = true  → DPadControls, interactive while playing,
+  ///     dimmed + non-interactive otherwise.
+  ///   - dPadEnabled = false → a single Level stat card centered in the
+  ///     same footprint.
+  Widget _buildBottomBar(
     GameState gameState,
-    DPadPosition position,
     GameTheme theme,
-    bool isSmallScreen,
-  ) {
+    bool isSmallScreen, {
+    required bool dPadEnabled,
+  }) {
     final dpadSize = isSmallScreen ? 115.0 : 135.0;
+    final verticalPadding = isSmallScreen ? 8.0 : 12.0;
+    // Total reserved height = dpad footprint + the row's own padding so the
+    // box is the SAME pixel height in every branch and every status.
+    final barHeight = dpadSize + verticalPadding * 2;
+    final isInteractive = gameState.status == GameStatus.playing;
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: isSmallScreen ? 8 : 12,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Left stat: Length
-          Expanded(
-            child: _buildControlBarStat(
-              'Length',
-              '${gameState.snake.length}',
-              Icons.straighten,
-              theme,
-              isSmallScreen,
-              alignment: Alignment.centerLeft,
+    return SizedBox(
+      height: barHeight,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: verticalPadding,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: _buildControlBarStat(
+                'Length',
+                '${gameState.snake.length}',
+                Icons.straighten,
+                theme,
+                isSmallScreen,
+                alignment: Alignment.centerLeft,
+              ),
             ),
-          ),
-
-          // Center: D-Pad
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: DPadControls(
-              onDirection: _handleSwipe,
-              theme: theme,
-              opacity: 0.8,
-              size: dpadSize,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: SizedBox(
+                width: dpadSize,
+                height: dpadSize,
+                child: dPadEnabled
+                    ? Opacity(
+                        opacity: isInteractive ? 1.0 : 0.45,
+                        child: IgnorePointer(
+                          ignoring: !isInteractive,
+                          child: DPadControls(
+                            onDirection: _handleSwipe,
+                            theme: theme,
+                            opacity: 0.8,
+                            size: dpadSize,
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: _buildControlBarStat(
+                          'Level',
+                          '${gameState.level}',
+                          Icons.trending_up,
+                          theme,
+                          isSmallScreen,
+                          alignment: Alignment.center,
+                        ),
+                      ),
+              ),
             ),
-          ),
-
-          // Right stat: Speed
-          Expanded(
-            child: _buildControlBarStat(
-              'Speed',
-              _getSpeedLabel(gameState.gameSpeed),
-              _getSpeedIcon(gameState.gameSpeed),
-              theme,
-              isSmallScreen,
-              alignment: Alignment.centerRight,
+            Expanded(
+              child: _buildControlBarStat(
+                'Speed',
+                _getSpeedLabel(gameState.gameSpeed),
+                _getSpeedIcon(gameState.gameSpeed),
+                theme,
+                isSmallScreen,
+                alignment: Alignment.centerRight,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -996,22 +1035,19 @@ class _GameScreenState extends State<GameScreen>
                                             ),
                                           ),
 
-                                          // Control bar: D-Pad with stats on sides (when D-Pad enabled)
-                                          // OR: Compact stats footer (when D-Pad disabled)
-                                          if (settingsState.dPadEnabled &&
-                                              gameState.status == GameStatus.playing)
-                                            _buildDPadControlBar(
-                                              gameState,
-                                              settingsState.dPadPosition,
-                                              theme,
-                                              isSmallScreen,
-                                            )
-                                          else
-                                            _buildCompactGameInfo(
-                                              gameState,
-                                              theme,
-                                              isSmallScreen,
-                                            ),
+                                          // Unified bottom bar — same fixed
+                                          // height in every state (d-pad on,
+                                          // d-pad off, paused, crashed,
+                                          // game over) so the board never
+                                          // shifts. Center swaps between
+                                          // DPadControls and a Level card.
+                                          _buildBottomBar(
+                                            gameState,
+                                            theme,
+                                            isSmallScreen,
+                                            dPadEnabled:
+                                                settingsState.dPadEnabled,
+                                          ),
                                         ],
                                       );
                                     },
@@ -1084,88 +1120,6 @@ class _GameScreenState extends State<GameScreen>
             },
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildCompactGameInfo(
-    GameState gameState,
-    GameTheme theme,
-    bool isSmallScreen,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildCompactInfoCard(
-            'Length',
-            '${gameState.snake.length}',
-            Icons.straighten,
-            theme,
-            isSmallScreen,
-          ),
-          _buildCompactInfoCard(
-            'Level',
-            '${gameState.level}',
-            Icons.trending_up,
-            theme,
-            isSmallScreen,
-          ),
-          _buildCompactInfoCard(
-            'Speed',
-            _getSpeedLabel(gameState.gameSpeed),
-            _getSpeedIcon(gameState.gameSpeed),
-            theme,
-            isSmallScreen,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCompactInfoCard(
-    String label,
-    String value,
-    IconData icon,
-    GameTheme theme,
-    bool isSmallScreen,
-  ) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 8 : 12,
-        vertical: isSmallScreen ? 6 : 8,
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.3),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: theme.accentColor.withValues(alpha: 0.8),
-            size: isSmallScreen ? 14 : 16,
-          ),
-          SizedBox(height: isSmallScreen ? 2 : 4),
-          Text(
-            value,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontWeight: FontWeight.bold,
-              fontSize: isSmallScreen ? 11 : 12,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.6),
-              fontSize: isSmallScreen ? 8 : 10,
-            ),
-          ),
-        ],
       ),
     );
   }
