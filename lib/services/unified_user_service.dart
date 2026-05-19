@@ -666,6 +666,19 @@ class UnifiedUserService extends ChangeNotifier {
 
       AppLogger.success('Anonymous sign-in successful: ${result.user?.uid}');
 
+      // Directly await the backend handoff instead of relying on the
+      // authStateChanges listener — the listener fires in a microtask
+      // that races against the caller's routing decision (AuthCubit
+      // consumes _justLoadedNewUser the instant we return, and the FE
+      // routing decision happens right after). Awaiting here means the
+      // backend response — including is_new_user and the real username
+      // — is fully landed by the time we hand back control. The dedup
+      // guard in _loadOrCreateUser (line 344-347) makes this safe even
+      // when the listener fires too.
+      if (result.user != null) {
+        await _loadOrCreateUser(result.user!);
+      }
+
       return true;
     } catch (e, stackTrace) {
       AppLogger.firebase('Error signing in anonymously', e, stackTrace);
@@ -726,8 +739,17 @@ class UnifiedUserService extends ChangeNotifier {
         if (result.user != null) {
           AppLogger.success('Firebase sign-in successful: ${result.user!.uid}');
 
-          // The auth state change listener will handle creating the user profile
-          // and migrating data if needed
+          // Directly await the backend handoff. Previously this returned
+          // immediately and relied on the authStateChanges listener to
+          // call _loadOrCreateUser — but the listener fires in a microtask
+          // that races against the AuthCubit consumption of
+          // _justLoadedNewUser and the FE routing decision. Awaiting here
+          // means by the time we return, _justLoadedNewUser, _currentUser,
+          // and the cubit state all reflect authoritative backend data.
+          // The dedup guard in _loadOrCreateUser (line 344-347) prevents
+          // double-loading when the listener still fires.
+          await _loadOrCreateUser(result.user!);
+
           return true;
         }
 
