@@ -424,36 +424,36 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildFeaturesList(GameTheme theme) {
+    // Honest list — every entry maps to an entitlement the server actually
+    // grants on Pro verify (VerifyPurchaseCommandHandler). The previous
+    // 'Exclusive Game Modes' line was a false promise (modes are uniformly
+    // free per project rules) and 'Premium Power-ups' / 'VIP Tournaments'
+    // were unimplemented — those are now real recurring bundles.
     final features = [
       _FeatureItem(
         Icons.palette,
         'All Premium Themes',
-        'Access to 6 stunning visual themes',
+        'Crystal, Cyberpunk, Space, Ocean, Desert, Forest',
       ),
       _FeatureItem(
         Icons.grid_on,
         'Large Game Boards',
-        'Play on massive 35x35, 40x40 & 50x50 boards',
-      ),
-      _FeatureItem(
-        Icons.games,
-        'Exclusive Game Modes',
-        'Zen mode, Speed Challenge & more',
-      ),
-      _FeatureItem(
-        Icons.flash_on,
-        'Premium Power-ups',
-        'Teleport, Ghost Mode & other abilities',
+        'Play on 35x35, 40x40 & 50x50 boards',
       ),
       _FeatureItem(
         Icons.monetization_on,
         '2x Coin Rewards',
-        'Double Snake Coins from all activities',
+        'Double Snake Coins from every game',
+      ),
+      _FeatureItem(
+        Icons.flash_on,
+        'Premium Power-up Bundle',
+        '5× Teleport, Ghost Mode, Magnetic Food, Score Shield & Mega Invincibility every billing cycle',
       ),
       _FeatureItem(
         Icons.emoji_events,
-        'VIP Tournaments',
-        'Access exclusive premium tournaments',
+        'Tournament Entries',
+        '1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle',
       ),
     ];
 

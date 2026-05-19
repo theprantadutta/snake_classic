@@ -396,7 +396,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            'All premium themes · large boards · 2× coins · ad-free',
+            '6 themes · big boards · 2× coins · premium power-ups · tournament entries',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.75),
@@ -580,13 +580,16 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildProFeatureGrid(GameTheme theme) {
+    // Honest list — every line maps to an entitlement the server actually
+    // grants in VerifyPurchaseCommandHandler's Pro branch. The previous
+    // 'Ad-free' / 'Exclusive Game Modes' / vague 'Power-up perks' / 'VIP
+    // tournaments' promises were either unimplemented or false.
     final features = const [
       (Icons.color_lens, 'All 6 premium themes'),
       (Icons.grid_4x4, 'Premium board sizes (35×35, 40×40, 50×50)'),
       (Icons.monetization_on, '2× coin earnings'),
-      (Icons.block, 'Ad-free gameplay'),
-      (Icons.flash_on, 'Power-up perks'),
-      (Icons.leaderboard, 'VIP tournaments'),
+      (Icons.flash_on, '5× premium power-ups every cycle'),
+      (Icons.emoji_events, 'Bronze + Silver + Gold tournament entries each cycle'),
     ];
     return Column(
       children: features
