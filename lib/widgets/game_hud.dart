@@ -806,18 +806,20 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     final remainingTime = powerUp.remainingTime;
     final isUrgent = remainingTime.inSeconds <= 3;
 
+    // No numeric countdown — the ring IS the fuel gauge. Stroke bumped to
+    // 3.0 (was 2.5) so it reads as the primary indicator now that the
+    // "Xs" badge is gone.
     Widget indicator = Container(
       margin: const EdgeInsets.symmetric(horizontal: 3),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Progress ring
           SizedBox(
             width: size,
             height: size,
             child: CircularProgressIndicator(
               value: progress,
-              strokeWidth: 2.5,
+              strokeWidth: 3.0,
               strokeCap: StrokeCap.round,
               backgroundColor: powerUp.type.color.withValues(alpha: 0.15),
               valueColor: AlwaysStoppedAnimation(
@@ -825,10 +827,9 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
               ),
             ),
           ),
-          // Icon
           Container(
-            width: size * 0.65,
-            height: size * 0.65,
+            width: size * 0.62,
+            height: size * 0.62,
             decoration: BoxDecoration(
               color: isUrgent
                   ? Colors.red.withValues(alpha: 0.9)
@@ -841,25 +842,6 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: isSmallScreen ? 10 : 12,
                   fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          // Time badge
-          Positioned(
-            bottom: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: isUrgent ? Colors.red : Colors.black87,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '${remainingTime.inSeconds}s',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isSmallScreen ? 7 : 8,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
