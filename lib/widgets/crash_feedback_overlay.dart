@@ -25,6 +25,7 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
     with TickerProviderStateMixin {
   late AnimationController _shakeController;
   late AnimationController _pulseController;
+  bool _animationsStarted = false;
 
   @override
   void initState() {
@@ -39,10 +40,20 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
+  }
 
-    // Start animations
-    _shakeController.forward();
-    _pulseController.repeat(reverse: true);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Defer animation start until the first didChangeDependencies tick so
+    // the modal route's ~300ms transition doesn't consume half the shake.
+    // The player should see the shake play out from the moment the overlay
+    // is on screen, not catch the tail end.
+    if (!_animationsStarted) {
+      _animationsStarted = true;
+      _shakeController.forward();
+      _pulseController.repeat(reverse: true);
+    }
   }
 
   @override

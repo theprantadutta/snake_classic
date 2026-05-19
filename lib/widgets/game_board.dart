@@ -2314,6 +2314,27 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final crashPosition = gameState.crashPosition!;
     final crashReason = gameState.crashReason!;
 
+    // Expanding "shockwave" ring at the crash cell — pulses outward each
+    // cycle so the player's eye snaps to the cell that killed them. The
+    // sustained blink below holds the spotlight for the rest of the crash
+    // window; this ring is the punch.
+    _drawCrashShockwave(
+      canvas,
+      crashPosition,
+      cellWidth,
+      cellHeight,
+      crashReason == CrashReason.wallCollision ? Colors.red : Colors.orange,
+    );
+    if (gameState.collisionBodyPart != null) {
+      _drawCrashShockwave(
+        canvas,
+        gameState.collisionBodyPart!,
+        cellWidth,
+        cellHeight,
+        Colors.yellow,
+      );
+    }
+
     // Blinking animation for better visibility (rapid on/off blinking)
     final blinkValue = pulseAnimation.value;
     final isVisible =
@@ -2339,6 +2360,33 @@ class OptimizedGameBoardPainter extends CustomPainter {
         );
       }
     }
+  }
+
+  // Expanding ring overlay drawn on top of the base crash indicator.
+  // pulseAnimation oscillates 0..1; we read it as a continuous radius
+  // multiplier so the ring grows outward and fades each cycle.
+  void _drawCrashShockwave(
+    Canvas canvas,
+    Position cell,
+    double cellWidth,
+    double cellHeight,
+    Color color,
+  ) {
+    final rect = Rect.fromLTWH(
+      cell.x * cellWidth,
+      cell.y * cellHeight,
+      cellWidth,
+      cellHeight,
+    );
+    final t = pulseAnimation.value.clamp(0.0, 1.0);
+    final radius = (cellWidth * 0.5) + (cellWidth * 1.4 * t);
+    final alpha = (1.0 - t) * 0.85;
+    if (alpha <= 0.01) return;
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = cellWidth * 0.12 * (1.0 - t * 0.6)
+      ..color = color.withValues(alpha: alpha);
+    canvas.drawCircle(rect.center, radius, ring);
   }
 
   void _drawWallCrashIndicator(
