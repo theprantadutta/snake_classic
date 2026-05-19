@@ -54,7 +54,11 @@ class PauseOverlay extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
+          // Scrollable so expanding the Game Guide on a short screen doesn't
+          // overflow the dialog. shrinkWrap behaviour from SingleChildScrollView
+          // means the dialog still sizes to its content when it fits.
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Pause Icon
@@ -161,6 +165,7 @@ class PauseOverlay extends StatelessWidget {
                 ],
               ),
             ],
+          ),
           ),
         ),
       ),

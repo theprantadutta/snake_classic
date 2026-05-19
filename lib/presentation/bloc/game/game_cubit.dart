@@ -98,6 +98,13 @@ class GameCubit extends Cubit<GameCubitState> {
   // each get a fresh pulse.
   Timer? _acceptedInputClearTimer;
 
+  // Wall-clock timestamp of the moment pauseGame() last fired. resumeGame
+  // reads it to shift every wall-clock-driven game timer (active power-ups,
+  // on-board power-up expiry, TimeAttack countdown) forward by the pause
+  // duration — otherwise a 10s power-up sitting under a 20s pause is gone
+  // when the player resumes.
+  DateTime? _pauseStartedAt;
+
   // Tracks the next integer-second boundary at which each active power-up
   // should fire its countdown haptic. Keyed by power-up identity (Set of
   // PowerUpType active in the current game). Reset between games.
@@ -347,6 +354,8 @@ class GameCubit extends Cubit<GameCubitState> {
       _timeAttackTimer = null;
     }
 
+    _pauseStartedAt = DateTime.now();
+
     emit(
       state.copyWith(
         status: GamePlayStatus.paused,
@@ -361,12 +370,50 @@ class GameCubit extends Cubit<GameCubitState> {
   void resumeGame() {
     if (state.status != GamePlayStatus.paused) return;
 
-    emit(
-      state.copyWith(
-        status: GamePlayStatus.playing,
-        gameState: state.gameState?.copyWith(status: model.GameStatus.playing),
-      ),
-    );
+    // Shift every wall-clock timer forward by the time we spent paused so
+    // power-ups + TimeAttack pick up where they left off instead of losing
+    // their remaining seconds to real-world time.
+    final pauseDuration = _pauseStartedAt != null
+        ? DateTime.now().difference(_pauseStartedAt!)
+        : Duration.zero;
+    _pauseStartedAt = null;
+
+    final current = state.gameState;
+    if (current != null && pauseDuration > Duration.zero) {
+      final shiftedActive = current.activePowerUps
+          .map((p) => ActivePowerUp(
+                type: p.type,
+                activatedAt: p.activatedAt.add(pauseDuration),
+                duration: p.duration,
+              ))
+          .toList();
+      final shiftedPowerUp = current.powerUp != null
+          ? PowerUp(
+              position: current.powerUp!.position,
+              type: current.powerUp!.type,
+              createdAt: current.powerUp!.createdAt.add(pauseDuration),
+            )
+          : null;
+      final shiftedGameStart = current.gameStartTime?.add(pauseDuration);
+      emit(
+        state.copyWith(
+          status: GamePlayStatus.playing,
+          gameState: current.copyWith(
+            status: model.GameStatus.playing,
+            activePowerUps: shiftedActive,
+            powerUp: shiftedPowerUp,
+            gameStartTime: shiftedGameStart,
+          ),
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: GamePlayStatus.playing,
+          gameState: current?.copyWith(status: model.GameStatus.playing),
+        ),
+      );
+    }
 
     // Resume cue: reuse the button_click SFX at low volume + light haptic so
     // the player feels the world come back to life rather than silently
