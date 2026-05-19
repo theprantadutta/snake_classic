@@ -40,7 +40,7 @@ class PauseOverlay extends StatelessWidget {
       child: Center(
         child: Container(
           margin: const EdgeInsets.all(32),
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           decoration: BoxDecoration(
             color: theme.backgroundColor,
             borderRadius: BorderRadius.circular(16),
@@ -56,34 +56,40 @@ class PauseOverlay extends StatelessWidget {
               ),
             ],
           ),
-          // Scrollable so expanding the Game Guide on a short screen doesn't
-          // overflow the dialog. shrinkWrap behaviour from SingleChildScrollView
-          // means the dialog still sizes to its content when it fits.
-          child: SingleChildScrollView(
-            child: Column(
+          // Stack so the top-right close button sits inside the dialog's
+          // padded area, above the scrollable content.
+          child: Stack(
+            children: [
+              // Scrollable so expanding the Game Guide on a short screen doesn't
+              // overflow the dialog. shrinkWrap behaviour from SingleChildScrollView
+              // means the dialog still sizes to its content when it fits.
+              SingleChildScrollView(
+                child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Pause Icon
+              const SizedBox(height: 4),
+              // Pause Icon — sized down from 64 so the menu reads more
+              // compact overall.
               Icon(
                 Icons.pause_circle_filled,
-                size: 64,
+                size: 44,
                 color: theme.accentColor,
               ).gamePop(delay: 50.ms),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               // Pause Text
               Text(
                 'PAUSED',
                 style: TextStyle(
                   color: theme.accentColor,
-                  fontSize: 24,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
                 ),
               ).gameEntrance(delay: 100.ms),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Store Access Row
               Row(
@@ -96,7 +102,7 @@ class PauseOverlay extends StatelessWidget {
                     colors: [Colors.purple, Colors.blue],
                     onTap: () => context.push(AppRoutes.premiumBenefits),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   _buildStoreButton(
                     context: context,
                     icon: Icons.store,
@@ -107,14 +113,16 @@ class PauseOverlay extends StatelessWidget {
                 ],
               ).gameEntrance(delay: 150.ms),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Game Guide Section (moved from game screen)
               _buildGameGuideSection(),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Main Action Buttons
+              // Main Action Buttons — compact: 170w × 42h with 10px gaps
+              // so the stack of five buttons fits more screens without
+              // dominating the dialog.
               Column(
                 children: [
                   GradientButton(
@@ -123,10 +131,11 @@ class PauseOverlay extends StatelessWidget {
                     primaryColor: theme.accentColor,
                     secondaryColor: theme.foodColor,
                     icon: Icons.play_arrow,
-                    width: 200,
+                    width: 170,
+                    height: 42,
                   ).gameZoomIn(delay: 200.ms),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   GradientButton(
                     onPressed: onRestart,
@@ -134,11 +143,12 @@ class PauseOverlay extends StatelessWidget {
                     primaryColor: theme.accentColor.withValues(alpha: 0.8),
                     secondaryColor: theme.accentColor.withValues(alpha: 0.6),
                     icon: Icons.refresh,
-                    width: 200,
+                    width: 170,
+                    height: 42,
                     outlined: true,
                   ).gameZoomIn(delay: 250.ms),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   GradientButton(
                     onPressed: onHome,
@@ -146,11 +156,12 @@ class PauseOverlay extends StatelessWidget {
                     primaryColor: theme.snakeColor.withValues(alpha: 0.8),
                     secondaryColor: theme.snakeColor.withValues(alpha: 0.6),
                     icon: Icons.home,
-                    width: 200,
+                    width: 170,
+                    height: 42,
                     outlined: true,
                   ).gameZoomIn(delay: 300.ms),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   // D-Pad toggle. Wrapped in BlocBuilder so the label /
                   // icon flip live when the user taps it without closing
@@ -175,14 +186,15 @@ class PauseOverlay extends StatelessWidget {
                         icon: on
                             ? Icons.gamepad
                             : Icons.gamepad_outlined,
-                        width: 200,
+                        width: 170,
+                        height: 42,
                         outlined: !on,
                       ).gameZoomIn(delay: 320.ms);
                     },
                   ),
 
                   if (onShowTutorial != null) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     GradientButton(
                       onPressed: onShowTutorial!,
                       text: 'HOW TO PLAY',
@@ -191,7 +203,8 @@ class PauseOverlay extends StatelessWidget {
                       secondaryColor:
                           theme.accentColor.withValues(alpha: 0.4),
                       icon: Icons.help_outline,
-                      width: 200,
+                      width: 170,
+                      height: 42,
                       outlined: true,
                     ).gameZoomIn(delay: 350.ms),
                   ],
@@ -199,6 +212,31 @@ class PauseOverlay extends StatelessWidget {
               ),
             ],
           ),
+              ),
+              // Close button — top-right corner of the dialog. Tapping it
+              // resumes the game (same as the RESUME button below) so the
+              // gesture matches every other modal X in the app.
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: onResume,
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 22,
+                        color: theme.accentColor.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
