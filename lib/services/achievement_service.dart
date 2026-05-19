@@ -26,6 +26,7 @@ class AchievementService extends ChangeNotifier {
   /// `_pendingUnlocks` across app restarts. Without this the list lives
   /// in memory only, so an unlock-then-crash flow loses the backend sync.
   static const String _pendingUnlocksJsonKey = '__pendingUnlocks';
+  static const String _shownGameOverIdsJsonKey = '__shownGameOverIds';
   static const int _recentUnlocksMaxLength = 20;
 
   List<Achievement> _achievements = [];
@@ -36,6 +37,16 @@ class AchievementService extends ChangeNotifier {
   /// [_unlockAchievementLocal]. The game-over screen reads this to show
   /// celebration toasts only for the current game's unlocks.
   final List<Achievement> _lastGameUnlocks = [];
+
+  /// Achievement IDs the user has already seen on a game-over "unlocked!"
+  /// reveal. We persist this so an achievement is celebrated exactly once
+  /// even if local state churns (e.g., the phantom-unlock reset path can
+  /// flip isUnlocked back to false, the local evaluator re-fires on the
+  /// next game, and without this set the same row would appear in the
+  /// next game-over reveal). Once shown, the achievement is still listed
+  /// in the Achievements screen and the badge persists — we just don't
+  /// re-celebrate it.
+  final Set<String> _shownGameOverIds = {};
 
   List<Achievement> get achievements => _achievements;
   List<Achievement> get recentUnlocks => _recentUnlocks;
@@ -324,6 +335,15 @@ class AchievementService extends ChangeNotifier {
         ..clear()
         ..addAll(pending.whereType<String>());
     }
+
+    // Restore the "already celebrated on game-over" set so a fresh
+    // re-unlock (e.g., after phantom-unlock reset) doesn't re-reveal.
+    final shown = data[_shownGameOverIdsJsonKey];
+    if (shown is List) {
+      _shownGameOverIds
+        ..clear()
+        ..addAll(shown.whereType<String>());
+    }
   }
 
   Future<void> _saveProgress() async {
@@ -343,6 +363,13 @@ class AchievementService extends ChangeNotifier {
       // syncUnlockedAchievements() flushes to the backend.
       if (_pendingUnlocks.isNotEmpty) {
         progressData[_pendingUnlocksJsonKey] = List<String>.from(_pendingUnlocks);
+      }
+
+      // Persist the celebrated-once set so the game-over screen doesn't
+      // repeat reveals across launches.
+      if (_shownGameOverIds.isNotEmpty) {
+        progressData[_shownGameOverIdsJsonKey] =
+            List<String>.from(_shownGameOverIds);
       }
 
       // Save to cache
@@ -381,7 +408,13 @@ class AchievementService extends ChangeNotifier {
         !_pendingUnlocks.contains(achievement.id)) {
       _pendingUnlocks.add(achievement.id);
     }
-    _lastGameUnlocks.add(_achievements[index]);
+    // Only celebrate an achievement once on the game-over screen, even if
+    // local isUnlocked has been reset since (phantom-unlock reset path
+    // would otherwise cause every game to re-reveal the same row).
+    if (!_shownGameOverIds.contains(achievement.id)) {
+      _shownGameOverIds.add(achievement.id);
+      _lastGameUnlocks.add(_achievements[index]);
+    }
   }
 
   /// Trim `_recentUnlocks` so it never exceeds [_recentUnlocksMaxLength].
