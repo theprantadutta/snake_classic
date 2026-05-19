@@ -42,6 +42,12 @@ class _GameScreenState extends State<GameScreen>
   // reset it.
   bool _exitDialogOpen = false;
 
+  // Gate the top-right static gesture indicator: visible only until the
+  // player swipes for the first time this session. Tap-handler swipes flip
+  // it true so the redundant hint vanishes once the player has demonstrated
+  // they know what to do.
+  bool _hasSwipedThisSession = false;
+
   // Score popup system - extracted into separate widget to avoid full screen rebuilds
   final GlobalKey<_ScorePopupLayerState> _scorePopupLayerKey = GlobalKey<_ScorePopupLayerState>();
 
@@ -205,6 +211,9 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _handleSwipe(Direction direction) {
+    if (!_hasSwipedThisSession) {
+      setState(() => _hasSwipedThisSession = true);
+    }
     // If tutorial is active, send swipe to tutorial controller
     if (_tutorialActive && _tutorialController != null) {
       _tutorialController!.onSwipeDetected(direction);
@@ -1012,8 +1021,11 @@ class _GameScreenState extends State<GameScreen>
         children: [
           // Left side - Game hint
           _buildGameHint(theme, isSmallScreen),
-          // Right side - Static gesture indicator
-          _buildStaticGestureIndicator(theme, isSmallScreen),
+          // Right side - Static gesture indicator. Dropped after the first
+          // swipe — the central SwipeDetector feedback covers it from that
+          // point on and the duplicate looks like clutter.
+          if (!_hasSwipedThisSession)
+            _buildStaticGestureIndicator(theme, isSmallScreen),
         ],
       ),
     );

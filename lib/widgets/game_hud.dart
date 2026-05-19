@@ -34,11 +34,13 @@ class GameHUD extends StatefulWidget {
 class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _levelUpController;
+  late AnimationController _foodPulseController;
   late Animation<double> _levelUpScale;
   late Animation<double> _levelUpGlow;
   int _displayedScore = 0;
   int _previousLevel = 1;
   bool _showLevelUpEffect = false;
+  FoodType? _previousFoodType;
 
   @override
   void initState() {
@@ -104,8 +106,14 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       }
     });
 
+    _foodPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+
     _displayedScore = widget.gameState.score;
     _previousLevel = widget.gameState.level;
+    _previousFoodType = widget.gameState.food?.type;
   }
 
   @override
@@ -124,6 +132,13 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     if (widget.gameState.level > _previousLevel) {
       _triggerLevelUpEffect();
       _previousLevel = widget.gameState.level;
+    }
+
+    // Food type changed — one-shot pulse so the player sees the type swap.
+    final currentFoodType = widget.gameState.food?.type;
+    if (currentFoodType != null && currentFoodType != _previousFoodType) {
+      _previousFoodType = currentFoodType;
+      _foodPulseController.forward(from: 0.0);
     }
 
     // Pulse driver — shared between urgent power-up indicator and combo
@@ -150,6 +165,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   void dispose() {
     _pulseController.dispose();
     _levelUpController.dispose();
+    _foodPulseController.dispose();
     super.dispose();
   }
 
@@ -597,7 +613,17 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
 
     return SizedBox(
       height: chipHeight,
-      child: Container(
+      child: AnimatedBuilder(
+        animation: _foodPulseController,
+        builder: (context, child) {
+          // Pulse: 1.0 → 1.18 → 1.0 over the controller's 280ms lifetime.
+          final t = _foodPulseController.value;
+          final scale = t < 0.5
+              ? 1.0 + (0.18 * t * 2)
+              : 1.18 - (0.18 * (t - 0.5) * 2);
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: Container(
         padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 10),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
@@ -628,6 +654,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
             ),
           ],
         ),
+      ),
       ),
     );
   }

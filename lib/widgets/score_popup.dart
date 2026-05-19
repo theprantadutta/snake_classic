@@ -196,12 +196,21 @@ class ScorePopupManager {
     required Color color,
     int multiplier = 1,
   }) {
+    // MultiFood: when foods are eaten back-to-back at nearby cells the
+    // popups stack on top of each other. Offset new popups vertically by
+    // the count of existing popups within ~30px so each one is readable.
+    final overlapping = _activePopups
+        .where((p) => (p.position - position).distance < 30)
+        .length;
+    final adjusted = overlapping > 0
+        ? Offset(position.dx, position.dy - overlapping * 18)
+        : position;
     final id = _nextId++;
     _activePopups.add(
       ScorePopupData(
         id: id,
         points: points,
-        position: position,
+        position: adjusted,
         color: color,
         multiplier: multiplier,
       ),

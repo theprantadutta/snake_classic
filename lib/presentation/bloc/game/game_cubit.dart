@@ -251,7 +251,15 @@ class GameCubit extends Cubit<GameCubitState> {
     _activateArmedPowerUpIfAny();
 
     _audioService.playSound('game_start');
-    _enhancedAudioService.playSfx('game_start', volume: 0.8);
+    // Tournament-mode start sounds louder + adds a medium haptic so the
+    // moment registers as different from a casual run. Casual play keeps
+    // the original 0.8 game_start volume with no haptic.
+    if (state.isTournamentMode) {
+      _enhancedAudioService.playSfx('game_start', volume: 1.0);
+      unawaited(_hapticService.mediumImpact());
+    } else {
+      _enhancedAudioService.playSfx('game_start', volume: 0.8);
+    }
 
     _analytics.trackGameStarted(
       boardWidth: gameState.boardWidth,
@@ -346,6 +354,12 @@ class GameCubit extends Cubit<GameCubitState> {
         gameState: state.gameState?.copyWith(status: model.GameStatus.playing),
       ),
     );
+
+    // Resume cue: reuse the button_click SFX at low volume + light haptic so
+    // the player feels the world come back to life rather than silently
+    // sliding from frozen to running.
+    _enhancedAudioService.playSfx('button_click', volume: 0.4);
+    unawaited(_hapticService.lightImpact());
 
     _startGameLoop();
     _startSmoothAnimation();
@@ -726,7 +740,11 @@ class GameCubit extends Cubit<GameCubitState> {
         }
       } else {
         _audioService.playSound('eat');
-        HapticFeedback.lightImpact();
+        // Standardize through the service so intensity stays consistent with
+        // the power-up collect / bonus / special variants. The direct
+        // HapticFeedback.lightImpact() call was an inconsistency with the
+        // rest of the audio/haptic plumbing.
+        unawaited(_hapticService.foodEaten());
       }
 
       // Regenerate only the eaten food slot. In single-food mode this just
