@@ -36,6 +36,11 @@ class _GameScreenState extends State<GameScreen>
   GameState? _previousGameState;
   late FocusNode _keyboardFocusNode;
   bool _hasNavigatedToGameOver = false;
+  // Prevents the exit-confirmation dialog from stacking when a rapid tap on
+  // the exit button fires _showExitConfirmation twice before the first dialog
+  // is on screen. Cleared in the dialog's then() so both Cancel and Exit
+  // reset it.
+  bool _exitDialogOpen = false;
 
   // Score popup system - extracted into separate widget to avoid full screen rebuilds
   final GlobalKey<_ScorePopupLayerState> _scorePopupLayerKey = GlobalKey<_ScorePopupLayerState>();
@@ -236,14 +241,19 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _showExitConfirmation(BuildContext context) {
+    if (_exitDialogOpen) return;
     final gameCubit = context.read<GameCubit>();
     final theme = context.read<ThemeCubit>().state.currentTheme;
 
-    // Pause the game if it's playing
-    if (gameCubit.state.isPlaying) {
+    // Remember whether we paused on entry so Cancel only resumes a game we
+    // actually paused. If the user crashed between tap and dialog or it was
+    // already paused, Cancel must not flip the state.
+    final didPauseHere = gameCubit.state.isPlaying;
+    if (didPauseHere) {
       gameCubit.pauseGame();
     }
 
+    _exitDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -267,9 +277,9 @@ class _GameScreenState extends State<GameScreen>
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(dialogContext).pop(); // Close dialog
-              if (gameCubit.state.isPaused) {
-                gameCubit.resumeGame(); // Resume if was playing
+              Navigator.of(dialogContext).pop();
+              if (didPauseHere && gameCubit.state.isPaused) {
+                gameCubit.resumeGame();
               }
             },
             child: Text(
@@ -279,15 +289,15 @@ class _GameScreenState extends State<GameScreen>
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(dialogContext).pop(); // Close dialog
-              gameCubit.resetGame(); // Reset game state before exiting
-              context.pop(); // Exit game
+              Navigator.of(dialogContext).pop();
+              gameCubit.resetGame();
+              context.pop();
             },
             child: Text('Exit', style: TextStyle(color: theme.foodColor)),
           ),
         ],
       ),
-    );
+    ).whenComplete(() => _exitDialogOpen = false);
   }
 
   void _handleKeyPress(KeyEvent event) {
