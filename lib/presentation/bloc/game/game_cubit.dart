@@ -816,6 +816,13 @@ class GameCubit extends Cubit<GameCubitState> {
       _audioService.playSound('power_up');
     }
 
+    // PerfectGame: snapshot the visited-cells set into state so the painter
+    // can render the dim trail overlay. Out of mode, emit empty so the
+    // painter early-outs (zero cost for 95% of play).
+    final visitedSnapshot = previousState.gameMode.enforcesNoRevisit
+        ? Set<Position>.of(_visitedCells)
+        : const <Position>{};
+
     final newGameState = previousState.copyWith(
       snake: snake,
       food: currentFood,
@@ -829,6 +836,7 @@ class GameCubit extends Cubit<GameCubitState> {
       comboMultiplier: newComboMultiplier,
       activePowerUps: activePowerUps,
       lastMoveTime: now, // Reuse timestamp from start of tick instead of calling DateTime.now() again
+      visitedCells: visitedSnapshot,
     );
 
     final newCubitState = state.copyWith(

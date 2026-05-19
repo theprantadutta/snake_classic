@@ -675,6 +675,14 @@ class OptimizedGameBoardPainter extends CustomPainter {
       _drawWallWarning(canvas, size, cellWidth, cellHeight);
     }
 
+    // PerfectGame trail overlay — every cell the head has occupied this run
+    // painted as a dim ghost so the player can plan around the no-revisit
+    // rule. Empty set out of mode = no work.
+    if (gameState.gameMode.enforcesNoRevisit &&
+        gameState.visitedCells.isNotEmpty) {
+      _drawVisitedTrail(canvas, cellWidth, cellHeight);
+    }
+
     _drawFood(canvas, cellWidth, cellHeight);
     _drawPowerUp(canvas, cellWidth, cellHeight);
     _drawSnake(canvas, cellWidth, cellHeight);
@@ -793,6 +801,35 @@ class OptimizedGameBoardPainter extends CustomPainter {
       ).createShader(glowRect);
 
     canvas.drawRect(glowRect, paint);
+  }
+
+  /// PerfectGame visited-trail overlay. Paints every cell the snake's head
+  /// has ever occupied this run as a rounded rect at 8% alpha of the theme
+  /// accent color. Cells currently under the snake body are skipped — they
+  /// already render as part of the snake, doubling them up just adds noise.
+  void _drawVisitedTrail(
+    Canvas canvas,
+    double cellWidth,
+    double cellHeight,
+  ) {
+    final accent = theme.accentColor;
+    final paint = Paint()
+      ..color = accent.withValues(alpha: 0.10)
+      ..style = PaintingStyle.fill;
+    final snakeBody = gameState.snake.body.toSet();
+    for (final cell in gameState.visitedCells) {
+      if (snakeBody.contains(cell)) continue;
+      final rect = Rect.fromLTWH(
+        cell.x * cellWidth + cellWidth * 0.12,
+        cell.y * cellHeight + cellHeight * 0.12,
+        cellWidth * 0.76,
+        cellHeight * 0.76,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.15)),
+        paint,
+      );
+    }
   }
 
   void _drawGrid(

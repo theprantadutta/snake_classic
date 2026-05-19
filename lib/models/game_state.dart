@@ -69,6 +69,12 @@ class GameState {
   // time limit so the HUD knows to skip the countdown chip.
   final DateTime? gameStartTime;
 
+  // PerfectGame mode: every cell the snake's head has occupied this run.
+  // Empty in modes that don't enforce no-revisit so the painter can early-out
+  // without iterating an unused set. The cubit owns the master copy and
+  // emits a Set.of(...) snapshot each tick in enforcesNoRevisit modes.
+  final Set<Position> visitedCells;
+
   GameState({
     required this.snake,
     this.food,
@@ -93,6 +99,7 @@ class GameState {
     this.livesRemaining = 1,
     this.initialLives = 1,
     this.gameStartTime,
+    this.visitedCells = const {},
   });
 
   factory GameState.initial() {
@@ -289,6 +296,7 @@ class GameState {
     int? livesRemaining,
     int? initialLives,
     DateTime? gameStartTime,
+    Set<Position>? visitedCells,
   }) {
     return GameState(
       snake: snake ?? this.snake,
@@ -314,6 +322,7 @@ class GameState {
       livesRemaining: livesRemaining ?? this.livesRemaining,
       initialLives: initialLives ?? this.initialLives,
       gameStartTime: gameStartTime ?? this.gameStartTime,
+      visitedCells: visitedCells ?? this.visitedCells,
     );
   }
 
