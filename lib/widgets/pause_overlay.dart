@@ -245,8 +245,10 @@ class PauseOverlay extends StatelessWidget {
   }
 
   Widget _buildGameGuideSection() {
+    // Widened from 220 → 260 to fit the expanded section labels
+    // ("PowerUp Madness", "Slow Motion", etc.) without ellipsizing.
     return Container(
-      width: 220,
+      width: 260,
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
@@ -281,7 +283,9 @@ class PauseOverlay extends StatelessWidget {
           iconColor: theme.accentColor,
           collapsedIconColor: theme.accentColor.withValues(alpha: 0.6),
           children: [
-            // Food types
+            // FOOD
+            _buildGuideSubheader('FOOD'),
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -290,20 +294,114 @@ class PauseOverlay extends StatelessWidget {
                 _buildFoodItem('⭐', '50 pts'),
               ],
             ),
-            const SizedBox(height: 8),
-            // Control hints
-            Text(
-              'Swipe or tap D-pad to move\nAvoid walls & yourself',
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.7),
-                fontSize: 10,
-              ),
-              textAlign: TextAlign.center,
+
+            const SizedBox(height: 12),
+
+            // COMBO
+            _buildGuideSubheader('COMBO'),
+            const SizedBox(height: 4),
+            _buildGuideRow('🔥', '5 bites', '1.5×'),
+            _buildGuideRow('🔥', '10 bites', '2×'),
+            _buildGuideRow('🔥', '20 bites', '3×'),
+            const SizedBox(height: 2),
+            _buildGuideHint(
+              'The fire chip near your score heats up and pulses on each tier crossing.',
             ),
+
+            const SizedBox(height: 12),
+
+            // POWER-UPS
+            _buildGuideSubheader('POWER-UPS'),
+            const SizedBox(height: 4),
+            _buildGuideRow('⚡', 'Speed Boost', '7s'),
+            _buildGuideRow('🛡', 'Invincibility', '6s'),
+            _buildGuideRow('✨', 'Score 2×', '10s'),
+            _buildGuideRow('🐢', 'Slow Motion', '8s'),
+            const SizedBox(height: 2),
+            _buildGuideHint(
+              'The ring around the icon drains as it expires. Timer freezes on pause.',
+            ),
+
+            const SizedBox(height: 12),
+
+            // CRASH FEEDBACK
+            _buildGuideSubheader('CRASH'),
+            const SizedBox(height: 4),
+            _buildGuideHint(
+              'A red shockwave fires at the cell you died on. Self-collision also highlights the body segment you hit in yellow.',
+            ),
+
+            const SizedBox(height: 12),
+
+            // MODES
+            _buildGuideSubheader('MODES'),
+            const SizedBox(height: 4),
+            _buildGuideRow('🐍', 'Classic', 'walls on'),
+            _buildGuideRow('🌿', 'Zen', 'walls off'),
+            _buildGuideRow('⚡', 'Speed', 'fast tick'),
+            _buildGuideRow('🍎', 'Multi-Food', '3 foods at once'),
+            _buildGuideRow('❤️', 'Survival', '3 lives, ramps up'),
+            _buildGuideRow('⏱', 'TimeAttack', '3 min total'),
+            _buildGuideRow('🎆', 'PowerUp Madness', 'frequent power-ups'),
+            _buildGuideRow('💎', 'Perfect Game', "don't cross your trail"),
           ],
         ),
       ),
     ).gameEntrance(delay: 180.ms);
+  }
+
+  Widget _buildGuideSubheader(String label) {
+    return Text(
+      label,
+      style: TextStyle(
+        color: theme.accentColor.withValues(alpha: 0.65),
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.4,
+      ),
+    );
+  }
+
+  Widget _buildGuideRow(String emoji, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1.5),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 12)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.85),
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: theme.foodColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuideHint(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: theme.accentColor.withValues(alpha: 0.55),
+        fontSize: 10,
+        height: 1.3,
+        fontStyle: FontStyle.italic,
+      ),
+    );
   }
 
   Widget _buildFoodItem(String emoji, String points) {
