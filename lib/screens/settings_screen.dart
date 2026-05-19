@@ -1904,14 +1904,22 @@ extension _SettingsPremium on _SettingsScreenState {
   }
 
   Widget _buildUpgradeButton(PremiumState premiumState, GameTheme theme) {
+    // Full-width so the CTA actually reads as the primary action of the
+    // Premium section. Routes to the dedicated subscription screen
+    // (PremiumBenefitsScreen → /premium-benefits) — the same destination
+    // the pause overlay's Premium button uses. The previous in-screen
+    // dialog locked the user to monthly with no upsell or comparison.
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: GradientButton(
-        onPressed: () => _showPremiumDialog(),
-        text: 'Upgrade to Pro',
-        primaryColor: const Color(0xFFFFD700),
-        secondaryColor: const Color(0xFFFFA500),
-        icon: Icons.star,
+      child: SizedBox(
+        width: double.infinity,
+        child: GradientButton(
+          onPressed: () => context.push(AppRoutes.premiumBenefits),
+          text: 'Upgrade to Pro',
+          primaryColor: const Color(0xFFFFD700),
+          secondaryColor: const Color(0xFFFFA500),
+          icon: Icons.star,
+        ),
       ),
     );
   }
@@ -2090,96 +2098,11 @@ extension _SettingsPremium on _SettingsScreenState {
     );
   }
 
-  void _showPremiumDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.black.withValues(alpha: 0.9),
-        title: const Row(
-          children: [
-            Icon(Icons.diamond, color: Colors.amber),
-            SizedBox(width: 8),
-            Text('Snake Classic Pro', style: TextStyle(color: Colors.white)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Upgrade to Pro and unlock:',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            const Text('✓ All premium themes', style: TextStyle(color: Colors.white)),
-            const Text(
-              '✓ Exclusive snake skins',
-              style: TextStyle(color: Colors.white),
-            ),
-            const Text('✓ Premium power-ups', style: TextStyle(color: Colors.white)),
-            const Text(
-              '✓ Battle Pass (Coming Soon)',
-              style: TextStyle(color: Colors.white),
-            ),
-            const Text('✓ Priority support', style: TextStyle(color: Colors.white)),
-            const SizedBox(height: 16),
-            Text(
-              '${PurchaseService().getStorePriceOrDefault(ProductIds.snakeClassicProMonthly, 4.99)}/month',
-              style: const TextStyle(
-                color: Colors.amber,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _purchasePro();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber,
-              foregroundColor: Colors.black,
-            ),
-            child: const Text('Subscribe'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _purchasePro() {
-    final purchaseService = PurchaseService();
-    final product = purchaseService.getProduct(
-      ProductIds.snakeClassicProMonthly,
-    );
-
-    if (product != null) {
-      purchaseService.buyProduct(product);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Initiating Pro subscription...'),
-          backgroundColor: Colors.amber,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Subscription not available. Please try again later.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+  // Removed _showPremiumDialog + _purchasePro — the Upgrade button now
+  // routes to PremiumBenefitsScreen which carries the full subscription
+  // experience (monthly/yearly toggle, feature grid, benefits walk-through,
+  // proper purchase flow). The old inline dialog was monthly-only with no
+  // upsell.
 
   void _restorePurchases() async {
     try {
