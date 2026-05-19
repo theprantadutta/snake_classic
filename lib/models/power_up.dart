@@ -92,9 +92,20 @@ class PowerUp {
   final Position position;
   final PowerUpType type;
   final DateTime createdAt;
+  /// Pause-time snapshot — see [ActivePowerUp.pausedAt]. When set, every
+  /// time-related getter treats this as the effective "now" so the
+  /// on-board power-up's 20s expiration countdown freezes while the game
+  /// is paused.
+  final DateTime? pausedAt;
 
-  PowerUp({required this.position, required this.type, DateTime? createdAt})
-    : createdAt = createdAt ?? DateTime.now();
+  PowerUp({
+    required this.position,
+    required this.type,
+    DateTime? createdAt,
+    this.pausedAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  DateTime get _effectiveNow => pausedAt ?? DateTime.now();
 
   static Position generateRandomPosition(
     int boardWidth,
@@ -162,12 +173,12 @@ class PowerUp {
 
   bool get isExpired {
     // Power-ups expire after 20 seconds if not collected
-    return DateTime.now().difference(createdAt).inSeconds > 20;
+    return _effectiveNow.difference(createdAt).inSeconds > 20;
   }
 
   // Time remaining before expiration
   int get secondsRemaining {
-    final elapsed = DateTime.now().difference(createdAt).inSeconds;
+    final elapsed = _effectiveNow.difference(createdAt).inSeconds;
     return (20 - elapsed).clamp(0, 20);
   }
 
@@ -185,7 +196,7 @@ class PowerUp {
   double get pulsePhase {
     // Create a pulsing animation effect
     final secondsSinceCreated =
-        DateTime.now().difference(createdAt).inMilliseconds / 1000.0;
+        _effectiveNow.difference(createdAt).inMilliseconds / 1000.0;
     return (sin(secondsSinceCreated * 3.0) + 1.0) / 2.0; // 0.0 to 1.0
   }
 }
@@ -194,23 +205,37 @@ class ActivePowerUp {
   final PowerUpType type;
   final DateTime activatedAt;
   final Duration duration;
+  /// When non-null, getters treat this as the effective "now" so the
+  /// displayed remaining time freezes while the game is paused. The cubit
+  /// populates it in pauseGame and clears it (after shifting activatedAt
+  /// forward by the pause duration) in resumeGame. Without this, animation
+  /// controllers in the HUD would tick the displayed seconds down even
+  /// while gameplay is frozen, since remainingTime is a computed getter
+  /// against wall-clock time.
+  final DateTime? pausedAt;
 
-  ActivePowerUp({required this.type, DateTime? activatedAt, Duration? duration})
-    : activatedAt = activatedAt ?? DateTime.now(),
-      duration = duration ?? type.duration;
+  ActivePowerUp({
+    required this.type,
+    DateTime? activatedAt,
+    Duration? duration,
+    this.pausedAt,
+  }) : activatedAt = activatedAt ?? DateTime.now(),
+       duration = duration ?? type.duration;
+
+  DateTime get _effectiveNow => pausedAt ?? DateTime.now();
 
   bool get isExpired {
-    return DateTime.now().difference(activatedAt) >= duration;
+    return _effectiveNow.difference(activatedAt) >= duration;
   }
 
   Duration get remainingTime {
-    final elapsed = DateTime.now().difference(activatedAt);
+    final elapsed = _effectiveNow.difference(activatedAt);
     final remaining = duration - elapsed;
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
   double get progress {
-    final elapsed = DateTime.now().difference(activatedAt).inMilliseconds;
+    final elapsed = _effectiveNow.difference(activatedAt).inMilliseconds;
     final total = duration.inMilliseconds;
     return (elapsed / total).clamp(0.0, 1.0);
   }

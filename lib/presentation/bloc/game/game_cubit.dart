@@ -354,14 +354,51 @@ class GameCubit extends Cubit<GameCubitState> {
       _timeAttackTimer = null;
     }
 
-    _pauseStartedAt = DateTime.now();
+    final pauseStamp = DateTime.now();
+    _pauseStartedAt = pauseStamp;
 
-    emit(
-      state.copyWith(
-        status: GamePlayStatus.paused,
-        gameState: state.gameState?.copyWith(status: model.GameStatus.paused),
-      ),
-    );
+    final current = state.gameState;
+    if (current != null) {
+      // Stamp pausedAt on every wall-clock-driven object so their getters
+      // freeze the displayed time. Without this, the HUD's 60fps animation
+      // controllers tick the displayed seconds down even while the game
+      // tick timer is cancelled.
+      final pausedActive = current.activePowerUps
+          .map((p) => ActivePowerUp(
+                type: p.type,
+                activatedAt: p.activatedAt,
+                duration: p.duration,
+                pausedAt: pauseStamp,
+              ))
+          .toList();
+      final pausedOnBoard = current.powerUp != null
+          ? PowerUp(
+              position: current.powerUp!.position,
+              type: current.powerUp!.type,
+              createdAt: current.powerUp!.createdAt,
+              pausedAt: pauseStamp,
+            )
+          : null;
+
+      emit(
+        state.copyWith(
+          status: GamePlayStatus.paused,
+          gameState: current.copyWith(
+            status: model.GameStatus.paused,
+            activePowerUps: pausedActive,
+            powerUp: pausedOnBoard,
+            pausedAt: pauseStamp,
+          ),
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: GamePlayStatus.paused,
+          gameState: state.gameState?.copyWith(status: model.GameStatus.paused),
+        ),
+      );
+    }
 
     _analytics.trackGamePaused();
   }
@@ -380,6 +417,11 @@ class GameCubit extends Cubit<GameCubitState> {
 
     final current = state.gameState;
     if (current != null && pauseDuration > Duration.zero) {
+      // Shift every wall-clock anchor forward by the pause window AND
+      // clear pausedAt so the getters unfreeze. The two halves keep the
+      // displayed remaining time stable across the pause boundary: the
+      // shift cancels out the elapsed real-world time, the pausedAt clear
+      // makes the math use DateTime.now() again.
       final shiftedActive = current.activePowerUps
           .map((p) => ActivePowerUp(
                 type: p.type,
@@ -403,6 +445,7 @@ class GameCubit extends Cubit<GameCubitState> {
             activePowerUps: shiftedActive,
             powerUp: shiftedPowerUp,
             gameStartTime: shiftedGameStart,
+            clearPausedAt: true,
           ),
         ),
       );
@@ -410,7 +453,10 @@ class GameCubit extends Cubit<GameCubitState> {
       emit(
         state.copyWith(
           status: GamePlayStatus.playing,
-          gameState: current?.copyWith(status: model.GameStatus.playing),
+          gameState: current?.copyWith(
+            status: model.GameStatus.playing,
+            clearPausedAt: true,
+          ),
         ),
       );
     }

@@ -69,6 +69,11 @@ class GameState {
   // time limit so the HUD knows to skip the countdown chip.
   final DateTime? gameStartTime;
 
+  /// Pause-time snapshot for TimeAttack — see ActivePowerUp.pausedAt for
+  /// the full pattern. When non-null, timeAttackSecondsRemaining treats
+  /// this as 'now' so the countdown chip freezes during pause.
+  final DateTime? pausedAt;
+
   // PerfectGame mode: every cell the snake's head has occupied this run.
   // Empty in modes that don't enforce no-revisit so the painter can early-out
   // without iterating an unused set. The cubit owns the master copy and
@@ -99,6 +104,7 @@ class GameState {
     this.livesRemaining = 1,
     this.initialLives = 1,
     this.gameStartTime,
+    this.pausedAt,
     this.visitedCells = const {},
   });
 
@@ -296,7 +302,9 @@ class GameState {
     int? livesRemaining,
     int? initialLives,
     DateTime? gameStartTime,
+    DateTime? pausedAt,
     Set<Position>? visitedCells,
+    bool clearPausedAt = false,
   }) {
     return GameState(
       snake: snake ?? this.snake,
@@ -322,15 +330,18 @@ class GameState {
       livesRemaining: livesRemaining ?? this.livesRemaining,
       initialLives: initialLives ?? this.initialLives,
       gameStartTime: gameStartTime ?? this.gameStartTime,
+      pausedAt: clearPausedAt ? null : (pausedAt ?? this.pausedAt),
       visitedCells: visitedCells ?? this.visitedCells,
     );
   }
 
-  /// Seconds remaining in TimeAttack mode (0 if not a timed mode).
+  /// Seconds remaining in TimeAttack mode (0 if not a timed mode). Uses
+  /// pausedAt as the effective "now" so the chip freezes mid-pause.
   int get timeAttackSecondsRemaining {
     final limit = gameMode.timeLimit;
     if (limit == null || gameStartTime == null) return 0;
-    final elapsed = DateTime.now().difference(gameStartTime!);
+    final effectiveNow = pausedAt ?? DateTime.now();
+    final elapsed = effectiveNow.difference(gameStartTime!);
     final remaining = limit - elapsed;
     return remaining.isNegative ? 0 : remaining.inSeconds;
   }
