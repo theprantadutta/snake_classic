@@ -263,6 +263,7 @@ class AchievementService extends ChangeNotifier {
       return entry;
     }
 
+    var addedToReveal = false;
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
 
@@ -292,22 +293,40 @@ class AchievementService extends ChangeNotifier {
         final backendXp = catalog['xp_reward'] ?? catalog['xpReward'];
         final backendCoins = catalog['coin_reward'] ?? catalog['coinReward'];
 
-        // Use the most up-to-date data (local wins if unlocked locally but not synced yet)
-        final shouldUseLocal = achievement.isUnlocked && !backendUnlocked;
+        // Server is authoritative for Score / Games / Survival achievements
+        // (the local evaluator used to over-unlock these because it didn't
+        // honor mode/difficulty filters — see AchievementAutoEvaluator on
+        // the backend). The earlier "shouldUseLocal" escape clause that
+        // preserved an unconfirmed local unlock has been removed; we now
+        // trust the backend row.
+        final wasUnlockedLocally = achievement.isUnlocked;
+        _achievements[i] = achievement.copyWith(
+          isUnlocked: backendUnlocked,
+          currentProgress: backendProgress,
+          unlockedAt: backendUnlockedAt,
+          rewardClaimed: backendRewardClaimed,
+          // Overlay backend reward values when present so the UI shows
+          // authoritative amounts; fall back to the seeded defaults.
+          xpReward: backendXp is int ? backendXp : null,
+          coinReward: backendCoins is int ? backendCoins : null,
+        );
 
-        if (!shouldUseLocal) {
-          _achievements[i] = achievement.copyWith(
-            isUnlocked: backendUnlocked,
-            currentProgress: backendProgress,
-            unlockedAt: backendUnlockedAt,
-            rewardClaimed: backendRewardClaimed,
-            // Overlay backend reward values when present so the UI shows
-            // authoritative amounts; fall back to the seeded defaults.
-            xpReward: backendXp is int ? backendXp : null,
-            coinReward: backendCoins is int ? backendCoins : null,
-          );
+        // Newly server-confirmed unlock — reveal it on the next game-over
+        // screen (gated by celebrate-once so re-syncs don't repeat).
+        if (backendUnlocked && !wasUnlockedLocally) {
+          if (!_shownGameOverIds.contains(achievement.id)) {
+            _shownGameOverIds.add(achievement.id);
+            _lastGameUnlocks.add(_achievements[i]);
+            addedToReveal = true;
+          }
         }
       }
+    }
+
+    // Wake up listeners (game-over screen, profile, etc.) so the freshly
+    // added reveals land without waiting for the next manual refresh.
+    if (addedToReveal) {
+      notifyListeners();
     }
   }
 
@@ -485,88 +504,20 @@ class AchievementService extends ChangeNotifier {
     }
   }
 
-  List<Achievement> checkScoreAchievements(int score) {
-    final newUnlocks = <Achievement>[];
-
-    for (int i = 0; i < _achievements.length; i++) {
-      final achievement = _achievements[i];
-
-      if (achievement.type == AchievementType.score &&
-          !achievement.isUnlocked) {
-        if (score >= achievement.targetValue) {
-          _unlockAchievementLocal(i, achievement);
-          newUnlocks.add(_achievements[i]);
-        } else {
-          _achievements[i] = achievement.copyWith(currentProgress: score);
-        }
-      }
-    }
-
-    if (newUnlocks.isNotEmpty) {
-      _recentUnlocks.addAll(newUnlocks);
-      _trimRecentUnlocks();
-      _saveProgress();
-      notifyListeners();
-    }
-
-    return newUnlocks;
-  }
-
-  List<Achievement> checkGamePlayedAchievements(int totalGames) {
-    final newUnlocks = <Achievement>[];
-
-    for (int i = 0; i < _achievements.length; i++) {
-      final achievement = _achievements[i];
-
-      if (achievement.type == AchievementType.games &&
-          !achievement.isUnlocked) {
-        if (totalGames >= achievement.targetValue) {
-          _unlockAchievementLocal(i, achievement);
-          newUnlocks.add(_achievements[i]);
-        } else {
-          _achievements[i] = achievement.copyWith(currentProgress: totalGames);
-        }
-      }
-    }
-
-    if (newUnlocks.isNotEmpty) {
-      _recentUnlocks.addAll(newUnlocks);
-      _trimRecentUnlocks();
-      _saveProgress();
-      notifyListeners();
-    }
-
-    return newUnlocks;
-  }
-
-  List<Achievement> checkSurvivalAchievements(int survivalTime) {
-    final newUnlocks = <Achievement>[];
-
-    for (int i = 0; i < _achievements.length; i++) {
-      final achievement = _achievements[i];
-
-      if (achievement.type == AchievementType.survival &&
-          !achievement.isUnlocked) {
-        if (survivalTime >= achievement.targetValue) {
-          _unlockAchievementLocal(i, achievement);
-          newUnlocks.add(_achievements[i]);
-        } else if (survivalTime > achievement.currentProgress) {
-          _achievements[i] = achievement.copyWith(
-            currentProgress: survivalTime,
-          );
-        }
-      }
-    }
-
-    if (newUnlocks.isNotEmpty) {
-      _recentUnlocks.addAll(newUnlocks);
-      _trimRecentUnlocks();
-      _saveProgress();
-      notifyListeners();
-    }
-
-    return newUnlocks;
-  }
+  // Removed: checkScoreAchievements / checkGamePlayedAchievements /
+  // checkSurvivalAchievements. These used to evaluate score/games/survival
+  // unlocks locally with a simple `metric >= target` check, but the server
+  // applies mode/difficulty filters (see AchievementAutoEvaluator) that the
+  // client doesn't carry. The result was phantom unlocks (e.g., the
+  // "Reach 1000 in Classic" achievement would fire on a Zen run too) and
+  // a "Achievement not unlocked" 400 spam from the claim path.
+  //
+  // Score/Games/Survival are now server-authoritative. The backend's
+  // AchievementAutoEvaluator runs atomically inside SubmitScoreCommandHandler
+  // and inserts the UserAchievement row when (and only when) the filters
+  // match. _updateAchievementsFromBackend below detects newly-unlocked
+  // entries on the next sync and adds them to _lastGameUnlocks so the
+  // game-over reveal still fires — just from the right source of truth.
 
   /// Per-game achievement checks — peak metrics observable at game-end
   /// but not derivable from the score submission alone. Called from

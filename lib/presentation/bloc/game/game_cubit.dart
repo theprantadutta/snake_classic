@@ -1291,20 +1291,14 @@ class GameCubit extends Cubit<GameCubitState> {
     final gameState = state.gameState;
     if (gameState == null) return;
 
-    // Check achievements locally (no API calls — _unlockAchievementLocal only).
-    // `totalGamesPlayed` is the count BEFORE this game is recorded, so +1
-    // reflects the game we're finishing right now.
-    final projectedTotalGames =
-        _statisticsService.statistics.totalGamesPlayed + 1;
-    final scoreUnlocks = _achievementService.checkScoreAchievements(
-      gameState.score,
-    );
-    final gamesUnlocks = _achievementService.checkGamePlayedAchievements(
-      projectedTotalGames,
-    );
-    final survivalUnlocks = _achievementService.checkSurvivalAchievements(
-      gameDurationSeconds,
-    );
+    // Local evaluation only for SPECIAL achievements (combo / snake length /
+    // no-wall streaks / level + game-end conditions). Score, games, and
+    // survival achievements are now server-authoritative — the backend's
+    // AchievementAutoEvaluator runs them atomically with score submission
+    // and honors the mode/difficulty filters that the client doesn't carry.
+    // Anything unlocked by the server gets pulled in via the post-sync diff
+    // in AchievementService._updateAchievementsFromBackend and lands on the
+    // game-over reveal from there.
     final specialUnlocks = _achievementService.checkSpecialAchievements(
       level: gameState.level,
       hitWall: _hitWallThisGame,
@@ -1316,19 +1310,10 @@ class GameCubit extends Cubit<GameCubitState> {
       gameEndTime: DateTime.now(),
     );
 
-    // Buffer battle pass XP for newly unlocked achievements. (Coin and
-    // backend-XP rewards are NOT credited locally — the backend's
-    // ClaimAchievementRewardCommand grants them atomically into User.Coins
-    // and User.Experience, then the next CoinsCubit.syncWithBackend pulls
-    // the new balance. Crediting locally too would double-grant for online
-    // players; offline players will see the credit appear on next sync.)
-    final allNewUnlocks = [
-      ...scoreUnlocks,
-      ...gamesUnlocks,
-      ...survivalUnlocks,
-      ...specialUnlocks,
-    ];
-    for (final achievement in allNewUnlocks) {
+    // Buffer battle pass XP for client-evaluated unlocks now. Server-evaluated
+    // unlocks earn their BP XP after the post-game sync completes — see the
+    // diff handler below the fire-and-forget syncWithBackend call.
+    for (final achievement in specialUnlocks) {
       final xpKey = 'achievement_unlocked_${achievement.rarity.name}';
       final xp = BattlePassXpSource.getXpForAction(xpKey);
       if (xp > 0) {
@@ -1658,10 +1643,25 @@ class GameCubit extends Cubit<GameCubitState> {
       // increments User.Coins / User.Experience server-side — so chase it
       // with a coin balance refresh to pull the new total client-side.
       // Fire-and-forget — next refresh cycle catches anything missed if
-      // the score POST is still queued.
+      // the score POST is still queued. After the achievement sync lands,
+      // buffer BP XP for any newly server-confirmed unlocks (score / games
+      // / survival). The achievement service notifies listeners, so the
+      // game-over screen's ListenableBuilder picks up the new entries on
+      // top of the specialUnlocks it already revealed.
+      final preSyncIds =
+          _achievementService.lastGameUnlocks.map((a) => a.id).toSet();
       unawaited(() async {
         await _achievementService.syncWithBackend();
         await _coinsCubit.syncWithBackend();
+        for (final achievement in _achievementService.lastGameUnlocks) {
+          if (preSyncIds.contains(achievement.id)) continue;
+          final xpKey =
+              'achievement_unlocked_${achievement.rarity.name}';
+          final xp = BattlePassXpSource.getXpForAction(xpKey);
+          if (xp > 0) {
+            _battlePassCubit.bufferXP(xp, source: xpKey);
+          }
+        }
       }());
     } catch (e) {
       debugPrint('🎮 [GameCubit] Post-game sync error: $e');

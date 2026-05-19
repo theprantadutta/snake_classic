@@ -68,8 +68,18 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     // Load achievements data
     _loadAchievements();
 
+    // Re-load when the achievement service notifies. The post-game sync in
+    // GameCubit._postGameSync fires server-confirmed Score/Games/Survival
+    // unlocks asynchronously — they show up in lastGameUnlocks ~300ms-1s
+    // after this screen first builds. Listening here picks them up.
+    _achievementService.addListener(_onAchievementsChanged);
+
     // Daily challenge progress is now synced in _postGameSync batch call
     // No need for a separate refresh — data is updated locally already
+  }
+
+  void _onAchievementsChanged() {
+    if (mounted) _loadAchievements();
   }
 
   Future<void> _loadAchievements() async {
@@ -111,14 +121,21 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     }
   }
 
+  // Deduplicates _showUnlockToasts across reloads — the achievement service
+  // can fire a second time after the post-game sync confirms server-side
+  // unlocks, and we don't want the same toast queue twice.
+  final Set<String> _toastedIds = <String>{};
+
   void _showUnlockToasts(List<Achievement> unlocks) {
-    if (unlocks.isEmpty) return;
+    final fresh = unlocks.where((a) => !_toastedIds.contains(a.id)).toList();
+    if (fresh.isEmpty) return;
+    _toastedIds.addAll(fresh.map((a) => a.id));
     // First toast lands after the explosion settles; later toasts stagger
     // by 600ms (300ms slide + 300ms read time before the next slides in).
     const initialDelay = Duration(milliseconds: 1200);
     const staggerStep = Duration(milliseconds: 600);
-    for (int i = 0; i < unlocks.length; i++) {
-      final achievement = unlocks[i];
+    for (int i = 0; i < fresh.length; i++) {
+      final achievement = fresh[i];
       Future.delayed(initialDelay + staggerStep * i, () {
         if (!mounted) return;
         AchievementNotification.show(context, achievement);
@@ -128,6 +145,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
 
   @override
   void dispose() {
+    _achievementService.removeListener(_onAchievementsChanged);
     _explosionController.dispose();
     _scoreController.dispose();
     _achievementController.dispose();
