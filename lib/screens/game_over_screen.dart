@@ -526,13 +526,30 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
 
           const SizedBox(height: 16),
 
-          // Game Stats
+          // Game Stats — staggered count-up so the reveal sequence reads
+          // as a celebration (score → length → level → high score) instead
+          // of three numbers appearing in a single beat.
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStat('Length', '${gameState.snake.length}', theme),
-              _buildStat('Level', '${gameState.level}', theme),
-              _buildStat('High Score', '$displayHighScore', theme),
+              _buildAnimatedStat(
+                'Length',
+                gameState.snake.length,
+                theme,
+                delayMs: 150,
+              ),
+              _buildAnimatedStat(
+                'Level',
+                gameState.level,
+                theme,
+                delayMs: 300,
+              ),
+              _buildAnimatedStat(
+                'High Score',
+                displayHighScore,
+                theme,
+                delayMs: 450,
+              ),
             ],
           ),
         ],
@@ -540,25 +557,42 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     ).gameEntrance(delay: 400.ms);
   }
 
-  Widget _buildStat(String label, String value, theme) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: theme.accentColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
-        ),
-      ],
+  Widget _buildAnimatedStat(
+    String label,
+    int value,
+    theme, {
+    int delayMs = 0,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 600 + delayMs),
+      curve: Interval(
+        delayMs / (600 + delayMs),
+        1.0,
+        curve: Curves.easeOutCubic,
+      ),
+      builder: (context, t, child) {
+        final shown = (value * t).round();
+        return Column(
+          children: [
+            Text(
+              '$shown',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.6),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

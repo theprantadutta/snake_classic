@@ -873,6 +873,7 @@ class _GameScreenState extends State<GameScreen>
                                       },
                                       onHome: () =>
                                           _showExitConfirmation(context),
+                                      onShowTutorial: _startTutorial,
                                     ),
 
                                    // Score Popups Layer - isolated StatefulWidget

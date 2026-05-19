@@ -13,6 +13,9 @@ class PauseOverlay extends StatelessWidget {
   final VoidCallback onResume;
   final VoidCallback onRestart;
   final VoidCallback onHome;
+  /// Called from the new "How to Play" button — re-launches the gameplay
+  /// tutorial route. Optional so callers that don't wire it up still build.
+  final VoidCallback? onShowTutorial;
 
   const PauseOverlay({
     super.key,
@@ -20,6 +23,7 @@ class PauseOverlay extends StatelessWidget {
     required this.onResume,
     required this.onRestart,
     required this.onHome,
+    this.onShowTutorial,
   });
 
   @override
@@ -139,6 +143,21 @@ class PauseOverlay extends StatelessWidget {
                     width: 200,
                     outlined: true,
                   ).gameZoomIn(delay: 300.ms),
+
+                  if (onShowTutorial != null) ...[
+                    const SizedBox(height: 16),
+                    GradientButton(
+                      onPressed: onShowTutorial!,
+                      text: 'HOW TO PLAY',
+                      primaryColor:
+                          theme.accentColor.withValues(alpha: 0.7),
+                      secondaryColor:
+                          theme.accentColor.withValues(alpha: 0.4),
+                      icon: Icons.help_outline,
+                      width: 200,
+                      outlined: true,
+                    ).gameZoomIn(delay: 350.ms),
+                  ],
                 ],
               ),
             ],

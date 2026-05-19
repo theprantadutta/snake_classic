@@ -239,6 +239,14 @@ class GameCubit extends Cubit<GameCubitState> {
       '🎮 [GameCubit] State emitted. Current state.status=${state.status}',
     );
 
+    // Brief "Ready" beat before the first tick fires so the player gets a
+    // moment to focus on the snake's starting position. Reuses the
+    // level-up slowdown plumbing — set the deadline 500ms out and
+    // _scheduleNextGameTick will stretch the very first tick by 1.5x.
+    // Auto-clears once the window passes.
+    _levelUpSlowdownUntil =
+        DateTime.now().add(const Duration(milliseconds: 500));
+
     _startGameLoop();
     _startSmoothAnimation();
     _startPowerUpTimer();
