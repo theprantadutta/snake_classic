@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -22,8 +24,13 @@ class PauseOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.8),
+    // Blur the board behind the overlay so the pause visibly disengages the
+    // world. Drop the opaque tint to 0.55 — at 0.8 the board was fully hidden
+    // and the blur had nothing to do.
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+      child: Container(
+      color: Colors.black.withValues(alpha: 0.55),
       child: Center(
         child: Container(
           margin: const EdgeInsets.all(32),
@@ -137,6 +144,7 @@ class PauseOverlay extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
