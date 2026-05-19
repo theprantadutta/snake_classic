@@ -32,6 +32,19 @@ class Achievement {
   final int xpReward;
   /// Backend-side coin reward credited to User.Coins by the claim endpoint.
   final int coinReward;
+  /// Per-game mode filter. When set, the local Score/Time/Survival check
+  /// only unlocks this achievement if the finished game was in this mode.
+  /// Mirrors AchievementAutoEvaluator's `a.game_mode_filter` guard so
+  /// offline reveals match server evaluation exactly (no phantom unlocks
+  /// for mode-gated rows like classic_1000 firing on a Zen run).
+  /// Stored as the lowercase Dart enum name (`classic`, `zen`, `survival`,
+  /// `speedChallenge`, `multiFood`, `timeAttack`, `powerUpMadness`,
+  /// `perfectGame`) so case-insensitive comparison to GameState.gameMode
+  /// works out of the box.
+  final String? gameModeFilter;
+  /// Per-game difficulty filter — analogous to [gameModeFilter] but for
+  /// the Difficulty enum (`easy`, `normal`, `hard`).
+  final String? difficultyFilter;
 
   const Achievement({
     required this.id,
@@ -48,6 +61,8 @@ class Achievement {
     this.rewardClaimed = false,
     this.xpReward = 0,
     this.coinReward = 0,
+    this.gameModeFilter,
+    this.difficultyFilter,
   });
 
   Achievement copyWith({
@@ -65,6 +80,8 @@ class Achievement {
     bool? rewardClaimed,
     int? xpReward,
     int? coinReward,
+    String? gameModeFilter,
+    String? difficultyFilter,
   }) {
     return Achievement(
       id: id ?? this.id,
@@ -81,6 +98,8 @@ class Achievement {
       rewardClaimed: rewardClaimed ?? this.rewardClaimed,
       xpReward: xpReward ?? this.xpReward,
       coinReward: coinReward ?? this.coinReward,
+      gameModeFilter: gameModeFilter ?? this.gameModeFilter,
+      difficultyFilter: difficultyFilter ?? this.difficultyFilter,
     );
   }
 
@@ -456,55 +475,55 @@ class Achievement {
       // ============================================================
       // I. Game Mode — CLASSIC (4 NEW)
       // ============================================================
-      const Achievement(id: 'classic_initiate', title: 'Classic Initiate', description: 'Finish 10 Classic-mode games', icon: Icons.videogame_asset, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12),
-      const Achievement(id: 'classic_veteran', title: 'Classic Veteran', description: 'Finish 100 Classic-mode games', icon: Icons.sports_esports, type: AchievementType.games, rarity: AchievementRarity.epic, targetValue: 100, points: 125, xpReward: 125, coinReward: 60),
-      const Achievement(id: 'classic_1000', title: 'Classic Connoisseur', description: 'Score 1,000 in Classic mode', icon: Icons.emoji_events, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 1000, points: 60, xpReward: 60, coinReward: 30),
-      const Achievement(id: 'classic_5000', title: 'Classic Maestro', description: 'Score 5,000 in Classic mode', icon: Icons.military_tech, type: AchievementType.score, rarity: AchievementRarity.legendary, targetValue: 5000, points: 200, xpReward: 200, coinReward: 100),
+      const Achievement(id: 'classic_initiate', title: 'Classic Initiate', description: 'Finish 10 Classic-mode games', icon: Icons.videogame_asset, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12, gameModeFilter: 'classic'),
+      const Achievement(id: 'classic_veteran', title: 'Classic Veteran', description: 'Finish 100 Classic-mode games', icon: Icons.sports_esports, type: AchievementType.games, rarity: AchievementRarity.epic, targetValue: 100, points: 125, xpReward: 125, coinReward: 60, gameModeFilter: 'classic'),
+      const Achievement(id: 'classic_1000', title: 'Classic Connoisseur', description: 'Score 1,000 in Classic mode', icon: Icons.emoji_events, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 1000, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'classic'),
+      const Achievement(id: 'classic_5000', title: 'Classic Maestro', description: 'Score 5,000 in Classic mode', icon: Icons.military_tech, type: AchievementType.score, rarity: AchievementRarity.legendary, targetValue: 5000, points: 200, xpReward: 200, coinReward: 100, gameModeFilter: 'classic'),
 
       // ============================================================
       // J. Game Mode — ZEN (3 NEW)
       // ============================================================
-      const Achievement(id: 'zen_initiate', title: 'Zen Initiate', description: 'Finish 10 Zen games', icon: Icons.spa, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12),
-      const Achievement(id: 'zen_garden', title: 'Zen Garden', description: 'Score 500 in Zen mode', icon: Icons.local_florist, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 500, points: 50, xpReward: 50, coinReward: 25),
-      const Achievement(id: 'zen_master', title: 'Zen Master', description: 'Score 5,000 in Zen mode', icon: Icons.self_improvement, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 5000, points: 150, xpReward: 150, coinReward: 75),
+      const Achievement(id: 'zen_initiate', title: 'Zen Initiate', description: 'Finish 10 Zen games', icon: Icons.spa, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12, gameModeFilter: 'zen'),
+      const Achievement(id: 'zen_garden', title: 'Zen Garden', description: 'Score 500 in Zen mode', icon: Icons.local_florist, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 500, points: 50, xpReward: 50, coinReward: 25, gameModeFilter: 'zen'),
+      const Achievement(id: 'zen_master', title: 'Zen Master', description: 'Score 5,000 in Zen mode', icon: Icons.self_improvement, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 5000, points: 150, xpReward: 150, coinReward: 75, gameModeFilter: 'zen'),
 
       // ============================================================
       // K. Game Mode — SPEED CHALLENGE (3 NEW)
       // ============================================================
-      const Achievement(id: 'speed_initiate', title: 'Need For Speed', description: 'Finish 10 Speed Challenge games', icon: Icons.speed, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12),
-      const Achievement(id: 'speedrunner', title: 'Speedrunner', description: 'Score 500 in Speed Challenge', icon: Icons.directions_run, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 500, points: 60, xpReward: 60, coinReward: 30),
-      const Achievement(id: 'lightning', title: 'Lightning', description: 'Score 2,000 in Speed Challenge', icon: Icons.bolt, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 2000, points: 150, xpReward: 150, coinReward: 75),
+      const Achievement(id: 'speed_initiate', title: 'Need For Speed', description: 'Finish 10 Speed Challenge games', icon: Icons.speed, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12, gameModeFilter: 'speedChallenge'),
+      const Achievement(id: 'speedrunner', title: 'Speedrunner', description: 'Score 500 in Speed Challenge', icon: Icons.directions_run, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 500, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'speedChallenge'),
+      const Achievement(id: 'lightning', title: 'Lightning', description: 'Score 2,000 in Speed Challenge', icon: Icons.bolt, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 2000, points: 150, xpReward: 150, coinReward: 75, gameModeFilter: 'speedChallenge'),
 
       // ============================================================
       // L. Game Mode — MULTI-FOOD (3 NEW)
       // ============================================================
-      const Achievement(id: 'multifood_initiate', title: 'Foodscape', description: 'Finish 10 MultiFood games', icon: Icons.rice_bowl, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12),
-      const Achievement(id: 'buffet', title: 'Buffet', description: 'Score 1,000 in MultiFood', icon: Icons.kitchen, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 1000, points: 60, xpReward: 60, coinReward: 30),
-      const Achievement(id: 'smorgasbord', title: 'Smorgasbord', description: 'Score 5,000 in MultiFood', icon: Icons.tapas, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 5000, points: 150, xpReward: 150, coinReward: 75),
+      const Achievement(id: 'multifood_initiate', title: 'Foodscape', description: 'Finish 10 MultiFood games', icon: Icons.rice_bowl, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12, gameModeFilter: 'multiFood'),
+      const Achievement(id: 'buffet', title: 'Buffet', description: 'Score 1,000 in MultiFood', icon: Icons.kitchen, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 1000, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'multiFood'),
+      const Achievement(id: 'smorgasbord', title: 'Smorgasbord', description: 'Score 5,000 in MultiFood', icon: Icons.tapas, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 5000, points: 150, xpReward: 150, coinReward: 75, gameModeFilter: 'multiFood'),
 
       // ============================================================
       // M. Game Mode — SURVIVAL (3 NEW)
       // ============================================================
-      const Achievement(id: 'survival_initiate', title: 'Survival Initiate', description: 'Finish 10 Survival games', icon: Icons.favorite, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12),
-      const Achievement(id: 'survival_pro', title: 'Survival Pro', description: 'Survive 5 minutes in Survival mode', icon: Icons.health_and_safety, type: AchievementType.survival, rarity: AchievementRarity.epic, targetValue: 300, points: 100, xpReward: 100, coinReward: 50),
-      const Achievement(id: 'last_snake_standing', title: 'Last Snake Standing', description: 'Score 2,500 in Survival', icon: Icons.shield_moon, type: AchievementType.score, rarity: AchievementRarity.legendary, targetValue: 2500, points: 200, xpReward: 200, coinReward: 100),
+      const Achievement(id: 'survival_initiate', title: 'Survival Initiate', description: 'Finish 10 Survival games', icon: Icons.favorite, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12, gameModeFilter: 'survival'),
+      const Achievement(id: 'survival_pro', title: 'Survival Pro', description: 'Survive 5 minutes in Survival mode', icon: Icons.health_and_safety, type: AchievementType.survival, rarity: AchievementRarity.epic, targetValue: 300, points: 100, xpReward: 100, coinReward: 50, gameModeFilter: 'survival'),
+      const Achievement(id: 'last_snake_standing', title: 'Last Snake Standing', description: 'Score 2,500 in Survival', icon: Icons.shield_moon, type: AchievementType.score, rarity: AchievementRarity.legendary, targetValue: 2500, points: 200, xpReward: 200, coinReward: 100, gameModeFilter: 'survival'),
 
       // ============================================================
       // N. Game Mode — TIME ATTACK (3 NEW)
       // ============================================================
-      const Achievement(id: 'timeattack_initiate', title: 'Time Attacker', description: 'Finish 10 TimeAttack games', icon: Icons.timer, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12),
-      const Achievement(id: 'beat_the_clock', title: 'Beat the Clock', description: 'Survive the full 3-minute TimeAttack', icon: Icons.alarm_on, type: AchievementType.survival, rarity: AchievementRarity.rare, targetValue: 180, points: 75, xpReward: 75, coinReward: 35),
-      const Achievement(id: 'timeattack_master', title: 'TimeAttack Master', description: 'Score 3,000 in TimeAttack', icon: Icons.av_timer, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 3000, points: 150, xpReward: 150, coinReward: 75),
+      const Achievement(id: 'timeattack_initiate', title: 'Time Attacker', description: 'Finish 10 TimeAttack games', icon: Icons.timer, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12, gameModeFilter: 'timeAttack'),
+      const Achievement(id: 'beat_the_clock', title: 'Beat the Clock', description: 'Survive the full 3-minute TimeAttack', icon: Icons.alarm_on, type: AchievementType.survival, rarity: AchievementRarity.rare, targetValue: 180, points: 75, xpReward: 75, coinReward: 35, gameModeFilter: 'timeAttack'),
+      const Achievement(id: 'timeattack_master', title: 'TimeAttack Master', description: 'Score 3,000 in TimeAttack', icon: Icons.av_timer, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 3000, points: 150, xpReward: 150, coinReward: 75, gameModeFilter: 'timeAttack'),
 
       // ============================================================
       // O. Difficulty-Gated (6 NEW)
       // ============================================================
-      const Achievement(id: 'hard_mode_hero', title: 'Hard Mode Hero', description: 'Score 500 on Hard difficulty', icon: Icons.fitness_center, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 500, points: 75, xpReward: 75, coinReward: 35),
-      const Achievement(id: 'hard_mode_master', title: 'Hard Mode Master', description: 'Score 2,000 on Hard difficulty', icon: Icons.military_tech, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 2000, points: 150, xpReward: 150, coinReward: 75),
-      const Achievement(id: 'hard_mode_god', title: 'Hard Mode God', description: 'Score 5,000 on Hard difficulty', icon: Icons.whatshot, type: AchievementType.score, rarity: AchievementRarity.diamond, targetValue: 5000, points: 300, xpReward: 300, coinReward: 150),
-      const Achievement(id: 'hard_veteran', title: 'Hard Veteran', description: 'Finish 50 games on Hard difficulty', icon: Icons.shield, type: AchievementType.games, rarity: AchievementRarity.epic, targetValue: 50, points: 125, xpReward: 125, coinReward: 60),
-      const Achievement(id: 'no_easy_way', title: 'No Easy Way', description: 'Finish 100 games on Hard difficulty', icon: Icons.gpp_good, type: AchievementType.games, rarity: AchievementRarity.legendary, targetValue: 100, points: 200, xpReward: 200, coinReward: 100),
-      const Achievement(id: 'hardcore_for_life', title: 'Hardcore for Life', description: 'Finish 500 games on Hard difficulty', icon: Icons.local_fire_department, type: AchievementType.games, rarity: AchievementRarity.diamond, targetValue: 500, points: 400, xpReward: 400, coinReward: 200),
+      const Achievement(id: 'hard_mode_hero', title: 'Hard Mode Hero', description: 'Score 500 on Hard difficulty', icon: Icons.fitness_center, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 500, points: 75, xpReward: 75, coinReward: 35, difficultyFilter: 'hard'),
+      const Achievement(id: 'hard_mode_master', title: 'Hard Mode Master', description: 'Score 2,000 on Hard difficulty', icon: Icons.military_tech, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 2000, points: 150, xpReward: 150, coinReward: 75, difficultyFilter: 'hard'),
+      const Achievement(id: 'hard_mode_god', title: 'Hard Mode God', description: 'Score 5,000 on Hard difficulty', icon: Icons.whatshot, type: AchievementType.score, rarity: AchievementRarity.diamond, targetValue: 5000, points: 300, xpReward: 300, coinReward: 150, difficultyFilter: 'hard'),
+      const Achievement(id: 'hard_veteran', title: 'Hard Veteran', description: 'Finish 50 games on Hard difficulty', icon: Icons.shield, type: AchievementType.games, rarity: AchievementRarity.epic, targetValue: 50, points: 125, xpReward: 125, coinReward: 60, difficultyFilter: 'hard'),
+      const Achievement(id: 'no_easy_way', title: 'No Easy Way', description: 'Finish 100 games on Hard difficulty', icon: Icons.gpp_good, type: AchievementType.games, rarity: AchievementRarity.legendary, targetValue: 100, points: 200, xpReward: 200, coinReward: 100, difficultyFilter: 'hard'),
+      const Achievement(id: 'hardcore_for_life', title: 'Hardcore for Life', description: 'Finish 500 games on Hard difficulty', icon: Icons.local_fire_department, type: AchievementType.games, rarity: AchievementRarity.diamond, targetValue: 500, points: 400, xpReward: 400, coinReward: 200, difficultyFilter: 'hard'),
 
       // ============================================================
       // P. Combo (5 NEW)

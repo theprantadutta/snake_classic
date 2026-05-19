@@ -1291,14 +1291,34 @@ class GameCubit extends Cubit<GameCubitState> {
     final gameState = state.gameState;
     if (gameState == null) return;
 
-    // Local evaluation only for SPECIAL achievements (combo / snake length /
-    // no-wall streaks / level + game-end conditions). Score, games, and
-    // survival achievements are now server-authoritative — the backend's
-    // AchievementAutoEvaluator runs them atomically with score submission
-    // and honors the mode/difficulty filters that the client doesn't carry.
-    // Anything unlocked by the server gets pulled in via the post-sync diff
-    // in AchievementService._updateAchievementsFromBackend and lands on the
-    // game-over reveal from there.
+    // Filter-aware local evaluation so offline play still reveals
+    // achievements at game-end. Mirrors AchievementAutoEvaluator's
+    // SQL guards exactly: per-game Score / Survival rows only fire when
+    // gameModeFilter and difficultyFilter (if set) match the finished
+    // game. GamesInMode / GamesInDifficulty rows stay server-only because
+    // the client doesn't track per-mode game counts. Special achievements
+    // (combo / snake length / no-wall etc.) are always client-only.
+    //
+    // The post-sync diff in _updateAchievementsFromBackend still catches
+    // any server-only unlocks (cumulative tallies, GamesInMode totals)
+    // so the reveal sequence stays complete online.
+    final modeName = gameState.gameMode.name;
+    const difficultyName = 'normal'; // mirrors the value sent in queueSync
+    final projectedTotalGames =
+        _statisticsService.statistics.totalGamesPlayed + 1;
+
+    final scoreUnlocks = _achievementService.checkScoreAchievements(
+      gameState.score,
+      gameMode: modeName,
+      difficulty: difficultyName,
+    );
+    final survivalUnlocks = _achievementService.checkSurvivalAchievements(
+      gameDurationSeconds,
+      gameMode: modeName,
+      difficulty: difficultyName,
+    );
+    final gamesUnlocks =
+        _achievementService.checkGamePlayedAchievements(projectedTotalGames);
     final specialUnlocks = _achievementService.checkSpecialAchievements(
       level: gameState.level,
       hitWall: _hitWallThisGame,
@@ -1310,10 +1330,17 @@ class GameCubit extends Cubit<GameCubitState> {
       gameEndTime: DateTime.now(),
     );
 
-    // Buffer battle pass XP for client-evaluated unlocks now. Server-evaluated
-    // unlocks earn their BP XP after the post-game sync completes — see the
-    // diff handler below the fire-and-forget syncWithBackend call.
-    for (final achievement in specialUnlocks) {
+    // Buffer battle pass XP for client-evaluated unlocks now. Server-only
+    // unlocks (filter-gated games counts, cumulative tallies) earn their
+    // BP XP after the post-game sync completes — see the diff handler
+    // below the fire-and-forget syncWithBackend call.
+    final allLocalUnlocks = [
+      ...scoreUnlocks,
+      ...survivalUnlocks,
+      ...gamesUnlocks,
+      ...specialUnlocks,
+    ];
+    for (final achievement in allLocalUnlocks) {
       final xpKey = 'achievement_unlocked_${achievement.rarity.name}';
       final xp = BattlePassXpSource.getXpForAction(xpKey);
       if (xp > 0) {

@@ -292,6 +292,17 @@ class AchievementService extends ChangeNotifier {
         final catalog = catalogOf(backendData);
         final backendXp = catalog['xp_reward'] ?? catalog['xpReward'];
         final backendCoins = catalog['coin_reward'] ?? catalog['coinReward'];
+        // GameMode and Difficulty enum names come from the server as PascalCase
+        // (Classic, Hard, etc.). The Dart enum names are camelCase. Lowercase
+        // both ends so the filter comparison in the local check is reliable.
+        final backendModeFilter =
+            (catalog['game_mode_filter'] ?? catalog['gameModeFilter'])
+                ?.toString()
+                .toLowerCase();
+        final backendDifficultyFilter =
+            (catalog['difficulty_filter'] ?? catalog['difficultyFilter'])
+                ?.toString()
+                .toLowerCase();
 
         // Server is authoritative for Score / Games / Survival achievements
         // (the local evaluator used to over-unlock these because it didn't
@@ -309,6 +320,10 @@ class AchievementService extends ChangeNotifier {
           // authoritative amounts; fall back to the seeded defaults.
           xpReward: backendXp is int ? backendXp : null,
           coinReward: backendCoins is int ? backendCoins : null,
+          // Overlay filters from the server's catalog so the client's
+          // hardcoded defaults can never drift past a server-side change.
+          gameModeFilter: backendModeFilter,
+          difficultyFilter: backendDifficultyFilter,
         );
 
         // Newly server-confirmed unlock — reveal it on the next game-over
@@ -343,6 +358,8 @@ class AchievementService extends ChangeNotifier {
               ? DateTime.parse(savedData['unlockedAt'])
               : null,
           rewardClaimed: savedData['rewardClaimed'] ?? false,
+          gameModeFilter: savedData['gameModeFilter'] as String?,
+          difficultyFilter: savedData['difficultyFilter'] as String?,
         );
       }
     }
@@ -375,6 +392,12 @@ class AchievementService extends ChangeNotifier {
           'currentProgress': achievement.currentProgress,
           'unlockedAt': achievement.unlockedAt?.toIso8601String(),
           'rewardClaimed': achievement.rewardClaimed,
+          // Persist server-sourced filters so the next launch can run
+          // filter-aware local checks before the first sync lands.
+          if (achievement.gameModeFilter != null)
+            'gameModeFilter': achievement.gameModeFilter,
+          if (achievement.difficultyFilter != null)
+            'difficultyFilter': achievement.difficultyFilter,
         };
       }
 
@@ -504,20 +527,129 @@ class AchievementService extends ChangeNotifier {
     }
   }
 
-  // Removed: checkScoreAchievements / checkGamePlayedAchievements /
-  // checkSurvivalAchievements. These used to evaluate score/games/survival
-  // unlocks locally with a simple `metric >= target` check, but the server
-  // applies mode/difficulty filters (see AchievementAutoEvaluator) that the
-  // client doesn't carry. The result was phantom unlocks (e.g., the
-  // "Reach 1000 in Classic" achievement would fire on a Zen run too) and
-  // a "Achievement not unlocked" 400 spam from the claim path.
-  //
-  // Score/Games/Survival are now server-authoritative. The backend's
-  // AchievementAutoEvaluator runs atomically inside SubmitScoreCommandHandler
-  // and inserts the UserAchievement row when (and only when) the filters
-  // match. _updateAchievementsFromBackend below detects newly-unlocked
-  // entries on the next sync and adds them to _lastGameUnlocks so the
-  // game-over reveal still fires — just from the right source of truth.
+  /// Returns true when the achievement's mode/difficulty filters (if any)
+  /// match the current game's mode + difficulty. Mirrors the SQL guards in
+  /// AchievementAutoEvaluator: `(filter IS NULL OR filter = current)`.
+  bool _filterMatches(Achievement a, String gameMode, String difficulty) {
+    final mode = a.gameModeFilter;
+    if (mode != null && mode.toLowerCase() != gameMode.toLowerCase()) {
+      return false;
+    }
+    final diff = a.difficultyFilter;
+    if (diff != null && diff.toLowerCase() != difficulty.toLowerCase()) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Per-game Score evaluator. Honors the gameMode/difficulty filter so a
+  /// 1000-point Zen run doesn't phantom-unlock `classic_1000`. Server-side
+  /// AchievementAutoEvaluator applies the same gate.
+  List<Achievement> checkScoreAchievements(
+    int score, {
+    required String gameMode,
+    required String difficulty,
+  }) {
+    final newUnlocks = <Achievement>[];
+
+    for (int i = 0; i < _achievements.length; i++) {
+      final achievement = _achievements[i];
+
+      if (achievement.type == AchievementType.score &&
+          !achievement.isUnlocked &&
+          _filterMatches(achievement, gameMode, difficulty)) {
+        if (score >= achievement.targetValue) {
+          _unlockAchievementLocal(i, achievement);
+          newUnlocks.add(_achievements[i]);
+        } else if (score > achievement.currentProgress) {
+          _achievements[i] =
+              achievement.copyWith(currentProgress: score);
+        }
+      }
+    }
+
+    if (newUnlocks.isNotEmpty) {
+      _recentUnlocks.addAll(newUnlocks);
+      _trimRecentUnlocks();
+      _saveProgress();
+      notifyListeners();
+    }
+
+    return newUnlocks;
+  }
+
+  /// Per-run Survival/Time evaluator. Same filter pattern as Score.
+  List<Achievement> checkSurvivalAchievements(
+    int survivalTime, {
+    required String gameMode,
+    required String difficulty,
+  }) {
+    final newUnlocks = <Achievement>[];
+
+    for (int i = 0; i < _achievements.length; i++) {
+      final achievement = _achievements[i];
+
+      if (achievement.type == AchievementType.survival &&
+          !achievement.isUnlocked &&
+          _filterMatches(achievement, gameMode, difficulty)) {
+        if (survivalTime >= achievement.targetValue) {
+          _unlockAchievementLocal(i, achievement);
+          newUnlocks.add(_achievements[i]);
+        } else if (survivalTime > achievement.currentProgress) {
+          _achievements[i] = achievement.copyWith(
+            currentProgress: survivalTime,
+          );
+        }
+      }
+    }
+
+    if (newUnlocks.isNotEmpty) {
+      _recentUnlocks.addAll(newUnlocks);
+      _trimRecentUnlocks();
+      _saveProgress();
+      notifyListeners();
+    }
+
+    return newUnlocks;
+  }
+
+  /// Total-games-played evaluator. Only handles the "Count + Games" rows
+  /// (no mode/difficulty filter). The filter-gated GamesInMode /
+  /// GamesInDifficulty rows (classic_initiate, hard_veteran, etc.) need
+  /// per-mode/per-difficulty game counts that the client doesn't track —
+  /// those stay server-authoritative and land via the post-sync diff in
+  /// _updateAchievementsFromBackend. Skipping them here avoids the
+  /// pre-Option-C bug where a Zen player would unlock classic_initiate
+  /// because total-games-played hit 10.
+  List<Achievement> checkGamePlayedAchievements(int totalGames) {
+    final newUnlocks = <Achievement>[];
+
+    for (int i = 0; i < _achievements.length; i++) {
+      final achievement = _achievements[i];
+
+      if (achievement.type == AchievementType.games &&
+          !achievement.isUnlocked &&
+          achievement.gameModeFilter == null &&
+          achievement.difficultyFilter == null) {
+        if (totalGames >= achievement.targetValue) {
+          _unlockAchievementLocal(i, achievement);
+          newUnlocks.add(_achievements[i]);
+        } else if (totalGames > achievement.currentProgress) {
+          _achievements[i] =
+              achievement.copyWith(currentProgress: totalGames);
+        }
+      }
+    }
+
+    if (newUnlocks.isNotEmpty) {
+      _recentUnlocks.addAll(newUnlocks);
+      _trimRecentUnlocks();
+      _saveProgress();
+      notifyListeners();
+    }
+
+    return newUnlocks;
+  }
 
   /// Per-game achievement checks — peak metrics observable at game-end
   /// but not derivable from the score submission alone. Called from
