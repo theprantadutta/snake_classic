@@ -162,34 +162,60 @@ class AchievementService extends ChangeNotifier {
   }
 
   /// POST /achievements/claim for every achievement that is server-unlocked
-  /// but not yet reward-claimed. Idempotent — the server rejects repeat
-  /// claims, and our local `rewardClaimed` flag is updated only on success
-  /// so a failed claim retries on the next sync.
+  /// but not yet reward-claimed. Reconciles divergent local state instead
+  /// of looping forever: if the server says an achievement isn't actually
+  /// unlocked (or doesn't exist), we clear our local isUnlocked flag so
+  /// the next sync doesn't keep hammering 400s.
   Future<void> _claimUnclaimedRewards() async {
     if (!_connectivityService.isOnline || !_apiService.isAuthenticated) {
       return;
     }
 
-    bool anyClaimed = false;
+    bool anyChanged = false;
     for (int i = 0; i < _achievements.length; i++) {
       final a = _achievements[i];
       if (!a.isUnlocked || a.rewardClaimed) continue;
 
-      try {
-        final result = await _apiService.claimAchievementReward(a.id);
-        if (result != null) {
+      final result = await _apiService.claimAchievementReward(a.id);
+      switch (result.outcome) {
+        case AchievementClaimOutcome.success:
+        case AchievementClaimOutcome.alreadyClaimed:
+          // Server granted the reward (or had already granted it earlier).
+          // Mark locally so we stop attempting on the next sync.
           _achievements[i] = a.copyWith(rewardClaimed: true);
-          anyClaimed = true;
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error claiming achievement ${a.id}: $e');
-        }
-        // Don't break — try the next one. Failed claims retry next sync.
+          anyChanged = true;
+          break;
+        case AchievementClaimOutcome.notUnlocked:
+        case AchievementClaimOutcome.notFound:
+          // Server is authoritative — our local isUnlocked is a phantom.
+          // Reset isUnlocked + clear unlockedAt so this row stops being
+          // picked up by the claim loop. If the achievement is genuinely
+          // earnable, gameplay will trigger a fresh unlock through the
+          // normal path next time the criteria are met.
+          if (kDebugMode) {
+            print(
+              'Achievement ${a.id}: server reports ${result.outcome.name}; '
+              'clearing local unlock to stop retry loop',
+            );
+          }
+          // copyWith uses ?? so it can't clear unlockedAt back to null —
+          // not a problem because every downstream gate checks isUnlocked
+          // first. Stale unlockedAt is harmless when isUnlocked is false.
+          _achievements[i] = a.copyWith(
+            isUnlocked: false,
+            currentProgress: 0,
+            rewardClaimed: false,
+          );
+          _pendingUnlocks.remove(a.id);
+          anyChanged = true;
+          break;
+        case AchievementClaimOutcome.networkError:
+          // Transient — leave state untouched, will retry on the next sync.
+          break;
       }
     }
 
-    if (anyClaimed) {
+    if (anyChanged) {
       await _saveProgress();
       notifyListeners();
     }

@@ -607,11 +607,12 @@ class ApiService {
     }
   }
 
-  /// Claim the XP + coin reward for an unlocked achievement. Returns the
-  /// server-confirmed reward payload (xp, coins) or `null` on failure /
-  /// already-claimed. Idempotent at the handler level — repeat calls after
-  /// success return a server-side "Reward already claimed" failure.
-  Future<Map<String, dynamic>?> claimAchievementReward(String achievementId) async {
+  /// Claim the XP + coin reward for an unlocked achievement. Returns a
+  /// tagged result so the caller can react properly to each failure mode:
+  /// success → mark locally claimed; alreadyClaimed → same; notUnlocked or
+  /// notFound → reconcile local state (server is authoritative, stop
+  /// retrying); networkError → leave alone, next sync retries.
+  Future<AchievementClaimResult> claimAchievementReward(String achievementId) async {
     try {
       final response = await http
           .post(
@@ -621,10 +622,64 @@ class ApiService {
           )
           .timeout(_timeout);
 
-      return _handleResponse(response);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        Map<String, dynamic> body = const {};
+        if (response.body.isNotEmpty) {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map) body = Map<String, dynamic>.from(decoded);
+        }
+        return AchievementClaimResult(
+          outcome: AchievementClaimOutcome.success,
+          xpAwarded: (body['xp_awarded'] ?? body['xpAwarded'] ?? 0) as int,
+          coinsAwarded: (body['coins_awarded'] ?? body['coinsAwarded'] ?? 0) as int,
+        );
+      }
+
+      if (response.statusCode == 401) {
+        clearToken();
+        onUnauthorized?.call();
+        return const AchievementClaimResult(
+          outcome: AchievementClaimOutcome.networkError,
+        );
+      }
+
+      // 400 / 404: parse server error message so we can dispatch correctly.
+      // Server returns {"error": "Achievement not unlocked"} etc.
+      String? serverError;
+      if (response.body.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map) {
+            serverError = decoded['error']?.toString();
+          }
+        } catch (_) {/* non-JSON body */}
+      }
+      if (serverError != null) {
+        final lower = serverError.toLowerCase();
+        if (lower.contains('already claimed')) {
+          return const AchievementClaimResult(
+            outcome: AchievementClaimOutcome.alreadyClaimed,
+          );
+        }
+        if (lower.contains('not unlocked')) {
+          return const AchievementClaimResult(
+            outcome: AchievementClaimOutcome.notUnlocked,
+          );
+        }
+        if (lower.contains('not found')) {
+          return const AchievementClaimResult(
+            outcome: AchievementClaimOutcome.notFound,
+          );
+        }
+      }
+      return const AchievementClaimResult(
+        outcome: AchievementClaimOutcome.networkError,
+      );
     } catch (e) {
       AppLogger.error('Error claiming achievement reward', e);
-      return null;
+      return const AchievementClaimResult(
+        outcome: AchievementClaimOutcome.networkError,
+      );
     }
   }
 
@@ -1510,4 +1565,26 @@ class ApiService {
       return false;
     }
   }
+}
+
+/// Outcome of POST /achievements/claim. Tagged so callers can reconcile
+/// local state on `notUnlocked` / `notFound` instead of looping forever.
+enum AchievementClaimOutcome {
+  success,
+  alreadyClaimed,
+  notUnlocked,
+  notFound,
+  networkError,
+}
+
+class AchievementClaimResult {
+  final AchievementClaimOutcome outcome;
+  final int xpAwarded;
+  final int coinsAwarded;
+
+  const AchievementClaimResult({
+    required this.outcome,
+    this.xpAwarded = 0,
+    this.coinsAwarded = 0,
+  });
 }
