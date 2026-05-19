@@ -21,24 +21,37 @@ class DPadControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final buttonSize = size * 0.35;
-    final spacing = size * 0.02;
+    // Smaller buttons + more edge-padding so the four circles have clear
+    // breathing room from each other (no more overlapping affordance
+    // rings at the diagonals).
+    final buttonSize = size * 0.30;
+    final spacing = size * 0.04;
+    final hubSize = size * 0.10;
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: opacity * 0.3),
-        borderRadius: BorderRadius.circular(size * 0.15),
+        color: theme.backgroundColor.withValues(alpha: opacity * 0.25),
+        borderRadius: BorderRadius.circular(size * 0.18),
         border: Border.all(
-          color: theme.accentColor.withValues(alpha: opacity * 0.2),
+          color: theme.accentColor.withValues(alpha: opacity * 0.18),
           width: 1,
         ),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Up button
+          // Decorative center hub — small dot so the cross of buttons
+          // reads as one coherent control instead of four loose circles.
+          Container(
+            width: hubSize,
+            height: hubSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: theme.accentColor.withValues(alpha: opacity * 0.25),
+            ),
+          ),
           Positioned(
             top: spacing,
             child: _buildDirectionButton(
@@ -47,7 +60,6 @@ class DPadControls extends StatelessWidget {
               buttonSize: buttonSize,
             ),
           ),
-          // Down button
           Positioned(
             bottom: spacing,
             child: _buildDirectionButton(
@@ -56,7 +68,6 @@ class DPadControls extends StatelessWidget {
               buttonSize: buttonSize,
             ),
           ),
-          // Left button
           Positioned(
             left: spacing,
             child: _buildDirectionButton(
@@ -65,7 +76,6 @@ class DPadControls extends StatelessWidget {
               buttonSize: buttonSize,
             ),
           ),
-          // Right button
           Positioned(
             right: spacing,
             child: _buildDirectionButton(
@@ -124,7 +134,6 @@ class _DPadButtonState extends State<_DPadButton> {
 
   @override
   Widget build(BuildContext context) {
-    final ringSize = widget.size * 1.15;
     return GestureDetector(
       onTapDown: (_) {
         setState(() => _isPressed = true);
@@ -132,62 +141,46 @@ class _DPadButtonState extends State<_DPadButton> {
       },
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          // Always-visible affordance ring at 115% — communicates the touch
-          // region before the player has pressed. Subtle (~8% alpha) so it
-          // doesn't compete with the active button fill.
-          Container(
-            width: ringSize,
-            height: ringSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: widget.theme.accentColor.withValues(
-                  alpha: widget.opacity * 0.18,
-                ),
-                width: 1,
-              ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        width: widget.size,
+        height: widget.size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: _isPressed
+              ? widget.theme.accentColor.withValues(alpha: widget.opacity * 0.55)
+              : widget.theme.accentColor.withValues(alpha: widget.opacity * 0.22),
+          border: Border.all(
+            color: widget.theme.accentColor.withValues(
+              alpha: widget.opacity * 0.5,
+            ),
+            width: _isPressed ? 2 : 1.2,
+          ),
+          boxShadow: _isPressed
+              ? [
+                  BoxShadow(
+                    color: widget.theme.accentColor.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    spreadRadius: 1.5,
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Center(
+          child: Icon(
+            widget.icon,
+            size: widget.size * 0.62,
+            color: widget.theme.accentColor.withValues(
+              alpha: _isPressed ? widget.opacity : widget.opacity * 0.85,
             ),
           ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 100),
-            width: widget.size,
-            height: widget.size,
-            decoration: BoxDecoration(
-              color: _isPressed
-                  ? widget.theme.accentColor.withValues(alpha: widget.opacity * 0.5)
-                  : widget.theme.accentColor.withValues(
-                      alpha: widget.opacity * 0.2,
-                    ),
-              borderRadius: BorderRadius.circular(widget.size * 0.25),
-              border: Border.all(
-                color: widget.theme.accentColor.withValues(
-                  alpha: widget.opacity * 0.4,
-                ),
-                width: _isPressed ? 2 : 1,
-              ),
-              boxShadow: _isPressed
-                  ? [
-                      BoxShadow(
-                        color: widget.theme.accentColor.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Icon(
-              widget.icon,
-              size: widget.size * 0.6,
-              color: widget.theme.accentColor.withValues(
-                alpha: _isPressed ? widget.opacity : widget.opacity * 0.8,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
