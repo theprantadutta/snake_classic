@@ -2,7 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
@@ -147,6 +149,37 @@ class PauseOverlay extends StatelessWidget {
                     width: 200,
                     outlined: true,
                   ).gameZoomIn(delay: 300.ms),
+
+                  const SizedBox(height: 16),
+
+                  // D-Pad toggle. Wrapped in BlocBuilder so the label /
+                  // icon flip live when the user taps it without closing
+                  // the overlay. Same Cubit method the Settings screen
+                  // uses, so the choice is durable across runs.
+                  BlocBuilder<GameSettingsCubit, GameSettingsState>(
+                    buildWhen: (prev, curr) =>
+                        prev.dPadEnabled != curr.dPadEnabled,
+                    builder: (context, settings) {
+                      final on = settings.dPadEnabled;
+                      return GradientButton(
+                        onPressed: () => context
+                            .read<GameSettingsCubit>()
+                            .updateDPadEnabled(!on),
+                        text: on ? 'D-PAD: ON' : 'D-PAD: OFF',
+                        primaryColor: on
+                            ? theme.accentColor.withValues(alpha: 0.8)
+                            : theme.accentColor.withValues(alpha: 0.5),
+                        secondaryColor: on
+                            ? theme.accentColor.withValues(alpha: 0.6)
+                            : theme.accentColor.withValues(alpha: 0.3),
+                        icon: on
+                            ? Icons.gamepad
+                            : Icons.gamepad_outlined,
+                        width: 200,
+                        outlined: !on,
+                      ).gameZoomIn(delay: 320.ms);
+                    },
+                  ),
 
                   if (onShowTutorial != null) ...[
                     const SizedBox(height: 16),
