@@ -747,27 +747,30 @@ class _GameScreenState extends State<GameScreen>
           horizontal: 12,
           vertical: verticalPadding,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: _buildControlBarStat(
-                'Length',
-                '${gameState.snake.length}',
-                Icons.straighten,
-                theme,
-                isSmallScreen,
-                alignment: Alignment.centerLeft,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: SizedBox(
-                width: dpadSize,
-                height: dpadSize,
-                child: dPadEnabled
-                    ? Opacity(
+        child: dPadEnabled
+            // D-Pad on: center reserves the dpadSize square, side stats
+            // shrink to fit the remaining columns. Compact cards aligned
+            // to the outer edges so the d-pad has breathing room.
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: _buildControlBarStat(
+                      'Length',
+                      '${gameState.snake.length}',
+                      Icons.straighten,
+                      theme,
+                      isSmallScreen,
+                      alignment: Alignment.centerLeft,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: SizedBox(
+                      width: dpadSize,
+                      height: dpadSize,
+                      child: Opacity(
                         opacity: isInteractive ? 1.0 : 0.45,
                         child: IgnorePointer(
                           ignoring: !isInteractive,
@@ -778,31 +781,121 @@ class _GameScreenState extends State<GameScreen>
                             size: dpadSize,
                           ),
                         ),
-                      )
-                    : Center(
-                        child: _buildControlBarStat(
-                          'Level',
-                          '${gameState.level}',
-                          Icons.trending_up,
-                          theme,
-                          isSmallScreen,
-                          alignment: Alignment.center,
-                        ),
                       ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildControlBarStat(
+                      'Speed',
+                      _getSpeedLabel(gameState.gameSpeed),
+                      _getSpeedIcon(gameState.gameSpeed),
+                      theme,
+                      isSmallScreen,
+                      alignment: Alignment.centerRight,
+                    ),
+                  ),
+                ],
+              )
+            // D-Pad off: no center widget eats the middle, so the three
+            // stats stretch across the full row in even thirds with
+            // expressive sizing (no whitespace gaps).
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _buildExpressiveStat(
+                      'Length',
+                      '${gameState.snake.length}',
+                      Icons.straighten,
+                      theme,
+                      isSmallScreen,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildExpressiveStat(
+                      'Level',
+                      '${gameState.level}',
+                      Icons.trending_up,
+                      theme,
+                      isSmallScreen,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildExpressiveStat(
+                      'Speed',
+                      _getSpeedLabel(gameState.gameSpeed),
+                      _getSpeedIcon(gameState.gameSpeed),
+                      theme,
+                      isSmallScreen,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            Expanded(
-              child: _buildControlBarStat(
-                'Speed',
-                _getSpeedLabel(gameState.gameSpeed),
-                _getSpeedIcon(gameState.gameSpeed),
-                theme,
-                isSmallScreen,
-                alignment: Alignment.centerRight,
-              ),
-            ),
-          ],
+      ),
+    );
+  }
+
+  /// Larger stat card used when the D-Pad is disabled — fills its 1/3 of
+  /// the bottom bar instead of shrinkwrapping to an icon + two tiny text
+  /// labels. Icon big, value big, label small — same vertical structure
+  /// as the compact variant but stretched to the available width.
+  Widget _buildExpressiveStat(
+    String label,
+    String value,
+    IconData icon,
+    GameTheme theme,
+    bool isSmallScreen,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.6),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.3),
+          width: 1.2,
         ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: theme.accentColor.withValues(alpha: 0.08),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: theme.accentColor.withValues(alpha: 0.85),
+            size: isSmallScreen ? 24 : 28,
+          ),
+          SizedBox(height: isSmallScreen ? 4 : 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: theme.accentColor,
+              fontWeight: FontWeight.w800,
+              fontSize: isSmallScreen ? 22 : 28,
+              height: 1.0,
+            ),
+          ),
+          SizedBox(height: isSmallScreen ? 2 : 4),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.55),
+              fontSize: isSmallScreen ? 10 : 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
       ),
     );
   }
