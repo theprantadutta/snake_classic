@@ -797,13 +797,14 @@ class _GameScreenState extends State<GameScreen>
                 ],
               )
             // D-Pad off: no center widget eats the middle, so the three
-            // stats stretch across the full row in even thirds with
-            // expressive sizing (no whitespace gaps).
+            // stats spread across the full row in even thirds. Each card
+            // is normal-size — wider, not taller — and vertically
+            // centered in the same-height bar.
             : Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: _buildExpressiveStat(
+                    child: _buildWideStat(
                       'Length',
                       '${gameState.snake.length}',
                       Icons.straighten,
@@ -813,7 +814,7 @@ class _GameScreenState extends State<GameScreen>
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildExpressiveStat(
+                    child: _buildWideStat(
                       'Level',
                       '${gameState.level}',
                       Icons.trending_up,
@@ -823,7 +824,7 @@ class _GameScreenState extends State<GameScreen>
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildExpressiveStat(
+                    child: _buildWideStat(
                       'Speed',
                       _getSpeedLabel(gameState.gameSpeed),
                       _getSpeedIcon(gameState.gameSpeed),
@@ -837,11 +838,10 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  /// Larger stat card used when the D-Pad is disabled — fills its 1/3 of
-  /// the bottom bar instead of shrinkwrapping to an icon + two tiny text
-  /// labels. Icon big, value big, label small — same vertical structure
-  /// as the compact variant but stretched to the available width.
-  Widget _buildExpressiveStat(
+  /// Stat card used when the D-Pad is disabled — fills its 1/3 of the
+  /// bottom bar's width but only takes the height it needs. Normal text
+  /// sizes; the extra space we won is horizontal, not vertical.
+  Widget _buildWideStat(
     String label,
     String value,
     IconData icon,
@@ -849,50 +849,41 @@ class _GameScreenState extends State<GameScreen>
     bool isSmallScreen,
   ) {
     return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 10 : 12,
+        vertical: isSmallScreen ? 8 : 10,
+      ),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.6),
         border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.3),
-          width: 1.2,
+          color: theme.accentColor.withValues(alpha: 0.25),
         ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: theme.accentColor.withValues(alpha: 0.08),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            color: theme.accentColor.withValues(alpha: 0.85),
-            size: isSmallScreen ? 24 : 28,
+            color: theme.accentColor.withValues(alpha: 0.7),
+            size: isSmallScreen ? 16 : 20,
           ),
-          SizedBox(height: isSmallScreen ? 4 : 6),
+          const SizedBox(height: 4),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: theme.accentColor,
-              fontWeight: FontWeight.w800,
-              fontSize: isSmallScreen ? 22 : 28,
-              height: 1.0,
+              fontWeight: FontWeight.bold,
+              fontSize: isSmallScreen ? 14 : 16,
             ),
           ),
-          SizedBox(height: isSmallScreen ? 2 : 4),
           Text(
-            label.toUpperCase(),
+            label,
             style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.55),
-              fontSize: isSmallScreen ? 10 : 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
+              color: theme.accentColor.withValues(alpha: 0.5),
+              fontSize: isSmallScreen ? 9 : 10,
             ),
           ),
         ],
