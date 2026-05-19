@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -70,9 +71,19 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
     });
 
     final authCubit = context.read<AuthCubit>();
-    final success = authCubit.state.isGuestUser
-        ? await authCubit.updateGuestUsername(newUsername)
-        : await authCubit.updateAuthenticatedUsername(newUsername);
+    // Use Firebase auth as the source of truth for which update path to
+    // take. state.isGuestUser reads off the cached UnifiedUser, which can
+    // briefly be the offline-guest stub mid-handoff and would route us
+    // into updateGuestUsername — a local-only mutation that gets
+    // overwritten the moment the backend sync settles. Firebase's
+    // currentUser is authoritative: if a real (non-anonymous) Firebase
+    // user is signed in, we MUST hit the authenticated update endpoint.
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    final isAuthenticated =
+        firebaseUser != null && !firebaseUser.isAnonymous;
+    final success = isAuthenticated
+        ? await authCubit.updateAuthenticatedUsername(newUsername)
+        : await authCubit.updateGuestUsername(newUsername);
 
     if (!mounted) return;
 

@@ -710,10 +710,21 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
         // auto-generated name before landing on home. For returning users
         // (cross-device Google login etc.), needsUsernameSetup is false
         // and we go straight home.
+        //
+        // Second gate: never show the setup screen to a user that already
+        // has a non-empty username on file. The backend's username
+        // generator (AuthenticateWithFirebaseCommandHandler) always
+        // assigns one for new accounts, so this is mostly defense-in-
+        // depth — but if needsUsernameSetup ever drifts true for someone
+        // with an established name (e.g. a stale flag from a prior
+        // session), we don't make them re-pick a name they already have.
         if (mounted) {
-          final route = authCubit.state.needsUsernameSetup
-              ? AppRoutes.usernameSetup
-              : AppRoutes.home;
+          final existingUsername =
+              authCubit.state.user?.username.trim() ?? '';
+          final showSetup = authCubit.state.needsUsernameSetup &&
+              existingUsername.isEmpty;
+          final route =
+              showSetup ? AppRoutes.usernameSetup : AppRoutes.home;
           context.go(route);
         }
       } else if (mounted) {
@@ -742,10 +753,13 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
       if (mounted) {
         // Same username-setup divert applies to anonymous sign-ins —
         // anonymous users get a generated username server-side too and
-        // benefit from picking their own.
-        final route = authCubit.state.needsUsernameSetup
-            ? AppRoutes.usernameSetup
-            : AppRoutes.home;
+        // benefit from picking their own. Same second-gate as the Google
+        // path: never show setup to someone with an established username.
+        final existingUsername =
+            authCubit.state.user?.username.trim() ?? '';
+        final showSetup = authCubit.state.needsUsernameSetup &&
+            existingUsername.isEmpty;
+        final route = showSetup ? AppRoutes.usernameSetup : AppRoutes.home;
         context.go(route);
       }
     } catch (e) {
