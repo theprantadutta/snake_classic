@@ -907,17 +907,16 @@ class _GameScreenState extends State<GameScreen>
                                 theme: theme,
                                 onSkip: _onTutorialComplete,
                               ),
-                            // Accepted-input edge pulse. Paints a soft
-                            // colored bloom on the screen edge in the
-                            // direction the swipe went, so the player gets
-                            // a glance-level "yep, registered" cue before
-                            // the next tick actually turns the snake.
-                            const _AcceptedInputEdgePulse(),
                             // Rejected-input flash. Paints a brief centered
                             // red ring whenever the cubit denies a direction
                             // change (reverse-into-self or already-queued).
                             // Independent BlocSelector keeps it isolated from
                             // the main rebuild path.
+                            //
+                            // Accepted-input edge bloom lives INSIDE the
+                            // board painter (game_board.dart) so it scopes
+                            // to the play area and rides the existing 60fps
+                            // repaint cycle — no extra full-screen paints.
                             const _RejectedInputFlash(),
                           ],
                         ),
@@ -1221,150 +1220,6 @@ class _GameBackgroundPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
   }
-}
-
-/// Edge bloom that confirms an accepted direction change. Paints a soft
-/// gradient on the screen edge corresponding to the swipe direction for
-/// ~250ms. Subscribes via BlocSelector on a tuple key so it only rebuilds
-/// when a new acceptance lands, not on every tick.
-class _AcceptedInputEdgePulse extends StatefulWidget {
-  const _AcceptedInputEdgePulse();
-
-  @override
-  State<_AcceptedInputEdgePulse> createState() =>
-      _AcceptedInputEdgePulseState();
-}
-
-class _AcceptedInputEdgePulseState extends State<_AcceptedInputEdgePulse>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  Direction? _direction;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 260),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocListener<GameCubit, GameCubitState>(
-      listenWhen: (prev, curr) =>
-          prev.lastAcceptedInputAt != curr.lastAcceptedInputAt &&
-          curr.lastAcceptedInputAt != null,
-      listener: (context, state) {
-        final dir = state.lastAcceptedDirection;
-        if (dir == null) return;
-        setState(() => _direction = dir);
-        _controller.forward(from: 0.0);
-      },
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          if (_direction == null || _controller.value == 0 ||
-              _controller.value >= 1) {
-            return const SizedBox.shrink();
-          }
-          return IgnorePointer(
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: _EdgePulsePainter(
-                direction: _direction!,
-                progress: _controller.value,
-                color: _colorFor(_direction!),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Color _colorFor(Direction d) {
-    switch (d) {
-      case Direction.up:
-        return Colors.cyanAccent;
-      case Direction.down:
-        return Colors.amberAccent;
-      case Direction.left:
-        return Colors.purpleAccent;
-      case Direction.right:
-        return Colors.greenAccent;
-    }
-  }
-}
-
-class _EdgePulsePainter extends CustomPainter {
-  final Direction direction;
-  final double progress;
-  final Color color;
-
-  _EdgePulsePainter({
-    required this.direction,
-    required this.progress,
-    required this.color,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Bloom thickness eases out (peaks at ~30% then fades).
-    final t = progress;
-    final intensity = t < 0.3 ? t / 0.3 : 1.0 - ((t - 0.3) / 0.7);
-    final alpha = (intensity.clamp(0.0, 1.0)) * 0.55;
-    final shorter = math.min(size.width, size.height);
-    final bloom = shorter * 0.18;
-
-    Rect rect;
-    Alignment begin, end;
-    switch (direction) {
-      case Direction.up:
-        rect = Rect.fromLTWH(0, 0, size.width, bloom);
-        begin = Alignment.topCenter;
-        end = Alignment.bottomCenter;
-        break;
-      case Direction.down:
-        rect = Rect.fromLTWH(0, size.height - bloom, size.width, bloom);
-        begin = Alignment.bottomCenter;
-        end = Alignment.topCenter;
-        break;
-      case Direction.left:
-        rect = Rect.fromLTWH(0, 0, bloom, size.height);
-        begin = Alignment.centerLeft;
-        end = Alignment.centerRight;
-        break;
-      case Direction.right:
-        rect = Rect.fromLTWH(size.width - bloom, 0, bloom, size.height);
-        begin = Alignment.centerRight;
-        end = Alignment.centerLeft;
-        break;
-    }
-
-    final paint = Paint()
-      ..shader = LinearGradient(
-        begin: begin,
-        end: end,
-        colors: [
-          color.withValues(alpha: alpha),
-          color.withValues(alpha: 0),
-        ],
-      ).createShader(rect);
-    canvas.drawRect(rect, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _EdgePulsePainter oldDelegate) =>
-      oldDelegate.direction != direction ||
-      oldDelegate.progress != progress ||
-      oldDelegate.color != color;
 }
 
 /// Brief red ring flashed at screen center when the cubit denies a direction
