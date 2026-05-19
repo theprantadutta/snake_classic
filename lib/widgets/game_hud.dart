@@ -124,13 +124,16 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       _previousLevel = widget.gameState.level;
     }
 
-    // Power-up urgent pulse
+    // Pulse driver — shared between urgent power-up indicator and combo
+    // chip heat. Either is enough to keep the controller running.
     final hasUrgentPowerUp = widget.gameState.activePowerUps.any(
       (p) => !p.isExpired && p.remainingTime.inSeconds <= 3,
     );
-    if (hasUrgentPowerUp && !_pulseController.isAnimating) {
+    final hasComboHeat = widget.gameState.currentCombo >= 5;
+    final shouldPulse = hasUrgentPowerUp || hasComboHeat;
+    if (shouldPulse && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
-    } else if (!hasUrgentPowerUp && _pulseController.isAnimating) {
+    } else if (!shouldPulse && _pulseController.isAnimating) {
       _pulseController.stop();
       _pulseController.reset();
     }
@@ -621,7 +624,17 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         ? Colors.amber
         : Colors.green;
 
-    return Container(
+    // Combo heat tier — drives the pulse intensity. 0 = idle, 1 = warm,
+    // 2 = hot, 3 = scorching. Glow only at hot/scorching.
+    final heatTier = combo >= 20
+        ? 3
+        : combo >= 10
+        ? 2
+        : combo >= 5
+        ? 1
+        : 0;
+
+    final chip = Container(
       padding: EdgeInsets.symmetric(
         horizontal: isSmallScreen ? 8 : 10,
         vertical: isSmallScreen ? 4 : 6,
@@ -632,6 +645,15 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         ),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
+        boxShadow: heatTier >= 2
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.45),
+                  blurRadius: heatTier == 3 ? 14 : 9,
+                  spreadRadius: heatTier == 3 ? 1.5 : 0.5,
+                ),
+              ]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -648,6 +670,18 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+
+    if (heatTier == 0) return chip;
+    // Scale grows with tier so a 20-combo bite reads as "scorching".
+    final scaleAmplitude = 0.04 * heatTier;
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        final scale = 1.0 + scaleAmplitude * _pulseController.value;
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: chip,
     );
   }
 

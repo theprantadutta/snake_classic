@@ -28,6 +28,31 @@ class _ScorePopupState extends State<ScorePopup>
   late Animation<double> _opacity;
   late Animation<double> _rise;
 
+  // Peak scale rises with multiplier so a 3x bite feels heavier than a 1x.
+  double get _peakScale {
+    switch (widget.multiplier) {
+      case >= 3:
+        return 2.0;
+      case 2:
+        return 1.7;
+      default:
+        return 1.3;
+    }
+  }
+
+  // Heat-flash color held over the first 200ms of the animation; settles
+  // back to the food color afterwards.
+  Color get _flashColor {
+    switch (widget.multiplier) {
+      case >= 3:
+        return Colors.red;
+      case 2:
+        return Colors.orange;
+      default:
+        return widget.color;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -36,18 +61,19 @@ class _ScorePopupState extends State<ScorePopup>
       duration: const Duration(milliseconds: 1000),
     );
 
-    // Scale: quick bounce in, then settle
+    final peak = _peakScale;
+    // Scale: quick bounce in, then settle. Peak height scales with multiplier.
     _scale = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(
           begin: 0.5,
-          end: 1.3,
+          end: peak,
         ).chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 30,
       ),
       TweenSequenceItem(
         tween: Tween<double>(
-          begin: 1.3,
+          begin: peak,
           end: 1.0,
         ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 20,
@@ -86,53 +112,70 @@ class _ScorePopupState extends State<ScorePopup>
 
   @override
   Widget build(BuildContext context) {
-    final displayText = widget.multiplier > 1
-        ? '+${widget.points} x${widget.multiplier}'
-        : '+${widget.points}';
-
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) {
+      builder: (context, _) {
         return Positioned(
           left: widget.position.dx - 20,
           top: widget.position.dy - _rise.value,
           child: Opacity(
             opacity: _opacity.value,
-            child: Transform.scale(scale: _scale.value, child: child),
+            child: Transform.scale(scale: _scale.value, child: _buildBadge()),
           ),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: widget.color.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: widget.color.withValues(alpha: 0.3),
-              blurRadius: 4,
-              spreadRadius: 1,
+    );
+  }
+
+  Widget _buildBadge() {
+    final displayText = widget.multiplier > 1
+        ? '+${widget.points} x${widget.multiplier}'
+        : '+${widget.points}';
+
+    final flash = _flashColor;
+    // Lerp from the heat-flash color (multiplier 2/3) to the food color over
+    // the first 30% of the animation so big multipliers read as red-hot,
+    // then settle into the standard food palette.
+    final flashProgress = (_controller.value / 0.3).clamp(0.0, 1.0);
+    final effectiveColor = widget.multiplier >= 2
+        ? Color.lerp(flash, widget.color, flashProgress) ?? widget.color
+        : widget.color;
+    final shadowBlur = 4.0 + (widget.multiplier - 1) * 3.0;
+    final shadowSpread = 1.0 + (widget.multiplier - 1) * 1.5;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: widget.multiplier >= 2 ? 10 : 8,
+        vertical: widget.multiplier >= 2 ? 6 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: effectiveColor.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: effectiveColor.withValues(alpha: 0.5),
+            blurRadius: shadowBlur,
+            spreadRadius: shadowSpread,
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withValues(alpha: widget.multiplier >= 2 ? 0.55 : 0.25),
+          width: widget.multiplier >= 2 ? 1.5 : 1,
+        ),
+      ),
+      child: Text(
+        displayText,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: widget.multiplier >= 3 ? 16 : widget.multiplier == 2 ? 14 : 11,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.4),
+              offset: const Offset(0.5, 0.5),
+              blurRadius: 1,
             ),
           ],
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.25),
-            width: 1,
-          ),
-        ),
-        child: Text(
-          displayText,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: widget.multiplier > 1 ? 13 : 11,
-            fontWeight: FontWeight.bold,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                offset: const Offset(0.5, 0.5),
-                blurRadius: 1,
-              ),
-            ],
-          ),
         ),
       ),
     );

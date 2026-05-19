@@ -630,6 +630,19 @@ class GameCubit extends Cubit<GameCubitState> {
       newMaxCombo = max(newMaxCombo, newCombo);
       newComboMultiplier = model.GameState.calculateComboMultiplier(newCombo);
 
+      // Combo tier crossing — 1.0→1.5 at 5, 1.5→2.0 at 10, 2.0→3.0 at 20.
+      // Each crossing earns a medium haptic; the 3.0 tier earns an extra
+      // heavy on top so 20-bite streaks land with weight. SFX reuses the
+      // existing score_milestone key at low volume so it doesn't drown the
+      // food-eat sound (a dedicated combo_milestone asset is a follow-up).
+      if (newComboMultiplier > previousState.comboMultiplier) {
+        unawaited(_hapticService.mediumImpact());
+        if (newComboMultiplier >= 3.0) {
+          unawaited(_hapticService.heavyImpact());
+        }
+        _enhancedAudioService.playSfx('score_milestone', volume: 0.45);
+      }
+
       final basePoints = eatenFood.type.points;
       final comboBonus = (basePoints * newComboMultiplier).round();
       final multipliedPoints = comboBonus * previousState.scoreMultiplier;
