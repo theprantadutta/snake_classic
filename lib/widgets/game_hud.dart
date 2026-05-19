@@ -796,74 +796,15 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   }
 
   Widget _buildPowerUpIndicator(ActivePowerUp powerUp) {
-    // Indicator footprint sized to fit cleanly inside the secondary-row
-    // fixed height (32 small / 38 normal) minus a tiny breathing margin.
-    // Was 28/34 — pushed the row taller than the chip-style siblings
-    // and caused the game board to shift down whenever a power-up
-    // activated mid-game.
     final size = isSmallScreen ? 22.0 : 28.0;
-    final progress = 1.0 - powerUp.progress;
-    final remainingTime = powerUp.remainingTime;
-    final isUrgent = remainingTime.inSeconds <= 3;
-
-    // No numeric countdown — the ring IS the fuel gauge. Stroke bumped to
-    // 3.0 (was 2.5) so it reads as the primary indicator now that the
-    // "Xs" badge is gone.
-    Widget indicator = Container(
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SizedBox(
-            width: size,
-            height: size,
-            child: CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 3.0,
-              strokeCap: StrokeCap.round,
-              backgroundColor: powerUp.type.color.withValues(alpha: 0.15),
-              valueColor: AlwaysStoppedAnimation(
-                isUrgent ? Colors.red : powerUp.type.color,
-              ),
-            ),
-          ),
-          Container(
-            width: size * 0.62,
-            height: size * 0.62,
-            decoration: BoxDecoration(
-              color: isUrgent
-                  ? Colors.red.withValues(alpha: 0.9)
-                  : powerUp.type.color.withValues(alpha: 0.85),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                powerUp.type.icon,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 10 : 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
+    return _PowerUpRing(
+      key: ValueKey(
+        '${powerUp.type.name}-${powerUp.activatedAt.microsecondsSinceEpoch}',
       ),
+      powerUp: powerUp,
+      size: size,
+      isSmallScreen: isSmallScreen,
     );
-
-    if (isUrgent) {
-      return AnimatedBuilder(
-        animation: _pulseController,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: 1.0 + (_pulseController.value * 0.12),
-            child: child,
-          );
-        },
-        child: indicator,
-      );
-    }
-
-    return indicator;
   }
 
   Widget _buildTournamentBanner() {
@@ -939,6 +880,118 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Per-indicator active power-up ring with its own 60fps ticker so the
+/// drain animates smoothly across the full duration. Previously the ring
+/// only repainted when the parent HUD rebuilt — which only fires on game
+/// ticks (~150–300ms) or when _pulseController happens to be running — so
+/// the visual sat at its initial value, snapped to ~empty during the last
+/// 3 seconds, then disappeared. The ticker rebuilds JUST this widget at
+/// 60fps; the rest of the HUD stays untouched.
+class _PowerUpRing extends StatefulWidget {
+  final ActivePowerUp powerUp;
+  final double size;
+  final bool isSmallScreen;
+
+  const _PowerUpRing({
+    super.key,
+    required this.powerUp,
+    required this.size,
+    required this.isSmallScreen,
+  });
+
+  @override
+  State<_PowerUpRing> createState() => _PowerUpRingState();
+}
+
+class _PowerUpRingState extends State<_PowerUpRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // 1s repeating tick — value isn't read, the ticker just drives 60fps
+    // rebuilds via AnimatedBuilder so progress/remainingTime read fresh
+    // from the model on every frame.
+    _ticker = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ticker,
+      builder: (context, _) {
+        final powerUp = widget.powerUp;
+        final size = widget.size;
+        final isSmallScreen = widget.isSmallScreen;
+        final progress = 1.0 - powerUp.progress;
+        final isUrgent = powerUp.remainingTime.inSeconds <= 3;
+
+        // Urgent pulse driven off the same ticker — scale oscillates with
+        // the controller's 0..1 sweep so the indicator visibly throbs in
+        // the last seconds without needing the shared _pulseController.
+        final urgentScale = isUrgent
+            ? 1.0 + (math.sin(_ticker.value * math.pi * 2) * 0.06).abs()
+            : 1.0;
+
+        return Transform.scale(
+          scale: urgentScale,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: size,
+                  height: size,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 3.0,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor:
+                        powerUp.type.color.withValues(alpha: 0.15),
+                    valueColor: AlwaysStoppedAnimation(
+                      isUrgent ? Colors.red : powerUp.type.color,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: size * 0.62,
+                  height: size * 0.62,
+                  decoration: BoxDecoration(
+                    color: isUrgent
+                        ? Colors.red.withValues(alpha: 0.9)
+                        : powerUp.type.color.withValues(alpha: 0.85),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      powerUp.type.icon,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 10 : 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
