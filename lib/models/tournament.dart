@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:snake_classic/utils/constants.dart' show GameMode;
+
 enum TournamentType {
   daily,
   weekly,
@@ -115,6 +117,26 @@ enum TournamentGameMode {
         return '🎆';
       case TournamentGameMode.perfectGame:
         return '💎';
+    }
+  }
+
+  // Maps the tournament's declared mode to the single-player engine's
+  // GameMode so the game cubit can honor it at tick time. Previously the
+  // cubit always used settings.gameMode regardless of tournament rules.
+  GameMode toGameMode() {
+    switch (this) {
+      case TournamentGameMode.classic:
+        return GameMode.classic;
+      case TournamentGameMode.speedRun:
+        return GameMode.speedChallenge;
+      case TournamentGameMode.survival:
+        return GameMode.survival;
+      case TournamentGameMode.noWalls:
+        return GameMode.zen;
+      case TournamentGameMode.powerUpMadness:
+        return GameMode.powerUpMadness;
+      case TournamentGameMode.perfectGame:
+        return GameMode.perfectGame;
     }
   }
 }

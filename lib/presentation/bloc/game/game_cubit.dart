@@ -79,6 +79,11 @@ class GameCubit extends Cubit<GameCubitState> {
   int _powerUpsCollectedThisGame = 0;
   int _consecutiveGamesWithoutWallHits = 0;
 
+  // PerfectGame mode: every cell the snake's head has ever occupied during
+  // the current run. A second visit ends the run. Reset on game start and
+  // Survival respawn; left intact when paused.
+  final Set<Position> _visitedCells = {};
+
   // Battle pass milestone tracking (reset per game)
   final Set<String> _bpMilestonesThisGame = {};
 
@@ -135,17 +140,22 @@ class GameCubit extends Cubit<GameCubitState> {
     debugPrint('🎮 [GameCubit] startGame() called');
 
     final settings = _settingsCubit.state;
+    // Tournament mode: honor the tournament's declared rules instead of the
+    // user's settings mode. Previously the cubit ignored tournamentMode at
+    // tick time, so PowerUpMadness tournaments played identically to Classic.
+    final effectiveGameMode =
+        state.tournamentMode?.toGameMode() ?? settings.gameMode;
     debugPrint(
-      '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, gameMode=${settings.gameMode.name}, highScore=${settings.highScore}',
+      '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, gameMode=${effectiveGameMode.name}, highScore=${settings.highScore}',
     );
 
-    final initialLives = settings.gameMode.initialLives;
+    final initialLives = effectiveGameMode.initialLives;
     final startTime = DateTime.now();
     final gameState = model.GameState.initial().copyWith(
       highScore: settings.highScore,
       boardWidth: settings.boardSize.width,
       boardHeight: settings.boardSize.height,
-      gameMode: settings.gameMode,
+      gameMode: effectiveGameMode,
       status: model.GameStatus.playing,
       currentCombo: 0,
       maxCombo: 0,
@@ -170,6 +180,9 @@ class GameCubit extends Cubit<GameCubitState> {
     _updateCount = 0;
     _bpMilestonesThisGame.clear();
     _achievementService.resetLastGameUnlocks();
+    _visitedCells
+      ..clear()
+      ..addAll(gameState.snake.body);
 
     // Daily first game XP
     _awardDailyFirstGameXP();
@@ -391,8 +404,11 @@ class GameCubit extends Cubit<GameCubitState> {
 
   void _startPowerUpTimer() {
     _powerUpTimer?.cancel();
+    final mode = state.gameState?.gameMode;
+    final intervalSeconds = mode?.powerUpSpawnIntervalSecondsOverride ??
+        GameConstants.powerUpSpawnIntervalSeconds;
     _powerUpTimer = Timer.periodic(
-      const Duration(seconds: GameConstants.powerUpSpawnIntervalSeconds),
+      Duration(seconds: intervalSeconds),
       (_) => _trySpawnPowerUp(),
     );
   }
@@ -581,6 +597,19 @@ class GameCubit extends Cubit<GameCubitState> {
       );
       return;
     }
+
+    // PerfectGame: head re-entering a previously-visited cell is fatal,
+    // regardless of food/immunity. Skip if this tick the head landed on a
+    // cell that is currently part of the snake's body — that case is already
+    // caught by the self-collision branch above, so any revisit reaching this
+    // point is a true trail-cross.
+    if (previousState.gameMode.enforcesNoRevisit &&
+        !hasImmunity &&
+        _visitedCells.contains(snake.head)) {
+      _handleCrash(model.CrashReason.selfCollision, snake.head);
+      return;
+    }
+    _visitedCells.add(snake.head);
 
     // Handle food consumption
     var newScore = previousState.score;
@@ -813,7 +842,9 @@ class GameCubit extends Cubit<GameCubitState> {
     if (state.gameState?.powerUp != null) return;
 
     final random = Random();
-    if (random.nextDouble() < 0.5) {
+    final spawnChance =
+        state.gameState?.gameMode.powerUpSpawnChanceOverride ?? 0.5;
+    if (random.nextDouble() < spawnChance) {
       final current = state.gameState!;
       // Avoid every visible food (primary + multi-food extras) so the new
       // power-up doesn't share a cell with an eatable target.
@@ -844,6 +875,11 @@ class GameCubit extends Cubit<GameCubitState> {
     HapticFeedback.heavyImpact();
 
     final newSnake = Snake.initial();
+    // PerfectGame respawns get a fresh visited-cell map; the rule applies
+    // per-life rather than across the whole run.
+    _visitedCells
+      ..clear()
+      ..addAll(newSnake.body);
     final newFood = Food.generateRandom(
       current.boardWidth,
       current.boardHeight,

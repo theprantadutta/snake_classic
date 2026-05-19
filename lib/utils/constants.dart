@@ -508,7 +508,9 @@ enum GameMode {
   speedChallenge,
   multiFood,
   survival,
-  timeAttack;
+  timeAttack,
+  powerUpMadness,
+  perfectGame;
 
   String get name {
     switch (this) {
@@ -524,6 +526,10 @@ enum GameMode {
         return 'Survival';
       case GameMode.timeAttack:
         return 'Time Attack';
+      case GameMode.powerUpMadness:
+        return 'Power-Up Madness';
+      case GameMode.perfectGame:
+        return 'Perfect Game';
     }
   }
 
@@ -541,6 +547,10 @@ enum GameMode {
         return 'Survive as long as possible with limited lives';
       case GameMode.timeAttack:
         return 'Score as much as possible in limited time';
+      case GameMode.powerUpMadness:
+        return 'Power-ups spawn far more often — embrace the chaos';
+      case GameMode.perfectGame:
+        return 'Never cross your own trail. One step on a visited cell ends the run.';
     }
   }
 
@@ -558,6 +568,10 @@ enum GameMode {
         return '❤️';
       case GameMode.timeAttack:
         return '⏰';
+      case GameMode.powerUpMadness:
+        return '✨';
+      case GameMode.perfectGame:
+        return '🎯';
     }
   }
 
@@ -609,6 +623,40 @@ enum GameMode {
         return 20; // Very fast speed increase
       default:
         return 10; // Normal speed increase
+    }
+  }
+
+  // Per-mode power-up spawn override. Returns null to fall back to
+  // GameConstants.powerUpSpawnIntervalSeconds.
+  int? get powerUpSpawnIntervalSecondsOverride {
+    switch (this) {
+      case GameMode.powerUpMadness:
+        return 8;
+      default:
+        return null;
+    }
+  }
+
+  // Per-mode power-up spawn probability override (0.0–1.0). Null falls back
+  // to the default 0.5 chance inside _trySpawnPowerUp.
+  double? get powerUpSpawnChanceOverride {
+    switch (this) {
+      case GameMode.powerUpMadness:
+        return 0.9;
+      default:
+        return null;
+    }
+  }
+
+  // PerfectGame rule: the snake's head must never re-enter any cell its
+  // body has previously occupied. The cubit tracks visited cells in a Set
+  // and crashes the run when this returns true and the head re-enters one.
+  bool get enforcesNoRevisit {
+    switch (this) {
+      case GameMode.perfectGame:
+        return true;
+      default:
+        return false;
     }
   }
 }
