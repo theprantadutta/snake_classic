@@ -88,6 +88,16 @@ class GameCubit extends Cubit<GameCubitState> {
   // automatically when the window passes (checked in _scheduleNextGameTick).
   DateTime? _levelUpSlowdownUntil;
 
+  // Timer that clears state.lastRejectedInputAt after the gesture indicators
+  // have flashed red. Cancelled on each new rejection so back-to-back
+  // rejections keep the flash visible.
+  Timer? _rejectedInputClearTimer;
+
+  // Tracks the next integer-second boundary at which each active power-up
+  // should fire its countdown haptic. Keyed by power-up identity (Set of
+  // PowerUpType active in the current game). Reset between games.
+  final Map<PowerUpType, int> _powerUpCountdownLastSecond = {};
+
   // Battle pass milestone tracking (reset per game)
   final Set<String> _bpMilestonesThisGame = {};
 
@@ -187,6 +197,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _visitedCells
       ..clear()
       ..addAll(gameState.snake.body);
+    _powerUpCountdownLastSecond.clear();
 
     // Daily first game XP
     _awardDailyFirstGameXP();
@@ -358,8 +369,26 @@ class GameCubit extends Cubit<GameCubitState> {
     if (state.status != GamePlayStatus.playing) return;
     if (state.gameState == null) return;
 
-    state.gameState!.snake.changeDirection(newDirection);
-    HapticFeedback.selectionClick();
+    final accepted = state.gameState!.snake.changeDirection(newDirection);
+    if (accepted) {
+      HapticFeedback.selectionClick();
+    } else {
+      // Denied: surface a double-buzz haptic + timestamp the rejection so
+      // the gesture indicators can flash red. Without this, reverse-into-
+      // self attempts look like the game ignored the input entirely.
+      HapticFeedback.selectionClick();
+      Future.delayed(const Duration(milliseconds: 80), () {
+        HapticFeedback.selectionClick();
+      });
+      final stamp = DateTime.now();
+      emit(state.copyWith(lastRejectedInputAt: stamp));
+      _rejectedInputClearTimer?.cancel();
+      _rejectedInputClearTimer = Timer(const Duration(milliseconds: 250), () {
+        if (state.lastRejectedInputAt == stamp) {
+          emit(state.copyWith(clearRejectedInput: true));
+        }
+      });
+    }
   }
 
   void _startGameLoop() {
@@ -729,6 +758,30 @@ class GameCubit extends Cubit<GameCubitState> {
     var activePowerUps = previousState.activePowerUps
         .where((p) => !p.isExpired)
         .toList();
+
+    // Power-up countdown haptic: fire once when each active power-up's
+    // remaining time first dips below 3s, 2s, and 1s. Visual flash already
+    // pulses in the last 3 seconds (game_hud.dart:758) — this adds a felt
+    // cue so a player whose eyes are on the snake still gets the warning.
+    for (final p in activePowerUps) {
+      final remainingMs = p.remainingTime.inMilliseconds;
+      if (remainingMs <= 0 || remainingMs > 3000) continue;
+      // Bucket = ceil(remainingMs / 1000) → 3, 2, 1.
+      final bucket = (remainingMs + 999) ~/ 1000;
+      final lastBucket = _powerUpCountdownLastSecond[p.type];
+      if (lastBucket == null || lastBucket > bucket) {
+        _powerUpCountdownLastSecond[p.type] = bucket;
+        unawaited(_hapticService.scoreMilestone());
+      }
+    }
+    // Drop entries for power-ups that have expired since the last tick so a
+    // fresh future collection of the same type re-arms the countdown.
+    if (_powerUpCountdownLastSecond.isNotEmpty) {
+      final activeTypes = activePowerUps.map((p) => p.type).toSet();
+      _powerUpCountdownLastSecond
+          .removeWhere((type, _) => !activeTypes.contains(type));
+    }
+
     if (willCollectPowerUp) {
       debugPrint('🎁 Collecting power-up: ${currentPowerUp.type.name}');
       _hapticService.powerUpCollected();
@@ -1605,6 +1658,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
+    _rejectedInputClearTimer?.cancel();
     return super.close();
   }
 }

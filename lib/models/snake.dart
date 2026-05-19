@@ -87,19 +87,26 @@ class Snake {
     }
   }
 
-  void changeDirection(Direction newDirection) {
+  /// Queues a direction change for the next tick. Returns `true` when the
+  /// input is accepted, `false` when it is rejected — either because a
+  /// direction is already queued this tick or because the requested move
+  /// would reverse the snake into itself. Callers use the return value to
+  /// surface "denied" feedback (haptic + red flash on the gesture indicator).
+  bool changeDirection(Direction newDirection) {
     // Only allow ONE direction change per game tick
     // This prevents rapid inputs like RIGHT → DOWN → LEFT from causing self-collision
     if (_hasQueuedDirection) {
-      return;
+      return false;
     }
 
     // Validate against the LAST COMMITTED direction (not the pending currentDirection)
     // This ensures we can't reverse through a sequence of perpendicular moves
-    if (newDirection != _lastCommittedDirection.opposite) {
-      currentDirection = newDirection;
-      _hasQueuedDirection = true;
+    if (newDirection == _lastCommittedDirection.opposite) {
+      return false;
     }
+    currentDirection = newDirection;
+    _hasQueuedDirection = true;
+    return true;
   }
 
   bool checkSelfCollision() {

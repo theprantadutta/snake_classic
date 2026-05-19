@@ -17,6 +17,11 @@ class GameCubitState extends Equatable {
   final TournamentGameMode? tournamentMode;
   final double moveProgress;
   final model.GameState? previousGameState;
+  /// Timestamp of the last rejected direction input (reverse-into-self or
+  /// already-queued). Input widgets watch this to flash a red "denied" cue
+  /// when fresh (within ~250ms). Cleared back to null by a Timer in the
+  /// cubit so the flash doesn't linger.
+  final DateTime? lastRejectedInputAt;
 
   const GameCubitState({
     this.status = GamePlayStatus.initial,
@@ -25,6 +30,7 @@ class GameCubitState extends Equatable {
     this.tournamentMode,
     this.moveProgress = 0.0,
     this.previousGameState,
+    this.lastRejectedInputAt,
   });
 
   /// Initial state
@@ -38,8 +44,10 @@ class GameCubitState extends Equatable {
     TournamentGameMode? tournamentMode,
     double? moveProgress,
     model.GameState? previousGameState,
+    DateTime? lastRejectedInputAt,
     bool clearTournament = false,
     bool clearPreviousGameState = false,
+    bool clearRejectedInput = false,
   }) {
     return GameCubitState(
       status: status ?? this.status,
@@ -54,6 +62,9 @@ class GameCubitState extends Equatable {
       previousGameState: clearPreviousGameState
           ? null
           : (previousGameState ?? this.previousGameState),
+      lastRejectedInputAt: clearRejectedInput
+          ? null
+          : (lastRejectedInputAt ?? this.lastRejectedInputAt),
     );
   }
 
@@ -122,5 +133,6 @@ class GameCubitState extends Equatable {
     tournamentMode,
     moveProgress,
     previousGameState,
+    lastRejectedInputAt,
   ];
 }
