@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -337,6 +338,14 @@ class PremiumCubit extends Cubit<PremiumState> {
     _coinsCubit?.updatePremiumMultiplier(true, state.hasBattlePass);
     _analytics.trackPremiumSubscriptionStarted();
     _analytics.setUserProperties(isPremium: true);
+
+    // The Pro purchase server-side now grants a premium power-up bundle
+    // + free tournament tier entries (VerifyPurchaseCommandHandler). Kick
+    // off a sync so those grants land in local state immediately rather
+    // than waiting for the next manual refresh. Fire-and-forget — the
+    // user-visible status flip already happened above.
+    unawaited(syncWithBackend());
+    unawaited(getIt<PowerUpCubit>().loadInventory());
   }
 
   /// Purchase premium subscription (monthly)
