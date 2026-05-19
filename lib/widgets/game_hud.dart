@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -457,11 +459,26 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       ),
       child: Row(
         children: [
-          // Level badge with animation
+          // Level badge with animation — wrapped in a Stack so the level-up
+          // particle burst can fan out from behind the badge without
+          // displacing the row layout.
           AnimatedBuilder(
             animation: _levelUpController,
             builder: (context, child) {
-              return Transform.scale(
+              return Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  if (_showLevelUpEffect)
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _LevelUpBurstPainter(
+                          progress: _levelUpController.value,
+                          color: Colors.amber,
+                        ),
+                      ),
+                    ),
+                  Transform.scale(
                 scale: _showLevelUpEffect ? _levelUpScale.value : 1.0,
                 child: Container(
                   padding: EdgeInsets.symmetric(
@@ -517,6 +534,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
+              ),
+                ],
               );
             },
           ),
@@ -880,4 +899,38 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       ),
     );
   }
+}
+
+/// Lightweight 8-spoke radial burst drawn behind the level badge for the
+/// duration of `_levelUpController` (1500ms). Each particle slides outward
+/// and fades; the burst never moves the surrounding layout because it
+/// paints inside a Positioned.fill.
+class _LevelUpBurstPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _LevelUpBurstPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0 || progress >= 1) return;
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxRadius = math.max(size.width, size.height) * 1.6;
+    final paint = Paint()
+      ..color = color.withValues(alpha: (1.0 - progress) * 0.85)
+      ..style = PaintingStyle.fill;
+    const count = 8;
+    for (var i = 0; i < count; i++) {
+      final angle = (i / count) * 2 * math.pi;
+      final dist = maxRadius * progress;
+      final px = center.dx + math.cos(angle) * dist;
+      final py = center.dy + math.sin(angle) * dist;
+      final r = math.max(1.0, 3.0 * (1.0 - progress));
+      canvas.drawCircle(Offset(px, py), r, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LevelUpBurstPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.color != color;
 }

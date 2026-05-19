@@ -84,6 +84,10 @@ class GameCubit extends Cubit<GameCubitState> {
   // Survival respawn; left intact when paused.
   final Set<Position> _visitedCells = {};
 
+  // Brief tick-rate slowdown after a level-up so the moment lands. Cleared
+  // automatically when the window passes (checked in _scheduleNextGameTick).
+  DateTime? _levelUpSlowdownUntil;
+
   // Battle pass milestone tracking (reset per game)
   final Set<String> _bpMilestonesThisGame = {};
 
@@ -367,7 +371,18 @@ class GameCubit extends Cubit<GameCubitState> {
   /// This pattern allows speed changes to take effect immediately
   /// without causing a pause when the timer is restarted.
   void _scheduleNextGameTick() {
-    final speed = state.gameState?.gameSpeed ?? 150;
+    var speed = state.gameState?.gameSpeed ?? 150;
+    // Level-up beat: stretch the next ~300ms by 1.5x so the level
+    // transition is felt, not just seen. Window is cleared automatically
+    // when DateTime.now() passes the deadline.
+    final slowdown = _levelUpSlowdownUntil;
+    if (slowdown != null) {
+      if (DateTime.now().isBefore(slowdown)) {
+        speed = (speed * 1.5).round();
+      } else {
+        _levelUpSlowdownUntil = null;
+      }
+    }
     final level = state.gameState?.level ?? 1;
     if (_updateCount <= 5 || _updateCount % 100 == 0) {
       debugPrint(
@@ -665,7 +680,11 @@ class GameCubit extends Cubit<GameCubitState> {
           '🎮 [GameCubit] LEVEL UP! $previousLevel -> $newLevel (next target: ${model.GameState.getTargetScoreForLevel(newLevel + 1)})',
         );
         _audioService.playSound('level_up');
-        HapticFeedback.mediumImpact();
+        unawaited(_hapticService.levelUp());
+        // 300ms tick slowdown so the level transition reads as an event
+        // rather than a silent counter increment.
+        _levelUpSlowdownUntil =
+            DateTime.now().add(const Duration(milliseconds: 300));
         _analytics.trackLevelUp(newLevel);
 
         // Award coins for every level gained this tick.
