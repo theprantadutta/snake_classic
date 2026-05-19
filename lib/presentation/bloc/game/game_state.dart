@@ -4,6 +4,7 @@ import 'package:snake_classic/models/game_state.dart' as model;
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/tournament.dart';
+import 'package:snake_classic/utils/direction.dart';
 
 /// Game play status
 enum GamePlayStatus { initial, ready, playing, paused, crashed, gameOver }
@@ -22,6 +23,13 @@ class GameCubitState extends Equatable {
   /// when fresh (within ~250ms). Cleared back to null by a Timer in the
   /// cubit so the flash doesn't linger.
   final DateTime? lastRejectedInputAt;
+  /// Timestamp + direction of the last accepted direction input. Drives the
+  /// edge-bloom pulse (250ms) and the snake-head intent shimmer (~100ms)
+  /// so the player gets a glance-level "did it register?" answer before
+  /// the next tick actually turns the snake. Cleared by a Timer in the
+  /// cubit so neither layer lingers.
+  final DateTime? lastAcceptedInputAt;
+  final Direction? lastAcceptedDirection;
 
   const GameCubitState({
     this.status = GamePlayStatus.initial,
@@ -31,6 +39,8 @@ class GameCubitState extends Equatable {
     this.moveProgress = 0.0,
     this.previousGameState,
     this.lastRejectedInputAt,
+    this.lastAcceptedInputAt,
+    this.lastAcceptedDirection,
   });
 
   /// Initial state
@@ -45,9 +55,12 @@ class GameCubitState extends Equatable {
     double? moveProgress,
     model.GameState? previousGameState,
     DateTime? lastRejectedInputAt,
+    DateTime? lastAcceptedInputAt,
+    Direction? lastAcceptedDirection,
     bool clearTournament = false,
     bool clearPreviousGameState = false,
     bool clearRejectedInput = false,
+    bool clearAcceptedInput = false,
   }) {
     return GameCubitState(
       status: status ?? this.status,
@@ -65,6 +78,12 @@ class GameCubitState extends Equatable {
       lastRejectedInputAt: clearRejectedInput
           ? null
           : (lastRejectedInputAt ?? this.lastRejectedInputAt),
+      lastAcceptedInputAt: clearAcceptedInput
+          ? null
+          : (lastAcceptedInputAt ?? this.lastAcceptedInputAt),
+      lastAcceptedDirection: clearAcceptedInput
+          ? null
+          : (lastAcceptedDirection ?? this.lastAcceptedDirection),
     );
   }
 
@@ -134,5 +153,7 @@ class GameCubitState extends Equatable {
     moveProgress,
     previousGameState,
     lastRejectedInputAt,
+    lastAcceptedInputAt,
+    lastAcceptedDirection,
   ];
 }

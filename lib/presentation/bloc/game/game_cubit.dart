@@ -93,6 +93,11 @@ class GameCubit extends Cubit<GameCubitState> {
   // rejections keep the flash visible.
   Timer? _rejectedInputClearTimer;
 
+  // Same pattern for accepted inputs — drives the edge bloom + snake-head
+  // intent shimmer. Cancelled on each new acceptance so back-to-back swipes
+  // each get a fresh pulse.
+  Timer? _acceptedInputClearTimer;
+
   // Tracks the next integer-second boundary at which each active power-up
   // should fire its countdown haptic. Keyed by power-up identity (Set of
   // PowerUpType active in the current game). Reset between games.
@@ -394,6 +399,19 @@ class GameCubit extends Cubit<GameCubitState> {
     final accepted = state.gameState!.snake.changeDirection(newDirection);
     if (accepted) {
       HapticFeedback.selectionClick();
+      // Emit timestamp + direction so the edge bloom and snake-head intent
+      // shimmer can fire. Clears after 300ms.
+      final stamp = DateTime.now();
+      emit(state.copyWith(
+        lastAcceptedInputAt: stamp,
+        lastAcceptedDirection: newDirection,
+      ));
+      _acceptedInputClearTimer?.cancel();
+      _acceptedInputClearTimer = Timer(const Duration(milliseconds: 300), () {
+        if (state.lastAcceptedInputAt == stamp) {
+          emit(state.copyWith(clearAcceptedInput: true));
+        }
+      });
     } else {
       // Denied: surface a double-buzz haptic + timestamp the rejection so
       // the gesture indicators can flash red. Without this, reverse-into-
@@ -1693,6 +1711,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
     _rejectedInputClearTimer?.cancel();
+    _acceptedInputClearTimer?.cancel();
     return super.close();
   }
 }

@@ -332,6 +332,23 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
                                       final moveProgress = _calculateMoveProgress(
                                         gameSpeed,
                                       );
+                                      // Head-shimmer driver: fade over a
+                                      // ~140ms window from the accept stamp
+                                      // so the highlight shows for a couple
+                                      // of frames then disappears, regardless
+                                      // of when the next tick fires.
+                                      Direction? shimmerDir;
+                                      double shimmerAge = 1.0;
+                                      final stamp = cubitState.lastAcceptedInputAt;
+                                      if (stamp != null) {
+                                        final ageMs = DateTime.now()
+                                            .difference(stamp)
+                                            .inMilliseconds;
+                                        if (ageMs <= 140) {
+                                          shimmerDir = cubitState.lastAcceptedDirection;
+                                          shimmerAge = (ageMs / 140).clamp(0.0, 1.0);
+                                        }
+                                      }
 
                                       return CustomPaint(
                                         painter: OptimizedGameBoardPainter(
@@ -346,6 +363,8 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
                                           // Pass time once per frame to avoid DateTime.now() in paint loop
                                           animationTimeMs:
                                               DateTime.now().millisecondsSinceEpoch,
+                                          recentInputDirection: shimmerDir,
+                                          recentInputAge: shimmerAge,
                                           // Performance: Pass pre-allocated Paint objects
                                           // to avoid creating 6+ paints per frame at 60fps
                                           cachedSnakeHeadPaint: _persistentSnakeHeadPaint,
@@ -621,6 +640,12 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final PremiumState premiumState;
   final int
   animationTimeMs; // Passed once per frame to avoid DateTime.now() in paint
+  // Intent shimmer driver: when a direction change is freshly accepted (the
+  // cubit set lastAcceptedInputAt within the last ~120ms), the painter
+  // draws a small leading-edge highlight on the snake head pointing in
+  // that direction. Closes the "did my input land?" gap during slow ticks.
+  final Direction? recentInputDirection;
+  final double recentInputAge; // 0.0 = just-fired, 1.0 = stale (no draw)
 
   // Performance: Paint objects are now passed from _GameBoardState where they
   // persist across frames, instead of being recreated 60 times/sec.
@@ -639,6 +664,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     this.previousGameState,
     required this.premiumState,
     this.animationTimeMs = 0,
+    this.recentInputDirection,
+    this.recentInputAge = 1.0,
     // Cached paints from _GameBoardState
     Paint? cachedSnakeHeadPaint,
     Paint? cachedSnakeBodyPaint,
@@ -918,9 +945,61 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
       if (isHead) {
         _drawSnakeHead(canvas, segmentRects[i], snake.currentDirection);
+        // Intent shimmer: when a fresh direction change is queued, paint a
+        // brief highlight on the head's leading edge so the player sees the
+        // input register before the tick actually fires.
+        if (recentInputDirection != null && recentInputAge < 1.0) {
+          _drawHeadIntentShimmer(canvas, segmentRects[i]);
+        }
       } else {
         _drawSnakeBody(canvas, segmentRects[i], i, snakeLength, isTail);
       }
+    }
+  }
+
+  /// Paints a thin colored highlight on the snake-head edge facing the new
+  /// direction. Fades over the ~120ms input-age window. Cheap — one
+  /// drawLine + one Paint per frame while active, zero cost when idle.
+  void _drawHeadIntentShimmer(Canvas canvas, Rect headRect) {
+    final dir = recentInputDirection!;
+    final t = recentInputAge.clamp(0.0, 1.0);
+    final alpha = (1.0 - t) * 0.9;
+    if (alpha <= 0.02) return;
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = headRect.width * 0.18
+      ..strokeCap = StrokeCap.round;
+    final inset = headRect.width * 0.12;
+    switch (dir) {
+      case Direction.up:
+        canvas.drawLine(
+          Offset(headRect.left + inset, headRect.top + inset),
+          Offset(headRect.right - inset, headRect.top + inset),
+          paint,
+        );
+        break;
+      case Direction.down:
+        canvas.drawLine(
+          Offset(headRect.left + inset, headRect.bottom - inset),
+          Offset(headRect.right - inset, headRect.bottom - inset),
+          paint,
+        );
+        break;
+      case Direction.left:
+        canvas.drawLine(
+          Offset(headRect.left + inset, headRect.top + inset),
+          Offset(headRect.left + inset, headRect.bottom - inset),
+          paint,
+        );
+        break;
+      case Direction.right:
+        canvas.drawLine(
+          Offset(headRect.right - inset, headRect.top + inset),
+          Offset(headRect.right - inset, headRect.bottom - inset),
+          paint,
+        );
+        break;
     }
   }
 
