@@ -15,6 +15,10 @@ class GameHUD extends StatefulWidget {
   final bool isSmallScreen;
   final String? tournamentId;
   final TournamentGameMode? tournamentMode;
+  /// Optional GlobalKey attached to the pause button so the tutorial's
+  /// "Pause Anytime" step can spotlight it. game_screen.dart passes
+  /// `GameTutorialKeys.pauseButtonKey` here; everywhere else omit it.
+  final Key? pauseButtonKey;
 
   const GameHUD({
     super.key,
@@ -25,6 +29,7 @@ class GameHUD extends StatefulWidget {
     this.isSmallScreen = false,
     this.tournamentId,
     this.tournamentMode,
+    this.pauseButtonKey,
   });
 
   @override
@@ -206,14 +211,18 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
 
               const SizedBox(width: 12),
 
-              // Right: Pause button
-              _buildIconButton(
-                icon: gameState.status == GameStatus.playing
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
-                onTap: widget.onPause,
-                color: theme.accentColor,
-                isPrimary: true,
+              // Right: Pause button — KeyedSubtree so the tutorial's
+              // spotlight target points at this widget when a key is supplied.
+              KeyedSubtree(
+                key: widget.pauseButtonKey,
+                child: _buildIconButton(
+                  icon: gameState.status == GameStatus.playing
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  onTap: widget.onPause,
+                  color: theme.accentColor,
+                  isPrimary: true,
+                ),
               ),
             ],
           ),

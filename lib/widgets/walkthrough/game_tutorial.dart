@@ -134,6 +134,9 @@ class GameTutorialController extends ChangeNotifier {
 /// GlobalKeys for game tutorial targets
 class GameTutorialKeys {
   static final hudKey = GlobalKey();
+  /// Spotlight target for the tutorial_pause step — the pause icon in
+  /// the HUD's top-right. Wired via GameHUD(pauseButtonKey: ...).
+  static final pauseButtonKey = GlobalKey();
   static final scoreKey = GlobalKey();
   static final levelKey = GlobalKey();
   static final gameBoardKey = GlobalKey();
@@ -192,7 +195,9 @@ final List<WalkthroughStep> _tutorialSteps = [
     canSkip: false,
   ),
 
-  // Step 6: Food explanation
+  // Step 6: Food explanation. Food TYPES + point values are intentionally
+  // not taught here — the pause menu's Game Guide carries that reference
+  // (and the food chip on the HUD shows the current type's value live).
   const WalkthroughStep(
     id: 'tutorial_food',
     title: 'Eat to Grow',
@@ -201,16 +206,25 @@ final List<WalkthroughStep> _tutorialSteps = [
     icon: Icons.restaurant,
   ),
 
-  // Step 7: Food types
+  // Step 7: Combo system.
   const WalkthroughStep(
-    id: 'tutorial_food_types',
-    title: 'Food Types',
-    message: 'Regular food: +10 points\nBonus food (golden): +25 points\nSpecial food (purple): +50 points',
+    id: 'tutorial_combo',
+    title: 'Build a Combo',
+    message: 'Eat food without dying to build a combo. At 5 bites you get 1.5×, at 10 you get 2×, at 20 you get 3×. The fire chip near your score heats up and pulses as you climb.',
     position: TooltipPosition.center,
-    icon: Icons.star,
+    icon: Icons.local_fire_department,
   ),
 
-  // Step 8: Avoid walls
+  // Step 8: Power-ups.
+  const WalkthroughStep(
+    id: 'tutorial_powerups',
+    title: 'Power-ups',
+    message: "Sparkly icons spawn occasionally — eat one to activate it. The ring around its icon drains as the effect runs out, and the timer freezes if you pause the game.",
+    position: TooltipPosition.center,
+    icon: Icons.bolt,
+  ),
+
+  // Step 9: Avoid walls
   const WalkthroughStep(
     id: 'tutorial_walls',
     title: 'Avoid the Walls!',
@@ -219,7 +233,7 @@ final List<WalkthroughStep> _tutorialSteps = [
     icon: Icons.warning_amber,
   ),
 
-  // Step 9: Don't hit yourself
+  // Step 10: Don't hit yourself
   const WalkthroughStep(
     id: 'tutorial_self',
     title: "Don't Hit Yourself!",
@@ -228,11 +242,23 @@ final List<WalkthroughStep> _tutorialSteps = [
     icon: Icons.do_not_disturb_on,
   ),
 
-  // Step 10: Complete
+  // Step 11: Pause menu. Spotlights the pause icon in the HUD's top-right.
+  WalkthroughStep(
+    id: 'tutorial_pause',
+    title: 'Pause Anytime',
+    message: 'Tap the pause icon to freeze the run. From there you can resume, restart, open the Game Guide, replay this tutorial, or toggle the D-Pad.',
+    targetKey: GameTutorialKeys.pauseButtonKey,
+    position: TooltipPosition.below,
+    icon: Icons.pause_circle_outline,
+    spotlightPadding: 6,
+    spotlightBorderRadius: 14,
+  ),
+
+  // Step 12: Complete
   const WalkthroughStep(
     id: 'tutorial_complete',
     title: "You're Ready!",
-    message: 'Good luck! Try to beat your high score and unlock achievements along the way.',
+    message: "Good luck! Open the pause menu's Game Guide anytime to read up on combos, power-ups, modes, and crash feedback. Check your Profile to see achievements unlock as you hit goals.",
     position: TooltipPosition.center,
     icon: Icons.celebration,
     actionLabel: 'Start Playing!',

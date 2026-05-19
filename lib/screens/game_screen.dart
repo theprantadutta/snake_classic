@@ -1077,6 +1077,8 @@ class _GameScreenState extends State<GameScreen>
                                                 gameCubitState.tournamentId,
                                             tournamentMode:
                                                 gameCubitState.tournamentMode,
+                                            pauseButtonKey: GameTutorialKeys
+                                                .pauseButtonKey,
                                           ),
 
                                           // Note: Instructions moved to pause menu for cleaner gameplay view
