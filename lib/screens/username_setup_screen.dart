@@ -104,9 +104,22 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
           body: AppBackground(
             theme: theme,
             child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
+              // SingleChildScrollView so the keyboard opening (autofocused
+              // TextField) on a short screen doesn't overflow the Column.
+              // LayoutBuilder + ConstrainedBox keeps the Spacers working at
+              // tall heights — content centres vertically when it fits and
+              // scrolls when it doesn't.
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Spacer(),
@@ -207,6 +220,11 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
                     const SizedBox(height: 16),
                   ],
                 ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
