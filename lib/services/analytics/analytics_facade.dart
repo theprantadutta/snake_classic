@@ -300,4 +300,8 @@ class AnalyticsFacade implements AnalyticsClient {
   @override
   Future<void> trackWalkthroughCompleted() async =>
       _fire((c) => c.trackWalkthroughCompleted());
+
+  @override
+  Future<void> trackReviewRequested(String trigger) async =>
+      _fire((c) => c.trackReviewRequested(trigger));
 }

@@ -339,4 +339,12 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   Future<void> trackWalkthroughCompleted() {
     return _analytics.logTutorialComplete();
   }
+
+  @override
+  Future<void> trackReviewRequested(String trigger) {
+    return _analytics.logEvent(
+      name: 'review_requested',
+      parameters: {'trigger': trigger},
+    );
+  }
 }

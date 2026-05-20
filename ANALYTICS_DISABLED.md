@@ -32,9 +32,12 @@ package changelog / known-issues before restoring.
    `firebase_analytics_client.dart` is commented out, and the `AnalyticsFacade`
    is registered with only `LoggerAnalyticsClient` (no `kDebugMode` gate while
    disabled).
-4. **`lib/services/analytics/firebase_analytics_client.dart`** — left ENTIRELY
-   UNTOUCHED on purpose. When the package returns, this file should compile
-   as-is.
+4. **`lib/services/analytics/firebase_analytics_client.dart`** — kept in sync
+   with the `AnalyticsClient` interface so it compiles as-is once
+   `firebase_analytics` is restored. If new methods are added to the
+   interface while analytics is disabled, mirror the implementation here too
+   (the file is `analyzer.exclude`'d, so `flutter analyze` won't flag drift —
+   easy to forget).
 
 `pubspec.lock` and the generated `*PluginRegistrant.*` files regenerate on the
 next `flutter pub get`, so no manual reverts there.

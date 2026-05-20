@@ -273,4 +273,9 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   Future<void> trackWalkthroughCompleted() async {
     AppLogger.info('$_tag walkthrough_completed');
   }
+
+  @override
+  Future<void> trackReviewRequested(String trigger) async {
+    AppLogger.info('$_tag review_requested: trigger=$trigger');
+  }
 }

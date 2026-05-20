@@ -126,4 +126,11 @@ abstract class AnalyticsClient {
   Future<void> trackDailyBonusCollected();
   Future<void> trackWalkthroughStarted();
   Future<void> trackWalkthroughCompleted();
+
+  /// Fires when ReviewService dispatches a `requestReview()` to the native
+  /// platform. [trigger] is the human-readable name of the moment that
+  /// caused the request (e.g. `newHighScore`). The platform does not report
+  /// whether a dialog actually rendered, so this is the closest signal we
+  /// have to "how often do we ask."
+  Future<void> trackReviewRequested(String trigger);
 }

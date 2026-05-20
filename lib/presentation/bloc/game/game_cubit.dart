@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/models/game_state.dart' as model;
@@ -21,6 +22,7 @@ import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
+import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
@@ -1477,6 +1479,21 @@ class GameCubit extends Cubit<GameCubitState> {
     // Local-only achievement checks (no API calls) so game over screen has data
     _trackGameEndLocal();
 
+    // If this game unlocked anything rare or better, treat it as a positive
+    // moment worth asking for an app-store review. The service runs all
+    // eligibility gates (cap, install grace period, lifetime games) and
+    // self-throttles, so it's safe to fire on every qualifying unlock.
+    final unlockedSomethingMeaningful =
+        _achievementService.lastGameUnlocks.any(
+      (a) => a.rarity.index >= AchievementRarity.rare.index,
+    );
+    if (unlockedSomethingMeaningful) {
+      unawaited(
+        getIt<ReviewService>()
+            .maybeRequestReview(ReviewTrigger.achievementUnlocked),
+      );
+    }
+
     // Track game over analytics
     final gameDuration = _gameStartTime != null
         ? DateTime.now().difference(_gameStartTime!).inSeconds
@@ -1532,6 +1549,14 @@ class GameCubit extends Cubit<GameCubitState> {
         _settingsCubit.updateHighScore(highScore);
         _audioService.playSound('high_score');
         _enhancedAudioService.playSfx('high_score', volume: 1.0);
+
+        // Strongest positive signal we have — ask the platform to consider
+        // a review prompt. Service self-throttles to once per 60 days and
+        // gates on lifetime games + install age.
+        unawaited(
+          getIt<ReviewService>()
+              .maybeRequestReview(ReviewTrigger.newHighScore),
+        );
       }
 
       final gameDurationSeconds = _gameStartTime != null
