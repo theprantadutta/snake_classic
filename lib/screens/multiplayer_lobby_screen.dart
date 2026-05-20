@@ -1463,20 +1463,25 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               const SizedBox(height: 16),
 
               ...MultiplayerGameMode.values.map(
-                (mode) => Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  decoration: BoxDecoration(
-                    color: selectedMode == mode
+                (mode) => Padding(
+                  // Color + border were previously on an outer DecoratedBox,
+                  // which hides ListTile's own ink ripple. Moved to
+                  // tileColor/shape so ripples render correctly and Flutter
+                  // stops warning about the Material-ancestor mismatch.
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    tileColor: selectedMode == mode
                         ? theme.accentColor.withValues(alpha: 0.1)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: selectedMode == mode
-                        ? Border.all(
-                            color: theme.accentColor.withValues(alpha: 0.3),
-                          )
-                        : null,
-                  ),
-                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: selectedMode == mode
+                          ? BorderSide(
+                              color:
+                                  theme.accentColor.withValues(alpha: 0.3),
+                            )
+                          : BorderSide.none,
+                    ),
                     leading: Icon(
                       selectedMode == mode
                           ? Icons.radio_button_checked

@@ -21,10 +21,13 @@ class DPadControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Smaller buttons + more edge-padding so the four circles have clear
-    // breathing room from each other (no more overlapping affordance
-    // rings at the diagonals).
-    final buttonSize = size * 0.30;
+    // Button ratio dialled to 0.34 — slightly larger touch targets than
+    // the previous 0.30 (visible +13% diameter) while staying well inside
+    // the geometric ceiling of ~0.46 where diagonal-neighbour circles
+    // would start to touch. The outer size is fixed by the bottom-bar
+    // contract in game_screen.dart, so this is the only knob that can
+    // grow the buttons without affecting layout height.
+    final buttonSize = size * 0.34;
     final spacing = size * 0.04;
     final hubSize = size * 0.10;
 

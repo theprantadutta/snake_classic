@@ -30,6 +30,11 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen>
     with WidgetsBindingObserver, TickerProviderStateMixin {
+  // Per-swipe direction + animation controller driving the centered
+  // gesture-indicator chip above the board. Rotates an arrow to match
+  // the most recent accepted direction and glows for ~800ms after each
+  // input, so the player sees confirmation in dedicated chrome (the
+  // edge-bloom on the board itself handles in-arena feedback).
   Direction? _lastSwipeDirection;
   late AnimationController _gestureIndicatorController;
   late GameJuiceController _juiceController;
@@ -378,11 +383,11 @@ class _GameScreenState extends State<GameScreen>
 
     context.read<GameCubit>().changeDirection(direction);
 
-    // Update last swipe direction (no setState needed - the gesture indicator
-    // uses its own AnimatedBuilder with _gestureIndicatorController)
+    // Drive the centered gesture-indicator chip above the board: rotates
+    // its arrow to match the swipe direction and glows for ~800ms. The
+    // board's edge-bloom (accepted) and centered red ring (rejected)
+    // still handle in-arena feedback — this chip is the chrome-side cue.
     _lastSwipeDirection = direction;
-
-    // Animate the gesture indicator
     _gestureIndicatorController.forward().then((_) {
       _gestureIndicatorController.reverse();
     });
@@ -1013,16 +1018,14 @@ class _GameScreenState extends State<GameScreen>
                       body: SafeArea(
                         child: Stack(
                           children: [
-                            // SwipeDetector only wraps the game content, not overlays
+                            // SwipeDetector only wraps the game content, not overlays.
+                            // No onTap handler — pause is reserved for the HUD's
+                            // pause button (and spacebar on keyboard). Previously
+                            // this called togglePause() on any tap, which made
+                            // accidental finger-rests near the d-pad or HUD edges
+                            // pause the game with no obvious cause.
                             SwipeDetector(
                               onSwipe: _handleSwipe,
-                              onTap: () {
-                                // Only toggle pause when playing (not when crashed or game over)
-                                if (gameState.status == GameStatus.playing ||
-                                    gameState.status == GameStatus.paused) {
-                                  context.read<GameCubit>().togglePause();
-                                }
-                              },
                               showFeedback: false, // Disable animated feedback
                               child: Stack(
                                 children: [
@@ -1081,10 +1084,14 @@ class _GameScreenState extends State<GameScreen>
                                                 .pauseButtonKey,
                                           ),
 
-                                          // Note: Instructions moved to pause menu for cleaner gameplay view
-
-                                          // Static row above game board - Game Hint and Gesture Indicator
-                                          _buildStaticGameRow(
+                                          // Note: Instructions moved to pause menu for cleaner gameplay view.
+                                          // The "Avoid walls" hint that used to share this strip
+                                          // with the gesture indicator was removed (tutorial-only
+                                          // noise after game 2). The gesture indicator stays —
+                                          // centered now that it's alone — because it's the
+                                          // chrome-side per-swipe confirmation that pairs with
+                                          // the board's edge-bloom.
+                                          _buildGestureIndicatorRow(
                                             theme,
                                             isSmallScreen,
                                           ),
@@ -1212,66 +1219,18 @@ class _GameScreenState extends State<GameScreen>
 
   // NOTE: Instructions moved to pause_overlay.dart - _buildGameGuideSection()
 
-  Widget _buildStaticGameRow(GameTheme theme, bool isSmallScreen) {
+  /// Thin strip between HUD and board holding the centered gesture
+  /// indicator chip. Mirrors the original static-row vertical margin so
+  /// the board sits at the same Y position it did before — no shift on
+  /// hot-reload from earlier builds.
+  Widget _buildGestureIndicatorRow(GameTheme theme, bool isSmallScreen) {
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: 16,
         vertical: isSmallScreen ? 6 : 8,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Left side - Game hint
-          _buildGameHint(theme, isSmallScreen),
-          // Right side - reactive gesture indicator. Always visible so the
-          // player sees the direction arrow rotate + glow on every accepted
-          // swipe — that's the per-input visual confirmation.
-          _buildStaticGestureIndicator(theme, isSmallScreen),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGameHint(GameTheme theme, bool isSmallScreen) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 8 : 10,
-        vertical: isSmallScreen ? 6 : 8,
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.foodColor.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.lightbulb_outline,
-            color: theme.foodColor.withValues(alpha: 0.7),
-            size: isSmallScreen ? 14 : 16,
-          ),
-          SizedBox(width: isSmallScreen ? 6 : 8),
-          Text(
-            'Avoid walls & yourself',
-            style: TextStyle(
-              color: theme.foodColor.withValues(alpha: 0.8),
-              fontSize: isSmallScreen ? 10 : 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+      alignment: Alignment.center,
+      child: _buildStaticGestureIndicator(theme, isSmallScreen),
     );
   }
 
@@ -1308,7 +1267,6 @@ class _GameScreenState extends State<GameScreen>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Direction arrow with rotation
               AnimatedRotation(
                 turns: _getDirectionRotation(_lastSwipeDirection),
                 duration: const Duration(milliseconds: 200),
@@ -1319,17 +1277,16 @@ class _GameScreenState extends State<GameScreen>
                   child: Icon(
                     Icons.arrow_upward_rounded,
                     color: activeColor.withValues(alpha: isActive ? 1.0 : 0.6),
-                    size: 18,
+                    size: isSmallScreen ? 16 : 18,
                   ),
                 ),
               ),
               const SizedBox(width: 6),
-              // "Swipe" label
               Text(
                 'Swipe',
                 style: TextStyle(
                   color: activeColor.withValues(alpha: isActive ? 0.9 : 0.6),
-                  fontSize: 12,
+                  fontSize: isSmallScreen ? 11 : 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
                 ),

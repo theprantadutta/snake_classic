@@ -245,19 +245,27 @@ class PauseOverlay extends StatelessWidget {
   }
 
   Widget _buildGameGuideSection() {
+    // Color + border were on an outer DecoratedBox, which hid ExpansionTile's
+    // (internally a ListTile) ink ripple and triggered Flutter's
+    // Material-ancestor warning. Moved onto ExpansionTile's own
+    // backgroundColor + shape (both states) so ripples render correctly.
     // Widened from 220 → 260 to fit the expanded section labels
     // ("PowerUp Madness", "Slow Motion", etc.) without ellipsizing.
-    return Container(
+    final guideShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
+    );
+    return SizedBox(
       width: 260,
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-      ),
       child: Theme(
         data: ThemeData(dividerColor: Colors.transparent),
         child: ExpansionTile(
           initiallyExpanded: false,
+          backgroundColor: theme.backgroundColor.withValues(alpha: 0.5),
+          collapsedBackgroundColor:
+              theme.backgroundColor.withValues(alpha: 0.5),
+          shape: guideShape,
+          collapsedShape: guideShape,
           tilePadding: const EdgeInsets.symmetric(horizontal: 12),
           childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           title: Row(
