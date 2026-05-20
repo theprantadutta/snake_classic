@@ -31,14 +31,14 @@ dependencies:
   
   # Audio system
   audioplayers: ^6.0.0
-  flutter_soloud: ^3.4.7
+  flutter_soloud: ^4.0.6
   
   # Persistent storage
   shared_preferences: ^2.2.3
 
   # Drift database for offline-first storage
   drift: ^2.18.0
-  sqlite3_flutter_libs: ^0.5.24
+  sqlite3_flutter_libs: ^0.6.0+eol
   path_provider: ^2.1.4
   path: ^1.9.0
   
@@ -69,11 +69,11 @@ dependencies:
   
   # Enhanced UI components for auth
   flutter_dotenv: ^6.0.0
-  font_awesome_flutter: ^10.7.0
+  font_awesome_flutter: ^11.0.0
   
   # Push notifications
   firebase_messaging: ^16.0.1
-  flutter_local_notifications: ^20.1.0
+  flutter_local_notifications: ^21.0.0
   
   # HTTP client for backend communication
   http: ^1.2.2
@@ -96,7 +96,7 @@ dependencies:
 
   # For Splash Screen
   flutter_native_splash: ^2.4.6
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.1.0
 
 dev_dependencies:
   flutter_test:

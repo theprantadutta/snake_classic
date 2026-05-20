@@ -163,6 +163,7 @@ class Achievement {
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       icon: IconData(
+        // ignore: non_const_argument_for_const_parameter
         json['iconCodePoint'] ?? Icons.star.codePoint,
         fontFamily: 'MaterialIcons',
       ),

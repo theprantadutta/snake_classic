@@ -686,7 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.blue.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: const FaIcon(
                           FontAwesomeIcons.google,
                           color: Colors.blue,
                           size: 24,
@@ -752,7 +752,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildEnhancedButton(
                     context,
                     'Sign in with Google',
-                    FontAwesomeIcons.google,
+                    const FaIcon(
+                      FontAwesomeIcons.google,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     Colors.blue,
                     Colors.blue.shade700,
                     () => _handleGoogleUpgrade(context, theme),
@@ -938,7 +942,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildEnhancedButton(
                     context,
                     'Sign Out',
-                    Icons.logout_rounded,
+                    const Icon(
+                      Icons.logout_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     Colors.red,
                     Colors.red.shade700,
                     () => _showSignOutDialog(context, theme),
@@ -1019,7 +1027,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildEnhancedButton(
     BuildContext context,
     String text,
-    IconData icon,
+    Widget icon,
     Color primaryColor,
     Color secondaryColor,
     VoidCallback onPressed,
@@ -1051,7 +1059,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white, size: 24),
+              icon,
               const SizedBox(width: 12),
               Text(
                 text,

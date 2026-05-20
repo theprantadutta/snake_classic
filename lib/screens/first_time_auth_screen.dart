@@ -295,7 +295,11 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                               _buildAuthButton(
                                     context,
                                     'Sign in with Google',
-                                    FontAwesomeIcons.google,
+                                    const FaIcon(
+                                      FontAwesomeIcons.google,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
                                     [Colors.red.shade600, Colors.red.shade700],
                                     () => _handleGoogleSignIn(authCubit),
                                   )
@@ -307,7 +311,11 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                               _buildAuthButton(
                                     context,
                                     'Continue as Guest',
-                                    Icons.person_outline_rounded,
+                                    const Icon(
+                                      Icons.person_outline_rounded,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
                                     [
                                       theme.primaryColor.withValues(alpha: 0.8),
                                       theme.primaryColor,
@@ -647,7 +655,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
   Widget _buildAuthButton(
     BuildContext context,
     String text,
-    IconData icon,
+    Widget icon,
     List<Color> gradientColors,
     VoidCallback onPressed,
   ) {
@@ -678,7 +686,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white, size: 24),
+              icon,
               const SizedBox(width: 12),
               Text(
                 text,
