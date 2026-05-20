@@ -426,7 +426,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   ) {
     return Row(
       children: [
-        // Theme switcher / Settings
+        // Settings entry point
         GestureDetector(
           onTap: () {
             context.push(AppRoutes.settings);
@@ -443,7 +443,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             ),
             child: Icon(
-              Icons.palette,
+              Icons.settings_rounded,
               color: theme.accentColor,
               size: isSmallScreen ? 20 : 24,
             ),
@@ -775,11 +775,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               Flexible(
                 flex: 3,
                 child: Container(
+                  // maxHeight is clamped to be at least 80 (the minHeight
+                  // floor) so a transient small availableHeight on Android
+                  // resume — when SafeArea/system-bars haven't resettled —
+                  // can't produce minHeight > maxHeight and trip the
+                  // BoxConstraints assertion. The 0.25 ratio is preserved
+                  // for the common case; the clamp only kicks in below
+                  // ~320 px of available height.
                   constraints: BoxConstraints(
-                    maxHeight: availableHeight > 0
-                        ? availableHeight * 0.25
-                        : 120,
                     minHeight: 80,
+                    maxHeight: (availableHeight > 0
+                            ? availableHeight * 0.25
+                            : 120.0)
+                        .clamp(80.0, double.infinity),
                   ),
                   child: _buildCompactStatsRow(
                     context: context,
