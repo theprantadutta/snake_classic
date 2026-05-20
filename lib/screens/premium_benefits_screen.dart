@@ -16,8 +16,18 @@ class PremiumBenefitsScreen extends StatefulWidget {
 
 class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     with SingleTickerProviderStateMixin {
+  // Trial lengths mirror the Play Console base-plan offers (monthly: 3-day,
+  // yearly: 7-day). Used to render trial copy in the pricing cards, trial
+  // info card, and Subscribe-button subtitle. Update here AND in Play
+  // Console together if the offer ever changes.
+  static const int _monthlyTrialDays = 3;
+  static const int _yearlyTrialDays = 7;
+
   late TabController _tabController;
   bool _isYearly = true;
+
+  int get _selectedTrialDays =>
+      _isYearly ? _yearlyTrialDays : _monthlyTrialDays;
 
   @override
   void initState() {
@@ -294,7 +304,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           price: PurchaseService().getStorePriceOrDefault(
               ProductIds.snakeClassicProMonthly, 4.99),
           period: '/month',
-          badge: '3-day free trial',
+          badge: '$_monthlyTrialDays-day free trial',
           accentColor: Colors.blue,
           isPopular: false,
           theme: theme,
@@ -308,7 +318,9 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               : PurchaseService().getStorePriceOrDefault(
                   ProductIds.snakeClassicProMonthly, 4.99),
           period: _isYearly ? '/year' : '/month',
-          badge: _isYearly ? 'Save 33% - Best Value!' : '3-day free trial',
+          badge: _isYearly
+              ? 'Save 33% • $_yearlyTrialDays-day free trial'
+              : '$_monthlyTrialDays-day free trial',
           accentColor: Colors.green,
           isPopular: _isYearly,
           theme: theme,
@@ -565,7 +577,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '3-Day Free Trial',
+                  '$_selectedTrialDays-Day Free Trial',
                   style: TextStyle(
                     color: theme.accentColor,
                     fontWeight: FontWeight.bold,
@@ -655,9 +667,9 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        '3-day free trial via Google Play',
-                        style: TextStyle(
+                      Text(
+                        '$_selectedTrialDays-day free trial via Google Play',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           color: Colors.white70,
