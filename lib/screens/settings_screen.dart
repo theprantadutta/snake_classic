@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
@@ -395,6 +396,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ], theme),
 
                                   const SizedBox(height: 32),
+
+                                  // Diagnostic buttons that isolate each layer
+                                  // of the notification pipeline. Gated behind
+                                  // kDebugMode so production builds never see
+                                  // it — these are developer-facing controls
+                                  // for triage during development + Play Store
+                                  // internal testing, not user features. See
+                                  // NOTIFICATIONS_TESTING.md for triage guide.
+                                  if (kDebugMode) ...[
+                                    _buildSection('TEST NOTIFICATIONS', [
+                                      _buildNotificationTestPanel(theme),
+                                    ], theme),
+                                    const SizedBox(height: 32),
+                                  ],
 
                                   _buildSection('USER PROFILE', [
                                     _buildUserProfileSettings(authState, theme),
@@ -1339,6 +1354,267 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ],
     );
+  }
+
+  /// Three-button diagnostic surface for the notification pipeline. Each
+  /// button isolates one layer:
+  ///   • Send Local Test   → permission + channel + display path
+  ///   • Send Push via Backend → FCM token + backend send + delivery
+  ///   • Copy FCM Token    → manual Firebase Console testing
+  /// If "local" works but "backend" doesn't, the break is in token
+  /// registration or backend send. If neither works, the OS-level
+  /// permission is denied.
+  Widget _buildNotificationTestPanel(GameTheme theme) {
+    final fcmToken = _notificationService.fcmToken;
+    final hasFcmToken = fcmToken != null && fcmToken.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GradientButton(
+          onPressed: _sendTestLocalNotification,
+          text: 'SEND LOCAL TEST',
+          primaryColor: theme.accentColor,
+          secondaryColor: theme.foodColor,
+          icon: Icons.notifications_active,
+          width: double.infinity,
+          outlined: true,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Fires immediately. If you don\'t see it, OS permission is denied '
+          'or the channel is blocked in system settings.',
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 16),
+        GradientButton(
+          onPressed: hasFcmToken ? _sendTestPushViaBackend : null,
+          text: hasFcmToken ? 'SEND PUSH VIA BACKEND' : 'NO FCM TOKEN',
+          primaryColor: theme.accentColor,
+          secondaryColor: theme.foodColor,
+          icon: Icons.cloud_upload,
+          width: double.infinity,
+          outlined: true,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          hasFcmToken
+              ? 'Backend sends a push to your device via FCM. Should arrive '
+                  'within ~5 seconds if token + backend + delivery all work.'
+              : 'FCM token not yet registered. Sign in or restart the app, '
+                  'then return to retry.',
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+        if (kDebugMode) ...[
+          const SizedBox(height: 16),
+          GradientButton(
+            onPressed: hasFcmToken ? _copyFcmTokenToClipboard : null,
+            text: 'COPY FCM TOKEN',
+            primaryColor: theme.accentColor,
+            secondaryColor: theme.foodColor,
+            icon: Icons.content_copy,
+            width: double.infinity,
+            outlined: true,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Debug only. Paste into Firebase Console → Cloud Messaging → '
+            'Send test message to bypass the backend entirely.',
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.6),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GradientButton(
+            onPressed: _scheduleTestAtTime,
+            text: 'SCHEDULE TEST AT TIME',
+            primaryColor: theme.accentColor,
+            secondaryColor: theme.foodColor,
+            icon: Icons.schedule,
+            width: double.infinity,
+            outlined: true,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Pick date + time. Uses OS scheduler so it fires even if the '
+            'app is killed. Inexact mode — may run up to ~15 min late in '
+            'Doze. Re-scheduling overwrites the pending test.',
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.6),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GradientButton(
+            onPressed: _cancelScheduledTest,
+            text: 'CANCEL SCHEDULED TEST',
+            primaryColor: theme.accentColor.withValues(alpha: 0.5),
+            secondaryColor: theme.foodColor.withValues(alpha: 0.5),
+            icon: Icons.cancel_outlined,
+            width: double.infinity,
+            outlined: true,
+          ),
+          const SizedBox(height: 16),
+          GradientButton(
+            onPressed: _previewDailyReminder,
+            text: 'PREVIEW DAILY REMINDER',
+            primaryColor: theme.accentColor,
+            secondaryColor: theme.foodColor,
+            icon: Icons.alarm_on,
+            width: double.infinity,
+            outlined: true,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Fires the exact content the daily reminder would show '
+            'tomorrow — pulls your current streak / high score from '
+            'statistics so you see your real message variant. Bypasses '
+            'the 23h schedule for instant verification.',
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.6),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _sendTestLocalNotification() async {
+    await _notificationService.sendTestLocalNotification();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Local test fired — check your notification tray.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _sendTestPushViaBackend() async {
+    await _notificationService.sendTestNotificationViaBackend();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Push request sent. Should arrive within ~5s if FCM is wired up.',
+        ),
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Future<void> _copyFcmTokenToClipboard() async {
+    final token = _notificationService.fcmToken;
+    if (token == null) return;
+    await Clipboard.setData(ClipboardData(text: token));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('FCM token copied. Paste into Firebase Console.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Two-step picker: date → time. Defaults bias toward "now + 2 min" so
+  /// the common dev workflow (tap-tap-OK to verify scheduling works) is
+  /// fast. Schedules via OS-level zonedSchedule on confirm.
+  Future<void> _scheduleTestAtTime() async {
+    final now = DateTime.now();
+    final preset = now.add(const Duration(minutes: 2));
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: preset,
+      firstDate: now.subtract(const Duration(days: 1)),
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (pickedDate == null || !mounted) return;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(preset),
+    );
+    if (pickedTime == null || !mounted) return;
+
+    final fireAt = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+
+    if (!fireAt.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pick a future date + time'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    await _notificationService.scheduleTestNotificationAt(fireAt);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Scheduled for ${_formatScheduledTime(fireAt)}'),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Future<void> _cancelScheduledTest() async {
+    await _notificationService.cancelScheduledTestNotification();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Scheduled test cancelled'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _previewDailyReminder() async {
+    // Pull live stats from AppDataCache so the previewed message reflects
+    // what the user would actually see in the wild. hasIncompleteDailyChallenge
+    // would require the DailyChallengeService — passing false here keeps
+    // the preview self-contained; if streak >= 3 or highScore > 0, those
+    // higher-priority branches fire anyway. Worst case: user sees the
+    // generic message variant. Better tradeoff than coupling Settings to
+    // another service for a debug-only feature.
+    final stats = _appCache.statistics ?? {};
+    final winStreak = (stats['winStreak'] as int?) ?? 0;
+    final highScore = (stats['highScore'] as int?) ?? 0;
+
+    await _notificationService.previewDailyReminder(
+      currentWinStreak: winStreak,
+      hasIncompleteDailyChallenge: false,
+      highScore: highScore,
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Daily reminder preview fired — check your tray.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  String _formatScheduledTime(DateTime dt) {
+    final hh = dt.hour.toString().padLeft(2, '0');
+    final mm = dt.minute.toString().padLeft(2, '0');
+    return '${dt.month}/${dt.day} $hh:$mm';
   }
 
   Widget _buildReplayTutorialButton(GameTheme theme) {

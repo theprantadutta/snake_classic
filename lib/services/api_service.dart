@@ -1489,6 +1489,45 @@ class ApiService {
     }
   }
 
+  /// Trigger the backend's test-notification endpoint (`POST /test/send-test-notification`).
+  /// Authenticated — the endpoint is `[Authorize]` on the server. Body
+  /// uses `token` (camelCase) to match the backend's
+  /// `TestNotificationRequest(string Token, ...)` record contract; the
+  /// older snake_case `fcm_token` field went to a null property and
+  /// the request blew up server-side with no auth header.
+  Future<bool> sendTestNotification({
+    required String fcmToken,
+    String title = '🐍 Backend Test',
+    String body = 'This notification was sent from the Snake Classic backend!',
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/test/send-test-notification'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'token': fcmToken,
+              'title': title,
+              'body': body,
+            }),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        AppLogger.network('Test notification dispatched via backend');
+        return true;
+      }
+      AppLogger.error(
+        'Backend test notification failed: ${response.statusCode}',
+        response.body,
+      );
+      return false;
+    } catch (e) {
+      AppLogger.error('Error sending test notification via backend', e);
+      return false;
+    }
+  }
+
   /// Subscribe to notification topic
   Future<bool> subscribeToTopic(String fcmToken, String topic) async {
     try {

@@ -47,5 +47,17 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!--
+			Tells iOS the app expects remote (push) notifications and may
+			be woken in the background to handle them. Strictly speaking
+			visible notifications (with a 'notification' payload) display
+			even without this, but adding it future-proofs us against any
+			data-only / content-available pushes the backend might send,
+			and it's what Firebase's iOS setup guide recommends.
+		-->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+		</array>
 	</dict>
 </plist>

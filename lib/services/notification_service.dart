@@ -5,6 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// Timezone data + types — transitive dep via flutter_local_notifications, no
+// pubspec entry needed. We only ever use tz.UTC for relative scheduling so
+// we deliberately skip setLocalLocation (which would require resolving the
+// device's IANA zone name and pulling in flutter_timezone on iOS).
+import 'package:timezone/data/latest_10y.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 import '../utils/logger.dart';
 import 'api_service.dart';
 import 'backend_service.dart';
@@ -39,6 +45,7 @@ class NotificationService {
   String? _fcmToken;
   bool _initialized = false;
   bool _backendIntegrationDone = false;
+  bool _timezonesInitialized = false;
 
   // Notification preferences - stored in SharedPreferences via PreferencesService
   final Map<NotificationType, bool> _notificationPreferences = {
@@ -99,7 +106,17 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    // Create notification channel for Android
+    // Create notification channel for Android, then explicitly request
+    // POST_NOTIFICATIONS at runtime via flutter_local_notifications.
+    //
+    // Why not rely on firebase_messaging.requestPermission for this?
+    // Per the FlutterFire team's tracking issue, FCM's requestPermission
+    // does NOT reliably trigger the Android 13+ system dialog — on a
+    // newly-installed device targeting API 33+ the user is silently in
+    // a "denied" state and every subsequent notification is dropped
+    // without any error log. Going through the local-notifications
+    // plugin's own request is the documented Android path and is
+    // idempotent (returns immediately if already granted/denied).
     if (defaultTargetPlatform == TargetPlatform.android) {
       const channel = AndroidNotificationChannel(
         _channelId,
@@ -110,11 +127,16 @@ class NotificationService {
         enableVibration: true,
       );
 
-      await _localNotifications
+      final androidPlugin = _localNotifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.createNotificationChannel(channel);
+          >();
+      await androidPlugin?.createNotificationChannel(channel);
+
+      final granted = await androidPlugin?.requestNotificationsPermission();
+      AppLogger.info(
+        '🔔 Android notifications permission requested. Granted: $granted',
+      );
     }
   }
 
@@ -402,6 +424,91 @@ class NotificationService {
   // cancel + reschedule on every app launch without piling up duplicates.
   static const int _dailyReminderNotificationId = 1001;
 
+  // Reserved ID for the debug-only "schedule test notification" feature
+  // surfaced in Settings → TEST NOTIFICATIONS. Single ID so re-scheduling
+  // overwrites the pending one — at most one pending test at a time.
+  static const int _scheduledTestNotificationId = 1002;
+
+  /// Lazily initialize the IANA timezone DB (the `timezone` package's
+  /// dataset). zonedSchedule needs a tz.Location, which requires this
+  /// init. Idempotent — safe to call repeatedly. We use the 10-year
+  /// dataset rather than the full one (~100KB instead of ~600KB) since
+  /// nothing in this app schedules beyond a decade out.
+  void _ensureTimezonesInitialized() {
+    if (_timezonesInitialized) return;
+    tz_data.initializeTimeZones();
+    _timezonesInitialized = true;
+  }
+
+  /// Schedule a one-shot test notification to fire at [fireAt] (a wall-
+  /// clock local time on the device). Backed by `zonedSchedule` so the
+  /// OS scheduler owns the trigger — fires even when the app is killed.
+  ///
+  /// Debug-only feature; called by the Settings test panel. Single
+  /// reserved ID means a subsequent call overwrites any pending test
+  /// notification (at most one in flight).
+  ///
+  /// Android schedule mode is inexactAllowWhileIdle so we don't require
+  /// the SCHEDULE_EXACT_ALARM permission (which this app intentionally
+  /// strips from the manifest for Play Store policy reasons). The
+  /// trade-off: Doze mode can delay delivery by up to ~15 minutes.
+  Future<void> scheduleTestNotificationAt(DateTime fireAt) async {
+    _ensureTimezonesInitialized();
+
+    // Convert wall-clock DateTime to UTC TZDateTime. The notification
+    // fires at the same absolute instant regardless of which Location
+    // we use — tz.UTC is always available without setLocalLocation.
+    final fireAtUtc = tz.TZDateTime.from(fireAt.toUtc(), tz.UTC);
+
+    const androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      playSound: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final delay = fireAt.difference(DateTime.now());
+    final delaySummary = delay.inSeconds < 60
+        ? '${delay.inSeconds}s'
+        : delay.inMinutes < 60
+            ? '${delay.inMinutes}m'
+            : '${delay.inHours}h ${delay.inMinutes % 60}m';
+
+    await _localNotifications.zonedSchedule(
+      id: _scheduledTestNotificationId,
+      title: '⏰ Scheduled test fired',
+      body:
+          'Your scheduled test notification arrived (was queued $delaySummary ahead).',
+      scheduledDate: fireAtUtc,
+      notificationDetails: details,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: jsonEncode({'route': 'home', 'source': 'test_schedule'}),
+    );
+
+    AppLogger.info('⏰ Test notification scheduled for $fireAt ($delaySummary ahead)');
+  }
+
+  /// Cancel a pending scheduled test notification. No-op if nothing
+  /// pending under the reserved ID.
+  Future<void> cancelScheduledTestNotification() async {
+    await _localNotifications.cancel(id: _scheduledTestNotificationId);
+    AppLogger.info('🔕 Scheduled test notification cancelled');
+  }
+
   /// Schedule (or refresh) the daily player reminder.
   ///
   /// Replaces the server-side cron that was supposed to fire once a day
@@ -435,24 +542,13 @@ class NotificationService {
       return;
     }
 
-    // Pick the most relevant message. Streak-at-risk wins because losing
-    // a streak is the most urgent reason to come back.
-    String title;
-    String body;
-    if (currentWinStreak >= 3) {
-      title = '🔥 Your streak is on the line!';
-      body =
-          "You're on a $currentWinStreak-day streak. One game keeps it alive.";
-    } else if (hasIncompleteDailyChallenge) {
-      title = '🎯 Today\'s challenge is waiting';
-      body = 'Complete it before midnight to claim your rewards.';
-    } else if (highScore > 0) {
-      title = 'Can you beat your best?';
-      body = 'Your high score is $highScore. One round, one chance.';
-    } else {
-      title = '🐍 Snake Classic';
-      body = 'Pick up where you left off.';
-    }
+    _ensureTimezonesInitialized();
+
+    final message = _pickDailyReminderMessage(
+      currentWinStreak: currentWinStreak,
+      hasIncompleteDailyChallenge: hasIncompleteDailyChallenge,
+      highScore: highScore,
+    );
 
     const androidDetails = AndroidNotificationDetails(
       _channelId,
@@ -475,29 +571,101 @@ class NotificationService {
       iOS: iosDetails,
     );
 
+    // First fire is ~23 hours from now (just under a full day so the user
+    // gets a ping shortly before their "next 24h" comes around). After
+    // that, matchDateTimeComponents.time tells the OS to repeat at the
+    // SAME TIME-OF-DAY every subsequent day — no drift, no daily setup
+    // call needed. Re-calling this method (from auth init and after each
+    // game) cancels + reschedules so the anchor naturally drifts toward
+    // the user's most recent active window.
+    //
+    // Why migrate from periodicallyShow(RepeatInterval.daily)?
+    // periodicallyShow maps to AlarmManager.setInexactRepeating which on
+    // modern Android (8+) is documented to drift over time and is
+    // unreliable on some OEMs. zonedSchedule + matchDateTimeComponents
+    // uses setAndAllowWhileIdle and re-schedules each fire, which is the
+    // documented recommended pattern for reliable daily notifications.
+    //
+    // inexactAllowWhileIdle keeps us off the SCHEDULE_EXACT_ALARM Play
+    // policy gate (manifest intentionally strips it).
+    final firstFireLocal = DateTime.now().add(const Duration(hours: 23));
+    final firstFireTz = tz.TZDateTime.from(firstFireLocal.toUtc(), tz.UTC);
+
     try {
-      // RepeatInterval.daily fires the same notification ~24 hours after
-      // each schedule call. Calling this on every app launch effectively
-      // shifts the fire time toward the user's typical play window — a
-      // reasonable approximation of "when they'd want to be reminded"
-      // without needing the timezone package's TZDateTime plumbing.
-      //
-      // inexactAllowWhileIdle skips the Android 12+ SCHEDULE_EXACT_ALARM
-      // permission requirement (a daily reminder doesn't need
-      // second-precision firing).
-      await _localNotifications.periodicallyShow(
+      await _localNotifications.zonedSchedule(
         id: _dailyReminderNotificationId,
-        title: title,
-        body: body,
-        repeatInterval: RepeatInterval.daily,
+        title: message.title,
+        body: message.body,
+        scheduledDate: firstFireTz,
         notificationDetails: details,
-        payload: jsonEncode({'route': 'home', 'source': 'daily_reminder'}),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: jsonEncode({'route': 'home', 'source': 'daily_reminder'}),
+        matchDateTimeComponents: DateTimeComponents.time,
       );
-      AppLogger.info('⏰ Daily reminder scheduled: $title');
+      AppLogger.info(
+        '⏰ Daily reminder scheduled: ${message.title} (first fire '
+        '$firstFireLocal, then daily at same time-of-day)',
+      );
     } catch (e) {
       AppLogger.error('Failed to schedule daily reminder', e);
     }
+  }
+
+  /// Pick the daily-reminder message variant from local game state.
+  /// Streak-at-risk wins because losing a streak is the most urgent
+  /// reason to come back; falls through to challenge → high-score →
+  /// generic in priority order. Extracted so the debug preview button
+  /// can call the same logic with the user's current state.
+  ({String title, String body}) _pickDailyReminderMessage({
+    required int currentWinStreak,
+    required bool hasIncompleteDailyChallenge,
+    required int highScore,
+  }) {
+    if (currentWinStreak >= 3) {
+      return (
+        title: '🔥 Your streak is on the line!',
+        body:
+            "You're on a $currentWinStreak-day streak. One game keeps it alive.",
+      );
+    } else if (hasIncompleteDailyChallenge) {
+      return (
+        title: '🎯 Today\'s challenge is waiting',
+        body: 'Complete it before midnight to claim your rewards.',
+      );
+    } else if (highScore > 0) {
+      return (
+        title: 'Can you beat your best?',
+        body: 'Your high score is $highScore. One round, one chance.',
+      );
+    } else {
+      return (title: '🐍 Snake Classic', body: 'Pick up where you left off.');
+    }
+  }
+
+  /// Fire the daily-reminder content NOW with the message it would
+  /// have at the next scheduled fire. Debug-only — used by the Settings
+  /// test panel to preview the exact notification a user will see
+  /// without waiting 23 hours.
+  Future<void> previewDailyReminder({
+    required int currentWinStreak,
+    required bool hasIncompleteDailyChallenge,
+    required int highScore,
+  }) async {
+    final message = _pickDailyReminderMessage(
+      currentWinStreak: currentWinStreak,
+      hasIncompleteDailyChallenge: hasIncompleteDailyChallenge,
+      highScore: highScore,
+    );
+    AppLogger.info('🧪 Previewing daily reminder: ${message.title}');
+    await _showLocalNotification(
+      title: message.title,
+      body: message.body,
+      type: NotificationType.dailyReminder,
+      payload: jsonEncode({
+        'route': 'home',
+        'source': 'daily_reminder_preview',
+      }),
+    );
   }
 
   /// Cancel any pending daily reminder. Called from the settings UI when
@@ -737,7 +905,13 @@ class NotificationService {
     }
   }
 
-  /// Send test notification via backend
+  /// Send test notification via backend.
+  ///
+  /// Goes through ApiService rather than the legacy BackendService so the
+  /// JWT auth header is attached — without it the [Authorize] endpoint
+  /// returned 401. Field naming also corrected: backend's
+  /// TestNotificationRequest uses `Token` (camelCase-binds from `token`),
+  /// not the snake_case `fcm_token` BackendService was sending.
   Future<void> sendTestNotificationViaBackend() async {
     if (_fcmToken == null) {
       AppLogger.warning('Cannot send test notification: No FCM token');
@@ -745,12 +919,8 @@ class NotificationService {
     }
 
     try {
-      // ignore: deprecated_member_use
-      final success = await BackendService().sendTestNotification(
+      final success = await ApiService().sendTestNotification(
         fcmToken: _fcmToken!,
-        title: '🐍 Backend Test',
-        body: 'This notification was sent from the Snake Classic backend!',
-        route: 'home',
       );
 
       if (success) {
@@ -798,6 +968,21 @@ class NotificationService {
     } catch (e) {
       AppLogger.error('Error loading notification preferences', e);
     }
+  }
+
+  /// Fire a local notification immediately for end-to-end testing of the
+  /// permission + channel + display pipeline. Used by the "Send Local
+  /// Test" button on the settings screen. If this is invisible, the
+  /// problem is local (permission denied, OS blocked the channel, or
+  /// notifications disabled in system settings) — no FCM / backend
+  /// involvement at all.
+  Future<void> sendTestLocalNotification() async {
+    AppLogger.info('🧪 Firing test local notification');
+    await _showLocalNotification(
+      title: '🐍 Snake Classic Test',
+      body: 'If you see this, local notifications work end-to-end.',
+      payload: jsonEncode({'route': 'home', 'source': 'test'}),
+    );
   }
 
   /// Development-only method to print FCM token for Firebase Console testing
