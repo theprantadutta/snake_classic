@@ -438,6 +438,20 @@ class GameCubit extends Cubit<GameCubitState> {
               createdAt: current.powerUp!.createdAt.add(pauseDuration),
             )
           : null;
+      // Same shift for bonus/special food. Food.isExpired compares
+      // DateTime.now() to createdAt with no pause concept of its own, so
+      // without this a 10–15s pause was enough to expire any bonus/special
+      // sitting on the board — the next _updateGame tick after resume would
+      // see isExpired==true and reroll its position. Normal food never
+      // expires; the shift is harmless either way.
+      Food shiftFood(Food f) => Food(
+            position: f.position,
+            type: f.type,
+            createdAt: f.createdAt.add(pauseDuration),
+          );
+      final shiftedFood =
+          current.food != null ? shiftFood(current.food!) : null;
+      final shiftedFoods = current.foods.map(shiftFood).toList();
       final shiftedGameStart = current.gameStartTime?.add(pauseDuration);
       emit(
         state.copyWith(
@@ -446,6 +460,8 @@ class GameCubit extends Cubit<GameCubitState> {
             status: model.GameStatus.playing,
             activePowerUps: shiftedActive,
             powerUp: shiftedPowerUp,
+            food: shiftedFood,
+            foods: shiftedFoods,
             gameStartTime: shiftedGameStart,
             clearPausedAt: true,
           ),
