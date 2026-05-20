@@ -98,8 +98,15 @@ class AppDataCache extends ChangeNotifier {
       // on first paint (skeletons / loading text shown) but the user reaches
       // the home screen up to ~4s sooner per slow endpoint.
       await Future.wait([
-        // Group 1: Local data (fast, no timeout needed)
-        _loadStatistics(),
+        // Group 1: Local data (fast — disk-only after StatisticsService's
+        // initialize() was decoupled from cloud sync). _loadStatistics
+        // still gets a 4s safety-net timeout in case the underlying disk
+        // I/O stalls; we'd rather paint home with stale stats than block
+        // the loading screen the way we used to when the backend was
+        // unreachable and statsService.initialize chained a 15s API call.
+        _loadStatistics().timeout(const Duration(seconds: 4), onTimeout: () {
+          AppLogger.warning('AppDataCache: Statistics load timed out');
+        }),
         _loadRecentAchievements(),
         _loadReplayKeys(),
         _loadSettingsData(),

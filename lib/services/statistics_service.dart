@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -30,15 +31,25 @@ class StatisticsService {
     if (_initialized) return;
 
     try {
-      // Load local statistics first
+      // Load local statistics first — fast, disk-only.
       await _loadLocalStatistics();
 
-      // If user is signed in, sync with cloud
-      if (_userService.isSignedIn) {
-        await _syncWithCloud();
-      }
-
+      // Mark ready as soon as local data is available so callers that
+      // await initialize() (GameSettingsCubit, AppDataCache, etc.) are
+      // never blocked on a network round-trip. Previously this was set
+      // AFTER _syncWithCloud, which made the whole offline-first chain
+      // wait up to ~30s on backend timeouts when the server was down —
+      // turning a clean local-only state into a "high score reads 0"
+      // bug for the full timeout window.
       _initialized = true;
+
+      // Cloud sync runs in the background. Local data is already usable;
+      // any server-side aggregates land later and mutate _currentStatistics
+      // in place. Listeners that need a refresh can call
+      // [getDisplayStatistics] again or subscribe via AppDataCache.
+      if (_userService.isSignedIn) {
+        unawaited(_syncWithCloud());
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Error initializing statistics service: $e');
@@ -113,6 +124,17 @@ class StatisticsService {
           serverStats,
         );
         await _saveLocalStatistics();
+
+        // Propagate the post-merge high score to the separate
+        // StorageService.highScore key. Without this, a server-restored
+        // value (e.g. server has 2033, local statistics now reflect that)
+        // wouldn't be visible to GameSettingsCubit — which reads the
+        // separate key on next init — until an app restart triggered
+        // the reconciliation in _loadLocalStatistics. The never-decrease
+        // guard in saveHighScore makes this a no-op if it's already up
+        // to date or lower, so this is safe to call unconditionally.
+        await _storageService.saveHighScore(_currentStatistics.highScore);
+
         if (kDebugMode) {
           print('Statistics: cumulative fields refreshed from server');
         }
@@ -594,8 +616,10 @@ class StatisticsService {
     _currentStatistics = GameStatistics.initial();
     await _saveLocalStatistics();
 
-    // Reset high score in storage
-    await _storageService.saveHighScore(0);
+    // Reset high score in storage. Has to go through the explicit
+    // resetHighScore path — saveHighScore now refuses any write that
+    // would decrease the stored value, by design.
+    await _storageService.resetHighScore();
 
     if (_userService.isSignedIn) {
       // Reset on backend

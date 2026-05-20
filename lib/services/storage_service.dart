@@ -45,8 +45,26 @@ class StorageService {
     return settings?.highScore ?? 0;
   }
 
+  /// Persist a new high score. Never-decrease guard: if the incoming
+  /// [score] is not strictly higher than the value already on disk, the
+  /// write is skipped. This is the storage-boundary defense against
+  /// regressions like the GameCubit reading a stale (loading-state)
+  /// cubit value at game start, computing `isNewHighScore` against that
+  /// stale anchor, and then overwriting a real record with a lower one.
+  ///
+  /// Use [resetHighScore] for legitimate clears (e.g. resetStatistics).
   Future<void> saveHighScore(int score) async {
+    final current = await getHighScore();
+    if (score <= current) return;
     await _settingsDao?.updateHighScore(score);
+  }
+
+  /// Explicit reset path that bypasses the never-decrease guard in
+  /// [saveHighScore]. Only callers that genuinely want to clear the
+  /// stored high score (resetStatistics, user-initiated wipe) should
+  /// use this.
+  Future<void> resetHighScore() async {
+    await _settingsDao?.updateHighScore(0);
   }
 
   // ==================== Theme ====================

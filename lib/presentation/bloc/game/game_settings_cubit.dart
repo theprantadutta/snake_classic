@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
@@ -22,8 +24,26 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
 
     try {
       // Initialize StatisticsService first to sync high scores between
-      // the statistics object and the separate highScore key
-      await _statisticsService.initialize();
+      // the statistics object and the separate highScore key.
+      //
+      // After the cloud-sync-on-init fix in StatisticsService.initialize
+      // this call is local-only and returns in tens of ms. The 3-second
+      // safety net is defense in depth: if the underlying disk I/O ever
+      // stalls (low-storage Android device, locked DB file, etc.) we
+      // swallow the timeout and fall through to the storage reads below
+      // — the user's local settings are still loadable directly from
+      // StorageService even if the StatisticsService prep step hangs.
+      try {
+        await _statisticsService
+            .initialize()
+            .timeout(const Duration(seconds: 3));
+      } on TimeoutException catch (e) {
+        AppLogger.error(
+          'StatisticsService.initialize timed out — continuing with '
+          'direct storage reads',
+          e,
+        );
+      }
 
       // Load saved settings (now synced)
       final highScore = await _storageService.getHighScore();
