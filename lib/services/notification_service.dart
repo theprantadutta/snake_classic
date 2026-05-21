@@ -571,13 +571,24 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // First fire is ~23 hours from now (just under a full day so the user
-    // gets a ping shortly before their "next 24h" comes around). After
-    // that, matchDateTimeComponents.time tells the OS to repeat at the
-    // SAME TIME-OF-DAY every subsequent day — no drift, no daily setup
-    // call needed. Re-calling this method (from auth init and after each
-    // game) cancels + reschedules so the anchor naturally drifts toward
-    // the user's most recent active window.
+    // Pin the daily reminder to a fixed time-of-day (20:00 local — mobile
+    // gaming's prime evening window). If "now" is already past today's
+    // 20:00, schedule the first fire for tomorrow at 20:00; otherwise
+    // schedule for today at 20:00. After the first fire,
+    // matchDateTimeComponents.time tells the OS to repeat at the SAME
+    // TIME-OF-DAY every subsequent day — no drift, no daily setup needed.
+    //
+    // Why a FIXED anchor rather than "now + 23h"?
+    // This method is called on every app launch AND after every game end
+    // (see UnifiedUserService._initializeNotificationIntegration and
+    // GameCubit's post-game flow). With a relative "now + 23h" anchor,
+    // each call cancels the pending schedule and pushes the next fire
+    // another 23 hours into the future — so an actively-engaged player
+    // never actually sees the notification, because tomorrow's fire keeps
+    // getting bumped to the day after every time they open the app.
+    // A fixed time-of-day makes cancel-and-reschedule idempotent: the new
+    // schedule lands on the same 20:00 anchor regardless of when the user
+    // re-opens the app.
     //
     // Why migrate from periodicallyShow(RepeatInterval.daily)?
     // periodicallyShow maps to AlarmManager.setInexactRepeating which on
@@ -588,7 +599,17 @@ class NotificationService {
     //
     // inexactAllowWhileIdle keeps us off the SCHEDULE_EXACT_ALARM Play
     // policy gate (manifest intentionally strips it).
-    final firstFireLocal = DateTime.now().add(const Duration(hours: 23));
+    const reminderHourLocal = 20; // 8 PM
+    final now = DateTime.now();
+    var firstFireLocal = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      reminderHourLocal,
+    );
+    if (!firstFireLocal.isAfter(now)) {
+      firstFireLocal = firstFireLocal.add(const Duration(days: 1));
+    }
     final firstFireTz = tz.TZDateTime.from(firstFireLocal.toUtc(), tz.UTC);
 
     try {
