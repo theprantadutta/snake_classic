@@ -91,6 +91,25 @@ class PowerUpCubit extends Cubit<PowerUpState> {
     }
   }
 
+  /// Spend coins on a power-up bundle. Server-authoritative — price and
+  /// contents are looked up in ProductCatalog.PowerUpBundles on the backend
+  /// so a tampered client can't request arbitrary bundles. Returns the
+  /// updated coin balance, or null on failure.
+  Future<int?> purchaseBundleWithCoins(String bundleId) async {
+    if (!_api.isAuthenticated) return null;
+    try {
+      final data = await _api.purchasePowerUpBundle(bundleId);
+      if (data == null) return null;
+      emit(state.copyWith(
+        inventory: _parseInventory(data['inventory']),
+      ));
+      return data['coin_balance'] as int?;
+    } catch (e) {
+      AppLogger.error('Failed to purchase power-up bundle', e);
+      return null;
+    }
+  }
+
   /// Consume one use of a power-up. Called by the pre-game activation
   /// flow at the moment the power-up activates in-game. Also clears the
   /// armed slot — once a power-up is used the user must re-arm if they

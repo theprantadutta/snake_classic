@@ -478,6 +478,9 @@ class PowerUpBundle {
   double get savingsPercentage => (savings / originalPrice) * 100;
 
   static const List<PowerUpBundle> availableBundles = [
+    // bundlePrice values MUST match ProductCatalog.PowerUpBundles on the
+    // backend — server validates against its own catalog and rejects any
+    // tampered request.
     PowerUpBundle(
       id: 'mega_pack',
       name: 'Mega Power Pack',
@@ -488,8 +491,8 @@ class PowerUpBundle {
         PremiumPowerUpType.megaScoreMultiplier,
         PremiumPowerUpType.megaSlowMotion,
       ],
-      originalPrice: 1196, // 4 power-ups at ~299 coins each
-      bundlePrice: 899,
+      originalPrice: 11000, // 4 mega power-ups at ~2,750 coins each individually
+      bundlePrice: 8000,
       icon: '⚡',
     ),
     PowerUpBundle(
@@ -502,8 +505,8 @@ class PowerUpBundle {
         PremiumPowerUpType.scoreShield,
         PremiumPowerUpType.ghostMode,
       ],
-      originalPrice: 1596,
-      bundlePrice: 1199,
+      originalPrice: 16000,
+      bundlePrice: 12000,
       icon: '🎯',
     ),
     PowerUpBundle(
@@ -511,8 +514,8 @@ class PowerUpBundle {
       name: 'Ultimate Power Pack',
       description: 'Every premium power-up available',
       powerUps: PremiumPowerUpType.values,
-      originalPrice: 3990, // Sum of all individual power-up prices
-      bundlePrice: 2799,
+      originalPrice: 35000, // Sum of all individual premium prices
+      bundlePrice: 25000,
       icon: '👑',
     ),
   ];

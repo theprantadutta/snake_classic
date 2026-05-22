@@ -1181,9 +1181,12 @@ class ApiService {
             Uri.parse('$baseUrl/purchases/equipped-cosmetics'),
             headers: _authHeaders,
             body: jsonEncode({
-              'skinId': ?skinId,
-              'trailId': ?trailId,
-              'themeId': ?themeId,
+              // Backend uses JsonNamingPolicy.SnakeCaseLower for deserialization
+              // — SkinId/TrailId/ThemeId DTO props bind from snake_case keys.
+              // CamelCase nulls them out silently.
+              'skin_id': ?skinId,
+              'trail_id': ?trailId,
+              'theme_id': ?themeId,
             }),
           )
           .timeout(_timeout);
@@ -1217,8 +1220,8 @@ class ApiService {
             Uri.parse('$baseUrl/PowerUps/purchase'),
             headers: _authHeaders,
             body: jsonEncode({
-              'powerUpType': powerUpType,
-              'coinCost': coinCost,
+              'power_up_type': powerUpType,
+              'coin_cost': coinCost,
             }),
           )
           .timeout(_timeout);
@@ -1235,12 +1238,32 @@ class ApiService {
           .post(
             Uri.parse('$baseUrl/PowerUps/consume'),
             headers: _authHeaders,
-            body: jsonEncode({'powerUpType': powerUpType}),
+            body: jsonEncode({'power_up_type': powerUpType}),
           )
           .timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
       AppLogger.error('Error consuming power-up', e);
+      return null;
+    }
+  }
+
+  /// Spend coins on a power-up bundle (mega / tactical / ultimate pack).
+  /// Server-authoritative: price + contents validated against
+  /// ProductCatalog.PowerUpBundles; client can't tamper with either.
+  /// Returns the new inventory + coin balance, or null on failure.
+  Future<Map<String, dynamic>?> purchasePowerUpBundle(String bundleId) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/PowerUps/purchase-bundle'),
+            headers: _authHeaders,
+            body: jsonEncode({'bundle_id': bundleId}),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error purchasing power-up bundle', e);
       return null;
     }
   }

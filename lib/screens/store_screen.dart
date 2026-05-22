@@ -2142,34 +2142,36 @@ class _StoreScreenState extends State<StoreScreen>
     // returned by the backend (ASP.NET applies DictionaryKeyPolicy =
     // SnakeCaseLower to outgoing dicts). Mapping back to PowerUpType for
     // activation lives in the game cubit (next commit).
+    // Coin costs MUST match PurchasePowerUpWithCoinsCommandHandler.AllowedCosts
+    // on the backend — server rejects request.CoinCost mismatches outright.
     final powerUps = const [
       _PowerUpCatalogItem(
         type: 'speed_boost',
         name: 'Speed Boost',
         description: 'Increases snake speed for 7 seconds.',
         icon: Icons.speed,
-        coinCost: 50,
+        coinCost: 500,
       ),
       _PowerUpCatalogItem(
         type: 'invincibility',
         name: 'Invincibility',
         description: 'Pass through walls and yourself for 6 seconds.',
         icon: Icons.shield,
-        coinCost: 75,
+        coinCost: 1000,
       ),
       _PowerUpCatalogItem(
         type: 'score_multiplier',
         name: 'Score Multiplier',
         description: 'Double points for 10 seconds.',
         icon: Icons.star,
-        coinCost: 60,
+        coinCost: 750,
       ),
       _PowerUpCatalogItem(
         type: 'slow_motion',
         name: 'Slow Motion',
         description: 'Slows the game for precision (8 seconds).',
         icon: Icons.slow_motion_video,
-        coinCost: 50,
+        coinCost: 500,
       ),
     ];
 
@@ -2595,29 +2597,34 @@ class _StoreScreenState extends State<StoreScreen>
       );
       return;
     }
-    final success = await context.read<CoinsCubit>().spendCoins(
-          bundle.bundlePrice.toInt(),
-          CoinSpendingCategory.powerUps,
-          itemName: bundle.name,
-        );
+    // Server-authoritative purchase. Backend looks up the bundle in
+    // ProductCatalog.PowerUpBundles, atomically debits coins, and increments
+    // PowerUpInventory. We rely on the server response — no local coin spend.
+    final coinsCubit = context.read<CoinsCubit>();
+    final powerUpCubit = context.read<PowerUpCubit>();
+    final newBalance = await powerUpCubit.purchaseBundleWithCoins(bundle.id);
     if (!mounted) return;
-    if (success) {
-      await context.read<PremiumCubit>().unlockBundle(bundle.id);
-      if (!mounted) return;
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text('${bundle.name} unlocked!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
+    if (newBalance == null) {
       scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Text('Purchase failed. Try again.'),
           backgroundColor: Colors.red,
         ),
       );
+      return;
     }
+    // Mark the bundle owned locally so the UI swaps to the "owned" state;
+    // server doesn't track set-membership for power-up bundles (it tracks
+    // consumable counts in PowerUpInventory), so we keep this flag client-side.
+    await context.read<PremiumCubit>().unlockBundle(bundle.id);
+    await coinsCubit.setServerBalance(newBalance);
+    if (!mounted) return;
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Text('${bundle.name} unlocked!'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 }
 
