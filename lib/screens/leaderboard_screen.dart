@@ -467,27 +467,24 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     GameTheme theme,
     bool isCurrentUser,
   ) {
-    Color rankColor = Colors.white;
-    IconData? rankIcon;
+    // Top-3 podium styling. Each gets its own metallic tint plus a faint
+    // background gradient so the eye lands there first. Beyond rank 3 the
+    // entries use the neutral theme treatment.
+    final podium = _podiumStyle(rank);
+    final isPodium = podium != null;
 
-    if (rank == 1) {
-      rankColor = Colors.amber;
-      rankIcon = Icons.emoji_events;
-    } else if (rank == 2) {
-      rankColor = Colors.grey[300]!;
-      rankIcon = Icons.workspace_premium;
-    } else if (rank == 3) {
-      rankColor = Colors.brown[300]!;
-      rankIcon = Icons.workspace_premium;
-    }
+    final score = (player['highScore'] ?? 0) as int;
+    final gamesPlayed = (player['totalGamesPlayed'] ?? 0) as int;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        // Beefier visual treatment for the signed-in player: gradient fill,
-        // double-width glowing border, and a soft drop-shadow so the row
-        // pops off the screen at a glance.
+        // Layering priority:
+        //   1. Signed-in player gets the accent-color gradient + glow (wins
+        //      over podium so they always know which row is theirs).
+        //   2. Top 3 (when not the current user) get the metallic gradient.
+        //   3. Everyone else gets the flat theme tint.
         gradient: isCurrentUser
             ? LinearGradient(
                 begin: Alignment.centerLeft,
@@ -498,14 +495,26 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   theme.primaryColor.withValues(alpha: 0.18),
                 ],
               )
-            : null,
-        color: isCurrentUser
+            : (isPodium
+                ? LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      podium.color.withValues(alpha: 0.22),
+                      podium.color.withValues(alpha: 0.10),
+                      theme.primaryColor.withValues(alpha: 0.06),
+                    ],
+                  )
+                : null),
+        color: (isCurrentUser || isPodium)
             ? null
             : theme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: isCurrentUser
             ? Border.all(color: theme.accentColor, width: 1.5)
-            : Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
+            : (isPodium
+                ? Border.all(color: podium.color.withValues(alpha: 0.45), width: 1.2)
+                : Border.all(color: theme.primaryColor.withValues(alpha: 0.2))),
         boxShadow: isCurrentUser
             ? [
                 BoxShadow(
@@ -515,46 +524,50 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   offset: const Offset(0, 2),
                 ),
               ]
-            : null,
+            : (isPodium
+                ? [
+                    BoxShadow(
+                      color: podium.color.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null),
       ),
       child: Row(
         children: [
-          // Rank
-          SizedBox(
-            width: 40,
-            child: Row(
-              children: [
-                if (rankIcon != null) ...[
-                  Icon(rankIcon, color: rankColor, size: 20),
-                ] else ...[
-                  Text(
-                    '#$rank',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: rankColor,
+          // Rank chip — medal for top 3, pill with "#N" for the rest.
+          _buildRankWidget(rank, podium, theme),
+
+          const SizedBox(width: 10),
+
+          // Avatar with subtle metallic ring for podium positions.
+          Container(
+            padding: isPodium ? const EdgeInsets.all(2) : EdgeInsets.zero,
+            decoration: isPodium
+                ? BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        podium.color,
+                        podium.color.withValues(alpha: 0.5),
+                      ],
                     ),
-                  ),
-                ],
-              ],
+                  )
+                : null,
+            child: CircleAvatar(
+              radius: 20,
+              backgroundImage: player['photoURL'] != null
+                  ? NetworkImage(player['photoURL']!)
+                  : null,
+              onBackgroundImageError: player['photoURL'] != null
+                  ? (e, s) {}
+                  : null,
+              backgroundColor: theme.primaryColor,
+              child: player['photoURL'] == null
+                  ? Icon(Icons.person, color: theme.backgroundColor, size: 20)
+                  : null,
             ),
-          ),
-
-          // const SizedBox(width: 12),
-
-          // Avatar
-          CircleAvatar(
-            radius: 20,
-            backgroundImage: player['photoURL'] != null
-                ? NetworkImage(player['photoURL']!)
-                : null,
-            onBackgroundImageError: player['photoURL'] != null
-                ? (e, s) {}
-                : null,
-            backgroundColor: theme.primaryColor,
-            child: player['photoURL'] == null
-                ? Icon(Icons.person, color: theme.backgroundColor, size: 20)
-                : null,
           ),
 
           const SizedBox(width: 12),
@@ -651,27 +664,168 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   ],
                 ),
                 Text(
-                  '${player['totalGamesPlayed']} games played',
+                  _formatGamesPlayed(gamesPlayed),
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: Colors.white.withValues(alpha: 0.65),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Score
-          Text(
-            '${player['highScore']}',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isCurrentUser ? theme.accentColor : Colors.white,
-            ),
+          // Score — right-aligned, thousands-separated. Podium uses a
+          // gradient text effect via ShaderMask for a "scoreboard" feel.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildScoreText(score, podium, isCurrentUser, theme),
+              const SizedBox(height: 2),
+              Text(
+                'pts',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Leaderboard row helpers
+  // ---------------------------------------------------------------------------
+
+  /// Returns gold / silver / bronze styling for the top 3, or null for the rest.
+  _PodiumStyle? _podiumStyle(int rank) {
+    switch (rank) {
+      case 1:
+        return const _PodiumStyle(
+          color: Color(0xFFFFD54F), // gold
+          icon: Icons.emoji_events,
+        );
+      case 2:
+        return _PodiumStyle(
+          color: Colors.grey.shade400, // silver
+          icon: Icons.workspace_premium,
+        );
+      case 3:
+        return _PodiumStyle(
+          color: const Color(0xFFCD7F32), // bronze
+          icon: Icons.workspace_premium,
+        );
+      default:
+        return null;
+    }
+  }
+
+  /// Rank widget — medal disc for top 3, pill chip with "#N" for the rest.
+  Widget _buildRankWidget(int rank, _PodiumStyle? podium, GameTheme theme) {
+    if (podium != null) {
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [podium.color, podium.color.withValues(alpha: 0.6)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: podium.color.withValues(alpha: 0.55),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Icon(podium.icon, color: Colors.white, size: 20),
+      );
+    }
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: theme.primaryColor.withValues(alpha: 0.18),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        '$rank',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: theme.accentColor,
+        ),
+      ),
+    );
+  }
+
+  /// Score text with thousands separator. Podium positions get a gradient
+  /// ShaderMask in their medal color; the current user gets the accent
+  /// color; everyone else is plain white.
+  Widget _buildScoreText(
+    int score,
+    _PodiumStyle? podium,
+    bool isCurrentUser,
+    GameTheme theme,
+  ) {
+    final formatted = _formatThousands(score);
+    if (podium != null && !isCurrentUser) {
+      return ShaderMask(
+        shaderCallback: (bounds) => LinearGradient(
+          colors: [Colors.white, podium.color],
+        ).createShader(bounds),
+        child: Text(
+          formatted,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
+        ),
+      );
+    }
+    return Text(
+      formatted,
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w900,
+        color: isCurrentUser ? theme.accentColor : Colors.white,
+        letterSpacing: -0.5,
+      ),
+    );
+  }
+
+  /// "1 game played" / "12 games played" / "1,234 games played". The
+  /// thousand-separator handles backend-aggregated counts that can get big.
+  String _formatGamesPlayed(int count) {
+    final formatted = _formatThousands(count);
+    return count == 1 ? '$formatted game played' : '$formatted games played';
+  }
+
+  String _formatThousands(int n) {
+    // Manual thousand-separator — saves pulling in `intl` just for this.
+    final s = n.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(s[i]);
+    }
+    return buffer.toString();
+  }
+}
+
+class _PodiumStyle {
+  final Color color;
+  final IconData icon;
+  const _PodiumStyle({required this.color, required this.icon});
 }
