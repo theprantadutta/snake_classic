@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Premium subscription tier
@@ -156,11 +157,25 @@ class PremiumState extends Equatable {
   bool isThemeUnlocked(GameTheme theme) =>
       !PremiumContent.isPremiumTheme(theme) || hasPremium || ownedThemes.contains(theme);
 
-  /// Check if a skin is owned
+  /// Check if a skin is owned. Strict set-membership only — used by the
+  /// purchase-pending reconciler (`_isProductOwned`) where we need to know
+  /// whether the IAP grant has landed, independent of Pro status.
   bool isSkinOwned(String skinId) => ownedSkins.contains(skinId);
 
-  /// Check if a trail is owned
+  /// Check if a trail is owned. Same strict-set semantics as [isSkinOwned].
   bool isTrailOwned(String trailId) => ownedTrails.contains(trailId);
+
+  /// Check if a skin is usable by the player — free skins always are; premium
+  /// skins unlock either through individual purchase OR an active Pro
+  /// subscription (Pro bundles all premium cosmetics, mirroring the theme
+  /// fast-path). Use this in UI gating (store equip buttons, paint logic).
+  bool isSkinUnlocked(SnakeSkinType skin) =>
+      !skin.isPremium || hasPremium || ownedSkins.contains(skin.id);
+
+  /// Check if a trail is usable by the player. Same Pro-bundle fast-path
+  /// as [isSkinUnlocked].
+  bool isTrailUnlocked(TrailEffectType trail) =>
+      !trail.isPremium || hasPremium || ownedTrails.contains(trail.id);
 
   /// Check if a power-up is unlocked
   bool isPowerUpUnlocked(String powerUpId) => ownedPowerUps.contains(powerUpId);

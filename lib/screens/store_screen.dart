@@ -401,7 +401,8 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            '6 themes · big boards · 2× coins · premium power-ups · tournament entries · Battle Pass Premium',
+            'All premium themes, skins & trails · big boards · 2× coins · '
+            'premium power-ups · tournament entries · Battle Pass Premium',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.75),
@@ -632,6 +633,8 @@ class _StoreScreenState extends State<StoreScreen>
     // tournaments' promises were either unimplemented or false.
     final features = const [
       (Icons.color_lens, 'All 6 premium themes'),
+      (Icons.pets, 'All 11 premium snake skins'),
+      (Icons.gradient, 'All 11 premium trail effects'),
       (Icons.grid_4x4, 'Premium board sizes (35×35, 40×40, 50×50)'),
       (Icons.monetization_on, '2× coin earnings'),
       (Icons.flash_on, '5× premium power-ups every cycle'),
@@ -1559,7 +1562,8 @@ class _StoreScreenState extends State<StoreScreen>
       itemCount: SnakeSkinType.values.length,
       itemBuilder: (context, index) {
         final skin = SnakeSkinType.values[index];
-        final isUnlocked = !skin.isPremium || premiumState.isSkinOwned(skin.id);
+        // Pro subscription unlocks all premium skins (mirrors theme bundling).
+        final isUnlocked = premiumState.isSkinUnlocked(skin);
         final isSelected = premiumState.selectedSkinId == skin.id;
         final productId = ProductIds.skinStoreId(skin.id);
         return _buildSkinCard(
@@ -1779,8 +1783,8 @@ class _StoreScreenState extends State<StoreScreen>
       itemCount: TrailEffectType.values.length,
       itemBuilder: (context, index) {
         final trail = TrailEffectType.values[index];
-        final isUnlocked =
-            !trail.isPremium || premiumState.isTrailOwned(trail.id);
+        // Pro subscription unlocks all premium trails (mirrors theme bundling).
+        final isUnlocked = premiumState.isTrailUnlocked(trail);
         final isSelected = premiumState.selectedTrailId == trail.id;
         final productId = ProductIds.withPrefix(trail.id);
         return _buildTrailCard(

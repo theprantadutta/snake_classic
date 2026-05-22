@@ -448,6 +448,16 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         'Crystal, Cyberpunk, Space, Ocean, Desert, Forest',
       ),
       _FeatureItem(
+        Icons.pets,
+        'All Premium Snake Skins',
+        'Golden, Galaxy, Dragon, Electric, Fire, Ice & 5 more',
+      ),
+      _FeatureItem(
+        Icons.gradient,
+        'All Premium Trail Effects',
+        'Particle, Glow, Rainbow, Fire, Cosmic, Crystal & 5 more',
+      ),
+      _FeatureItem(
         Icons.grid_on,
         'Large Game Boards',
         'Play on 35x35, 40x40 & 50x50 boards',
