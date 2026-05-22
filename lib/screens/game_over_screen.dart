@@ -570,9 +570,69 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
               ),
             ],
           ),
+
+          // Coins earned this game — only shown when non-zero. Read from
+          // GameCubitState which the game cubit emits after the post-game
+          // grants land (game-completed + perfect + long-survival + any
+          // level-up bonuses). Daily-cap and Pro multiplier are already
+          // applied so this is the true take-home from the game.
+          if ((context.read<GameCubit>().state.coinsEarnedThisGame) > 0) ...[
+            const SizedBox(height: 12),
+            _buildCoinsEarnedRow(
+              context.read<GameCubit>().state.coinsEarnedThisGame,
+              theme,
+            ),
+          ],
         ],
       ),
     ).gameEntrance(delay: 400.ms);
+  }
+
+  Widget _buildCoinsEarnedRow(int coinsEarned, theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.amber.withValues(alpha: 0.22),
+            Colors.orange.withValues(alpha: 0.12),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
+      ),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 800),
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOutCubic),
+        builder: (context, t, _) {
+          final shown = (coinsEarned * t).round();
+          return Row(
+            children: [
+              const Icon(Icons.monetization_on, color: Colors.amber, size: 22),
+              const SizedBox(width: 10),
+              Text(
+                'Coins Earned',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '+$shown',
+                style: const TextStyle(
+                  color: Colors.amber,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildAnimatedStat(

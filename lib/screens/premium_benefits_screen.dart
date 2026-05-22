@@ -457,6 +457,19 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         '2x Coin Rewards',
         'Double Snake Coins from every game',
       ),
+      // In-game spawn boosts implemented in food.dart (Food.generateRandom
+      // isPremium param) and game_cubit.dart (_trySpawnPowerUp). Backed by
+      // the snapshot of PremiumCubit.hasPremium at game start.
+      _FeatureItem(
+        Icons.auto_awesome,
+        'Lucky Forager — More Special Foods',
+        '+50% chance to spawn the rare 50-point special food in every game',
+      ),
+      _FeatureItem(
+        Icons.bolt,
+        'More In-Game Power-ups',
+        '+30% spawn rate for on-board power-ups during gameplay',
+      ),
       _FeatureItem(
         Icons.flash_on,
         'Premium Power-up Bundle',

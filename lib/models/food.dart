@@ -59,20 +59,27 @@ class Food {
     return Position(0, 0);
   }
 
-  static Food generateRandom(int boardWidth, int boardHeight, Snake snake) {
+  static Food generateRandom(
+    int boardWidth,
+    int boardHeight,
+    Snake snake, {
+    bool isPremium = false,
+  }) {
     final position = generateRandomPosition(boardWidth, boardHeight, snake);
     final random = Random();
 
     FoodType type = FoodType.normal;
     final chance = random.nextDouble();
 
-    // Roughly: 8% special (50pt star), 10% bonus (25pt), 82% normal (10pt).
-    // Bumped special from 5% to 8% so players see a special target every
-    // ~12 foods on average instead of every ~20 — still rare enough to feel
-    // like a reward but no longer feels random-luck-only.
-    if (chance < 0.08) {
+    // Base rate: 8% special (50pt star), 10% bonus (25pt), 82% normal (10pt).
+    // Pro subscribers get a 50% boost to the special-food rate (8% -> 12%),
+    // surfacing the rare 50pt target more often. Bonus rate is unchanged so
+    // the bump is felt specifically on the "wow" tier.
+    final specialThreshold = isPremium ? 0.12 : 0.08;
+    final bonusThreshold = specialThreshold + 0.10;
+    if (chance < specialThreshold) {
       type = FoodType.special;
-    } else if (chance < 0.18) {
+    } else if (chance < bonusThreshold) {
       type = FoodType.bonus;
     }
 

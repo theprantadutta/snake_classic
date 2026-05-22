@@ -30,6 +30,11 @@ class GameCubitState extends Equatable {
   /// cubit so neither layer lingers.
   final DateTime? lastAcceptedInputAt;
   final Direction? lastAcceptedDirection;
+  /// Total coins credited to the user during the current (or just-ended)
+  /// game session — sum of game_completed, perfect_game, long_survival,
+  /// and level_up grants reflected after Pro multipliers and daily cap.
+  /// Reset to 0 on each new game start; read by the game-over screen.
+  final int coinsEarnedThisGame;
 
   const GameCubitState({
     this.status = GamePlayStatus.initial,
@@ -41,6 +46,7 @@ class GameCubitState extends Equatable {
     this.lastRejectedInputAt,
     this.lastAcceptedInputAt,
     this.lastAcceptedDirection,
+    this.coinsEarnedThisGame = 0,
   });
 
   /// Initial state
@@ -57,6 +63,7 @@ class GameCubitState extends Equatable {
     DateTime? lastRejectedInputAt,
     DateTime? lastAcceptedInputAt,
     Direction? lastAcceptedDirection,
+    int? coinsEarnedThisGame,
     bool clearTournament = false,
     bool clearPreviousGameState = false,
     bool clearRejectedInput = false,
@@ -84,6 +91,7 @@ class GameCubitState extends Equatable {
       lastAcceptedDirection: clearAcceptedInput
           ? null
           : (lastAcceptedDirection ?? this.lastAcceptedDirection),
+      coinsEarnedThisGame: coinsEarnedThisGame ?? this.coinsEarnedThisGame,
     );
   }
 
@@ -155,5 +163,6 @@ class GameCubitState extends Equatable {
     lastRejectedInputAt,
     lastAcceptedInputAt,
     lastAcceptedDirection,
+    coinsEarnedThisGame,
   ];
 }

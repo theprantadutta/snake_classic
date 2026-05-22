@@ -16,6 +16,7 @@ import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/game_replay.dart' show GameRecorder;
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
@@ -123,6 +124,19 @@ class GameCubit extends Cubit<GameCubitState> {
   final Map<String, int> _currentGamePowerUpTypes = {};
   int _currentGamePowerUpTime = 0;
 
+  // Pro perks (read from PremiumCubit at game start). Drives the boosted
+  // special-food rate in Food.generateRandom and the boosted in-game
+  // power-up spawn chance in _trySpawnPowerUp. Sticky for the duration of
+  // a single game so a mid-session Pro lapse doesn't visibly degrade what
+  // the player was just experiencing.
+  bool _isPro = false;
+
+  // Coins credited during this game session — snapshotted from balance.earned
+  // diffs around each earnCoins call so it stays accurate after the daily
+  // cap or Pro multiplier adjusts the actual grant. Reset on game start;
+  // surfaced via GameCubitState.coinsEarnedThisGame for the game-over screen.
+  int _currentGameCoinsEarned = 0;
+
   GameCubit({
     required AudioService audioService,
     required EnhancedAudioService enhancedAudioService,
@@ -209,6 +223,11 @@ class GameCubit extends Cubit<GameCubitState> {
     _currentGamePowerUpTime = 0;
     _updateCount = 0;
     _bpMilestonesThisGame.clear();
+    _currentGameCoinsEarned = 0;
+    // Snapshot Pro status once at game start — sticky for the session.
+    _isPro = getIt.isRegistered<PremiumCubit>()
+        ? getIt<PremiumCubit>().state.hasPremium
+        : false;
     _achievementService.resetLastGameUnlocks();
     _visitedCells
       ..clear()
@@ -223,6 +242,7 @@ class GameCubit extends Cubit<GameCubitState> {
       gameState.boardWidth,
       gameState.boardHeight,
       gameState.snake,
+      isPremium: _isPro,
     );
     final List<Food> extraFoods = [];
     if (gameState.gameMode.hasMultipleFood) {
@@ -694,6 +714,7 @@ class GameCubit extends Cubit<GameCubitState> {
         previousState.boardWidth,
         previousState.boardHeight,
         snake,
+        isPremium: _isPro,
       );
     }
 
@@ -872,7 +893,7 @@ class GameCubit extends Cubit<GameCubitState> {
         // Award coins for every level gained this tick.
         for (var lvl = previousLevel + 1; lvl <= newLevel; lvl++) {
           final levelForCoins = lvl;
-          Future.microtask(() => _coinsCubit.earnCoins(
+          Future.microtask(() => _earnAndTrack(
             CoinEarningSource.levelUp,
             metadata: {'level': levelForCoins},
           ));
@@ -1079,12 +1100,22 @@ class GameCubit extends Cubit<GameCubitState> {
     // never on a normal-size board) fall back to the unguarded generator so
     // we never deadlock the game tick.
     for (var attempt = 0; attempt < 32; attempt++) {
-      final candidate = Food.generateRandom(boardWidth, boardHeight, snake);
+      final candidate = Food.generateRandom(
+        boardWidth,
+        boardHeight,
+        snake,
+        isPremium: _isPro,
+      );
       if (!taken.contains(candidate.position)) {
         return candidate;
       }
     }
-    return Food.generateRandom(boardWidth, boardHeight, snake);
+    return Food.generateRandom(
+      boardWidth,
+      boardHeight,
+      snake,
+      isPremium: _isPro,
+    );
   }
 
   void _trySpawnPowerUp() {
@@ -1092,8 +1123,13 @@ class GameCubit extends Cubit<GameCubitState> {
     if (state.gameState?.powerUp != null) return;
 
     final random = Random();
-    final spawnChance =
+    final baseChance =
         state.gameState?.gameMode.powerUpSpawnChanceOverride ?? 0.5;
+    // Pro perk: 30% more in-game power-up spawns. Capped at 0.95 so a mode
+    // that already overrides to ~0.9 doesn't become a 100% guarantee.
+    final spawnChance = _isPro
+        ? min(0.95, baseChance * 1.3)
+        : baseChance;
     if (random.nextDouble() < spawnChance) {
       final current = state.gameState!;
       // Avoid every visible food (primary + multi-food extras) so the new
@@ -1134,6 +1170,7 @@ class GameCubit extends Cubit<GameCubitState> {
       current.boardWidth,
       current.boardHeight,
       newSnake,
+      isPremium: _isPro,
     );
     // Re-seed extras list if the active mode wants multiple simultaneous foods.
     final extras = <Food>[];
@@ -1783,7 +1820,7 @@ class GameCubit extends Cubit<GameCubitState> {
       // Base coins + bonus based on score (1 base + 1 per 200 points, max 10)
       final coinsEarned = (1 + (score ~/ 200)).clamp(1, 10);
 
-      await _coinsCubit.earnCoins(
+      await _earnAndTrack(
         CoinEarningSource.gameCompleted,
         customAmount: coinsEarned,
         metadata: {'score': score, 'level': level, 'foodEaten': foodEaten},
@@ -1797,7 +1834,7 @@ class GameCubit extends Cubit<GameCubitState> {
           gameDurationSeconds >= 30;
 
       if (isPerfectGame) {
-        await _coinsCubit.earnCoins(
+        await _earnAndTrack(
           CoinEarningSource.perfectGame,
           metadata: {
             'duration': gameDurationSeconds,
@@ -1808,7 +1845,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
       // Bonus for long survival (> 5 minutes = 300 seconds)
       if (gameDurationSeconds > 300) {
-        await _coinsCubit.earnCoins(
+        await _earnAndTrack(
           CoinEarningSource.longSurvival,
           metadata: {
             'duration': gameDurationSeconds,
@@ -1817,12 +1854,37 @@ class GameCubit extends Cubit<GameCubitState> {
         );
       }
 
+      // Surface the running per-game total to the cubit state so the
+      // game-over screen can render it. We emit even when 0 (e.g., daily
+      // cap maxed out) so the screen always reads a fresh value.
+      emit(state.copyWith(coinsEarnedThisGame: _currentGameCoinsEarned));
+
       AppLogger.info(
-        'Awarded game completion coins: $coinsEarned (score: $score, perfect: $isPerfectGame, long: ${gameDurationSeconds > 300})',
+        'Awarded game completion coins: $coinsEarned (score: $score, perfect: $isPerfectGame, long: ${gameDurationSeconds > 300}); total this game: $_currentGameCoinsEarned',
       );
     } catch (e) {
       AppLogger.error('Error awarding game completion coins', e);
     }
+  }
+
+  /// Wraps [CoinsCubit.earnCoins] so the actual granted amount (post-Pro
+  /// multiplier, post-daily-cap) is accumulated into [_currentGameCoinsEarned].
+  /// `balance.earned` is a monotonic lifetime counter; the diff before and
+  /// after the call is exactly what the cubit credited this time.
+  Future<void> _earnAndTrack(
+    CoinEarningSource source, {
+    int? customAmount,
+    Map<String, dynamic>? metadata,
+  }) async {
+    final before = _coinsCubit.state.balance.earned;
+    await _coinsCubit.earnCoins(
+      source,
+      customAmount: customAmount,
+      metadata: metadata,
+    );
+    final after = _coinsCubit.state.balance.earned;
+    final delta = after - before;
+    if (delta > 0) _currentGameCoinsEarned += delta;
   }
 
   /// Buffer battle pass XP locally based on game performance.
