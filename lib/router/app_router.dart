@@ -6,6 +6,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/battle_pass_screen.dart';
 import 'package:snake_classic/screens/daily_challenges_screen.dart';
+import 'package:snake_classic/screens/weekly_quests_screen.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
 import 'package:snake_classic/screens/username_setup_screen.dart';
 import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
@@ -226,6 +227,12 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       name: 'dailyChallenges',
       pageBuilder: (context, state) =>
           _zoomPage(state, const DailyChallengesScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.weeklyQuests,
+      name: 'weeklyQuests',
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const WeeklyQuestsScreen()),
     ),
     GoRoute(
       path: AppRoutes.instructions,

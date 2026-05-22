@@ -1320,6 +1320,86 @@ class ApiService {
     }
   }
 
+  // ==================== Weekly Quests ====================
+
+  /// Get current week's quests (5 active quests + per-user progress).
+  /// Backend returns a JSON array; `_handleResponse` wraps non-map bodies
+  /// in `{'data': ...}`, so the list lives at `result['data']`.
+  Future<List<dynamic>?> getCurrentWeeklyQuests() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/WeeklyQuests/current'), headers: _authHeaders)
+          .timeout(_timeout);
+      final result = _handleResponse(response);
+      final data = result?['data'];
+      if (data is List) return data;
+      return null;
+    } catch (e) {
+      AppLogger.error('Error fetching weekly quests', e);
+      return null;
+    }
+  }
+
+  /// Push a progress increment for the current ISO week's quests.
+  Future<bool> updateWeeklyQuestProgress({
+    required String type,
+    required int incrementBy,
+    String? gameMode,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/WeeklyQuests/progress'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'type': type,
+              'incrementBy': incrementBy,
+              'gameMode': ?gameMode,
+            }),
+          )
+          .timeout(_timeout);
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      AppLogger.error('Error updating weekly quest progress', e);
+      return false;
+    }
+  }
+
+  /// Batched progress update — one round-trip for all per-game events.
+  Future<bool> batchUpdateWeeklyQuestProgress(
+      List<Map<String, dynamic>> updates) async {
+    if (updates.isEmpty) return true;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/WeeklyQuests/progress/batch'),
+            headers: _authHeaders,
+            body: jsonEncode(updates),
+          )
+          .timeout(_timeout);
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      AppLogger.error('Error batch-updating weekly quest progress', e);
+      return false;
+    }
+  }
+
+  /// Claim a completed weekly quest's reward. Server credits coins + BP XP.
+  Future<Map<String, dynamic>?> claimWeeklyQuestReward(String questId) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/WeeklyQuests/claim/$questId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error claiming weekly quest reward', e);
+      return null;
+    }
+  }
+
   // ==================== Daily Bonus ====================
 
   /// Get daily bonus status

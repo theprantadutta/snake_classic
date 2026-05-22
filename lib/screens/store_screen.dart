@@ -275,6 +275,11 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
 
   Widget _buildProTab(GameTheme theme, PremiumState premiumState) {
+    // Drops any Pro SKU from the pending set once PremiumCubit reports
+    // hasPremium=true — the spinner on the plan cards stops the moment the
+    // backend's VerifyPurchase response lands.
+    _reconcilePendingPurchases(premiumState);
+
     if (premiumState.hasPremium) {
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -396,7 +401,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            '6 themes · big boards · 2× coins · premium power-ups · tournament entries',
+            '6 themes · big boards · 2× coins · premium power-ups · tournament entries · Battle Pass Premium',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.75),
@@ -419,11 +424,21 @@ class _StoreScreenState extends State<StoreScreen>
   }) {
     final price =
         PurchaseService().getStorePriceOrDefault(productId, fallbackPrice);
+    final isPending = _pendingProductIds.contains(productId);
+    // While a sibling plan card is mid-verify we disable BOTH plan cards so
+    // the user can't kick off a second purchase before the first one's
+    // VerifyPurchase response lands — that would double-charge and bug out
+    // the PremiumCubit's mid-flight state.
+    final anyProPending = _pendingProductIds
+            .contains(ProductIds.snakeClassicProMonthly) ||
+        _pendingProductIds.contains(ProductIds.snakeClassicProYearly);
     final borderColor = highlight
         ? Colors.amber.withValues(alpha: 0.6)
         : theme.accentColor.withValues(alpha: 0.25);
     return GestureDetector(
-      onTap: () => _purchaseSubscription(productId, '$title plan'),
+      onTap: anyProPending
+          ? null
+          : () => _purchaseSubscription(productId, '$title plan'),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -495,24 +510,55 @@ class _StoreScreenState extends State<StoreScreen>
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () =>
-                    _purchaseSubscription(productId, '$title plan'),
+                onPressed: anyProPending
+                    ? null
+                    : () => _purchaseSubscription(productId, '$title plan'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: highlight
                       ? Colors.amber
                       : theme.primaryColor.withValues(alpha: 0.9),
                   foregroundColor:
                       highlight ? Colors.black : Colors.white,
+                  disabledBackgroundColor: (highlight
+                          ? Colors.amber
+                          : theme.primaryColor)
+                      .withValues(alpha: 0.45),
+                  disabledForegroundColor: highlight
+                      ? Colors.black.withValues(alpha: 0.7)
+                      : Colors.white.withValues(alpha: 0.85),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Subscribe',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
+                child: isPending
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(
+                                highlight ? Colors.black : Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Verifying…',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ],
+                      )
+                    : const Text(
+                        'Subscribe',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
               ),
             ),
           ],
@@ -590,6 +636,7 @@ class _StoreScreenState extends State<StoreScreen>
       (Icons.monetization_on, '2× coin earnings'),
       (Icons.flash_on, '5× premium power-ups every cycle'),
       (Icons.emoji_events, 'Bronze + Silver + Gold tournament entries each cycle'),
+      (Icons.workspace_premium, 'Battle Pass Premium track every season'),
     ];
     return Column(
       children: features
@@ -638,6 +685,12 @@ class _StoreScreenState extends State<StoreScreen>
 
   Future<void> _purchaseSubscription(String productId, String displayName) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
+    // Mark pending up-front so the plan cards swap to a "Verifying…" state
+    // covering the ~2–15s window between Play Store confirmation and the
+    // backend's VerifyPurchase response landing in PremiumCubit. Auto-cleared
+    // by _reconcilePendingPurchases when hasPremium flips true, or by the
+    // 45s safety timeout in _markPending if the webhook is genuinely lost.
+    _markPending(productId);
     try {
       await PurchaseService().purchaseProduct(productId);
       if (mounted) {
@@ -649,7 +702,10 @@ class _StoreScreenState extends State<StoreScreen>
         );
       }
     } catch (e) {
+      // Failure path — drop the pending state immediately so the user can
+      // retry without waiting for the 45s safety timeout.
       if (mounted) {
+        setState(() => _pendingProductIds.remove(productId));
         scaffoldMessenger.showSnackBar(
           const SnackBar(
             content:
@@ -1028,6 +1084,13 @@ class _StoreScreenState extends State<StoreScreen>
   /// Resolve "is this productId now owned" across themes / skins / trails /
   /// bundles so the pending spinner clears regardless of the cosmetic type.
   bool _isProductOwned(String productId, PremiumState premiumState) {
+    // Pro subscription SKUs — once PremiumCubit flips to hasPremium=true the
+    // Pro tab swaps to the "you are Pro" banner, but we also clear pending
+    // so any leftover spinner state doesn't survive a tab switch.
+    if (productId == ProductIds.snakeClassicProMonthly ||
+        productId == ProductIds.snakeClassicProYearly) {
+      return premiumState.hasPremium;
+    }
     // Themes — including the all-themes bundle. Pro subscribers also have
     // all premium themes implicitly.
     if (productId == ProductIds.themesBundle) {

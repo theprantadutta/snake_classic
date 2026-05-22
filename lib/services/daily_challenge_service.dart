@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
+import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -387,6 +390,11 @@ class DailyChallengeService extends ChangeNotifier {
     await _saveLocalProgress();
     notifyListeners();
 
+    // Grant battle-pass XP for the claim — fire-and-forget. Goes through
+    // the cubit's flush path so it pipes through the server's anti-cheat
+    // validator with the right source key.
+    _grantBattlePassXp(['daily_challenge']);
+
     // Sync with backend in background
     if (_connectivityService.isOnline && _apiService.isAuthenticated) {
       try {
@@ -437,6 +445,12 @@ class DailyChallengeService extends ChangeNotifier {
     await _saveLocalProgress();
     notifyListeners();
 
+    // Grant battle-pass XP for each claimed challenge in a single flush.
+    // Multiple sources are combined into one POST (Phase E validator
+    // tolerates comma-separated source strings up to summed-amount × 5).
+    final sources = List<String>.filled(claimable.length, 'daily_challenge');
+    _grantBattlePassXp(sources);
+
     // Batch claim via backend
     if (_connectivityService.isOnline && _apiService.isAuthenticated) {
       try {
@@ -473,6 +487,23 @@ class DailyChallengeService extends ChangeNotifier {
     }
 
     return totalClaimed;
+  }
+
+  /// Buffer + flush battle-pass XP for one or more claim sources.
+  /// Fire-and-forget: failure here must not roll back the user-visible claim.
+  /// We grab the cubit from get_it instead of an injected dependency to keep
+  /// this singleton service free of Bloc/UI plumbing.
+  void _grantBattlePassXp(List<String> sources) {
+    if (sources.isEmpty) return;
+    if (!GetIt.I.isRegistered<BattlePassCubit>()) return;
+    final cubit = GetIt.I<BattlePassCubit>();
+    for (final source in sources) {
+      final xp = BattlePassXpSource.getXpForAction(source);
+      if (xp > 0) cubit.bufferXP(xp, source: source);
+    }
+    // Flush immediately — these are not in-game milestones that benefit from
+    // batching with other game-end events.
+    cubit.flushXP();
   }
 
   /// Force sync with backend

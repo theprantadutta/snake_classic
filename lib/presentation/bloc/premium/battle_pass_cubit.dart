@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +24,14 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   final ApiService _apiService = ApiService();
   final ConnectivityService _connectivityService = ConnectivityService();
 
+  // Watches PremiumCubit so the moment a Pro purchase resolves we re-fetch
+  // battle-pass progress and pick up the server-side HasPremium snapshot
+  // (computed by BattlePassPremiumGate). Without this hook the BP screen
+  // stays on a stale "Unlock with Pro" banner until the user manually
+  // navigates away and back.
+  StreamSubscription<PremiumState>? _premiumSub;
+  bool _lastSeenHasPremium = false;
+
   BattlePassCubit({
     required StorageService storageService,
     PremiumCubit? premiumCubit,
@@ -31,6 +40,12 @@ class BattlePassCubit extends Cubit<BattlePassState> {
        _premiumCubit = premiumCubit,
        _analytics = analytics,
        super(BattlePassState.initial());
+
+  @override
+  Future<void> close() {
+    _premiumSub?.cancel();
+    return super.close();
+  }
 
   /// Initialize battle pass state — always load local first (instant), then background refresh
   Future<void> initialize() async {
@@ -51,6 +66,10 @@ class BattlePassCubit extends Cubit<BattlePassState> {
       if (_apiService.isAuthenticated) {
         _refreshFromBackendSilently();
       }
+
+      // Watch Pro status — when it flips on (post-IAP verification) we need
+      // to re-fetch progress so isActive reflects the new entitlement.
+      _watchPremiumCubit();
     } catch (e) {
       AppLogger.error('Error initializing BattlePassCubit', e);
       emit(
@@ -66,6 +85,30 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     _loadFromBackend().catchError((e) {
       AppLogger.error('Background battle pass refresh failed', e);
       return false;
+    });
+  }
+
+  /// Subscribe to PremiumCubit so a Pro purchase (or restore) triggers a
+  /// re-fetch of battle-pass progress. We only react on the *rising edge*
+  /// of hasPremium (false → true) — a lapse the other way doesn't need to
+  /// re-fetch since the snapshot is sticky on the server for the season.
+  void _watchPremiumCubit() {
+    final premium = _premiumCubit;
+    if (premium == null) return;
+    _lastSeenHasPremium = premium.state.hasPremium;
+    // Handle the case where Pro was already active at startup (e.g., a
+    // restart after a Pro purchase) but our cached BP state still says
+    // isActive=false — force one refresh through.
+    if (_lastSeenHasPremium && !state.isActive && _apiService.isAuthenticated) {
+      _refreshFromBackendSilently();
+    }
+    _premiumSub = premium.stream.listen((premiumState) {
+      final nowPro = premiumState.hasPremium;
+      if (nowPro && !_lastSeenHasPremium) {
+        AppLogger.info('Pro active → refreshing battle pass progress');
+        _refreshFromBackendSilently();
+      }
+      _lastSeenHasPremium = nowPro;
     });
   }
 
@@ -247,17 +290,6 @@ class BattlePassCubit extends Cubit<BattlePassState> {
         json.encode(state.season!.toJson()),
       );
     }
-  }
-
-  /// Activate battle pass (after purchase)
-  Future<void> activate({Duration duration = const Duration(days: 90)}) async {
-    final expiryDate = DateTime.now().add(duration);
-    emit(state.copyWith(isActive: true, expiryDate: expiryDate));
-    await _saveState();
-    _syncBattlePassToPremium();
-    AppLogger.info(
-      'Battle pass activated until ${expiryDate.toIso8601String()}',
-    );
   }
 
   // ==================== XP Buffering ====================

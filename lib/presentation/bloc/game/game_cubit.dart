@@ -28,7 +28,9 @@ import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
+import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
+import 'package:snake_classic/models/weekly_quest.dart';
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/utils/direction.dart';
@@ -1702,6 +1704,40 @@ class GameCubit extends Cubit<GameCubitState> {
             gameMode: gameState.gameMode.name,
           ),
         ]),
+        // Mirror the daily-challenge progress events to the weekly-quest
+        // tracker — the backend filters by Type so events without a matching
+        // active quest are no-ops.
+        WeeklyQuestService().reportProgressBatch([
+          if (gameState.score > 0)
+            (
+              type: WeeklyQuestType.score,
+              incrementBy: gameState.score,
+              gameMode: null,
+            ),
+          if (foodEaten > 0)
+            (
+              type: WeeklyQuestType.foodEaten,
+              incrementBy: foodEaten,
+              gameMode: null,
+            ),
+          if (gameDurationSeconds > 0)
+            (
+              type: WeeklyQuestType.survival,
+              incrementBy: gameDurationSeconds,
+              gameMode: null,
+            ),
+          (
+            type: WeeklyQuestType.gamesPlayed,
+            incrementBy: 1,
+            gameMode: null,
+          ),
+          if (state.isTournamentMode)
+            (
+              type: WeeklyQuestType.tournamentParticipation,
+              incrementBy: 1,
+              gameMode: null,
+            ),
+        ]),
         _battlePassCubit.flushXP(),
       ]);
 
@@ -1815,6 +1851,19 @@ class GameCubit extends Cubit<GameCubitState> {
       final xp = BattlePassXpSource.getXpForAction('survival_60s');
       if (xp > 0) {
         _battlePassCubit.bufferXP(xp, source: 'survival_60s');
+      }
+    }
+
+    // Tournament participation XP — once per tournament game. The flush at
+    // game end combines this with the per-game sources above into a single
+    // backend POST that the AddBattlePassXp validator accepts via its
+    // comma-separated source allowlist.
+    if (state.isTournamentMode &&
+        !_bpMilestonesThisGame.contains('tournament_participation')) {
+      _bpMilestonesThisGame.add('tournament_participation');
+      final xp = BattlePassXpSource.getXpForAction('tournament_participation');
+      if (xp > 0) {
+        _battlePassCubit.bufferXP(xp, source: 'tournament_participation');
       }
     }
   }

@@ -1382,12 +1382,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         widgetKey: HomeWalkthrough.eventsKey,
       ),
       _NavItem(Icons.timeline, 'BATTLE', Colors.deepPurple, () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Coming Soon!'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        context.push(AppRoutes.battlePass);
       }),
       _NavItem(Icons.people, 'FRIENDS', Colors.blue, () {
         context.push(AppRoutes.friends);

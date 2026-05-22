@@ -145,7 +145,9 @@ class BattlePassReward {
       quantity: json['quantity'] ?? 1,
       itemId: json['item_id'],
       icon: json['icon'] ?? '🎁',
-      color: Color(json['color'] ?? 0xFF2196F3),
+      // Tolerate ARGB-int OR "#RRGGBB"/"#AARRGGBB" hex string — backend
+      // generator emits int, but season templates / legacy data may pass hex.
+      color: BattlePassSeason._parseColor(json['color'], const Color(0xFF2196F3)),
       isSpecial: json['is_special'] ?? false,
     );
   }
@@ -328,9 +330,25 @@ class BattlePassSeason {
           : [],
       price: json['price']?.toDouble() ?? 9.99,
       bannerImage: json['banner_image'] ?? '',
-      themeColor: Color(json['theme_color'] ?? 0xFF9C27B0),
+      // Backend serializes ThemeColor as a "#AARRGGBB" hex string (from the
+      // BattlePassSeason entity column); legacy / sample seasons may pass an
+      // already-packed ARGB int. Tolerate either.
+      themeColor: _parseColor(json['theme_color'], const Color(0xFF9C27B0)),
       metadata: json['metadata'] ?? {},
     );
+  }
+
+  static Color _parseColor(dynamic raw, Color fallback) {
+    if (raw == null) return fallback;
+    if (raw is int) return Color(raw);
+    if (raw is String && raw.isNotEmpty) {
+      var s = raw.startsWith('#') ? raw.substring(1) : raw;
+      // "RRGGBB" → assume opaque alpha.
+      if (s.length == 6) s = 'FF$s';
+      final parsed = int.tryParse(s, radix: 16);
+      if (parsed != null) return Color(parsed);
+    }
+    return fallback;
   }
 
   // Create a sample season for testing/demo

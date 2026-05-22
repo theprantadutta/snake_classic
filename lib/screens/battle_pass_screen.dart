@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/router/routes.dart';
 // import 'package:snake_classic/services/purchase_service.dart'; // TODO: Re-enable with purchase flow
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -34,6 +35,14 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    // Silent refresh on entry so a Pro purchase made elsewhere in the app
+    // immediately reflects in the premium track. The cubit also listens to
+    // PremiumCubit for live updates; this is the belt-and-suspenders that
+    // handles cold starts where the auth/refresh order can race.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<BattlePassCubit>().refresh();
+    });
   }
 
   @override
@@ -124,43 +133,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
 
             // Empty state — no season available after loading
             if (season == null) {
-              return Scaffold(
-                body: AppBackground(
-                  theme: theme,
-                  child: SafeArea(
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Row(
-                            children: [
-                              IconButton(
-                                onPressed: () => context.pop(),
-                                icon: Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  color: theme.accentColor,
-                                  size: 20,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              'No active season',
-                              style: TextStyle(
-                                color: theme.accentColor.withValues(alpha: 0.6),
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
+              return _NoActiveSeasonScreen(theme: theme);
             }
 
             // Trigger auto-scroll once state is ready
@@ -180,40 +153,13 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                         season: season,
                         theme: theme,
                       ),
-                      // Coming Soon banner
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.amber.withValues(alpha: 0.25),
-                              Colors.orange.withValues(alpha: 0.15),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.amber.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.construction, color: Colors.amber, size: 20),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Coming Soon! Battle Pass is not yet available for purchase.',
-                                style: TextStyle(
-                                  color: theme.accentColor,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Premium track is bundled with the Pro subscription.
+                      // When the user doesn't have Pro active, show a CTA
+                      // pointing them to the store. When they do, the banner
+                      // is hidden — the unlocked premium nodes are evidence
+                      // enough.
+                      if (!bpState.isActive)
+                        _UnlockWithProBanner(theme: theme),
                       _SeasonStrip(
                         season: season,
                         theme: theme,
@@ -372,6 +318,316 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
 }
 
 // ===========================================================================
+// 0. _UnlockWithProBanner — shown when the Premium track isn't active for
+// the user. Premium is bundled with the Pro subscription so this routes to
+// the unified store rather than triggering a dedicated battle-pass purchase.
+// ===========================================================================
+class _UnlockWithProBanner extends StatelessWidget {
+  final GameTheme theme;
+
+  const _UnlockWithProBanner({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => context.push(AppRoutes.store),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.amber.withValues(alpha: 0.25),
+              Colors.orange.withValues(alpha: 0.15),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.workspace_premium, color: Colors.amber, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Unlock Premium Track with Pro',
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'Subscribe to Pro to claim premium rewards each tier.',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.75),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: theme.accentColor.withValues(alpha: 0.8),
+              size: 14,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// 0.5 _NoActiveSeasonScreen — full-screen empty state shown when the backend
+// reports no active season. Communicates that this is a temporary state
+// (rotation is automated), surfaces tappable affordances so users have a
+// next action, and offers a manual refresh.
+// ===========================================================================
+class _NoActiveSeasonScreen extends StatelessWidget {
+  final GameTheme theme;
+  const _NoActiveSeasonScreen({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: AppBackground(
+        theme: theme,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Minimal header — just the back button so the layout stays
+              // consistent with the populated BP screen.
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => context.pop(),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: theme.accentColor,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 24),
+                      // Hero icon
+                      Center(
+                        child: Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                theme.accentColor.withValues(alpha: 0.25),
+                                theme.accentColor.withValues(alpha: 0.08),
+                              ],
+                            ),
+                            border: Border.all(
+                              color: theme.accentColor.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.hourglass_empty_rounded,
+                            color: theme.accentColor.withValues(alpha: 0.85),
+                            size: 44,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      Text(
+                        'Between Seasons',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "No Battle Pass is running right now — the next "
+                        "season will start automatically. Check back soon.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Info cards — "what to expect" + "things you can do
+                      // meanwhile". Keeps the user on a productive path.
+                      _InfoCard(
+                        theme: theme,
+                        icon: Icons.auto_awesome,
+                        title: 'New season drops automatically',
+                        subtitle:
+                            'Every 60 days. New themed skins, trails, and '
+                            'milestone rewards across 100 tiers.',
+                      ),
+                      const SizedBox(height: 10),
+                      _InfoCard(
+                        theme: theme,
+                        icon: Icons.flag_rounded,
+                        title: 'Weekly Quests',
+                        subtitle:
+                            "Fresh quests every Monday — they'll feed into "
+                            'the next Battle Pass as soon as it starts.',
+                        onTap: () => context.push(AppRoutes.weeklyQuests),
+                      ),
+                      const SizedBox(height: 10),
+                      _InfoCard(
+                        theme: theme,
+                        icon: Icons.emoji_events,
+                        title: 'Daily Challenges',
+                        subtitle:
+                            "Three new challenges every day — keep your "
+                            'streak alive and earn coins.',
+                        onTap: () => context.push(AppRoutes.dailyChallenges),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Manual refresh — for the rare case the rotation job
+                      // just ran and the local cache is stale.
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            context.read<BattlePassCubit>().refresh(),
+                        icon: Icon(Icons.refresh_rounded,
+                            color: theme.accentColor),
+                        label: Text(
+                          'Check for new season',
+                          style: TextStyle(
+                            color: theme.accentColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 12),
+                          side: BorderSide(
+                            color: theme.accentColor.withValues(alpha: 0.5),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final GameTheme theme;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  const _InfoCard({
+    required this.theme,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final card = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.accentColor.withValues(alpha: 0.06),
+        border: Border.all(
+            color: theme.accentColor.withValues(alpha: 0.22)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon,
+                color: theme.accentColor.withValues(alpha: 0.85), size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.65),
+                    fontSize: 11.5,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onTap != null) ...[
+            const SizedBox(width: 6),
+            Icon(Icons.arrow_forward_ios_rounded,
+                color: theme.accentColor.withValues(alpha: 0.6), size: 12),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap == null) return card;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: card,
+    );
+  }
+}
+
+// ===========================================================================
 // 1. _CompactHeader
 // ===========================================================================
 class _CompactHeader extends StatelessWidget {
@@ -384,69 +640,117 @@ class _CompactHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: theme.accentColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          ShaderMask(
-            shaderCallback: (bounds) => LinearGradient(
-              colors: [
-                theme.accentColor,
-                theme.accentColor.withValues(alpha: 0.7),
-              ],
-            ).createShader(bounds),
-            child: const Text(
-              'BATTLE PASS',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                letterSpacing: 2,
-              ),
-            ),
-          ),
-          const Spacer(),
-          // Timer chip
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.2),
-                  theme.accentColor.withValues(alpha: 0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.timer_outlined,
-                  color: theme.accentColor.withValues(alpha: 0.8),
-                  size: 14,
+          // Row 1: back button + title (gets the full width, no longer
+          // squeezed by the trailing chips).
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => context.pop(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: theme.accentColor,
+                  size: 20,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  '${season.timeRemaining.inDays}d left',
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ShaderMask(
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: [
+                      theme.accentColor,
+                      theme.accentColor.withValues(alpha: 0.7),
+                    ],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'BATTLE PASS',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Row 2: action chips — Quests + season timer.
+          Row(
+            children: [
+              InkWell(
+                onTap: () => context.push(AppRoutes.weeklyQuests),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: theme.accentColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.flag_rounded,
+                          color: theme.accentColor.withValues(alpha: 0.85),
+                          size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Quests',
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.accentColor.withValues(alpha: 0.2),
+                      theme.accentColor.withValues(alpha: 0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: theme.accentColor.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.timer_outlined,
+                      color: theme.accentColor.withValues(alpha: 0.8),
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${season.timeRemaining.inDays}d left',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
