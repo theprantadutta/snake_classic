@@ -102,6 +102,132 @@ class AuthService {
     }
   }
 
+  /// Sign in with an existing email/password account.
+  /// Returns the UserCredential on success, throws FirebaseAuthException on
+  /// failure so the caller can surface a specific error (wrong-password,
+  /// user-not-found, invalid-email, too-many-requests).
+  Future<UserCredential> signInWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    AppLogger.firebase('Signing in with email/password: $email');
+    final result = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    if (result.user != null) {
+      AppLogger.success('Email sign-in successful: ${result.user!.uid}');
+      await _authenticateWithBackend(result.user!);
+    }
+    return result;
+  }
+
+  /// Create a brand-new email/password account. Best-effort sends the
+  /// verification email; failures there are non-fatal (the user can request
+  /// another from inside the app).
+  Future<UserCredential> createAccountWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    AppLogger.firebase('Creating email/password account: $email');
+    final result = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    if (result.user != null) {
+      AppLogger.success('Email account created: ${result.user!.uid}');
+      try {
+        await result.user!.sendEmailVerification();
+      } catch (e) {
+        AppLogger.firebase('Failed to send verification email (non-fatal)', e);
+      }
+      await _authenticateWithBackend(result.user!);
+    }
+    return result;
+  }
+
+  /// Promote the current anonymous user to an email/password account.
+  /// Preserves the Firebase UID, so the backend record (game progress,
+  /// coins, cosmetics) stays attached.
+  Future<UserCredential> linkAnonymousToEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed-in user to link.',
+      );
+    }
+    if (!user.isAnonymous) {
+      throw FirebaseAuthException(
+        code: 'not-anonymous',
+        message: 'Current account is not anonymous.',
+      );
+    }
+    final credential = EmailAuthProvider.credential(
+      email: email,
+      password: password,
+    );
+    final result = await user.linkWithCredential(credential);
+    AppLogger.success('Linked anonymous account to email: ${result.user?.uid}');
+    try {
+      await result.user?.sendEmailVerification();
+    } catch (e) {
+      AppLogger.firebase('Failed to send verification email after link (non-fatal)', e);
+    }
+    if (result.user != null) {
+      await _authenticateWithBackend(result.user!);
+    }
+    return result;
+  }
+
+  /// Promote the current anonymous user to a Google-signed account.
+  Future<UserCredential> linkAnonymousToGoogle() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed-in user to link.',
+      );
+    }
+    if (!user.isAnonymous) {
+      throw FirebaseAuthException(
+        code: 'not-anonymous',
+        message: 'Current account is not anonymous.',
+      );
+    }
+    if (!_googleSignIn.supportsAuthenticate()) {
+      throw FirebaseAuthException(
+        code: 'unsupported-platform',
+        message: 'Google Sign-In not supported on this platform.',
+      );
+    }
+    final googleUser = await _googleSignIn.authenticate();
+    final googleAuth = googleUser.authentication;
+    if (googleAuth.idToken == null) {
+      throw FirebaseAuthException(
+        code: 'missing-id-token',
+        message: 'Failed to obtain Google ID token.',
+      );
+    }
+    final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
+    final result = await user.linkWithCredential(credential);
+    AppLogger.success('Linked anonymous account to Google: ${result.user?.uid}');
+    if (result.user != null) {
+      await _authenticateWithBackend(result.user!);
+    }
+    return result;
+  }
+
+  /// Send a password-reset email. Errors propagate so the UI can show
+  /// "no account found" vs. "rate-limited" messages.
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+    AppLogger.firebase('Password reset email sent to $email');
+  }
+
   Future<void> signOut() async {
     try {
       // Logout from backend first

@@ -18,6 +18,7 @@ abstract class AnalyticsClient {
 
   Future<void> trackSignInGoogle();
   Future<void> trackSignInAnonymous();
+  Future<void> trackSignInEmail();
   Future<void> trackSignOut();
   Future<void> trackUsernameSet();
 

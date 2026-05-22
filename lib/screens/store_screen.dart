@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
@@ -14,6 +15,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class StoreScreen extends StatefulWidget {
@@ -858,7 +860,19 @@ class _StoreScreenState extends State<StoreScreen>
     return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   }
 
+  /// Anonymous (guest) users can't make purchases — every paid path on this
+  /// screen funnels through this check. On block we show the upgrade sheet;
+  /// the caller bails so the user can re-tap Buy after they link an account.
+  Future<bool> _ensurePurchasable() async {
+    final user = context.read<AuthCubit>().state.user;
+    if (user == null || !user.isAnonymous) return true;
+    await showAccountUpgradeSheet(context);
+    return false;
+  }
+
   Future<void> _purchaseSubscription(String productId, String displayName) async {
+    if (!await _ensurePurchasable()) return;
+    if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     // Mark pending up-front so the plan cards swap to a "Verifying…" state
     // covering the ~2–15s window between Play Store confirmation and the
@@ -953,7 +967,10 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  void _purchaseCoinPack(CoinPurchaseOption option, GameTheme theme) {
+  Future<void> _purchaseCoinPack(
+      CoinPurchaseOption option, GameTheme theme) async {
+    if (!await _ensurePurchasable()) return;
+    if (!mounted) return;
     final price = PurchaseService().getStorePriceOrDefault(
         ProductIds.withPrefix(option.id), option.price);
     showDialog(
@@ -1643,6 +1660,8 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Future<void> _purchaseThemeProduct(String productId, String displayName) async {
+    if (!await _ensurePurchasable()) return;
+    if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final theme = context.read<ThemeCubit>().state.currentTheme;
     final price = PurchaseService().getStorePriceOrDefault(productId, 1.99);
@@ -2240,6 +2259,8 @@ class _StoreScreenState extends State<StoreScreen>
     required String displayName,
     required double fallbackPrice,
   }) async {
+    if (!await _ensurePurchasable()) return;
+    if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final theme = context.read<ThemeCubit>().state.currentTheme;
     final price =
@@ -2543,6 +2564,8 @@ class _StoreScreenState extends State<StoreScreen>
 
   Future<void> _purchasePowerUpWithCoins(
       _PowerUpCatalogItem item, GameTheme theme) async {
+    if (!await _ensurePurchasable()) return;
+    if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final coinsCubit = context.read<CoinsCubit>();
     final powerUpCubit = context.read<PowerUpCubit>();
@@ -2763,6 +2786,8 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Future<void> _purchaseCoinBundle(PowerUpBundle bundle, bool canAfford) async {
+    if (!await _ensurePurchasable()) return;
+    if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     if (!canAfford) {
       scaffoldMessenger.showSnackBar(

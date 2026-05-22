@@ -307,6 +307,25 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
                               const SizedBox(height: 16),
 
+                              // Email Sign-In Button
+                              _buildAuthButton(
+                                    context,
+                                    'Sign in with Email',
+                                    const Icon(
+                                      Icons.email_outlined,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                    [
+                                      theme.accentColor.withValues(alpha: 0.85),
+                                      theme.accentColor,
+                                    ],
+                                    () => context.push(AppRoutes.emailAuth),
+                                  )
+                                  .gameZoomIn(delay: 350.ms),
+
+                              const SizedBox(height: 16),
+
                               // Guest Button
                               _buildAuthButton(
                                     context,
@@ -323,6 +342,23 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                     () => _handleGuestLogin(authCubit),
                                   )
                                   .gameZoomIn(delay: 400.ms),
+
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Text(
+                                  'Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white
+                                        .withValues(alpha: 0.65),
+                                    fontSize: 12,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ).gameZoomIn(delay: 450.ms),
                             ],
                           ),
 

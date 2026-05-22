@@ -39,6 +39,11 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackSignInEmail() async {
+    AppLogger.info('$_tag sign_in_email');
+  }
+
+  @override
   Future<void> trackSignOut() async {
     AppLogger.info('$_tag sign_out');
   }

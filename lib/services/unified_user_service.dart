@@ -51,6 +51,12 @@ class UnifiedUser {
     this.preferences = const {},
   });
 
+  /// True when the account has no identifiable credential. Purchases are
+  /// gated on this — anonymous users must link a Google or email/password
+  /// credential via the account-upgrade sheet before they can buy.
+  bool get isAnonymous =>
+      userType == UserType.anonymous || userType == UserType.guest;
+
   UnifiedUser copyWith({
     String? uid,
     UserType? userType,
@@ -774,6 +780,128 @@ class UnifiedUserService extends ChangeNotifier {
   /// Public wrapper for anonymous sign-in
   Future<bool> signInAnonymously() async {
     return _signInAnonymously();
+  }
+
+  /// Sign in with an existing email/password account.
+  Future<bool> signInWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      AppLogger.user('Email sign-in: $email');
+      final result = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (result.user != null) {
+        AppLogger.success('Email sign-in OK: ${result.user!.uid}');
+        await _loadOrCreateUser(result.user!);
+        return true;
+      }
+      return false;
+    } catch (e, stackTrace) {
+      AppLogger.user('Error signing in with email/password', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Create a new email/password account.
+  Future<bool> createAccountWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      AppLogger.user('Creating email/password account: $email');
+      final result = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (result.user != null) {
+        AppLogger.success('Email account created: ${result.user!.uid}');
+        try {
+          await result.user!.sendEmailVerification();
+        } catch (e) {
+          AppLogger.user('Failed to send verification email (non-fatal)', e);
+        }
+        await _loadOrCreateUser(result.user!);
+        return true;
+      }
+      return false;
+    } catch (e, stackTrace) {
+      AppLogger.user('Error creating email/password account', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Promote the current anonymous account to email/password. Firebase
+  /// keeps the same UID, so the backend user record (progress, coins,
+  /// cosmetics) is preserved — the next /auth/firebase call updates
+  /// AuthProvider/Email/IsAnonymous on the existing row.
+  Future<bool> linkAnonymousToEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || !user.isAnonymous) {
+        AppLogger.user('linkAnonymousToEmailPassword called without anon user');
+        return false;
+      }
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+      final result = await user.linkWithCredential(credential);
+      AppLogger.success('Linked anon → email: ${result.user?.uid}');
+      try {
+        await result.user?.sendEmailVerification();
+      } catch (e) {
+        AppLogger.user('Failed to send verification email after link', e);
+      }
+      if (result.user != null) {
+        await _loadOrCreateUser(result.user!);
+      }
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.user('Error linking anon → email', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Promote the current anonymous account to a Google sign-in.
+  Future<bool> linkAnonymousToGoogle() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || !user.isAnonymous) {
+        AppLogger.user('linkAnonymousToGoogle called without anon user');
+        return false;
+      }
+      if (!_googleSignIn.supportsAuthenticate()) {
+        AppLogger.user('Google sign-in unsupported on this platform');
+        return false;
+      }
+      final googleUser = await _googleSignIn.authenticate();
+      final googleAuth = googleUser.authentication;
+      if (googleAuth.idToken == null) {
+        AppLogger.user('Failed to obtain Google ID token');
+        return false;
+      }
+      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
+      final result = await user.linkWithCredential(credential);
+      AppLogger.success('Linked anon → Google: ${result.user?.uid}');
+      if (result.user != null) {
+        await _loadOrCreateUser(result.user!);
+      }
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.user('Error linking anon → Google', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Best-effort password reset. Errors bubble up.
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
   }
 
   Future<bool> updateUsername(String newUsername) async {

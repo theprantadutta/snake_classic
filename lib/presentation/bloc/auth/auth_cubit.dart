@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -168,6 +169,134 @@ class AuthCubit extends Cubit<AuthState> {
       return result;
     } catch (e) {
       emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
+  /// Sign in with email/password. Returns true on success. On failure,
+  /// emits an errorMessage containing the FirebaseAuthException code so
+  /// the UI can map it to a user-friendly inline error.
+  Future<bool> signInWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.signInWithEmailPassword(
+        email: email,
+        password: password,
+      );
+      if (ok) {
+        _analytics.trackSignInEmail();
+        _analytics.setUserId(_userService.currentUser?.uid);
+        _analytics.setUserProperties(authMethod: 'email');
+        final needsSetup = _userService.consumeJustLoadedNewUser();
+        emit(state.copyWith(needsUsernameSetup: needsSetup));
+      } else {
+        emit(state.copyWith(isLoading: false, errorMessage: 'sign-in failed'));
+      }
+      return ok;
+    } on FirebaseAuthException catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
+  /// Create a brand-new email/password account.
+  Future<bool> createAccountWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.createAccountWithEmailPassword(
+        email: email,
+        password: password,
+      );
+      if (ok) {
+        _analytics.trackSignInEmail();
+        _analytics.setUserId(_userService.currentUser?.uid);
+        _analytics.setUserProperties(authMethod: 'email');
+        final needsSetup = _userService.consumeJustLoadedNewUser();
+        emit(state.copyWith(needsUsernameSetup: needsSetup));
+      } else {
+        emit(state.copyWith(isLoading: false, errorMessage: 'sign-up failed'));
+      }
+      return ok;
+    } on FirebaseAuthException catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
+  /// Link the current anonymous account to a new email/password credential.
+  /// Same UID = same backend user row, so progress is preserved.
+  Future<bool> linkAnonymousToEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.linkAnonymousToEmailPassword(
+        email: email,
+        password: password,
+      );
+      if (ok) {
+        _analytics.setUserProperties(authMethod: 'email');
+        // After linking the cubit's user reference should refresh from
+        // the service — the listener picks up the change but we emit
+        // here too for snappy UI feedback.
+        emit(state.copyWith(user: _userService.currentUser, isLoading: false));
+      } else {
+        emit(state.copyWith(isLoading: false, errorMessage: 'link failed'));
+      }
+      return ok;
+    } on FirebaseAuthException catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
+  /// Link the current anonymous account to a Google sign-in.
+  Future<bool> linkAnonymousToGoogle() async {
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.linkAnonymousToGoogle();
+      if (ok) {
+        _analytics.setUserProperties(authMethod: 'google');
+        emit(state.copyWith(user: _userService.currentUser, isLoading: false));
+      } else {
+        emit(state.copyWith(isLoading: false, errorMessage: 'link failed'));
+      }
+      return ok;
+    } on FirebaseAuthException catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
+  /// Send a Firebase password-reset email. Returns true if accepted.
+  Future<bool> sendPasswordResetEmail(String email) async {
+    try {
+      await _userService.sendPasswordResetEmail(email);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      emit(state.copyWith(errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(errorMessage: e.toString()));
       return false;
     }
   }

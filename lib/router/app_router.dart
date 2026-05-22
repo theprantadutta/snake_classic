@@ -7,6 +7,7 @@ import 'package:snake_classic/screens/achievements_screen.dart';
 import 'package:snake_classic/screens/battle_pass_screen.dart';
 import 'package:snake_classic/screens/daily_challenges_screen.dart';
 import 'package:snake_classic/screens/weekly_quests_screen.dart';
+import 'package:snake_classic/screens/email_auth_screen.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
 import 'package:snake_classic/screens/username_setup_screen.dart';
 import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
@@ -91,6 +92,17 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       name: 'firstTimeAuth',
       pageBuilder: (context, state) =>
           _zoomPage(state, const FirstTimeAuthScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.emailAuth,
+      name: 'emailAuth',
+      pageBuilder: (context, state) {
+        // `link` query flag distinguishes the upgrade-from-anonymous flow
+        // from a fresh sign-in. Set when launching from the purchase-gate
+        // bottom sheet.
+        final isLink = state.uri.queryParameters['link'] == '1';
+        return _zoomPage(state, EmailAuthScreen(linkFromAnonymous: isLink));
+      },
     ),
     GoRoute(
       path: AppRoutes.usernameSetup,

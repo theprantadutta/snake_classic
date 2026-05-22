@@ -48,6 +48,11 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackSignInEmail() {
+    return _analytics.logLogin(loginMethod: 'email');
+  }
+
+  @override
   Future<void> trackSignOut() {
     return _analytics.logEvent(name: 'sign_out');
   }
