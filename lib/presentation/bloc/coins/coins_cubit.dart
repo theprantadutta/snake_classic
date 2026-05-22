@@ -32,9 +32,10 @@ class CoinsCubit extends Cubit<CoinsState> {
       emit(state.copyWith(status: CoinsStatus.ready));
       AppLogger.info('CoinsCubit initialized. Balance: ${state.balance.total}');
 
-      // Reconcile with server-side balance once loaded. Non-blocking — local
-      // balance is already usable for gameplay; server sync is best-effort.
-      unawaited(syncWithBackend());
+      // Backend reconcile is no longer fired here — AuthCubit triggers
+      // syncWithBackend after the user is authenticated and the JWT is
+      // valid (see AuthCubit._firePostAuthSyncs). Firing here would race
+      // with auth and consistently 401 on first launch.
     } catch (e) {
       AppLogger.error('Error initializing CoinsCubit', e);
       emit(

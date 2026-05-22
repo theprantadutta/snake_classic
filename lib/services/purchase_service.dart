@@ -239,14 +239,16 @@ class PurchaseService {
           AppLogger.warning('loadProducts timed out — continuing without product data');
         },
       );
-      await restorePurchases().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          AppLogger.warning('restorePurchases timed out — continuing without restore');
-        },
-      );
+      // restorePurchases() intentionally NOT called here. Calling it at
+      // boot re-emits every existing Play Store purchase through the
+      // _listenToPurchaseUpdated listener, which then tries to verify
+      // each one against OUR backend — and the user isn't authenticated
+      // yet, so every verify call 401s and the purchases pile up in the
+      // pending-verification queue. Restore + pending-retry are now
+      // triggered by AuthCubit once it transitions to authenticated
+      // (see PurchaseService.runPostAuthRestore below).
 
-      AppLogger.info('Purchase Service initialized successfully');
+      AppLogger.info('Purchase Service initialized successfully (post-auth restore pending)');
     } catch (e) {
       AppLogger.error('Error initializing Purchase Service', e);
     }
@@ -664,6 +666,33 @@ class PurchaseService {
     } catch (e) {
       AppLogger.error('Error restoring purchases', e);
       _purchaseStatusController.add('Failed to restore purchases');
+    }
+  }
+
+  /// One-shot post-authentication setup. Triggered from AuthCubit when it
+  /// transitions to authenticated. Re-emits the user's Play Store purchases
+  /// through the listener (which now has a valid JWT for backend verify)
+  /// AND drains any purchases that 401'd in a previous unauth session.
+  /// Idempotent and safe to call multiple times.
+  bool _postAuthRestoreDone = false;
+  Future<void> runPostAuthRestore() async {
+    if (_postAuthRestoreDone) {
+      // Subsequent re-auths just drain the pending queue; no need to
+      // re-emit the whole Play Store inventory.
+      await retryPendingVerifications();
+      return;
+    }
+    _postAuthRestoreDone = true;
+    try {
+      AppLogger.info('Running post-auth purchase restore + verification drain');
+      await restorePurchases().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () =>
+            AppLogger.warning('Post-auth restorePurchases timed out'),
+      );
+      await retryPendingVerifications();
+    } catch (e) {
+      AppLogger.error('Error during post-auth purchase restore', e);
     }
   }
 

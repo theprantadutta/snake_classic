@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 enum UserType { guest, anonymous, google }
@@ -392,14 +393,24 @@ class UnifiedUserService extends ChangeNotifier {
               'User loaded from backend: ${_currentUser?.username}',
             );
           } else {
-            // Create local user object from Firebase data
-            _currentUser = await _createUserFromFirebase(firebaseUser);
-            await _cacheUserSession(_currentUser!);
+            // /auth/me returned null — backend was reachable for the
+            // token verify but not for the profile fetch (transient).
+            // Prefer the cached user over a fresh-from-Firebase rebuild
+            // so we don't lose offline-accurate fields (highScore, etc).
+            await _restoreFromCacheOrCreate(firebaseUser,
+                reason: '/auth/me unreachable');
           }
         } else {
-          // Backend auth failed, create local user
-          _currentUser = await _createUserFromFirebase(firebaseUser);
-          await _cacheUserSession(_currentUser!);
+          // Backend auth failed entirely. This is the common offline path
+          // when Firebase still has a cached ID token (so we entered the
+          // online branch) but our backend is unreachable. Before this
+          // fix we'd call _createUserFromFirebase here, which rebuilds
+          // _currentUser from `guest_user_data` SharedPreferences (often
+          // 0 or stale) and CACHES that — wiping a previously-correct
+          // cached UnifiedUser. The user then sees their high score drop
+          // to 0/stale offline. Restore from cache when possible instead.
+          await _restoreFromCacheOrCreate(firebaseUser,
+              reason: 'backend auth failed (likely offline)');
         }
       } else {
         // Offline path - try to load cached session
@@ -434,6 +445,31 @@ class UnifiedUserService extends ChangeNotifier {
       _isLoadingUser = false;
       _loadingUserId = null;
     }
+  }
+
+  /// Backend-unreachable fallback inside the "online" branch of
+  /// _loadOrCreateUser. Prefers a matching cached UnifiedUser (preserves
+  /// highScore, gamesPlayed, level, etc. from the last good fetch) over a
+  /// blank rebuild via _createUserFromFirebase (which seeds from stale
+  /// guest_user_data and clobbers the cache). Falls through to the rebuild
+  /// only when there's no usable cache.
+  Future<void> _restoreFromCacheOrCreate(
+    User firebaseUser, {
+    required String reason,
+  }) async {
+    final cachedUser = await _loadCachedUserSession();
+    if (cachedUser != null && cachedUser.uid == firebaseUser.uid) {
+      _currentUser = cachedUser;
+      AppLogger.user(
+        'Restored cached user (reason: $reason): highScore=${_currentUser?.highScore}',
+      );
+      return;
+    }
+    _currentUser = await _createUserFromFirebase(firebaseUser);
+    await _cacheUserSession(_currentUser!);
+    AppLogger.user(
+      'No usable cache (reason: $reason); created fresh user from Firebase',
+    );
   }
 
   Future<UnifiedUser> _createUserFromFirebase(User firebaseUser) async {
@@ -598,7 +634,15 @@ class UnifiedUserService extends ChangeNotifier {
     }
   }
 
-  /// Load cached user session from local storage
+  /// Load cached user session from local storage.
+  /// Bumps the highScore field to max(cached, localDb) before returning so
+  /// the offline auth state can't be stale relative to disk — the local
+  /// Drift settings table is monotonic (never-decrease guard in
+  /// StorageService.saveHighScore) and gets updated by both local plays
+  /// and cloud syncs, so it's never lower than what we should display.
+  /// Without this, a stale cached UnifiedUser persists across app launches
+  /// and the home screen's max(authState, settings) workaround can't paper
+  /// over the gap when settings is also stale.
   Future<UnifiedUser?> _loadCachedUserSession() async {
     if (_prefs == null) return null;
     try {
@@ -606,7 +650,19 @@ class UnifiedUserService extends ChangeNotifier {
       if (cachedJson != null) {
         final userData = jsonDecode(cachedJson) as Map<String, dynamic>;
         AppLogger.user('Loaded cached user session');
-        return UnifiedUser.fromJson(userData);
+        var user = UnifiedUser.fromJson(userData);
+        try {
+          final dbHighScore = await StorageService().getHighScore();
+          if (dbHighScore > user.highScore) {
+            AppLogger.user(
+              'Cached user highScore=${user.highScore} < DB highScore=$dbHighScore, bumping cached user',
+            );
+            user = user.copyWith(highScore: dbHighScore);
+          }
+        } catch (e) {
+          AppLogger.user('Failed to enrich cached user with DB highScore', e);
+        }
+        return user;
       }
     } catch (e) {
       AppLogger.error('Failed to load cached user session', e);

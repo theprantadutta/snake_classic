@@ -708,17 +708,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     double actualScreenHeight,
   ) {
     final isSmallScreen = screenHeight < 750;
-    // Read high score from GameSettingsCubit (synced source of truth)
-    final settingsHighScore = context
-        .watch<GameSettingsCubit>()
-        .state
-        .highScore;
-    // Take max of settings high score and auth high score (for signed-in users)
-    final highScore = authState.isSignedIn
-        ? (authState.highScore > settingsHighScore
-              ? authState.highScore
-              : settingsHighScore)
-        : settingsHighScore;
+    // High score reads from GameSettingsCubit only — same pattern as
+    // CoinsCubit. The cubit's state is backed by the local Drift settings
+    // table (monotonic via the never-decrease guard) and refreshed from
+    // the server on each online launch via GameSettingsCubit.syncWithBackend.
+    // Once an online session lands the server value into the DB, every
+    // subsequent offline session shows the right number. No dual-source
+    // max needed.
+    final highScore = context.watch<GameSettingsCubit>().state.highScore;
 
     return LayoutBuilder(
       builder: (context, constraints) {

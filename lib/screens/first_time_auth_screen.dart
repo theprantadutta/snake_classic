@@ -105,8 +105,13 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
           child: LayoutBuilder(
             builder: (context, constraints) {
               final screenHeight = constraints.maxHeight;
+              // Bumped from <600 to <800 so the tighter layout is the
+              // default — most phones (incl. 6.1" / Pixel-class) sit
+              // around 800-900 logical pixels, and with three auth
+              // buttons + the guest-can't-purchase subtitle the prior
+              // large-screen sizing pushed content past the fold.
               final screenWidth = constraints.maxWidth;
-              final isSmallScreen = screenHeight < 600;
+              final isSmallScreen = screenHeight < 800;
               final isNarrowScreen = screenWidth < 400;
 
               if (_showPrivacyPolicy) {
@@ -248,14 +253,12 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
-                                  SizedBox(
-                                    height: isSmallScreen
-                                        ? screenHeight * 0.015
-                                        : screenHeight * 0.02,
-                                  ),
-
-                                  // Feature list
-                                  ..._buildFeatureList(theme, isSmallScreen),
+                                  // Feature list removed — the three auth
+                                  // buttons below already convey the same
+                                  // choices, and freeing the vertical space
+                                  // lets all three buttons + the guest
+                                  // subtitle fit on standard phones without
+                                  // scrolling.
                                 ],
                               ),
                             )
@@ -269,23 +272,38 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
                         // Auth buttons
                         if (_isLoading)
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              children: [
-                                CircularProgressIndicator(
-                                  color: theme.accentColor,
-                                  strokeWidth: 3,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Signing you in...',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontSize: 16,
+                          // Full-width centered loading block — without an
+                          // explicit width and CrossAxisAlignment.center
+                          // the Column shrunk to its widest child and
+                          // floated to the left edge, leaving the right
+                          // half of the screen blank during the Google
+                          // sign-in handoff. SizedBox(width: infinity)
+                          // pins it to the available width; the Column's
+                          // cross-axis center keeps spinner + text aligned.
+                          SizedBox(
+                            width: double.infinity,
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(
+                                    color: theme.accentColor,
+                                    strokeWidth: 3,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Signing you in...',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.8),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           )
                         else
@@ -620,72 +638,6 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
         ],
       ),
     );
-  }
-
-  List<Widget> _buildFeatureList(
-    GameTheme theme, [
-    bool isSmallScreen = false,
-  ]) {
-    final features = [
-      {
-        'icon': Icons.cloud_sync_rounded,
-        'title': 'Google Sign-In',
-        'subtitle': 'Save progress • Sync across devices • Global leaderboards',
-      },
-      {
-        'icon': Icons.person_rounded,
-        'title': 'Guest Mode',
-        'subtitle': 'Play instantly • Local progress • Upgrade to Google later',
-      },
-    ];
-
-    return features
-        .map(
-          (feature) => Padding(
-            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 6.0 : 8.0),
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    feature['icon'] as IconData,
-                    color: theme.accentColor,
-                    size: isSmallScreen ? 18 : 20,
-                  ),
-                ),
-                SizedBox(width: isSmallScreen ? 10 : 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        feature['title'] as String,
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 14 : 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        feature['subtitle'] as String,
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 10 : 12,
-                          color: Colors.white.withValues(alpha: 0.7),
-                          height: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        )
-        .toList();
   }
 
   Widget _buildAuthButton(

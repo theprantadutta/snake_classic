@@ -48,15 +48,33 @@ class ApiService {
       _accessToken = prefs.getString(_tokenKey);
       _userId = prefs.getString(_userIdKey);
       if (_accessToken != null) {
-        AppLogger.network('Loaded stored JWT token');
+        // If the stored token is already expired/expiring, clear it
+        // now so isAuthenticated reads false from the very first cubit
+        // check. Without this, every service-init that gates on
+        // isAuthenticated (AchievementService, BattlePassCubit, etc.)
+        // fires a call with the stale token, eats a 401, and floods
+        // the log before the real backend auth in _loadOrCreateUser
+        // refreshes the JWT.
+        if (isTokenExpiredOrExpiring) {
+          AppLogger.network('Stored JWT is expired — clearing on init');
+          await clearToken();
+        } else {
+          AppLogger.network('Loaded stored JWT token');
+        }
       }
     } catch (e) {
       AppLogger.error('Error loading stored token', e);
     }
   }
 
-  /// Check if user is authenticated with backend
-  bool get isAuthenticated => _accessToken != null;
+  /// Check if user is authenticated with backend.
+  /// Strict: also requires the JWT to not be expired/expiring. Without the
+  /// expiry check, a stored-but-expired token (e.g. resuming after a long
+  /// idle) would have every sync call eat a 401 before learning the token
+  /// is dead. With the check, callers skip the call cleanly and wait for
+  /// _loadOrCreateUser to mint a fresh JWT.
+  bool get isAuthenticated =>
+      _accessToken != null && !isTokenExpiredOrExpiring;
 
   /// Get current user ID from backend
   String? get currentUserId => _userId;

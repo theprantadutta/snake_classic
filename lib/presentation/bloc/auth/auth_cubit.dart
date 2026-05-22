@@ -4,9 +4,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
+import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
+import 'package:snake_classic/utils/logger.dart';
 
 import 'auth_state.dart';
 
@@ -93,6 +100,15 @@ class AuthCubit extends Cubit<AuthState> {
           clearError: true,
         ),
       );
+      // Post-auth side effects. Gated on having a real backend JWT —
+      // an offline-guest UnifiedUser still satisfies `user != null` but
+      // doesn't have an authenticated API session, so we'd just 401 if
+      // we ran the syncs. PurchaseService.runPostAuthRestore is
+      // idempotent across re-emits (only fires the full restore once
+      // per process; subsequent calls just drain pending verifies).
+      if (user.userType != UserType.guest && ApiService().isAuthenticated) {
+        _firePostAuthSyncs();
+      }
     } else {
       emit(
         state.copyWith(
@@ -103,6 +119,48 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     }
+  }
+
+  // The last UID we ran the cubit-level syncs for. Reset on UID transition
+  // so a sign-out + sign-in-to-different-account, or an anonymous → Google
+  // upgrade, re-syncs from the new identity. A simple boolean would have
+  // pinned syncs to the first authenticated UID and starved every later
+  // user of their own data until the next cold start.
+  String? _lastSyncedUid;
+
+  void _firePostAuthSyncs() {
+    // PurchaseService manages its own one-shot for the Play Store restore;
+    // subsequent calls just drain the pending-verification queue. Safe to
+    // call on every authenticated emission.
+    unawaited(PurchaseService().runPostAuthRestore());
+
+    final currentUid = _userService.currentUser?.uid;
+    if (currentUid == null) return;
+    if (currentUid == _lastSyncedUid) return;
+    _lastSyncedUid = currentUid;
+
+    AppLogger.info('Firing post-auth syncs for user $currentUid');
+
+    // Premium — authoritative pull from the backend. If the server has
+    // revoked Pro (subscription expired, cleanup job ran, RTDN webhook
+    // landed), this is what catches the revocation and downgrades local
+    // tier. Without this firing on every UID transition, a stale
+    // tier=pro could persist for the new account.
+    try {
+      unawaited(getIt<PremiumCubit>().syncWithBackend());
+    } catch (_) {}
+
+    // Coins — pulls server's coins column and merges via max(local, server).
+    try {
+      unawaited(getIt<CoinsCubit>().syncWithBackend());
+    } catch (_) {}
+
+    // High score — same pattern; pulls user.high_score and bumps the
+    // local DB via the never-decrease guard. The settings-table stream
+    // propagates into GameSettingsCubit state.
+    try {
+      unawaited(getIt<GameSettingsCubit>().syncWithBackend());
+    } catch (_) {}
   }
 
   /// Sign in with Google

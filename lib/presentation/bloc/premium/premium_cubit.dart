@@ -149,8 +149,13 @@ class PremiumCubit extends Cubit<PremiumState> {
       // Listen to purchase updates
       _setupPurchaseListener();
 
-      // Merge entitlements from backend (non-blocking)
-      unawaited(syncWithBackend());
+      // Backend reconcile (which is what catches server-side Pro
+      // revocations) is no longer fired here — AuthCubit triggers it
+      // after the user is authenticated (see
+      // AuthCubit._firePostAuthSyncs). Firing here raced auth: on a
+      // cold start the JWT often wasn't ready yet, syncWithBackend
+      // early-returned, and a stale tier=pro would persist locally
+      // even though the backend had revoked.
 
       AppLogger.info('PremiumCubit initialized. Premium: ${state.hasPremium}');
     } catch (e) {
