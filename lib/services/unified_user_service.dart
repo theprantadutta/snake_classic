@@ -834,14 +834,26 @@ class UnifiedUserService extends ChangeNotifier {
       // Update the in-memory user with the freshly-fetched fields. Keep
       // the local userType (Firebase/auth provider) since the backend
       // doesn't return it in a form we map; everything else is overlay.
+      //
+      // High score / cumulative-aggregate fields use max(server, local) so
+      // a stale server response can't regress local data. This matters when
+      // an offline-earned high score has been recorded locally but the
+      // score-submit queue hasn't drained to the server yet — without the
+      // max guard, refreshFromBackend would clobber the fresh local high
+      // score with the older server value until the next score-submit
+      // brought them back in sync.
+      final serverHighScore = (fresh['high_score'] ?? fresh['highScore'] ?? 0) as int;
+      final serverGames = (fresh['total_games_played'] ?? fresh['totalGamesPlayed'] ?? 0) as int;
+      final serverTotal = (fresh['total_score'] ?? fresh['totalScore'] ?? 0) as int;
+
       _currentUser = _currentUser!.copyWith(
         username: fresh['username'] ?? _currentUser!.username,
         displayName: fresh['display_name'] ?? fresh['displayName'] ?? _currentUser!.displayName,
         photoURL: fresh['photo_url'] ?? fresh['photoURL'] ?? _currentUser!.photoURL,
         email: fresh['email'] ?? _currentUser!.email,
-        highScore: fresh['high_score'] ?? fresh['highScore'] ?? _currentUser!.highScore,
-        totalGamesPlayed: fresh['total_games_played'] ?? fresh['totalGamesPlayed'] ?? _currentUser!.totalGamesPlayed,
-        totalScore: fresh['total_score'] ?? fresh['totalScore'] ?? _currentUser!.totalScore,
+        highScore: max(serverHighScore, _currentUser!.highScore),
+        totalGamesPlayed: max(serverGames, _currentUser!.totalGamesPlayed),
+        totalScore: max(serverTotal, _currentUser!.totalScore),
         level: fresh['level'] ?? _currentUser!.level,
       );
       await _cacheUserSession(_currentUser!);
@@ -871,9 +883,9 @@ class UnifiedUserService extends ChangeNotifier {
   }) async {
     if (_currentUser == null) return;
 
-    final updatedHighScore =
-        (newHighScore != null && newHighScore > _currentUser!.highScore)
-        ? newHighScore
+    // High score is strictly monotonic — only accept upward moves.
+    final updatedHighScore = newHighScore != null
+        ? max(newHighScore, _currentUser!.highScore)
         : _currentUser!.highScore;
 
     _currentUser = _currentUser!.copyWith(
@@ -883,12 +895,12 @@ class UnifiedUserService extends ChangeNotifier {
       level: level ?? _currentUser!.level,
     );
 
-    // Update via backend API
-    // Note: Score submission is handled separately by GameCubit's post-game sync
-    // pipeline (via DataSyncService queue), so we only update the profile here.
+    // Update via backend API. high_score is omitted intentionally — the
+    // backend's UpdateProfileCommand DTO doesn't accept it (it's mutated
+    // server-side only via SubmitScoreCommandHandler's GREATEST clause),
+    // so sending it was a no-op that risked confusing future maintainers.
     if (_apiService.isAuthenticated) {
       await _apiService.updateProfile({
-        'high_score': _currentUser!.highScore,
         'total_games_played': _currentUser!.totalGamesPlayed,
         'total_score': _currentUser!.totalScore,
         'level': _currentUser!.level,
