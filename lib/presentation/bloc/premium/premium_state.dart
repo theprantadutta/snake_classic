@@ -51,6 +51,15 @@ class PremiumState extends Equatable {
   final bool hasBattlePass;
   final int battlePassTier;
 
+  // Server-side promo (welcome bonus / app-wide giveaway). Distinct from
+  // the local `isOnTrial` field (which represents the legacy in-app
+  // 3-day trial). When `isOnPromo` is true the user has Pro for free
+  // until `promoExpiresAt`; revocation is handled server-side by the
+  // ExpirePromosJob.
+  final bool isOnPromo;
+  final DateTime? promoExpiresAt;
+  final String? promoSource;
+
   const PremiumState({
     this.status = PremiumStatus.initial,
     this.tier = PremiumTier.free,
@@ -72,6 +81,9 @@ class PremiumState extends Equatable {
     this.goldTournamentEntries = 0,
     this.hasBattlePass = false,
     this.battlePassTier = 0,
+    this.isOnPromo = false,
+    this.promoExpiresAt,
+    this.promoSource,
   });
 
   /// Initial state
@@ -100,6 +112,10 @@ class PremiumState extends Equatable {
     int? goldTournamentEntries,
     bool? hasBattlePass,
     int? battlePassTier,
+    bool? isOnPromo,
+    DateTime? promoExpiresAt,
+    String? promoSource,
+    bool clearPromo = false,
   }) {
     return PremiumState(
       status: status ?? this.status,
@@ -125,6 +141,10 @@ class PremiumState extends Equatable {
           goldTournamentEntries ?? this.goldTournamentEntries,
       hasBattlePass: hasBattlePass ?? this.hasBattlePass,
       battlePassTier: battlePassTier ?? this.battlePassTier,
+      isOnPromo: clearPromo ? false : (isOnPromo ?? this.isOnPromo),
+      promoExpiresAt:
+          clearPromo ? null : (promoExpiresAt ?? this.promoExpiresAt),
+      promoSource: clearPromo ? null : (promoSource ?? this.promoSource),
     );
   }
 
@@ -252,5 +272,8 @@ class PremiumState extends Equatable {
     goldTournamentEntries,
     hasBattlePass,
     battlePassTier,
+    isOnPromo,
+    promoExpiresAt,
+    promoSource,
   ];
 }

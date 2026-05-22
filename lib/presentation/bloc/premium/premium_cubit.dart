@@ -709,6 +709,30 @@ class PremiumCubit extends Cubit<PremiumState> {
       }
     }
 
+    // ---- Promo state (read first so the tier block can layer on top) ----
+    // is_promo true => the user is on a free server-granted Pro trial.
+    // The backend already merges promo + paid into a single is_premium /
+    // subscription_expiry pair, so the tier-handling below works the same
+    // for both — promo just adds the TRIAL badge + revocation timing.
+    final isPromo = data['is_promo'] == true;
+    final promoExpiresStr = data['promo_expires_at'] as String?;
+    final promoExpires =
+        promoExpiresStr != null ? DateTime.tryParse(promoExpiresStr) : null;
+    final promoSource = data['promo_source'] as String?;
+    if (isPromo != state.isOnPromo ||
+        promoExpires != state.promoExpiresAt ||
+        promoSource != state.promoSource) {
+      if (isPromo) {
+        emit(state.copyWith(
+          isOnPromo: true,
+          promoExpiresAt: promoExpires,
+          promoSource: promoSource,
+        ));
+      } else {
+        emit(state.copyWith(clearPromo: true));
+      }
+    }
+
     // ---- Subscription tier ----
     if (data['is_premium'] == true) {
       final expiryStr = data['subscription_expiry'] as String?;
