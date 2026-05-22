@@ -48,18 +48,21 @@ void main() async {
   AppLogger.lifecycle('Snake Classic starting up...');
 
   try {
-    // Hide status bar but keep navigation area for back gesture
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.manual,
-      overlays: [SystemUiOverlay.bottom],
-    );
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: Brightness.light,
-        systemNavigationBarDividerColor: Colors.transparent,
-      ),
-    );
+    // Edge-to-edge mode for Android 15+ compliance. Content draws under the
+    // (translucent) status + nav bars; SafeArea widgets on each screen handle
+    // the inset padding. SystemUiMode.manual previously used here routed
+    // through Flutter's deprecated setStatusBarColor / setNavigationBarColor
+    // path which triggers Play Console's "deprecated APIs for edge-to-edge"
+    // warning — see flutter/flutter#183372. The active game screen still
+    // goes full-immersive via immersiveSticky (handled in GameScreen).
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ));
 
     // Load environment variables
     AppLogger.info('Loading environment variables...');
@@ -245,18 +248,17 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
   }
 
   void _setImmersiveMode() {
-    // Hide status bar but keep navigation area accessible for back gesture
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.manual,
-      overlays: [SystemUiOverlay.bottom],
-    );
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: Brightness.light,
-        systemNavigationBarDividerColor: Colors.transparent,
-      ),
-    );
+    // Re-apply the edge-to-edge defaults on app resume. Same rationale as
+    // the bootstrap setup above — manual mode triggers the deprecated
+    // setStatusBarColor path Play Console flags.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ));
   }
 
   @override

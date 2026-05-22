@@ -7,7 +7,13 @@
         <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowFullscreen">false</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">false</item>
+        <!-- Edge-to-edge: theme-level transparent bars so the splash screen
+             extends under the system bars during process startup, matching
+             the SystemUiMode.edgeToEdge bootstrap in main.dart. Required
+             for Android 15 (SDK 35) compliance — see flutter#183372. -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
     <!-- Theme applied to the Android Window as soon as the process has started.

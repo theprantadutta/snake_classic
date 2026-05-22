@@ -66,6 +66,12 @@ class _GameScreenState extends State<GameScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
+    // Note: the status bar is hidden app-wide via WindowInsetsController in
+    // MainActivity.kt — no per-screen SystemUiMode tweak needed here. The
+    // navigation bar stays visible during gameplay so the back gesture
+    // remains accessible (matches the original SystemUiMode.manual +
+    // [SystemUiOverlay.bottom] behavior the app shipped with).
+
     // Initialize keyboard focus node
     _keyboardFocusNode = FocusNode();
 

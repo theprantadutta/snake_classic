@@ -59,6 +59,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Note: the status bar is hidden app-wide via WindowInsetsController in
+    // MainActivity.kt — no per-screen tweak needed. The nav bar stays
+    // visible for back-gesture access.
+
     _keyboardFocusNode = FocusNode();
 
     // Initialize juice controller for screen shake and effects
