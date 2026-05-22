@@ -337,6 +337,11 @@ class SocialService {
           'username': entry['username'],
           'photoURL': entry['photo_url'],
           'highScore': entry['high_score'] ?? entry['score'],
+          // Backend now returns total_games_played on every leaderboard
+          // entry (LeaderboardEntryDto.TotalGamesPlayed). Without this
+          // mapping UserProfile.totalGamesPlayed silently defaulted to 0,
+          // so the friends leaderboard row showed "0 games" for everyone.
+          'totalGamesPlayed': entry['total_games_played'] ?? 0,
           'status': 'offline',
         });
       }).toList();

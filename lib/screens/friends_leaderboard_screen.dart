@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -100,6 +101,8 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, state) {
         final theme = state.currentTheme;
+        final authState = context.watch<AuthCubit>().state;
+        final currentUid = authState.isSignedIn ? authState.userId : null;
 
         return Scaffold(
           body: Container(
@@ -121,7 +124,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                   Expanded(
                     child: _isLoading
                         ? _buildLoadingIndicator(theme)
-                        : _buildLeaderboard(theme),
+                        : _buildLeaderboard(theme, currentUid),
                   ),
                 ],
               ),
@@ -226,7 +229,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     );
   }
 
-  Widget _buildLeaderboard(GameTheme theme) {
+  Widget _buildLeaderboard(GameTheme theme, String? currentUid) {
     if (_leaderboard.isEmpty) {
       return _buildEmptyState(theme);
     }
@@ -234,7 +237,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     return Column(
       children: [
         // Top 3 podium
-        if (_leaderboard.length >= 2) _buildPodium(theme),
+        if (_leaderboard.length >= 2) _buildPodium(theme, currentUid),
 
         // Rest of the leaderboard
         Expanded(
@@ -251,6 +254,8 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 rank: rank,
                 theme: theme,
                 delay: (actualIndex * 100).ms,
+                isCurrentUser:
+                    currentUid != null && user.uid == currentUid,
               );
             },
           ),
@@ -259,7 +264,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     );
   }
 
-  Widget _buildPodium(GameTheme theme) {
+  Widget _buildPodium(GameTheme theme, String? currentUid) {
     return Container(
       height: 200,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -275,6 +280,8 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 height: 120,
                 theme: theme,
                 delay: 200.ms,
+                isCurrentUser:
+                    currentUid != null && _leaderboard[1].uid == currentUid,
               ),
             ),
 
@@ -286,6 +293,8 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               height: 160,
               theme: theme,
               delay: 100.ms,
+              isCurrentUser:
+                  currentUid != null && _leaderboard[0].uid == currentUid,
             ),
           ),
 
@@ -298,6 +307,8 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 height: 80,
                 theme: theme,
                 delay: 300.ms,
+                isCurrentUser:
+                    currentUid != null && _leaderboard[2].uid == currentUid,
               ),
             ),
         ],
@@ -311,6 +322,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     required double height,
     required GameTheme theme,
     required Duration delay,
+    required bool isCurrentUser,
   }) {
     final colors = {
       1: [Colors.amber, Colors.yellow],
@@ -323,26 +335,47 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // User avatar
-        CircleAvatar(
-          radius: rank == 1 ? 32 : 24,
-          backgroundColor: theme.accentColor.withValues(alpha: 0.2),
-          backgroundImage: user.photoUrl != null
-              ? NetworkImage(user.photoUrl!)
-              : null,
-          onBackgroundImageError: user.photoUrl != null ? (e, s) {} : null,
-          child: user.photoUrl == null
-              ? Text(
-                  user.publicLabel.isNotEmpty
-                      ? user.publicLabel[0].toUpperCase()
-                      : 'U',
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: rank == 1 ? 24 : 18,
-                    fontWeight: FontWeight.bold,
+        // User avatar — gets a glowing accent-color ring when this is the
+        // signed-in player, so they spot themselves on the podium instantly.
+        Container(
+          padding: isCurrentUser ? const EdgeInsets.all(3) : EdgeInsets.zero,
+          decoration: isCurrentUser
+              ? BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.accentColor,
+                      theme.accentColor.withValues(alpha: 0.6),
+                    ],
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.accentColor.withValues(alpha: 0.55),
+                      blurRadius: 10,
+                    ),
+                  ],
                 )
               : null,
+          child: CircleAvatar(
+            radius: rank == 1 ? 32 : 24,
+            backgroundColor: theme.accentColor.withValues(alpha: 0.2),
+            backgroundImage: user.photoUrl != null
+                ? NetworkImage(user.photoUrl!)
+                : null,
+            onBackgroundImageError: user.photoUrl != null ? (e, s) {} : null,
+            child: user.photoUrl == null
+                ? Text(
+                    user.publicLabel.isNotEmpty
+                        ? user.publicLabel[0].toUpperCase()
+                        : 'U',
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: rank == 1 ? 24 : 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
+          ),
         ).gamePop(delay: delay),
 
         const SizedBox(height: 8),
@@ -370,11 +403,11 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
 
         const SizedBox(height: 4),
 
-        // User name
+        // User name — "YOU" chip below when the current user owns this slot.
         Text(
           user.publicLabel,
           style: TextStyle(
-            color: theme.accentColor,
+            color: isCurrentUser ? theme.accentColor : theme.accentColor,
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),
@@ -382,10 +415,14 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ).gameEntrance(delay: delay + 200.ms),
+        if (isCurrentUser) ...[
+          const SizedBox(height: 2),
+          _buildYouChip(theme).gameEntrance(delay: delay + 250.ms),
+        ],
 
-        // Score
+        // Score — thousands-separated
         Text(
-          '${user.highScore}',
+          _formatThousands(user.highScore),
           style: TextStyle(
             color: rankColors[0],
             fontSize: rank == 1 ? 16 : 14,
@@ -439,13 +476,42 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
     required int rank,
     required GameTheme theme,
     required Duration delay,
+    required bool isCurrentUser,
   }) {
-    return Card(
-      color: theme.backgroundColor.withValues(alpha: 0.5),
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        gradient: isCurrentUser
+            ? LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  theme.accentColor.withValues(alpha: 0.32),
+                  theme.accentColor.withValues(alpha: 0.16),
+                  theme.primaryColor.withValues(alpha: 0.18),
+                ],
+              )
+            : null,
+        color: isCurrentUser
+            ? null
+            : theme.backgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.accentColor.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: isCurrentUser
+              ? theme.accentColor
+              : theme.accentColor.withValues(alpha: 0.2),
+          width: isCurrentUser ? 1.5 : 1.0,
+        ),
+        boxShadow: isCurrentUser
+            ? [
+                BoxShadow(
+                  color: theme.accentColor.withValues(alpha: 0.35),
+                  blurRadius: 14,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -464,7 +530,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               ),
               child: Center(
                 child: Text(
-                  '#$rank',
+                  '$rank',
                   style: TextStyle(
                     color: theme.accentColor,
                     fontSize: 16,
@@ -507,7 +573,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 children: [
                   Row(
                     children: [
-                      Expanded(
+                      Flexible(
                         child: Text(
                           user.publicLabel,
                           style: TextStyle(
@@ -515,8 +581,14 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                             fontWeight: FontWeight.bold,
                             color: theme.accentColor,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (isCurrentUser) ...[
+                        const SizedBox(width: 8),
+                        _buildYouChip(theme),
+                      ],
+                      const SizedBox(width: 6),
                       Text(
                         user.status.emoji,
                         style: const TextStyle(fontSize: 14),
@@ -533,7 +605,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${user.totalGamesPlayed} games',
+                        _formatGamesPlayed(user.totalGamesPlayed),
                         style: TextStyle(
                           fontSize: 12,
                           color: theme.accentColor.withValues(alpha: 0.6),
@@ -545,7 +617,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               ),
             ),
 
-            // Score
+            // Score — thousands-separated.
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -555,11 +627,12 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                     Icon(Icons.emoji_events, size: 16, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text(
-                      '${user.highScore}',
+                      _formatThousands(user.highScore),
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                         color: theme.accentColor,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
@@ -577,6 +650,69 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
         ),
       ),
     ).gameListItem(0);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared helpers — mirror the global leaderboard treatment so YOU chip,
+  // game-count pluralization, and number formatting stay consistent across
+  // both screens.
+  // ---------------------------------------------------------------------------
+
+  Widget _buildYouChip(GameTheme theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.accentColor,
+            theme.accentColor.withValues(alpha: 0.75),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: theme.accentColor.withValues(alpha: 0.55),
+            blurRadius: 6,
+            spreadRadius: 0.5,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.person_pin,
+            color: theme.backgroundColor,
+            size: 11,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            'YOU',
+            style: TextStyle(
+              color: theme.backgroundColor,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatGamesPlayed(int count) {
+    final formatted = _formatThousands(count);
+    return count == 1 ? '$formatted game' : '$formatted games';
+  }
+
+  String _formatThousands(int n) {
+    final s = n.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(s[i]);
+    }
+    return buffer.toString();
   }
 
   Widget _buildEmptyState(GameTheme theme) {
