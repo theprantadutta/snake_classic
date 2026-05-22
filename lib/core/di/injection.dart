@@ -105,10 +105,10 @@ Future<void> configureDependencies() async {
   );
 
   // ==================== Analytics ====================
+  // Debug builds never hit production Firebase Analytics — they log locally only.
   getIt.registerLazySingleton<AnalyticsFacade>(() {
     return AnalyticsFacade([
-      FirebaseAnalyticsClient(),
-      if (kDebugMode) LoggerAnalyticsClient(),
+      if (kDebugMode) LoggerAnalyticsClient() else FirebaseAnalyticsClient(),
     ]);
   });
 
