@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 // Database
@@ -5,9 +6,7 @@ import 'package:snake_classic/data/database/app_database.dart';
 
 // Services
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
-// TEMPORARILY DISABLED: firebase_analytics blocked on upstream issue.
-// See ANALYTICS_DISABLED.md for restoration steps.
-// import 'package:snake_classic/services/analytics/firebase_analytics_client.dart';
+import 'package:snake_classic/services/analytics/firebase_analytics_client.dart';
 import 'package:snake_classic/services/analytics/logger_analytics_client.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/offline_cache_service.dart';
@@ -106,12 +105,10 @@ Future<void> configureDependencies() async {
   );
 
   // ==================== Analytics ====================
-  // TEMPORARILY: only LoggerAnalyticsClient is wired in.
-  // firebase_analytics is disabled pending an upstream fix.
-  // See ANALYTICS_DISABLED.md for restoration steps.
   getIt.registerLazySingleton<AnalyticsFacade>(() {
     return AnalyticsFacade([
-      LoggerAnalyticsClient(),
+      FirebaseAnalyticsClient(),
+      if (kDebugMode) LoggerAnalyticsClient(),
     ]);
   });
 
