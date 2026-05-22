@@ -87,6 +87,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               // Tab Bar
               _buildTabBar(theme),
 
+              // Subtitle explaining what the active tab ranks by — without
+              // this, "Global vs Weekly" doesn't tell players whether the
+              // metric is score / coins / XP / something else.
+              AnimatedBuilder(
+                animation: _tabController,
+                builder: (context, _) => _buildSubtitle(theme),
+              ),
+
               // User Rank Card
               if (authState.isSignedIn && leaderboardState.userRank != null)
                 _buildUserRankCard(authState, theme, leaderboardState.userRank!),
@@ -169,6 +177,38 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         tabs: const [
           Tab(text: 'Global'),
           Tab(text: 'Weekly'),
+        ],
+      ),
+    );
+  }
+
+  /// Tells the player exactly what metric the active tab is ranking on,
+  /// so "Global vs Weekly" isn't ambiguous between high score / coins / XP.
+  /// Mirrors what the backend handlers do: GetGlobalLeaderboardQueryHandler
+  /// orders by aggregated max(Score.ScoreValue) lifetime; the weekly one
+  /// scopes scores to `CreatedAt >= startOfWeek` (Sunday).
+  Widget _buildSubtitle(GameTheme theme) {
+    final isWeekly = _tabController.index == 1;
+    final icon = isWeekly ? Icons.calendar_today : Icons.public;
+    final text = isWeekly
+        ? 'Ranked by your best single-game score this week (resets Sunday)'
+        : 'Ranked by your highest single-game score ever';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        children: [
+          Icon(icon, color: theme.accentColor.withValues(alpha: 0.75), size: 14),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -445,13 +485,37 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
+        // Beefier visual treatment for the signed-in player: gradient fill,
+        // double-width glowing border, and a soft drop-shadow so the row
+        // pops off the screen at a glance.
+        gradient: isCurrentUser
+            ? LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  theme.accentColor.withValues(alpha: 0.32),
+                  theme.accentColor.withValues(alpha: 0.16),
+                  theme.primaryColor.withValues(alpha: 0.18),
+                ],
+              )
+            : null,
         color: isCurrentUser
-            ? theme.accentColor.withValues(alpha: 0.2)
+            ? null
             : theme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: isCurrentUser
-            ? Border.all(color: theme.accentColor.withValues(alpha: 0.5))
+            ? Border.all(color: theme.accentColor, width: 1.5)
             : Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
+        boxShadow: isCurrentUser
+            ? [
+                BoxShadow(
+                  color: theme.accentColor.withValues(alpha: 0.35),
+                  blurRadius: 14,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
@@ -543,20 +607,44 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                          horizontal: 9,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.accentColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'YOU',
-                          style: TextStyle(
-                            color: theme.accentColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.accentColor,
+                              theme.accentColor.withValues(alpha: 0.75),
+                            ],
                           ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.accentColor.withValues(alpha: 0.55),
+                              blurRadius: 6,
+                              spreadRadius: 0.5,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.person_pin,
+                              color: theme.backgroundColor,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'YOU',
+                              style: TextStyle(
+                                color: theme.backgroundColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
