@@ -500,6 +500,28 @@ enum GameTheme {
         return Colors.purple.shade100;
     }
   }
+
+  /// Whether this theme is a Pro / IAP-gated premium theme. The premium set
+  /// matches the ProductCatalog.Themes entries on the backend (six themes
+  /// included with the Pro subscription). Used by `AppBackground` to render
+  /// distinctive theme-specific decoration layers so paying users see a
+  /// meaningful visual upgrade over the free themes.
+  bool get isPremium {
+    switch (this) {
+      case GameTheme.space:
+      case GameTheme.ocean:
+      case GameTheme.cyberpunk:
+      case GameTheme.forest:
+      case GameTheme.desert:
+      case GameTheme.crystal:
+        return true;
+      case GameTheme.classic:
+      case GameTheme.modern:
+      case GameTheme.neon:
+      case GameTheme.retro:
+        return false;
+    }
+  }
 }
 
 enum GameMode {
