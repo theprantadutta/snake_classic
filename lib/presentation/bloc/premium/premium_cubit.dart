@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
@@ -722,10 +723,55 @@ class PremiumCubit extends Cubit<PremiumState> {
         _storageService.setPremiumExpirationDate(expiry.toIso8601String());
       }
     } else if (data['is_premium'] == false && state.tier == PremiumTier.pro) {
-      // Subscription was revoked — downgrade locally so paywall gating
-      // reactivates immediately instead of waiting for cached expiry.
+      // Subscription was revoked. Downgrade tier locally so paywall gating
+      // reactivates immediately, then also revert the per-feature state
+      // that depended on Pro. The backend EntitlementRecomputer already
+      // pruned OwnedThemes / OwnedCosmetics / PowerUpInventory /
+      // TournamentEntries on the server — the sections above have already
+      // mirrored those down. What remains here is the client-only
+      // bookkeeping that nothing else touches.
       emit(state.copyWith(tier: PremiumTier.free));
       _storageService.setPremiumActive(false);
+
+      // Coin multiplier: drop from 1.5x / 1.75x back to 1.0x. Without this
+      // the player keeps earning at Pro rate until the next app start.
+      _coinsCubit?.updatePremiumMultiplier(false, state.hasBattlePass);
+
+      // Board size: if a premium board (35/40/50) was selected, fall back
+      // to the classic 20x20 free default so the next game doesn't start
+      // on a premium-only surface.
+      try {
+        final settingsCubit = getIt<GameSettingsCubit>();
+        if (settingsCubit.state.boardSize.isPremium) {
+          unawaited(settingsCubit.setBoardSize(BoardSize.classic));
+        }
+      } catch (_) {
+        // GameSettingsCubit not registered (shouldn't happen at runtime)
+        // — silent fallback rather than crashing the sync.
+      }
+
+      // Tournament entries: the server-side recomputer cleared them all.
+      // Force-set local counts to match (the regular sync block above is
+      // additive-only and wouldn't zero them out).
+      if (state.bronzeTournamentEntries != 0 ||
+          state.silverTournamentEntries != 0 ||
+          state.goldTournamentEntries != 0) {
+        emit(state.copyWith(
+          bronzeTournamentEntries: 0,
+          silverTournamentEntries: 0,
+          goldTournamentEntries: 0,
+        ));
+        await _storageService.setTournamentEntries(
+          bronze: 0,
+          silver: 0,
+          gold: 0,
+        );
+      }
+
+      // Power-up inventory: pull fresh from the server so the wiped Pro
+      // power-up charges land locally without waiting for the next
+      // PowerUpCubit refresh trigger.
+      unawaited(getIt<PowerUpCubit>().loadInventory());
     }
 
     // ---- Equipped-cosmetic restore (reinstall / device-switch) ----
