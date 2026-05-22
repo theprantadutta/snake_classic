@@ -587,7 +587,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         GradientButton(
-          onPressed: () => context.push(AppRoutes.themeSelector),
+          // Routes to the Themes tab of the unified store (tab index 2:
+          // Pro / Coins / Themes / Skins / Trails / Power-Ups).
+          onPressed: () => context.push('${AppRoutes.store}?tab=2'),
           text: 'BROWSE THEMES',
           primaryColor: theme.accentColor,
           secondaryColor: theme.primaryColor,

@@ -36,7 +36,6 @@ abstract class AppRoutes {
   static const String dailyChallenges = '/daily-challenges';
   static const String weeklyQuests = '/weekly-quests';
   static const String instructions = '/instructions';
-  static const String themeSelector = '/theme-selector';
   static const String replays = '/replays';
   static const String replayViewer = '/replays/:id';
 

@@ -26,7 +26,6 @@ import 'package:snake_classic/screens/replays_screen.dart';
 import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/store_screen.dart';
-import 'package:snake_classic/screens/theme_selector_screen.dart';
 import 'package:snake_classic/screens/tournament_detail_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
 
@@ -239,12 +238,6 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       name: 'instructions',
       pageBuilder: (context, state) =>
           _zoomPage(state, const InstructionsScreen()),
-    ),
-    GoRoute(
-      path: AppRoutes.themeSelector,
-      name: 'themeSelector',
-      pageBuilder: (context, state) =>
-          _zoomPage(state, const ThemeSelectorScreen()),
     ),
     GoRoute(
       path: AppRoutes.replays,
