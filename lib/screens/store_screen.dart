@@ -280,7 +280,8 @@ class _StoreScreenState extends State<StoreScreen>
     // backend's VerifyPurchase response lands.
     _reconcilePendingPurchases(premiumState);
 
-    if (premiumState.hasPremium) {
+    // Paid Pro user — banner + feature grid only, no need to show plans.
+    if (premiumState.hasPremium && !premiumState.isOnPromo) {
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -288,6 +289,60 @@ class _StoreScreenState extends State<StoreScreen>
             _buildProActiveBanner(theme, premiumState),
             const SizedBox(height: 16),
             _buildProFeatureGrid(theme),
+          ],
+        ),
+      );
+    }
+
+    // Trial user — banner with TRIAL badge + feature grid + plan picker
+    // below so they can convert without leaving the tab. Banner's
+    // "Keep Pro" CTA defaults to monthly; this section lets them choose.
+    if (premiumState.hasPremium && premiumState.isOnPromo) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildProActiveBanner(theme, premiumState),
+            const SizedBox(height: 20),
+            _buildProFeatureGrid(theme),
+            const SizedBox(height: 24),
+            Text(
+              'Subscribe before the trial ends',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildProPlanCard(
+                    theme: theme,
+                    title: 'Monthly',
+                    productId: ProductIds.snakeClassicProMonthly,
+                    fallbackPrice: 4.99,
+                    cadence: '/month',
+                    savingsLabel: null,
+                    highlight: false,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildProPlanCard(
+                    theme: theme,
+                    title: 'Yearly',
+                    productId: ProductIds.snakeClassicProYearly,
+                    fallbackPrice: 49.99,
+                    cadence: '/year',
+                    savingsLabel: 'Save 17%',
+                    highlight: true,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       );
@@ -569,61 +624,178 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildProActiveBanner(GameTheme theme, PremiumState premiumState) {
-    final expiry = premiumState.subscriptionExpiry;
+    // Promo trials (welcome bonus / app-wide giveaway) get amber-orange
+    // theming + a TRIAL chip + a convert CTA so the user knows this is a
+    // limited window and there's an action they can take. Paid Pro keeps
+    // the original green/teal "verified" treatment.
+    final isPromo = premiumState.isOnPromo;
+    final expiry = isPromo
+        ? premiumState.promoExpiresAt
+        : premiumState.subscriptionExpiry;
+    final gradientColors = isPromo
+        ? [
+            Colors.amber.withValues(alpha: 0.22),
+            Colors.orange.withValues(alpha: 0.12),
+          ]
+        : [
+            Colors.green.withValues(alpha: 0.18),
+            Colors.teal.withValues(alpha: 0.10),
+          ];
+    final borderColor = isPromo
+        ? Colors.amber.withValues(alpha: 0.45)
+        : Colors.green.withValues(alpha: 0.35);
+    final iconGradient = isPromo
+        ? const LinearGradient(colors: [Colors.amber, Colors.orange])
+        : const LinearGradient(colors: [Colors.green, Colors.teal]);
+    final icon = isPromo ? Icons.card_giftcard : Icons.verified;
+    final title = isPromo ? "You're on a free Pro trial!" : "You're Pro!";
+    final expiryLabel = isPromo
+        ? (expiry != null ? _formatPromoCountdown(expiry) : 'Free 3-day trial')
+        : (expiry != null ? 'Renews ${_formatDate(expiry)}' : null);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.green.withValues(alpha: 0.18),
-            Colors.teal.withValues(alpha: 0.10),
-          ],
-        ),
+        gradient: LinearGradient(colors: gradientColors),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.green.withValues(alpha: 0.35),
-          width: 1.5,
-        ),
+        border: Border.all(color: borderColor, width: 1.5),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.green, Colors.teal]),
-              shape: BoxShape.circle,
-            ),
-            child:
-                const Icon(Icons.verified, color: Colors.white, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "You're Pro!",
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: iconGradient,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 4),
-                if (expiry != null)
-                  Text(
-                    'Renews ${_formatDate(expiry)}',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 12,
+                child: Icon(icon, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              color: theme.accentColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isPromo) ...[
+                          const SizedBox(width: 8),
+                          _buildTrialBadge(),
+                        ],
+                      ],
                     ),
-                  ),
-              ],
-            ),
+                    if (expiryLabel != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        expiryLabel,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.78),
+                          fontSize: 12,
+                          fontWeight: isPromo ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
+          if (isPromo) ...[
+            const SizedBox(height: 14),
+            // Convert CTA — single tap straight into the plan picker. The
+            // tab swap happens in-screen so the user doesn't lose context.
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // Tap inside the Pro tab — toggle the "free trial active"
+                  // state away so the plan cards become visible (the Pro
+                  // tab's active-banner branch hides the plan cards).
+                  // Simplest: scroll the user's attention by showing a
+                  // dialog explaining their conversion options, OR just
+                  // route through the existing Pro plan purchase via the
+                  // monthly default. We'll fire the monthly purchase to
+                  // keep the path consistent with the Subscribe button.
+                  _purchaseSubscription(
+                    ProductIds.snakeClassicProMonthly,
+                    'Pro Monthly',
+                  );
+                },
+                icon: const Icon(Icons.workspace_premium, size: 18),
+                label: const Text(
+                  'Keep Pro — Subscribe',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _buildTrialBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Colors.amber, Colors.orange],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withValues(alpha: 0.6),
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: const Text(
+        'TRIAL',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+
+  /// Human-friendly countdown for promo expiry — "Ends in 2d 5h" / "Ends in
+  /// 14h 20m" / "Ends in 32m" / "Ending soon". Negative durations
+  /// (race between sync + revoke job) fall back to "Ending soon".
+  String _formatPromoCountdown(DateTime expiry) {
+    final remaining = expiry.difference(DateTime.now());
+    if (remaining.isNegative || remaining.inMinutes <= 0) {
+      return 'Ending soon';
+    }
+    final days = remaining.inDays;
+    final hours = remaining.inHours.remainder(24);
+    final minutes = remaining.inMinutes.remainder(60);
+    if (days > 0) return 'Ends in ${days}d ${hours}h';
+    if (hours > 0) return 'Ends in ${hours}h ${minutes}m';
+    return 'Ends in ${minutes}m';
   }
 
   Widget _buildProFeatureGrid(GameTheme theme) {
