@@ -631,11 +631,37 @@ class PremiumCubit extends Cubit<PremiumState> {
       final apiService = ApiService();
       if (!apiService.isAuthenticated) return;
 
+      // Wait for the cubit to finish hydrating before applying backend
+      // state. _applyBackendEntitlements gates several branches on the
+      // current in-memory state — most importantly the revocation block
+      // (`is_premium == false && state.tier == PremiumTier.pro`). If the
+      // sync fires before initialize() reads `isPremiumActive=true` from
+      // disk, `state.tier` is still the default `free` and the gate
+      // misses, leaving the revocation unpersisted. AuthCubit only fires
+      // the post-auth sync once per UID (`_lastSyncedUid` guard), so a
+      // missed downgrade then persists until the user signs out/in.
+      if (state.status != PremiumStatus.ready) {
+        try {
+          await stream
+              .firstWhere((s) => s.status == PremiumStatus.ready)
+              .timeout(const Duration(seconds: 10));
+        } catch (_) {
+          AppLogger.warning(
+            'PremiumCubit not ready within 10s — skipping backend sync; '
+            'will retry on next launch',
+          );
+          return;
+        }
+      }
+
       final data = await apiService.getPremiumContent();
       if (data == null) return;
 
       await _applyBackendEntitlements(data);
-      AppLogger.info('Premium state synced with backend');
+      AppLogger.info(
+        'Premium state synced with backend (is_premium=${data['is_premium']}, '
+        'local_tier=${state.tier.name})',
+      );
     } catch (e) {
       AppLogger.error('Error syncing premium state with backend', e);
     }
