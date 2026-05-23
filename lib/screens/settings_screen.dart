@@ -67,9 +67,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Fire-and-forget — the screen renders from current state and
     // updates if anything changed.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<AuthCubit>().refreshUserFromBackend();
-      }
+      if (!mounted) return;
+      context.read<AuthCubit>().refreshUserFromBackend();
+      // The AppDataCache settings map is populated at boot and never
+      // re-synced — but GameSettingsCubit gets live writes from places
+      // like the game-screen first-launch modal that flips D-Pad on.
+      // After our initial cache-based paint, overlay the cubit's
+      // authoritative state so the toggles reflect reality.
+      _syncFromSettingsCubit(context.read<GameSettingsCubit>().state);
+    });
+  }
+
+  /// Mirror the GameSettingsCubit state into our local UI fields. Used both
+  /// for the post-frame initial sync and from the BlocListener below so the
+  /// settings screen stays in lock-step with the cubit (source of truth).
+  void _syncFromSettingsCubit(GameSettingsState s) {
+    if (!s.isReady) return;
+    final changed = _dPadEnabled != s.dPadEnabled ||
+        _dPadPosition != s.dPadPosition ||
+        _screenShakeEnabled != s.screenShakeEnabled ||
+        _selectedBoardSize != s.boardSize ||
+        _selectedGameMode != s.gameMode ||
+        _selectedCrashFeedbackDuration != s.crashFeedbackDuration;
+    if (!changed) return;
+    setState(() {
+      _dPadEnabled = s.dPadEnabled;
+      _dPadPosition = s.dPadPosition;
+      _screenShakeEnabled = s.screenShakeEnabled;
+      _selectedBoardSize = s.boardSize;
+      _selectedGameMode = s.gameMode;
+      _selectedCrashFeedbackDuration = s.crashFeedbackDuration;
     });
   }
 
@@ -143,15 +170,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        return BlocBuilder<GameCubit, GameCubitState>(
-          builder: (context, gameState) {
-            return BlocBuilder<AuthCubit, AuthState>(
-              builder: (context, authState) {
-                return BlocBuilder<PremiumCubit, PremiumState>(
-                  builder: (context, premiumState) {
-                    final theme = themeState.currentTheme;
+    // Keep our local UI mirrors in lock-step with GameSettingsCubit so
+    // changes that originate elsewhere (e.g. the game-screen first-launch
+    // modal flipping D-Pad on) reflect here even if the screen is already
+    // mounted. The cubit is the source of truth; AppDataCache is a
+    // boot-time snapshot that can go stale.
+    return BlocListener<GameSettingsCubit, GameSettingsState>(
+      listenWhen: (prev, curr) =>
+          prev.dPadEnabled != curr.dPadEnabled ||
+          prev.dPadPosition != curr.dPadPosition ||
+          prev.screenShakeEnabled != curr.screenShakeEnabled ||
+          prev.boardSize != curr.boardSize ||
+          prev.gameMode != curr.gameMode ||
+          prev.crashFeedbackDuration != curr.crashFeedbackDuration,
+      listener: (context, settingsState) =>
+          _syncFromSettingsCubit(settingsState),
+      child: BlocBuilder<ThemeCubit, ThemeState>(
+        builder: (context, themeState) {
+          return BlocBuilder<GameCubit, GameCubitState>(
+            builder: (context, gameState) {
+              return BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, authState) {
+                  return BlocBuilder<PremiumCubit, PremiumState>(
+                    builder: (context, premiumState) {
+                      final theme = themeState.currentTheme;
 
                     return Scaffold(
                       extendBodyBehindAppBar: true,
@@ -487,6 +529,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         );
       },
+    ),
     );
   }
 
@@ -1748,109 +1791,111 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (currentUsername.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.accentColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: theme.accentColor.withValues(alpha: 0.3),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (currentUsername.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.person,
-                            size: 14,
-                            color: theme.accentColor.withValues(alpha: 0.7),
+                        decoration: BoxDecoration(
+                          color: theme.accentColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: theme.accentColor.withValues(alpha: 0.3),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Current: ',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 12,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.person,
+                              size: 14,
+                              color: theme.accentColor.withValues(alpha: 0.7),
                             ),
-                          ),
-                          Flexible(
-                            child: Text(
-                              currentUsername,
+                            const SizedBox(width: 6),
+                            Text(
+                              'Current: ',
                               style: TextStyle(
-                                color: theme.accentColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 12,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
+                            Flexible(
+                              child: Text(
+                                currentUsername,
+                                style: TextStyle(
+                                  color: theme.accentColor,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Text(
+                      'Choose a unique username that represents you in the game.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        labelStyle: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                        ),
+                        hintText: 'Enter new username',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                        filled: true,
+                        fillColor: theme.backgroundColor.withValues(alpha: 0.3),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: theme.accentColor.withValues(alpha: 0.3),
                           ),
-                        ],
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: theme.accentColor.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.accentColor),
+                        ),
+                        errorText: errorMessage,
+                        errorStyle: const TextStyle(color: Colors.red),
+                      ),
+                      style: TextStyle(color: Colors.white),
+                      maxLength: 20,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      '• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 12,
                       ),
                     ),
-                    const SizedBox(height: 12),
                   ],
-                  Text(
-                    'Choose a unique username that represents you in the game.',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: usernameController,
-                    decoration: InputDecoration(
-                      labelText: 'Username',
-                      labelStyle: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                      ),
-                      hintText: 'Enter new username',
-                      hintStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
-                      filled: true,
-                      fillColor: theme.backgroundColor.withValues(alpha: 0.3),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: theme.accentColor.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: theme.accentColor.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: theme.accentColor),
-                      ),
-                      errorText: errorMessage,
-                      errorStyle: const TextStyle(color: Colors.red),
-                    ),
-                    style: TextStyle(color: Colors.white),
-                    maxLength: 20,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    '• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+                ),
               ),
               actions: [
                 TextButton(

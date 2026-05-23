@@ -17,6 +17,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -105,7 +106,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     if (!mounted) return;
     final settingsCubit = context.read<GameSettingsCubit>();
-    if (settingsCubit.state.gameModeFirstLaunchPrompted) return;
+
+    // Wait for the cubit to finish hydrating from storage before checking
+    // the flag. Without this, a cold-start race (the cubit's init awaits
+    // StatisticsService.initialize for up to 3s before reading
+    // gameModeFirstLaunchPrompted from storage) leaves the flag at its
+    // default `false`, and we'd re-show this prompt on every launch even
+    // after the user picked once.
+    bool alreadyPrompted;
+    if (settingsCubit.state.isReady) {
+      alreadyPrompted = settingsCubit.state.gameModeFirstLaunchPrompted;
+    } else {
+      try {
+        final ready = await settingsCubit.stream
+            .firstWhere((s) => s.isReady)
+            .timeout(const Duration(seconds: 5));
+        alreadyPrompted = ready.gameModeFirstLaunchPrompted;
+      } catch (_) {
+        // Cubit took too long to come up — read the flag directly from
+        // storage so we still honour the user's prior decision rather
+        // than nagging them again.
+        alreadyPrompted =
+            await getIt<StorageService>().hasGameModeBeenPrompted();
+      }
+    }
+
+    if (!mounted) return;
+    if (alreadyPrompted) return;
 
     final selected = await showModalBottomSheet<GameMode>(
       context: context,
