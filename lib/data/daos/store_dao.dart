@@ -25,7 +25,9 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     return coin?.balance ?? 0;
   }
 
-  /// Add coins (from game, achievement, etc.)
+  /// Add coins (from game, achievement, etc.). Bumps balance, appends
+  /// a transaction record, and enqueues both rows for sync inside a
+  /// single Drift transaction.
   Future<void> addCoins(int amount, String source, {String? description}) async {
     final current = await (select(coins)..where((t) => t.id.equals(1)))
         .getSingleOrNull();
@@ -34,23 +36,44 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
 
     final newBalance = current.balance + amount;
     final newTotalEarned = current.totalEarned + amount;
+    final now = DateTime.now();
 
-    await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
-      balance: Value(newBalance),
-      totalEarned: Value(newTotalEarned),
-      lastUpdated: Value(DateTime.now()),
-    ));
+    await transaction(() async {
+      await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
+        balance: Value(newBalance),
+        totalEarned: Value(newTotalEarned),
+        lastUpdated: Value(now),
+        updatedAt: Value(now),
+      ));
 
-    // Record transaction
-    await into(coinTransactions).insert(CoinTransactionsCompanion.insert(
-      amount: amount,
-      type: 'earned',
-      source: source,
-      description: Value(description),
-    ));
+      await into(coinTransactions).insert(CoinTransactionsCompanion.insert(
+        amount: amount,
+        type: 'earned',
+        source: source,
+        description: Value(description),
+        updatedAt: Value(now),
+      ));
+
+      final txnKey = 'coin_transaction:${now.microsecondsSinceEpoch}';
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.coinBalance,
+        entityKey: 'coin_balance:1',
+      );
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.coinTransaction,
+        entityKey: txnKey,
+        payload: {
+          'amount': amount,
+          'type': 'earned',
+          'source': source,
+          'description': description,
+          'created_at': now.toUtc().toIso8601String(),
+        },
+      );
+    });
   }
 
-  /// Spend coins
+  /// Spend coins. Mirrors [addCoins] but with the opposite sign.
   Future<bool> spendCoins(int amount, String source, {String? description}) async {
     final current = await (select(coins)..where((t) => t.id.equals(1)))
         .getSingleOrNull();
@@ -59,30 +82,63 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
 
     final newBalance = current.balance - amount;
     final newTotalSpent = current.totalSpent + amount;
+    final now = DateTime.now();
 
-    await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
-      balance: Value(newBalance),
-      totalSpent: Value(newTotalSpent),
-      lastUpdated: Value(DateTime.now()),
-    ));
+    await transaction(() async {
+      await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
+        balance: Value(newBalance),
+        totalSpent: Value(newTotalSpent),
+        lastUpdated: Value(now),
+        updatedAt: Value(now),
+      ));
 
-    // Record transaction
-    await into(coinTransactions).insert(CoinTransactionsCompanion.insert(
-      amount: -amount,
-      type: 'spent',
-      source: source,
-      description: Value(description),
-    ));
+      await into(coinTransactions).insert(CoinTransactionsCompanion.insert(
+        amount: -amount,
+        type: 'spent',
+        source: source,
+        description: Value(description),
+        updatedAt: Value(now),
+      ));
+
+      final txnKey = 'coin_transaction:${now.microsecondsSinceEpoch}';
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.coinBalance,
+        entityKey: 'coin_balance:1',
+      );
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.coinTransaction,
+        entityKey: txnKey,
+        payload: {
+          'amount': -amount,
+          'type': 'spent',
+          'source': source,
+          'description': description,
+          'createdAt': now.toIso8601String(),
+        },
+      );
+    });
 
     return true;
   }
 
-  /// Set coin balance directly (for sync)
-  Future<void> setCoinBalance(int balance) async {
-    await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
-      balance: Value(balance),
-      lastUpdated: Value(DateTime.now()),
-    ));
+  /// Set coin balance directly. Used by the first-sign-in pull when
+  /// the cloud's authoritative balance comes down. [enqueueSync]
+  /// defaults true; set false when hydrating from server data.
+  Future<void> setCoinBalance(int balance, {bool enqueueSync = true}) async {
+    final now = DateTime.now();
+    await transaction(() async {
+      await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
+        balance: Value(balance),
+        lastUpdated: Value(now),
+        updatedAt: Value(now),
+      ));
+      if (enqueueSync) {
+        await attachedDatabase.enqueueSyncOutbox(
+          dataType: SyncDataType.coinBalance,
+          entityKey: 'coin_balance:1',
+        );
+      }
+    });
   }
 
   /// Get coin transaction history
@@ -110,25 +166,67 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
 
     if (!status.isPremiumActive) return false;
 
-    // Check expiration
     if (status.premiumExpirationDate != null &&
         DateTime.now().isAfter(status.premiumExpirationDate!)) {
-      // Premium expired, update status
-      await (update(premiumStatus)..where((t) => t.id.equals(1)))
-          .write(const PremiumStatusCompanion(isPremiumActive: Value(false)));
+      // Premium expired — flip the flag through the canonical setter
+      // so the outbox row gets queued.
+      await setPremiumActive(false);
       return false;
     }
 
     return true;
   }
 
+  /// Apply a partial update to the singleton premium-status row + bump
+  /// timestamps + enqueue an outbox row.
+  Future<void> _writePremiumStatus(
+    PremiumStatusCompanion patch, {
+    bool enqueueSync = true,
+  }) async {
+    final now = DateTime.now();
+    await transaction(() async {
+      await (update(premiumStatus)..where((t) => t.id.equals(1))).write(
+        patch.copyWith(
+          lastUpdated: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+      if (enqueueSync) {
+        await attachedDatabase.enqueueSyncOutbox(
+          dataType: SyncDataType.premiumStatus,
+          entityKey: 'premium_status:1',
+        );
+      }
+    });
+  }
+
   /// Set premium active
-  Future<void> setPremiumActive(bool active, {DateTime? expirationDate}) async {
-    await (update(premiumStatus)..where((t) => t.id.equals(1)))
-        .write(PremiumStatusCompanion(
-      isPremiumActive: Value(active),
-      premiumExpirationDate: Value(expirationDate),
-      lastUpdated: Value(DateTime.now()),
+  Future<void> setPremiumActive(bool active, {DateTime? expirationDate}) =>
+      _writePremiumStatus(PremiumStatusCompanion(
+        isPremiumActive: Value(active),
+        premiumExpirationDate: Value(expirationDate),
+      ));
+
+  /// Cloud-snapshot apply path. Mirrors [_writePremiumStatus] but
+  /// without the outbox enqueue, so a first-sign-in restore can write
+  /// the row without immediately echoing it back as a push.
+  Future<void> applyPremiumStatusSnapshot(PremiumStatusCompanion patch) =>
+      _writePremiumStatus(patch, enqueueSync: false);
+
+  /// Cloud-snapshot apply path for coin balance.
+  Future<void> applyCoinBalanceSnapshot({
+    required int balance,
+    int? totalEarned,
+    int? totalSpent,
+    DateTime? updatedAt,
+  }) async {
+    final ts = updatedAt ?? DateTime.now();
+    await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
+      balance: Value(balance),
+      totalEarned: totalEarned == null ? const Value.absent() : Value(totalEarned),
+      totalSpent: totalSpent == null ? const Value.absent() : Value(totalSpent),
+      lastUpdated: Value(ts),
+      updatedAt: Value(ts),
     ));
   }
 
@@ -143,15 +241,12 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     required bool isOnTrial,
     DateTime? trialStartDate,
     DateTime? trialEndDate,
-  }) async {
-    await (update(premiumStatus)..where((t) => t.id.equals(1)))
-        .write(PremiumStatusCompanion(
-      isOnTrial: Value(isOnTrial),
-      trialStartDate: Value(trialStartDate),
-      trialEndDate: Value(trialEndDate),
-      lastUpdated: Value(DateTime.now()),
-    ));
-  }
+  }) =>
+      _writePremiumStatus(PremiumStatusCompanion(
+        isOnTrial: Value(isOnTrial),
+        trialStartDate: Value(trialStartDate),
+        trialEndDate: Value(trialEndDate),
+      ));
 
   /// Get trial data
   Future<Map<String, dynamic>> getTrialData() async {
@@ -168,15 +263,12 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     required int bronze,
     required int silver,
     required int gold,
-  }) async {
-    await (update(premiumStatus)..where((t) => t.id.equals(1)))
-        .write(PremiumStatusCompanion(
-      bronzeTournamentEntries: Value(bronze),
-      silverTournamentEntries: Value(silver),
-      goldTournamentEntries: Value(gold),
-      lastUpdated: Value(DateTime.now()),
-    ));
-  }
+  }) =>
+      _writePremiumStatus(PremiumStatusCompanion(
+        bronzeTournamentEntries: Value(bronze),
+        silverTournamentEntries: Value(silver),
+        goldTournamentEntries: Value(gold),
+      ));
 
   /// Get tournament entries
   Future<Map<String, int>> getTournamentEntries() async {
@@ -207,30 +299,51 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     return item != null;
   }
 
-  /// Unlock an item
-  Future<void> unlockItem(String itemId, String itemType, {String? unlockedBy}) async {
-    await into(unlockedItems).insert(
-      UnlockedItemsCompanion.insert(
-        itemId: itemId,
-        itemType: itemType,
-        unlockedBy: Value(unlockedBy ?? 'purchase'),
-      ),
-      mode: InsertMode.insertOrIgnore,
-    );
+  /// Unlock an item. Idempotent — insertOrIgnore avoids creating
+  /// duplicate rows for the same (itemId, itemType) pair. The outbox
+  /// row is enqueued unconditionally; the sync engine handles
+  /// dedup at the backend.
+  Future<void> unlockItem(String itemId, String itemType,
+      {String? unlockedBy, bool enqueueSync = true}) async {
+    final now = DateTime.now();
+    await transaction(() async {
+      await into(unlockedItems).insert(
+        UnlockedItemsCompanion.insert(
+          itemId: itemId,
+          itemType: itemType,
+          unlockedBy: Value(unlockedBy ?? 'purchase'),
+          updatedAt: Value(now),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+      if (enqueueSync) {
+        await attachedDatabase.enqueueSyncOutbox(
+          dataType: SyncDataType.unlockedItem,
+          entityKey: 'unlocked_item:$itemType:$itemId',
+          payload: {
+            'item_id': itemId,
+            'item_type': itemType,
+            'unlocked_by': unlockedBy ?? 'purchase',
+            'unlocked_at': now.toUtc().toIso8601String(),
+          },
+        );
+      }
+    });
   }
 
-  /// Set unlocked items for a type (replaces all)
-  Future<void> setUnlockedItems(String itemType, List<String> itemIds) async {
+  /// Replace all items for a given type. Used by server-restore /
+  /// admin-debug paths. [enqueueSync] defaults true; pass false when
+  /// hydrating from a cloud pull.
+  Future<void> setUnlockedItems(
+    String itemType,
+    List<String> itemIds, {
+    bool enqueueSync = true,
+  }) async {
     await transaction(() async {
       await (delete(unlockedItems)..where((t) => t.itemType.equals(itemType)))
           .go();
       for (final itemId in itemIds) {
-        await into(unlockedItems).insert(
-          UnlockedItemsCompanion.insert(
-            itemId: itemId,
-            itemType: itemType,
-          ),
-        );
+        await unlockItem(itemId, itemType, enqueueSync: enqueueSync);
       }
     });
   }
@@ -268,9 +381,26 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   Future<BattlePassesData?> getCurrentBattlePass() =>
       (select(battlePasses)..limit(1)).getSingleOrNull();
 
-  /// Save battle pass data
-  Future<void> saveBattlePass(BattlePassesCompanion pass) async {
-    await into(battlePasses).insertOnConflictUpdate(pass);
+  /// Save battle pass data. [enqueueSync] defaults true.
+  Future<void> saveBattlePass(
+    BattlePassesCompanion pass, {
+    bool enqueueSync = true,
+  }) async {
+    final now = DateTime.now();
+    final stamped = pass.copyWith(
+      lastUpdated: Value(now),
+      updatedAt: Value(now),
+    );
+    final seasonId = stamped.seasonId.present ? stamped.seasonId.value : null;
+    await transaction(() async {
+      await into(battlePasses).insertOnConflictUpdate(stamped);
+      if (enqueueSync && seasonId != null) {
+        await attachedDatabase.enqueueSyncOutbox(
+          dataType: SyncDataType.battlePass,
+          entityKey: 'battle_pass:$seasonId',
+        );
+      }
+    });
   }
 
   /// Get battle pass as JSON
@@ -290,7 +420,8 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     });
   }
 
-  /// Set battle pass from JSON
+  /// Set battle pass from JSON. Used by the server pull on first
+  /// sign-in; doesn't enqueue an outbox row.
   Future<void> setBattlePassData(String? jsonData) async {
     if (jsonData == null) {
       await delete(battlePasses).go();
@@ -298,24 +429,28 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     }
 
     final data = json.decode(jsonData) as Map<String, dynamic>;
-    await saveBattlePass(BattlePassesCompanion(
-      seasonId: Value(data['seasonId'] ?? 'default'),
-      currentTier: Value(data['currentTier'] ?? 0),
-      currentXp: Value(data['currentXp'] ?? 0),
-      xpForNextTier: Value(data['xpForNextTier'] ?? 100),
-      isPremiumPass: Value(data['isPremiumPass'] ?? false),
-      claimedRewards: Value(json.encode(data['claimedRewards'] ?? [])),
-      seasonStartDate: data['seasonStartDate'] != null
-          ? Value(DateTime.parse(data['seasonStartDate']))
-          : const Value.absent(),
-      seasonEndDate: data['seasonEndDate'] != null
-          ? Value(DateTime.parse(data['seasonEndDate']))
-          : const Value.absent(),
-      lastUpdated: Value(DateTime.now()),
-    ));
+    await saveBattlePass(
+      BattlePassesCompanion(
+        seasonId: Value(data['seasonId'] ?? 'default'),
+        currentTier: Value(data['currentTier'] ?? 0),
+        currentXp: Value(data['currentXp'] ?? 0),
+        xpForNextTier: Value(data['xpForNextTier'] ?? 100),
+        isPremiumPass: Value(data['isPremiumPass'] ?? false),
+        claimedRewards: Value(json.encode(data['claimedRewards'] ?? [])),
+        seasonStartDate: data['seasonStartDate'] != null
+            ? Value(DateTime.parse(data['seasonStartDate']))
+            : const Value.absent(),
+        seasonEndDate: data['seasonEndDate'] != null
+            ? Value(DateTime.parse(data['seasonEndDate']))
+            : const Value.absent(),
+      ),
+      enqueueSync: false,
+    );
   }
 
   // ==================== Purchase History ====================
+  // PurchaseHistory is not synced — the server is already the source
+  // of truth via the IAP receipt-verification path.
 
   /// Add purchase to history
   Future<void> addPurchase(PurchaseHistoryCompanion purchase) async {

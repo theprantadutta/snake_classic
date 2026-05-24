@@ -11,6 +11,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:provider/provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
@@ -30,6 +31,7 @@ import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
+import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/typography.dart';
@@ -135,6 +137,12 @@ void main() async {
       // AuthService.ensureBackendAuthentication() is called on app resume
       // and before critical API calls, so we just clear the token here.
     };
+
+    // Boot the outbox drain engine. It owns the SyncQueue → backend
+    // batch sync. Gated internally on auth + connectivity, so it's
+    // safe to fire before sign-in completes — drains start once
+    // ApiService.isAuthenticated flips true.
+    unawaited(getIt<SyncEngine>().initialize(getIt<AppDatabase>()));
 
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

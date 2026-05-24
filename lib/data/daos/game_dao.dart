@@ -57,27 +57,35 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
         ? gameDurationSeconds
         : current.longestGameSeconds;
     final newAvgDuration = newTotalTime / newTotalGames;
+    final now = DateTime.now();
 
-    await (update(statistics)..where((t) => t.id.equals(1))).write(
-      StatisticsCompanion(
-        totalGamesPlayed: Value(newTotalGames),
-        totalScore: Value(newTotalScore),
-        highestScore: Value(newHighestScore),
-        totalFoodsEaten: Value(newTotalFoods),
-        totalGameTimeSeconds: Value(newTotalTime),
-        maxSnakeLength: Value(newMaxLength),
-        totalSnakeLength: Value(newTotalLength),
-        averageSnakeLength: Value(newAvgLength),
-        deathsByWall: Value(newDeathsByWall),
-        deathsBySelf: Value(newDeathsBySelf),
-        totalDeaths: Value(newDeathsByWall + newDeathsBySelf),
-        shortestGameSeconds: Value(newShortestGame),
-        longestGameSeconds: Value(newLongestGame),
-        averageGameDuration: Value(newAvgDuration),
-        lastPlayedAt: Value(DateTime.now()),
-        lastUpdated: Value(DateTime.now()),
-      ),
-    );
+    await transaction(() async {
+      await (update(statistics)..where((t) => t.id.equals(1))).write(
+        StatisticsCompanion(
+          totalGamesPlayed: Value(newTotalGames),
+          totalScore: Value(newTotalScore),
+          highestScore: Value(newHighestScore),
+          totalFoodsEaten: Value(newTotalFoods),
+          totalGameTimeSeconds: Value(newTotalTime),
+          maxSnakeLength: Value(newMaxLength),
+          totalSnakeLength: Value(newTotalLength),
+          averageSnakeLength: Value(newAvgLength),
+          deathsByWall: Value(newDeathsByWall),
+          deathsBySelf: Value(newDeathsBySelf),
+          totalDeaths: Value(newDeathsByWall + newDeathsBySelf),
+          shortestGameSeconds: Value(newShortestGame),
+          longestGameSeconds: Value(newLongestGame),
+          averageGameDuration: Value(newAvgDuration),
+          lastPlayedAt: Value(now),
+          lastUpdated: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.statistics,
+        entityKey: 'statistics:1',
+      );
+    });
   }
 
   /// Persist the full GameStatistics model as a JSON blob.
@@ -93,24 +101,41 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   /// New approach: round-trip the model verbatim through the dedicated
   /// `modelJson` column. The typed columns aren't read anywhere — they
   /// stay zero'd and inert.
-  Future<void> updateStatisticsFromJson(String jsonData) async {
-    // Upsert: insert the singleton row if missing, otherwise update.
-    final existing = await getStatistics();
-    if (existing == null) {
-      await into(statistics).insert(
-        StatisticsCompanion(
-          modelJson: Value(jsonData),
-          lastUpdated: Value(DateTime.now()),
-        ),
-      );
-    } else {
-      await (update(statistics)..where((t) => t.id.equals(1))).write(
-        StatisticsCompanion(
-          modelJson: Value(jsonData),
-          lastUpdated: Value(DateTime.now()),
-        ),
-      );
-    }
+  ///
+  /// [enqueueSync] defaults true so normal end-of-game writes mark the
+  /// row for upload. Pass false when hydrating from the backend on
+  /// first-sign-in so the pull doesn't bounce straight back as a push.
+  Future<void> updateStatisticsFromJson(
+    String jsonData, {
+    bool enqueueSync = true,
+  }) async {
+    final now = DateTime.now();
+    await transaction(() async {
+      final existing = await getStatistics();
+      if (existing == null) {
+        await into(statistics).insert(
+          StatisticsCompanion(
+            modelJson: Value(jsonData),
+            lastUpdated: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
+      } else {
+        await (update(statistics)..where((t) => t.id.equals(1))).write(
+          StatisticsCompanion(
+            modelJson: Value(jsonData),
+            lastUpdated: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
+      }
+      if (enqueueSync) {
+        await attachedDatabase.enqueueSyncOutbox(
+          dataType: SyncDataType.statistics,
+          entityKey: 'statistics:1',
+        );
+      }
+    });
   }
 
   /// Read the full GameStatistics JSON. Returns '{}' if no row exists yet
@@ -119,10 +144,6 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   Future<String> getStatisticsAsJson() async {
     final stats = await getStatistics();
     if (stats == null) return '{}';
-    // modelJson defaults to '{}' on legacy rows from the pre-v3 schema,
-    // so a player who upgraded the app will get a clean reset rather
-    // than zeros for everything (the typed columns were never populated
-    // correctly either). New games will populate modelJson going forward.
     return stats.modelJson;
   }
 
@@ -155,26 +176,42 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
     if (achievement == null) return;
 
     final isNowUnlocked = progress >= achievement.targetProgress;
+    final now = DateTime.now();
 
-    await (update(achievements)..where((t) => t.id.equals(achievementId)))
-        .write(AchievementsCompanion(
-      currentProgress: Value(progress),
-      isUnlocked: Value(isNowUnlocked),
-      unlockedAt: isNowUnlocked && !achievement.isUnlocked
-          ? Value(DateTime.now())
-          : const Value.absent(),
-      lastUpdated: Value(DateTime.now()),
-    ));
+    await transaction(() async {
+      await (update(achievements)..where((t) => t.id.equals(achievementId)))
+          .write(AchievementsCompanion(
+        currentProgress: Value(progress),
+        isUnlocked: Value(isNowUnlocked),
+        unlockedAt: isNowUnlocked && !achievement.isUnlocked
+            ? Value(now)
+            : const Value.absent(),
+        lastUpdated: Value(now),
+        updatedAt: Value(now),
+      ));
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.achievement,
+        entityKey: 'achievement:$achievementId',
+      );
+    });
   }
 
   /// Unlock achievement directly
   Future<void> unlockAchievement(String achievementId) async {
-    await (update(achievements)..where((t) => t.id.equals(achievementId)))
-        .write(AchievementsCompanion(
-      isUnlocked: const Value(true),
-      unlockedAt: Value(DateTime.now()),
-      lastUpdated: Value(DateTime.now()),
-    ));
+    final now = DateTime.now();
+    await transaction(() async {
+      await (update(achievements)..where((t) => t.id.equals(achievementId)))
+          .write(AchievementsCompanion(
+        isUnlocked: const Value(true),
+        unlockedAt: Value(now),
+        lastUpdated: Value(now),
+        updatedAt: Value(now),
+      ));
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.achievement,
+        entityKey: 'achievement:$achievementId',
+      );
+    });
   }
 
   /// Claim achievement reward
@@ -185,17 +222,42 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
 
     if (achievement == null || achievement.rewardClaimed) return 0;
 
-    await (update(achievements)..where((t) => t.id.equals(achievementId)))
-        .write(const AchievementsCompanion(
-      rewardClaimed: Value(true),
-    ));
+    final now = DateTime.now();
+    await transaction(() async {
+      await (update(achievements)..where((t) => t.id.equals(achievementId)))
+          .write(AchievementsCompanion(
+        rewardClaimed: const Value(true),
+        lastUpdated: Value(now),
+        updatedAt: Value(now),
+      ));
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.achievement,
+        entityKey: 'achievement:$achievementId',
+      );
+    });
 
     return achievement.rewardCoins;
   }
 
-  /// Insert or update achievement
-  Future<void> upsertAchievement(AchievementsCompanion achievement) async {
-    await into(achievements).insertOnConflictUpdate(achievement);
+  /// Insert or update achievement.
+  ///
+  /// [enqueueSync] defaults true; pass false when seeding the catalog
+  /// from a server pull so the same data doesn't bounce back as an
+  /// outbound sync.
+  Future<void> upsertAchievement(
+    AchievementsCompanion achievement, {
+    bool enqueueSync = true,
+  }) async {
+    final id = achievement.id.present ? achievement.id.value : null;
+    await transaction(() async {
+      await into(achievements).insertOnConflictUpdate(achievement);
+      if (enqueueSync && id != null) {
+        await attachedDatabase.enqueueSyncOutbox(
+          dataType: SyncDataType.achievement,
+          entityKey: 'achievement:$id',
+        );
+      }
+    });
   }
 
   /// Get achievements as JSON
@@ -217,60 +279,73 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
         .toList());
   }
 
-  /// Load achievements from JSON
-  /// Supports both List format (full achievement data) and Map format (progress only)
+  /// Load achievements from JSON. Bulk-load path that bypasses the
+  /// outbox enqueue — the data is coming FROM the backend (or local
+  /// seed) and shouldn't trigger an outbound sync.
+  /// Supports both List format (full achievement data) and Map format
+  /// (progress only).
   Future<void> loadAchievementsFromJson(String jsonData) async {
     final decoded = json.decode(jsonData);
 
     if (decoded is List) {
       // List format: full achievement data from backend or old format
       for (final item in decoded) {
-        await upsertAchievement(AchievementsCompanion(
-          id: Value(item['id']),
-          name: Value(item['name']),
-          description: Value(item['description']),
-          category: Value(item['category'] ?? 'general'),
-          currentProgress: Value(item['currentProgress'] ?? 0),
-          targetProgress: Value(item['targetProgress'] ?? 1),
-          isUnlocked: Value(item['isUnlocked'] ?? false),
-          unlockedAt: item['unlockedAt'] != null
-              ? Value(DateTime.parse(item['unlockedAt']))
-              : const Value.absent(),
-          rewardCoins: Value(item['rewardCoins'] ?? 0),
-          rewardClaimed: Value(item['rewardClaimed'] ?? false),
-        ));
+        await upsertAchievement(
+          AchievementsCompanion(
+            id: Value(item['id']),
+            name: Value(item['name']),
+            description: Value(item['description']),
+            category: Value(item['category'] ?? 'general'),
+            currentProgress: Value(item['currentProgress'] ?? 0),
+            targetProgress: Value(item['targetProgress'] ?? 1),
+            isUnlocked: Value(item['isUnlocked'] ?? false),
+            unlockedAt: item['unlockedAt'] != null
+                ? Value(DateTime.parse(item['unlockedAt']))
+                : const Value.absent(),
+            rewardCoins: Value(item['rewardCoins'] ?? 0),
+            rewardClaimed: Value(item['rewardClaimed'] ?? false),
+          ),
+          enqueueSync: false,
+        );
       }
     } else if (decoded is Map) {
       // Map format: progress-only data keyed by achievement id
-      // This format only updates progress fields for existing achievements
       for (final entry in decoded.entries) {
         final id = entry.key.toString();
         final data = entry.value;
         if (data == null || data is! Map) continue;
 
-        // Get existing achievement to preserve name/description/etc
         final existing = await getAchievementById(id);
         if (existing != null) {
-          await upsertAchievement(AchievementsCompanion(
-            id: Value(id),
-            name: Value(existing.name),
-            description: Value(existing.description),
-            category: Value(existing.category),
-            currentProgress: Value(data['currentProgress'] ?? existing.currentProgress),
-            targetProgress: Value(existing.targetProgress),
-            isUnlocked: Value(data['isUnlocked'] ?? existing.isUnlocked),
-            unlockedAt: data['unlockedAt'] != null
-                ? Value(DateTime.parse(data['unlockedAt']))
-                : (existing.unlockedAt != null ? Value(existing.unlockedAt!) : const Value.absent()),
-            rewardCoins: Value(existing.rewardCoins),
-            rewardClaimed: Value(existing.rewardClaimed),
-          ));
+          await upsertAchievement(
+            AchievementsCompanion(
+              id: Value(id),
+              name: Value(existing.name),
+              description: Value(existing.description),
+              category: Value(existing.category),
+              currentProgress:
+                  Value(data['currentProgress'] ?? existing.currentProgress),
+              targetProgress: Value(existing.targetProgress),
+              isUnlocked: Value(data['isUnlocked'] ?? existing.isUnlocked),
+              unlockedAt: data['unlockedAt'] != null
+                  ? Value(DateTime.parse(data['unlockedAt']))
+                  : (existing.unlockedAt != null
+                      ? Value(existing.unlockedAt!)
+                      : const Value.absent()),
+              rewardCoins: Value(existing.rewardCoins),
+              rewardClaimed: Value(existing.rewardClaimed),
+            ),
+            enqueueSync: false,
+          );
         }
       }
     }
   }
 
   // ==================== Replays ====================
+  // Replays are excluded from the sync surface (the user explicitly
+  // left them off the v1 sync scope — replays can be hundreds of KB
+  // each so we'd want to think about bandwidth before turning them on).
 
   /// Watch all replays
   Stream<List<Replay>> watchReplays() =>
@@ -286,9 +361,35 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   Future<Replay?> getReplay(String id) =>
       (select(replays)..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  /// Save a replay
+  /// Save a replay and apply the retention policy: keep top 10 by
+  /// score + the 10 most recent (deduplicated). Everything outside
+  /// that union gets deleted. Wrapped in a transaction so a half-
+  /// applied cull can't leave the table inconsistent.
   Future<void> saveReplay(ReplaysCompanion replay) async {
-    await into(replays).insertOnConflictUpdate(replay);
+    await transaction(() async {
+      await into(replays).insertOnConflictUpdate(replay);
+      await _applyReplayRetention();
+    });
+  }
+
+  /// Cull replays down to the keep-set: union of top-10-by-score and
+  /// last-10-by-recordedAt. Called from inside [saveReplay]'s
+  /// transaction so concurrent inserts can't race the delete.
+  Future<void> _applyReplayRetention() async {
+    final topByScore = await (select(replays)
+          ..orderBy([(t) => OrderingTerm.desc(t.score)])
+          ..limit(10))
+        .get();
+    final topByRecent = await (select(replays)
+          ..orderBy([(t) => OrderingTerm.desc(t.recordedAt)])
+          ..limit(10))
+        .get();
+    final keepIds = <String>{
+      ...topByScore.map((r) => r.id),
+      ...topByRecent.map((r) => r.id),
+    };
+    if (keepIds.isEmpty) return;
+    await (delete(replays)..where((t) => t.id.isNotIn(keepIds))).go();
   }
 
   /// Delete a replay
@@ -312,6 +413,8 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   }
 
   // ==================== Daily Challenges ====================
+  // Only the *claim* writes to Drift in the offline-first build —
+  // progress is held in-memory by DailyChallengeService.
 
   /// Watch today's challenges
   Stream<List<DailyChallenge>> watchTodaysChallenges() {
@@ -339,7 +442,8 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
         .get();
   }
 
-  /// Update challenge progress
+  /// Update challenge progress. Not used in the offline-first build —
+  /// progress lives in-memory — but kept for parity with the schema.
   Future<void> updateChallengeProgress(String challengeId, int progress) async {
     final challenge = await (select(dailyChallenges)
           ..where((t) => t.challengeId.equals(challengeId)))
@@ -348,6 +452,7 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
     if (challenge == null) return;
 
     final isNowCompleted = progress >= challenge.targetProgress;
+    final now = DateTime.now();
 
     await (update(dailyChallenges)
           ..where((t) => t.challengeId.equals(challengeId)))
@@ -355,12 +460,14 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
       currentProgress: Value(progress),
       isCompleted: Value(isNowCompleted),
       completedAt: isNowCompleted && !challenge.isCompleted
-          ? Value(DateTime.now())
+          ? Value(now)
           : const Value.absent(),
+      updatedAt: Value(now),
     ));
   }
 
-  /// Claim challenge reward
+  /// Claim challenge reward. Marks the row claimed + enqueues an
+  /// outbox row so the backend records the claim.
   Future<int> claimChallengeReward(String challengeId) async {
     final challenge = await (select(dailyChallenges)
           ..where((t) => t.challengeId.equals(challengeId)))
@@ -370,18 +477,46 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
       return 0;
     }
 
-    await (update(dailyChallenges)
-          ..where((t) => t.challengeId.equals(challengeId)))
-        .write(const DailyChallengesCompanion(
-      rewardClaimed: Value(true),
-    ));
+    final now = DateTime.now();
+    await transaction(() async {
+      await (update(dailyChallenges)
+            ..where((t) => t.challengeId.equals(challengeId)))
+          .write(DailyChallengesCompanion(
+        rewardClaimed: const Value(true),
+        updatedAt: Value(now),
+      ));
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.dailyChallengeClaim,
+        entityKey: 'daily_challenge_claim:$challengeId',
+      );
+    });
 
     return challenge.rewardCoins;
   }
 
-  /// Insert or update daily challenge
-  Future<void> upsertDailyChallenge(DailyChallengesCompanion challenge) async {
-    await into(dailyChallenges).insertOnConflictUpdate(challenge);
+  /// Insert or update daily challenge.
+  ///
+  /// [enqueueSync] defaults true. The DailyChallengeService claim
+  /// path uses this to persist + sync in one shot. Pass false when
+  /// hydrating from the backend.
+  Future<void> upsertDailyChallenge(
+    DailyChallengesCompanion challenge, {
+    bool enqueueSync = true,
+  }) async {
+    final id = challenge.challengeId.present
+        ? challenge.challengeId.value
+        : null;
+    final now = DateTime.now();
+    final stamped = challenge.copyWith(updatedAt: Value(now));
+    await transaction(() async {
+      await into(dailyChallenges).insertOnConflictUpdate(stamped);
+      if (enqueueSync && id != null) {
+        await attachedDatabase.enqueueSyncOutbox(
+          dataType: SyncDataType.dailyChallengeClaim,
+          entityKey: 'daily_challenge_claim:$id',
+        );
+      }
+    });
   }
 
   /// Clean up expired challenges

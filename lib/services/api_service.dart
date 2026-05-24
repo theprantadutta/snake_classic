@@ -410,6 +410,106 @@ class ApiService {
     }
   }
 
+  // ==================== Sync ====================
+  //
+  // These endpoints back the SyncEngine's outbox drain. The handlers
+  // are batch-aware on the backend side — singletons (settings,
+  // statistics, coin_balance, premium_status) take the payload
+  // directly; lists (achievements, coin_transactions, unlocked_items,
+  // battle_pass, daily_challenge_claims) wrap the array in
+  // `{"items": [...]}` to match `SyncBatchRequest<T>`.
+
+  Future<Map<String, dynamic>?> syncSettings(Map<String, dynamic> payload) async {
+    return _postSync('settings', payload);
+  }
+
+  Future<Map<String, dynamic>?> syncStatistics(Map<String, dynamic> payload) async {
+    return _postSync('statistics', payload);
+  }
+
+  Future<Map<String, dynamic>?> syncCoinBalance(Map<String, dynamic> payload) async {
+    return _postSync('coins/balance', payload);
+  }
+
+  Future<Map<String, dynamic>?> syncPremiumStatus(Map<String, dynamic> payload) async {
+    return _postSync('premium-status', payload);
+  }
+
+  Future<Map<String, dynamic>?> syncAchievements(
+    List<Map<String, dynamic>> items,
+  ) async {
+    return _postSync('achievements', {'items': items});
+  }
+
+  Future<Map<String, dynamic>?> syncCoinTransactions(
+    List<Map<String, dynamic>> items,
+  ) async {
+    return _postSync('coins/transactions', {'items': items});
+  }
+
+  Future<Map<String, dynamic>?> syncUnlockedItems(
+    List<Map<String, dynamic>> items,
+  ) async {
+    return _postSync('unlocked-items', {'items': items});
+  }
+
+  Future<Map<String, dynamic>?> syncBattlePass(
+    List<Map<String, dynamic>> items,
+  ) async {
+    return _postSync('battle-pass', {'items': items});
+  }
+
+  Future<Map<String, dynamic>?> syncDailyChallengeClaims(
+    List<Map<String, dynamic>> items,
+  ) async {
+    return _postSync('daily-challenge-claims', {'items': items});
+  }
+
+  /// First-sign-in pull. Returns the cloud snapshot, or null when the
+  /// user has no synced data yet (SyncEngine treats null as "fresh
+  /// user, push local"). Network / 5xx errors also return null so
+  /// the engine retries later.
+  Future<Map<String, dynamic>?> pullSyncSnapshot() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/sync/pull'), headers: _authHeaders)
+          .timeout(_timeout);
+
+      final body = _handleResponse(response);
+      if (body == null) return null;
+      // Backend wraps a null payload in `{"data": null}` for 200 OK;
+      // unwrap that so the SyncEngine sees the same shape regardless.
+      if (body.containsKey('data') && body['data'] == null) return null;
+      return body;
+    } catch (e) {
+      AppLogger.error('Error pulling sync snapshot', e);
+      return null;
+    }
+  }
+
+  /// Shared POST helper for every /sync/* endpoint. Returns the parsed
+  /// response body on 2xx, null on every kind of failure (network,
+  /// timeout, 401, 4xx, 5xx). SyncEngine treats null as "soft failure
+  /// — leave the outbox rows pending and retry on the next drain."
+  Future<Map<String, dynamic>?> _postSync(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/sync/$path'),
+            headers: _authHeaders,
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error POST /sync/$path', e);
+      return null;
+    }
+  }
+
   // ==================== Notifications ====================
 
   /// Register FCM token. Forwards the device's UTC offset so the

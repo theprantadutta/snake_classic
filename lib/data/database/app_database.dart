@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -11,6 +12,21 @@ import 'package:snake_classic/data/daos/store_dao.dart';
 import 'package:snake_classic/data/daos/sync_dao.dart';
 
 part 'app_database.g.dart';
+
+/// String constants for the `dataType` column on [SyncQueue] rows.
+/// Each one corresponds to a class of mutation the SyncEngine drains
+/// to its matching backend endpoint.
+class SyncDataType {
+  static const String settings = 'settings';
+  static const String statistics = 'statistics';
+  static const String achievement = 'achievement';
+  static const String coinBalance = 'coin_balance';
+  static const String coinTransaction = 'coin_transaction';
+  static const String premiumStatus = 'premium_status';
+  static const String unlockedItem = 'unlocked_item';
+  static const String battlePass = 'battle_pass';
+  static const String dailyChallengeClaim = 'daily_challenge_claim';
+}
 
 // =====================================================
 // TABLE 1: Game Settings
@@ -34,6 +50,12 @@ class GameSettings extends Table {
   TextColumn get selectedSkinId => text().nullable()();
   TextColumn get selectedTrailId => text().nullable()();
   DateTimeColumn get lastUpdated =>
+      dateTime().withDefault(currentDateAndTime)();
+  // Tracked by the sync engine; bumped on every mutation that should
+  // round-trip to the backend. Distinct from `lastUpdated` (which is
+  // older and inconsistently maintained) so we don't have to retrofit
+  // every existing write site.
+  DateTimeColumn get updatedAt =>
       dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -121,6 +143,9 @@ class Statistics extends Table {
   DateTimeColumn get lastPlayedAt => dateTime().nullable()();
   DateTimeColumn get lastUpdated =>
       dateTime().withDefault(currentDateAndTime)();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
 
   // Full GameStatistics model serialized as JSON.
   //
@@ -161,6 +186,9 @@ class Achievements extends Table {
   BoolColumn get isSecret => boolean().withDefault(const Constant(false))();
   DateTimeColumn get lastUpdated =>
       dateTime().withDefault(currentDateAndTime)();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -176,6 +204,9 @@ class Coins extends Table {
   IntColumn get totalSpent => integer().withDefault(const Constant(0))();
   DateTimeColumn get lastUpdated =>
       dateTime().withDefault(currentDateAndTime)();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
 }
 
 class CoinTransactions extends Table {
@@ -187,6 +218,11 @@ class CoinTransactions extends Table {
       text()(); // 'game', 'achievement', 'daily_bonus', 'purchase', etc.
   TextColumn get description => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt]. For an
+  /// append-only log this matches `createdAt` on insert, but kept for
+  /// schema symmetry with the other synced tables.
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
 }
 
 // =====================================================
@@ -210,6 +246,9 @@ class PremiumStatus extends Table {
       text().nullable()(); // For purchase validation
   DateTimeColumn get lastUpdated =>
       dateTime().withDefault(currentDateAndTime)();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
 }
 
 // =====================================================
@@ -223,6 +262,9 @@ class UnlockedItems extends Table {
   DateTimeColumn get unlockedAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get unlockedBy =>
       text().withDefault(const Constant('purchase'))(); // 'purchase', 'achievement', 'battle_pass', 'gift'
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
 }
 
 // =====================================================
@@ -241,6 +283,9 @@ class BattlePasses extends Table {
   DateTimeColumn get seasonStartDate => dateTime().nullable()();
   DateTimeColumn get seasonEndDate => dateTime().nullable()();
   DateTimeColumn get lastUpdated =>
+      dateTime().withDefault(currentDateAndTime)();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
       dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -262,6 +307,9 @@ class DailyChallenges extends Table {
   DateTimeColumn get challengeDate => dateTime()();
   DateTimeColumn get expiresAt => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
 }
 
 // =====================================================
@@ -390,7 +438,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -409,6 +457,38 @@ class AppDatabase extends _$AppDatabase {
         // GameStatistics model can round-trip without the per-field name
         // translation that lost data on every save/load cycle.
         await m.addColumn(statistics, statistics.modelJson);
+      }
+      if (from < 4) {
+        // v4: add `updatedAt` to every synced table so the sync engine
+        // has a uniform "this row changed at X" signal independent of
+        // the older / inconsistently-maintained `lastUpdated` columns.
+        //
+        // SQLite ALTER TABLE ADD COLUMN only accepts *constant*
+        // defaults — `CURRENT_TIMESTAMP` is non-constant and gets
+        // rejected. We add the column with a literal-0 default, then
+        // backfill the actual now() value in a follow-up UPDATE so
+        // existing rows aren't stuck at the epoch. New inserts pick
+        // up the proper currentDateAndTime default from the regular
+        // Drift companion path going forward.
+        const tables = <String>[
+          'game_settings',
+          'statistics',
+          'achievements',
+          'coins',
+          'coin_transactions',
+          'premium_status',
+          'unlocked_items',
+          'battle_passes',
+          'daily_challenges',
+        ];
+        for (final t in tables) {
+          await customStatement(
+            'ALTER TABLE "$t" ADD COLUMN "updated_at" INTEGER NOT NULL DEFAULT 0',
+          );
+          await customStatement(
+            "UPDATE \"$t\" SET \"updated_at\" = CAST(strftime('%s', 'now') AS INTEGER)",
+          );
+        }
       }
     },
   );
@@ -460,6 +540,38 @@ class AppDatabase extends _$AppDatabase {
     // CacheStore index for expiration checks
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_cache_store_expires ON cache_store(expires_at)',
+    );
+  }
+
+  /// Enqueue an outbox row signaling that a synced entity has changed.
+  /// Call this from inside the same Drift transaction as the data
+  /// write so the row and its outbox marker land atomically.
+  ///
+  /// [dataType] is one of [SyncDataType]'s constants. [entityKey] is
+  /// the stable identifier of the row (e.g. `'settings:1'`,
+  /// `'achievement:first_blood'`). [payload] is optional — for
+  /// snapshot types the SyncEngine reads the latest row at drain
+  /// time, so we can skip the payload; for event-typed rows we
+  /// freeze the payload here because the row's content may change
+  /// before the drain.
+  Future<void> enqueueSyncOutbox({
+    required String dataType,
+    required String entityKey,
+    Map<String, dynamic>? payload,
+    int priority = 2,
+  }) async {
+    final id = '$dataType:$entityKey:${DateTime.now().microsecondsSinceEpoch}';
+    await into(syncQueue).insert(
+      SyncQueueCompanion.insert(
+        id: id,
+        dataType: dataType,
+        data: jsonEncode({
+          'entityKey': entityKey,
+          'payload': ?payload,
+        }),
+        priority: Value(priority),
+      ),
+      mode: InsertMode.insertOrIgnore,
     );
   }
 

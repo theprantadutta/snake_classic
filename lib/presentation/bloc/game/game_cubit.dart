@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/data/database/app_database.dart' show ReplaysCompanion;
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
@@ -13,7 +16,7 @@ import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/snake.dart';
 import 'package:snake_classic/models/snake_coins.dart';
-import 'package:snake_classic/models/game_replay.dart' show GameRecorder;
+import 'package:snake_classic/models/game_replay.dart' show GameRecorder, GameReplay;
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
@@ -1420,7 +1423,7 @@ class GameCubit extends Cubit<GameCubitState> {
         : _hitSelfThisGame
         ? 'self'
         : null;
-    _gameRecorder.finishRecording(
+    final replay = _gameRecorder.finishRecording(
       playerName: 'Player',
       finalScore: gameState.score,
       gameMode: gameState.gameMode.name,
@@ -1440,6 +1443,38 @@ class GameCubit extends Cubit<GameCubitState> {
         'gameDurationSeconds': gameDurationSeconds,
       },
     );
+
+    // Persist the replay locally. GameDao's saveReplay enforces the
+    // retention policy (top 10 by score + 10 most recent), so the
+    // table can never exceed 20 rows even after a long play session.
+    // Fire-and-forget — a failed write must not block the game-over
+    // UI; talker logs catch any errors.
+    if (replay != null) {
+      unawaited(_persistReplay(replay, gameState));
+    }
+  }
+
+  Future<void> _persistReplay(
+    GameReplay replay,
+    model.GameState gameState,
+  ) async {
+    try {
+      await _storageService.gameDao.saveReplay(
+        ReplaysCompanion(
+          id: Value(replay.id),
+          name: Value(replay.playerName),
+          score: Value(replay.finalScore),
+          snakeLength: Value(gameState.snake.length),
+          gameDurationSeconds: Value(replay.gameTimeSeconds),
+          gameMode: Value(replay.gameMode),
+          boardSize: Value('${gameState.boardWidth}x${gameState.boardHeight}'),
+          replayData: Value(jsonEncode(replay.toJson())),
+          recordedAt: Value(replay.createdAt),
+        ),
+      );
+    } catch (e) {
+      AppLogger.error('Failed to persist replay', e);
+    }
   }
 
   /// Get game recording data (simplified)

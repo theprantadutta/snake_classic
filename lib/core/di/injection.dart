@@ -23,6 +23,7 @@ import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/review_service.dart';
+import 'package:snake_classic/services/sync/sync_engine.dart';
 
 // Core
 import 'package:snake_classic/core/network/network_info.dart';
@@ -217,6 +218,12 @@ Future<void> configureDependencies() async {
   );
 
   getIt.registerLazySingleton<PowerUpCubit>(() => PowerUpCubit());
+
+  // ==================== Sync ====================
+  // SyncEngine owns the outbox drain (Drift SyncQueue → backend
+  // batch endpoints). Registered as a lazy singleton; `initialize`
+  // is kicked off from main.dart after the DB is ready.
+  getIt.registerLazySingleton<SyncEngine>(() => SyncEngine());
 }
 
 /// Reset all dependencies (useful for testing)

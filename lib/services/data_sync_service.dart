@@ -406,12 +406,29 @@ class DataSyncService extends ChangeNotifier {
     if (!_apiService.isAuthenticated) return;
     if (_isSyncing) return; // Prevent concurrent syncs
 
+    // Outbox-owned dataTypes (settings/statistics/achievement/coin_balance/...)
+    // are drained by SyncEngine in batches; skip them here so the two
+    // engines don't fight over the same rows. DataSyncService still
+    // handles its own legacy types (profile, preferences, fcm_token_register).
+    const outboxOwned = <String>{
+      SyncDataType.settings,
+      SyncDataType.statistics,
+      SyncDataType.achievement,
+      SyncDataType.coinBalance,
+      SyncDataType.coinTransaction,
+      SyncDataType.premiumStatus,
+      SyncDataType.unlockedItem,
+      SyncDataType.battlePass,
+      SyncDataType.dailyChallengeClaim,
+    };
+
     final pendingItems = _syncQueue
         .where(
           (item) =>
-              item.status == SyncItemStatus.pending ||
-              (item.status == SyncItemStatus.failed &&
-                  item.retryCount < _maxRetries),
+              !outboxOwned.contains(item.dataType) &&
+              (item.status == SyncItemStatus.pending ||
+                  (item.status == SyncItemStatus.failed &&
+                      item.retryCount < _maxRetries)),
         )
         .toList();
 

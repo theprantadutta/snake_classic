@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,7 @@ import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 enum UserType { guest, anonymous, google }
@@ -392,6 +394,17 @@ class UnifiedUserService extends ChangeNotifier {
             AppLogger.success(
               'User loaded from backend: ${_currentUser?.username}',
             );
+
+            // Kick off the first-sign-in cloud pull (no-op if this
+            // user has already pulled once on this device). Backend
+            // pull endpoint is currently stubbed; this is wired now
+            // so it activates automatically when the endpoint lands.
+            final backendUserId = _apiService.currentUserId;
+            if (backendUserId != null) {
+              unawaited(
+                GetIt.I<SyncEngine>().maybeRunFirstSignInPull(backendUserId),
+              );
+            }
           } else {
             // /auth/me returned null — backend was reachable for the
             // token verify but not for the profile fetch (transient).
