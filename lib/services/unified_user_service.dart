@@ -395,14 +395,58 @@ class UnifiedUserService extends ChangeNotifier {
               'User loaded from backend: ${_currentUser?.username}',
             );
 
-            // Kick off the first-sign-in cloud pull (no-op if this
-            // user has already pulled once on this device). Backend
-            // pull endpoint is currently stubbed; this is wired now
-            // so it activates automatically when the endpoint lands.
+            // Kick off the first-sign-in cloud pull. Two guards:
+            //
+            // 1. Skip anonymous Firebase users. Each anonymous
+            //    sign-in mints a fresh uid, so the backend always
+            //    treats them as is_new_user=true. If we let that
+            //    set the `has_ever_signed_in` flag, a subsequent
+            //    real Google/email sign-in would short-circuit with
+            //    "alreadyDone" and never restore the user's actual
+            //    cloud data. Anonymous accounts have no cross-
+            //    install persistence anyway — there's nothing to
+            //    restore.
+            //
+            // 2. The engine uses [isNewUser] to disambiguate "no
+            //    cloud data exists yet" vs "transient pull failure
+            //    that should retry next launch".
+            //
+            // Awaited so the global SyncRestoreOverlay stays
+            // visible until the pull/apply finishes — otherwise
+            // the user lands on home with empty defaults before
+            // the snapshot arrives.
             final backendUserId = _apiService.currentUserId;
-            if (backendUserId != null) {
-              unawaited(
-                GetIt.I<SyncEngine>().maybeRunFirstSignInPull(backendUserId),
+            final isAnonFirebaseUser = firebaseUser.isAnonymous;
+            if (backendUserId != null && !isAnonFirebaseUser) {
+              try {
+                final result = await GetIt.I<SyncEngine>()
+                    .maybeRunFirstSignInPull(
+                  userId: backendUserId,
+                  isNewUser: _justLoadedNewUser,
+                );
+                AppLogger.network(
+                  'First-sign-in pull result: ${result.name}',
+                );
+                // If we just restored from cloud, re-load the user
+                // profile so the in-memory _currentUser reflects
+                // any restored fields (high score, coins, …).
+                if (result == FirstSignInResult.restored) {
+                  final refreshed = await _apiService.getCurrentUser();
+                  if (refreshed != null) {
+                    _currentUser = UnifiedUser.fromJson(refreshed);
+                    await _cacheUserSession(_currentUser!);
+                  }
+                }
+              } catch (e) {
+                AppLogger.error(
+                  'First-sign-in pull errored, continuing with local data',
+                  e,
+                );
+              }
+            } else if (isAnonFirebaseUser) {
+              AppLogger.network(
+                'Skipping first-sign-in pull for anonymous Firebase user '
+                '(no cross-install persistence to restore)',
               );
             }
           } else {

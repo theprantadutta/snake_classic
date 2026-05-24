@@ -43,7 +43,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late Animation<double> _playButtonPulseAnimation;
   bool _dailyBonusChecked = false;
   bool _walkthroughChecked = false;
-  bool _gameModePromptChecked = false;
 
   @override
   void initState() {
@@ -89,28 +88,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         _checkWalkthrough();
       }
     });
-
-    // First-launch game-mode prompt — shows once per device.
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        _maybeShowGameModePrompt();
-      }
-    });
   }
 
+  /// Shows the first-launch game-mode picker if it hasn't been shown
+  /// before. Returns once the sheet is dismissed (or immediately if the
+  /// user has already seen it). Triggered from the Play button so it
+  /// only appears in the path where the choice actually matters.
   Future<void> _maybeShowGameModePrompt() async {
-    if (_gameModePromptChecked) return;
-    _gameModePromptChecked = true;
-
     if (!mounted) return;
     final settingsCubit = context.read<GameSettingsCubit>();
 
-    // Wait for the cubit to finish hydrating from storage before checking
-    // the flag. Without this, a cold-start race (the cubit's init awaits
-    // StatisticsService.initialize for up to 3s before reading
-    // gameModeFirstLaunchPrompted from storage) leaves the flag at its
-    // default `false`, and we'd re-show this prompt on every launch even
-    // after the user picked once.
+    // Read the flag with a short hydration window. If the cubit is
+    // already ready (overwhelmingly the case by the time the user taps
+    // Play), this returns immediately. Falls back to direct storage on
+    // a timeout so we never nag a user who already chose.
     bool alreadyPrompted;
     if (settingsCubit.state.isReady) {
       alreadyPrompted = settingsCubit.state.gameModeFirstLaunchPrompted;
@@ -118,12 +109,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       try {
         final ready = await settingsCubit.stream
             .firstWhere((s) => s.isReady)
-            .timeout(const Duration(seconds: 5));
+            .timeout(const Duration(seconds: 2));
         alreadyPrompted = ready.gameModeFirstLaunchPrompted;
       } catch (_) {
-        // Cubit took too long to come up — read the flag directly from
-        // storage so we still honour the user's prior decision rather
-        // than nagging them again.
         alreadyPrompted =
             await getIt<StorageService>().hasGameModeBeenPrompted();
       }
@@ -406,6 +394,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         onSkip: () =>
                             ref.read(walkthroughProvider.notifier).skip(),
                       ),
+
+                    // Sync restore overlay is mounted globally in
+                    // SnakeClassicApp.builder so it appears regardless
+                    // of which screen is active during the pull.
                   ],
                 );
               },
@@ -835,7 +827,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         final isSmallButton = buttonSize < 120;
 
         return GestureDetector(
-          onTap: () {
+          onTap: () async {
+            // Show the one-time game-mode picker before launching the
+            // first game; no-op for users who've already picked.
+            await _maybeShowGameModePrompt();
+            if (!context.mounted) return;
             context.push(AppRoutes.game);
           },
           child: AnimatedBuilder(

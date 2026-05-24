@@ -32,6 +32,7 @@ import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
+import 'package:snake_classic/widgets/sync_restore_overlay.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/typography.dart';
@@ -338,6 +339,22 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
                   color: themeState.currentTheme.accentColor,
                 ),
               ),
+              // Global overlay for the first-sign-in cloud-pull modal.
+              // The auth flow that triggers the pull may happen on the
+              // loading screen, the first-time-auth screen, OR the
+              // email-auth screen depending on the path the user takes
+              // — putting it here makes sure it shows regardless of
+              // which screen the user is currently on.
+              builder: (context, child) {
+                return Stack(
+                  children: [
+                    ?child,
+                    SyncRestoreOverlay(
+                      theme: themeState.currentTheme,
+                    ),
+                  ],
+                );
+              },
             );
           },
         ),

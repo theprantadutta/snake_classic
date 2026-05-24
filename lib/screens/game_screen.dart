@@ -98,34 +98,22 @@ class _GameScreenState extends State<GameScreen>
 
     // Start the game when screen loads (only if not already playing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final gameCubit = context.read<GameCubit>();
-      debugPrint(
-        '[GameScreen] initState callback - cubit status: ${gameCubit.state.status}',
-      );
-      if (gameCubit.state.status == GamePlayStatus.ready ||
-          gameCubit.state.status == GamePlayStatus.initial) {
-        debugPrint('[GameScreen] Starting game...');
-        gameCubit.startGame();
-        debugPrint(
-          '[GameScreen] startGame() called, new status: ${gameCubit.state.status}',
-        );
-      } else {
-        debugPrint(
-          '[GameScreen] Game already in status: ${gameCubit.state.status}, not starting',
-        );
-      }
-      // Request keyboard focus
       _keyboardFocusNode.requestFocus();
-
-      // First-run flows: control choice, then tutorial.
-      _runFirstTimeFlows();
+      // Drives the full pre-game sequence: control-choice (if first time)
+      // → startGame → tutorial (if first time). Sequenced so the game
+      // never starts behind a blocking modal.
+      _bootstrapGame();
     });
   }
 
-  /// First-time onboarding flows in order: ask the player whether they want
-  /// gestures or the on-screen D-Pad, then launch the gameplay tutorial.
-  /// Both are one-shots gated by WalkthroughService flags.
-  Future<void> _runFirstTimeFlows() async {
+  /// Pre-game onboarding + start. Runs once per GameScreen mount.
+  ///   1. If the player has never picked a control scheme, show the
+  ///      d-pad / swipe modal FIRST and wait for their answer.
+  ///   2. Then call `startGame()` so the snake doesn't start moving
+  ///      behind a blocking dialog.
+  ///   3. After the game is running, kick off the gameplay tutorial if
+  ///      they haven't seen it (the tutorial itself handles pausing).
+  Future<void> _bootstrapGame() async {
     if (_tutorialChecked) return;
     _tutorialChecked = true;
 
@@ -136,10 +124,27 @@ class _GameScreenState extends State<GameScreen>
 
     if (!walkthroughService.isComplete(WalkthroughService.controlChoiceId)) {
       await _showControlChoiceDialog();
+      if (!mounted) return;
       await walkthroughService.markComplete(WalkthroughService.controlChoiceId);
+      if (!mounted) return;
     }
 
-    if (!mounted) return;
+    final gameCubit = context.read<GameCubit>();
+    debugPrint(
+      '[GameScreen] bootstrap - cubit status: ${gameCubit.state.status}',
+    );
+    if (gameCubit.state.status == GamePlayStatus.ready ||
+        gameCubit.state.status == GamePlayStatus.initial) {
+      debugPrint('[GameScreen] Starting game...');
+      gameCubit.startGame();
+      debugPrint(
+        '[GameScreen] startGame() called, new status: ${gameCubit.state.status}',
+      );
+    } else {
+      debugPrint(
+        '[GameScreen] Game already in status: ${gameCubit.state.status}, not starting',
+      );
+    }
 
     if (!walkthroughService.isComplete(WalkthroughService.gameTutorialId)) {
       _startTutorial();
@@ -147,17 +152,14 @@ class _GameScreenState extends State<GameScreen>
   }
 
   /// First-launch modal asking the player to pick gestures or the D-Pad.
-  /// Pauses the game while open so the snake doesn't run into the wall
-  /// behind the dialog. Whatever they choose is persisted via
-  /// GameSettingsCubit.updateDPadEnabled and surfaced as a clear
-  /// "you can change this anytime in Settings → Controls" footer.
+  /// Now called before [GameCubit.startGame], so the snake isn't already
+  /// moving behind the dialog — no pause/resume dance needed. Whatever
+  /// they choose is persisted via [GameSettingsCubit.updateDPadEnabled]
+  /// and surfaced with a "change this anytime in Settings → Controls"
+  /// footer.
   Future<void> _showControlChoiceDialog() async {
-    final gameCubit = context.read<GameCubit>();
     final settingsCubit = context.read<GameSettingsCubit>();
     final theme = context.read<ThemeCubit>().state.currentTheme;
-
-    final wasPlaying = gameCubit.state.isPlaying;
-    if (wasPlaying) gameCubit.pauseGame();
 
     await showDialog<void>(
       context: context,
@@ -229,10 +231,6 @@ class _GameScreenState extends State<GameScreen>
         ),
       ),
     );
-
-    if (wasPlaying && mounted && gameCubit.state.isPaused) {
-      gameCubit.resumeGame();
-    }
   }
 
   Widget _buildControlChoiceCard({

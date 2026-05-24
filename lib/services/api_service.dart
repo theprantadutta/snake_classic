@@ -475,6 +475,18 @@ class ApiService {
           .get(Uri.parse('$baseUrl/sync/pull'), headers: _authHeaders)
           .timeout(_timeout);
 
+      AppLogger.network(
+        'GET $baseUrl/sync/pull → ${response.statusCode} '
+        '(body length: ${response.body.length})',
+      );
+      // Dump the raw body so the user can see exactly what the
+      // backend returned. Truncated to keep talker readable on
+      // big snapshots.
+      final preview = response.body.length > 1000
+          ? '${response.body.substring(0, 1000)}… [truncated]'
+          : response.body;
+      AppLogger.network('  body: $preview');
+
       final body = _handleResponse(response);
       if (body == null) return null;
       // Backend wraps a null payload in `{"data": null}` for 200 OK;

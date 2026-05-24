@@ -9,6 +9,7 @@ import 'package:snake_classic/data/daos/game_dao.dart';
 import 'package:snake_classic/data/daos/settings_dao.dart';
 import 'package:snake_classic/data/daos/store_dao.dart';
 import 'package:snake_classic/data/daos/sync_dao.dart';
+import 'package:snake_classic/models/achievement.dart' as ach_model;
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -27,6 +28,36 @@ enum _DispatchResult {
   /// retries exceeded the items get marked failed.
   failed,
 }
+
+/// Outcome of [SyncEngine.maybeRunFirstSignInPull]. The UI uses this
+/// to drive the "restoring your data…" loading modal during sign-in.
+enum FirstSignInResult {
+  /// Device has previously completed first-sign-in. No-op.
+  alreadyDone,
+
+  /// User just registered on the backend (is_new_user = true).
+  /// No cloud data to restore; flag set so future sign-ins are
+  /// normal sessions.
+  brandNew,
+
+  /// Returning user; backend snapshot pulled and applied to local
+  /// Drift. Flag set.
+  restored,
+
+  /// Returning user but the pull failed or returned null. Flag
+  /// stays unset so next launch retries the whole flow. UI should
+  /// show a non-blocking warning and proceed with whatever local
+  /// data exists (likely empty defaults).
+  pullFailed,
+}
+
+/// UI-facing state stream emitted by the SyncEngine during the
+/// first-sign-in flow. The global overlay subscribes to this and
+/// renders a modal whenever the state is anything other than
+/// [idle] / [done]. `welcoming` covers the brand-new-user path so
+/// the user still sees a setup modal during their first sign-in
+/// (even when there's nothing to pull).
+enum FirstSignInState { idle, welcoming, pulling, applying, restored, failed, done }
 
 /// Drains the local outbox (the `SyncQueue` Drift table) to the
 /// backend. Owns the periodic + reactive (Drift-stream-driven)
@@ -75,6 +106,26 @@ class SyncEngine {
   Timer? _debounceTimer;
   Timer? _periodicTimer;
 
+  /// Signals that [initialize] has finished. Callers that race the
+  /// init (notably [maybeRunFirstSignInPull] when sign-in fires
+  /// during cold start) await this so they don't no-op on a not-
+  /// yet-initialized engine.
+  final Completer<void> _initialized = Completer<void>();
+
+  /// Broadcast stream the UI subscribes to for the loading modal
+  /// during first-sign-in restore.
+  final StreamController<FirstSignInState> _firstSignInStateController =
+      StreamController<FirstSignInState>.broadcast();
+  Stream<FirstSignInState> get firstSignInStateStream =>
+      _firstSignInStateController.stream;
+  FirstSignInState _firstSignInState = FirstSignInState.idle;
+  FirstSignInState get firstSignInState => _firstSignInState;
+
+  void _emitFirstSignInState(FirstSignInState state) {
+    _firstSignInState = state;
+    _firstSignInStateController.add(state);
+  }
+
   /// One-shot init. Hook this from app boot after the database +
   /// connectivity + auth singletons are ready.
   Future<void> initialize(AppDatabase db) async {
@@ -107,70 +158,204 @@ class SyncEngine {
     // Try once on init in case there's already a pending backlog.
     _scheduleDrain(immediate: true);
 
+    if (!_initialized.isCompleted) _initialized.complete();
+
     if (kDebugMode) {
       AppLogger.network('SyncEngine initialized');
     }
   }
 
-  /// Run the first-sign-in flow: if this device has never seen a
-  /// sign-in before (fresh install OR reinstall), attempt to pull
-  /// the user's cloud snapshot, wipe local state, and apply the
-  /// snapshot. Subsequent sign-ins on the same install short-circuit.
+  /// Run the first-sign-in flow.
   ///
-  /// Order is "pull first, wipe second" so a network failure can't
-  /// wipe local data before we have a replacement.
-  Future<void> maybeRunFirstSignInPull(String userId) async {
-    if (_db == null || _syncDao == null) return;
-    if (!_api.isAuthenticated) return;
-    if (!_connectivity.isOnline) return;
+  /// [isNewUser] comes from the `/auth/firebase` response's
+  /// `is_new_user` flag — true means the backend just minted this
+  /// user record. We use it to disambiguate "brand new user, no
+  /// cloud data" (legit empty snapshot) from "returning user but
+  /// the pull failed for some reason" (transient — must retry).
+  ///
+  /// Behaviour:
+  ///   * Flag already true → no-op, returns [alreadyDone].
+  ///   * isNewUser == true → no cloud data exists by definition;
+  ///     set flag + return [brandNew]. The outbox drain seeds cloud
+  ///     with whatever the user has played pre-signin.
+  ///   * Returning user + populated snapshot → wipe local + apply
+  ///     + clear outbox + set flag. Returns [restored].
+  ///   * Returning user + null/failed pull → flag stays unset so
+  ///     the next launch retries. Returns [pullFailed].
+  ///
+  /// Order is "pull first, wipe second" so a transient pull failure
+  /// can't wipe local data before we have a replacement.
+  Future<FirstSignInResult> maybeRunFirstSignInPull({
+    required String userId,
+    required bool isNewUser,
+  }) async {
+    // Wait up to 8s for [initialize] to complete. The engine boots
+    // from main.dart with `unawaited(...)`, so sign-in can race the
+    // init. A timeout means something is very wrong (initialize
+    // never resolved) — we treat that as a pull failure so the
+    // flag stays unset and next launch retries.
+    try {
+      await _initialized.future.timeout(const Duration(seconds: 8));
+    } catch (e) {
+      AppLogger.error(
+        'SyncEngine.maybeRunFirstSignInPull: initialize did not complete',
+        e,
+      );
+      _emitFirstSignInState(FirstSignInState.failed);
+      return FirstSignInResult.pullFailed;
+    }
+
+    if (!_api.isAuthenticated) {
+      AppLogger.warning(
+        'SyncEngine.maybeRunFirstSignInPull: skipped, not authenticated',
+      );
+      return FirstSignInResult.pullFailed;
+    }
 
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_hasEverSignedInPrefsKey) == true) {
-      // Normal subsequent sign-in. Local data stays put; the outbox
-      // drain handles any pending writes the usual way.
-      return;
+      AppLogger.network(
+        'SyncEngine.maybeRunFirstSignInPull: flag already set, no-op',
+      );
+      return FirstSignInResult.alreadyDone;
     }
 
-    if (kDebugMode) {
-      AppLogger.network('SyncEngine: first-sign-in flow for $userId');
+    AppLogger.network(
+      'SyncEngine.maybeRunFirstSignInPull: starting for $userId '
+      '(isNewUser=$isNewUser)',
+    );
+
+    if (isNewUser) {
+      // Backend just created the user — no cloud data exists.
+      // Leave local alone (user's pre-signin play is preserved
+      // and will sync up via the outbox drain). Set the flag.
+      // Emit `welcoming` so the global overlay shows a setup modal
+      // briefly — without this, brand-new users see zero feedback
+      // during sign-in and assume the auth flow is broken.
+      _emitFirstSignInState(FirstSignInState.welcoming);
+      AppLogger.network(
+        'SyncEngine: brand-new user (no cloud data to restore), '
+        'showing welcome modal for 1.5s',
+      );
+      await Future.delayed(const Duration(milliseconds: 1500));
+      await prefs.setBool(_hasEverSignedInPrefsKey, true);
+      _emitFirstSignInState(FirstSignInState.done);
+      return FirstSignInResult.brandNew;
+    }
+
+    // Returning user — must successfully pull (or confirm null
+    // snapshot from the backend) before we set the flag.
+    // Track the pulling-state start time so we can hold the modal
+    // visible for a minimum duration (the actual HTTP call often
+    // completes faster than the user's eye can register).
+    final pullingStart = DateTime.now();
+    _emitFirstSignInState(FirstSignInState.pulling);
+    if (!_connectivity.isOnline) {
+      AppLogger.warning(
+        'SyncEngine: returning user but offline — will retry next launch',
+      );
+      await _ensureMinModalTime(pullingStart);
+      _emitFirstSignInState(FirstSignInState.failed);
+      return FirstSignInResult.pullFailed;
     }
 
     Map<String, dynamic>? snapshot;
     try {
+      AppLogger.network('SyncEngine: GET /sync/pull …');
       snapshot = await _api.pullSyncSnapshot();
+      if (snapshot == null) {
+        AppLogger.warning(
+          'SyncEngine: pull returned null — backend has no data for '
+          'user $userId. (Either previous syncs never landed OR the '
+          'endpoint returned HTTP non-2xx. Check backend logs + DB.)',
+        );
+      } else {
+        AppLogger.network(
+          'SyncEngine: pull returned snapshot with sections '
+          '${snapshot.keys.toList()}',
+        );
+        // Dump per-section summary so the user can see what's actually
+        // populated vs missing.
+        for (final entry in snapshot.entries) {
+          final v = entry.value;
+          final summary = v == null
+              ? 'null'
+              : v is List
+                  ? '${v.length} item(s)'
+                  : v is Map
+                      ? '${v.length} field(s)'
+                      : v.toString();
+          AppLogger.network('  • ${entry.key}: $summary');
+        }
+      }
     } catch (e) {
-      // Hard error from the network layer (timeout, DNS, …). Bail
-      // without setting the flag so the next launch retries.
-      AppLogger.error('SyncEngine: pull threw, deferring first-sign-in', e);
-      return;
+      AppLogger.error('SyncEngine: pull threw, will retry next launch', e);
+      _emitFirstSignInState(FirstSignInState.failed);
+      return FirstSignInResult.pullFailed;
     }
 
     if (snapshot == null) {
-      // Backend has no data for this user OR the endpoint returned
-      // null. Treat as "fresh user" — leave local alone (the user's
-      // pre-signin play is preserved) and let the outbox drain push
-      // it up. Flag stays set to true going forward.
-      await prefs.setBool(_hasEverSignedInPrefsKey, true);
-      if (kDebugMode) {
-        AppLogger.network('SyncEngine: fresh-user path, preserving local');
-      }
-      return;
+      // Returning user but backend has no data for them. Could be:
+      //   (a) Their previous syncs never actually landed.
+      //   (b) Transient null parse from the API.
+      // Either way: don't set the flag, retry next launch. If it
+      // really is (a), the outbox drain on this session will seed
+      // cloud, and on the next launch the pull will succeed.
+      AppLogger.warning(
+        'SyncEngine: returning user but pull returned null. '
+        "Flag NOT set — will retry next launch. Local data preserved.",
+      );
+      await _ensureMinModalTime(pullingStart);
+      _emitFirstSignInState(FirstSignInState.failed);
+      return FirstSignInResult.pullFailed;
     }
 
-    // Cloud has data → cloud wins. Wipe local + apply snapshot in a
-    // single transaction and drop the outbox so we don't echo the
-    // pull straight back as a push.
+    // Cloud has data → apply each non-null section to local. We do
+    // NOT clearAllData() — the backend auto-creates a
+    // UserPremiumContent row for every authenticated user, so every
+    // returning user's snapshot is non-null even before any
+    // gameplay sync has landed. A blanket wipe-and-replace would
+    // nuke stats/coins/achievements/etc. that were never in the
+    // snapshot, leaving the user with zeros.
+    //
+    // The DAO apply helpers use insertOnConflictUpdate semantics, so
+    // each section that IS in the snapshot replaces the matching
+    // local row; sections that aren't in the snapshot leave local
+    // alone. This is the right "cloud-wins-per-section" behaviour
+    // for the offline-first build.
+    _emitFirstSignInState(FirstSignInState.applying);
     try {
-      await _db!.clearAllData();
       await _applyCloudSnapshot(snapshot);
       await _syncDao!.clearSyncQueue();
       await prefs.setBool(_hasEverSignedInPrefsKey, true);
-      if (kDebugMode) {
-        AppLogger.network('SyncEngine: first-sign-in restore complete');
-      }
+      await _ensureMinModalTime(pullingStart);
+      // Show "Restore complete" briefly before dismissing.
+      _emitFirstSignInState(FirstSignInState.restored);
+      AppLogger.network(
+        'SyncEngine: first-sign-in restore complete '
+        '(sections: ${snapshot.keys.toList()})',
+      );
+      await Future.delayed(const Duration(milliseconds: 800));
+      _emitFirstSignInState(FirstSignInState.done);
+      return FirstSignInResult.restored;
     } catch (e) {
       AppLogger.error('SyncEngine: snapshot apply failed', e);
       // Don't set the flag — next launch retries the whole flow.
+      await _ensureMinModalTime(pullingStart);
+      _emitFirstSignInState(FirstSignInState.failed);
+      return FirstSignInResult.pullFailed;
+    }
+  }
+
+  /// Hold the modal visible for a perceptible minimum so the user
+  /// gets meaningful feedback even when the pull / apply completes
+  /// in tens of milliseconds. Without this, the overlay flashes
+  /// invisibly and the user can't tell the flow ran at all.
+  Future<void> _ensureMinModalTime(DateTime startedAt) async {
+    const minVisible = Duration(milliseconds: 1500);
+    final elapsed = DateTime.now().difference(startedAt);
+    if (elapsed < minVisible) {
+      await Future.delayed(minVisible - elapsed);
     }
   }
 
@@ -223,13 +408,17 @@ class SyncEngine {
         for (final item in items) {
           await _syncDao!.removeSyncItem(item.id);
         }
-        if (kDebugMode) {
-          AppLogger.network('SyncEngine: synced $dataType x${items.length}');
-        }
+        AppLogger.network(
+          'SyncEngine: drained $dataType x${items.length} OK',
+        );
         break;
 
       case _DispatchResult.notReady:
         // Leave items pending; will retry on next drain.
+        AppLogger.warning(
+          'SyncEngine: $dataType x${items.length} drain returned null — '
+          'will retry. Check backend logs for the failed POST.',
+        );
         break;
 
       case _DispatchResult.failed:
@@ -581,20 +770,63 @@ class SyncEngine {
       }
 
       // ----- achievements -----
+      // Backend doesn't echo name/description because the catalog is
+      // client-seeded. If a local row already exists (post-seed) we leave
+      // name/description as Value.absent() to preserve them. If the row
+      // doesn't exist yet (reinstall — snapshot apply can race the
+      // AchievementService seed running in parallel on the loading
+      // screen), we look up the metadata from the local default
+      // catalog so the insert satisfies the not-null columns.
       final achievements = snapshot['achievements'];
       if (achievements is List) {
+        final defaultsById = {
+          for (final a in ach_model.Achievement.getDefaultAchievements())
+            a.id: a,
+        };
         for (final raw in achievements) {
           if (raw is! Map<String, dynamic>) continue;
           final id = raw['id'] as String?;
           if (id == null) continue;
+
+          final existing = await _gameDao!.getAchievementById(id);
+          final ach_model.Achievement? defaultEntry = defaultsById[id];
+
+          Value<String> nameValue = const Value.absent();
+          Value<String> descriptionValue = const Value.absent();
+          Value<String> categoryValue = const Value.absent();
+          Value<int> rewardCoinsValue = const Value.absent();
+          Value<String> iconNameValue = const Value.absent();
+          Value<bool> isSecretValue = const Value.absent();
+
+          if (existing == null) {
+            // Row doesn't exist locally — fill required columns from the
+            // local default catalog. If a server-side achievement id has
+            // no local default (shouldn't happen but defend), skip it
+            // rather than crash the whole snapshot apply.
+            if (defaultEntry == null) {
+              AppLogger.network(
+                'SyncEngine: skipping unknown achievement "$id" — '
+                'no local default catalog entry',
+              );
+              continue;
+            }
+            nameValue = Value(defaultEntry.title);
+            descriptionValue = Value(defaultEntry.description);
+            categoryValue = Value(defaultEntry.type.name);
+            rewardCoinsValue = Value(defaultEntry.coinReward);
+            iconNameValue = Value(defaultEntry.icon.codePoint.toString());
+            isSecretValue = const Value(false);
+          }
+
           await _gameDao!.upsertAchievement(
             AchievementsCompanion(
               id: Value(id),
-              // Backend doesn't echo name/description because the
-              // catalog is client-seeded — leave them at whatever the
-              // local seed already wrote.
-              name: const Value.absent(),
-              description: const Value.absent(),
+              name: nameValue,
+              description: descriptionValue,
+              category: categoryValue,
+              rewardCoins: rewardCoinsValue,
+              iconName: iconNameValue,
+              isSecret: isSecretValue,
               currentProgress: Value(raw['current_progress'] as int? ?? 0),
               targetProgress: Value(raw['target_progress'] as int? ?? 1),
               isUnlocked: Value(raw['is_unlocked'] as bool? ?? false),
