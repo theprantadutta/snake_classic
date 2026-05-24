@@ -348,10 +348,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: _buildQuickActionButton(
                     context,
-                    'Friends',
-                    Icons.people_rounded,
+                    'Replays',
+                    Icons.video_library_rounded,
                     Colors.blue,
-                    () => _navigateToFriends(context),
+                    () => _navigateToReplays(context),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1226,10 +1226,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _navigateToStatistics(BuildContext context) {
     context.push(AppRoutes.statistics);
-  }
-
-  void _navigateToFriends(BuildContext context) {
-    context.push(AppRoutes.friends);
   }
 
   void _navigateToAchievements(BuildContext context) {

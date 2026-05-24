@@ -14,9 +14,7 @@ import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
-import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
-import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -171,8 +169,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
-  /// Check and show daily bonus popup if available
-  /// Uses offline-first approach - tries API first, falls back to local state
+  /// Check and show daily bonus popup if available.
+  /// Offline-first: reads CoinsCubit's local state. No network call.
   Future<void> _checkDailyBonus() async {
     if (_dailyBonusChecked) return;
     _dailyBonusChecked = true;
@@ -186,45 +184,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     try {
       DailyBonusStatus? status;
 
-      // Try API first
-      try {
-        final apiService = ApiService();
-        final response = await apiService.getDailyBonusStatus();
-        if (response != null) {
-          status = DailyBonusStatus.fromJson(response);
-        }
-      } catch (e) {
-        AppLogger.warning(
-          'API daily bonus check failed, using local state: $e',
-        );
-      }
-
-      // Fall back to local CoinsCubit state if API failed
-      if (status == null && mounted) {
-        final coinsCubit = context.read<CoinsCubit>();
-        if (coinsCubit.state.canCollectDailyBonus) {
-          final localBonus = coinsCubit.state.availableDailyBonus;
-          if (localBonus != null) {
-            status = DailyBonusStatus(
-              canClaim: true,
-              currentStreak: localBonus.day,
-              todayReward: DailyBonusReward(
-                day: localBonus.day,
-                coins: localBonus.coins,
-                bonusItem: localBonus.bonusItem,
-              ),
-              weekRewards: coinsCubit.state.dailyBonuses
-                  .map(
-                    (b) => DailyBonusReward(
-                      day: b.day,
-                      coins: b.coins,
-                      bonusItem: b.bonusItem,
-                      claimed: b.isCollected,
-                    ),
-                  )
-                  .toList(),
-            );
-          }
+      if (coinsCubit.state.canCollectDailyBonus) {
+        final localBonus = coinsCubit.state.availableDailyBonus;
+        if (localBonus != null) {
+          status = DailyBonusStatus(
+            canClaim: true,
+            currentStreak: localBonus.day,
+            todayReward: DailyBonusReward(
+              day: localBonus.day,
+              coins: localBonus.coins,
+              bonusItem: localBonus.bonusItem,
+            ),
+            weekRewards: coinsCubit.state.dailyBonuses
+                .map(
+                  (b) => DailyBonusReward(
+                    day: b.day,
+                    coins: b.coins,
+                    bonusItem: b.bonusItem,
+                    claimed: b.isCollected,
+                  ),
+                )
+                .toList(),
+          );
         }
       }
 
@@ -237,21 +218,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         theme: theme,
         status: status,
         onClaim: () async {
-          // Offline-first: Give coins immediately via CoinsCubit
           if (mounted) {
             await context.read<CoinsCubit>().collectDailyBonus();
           }
-
           getIt<AnalyticsFacade>().trackDailyBonusCollected();
-
-          // Queue the API call for background sync (fire and forget)
-          DataSyncService().queueSync('daily_bonus_claim', {
-            'day': status!.currentStreak,
-            'coins': status.todayReward?.coins ?? 0,
-            'claimed_at': DateTime.now().toIso8601String(),
-          }, priority: SyncPriority.high);
-
-          return true; // Always return true for instant feedback
+          return true;
         },
       );
     } catch (e) {
@@ -1150,65 +1121,75 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             onTap: () => context.push(AppRoutes.statistics),
           ),
 
-          // Center: High Score display
+          // Center: High Score display. Wrapped in FittedBox so a
+          // marginal vertical squeeze (Row + spacer + score Text can
+          // exceed the parent's 61.2px slot by sub-pixel amounts on
+          // some screens) scales the whole stack down instead of
+          // tripping a RenderFlex overflow.
           Expanded(
             child: GestureDetector(
               onTap: () => context.push(AppRoutes.statistics),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.emoji_events,
-                        color: Colors.amber,
-                        size: isSmallScreen ? 18 : 22,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'HIGH SCORE',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 10 : 12,
-                          fontWeight: FontWeight.w600,
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                          letterSpacing: 1.5,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.emoji_events,
+                          color: Colors.amber,
+                          size: isSmallScreen ? 18 : 22,
                         ),
-                      ),
-                      if (hasSync) ...[
                         const SizedBox(width: 6),
-                        SyncStatusIndicator(size: isSmallScreen ? 14 : 16),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$highScore',
-                    style: TextStyle(
-                      fontSize: isSmallScreen ? 28 : 34,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.amber,
-                      height: 1.0,
-                      shadows: [
-                        Shadow(
-                          color: Colors.amber.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                        Text(
+                          'HIGH SCORE',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 10 : 12,
+                            fontWeight: FontWeight.w600,
+                            color: theme.accentColor.withValues(alpha: 0.7),
+                            letterSpacing: 1.5,
+                          ),
                         ),
+                        if (hasSync) ...[
+                          const SizedBox(width: 6),
+                          SyncStatusIndicator(size: isSmallScreen ? 14 : 16),
+                        ],
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      '$highScore',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 28 : 34,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.amber,
+                        height: 1.0,
+                        shadows: [
+                          Shadow(
+                            color: Colors.amber.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
 
-          // Leaderboard button (right)
+          // Replays button (right). Replaces the leaderboard entry
+          // point — online leaderboards are disabled in the offline-first
+          // build; the local replay history is the closest analog.
           _buildCircularNavButton(
-            icon: Icons.leaderboard,
+            icon: Icons.video_library,
             color: Colors.amber,
             isSmallScreen: isSmallScreen,
-            onTap: () => context.push(AppRoutes.leaderboard),
+            onTap: () => context.push(AppRoutes.replays),
           ),
         ],
       ),
@@ -1382,10 +1363,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final isVerySmallScreen = screenHeight < 650;
     final isSmallScreen = screenHeight < 750;
     // Note: isMediumScreen not needed in bottom navigation
+    // Offline-first build: BOARD (leaderboard), EVENTS (tournaments),
+    // and FRIENDS are removed from this grid because the backing API
+    // is unreliable. The screens still exist behind their routes for
+    // a future revive — only the entry points are gone. REPLAYS takes
+    // a slot so the grid keeps a balanced 3+3 layout.
     final navigationItems = [
-      _NavItem(Icons.leaderboard, 'BOARD', Colors.amber, () {
-        context.push(AppRoutes.leaderboard);
-      }),
       _NavItem(
         Icons.calendar_today,
         'DAILY',
@@ -1396,23 +1379,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         badge: _getDailyChallengesBadge(),
         widgetKey: HomeWalkthrough.dailyChallengesKey,
       ),
-      _NavItem(
-        Icons.emoji_events,
-        'EVENTS',
-        Colors.purple,
-        () {
-          context.push(AppRoutes.tournaments);
-        },
-        widgetKey: HomeWalkthrough.eventsKey,
-      ),
       _NavItem(Icons.timeline, 'BATTLE', Colors.deepPurple, () {
         context.push(AppRoutes.battlePass);
       }),
-      _NavItem(Icons.people, 'FRIENDS', Colors.blue, () {
-        context.push(AppRoutes.friends);
-      }),
       _NavItem(Icons.analytics, 'STATS', Colors.teal, () {
         context.push(AppRoutes.statistics);
+      }),
+      _NavItem(Icons.video_library, 'REPLAYS', Colors.amber, () {
+        context.push(AppRoutes.replays);
       }),
       _NavItem(
         Icons.palette,
@@ -1430,10 +1404,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     return Column(
       children: [
-        // First row - 4 items
+        // First row - 3 items
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: navigationItems.take(4).toList().asMap().entries.map((
+          children: navigationItems.take(3).toList().asMap().entries.map((
             entry,
           ) {
             final index = entry.key;
@@ -1462,17 +1436,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               : 16,
         ),
 
-        // Second row - 4 items
+        // Second row - 3 items
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: navigationItems
-              .skip(4)
-              .take(4)
+              .skip(3)
+              .take(3)
               .toList()
               .asMap()
               .entries
               .map((entry) {
-                final index = entry.key + 4; // Adjust index for animation delay
+                final index = entry.key + 3;
                 final item = entry.value;
 
                 return _buildNavButton(

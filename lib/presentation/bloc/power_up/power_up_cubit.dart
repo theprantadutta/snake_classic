@@ -1,16 +1,22 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/models/power_up.dart';
-import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/models/premium_power_up.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 /// Pre-game power-up inventory state. Keys are snake_case identifiers
-/// matching the JSON wire format (the backend ASP.NET pipeline applies
-/// SnakeCaseLower to outgoing dictionary keys). The `armed` field holds
-/// the inventory key the user has chosen to pre-load for their next
-/// game — consumed automatically when GameCubit.startGame fires.
+/// matching the legacy backend wire format (kept stable so existing
+/// arm/consume logic in GameCubit continues to work). The `armed`
+/// field holds the inventory key the user has chosen to pre-load
+/// for their next game — consumed automatically when
+/// GameCubit.startGame fires.
 class PowerUpState extends Equatable {
   final Map<String, int> inventory;
   final String? armed;
@@ -43,26 +49,30 @@ class PowerUpState extends Equatable {
   List<Object?> get props => [inventory, armed, loading];
 }
 
+/// Offline-first power-up inventory cubit. Persists inventory as a
+/// JSON map in SharedPreferences; coin purchases go through
+/// [CoinsCubit.spendCoins] so the existing coin-economy plumbing
+/// (balance, transactions, animations) keeps working unchanged.
+///
+/// Bundle composition is hardcoded in [PowerUpBundle.availableBundles]
+/// — the catalog lives in the app, not on a backend.
 class PowerUpCubit extends Cubit<PowerUpState> {
-  final ApiService _api;
+  static const String _inventoryPrefsKey = 'power_up_inventory_v1';
 
-  PowerUpCubit({ApiService? api})
-      : _api = api ?? ApiService(),
-        super(const PowerUpState());
+  PowerUpCubit() : super(const PowerUpState());
 
-  /// Pull the latest inventory from the backend. Called on app start and
-  /// after every mutation so multiple devices stay in sync.
   Future<void> loadInventory() async {
-    if (!_api.isAuthenticated) return;
     emit(state.copyWith(loading: true));
     try {
-      final data = await _api.getPowerUpInventory();
-      if (data == null) {
-        emit(state.copyWith(loading: false));
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_inventoryPrefsKey);
+      if (raw == null || raw.isEmpty) {
+        emit(state.copyWith(inventory: const {}, loading: false));
         return;
       }
+      final decoded = jsonDecode(raw);
       emit(PowerUpState(
-        inventory: _parseInventory(data['inventory']),
+        inventory: _parseInventory(decoded),
         loading: false,
       ));
     } catch (e) {
@@ -71,70 +81,71 @@ class PowerUpCubit extends Cubit<PowerUpState> {
     }
   }
 
-  /// Buy one use of a power-up using coins. The backend authoritatively
-  /// validates the cost and atomically debits the user's coin balance;
-  /// on success we mirror the returned inventory locally and return the
-  /// updated coin balance so the caller can refresh CoinsCubit.
-  /// Returns null on failure (caller shows an error snackbar).
+  /// Buy one use of a basic power-up. Local-only: spends coins via
+  /// [CoinsCubit] and bumps the inventory map by 1. Returns the new
+  /// coin balance on success or null if the user couldn't afford it.
   Future<int?> purchaseWithCoins(String powerUpType, int coinCost) async {
-    if (!_api.isAuthenticated) return null;
-    try {
-      final data = await _api.purchasePowerUp(powerUpType, coinCost);
-      if (data == null) return null;
-      emit(state.copyWith(
-        inventory: _parseInventory(data['inventory']),
-      ));
-      return data['coin_balance'] as int?;
-    } catch (e) {
-      AppLogger.error('Failed to purchase power-up', e);
-      return null;
-    }
+    final coins = GetIt.I<CoinsCubit>();
+    final ok = await coins.spendCoins(
+      coinCost,
+      CoinSpendingCategory.powerUps,
+      itemName: powerUpType,
+    );
+    if (!ok) return null;
+    await _grantToInventory({powerUpType: 1});
+    return coins.state.balance.total;
   }
 
-  /// Spend coins on a power-up bundle. Server-authoritative — price and
-  /// contents are looked up in ProductCatalog.PowerUpBundles on the backend
-  /// so a tampered client can't request arbitrary bundles. Returns the
-  /// updated coin balance, or null on failure.
+  /// Spend coins on a power-up bundle. Bundle contents are looked up
+  /// from [PowerUpBundle.availableBundles] — no network. Returns the
+  /// new coin balance, or null if the bundle was unknown or the user
+  /// couldn't afford it.
   Future<int?> purchaseBundleWithCoins(String bundleId) async {
-    if (!_api.isAuthenticated) return null;
-    try {
-      final data = await _api.purchasePowerUpBundle(bundleId);
-      if (data == null) return null;
-      emit(state.copyWith(
-        inventory: _parseInventory(data['inventory']),
-      ));
-      return data['coin_balance'] as int?;
-    } catch (e) {
-      AppLogger.error('Failed to purchase power-up bundle', e);
+    final bundle = PowerUpBundle.availableBundles
+        .where((b) => b.id == bundleId)
+        .cast<PowerUpBundle?>()
+        .firstWhere((_) => true, orElse: () => null);
+    if (bundle == null) {
+      AppLogger.warning('Unknown power-up bundle: $bundleId');
       return null;
     }
-  }
 
-  /// Consume one use of a power-up. Called by the pre-game activation
-  /// flow at the moment the power-up activates in-game. Also clears the
-  /// armed slot — once a power-up is used the user must re-arm if they
-  /// want another one on their next game (matches the "single-use"
-  /// expectation: you pay to use, you don't auto-rearm).
-  Future<bool> consume(String powerUpType) async {
-    if (!_api.isAuthenticated) return false;
-    if (state.countFor(powerUpType) <= 0) return false;
-    try {
-      final data = await _api.consumePowerUp(powerUpType);
-      if (data == null) return false;
-      emit(state.copyWith(
-        inventory: _parseInventory(data['inventory']),
-        clearArmed: true,
-      ));
-      return true;
-    } catch (e) {
-      AppLogger.error('Failed to consume power-up', e);
-      return false;
+    final coins = GetIt.I<CoinsCubit>();
+    final ok = await coins.spendCoins(
+      bundle.bundlePrice.toInt(),
+      CoinSpendingCategory.powerUps,
+      itemName: bundle.name,
+      metadata: {'bundleId': bundleId},
+    );
+    if (!ok) return null;
+
+    final grants = <String, int>{};
+    for (final premium in bundle.powerUps) {
+      final key = _inventoryKeyForPremium(premium);
+      grants[key] = (grants[key] ?? 0) + 1;
     }
+    await _grantToInventory(grants);
+    return coins.state.balance.total;
   }
 
-  /// Arm a power-up for the next game. Validates that the user has at
-  /// least one in inventory — UI should already gate this, but defensive
-  /// to prevent state corruption.
+  /// Decrement one use of a power-up. Called by the pre-game
+  /// activation flow at the moment the power-up activates in-game.
+  /// Also clears the armed slot — once a power-up is used the user
+  /// must re-arm if they want another one on their next game.
+  Future<bool> consume(String powerUpType) async {
+    if (state.countFor(powerUpType) <= 0) return false;
+    final next = Map<String, int>.from(state.inventory);
+    final remaining = (next[powerUpType] ?? 0) - 1;
+    if (remaining <= 0) {
+      next.remove(powerUpType);
+    } else {
+      next[powerUpType] = remaining;
+    }
+    emit(state.copyWith(inventory: next, clearArmed: true));
+    await _persistInventory(next);
+    return true;
+  }
+
   void arm(String powerUpType) {
     if (state.countFor(powerUpType) <= 0) {
       AppLogger.warning('Attempted to arm power-up not in inventory: $powerUpType');
@@ -144,16 +155,15 @@ class PowerUpCubit extends Cubit<PowerUpState> {
     emit(state.copyWith(armed: powerUpType));
   }
 
-  /// Clear the armed slot without consuming inventory. Called by the
-  /// loadout sheet "Unarm" action.
   void unarm() {
     if (state.armed == null) return;
     emit(state.copyWith(clearArmed: true));
   }
 
   /// Map the snake_case inventory key to the gameplay PowerUpType enum.
-  /// Returns null for unknown keys so a corrupted server response or a
-  /// future power-up type doesn't crash the engine.
+  /// Returns null for keys that aren't part of the basic-power-up set
+  /// (e.g. premium-bundle items live in inventory but have no in-game
+  /// trigger yet); callers should treat null as "ignore this key".
   static PowerUpType? typeFromInventoryKey(String key) {
     switch (key) {
       case 'speed_boost':
@@ -166,6 +176,45 @@ class PowerUpCubit extends Cubit<PowerUpState> {
         return PowerUpType.slowMotion;
       default:
         return null;
+    }
+  }
+
+  /// Translate a premium power-up enum value to the inventory key the
+  /// rest of the app uses. Mega-variants fold back into their basic
+  /// counterparts so existing in-game activation handles them; the
+  /// truly exclusive types use their enum name verbatim and are
+  /// inert until gameplay logic is wired up.
+  static String _inventoryKeyForPremium(PremiumPowerUpType type) {
+    switch (type) {
+      case PremiumPowerUpType.megaSpeedBoost:
+        return 'speed_boost';
+      case PremiumPowerUpType.megaInvincibility:
+        return 'invincibility';
+      case PremiumPowerUpType.megaScoreMultiplier:
+        return 'score_multiplier';
+      case PremiumPowerUpType.megaSlowMotion:
+        return 'slow_motion';
+      default:
+        return type.name;
+    }
+  }
+
+  Future<void> _grantToInventory(Map<String, int> grants) async {
+    if (grants.isEmpty) return;
+    final next = Map<String, int>.from(state.inventory);
+    grants.forEach((key, delta) {
+      next[key] = (next[key] ?? 0) + delta;
+    });
+    emit(state.copyWith(inventory: next));
+    await _persistInventory(next);
+  }
+
+  Future<void> _persistInventory(Map<String, int> inventory) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_inventoryPrefsKey, jsonEncode(inventory));
+    } catch (e) {
+      AppLogger.error('Failed to persist power-up inventory', e);
     }
   }
 

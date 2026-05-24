@@ -356,111 +356,19 @@ class DataSyncService extends ChangeNotifier {
           final result = await _apiService.updateProfile(item.data);
           return result != null;
 
-        case 'score':
-          // Parse playedAt timestamp if present
-          DateTime? playedAt;
-          if (item.data['playedAt'] != null) {
-            playedAt = DateTime.tryParse(item.data['playedAt']);
-          }
-
-          final result = await _apiService.submitScore(
-            score: item.data['score'] ?? 0,
-            gameDuration: item.data['gameDuration'] ?? 0,
-            foodsEaten: item.data['foodsEaten'] ?? 0,
-            gameMode: item.data['gameMode'] ?? 'classic',
-            difficulty: item.data['difficulty'] ?? 'normal',
-            playedAt: playedAt,
-            idempotencyKey: item.data['idempotencyKey'],
-          );
-          return result != null;
-
         case 'preferences':
           final result = await _apiService.updateProfile({
             'preferences': item.data,
           });
           return result != null;
 
-        case 'statistics':
-          final result = await _apiService.updateProfile({
-            'statistics': item.data,
-          });
-          return result != null;
-
-        case 'achievements':
-          // Achievements are synced individually
-          return true;
-
-        case 'daily_bonus_claim':
-          // Sync daily bonus claim with backend
-          // Note: If bonus was already claimed (alreadyClaimed: true), treat as success
-          // This is an idempotent operation - we don't want to retry if already claimed
-          final result = await _apiService.claimDailyBonus();
-          if (result == null) return false;
-          // Success if API returned success OR if bonus was already claimed
-          return result['success'] == true || result['alreadyClaimed'] == true;
-
-        case 'tournament_score':
-          // Submit tournament score to backend. Forward the idempotency
-          // key so a retried sync replays cleanly on the server side
-          // instead of double-incrementing GamesPlayed.
-          final tournamentResult = await _apiService.submitTournamentScore(
-            tournamentId: item.data['tournamentId'],
-            score: item.data['score'] ?? 0,
-            gameDuration: item.data['gameDuration'] ?? 0,
-            foodsEaten: item.data['foodsEaten'] ?? 0,
-            idempotencyKey: item.data['idempotencyKey'] as String?,
-          );
-          return tournamentResult != null &&
-              tournamentResult['success'] == true;
-
-        case 'battle_pass_claim':
-          // Claim battle pass reward on backend
-          final claimResult = await _apiService.claimBattlePassReward(
-            level: item.data['level'] ?? 0,
-            tier: item.data['tier'] ?? 'free',
-          );
-          return claimResult != null && claimResult['success'] == true;
-
-        case 'friend_request_send':
-          // Send friend request
-          final sendResult = await _apiService.sendFriendRequest(
-            userId: item.data['userId'],
-          );
-          return sendResult != null && sendResult['success'] == true;
-
-        case 'friend_request_accept':
-          // Accept friend request
-          final acceptResult = await _apiService.acceptFriendRequest(
-            item.data['requestId'],
-          );
-          return acceptResult != null && acceptResult['success'] == true;
-
-        case 'friend_request_reject':
-          // Reject friend request
-          final rejectResult = await _apiService.rejectFriendRequest(
-            item.data['requestId'],
-          );
-          return rejectResult != null && rejectResult['success'] == true;
-
-        case 'friend_remove':
-          // Remove friend
-          final removeResult = await _apiService.removeFriend(
-            item.data['friendId'],
-          );
-          return removeResult != null && removeResult['success'] == true;
-
-        case 'challenge_claim':
-          // Claim daily challenge reward
-          final challengeId = item.data['challengeId'] as String;
-          return await _apiService.claimChallengeReward(challengeId) != null;
-
         case 'fcm_token_register':
           // Late-register the FCM token (queued when auth wasn't ready
           // at the time the token was obtained). Forwards the timezone
-          // offset too so the morning-reminder cron knows the user's
-          // local 9 AM.
+          // offset too so any push-notification flow we keep can land
+          // at the right local hour.
           final fcmToken = item.data['fcmToken'] as String?;
-          if (fcmToken == null || fcmToken.isEmpty) return true; // nothing to send
+          if (fcmToken == null || fcmToken.isEmpty) return true;
           return await _apiService.registerFcmToken(
             fcmToken: fcmToken,
             platform: (item.data['platform'] as String?) ?? 'flutter',
@@ -468,11 +376,12 @@ class DataSyncService extends ChangeNotifier {
           );
 
         default:
-          // Generic profile update
-          final result = await _apiService.updateProfile({
-            item.dataType: item.data,
-          });
-          return result != null;
+          // Every other sync type (score, achievements, daily bonus,
+          // tournament score, battle pass claim, friend actions,
+          // challenge claim, statistics, etc.) lost its backend
+          // endpoint in the offline-first refactor. Drop them
+          // silently — local state is already the source of truth.
+          return true;
       }
     } catch (e) {
       item.lastError = e.toString();
@@ -483,59 +392,12 @@ class DataSyncService extends ChangeNotifier {
     }
   }
 
-  /// Sync multiple scores in batch
+  /// No-op in the offline-first build — score submission lost its
+  /// backend endpoint. Any queued 'score' items are marked completed
+  /// immediately so they don't sit in the queue forever.
   Future<List<String>> _syncScoresBatch(List<SyncQueueItem> scoreItems) async {
     if (scoreItems.isEmpty) return [];
-
-    // Prepare batch payload
-    final scores = scoreItems.map((item) {
-      DateTime? playedAt;
-      if (item.data['playedAt'] != null) {
-        playedAt = DateTime.tryParse(item.data['playedAt']);
-      }
-
-      return {
-        'score': item.data['score'] ?? 0,
-        'game_duration_seconds': item.data['gameDuration'] ?? 0,
-        'foods_eaten': item.data['foodsEaten'] ?? 0,
-        'game_mode': item.data['gameMode'] ?? 'classic',
-        'difficulty': item.data['difficulty'] ?? 'normal',
-        if (playedAt != null) 'played_at': playedAt.toUtc().toIso8601String(),
-        if (item.data['idempotencyKey'] != null)
-          'idempotency_key': item.data['idempotencyKey'],
-      };
-    }).toList();
-
-    final result = await _apiService.submitScoresBatch(scores);
-
-    if (result == null) return [];
-
-    // Process batch results
-    final completedIds = <String>[];
-    final results = result['results'] as List<dynamic>?;
-
-    if (results != null) {
-      for (int i = 0; i < results.length && i < scoreItems.length; i++) {
-        final scoreResult = results[i] as Map<String, dynamic>;
-        final item = scoreItems[i];
-
-        if (scoreResult['success'] == true) {
-          item.status = SyncItemStatus.completed;
-          completedIds.add(item.id);
-
-          if (kDebugMode) {
-            final wasDup = scoreResult['was_duplicate'] == true;
-            print(
-              'Batch synced score: ${item.data['score']} ${wasDup ? '(duplicate)' : ''}',
-            );
-          }
-        } else {
-          item.lastError = scoreResult['error'] ?? 'Unknown error';
-        }
-      }
-    }
-
-    return completedIds;
+    return scoreItems.map((item) => item.id).toList();
   }
 
   /// Perform sync with retry logic

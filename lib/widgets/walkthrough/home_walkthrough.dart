@@ -11,8 +11,6 @@ class HomeWalkthrough {
   static final storeKey = GlobalKey();
   static final profileKey = GlobalKey();
   static final settingsKey = GlobalKey();
-  /// Tournaments nav item (EVENTS in the bottom nav).
-  static final eventsKey = GlobalKey();
   /// Cosmetics nav item (skins + trails).
   static final cosmeticsKey = GlobalKey();
 
@@ -68,19 +66,7 @@ class HomeWalkthrough {
         spotlightBorderRadius: 14,
       ),
 
-      // Step 5: Tournaments
-      WalkthroughStep(
-        id: 'home_events',
-        title: 'Tournaments',
-        message: "Compete in daily, weekly, and monthly tournaments. Each tournament locks a mode (Classic, Survival, PerfectGame, etc.) — your score lands on the leaderboard.",
-        targetKey: eventsKey,
-        position: TooltipPosition.above,
-        icon: Icons.emoji_events,
-        spotlightPadding: 6,
-        spotlightBorderRadius: 14,
-      ),
-
-      // Step 6: Cosmetics
+      // Step 5: Cosmetics
       WalkthroughStep(
         id: 'home_cosmetics',
         title: 'Skins & Trails',

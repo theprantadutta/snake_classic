@@ -38,6 +38,11 @@ class StorageService {
   /// Check if initialized
   bool get isInitialized => _database != null;
 
+  /// Direct DAO access for callers that need to write rows not covered
+  /// by the higher-level helpers above (e.g. daily-challenge claim
+  /// rows). Throws if accessed before [initialize].
+  GameDao get gameDao => _gameDao!;
+
   // ==================== High Score ====================
 
   Future<int> getHighScore() async {

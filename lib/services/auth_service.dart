@@ -307,24 +307,15 @@ class AuthService {
     }
   }
 
-  /// Submit score to backend (handles high score tracking automatically)
+  /// No-op in the offline-first build. Score persistence is handled
+  /// locally by GameCubit → StatisticsService → Drift; nothing is
+  /// posted to the backend anymore. Kept as a method so existing
+  /// callers (legacy game-over hooks) compile without change.
   Future<void> updateHighScore(
     int score, {
     int gameDuration = 0,
     int foodsEaten = 0,
-  }) async {
-    if (currentUser == null) return;
-
-    try {
-      await _apiService.submitScore(
-        score: score,
-        gameDuration: gameDuration,
-        foodsEaten: foodsEaten,
-      );
-    } catch (e) {
-      AppLogger.error('Error submitting score', e);
-    }
-  }
+  }) async {}
 
   // Username management methods
 

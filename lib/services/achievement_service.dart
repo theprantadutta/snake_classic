@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import 'package:snake_classic/models/achievement.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
-import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/offline_cache_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 
@@ -14,9 +16,9 @@ class AchievementService extends ChangeNotifier {
 
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
+  // ignore: unused_field
   final ConnectivityService _connectivityService = ConnectivityService();
   final OfflineCacheService _cacheService = OfflineCacheService();
-  final DataSyncService _syncService = DataSyncService();
 
   // Cache key
   static const String _achievementsKey = 'user_achievements';
@@ -144,86 +146,44 @@ class AchievementService extends ChangeNotifier {
     }
   }
 
+  /// Backend sync was removed in the offline-first refactor. The only
+  /// post-load work left is crediting any locally-unlocked achievement
+  /// whose coin reward hasn't been collected yet.
   Future<void> _syncWithBackend() async {
     try {
-      final response = await _apiService.getUserAchievements();
-
-      if (response != null && response['achievements'] != null) {
-        final backendAchievements = List<Map<String, dynamic>>.from(
-          response['achievements'],
-        );
-        _updateAchievementsFromBackend(backendAchievements);
-
-        // Cache the synced data
-        await _saveProgress();
-      }
-
-      // Sync any pending offline unlocks
-      await _syncPendingUnlocks();
-
-      // Claim XP + coin rewards for any unlocks the server confirmed but
-      // hasn't yet credited. The backend's ClaimAchievementRewardCommand
-      // increments user.coins and user.experience atomically.
       await _claimUnclaimedRewards();
     } catch (e) {
       if (kDebugMode) {
-        print('Error syncing achievements with backend: $e');
+        print('Error processing unclaimed achievement rewards: $e');
       }
     }
   }
 
-  /// POST /achievements/claim for every achievement that is server-unlocked
-  /// but not yet reward-claimed. Reconciles divergent local state instead
-  /// of looping forever: if the server says an achievement isn't actually
-  /// unlocked (or doesn't exist), we clear our local isUnlocked flag so
-  /// the next sync doesn't keep hammering 400s.
+  /// Credit the coin reward for every achievement that's unlocked but
+  /// not yet claimed. Local-only: marks `rewardClaimed: true` and
+  /// hands the coins to [CoinsCubit] so the existing transaction log
+  /// + animations fire.
   Future<void> _claimUnclaimedRewards() async {
-    if (!_connectivityService.isOnline || !_apiService.isAuthenticated) {
-      return;
-    }
-
     bool anyChanged = false;
+    final coinsCubit = GetIt.I.isRegistered<CoinsCubit>()
+        ? GetIt.I<CoinsCubit>()
+        : null;
+
     for (int i = 0; i < _achievements.length; i++) {
       final a = _achievements[i];
       if (!a.isUnlocked || a.rewardClaimed) continue;
 
-      final result = await _apiService.claimAchievementReward(a.id);
-      switch (result.outcome) {
-        case AchievementClaimOutcome.success:
-        case AchievementClaimOutcome.alreadyClaimed:
-          // Server granted the reward (or had already granted it earlier).
-          // Mark locally so we stop attempting on the next sync.
-          _achievements[i] = a.copyWith(rewardClaimed: true);
-          anyChanged = true;
-          break;
-        case AchievementClaimOutcome.notUnlocked:
-        case AchievementClaimOutcome.notFound:
-          // Server is authoritative — our local isUnlocked is a phantom.
-          // Reset isUnlocked + clear unlockedAt so this row stops being
-          // picked up by the claim loop. If the achievement is genuinely
-          // earnable, gameplay will trigger a fresh unlock through the
-          // normal path next time the criteria are met.
-          if (kDebugMode) {
-            print(
-              'Achievement ${a.id}: server reports ${result.outcome.name}; '
-              'clearing local unlock to stop retry loop',
-            );
-          }
-          // copyWith uses ?? so it can't clear unlockedAt back to null —
-          // not a problem because every downstream gate checks isUnlocked
-          // first. Stale unlockedAt is harmless when isUnlocked is false.
-          _achievements[i] = a.copyWith(
-            isUnlocked: false,
-            currentProgress: 0,
-            rewardClaimed: false,
-          );
-          _pendingUnlocks.remove(a.id);
-          anyChanged = true;
-          break;
-        case AchievementClaimOutcome.networkError:
-          // Transient — leave state untouched, will retry on the next sync.
-          break;
+      final reward = a.coinReward;
+      if (reward > 0 && coinsCubit != null) {
+        await coinsCubit.earnCoins(
+          CoinEarningSource.achievementUnlocked,
+          customAmount: reward,
+          itemName: a.title,
+        );
       }
+
+      _achievements[i] = a.copyWith(rewardClaimed: true);
+      anyChanged = true;
     }
 
     if (anyChanged) {
@@ -232,13 +192,7 @@ class AchievementService extends ChangeNotifier {
     }
   }
 
-  Future<void> _syncPendingUnlocks() async {
-    if (_pendingUnlocks.isEmpty || !_connectivityService.isOnline) return;
-
-    // Use the batch sync method which handles both online and fallback
-    await syncUnlockedAchievements();
-  }
-
+  // ignore: unused_element
   void _updateAchievementsFromBackend(
     List<Map<String, dynamic>> backendAchievements,
   ) {
@@ -484,47 +438,12 @@ class AchievementService extends ChangeNotifier {
 
     if (_pendingUnlocks.isEmpty) return;
 
-    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-      try {
-        final updates = <Map<String, dynamic>>[];
-        for (final achievementId in _pendingUnlocks) {
-          final achievement = getAchievementById(achievementId);
-          if (achievement != null) {
-            updates.add({
-              'achievementId': achievementId,
-              'progressIncrement': achievement.targetValue,
-            });
-          }
-        }
-
-        if (updates.isNotEmpty) {
-          final success = await _apiService.batchUpdateAchievementProgress(updates);
-          if (success) {
-            _pendingUnlocks.clear();
-            // Persist the cleared state so a crash after this point doesn't
-            // resurrect already-synced unlocks on next launch.
-            await _saveProgress();
-            return;
-          }
-        }
-      } catch (e) {
-        // Fall through to queue for later sync
-        if (kDebugMode) {
-          print('Batch achievement sync failed, queuing: $e');
-        }
-      }
-    }
-
-    // Offline or batch failed — queue each for later sync via DataSyncService
-    for (final achievementId in List<String>.from(_pendingUnlocks)) {
-      final achievement = getAchievementById(achievementId);
-      if (achievement != null) {
-        await _syncService.queueSync('achievement_$achievementId', {
-          'achievementId': achievementId,
-          'progress': achievement.targetValue,
-        }, priority: SyncPriority.high);
-      }
-    }
+    // Offline-first: there's no backend to push to. Clear the queue
+    // and persist so a crash doesn't resurrect already-handled unlocks
+    // on next launch. The reward credit itself runs through
+    // [_claimUnclaimedRewards] which is now coin-only.
+    _pendingUnlocks.clear();
+    await _saveProgress();
   }
 
   /// Returns true when the achievement's mode/difficulty filters (if any)

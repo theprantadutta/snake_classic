@@ -490,16 +490,6 @@ class _NoActiveSeasonScreen extends StatelessWidget {
                       const SizedBox(height: 10),
                       _InfoCard(
                         theme: theme,
-                        icon: Icons.flag_rounded,
-                        title: 'Weekly Quests',
-                        subtitle:
-                            "Fresh quests every Monday — they'll feed into "
-                            'the next Battle Pass as soon as it starts.',
-                        onTap: () => context.push(AppRoutes.weeklyQuests),
-                      ),
-                      const SizedBox(height: 10),
-                      _InfoCard(
-                        theme: theme,
                         icon: Icons.emoji_events,
                         title: 'Daily Challenges',
                         subtitle:
@@ -681,41 +671,11 @@ class _CompactHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // Row 2: action chips — Quests + season timer.
+          // Row 2: season timer chip. The Quests chip was removed
+          // with the offline-first refactor — weekly quests depend
+          // on the backend and aren't surfaced in this build.
           Row(
             children: [
-              InkWell(
-                onTap: () => context.push(AppRoutes.weeklyQuests),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: theme.accentColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.flag_rounded,
-                          color: theme.accentColor.withValues(alpha: 0.85),
-                          size: 14),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Quests',
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

@@ -6,24 +6,26 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
 
-/// API Service with JWT authentication for backend communication
+/// HTTP gateway to the backend. After the offline-first refactor this
+/// is a narrow surface: only auth (Firebase ↔ JWT exchange, profile,
+/// username) and purchase/premium (IAP receipt verification, premium
+/// content, equipped cosmetics). Everything else — leaderboards,
+/// tournaments, social, scores, achievements, daily challenges, weekly
+/// quests, daily bonus, multiplayer, power-ups, battle pass — has been
+/// removed from the network surface and now lives in Drift.
 class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // Token storage keys
   static const String _tokenKey = 'jwt_access_token';
   static const String _userIdKey = 'backend_user_id';
 
-  // Cached token
   String? _accessToken;
   String? _userId;
 
-  // Callback for unauthorized responses
   VoidCallback? onUnauthorized;
 
-  // Backend configuration
   static const String _prodFallbackUrl = 'https://snakeclassic.pranta.dev';
 
   static String get baseUrl {
@@ -41,20 +43,12 @@ class ApiService {
 
   static const Duration _timeout = Duration(seconds: 15);
 
-  /// Initialize the API service - load stored token
   Future<void> initialize() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       _accessToken = prefs.getString(_tokenKey);
       _userId = prefs.getString(_userIdKey);
       if (_accessToken != null) {
-        // If the stored token is already expired/expiring, clear it
-        // now so isAuthenticated reads false from the very first cubit
-        // check. Without this, every service-init that gates on
-        // isAuthenticated (AchievementService, BattlePassCubit, etc.)
-        // fires a call with the stale token, eats a 401, and floods
-        // the log before the real backend auth in _loadOrCreateUser
-        // refreshes the JWT.
         if (isTokenExpiredOrExpiring) {
           AppLogger.network('Stored JWT is expired — clearing on init');
           await clearToken();
@@ -67,33 +61,23 @@ class ApiService {
     }
   }
 
-  /// Check if user is authenticated with backend.
-  /// Strict: also requires the JWT to not be expired/expiring. Without the
-  /// expiry check, a stored-but-expired token (e.g. resuming after a long
-  /// idle) would have every sync call eat a 401 before learning the token
-  /// is dead. With the check, callers skip the call cleanly and wait for
-  /// _loadOrCreateUser to mint a fresh JWT.
+  /// True when a usable JWT is in memory. Strict: also requires the
+  /// JWT to not be expired/expiring, so callers don't fire requests
+  /// that are about to eat a 401.
   bool get isAuthenticated =>
       _accessToken != null && !isTokenExpiredOrExpiring;
 
-  /// Get current user ID from backend
   String? get currentUserId => _userId;
 
-  /// Get stored access token
   String? get accessToken => _accessToken;
 
-  /// Check if the JWT token is expired or about to expire (within 5 minutes).
-  /// Returns true if the token should be refreshed.
   bool get isTokenExpiredOrExpiring {
     if (_accessToken == null) return true;
     try {
-      // JWT format: header.payload.signature
       final parts = _accessToken!.split('.');
       if (parts.length != 3) return true;
 
-      // Decode the payload (base64url)
       String payload = parts[1];
-      // Add padding if needed
       switch (payload.length % 4) {
         case 2:
           payload += '==';
@@ -109,17 +93,14 @@ class ApiService {
       if (exp == null) return true;
 
       final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-      // Consider expired if within 5 minutes of expiry
       return DateTime.now().isAfter(
         expiry.subtract(const Duration(minutes: 5)),
       );
     } catch (e) {
-      // If we can't decode the token, treat as expired
       return true;
     }
   }
 
-  /// Store JWT token
   Future<void> _storeToken(String token, String userId) async {
     _accessToken = token;
     _userId = userId;
@@ -132,7 +113,6 @@ class ApiService {
     }
   }
 
-  /// Clear stored token
   Future<void> clearToken() async {
     _accessToken = null;
     _userId = null;
@@ -145,15 +125,11 @@ class ApiService {
     }
   }
 
-  /// Get authorization headers
   Map<String, String> get _authHeaders => {
     'Content-Type': 'application/json',
     if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
   };
 
-  /// Handle response - check for auth errors.
-  /// On 401, clears the token and invokes the [onUnauthorized] callback.
-  /// Callers that want automatic retry should use [_authenticatedRequest].
   Map<String, dynamic>? _handleResponse(http.Response response) {
     if (response.statusCode == 401) {
       AppLogger.error('Unauthorized - token may be expired');
@@ -180,7 +156,6 @@ class ApiService {
 
   // ==================== Authentication ====================
 
-  /// Authenticate with Firebase token
   Future<Map<String, dynamic>?> authenticateWithFirebase(
     String firebaseIdToken,
   ) async {
@@ -218,7 +193,6 @@ class ApiService {
     }
   }
 
-  /// Get current user info
   Future<Map<String, dynamic>?> getCurrentUser() async {
     try {
       final response = await http
@@ -232,7 +206,6 @@ class ApiService {
     }
   }
 
-  /// Logout from backend
   Future<bool> logout() async {
     try {
       await http
@@ -250,7 +223,6 @@ class ApiService {
 
   // ==================== Users ====================
 
-  /// Get user profile
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
       final response = await http
@@ -264,7 +236,6 @@ class ApiService {
     }
   }
 
-  /// Update current user profile
   Future<Map<String, dynamic>?> updateProfile(Map<String, dynamic> data) async {
     try {
       final response = await http
@@ -282,7 +253,6 @@ class ApiService {
     }
   }
 
-  /// Check username availability
   Future<Map<String, dynamic>?> checkUsername(String username) async {
     try {
       final response = await http
@@ -300,7 +270,6 @@ class ApiService {
     }
   }
 
-  /// Suggest available usernames based on desired username (server-side)
   Future<List<String>?> suggestUsernames(
     String desiredUsername, {
     int count = 5,
@@ -328,7 +297,6 @@ class ApiService {
     }
   }
 
-  /// Set/update username
   Future<Map<String, dynamic>?> setUsername(String username) async {
     try {
       final response = await http
@@ -346,776 +314,8 @@ class ApiService {
     }
   }
 
-  /// Search users
-  Future<List<Map<String, dynamic>>?> searchUsers(
-    String query, {
-    int limit = 20,
-  }) async {
-    try {
-      final encodedQuery = Uri.encodeQueryComponent(query);
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/users/search?query=$encodedQuery&limit=$limit'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      final data = _handleResponse(response);
-      if (data != null && data['users'] != null) {
-        return List<Map<String, dynamic>>.from(data['users']);
-      }
-      return null;
-    } catch (e) {
-      AppLogger.error('Error searching users', e);
-      return null;
-    }
-  }
-
-  /// Reset user statistics (scores, achievements, daily challenges)
-  Future<Map<String, dynamic>?> resetUserStatistics() async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/users/me/reset-statistics'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error resetting statistics', e);
-      return null;
-    }
-  }
-
-  // ==================== Scores ====================
-
-  /// Submit a score
-  Future<Map<String, dynamic>?> submitScore({
-    required int score,
-    int gameDuration = 0,
-    int foodsEaten = 0,
-    String gameMode = 'classic',
-    String difficulty = 'normal',
-    Map<String, dynamic>? gameData,
-    DateTime? playedAt,
-    String? idempotencyKey,
-  }) async {
-    try {
-      final body = <String, dynamic>{
-        'score': score,
-        'game_duration_seconds': gameDuration,
-        'foods_eaten': foodsEaten,
-        'game_mode': gameMode,
-        'difficulty': difficulty,
-        'game_data': gameData,
-      };
-
-      // Add offline-first fields if provided
-      if (playedAt != null) {
-        body['played_at'] = playedAt.toUtc().toIso8601String();
-      }
-      if (idempotencyKey != null) {
-        body['idempotency_key'] = idempotencyKey;
-      }
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/scores'),
-            headers: _authHeaders,
-            body: jsonEncode(body),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error submitting score', e);
-      return null;
-    }
-  }
-
-  /// Submit multiple scores in batch (for offline sync)
-  Future<Map<String, dynamic>?> submitScoresBatch(
-    List<Map<String, dynamic>> scores,
-  ) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/scores/batch'),
-            headers: _authHeaders,
-            body: jsonEncode({'scores': scores}),
-          )
-          .timeout(const Duration(seconds: 30)); // Longer timeout for batch
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error submitting scores batch', e);
-      return null;
-    }
-  }
-
-  /// Get user's scores
-  Future<List<Map<String, dynamic>>?> getUserScores({
-    String? gameMode,
-    int limit = 50,
-    int offset = 0,
-  }) async {
-    try {
-      String url = '$baseUrl/scores/me?limit=$limit&offset=$offset';
-      if (gameMode != null) url += '&game_mode=$gameMode';
-
-      final response = await http
-          .get(Uri.parse(url), headers: _authHeaders)
-          .timeout(_timeout);
-
-      final data = _handleResponse(response);
-      if (data != null && data['data'] is List) {
-        return List<Map<String, dynamic>>.from(data['data']);
-      }
-      return null;
-    } catch (e) {
-      AppLogger.error('Error getting user scores', e);
-      return null;
-    }
-  }
-
-  /// Get user's score stats
-  Future<Map<String, dynamic>?> getUserScoreStats() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/scores/me/stats'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting score stats', e);
-      return null;
-    }
-  }
-
-  // ==================== Leaderboard ====================
-
-  /// Get global leaderboard
-  Future<Map<String, dynamic>?> getGlobalLeaderboard({
-    String gameMode = 'classic',
-    String difficulty = 'normal',
-    int page = 1,
-    int pageSize = 50,
-  }) async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse(
-              '$baseUrl/leaderboard/global?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize',
-            ),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting global leaderboard', e);
-      return null;
-    }
-  }
-
-  /// Get weekly leaderboard
-  Future<Map<String, dynamic>?> getWeeklyLeaderboard({
-    String gameMode = 'classic',
-    String difficulty = 'normal',
-    int page = 1,
-    int pageSize = 50,
-  }) async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse(
-              '$baseUrl/leaderboard/weekly?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize',
-            ),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting weekly leaderboard', e);
-      return null;
-    }
-  }
-
-  /// Get daily leaderboard
-  Future<Map<String, dynamic>?> getDailyLeaderboard({
-    String gameMode = 'classic',
-    String difficulty = 'normal',
-    int page = 1,
-    int pageSize = 50,
-  }) async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse(
-              '$baseUrl/leaderboard/daily?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize',
-            ),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting daily leaderboard', e);
-      return null;
-    }
-  }
-
-  /// Get friends leaderboard
-  Future<Map<String, dynamic>?> getFriendsLeaderboard({
-    String gameMode = 'classic',
-    String difficulty = 'normal',
-    int page = 1,
-    int pageSize = 50,
-  }) async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse(
-              '$baseUrl/leaderboard/friends?game_mode=$gameMode&difficulty=$difficulty&page=$page&page_size=$pageSize',
-            ),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting friends leaderboard', e);
-      return null;
-    }
-  }
-
-  // ==================== Achievements ====================
-
-  /// Get all achievements
-  Future<List<Map<String, dynamic>>?> getAllAchievements() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/achievements'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      final data = _handleResponse(response);
-      if (data != null && data['data'] is List) {
-        return List<Map<String, dynamic>>.from(data['data']);
-      }
-      return null;
-    } catch (e) {
-      AppLogger.error('Error getting achievements', e);
-      return null;
-    }
-  }
-
-  /// Get user's achievements
-  Future<Map<String, dynamic>?> getUserAchievements() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/achievements/me'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting user achievements', e);
-      return null;
-    }
-  }
-
-  /// Claim the XP + coin reward for an unlocked achievement. Returns a
-  /// tagged result so the caller can react properly to each failure mode:
-  /// success → mark locally claimed; alreadyClaimed → same; notUnlocked or
-  /// notFound → reconcile local state (server is authoritative, stop
-  /// retrying); networkError → leave alone, next sync retries.
-  Future<AchievementClaimResult> claimAchievementReward(String achievementId) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/achievements/claim'),
-            headers: _authHeaders,
-            body: jsonEncode({'achievement_id': achievementId}),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        Map<String, dynamic> body = const {};
-        if (response.body.isNotEmpty) {
-          final decoded = jsonDecode(response.body);
-          if (decoded is Map) body = Map<String, dynamic>.from(decoded);
-        }
-        return AchievementClaimResult(
-          outcome: AchievementClaimOutcome.success,
-          xpAwarded: (body['xp_awarded'] ?? body['xpAwarded'] ?? 0) as int,
-          coinsAwarded: (body['coins_awarded'] ?? body['coinsAwarded'] ?? 0) as int,
-        );
-      }
-
-      if (response.statusCode == 401) {
-        clearToken();
-        onUnauthorized?.call();
-        return const AchievementClaimResult(
-          outcome: AchievementClaimOutcome.networkError,
-        );
-      }
-
-      // 400 / 404: parse server error message so we can dispatch correctly.
-      // Server returns {"error": "Achievement not unlocked"} etc.
-      String? serverError;
-      if (response.body.isNotEmpty) {
-        try {
-          final decoded = jsonDecode(response.body);
-          if (decoded is Map) {
-            serverError = decoded['error']?.toString();
-          }
-        } catch (_) {/* non-JSON body */}
-      }
-      if (serverError != null) {
-        final lower = serverError.toLowerCase();
-        if (lower.contains('already claimed')) {
-          return const AchievementClaimResult(
-            outcome: AchievementClaimOutcome.alreadyClaimed,
-          );
-        }
-        if (lower.contains('not unlocked')) {
-          return const AchievementClaimResult(
-            outcome: AchievementClaimOutcome.notUnlocked,
-          );
-        }
-        if (lower.contains('not found')) {
-          return const AchievementClaimResult(
-            outcome: AchievementClaimOutcome.notFound,
-          );
-        }
-      }
-      return const AchievementClaimResult(
-        outcome: AchievementClaimOutcome.networkError,
-      );
-    } catch (e) {
-      AppLogger.error('Error claiming achievement reward', e);
-      return const AchievementClaimResult(
-        outcome: AchievementClaimOutcome.networkError,
-      );
-    }
-  }
-
-  /// Update achievement progress
-  Future<Map<String, dynamic>?> updateAchievementProgress({
-    required String achievementId,
-    int progressIncrement = 1,
-  }) async {
-    // Validate: API requires progress_increment >= 1
-    if (progressIncrement < 1) {
-      AppLogger.warning(
-        'Skipping achievement update: progressIncrement must be >= 1, got $progressIncrement',
-      );
-      return null;
-    }
-
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/achievements/progress'),
-            headers: _authHeaders,
-            body: jsonEncode({
-              'achievement_id': achievementId,
-              'progress_increment': progressIncrement,
-            }),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error updating achievement progress', e);
-      return null;
-    }
-  }
-
-  /// Batch update achievement progress (single HTTP call for multiple achievements)
-  Future<bool> batchUpdateAchievementProgress(
-    List<Map<String, dynamic>> updates,
-  ) async {
-    if (updates.isEmpty) return true;
-
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/achievements/progress/batch'),
-            headers: _authHeaders,
-            body: jsonEncode({
-              'achievements': updates
-                  .map(
-                    (u) => {
-                      'achievement_id': u['achievementId'],
-                      'progress_increment': u['progressIncrement'],
-                    },
-                  )
-                  .toList(),
-            }),
-          )
-          .timeout(_timeout);
-
-      final result = _handleResponse(response);
-      return result != null;
-    } catch (e) {
-      AppLogger.error('Error batch updating achievement progress', e);
-      return false;
-    }
-  }
-
-  /// Batch update daily challenge progress (single HTTP call for multiple challenge types)
-  Future<Map<String, dynamic>?> batchUpdateChallengeProgress(
-    List<Map<String, dynamic>> updates,
-  ) async {
-    if (updates.isEmpty) return null;
-
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/dailychallenges/progress/batch'),
-            headers: _authHeaders,
-            body: jsonEncode({'updates': updates}),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error batch updating challenge progress', e);
-      return null;
-    }
-  }
-
-  // ==================== Social ====================
-
-  /// Get friends list
-  Future<Map<String, dynamic>?> getFriends() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/social/friends'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting friends', e);
-      return null;
-    }
-  }
-
-  /// Get pending friend requests
-  Future<Map<String, dynamic>?> getPendingRequests() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/social/requests'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting pending requests', e);
-      return null;
-    }
-  }
-
-  /// Send friend request
-  Future<Map<String, dynamic>?> sendFriendRequest({
-    String? username,
-    String? userId,
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/social/friends/request'),
-            headers: _authHeaders,
-            body: jsonEncode({
-              'friend_username': username,
-              'friend_user_id': userId,
-            }),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error sending friend request', e);
-      return null;
-    }
-  }
-
-  /// Accept friend request
-  Future<Map<String, dynamic>?> acceptFriendRequest(String requestId) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/social/friends/accept/$requestId'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error accepting friend request', e);
-      return null;
-    }
-  }
-
-  /// Reject friend request
-  Future<Map<String, dynamic>?> rejectFriendRequest(String requestId) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/social/friends/reject/$requestId'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error rejecting friend request', e);
-      return null;
-    }
-  }
-
-  /// Remove friend
-  Future<Map<String, dynamic>?> removeFriend(String friendId) async {
-    try {
-      final response = await http
-          .delete(
-            Uri.parse('$baseUrl/social/friends/$friendId'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error removing friend', e);
-      return null;
-    }
-  }
-
-  // ==================== Tournaments ====================
-
-  /// List tournaments
-  Future<Map<String, dynamic>?> listTournaments({
-    String? status,
-    String? type,
-    int limit = 50,
-    int offset = 0,
-  }) async {
-    try {
-      String url = '$baseUrl/tournaments?limit=$limit&offset=$offset';
-      if (status != null) url += '&status=$status';
-      if (type != null) url += '&type=$type';
-
-      final response = await http
-          .get(Uri.parse(url), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error listing tournaments', e);
-      return null;
-    }
-  }
-
-  /// Get tournament details
-  Future<Map<String, dynamic>?> getTournament(String tournamentId) async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/tournaments/$tournamentId'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting tournament', e);
-      return null;
-    }
-  }
-
-  /// Join tournament
-  Future<Map<String, dynamic>?> joinTournament(
-    String tournamentId, {
-    String? entryTier,
-  }) async {
-    try {
-      final body = <String, dynamic>{};
-      if (entryTier != null) {
-        body['entry_tier'] = entryTier;
-      }
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/tournaments/$tournamentId/join'),
-            headers: _authHeaders,
-            body: body.isNotEmpty ? jsonEncode(body) : null,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error joining tournament', e);
-      return null;
-    }
-  }
-
-  /// Submit tournament score. The optional [idempotencyKey] lets a queued
-  /// retry replay the same submit without double-incrementing
-  /// GamesPlayed on the server (the backend short-circuits on the key).
-  Future<Map<String, dynamic>?> submitTournamentScore({
-    required String tournamentId,
-    required int score,
-    int gameDuration = 0,
-    int foodsEaten = 0,
-    String? idempotencyKey,
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/tournaments/$tournamentId/score'),
-            headers: _authHeaders,
-            body: jsonEncode({
-              'score': score,
-              'game_duration_seconds': gameDuration,
-              'foods_eaten': foodsEaten,
-              'idempotency_key': ?idempotencyKey,
-            }),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error submitting tournament score', e);
-      return null;
-    }
-  }
-
-  /// Get tournament leaderboard
-  Future<Map<String, dynamic>?> getTournamentLeaderboard(
-    String tournamentId, {
-    int limit = 50,
-    int offset = 0,
-  }) async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse(
-              '$baseUrl/tournaments/$tournamentId/leaderboard?limit=$limit&offset=$offset',
-            ),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting tournament leaderboard', e);
-      return null;
-    }
-  }
-
-  // ==================== Multiplayer ====================
-
-  /// Create multiplayer game
-  Future<Map<String, dynamic>?> createMultiplayerGame({
-    String mode = 'classic',
-    int maxPlayers = 4,
-    int gridSize = 20,
-    int speed = 100,
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/multiplayer/create'),
-            headers: _authHeaders,
-            body: jsonEncode({
-              'mode': mode,
-              'max_players': maxPlayers,
-              'grid_size': gridSize,
-              'speed': speed,
-            }),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error creating multiplayer game', e);
-      return null;
-    }
-  }
-
-  /// Join multiplayer game by code
-  Future<Map<String, dynamic>?> joinMultiplayerGame(String roomCode) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/multiplayer/join'),
-            headers: _authHeaders,
-            body: jsonEncode({'room_code': roomCode}),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error joining multiplayer game', e);
-      return null;
-    }
-  }
-
-  /// Get current multiplayer game
-  Future<Map<String, dynamic>?> getCurrentMultiplayerGame() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/multiplayer/current'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting current game', e);
-      return null;
-    }
-  }
-
-  /// Get available multiplayer games (public, waiting for players)
-  Future<List<dynamic>?> getAvailableGames() async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/multiplayer/available'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      // Route through _handleResponse for proper 401/error handling
-      final data = _handleResponse(response);
-      if (data != null && data['data'] is List) {
-        return data['data'] as List<dynamic>;
-      }
-      return null;
-    } catch (e) {
-      AppLogger.error('Error getting available games', e);
-      return null;
-    }
-  }
-
-  /// Get SignalR Hub URL for multiplayer
-  String getSignalRHubUrl() {
-    final hubUrl = baseUrl.replaceFirst('/api/v1', '');
-    return '$hubUrl/hubs/game';
-  }
-
-  /// Get WebSocket URL for multiplayer (deprecated, use SignalR)
-  @Deprecated('Use getSignalRHubUrl() instead')
-  String getMultiplayerWebSocketUrl(String gameId) {
-    final wsUrl = baseUrl
-        .replaceFirst('http', 'ws')
-        .replaceFirst('/api/v1', '');
-    return '$wsUrl/api/v1/multiplayer/ws/$gameId?token=$_accessToken';
-  }
-
   // ==================== Purchases ====================
 
-  /// Verify purchase
   Future<Map<String, dynamic>?> verifyPurchase({
     required String platform,
     required String receiptData,
@@ -1147,7 +347,6 @@ class ApiService {
     }
   }
 
-  /// Batch verify multiple purchases in a single call
   Future<Map<String, dynamic>?> batchVerifyPurchases(
     List<Map<String, dynamic>> purchases,
   ) async {
@@ -1167,7 +366,6 @@ class ApiService {
     }
   }
 
-  /// Get premium content
   Future<Map<String, dynamic>?> getPremiumContent() async {
     try {
       final response = await http
@@ -1185,9 +383,8 @@ class ApiService {
   }
 
   /// Persist the user's equipped cosmetic IDs so they survive reinstall
-  /// and device-switch. Pass null for any slot you don't want to change.
-  /// Returns the updated PremiumContent DTO, or null on failure (caller
-  /// can ignore — local SharedPreferences already has the chosen value).
+  /// and device-switch. Backend uses JsonNamingPolicy.SnakeCaseLower —
+  /// keys must be snake_case or they bind to null silently.
   Future<Map<String, dynamic>?> setEquippedCosmetics({
     String? skinId,
     String? trailId,
@@ -1199,9 +396,6 @@ class ApiService {
             Uri.parse('$baseUrl/purchases/equipped-cosmetics'),
             headers: _authHeaders,
             body: jsonEncode({
-              // Backend uses JsonNamingPolicy.SnakeCaseLower for deserialization
-              // — SkinId/TrailId/ThemeId DTO props bind from snake_case keys.
-              // CamelCase nulls them out silently.
               'skin_id': ?skinId,
               'trail_id': ?trailId,
               'theme_id': ?themeId,
@@ -1216,371 +410,10 @@ class ApiService {
     }
   }
 
-  // ==================== Power-Ups (pre-game inventory) ====================
-
-  Future<Map<String, dynamic>?> getPowerUpInventory() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/PowerUps/inventory'), headers: _authHeaders)
-          .timeout(_timeout);
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting power-up inventory', e);
-      return null;
-    }
-  }
-
-  Future<Map<String, dynamic>?> purchasePowerUp(
-      String powerUpType, int coinCost) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/PowerUps/purchase'),
-            headers: _authHeaders,
-            body: jsonEncode({
-              'power_up_type': powerUpType,
-              'coin_cost': coinCost,
-            }),
-          )
-          .timeout(_timeout);
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error purchasing power-up', e);
-      return null;
-    }
-  }
-
-  Future<Map<String, dynamic>?> consumePowerUp(String powerUpType) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/PowerUps/consume'),
-            headers: _authHeaders,
-            body: jsonEncode({'power_up_type': powerUpType}),
-          )
-          .timeout(_timeout);
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error consuming power-up', e);
-      return null;
-    }
-  }
-
-  /// Spend coins on a power-up bundle (mega / tactical / ultimate pack).
-  /// Server-authoritative: price + contents validated against
-  /// ProductCatalog.PowerUpBundles; client can't tamper with either.
-  /// Returns the new inventory + coin balance, or null on failure.
-  Future<Map<String, dynamic>?> purchasePowerUpBundle(String bundleId) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/PowerUps/purchase-bundle'),
-            headers: _authHeaders,
-            body: jsonEncode({'bundle_id': bundleId}),
-          )
-          .timeout(_timeout);
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error purchasing power-up bundle', e);
-      return null;
-    }
-  }
-
-  // ==================== Battle Pass ====================
-
-  /// Get current battle pass season
-  Future<Map<String, dynamic>?> getCurrentBattlePassSeason() async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/BattlePass/current-season'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting battle pass season', e);
-      return null;
-    }
-  }
-
-  /// Get battle pass progress
-  Future<Map<String, dynamic>?> getBattlePassProgress() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/BattlePass/progress'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting battle pass progress', e);
-      return null;
-    }
-  }
-
-  /// Add battle pass XP
-  Future<Map<String, dynamic>?> addBattlePassXP({
-    required int xp,
-    String source = 'gameplay',
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/BattlePass/add-xp'),
-            headers: _authHeaders,
-            body: jsonEncode({'xp': xp, 'source': source}),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error adding battle pass XP', e);
-      return null;
-    }
-  }
-
-  /// Claim battle pass reward
-  Future<Map<String, dynamic>?> claimBattlePassReward({
-    required int level,
-    required String tier,
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/BattlePass/claim-reward'),
-            headers: _authHeaders,
-            body: jsonEncode({'level': level, 'tier': tier}),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error claiming battle pass reward', e);
-      return null;
-    }
-  }
-
-  // ==================== Weekly Quests ====================
-
-  /// Get current week's quests (5 active quests + per-user progress).
-  /// Backend returns a JSON array; `_handleResponse` wraps non-map bodies
-  /// in `{'data': ...}`, so the list lives at `result['data']`.
-  Future<List<dynamic>?> getCurrentWeeklyQuests() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/WeeklyQuests/current'), headers: _authHeaders)
-          .timeout(_timeout);
-      final result = _handleResponse(response);
-      final data = result?['data'];
-      if (data is List) return data;
-      return null;
-    } catch (e) {
-      AppLogger.error('Error fetching weekly quests', e);
-      return null;
-    }
-  }
-
-  /// Push a progress increment for the current ISO week's quests.
-  Future<bool> updateWeeklyQuestProgress({
-    required String type,
-    required int incrementBy,
-    String? gameMode,
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/WeeklyQuests/progress'),
-            headers: _authHeaders,
-            body: jsonEncode({
-              'type': type,
-              'incrementBy': incrementBy,
-              'gameMode': ?gameMode,
-            }),
-          )
-          .timeout(_timeout);
-      return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (e) {
-      AppLogger.error('Error updating weekly quest progress', e);
-      return false;
-    }
-  }
-
-  /// Batched progress update — one round-trip for all per-game events.
-  Future<bool> batchUpdateWeeklyQuestProgress(
-      List<Map<String, dynamic>> updates) async {
-    if (updates.isEmpty) return true;
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/WeeklyQuests/progress/batch'),
-            headers: _authHeaders,
-            body: jsonEncode(updates),
-          )
-          .timeout(_timeout);
-      return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (e) {
-      AppLogger.error('Error batch-updating weekly quest progress', e);
-      return false;
-    }
-  }
-
-  /// Claim a completed weekly quest's reward. Server credits coins + BP XP.
-  Future<Map<String, dynamic>?> claimWeeklyQuestReward(String questId) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/WeeklyQuests/claim/$questId'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error claiming weekly quest reward', e);
-      return null;
-    }
-  }
-
-  // ==================== Daily Bonus ====================
-
-  /// Get daily bonus status
-  Future<Map<String, dynamic>?> getDailyBonusStatus() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/DailyBonus/status'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting daily bonus status', e);
-      return null;
-    }
-  }
-
-  /// Claim daily bonus
-  /// Returns success response, or {alreadyClaimed: true} if already claimed today
-  Future<Map<String, dynamic>?> claimDailyBonus() async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/DailyBonus/claim'),
-            headers: _authHeaders,
-            body: jsonEncode({}),
-          )
-          .timeout(_timeout);
-
-      // Handle 400 "already claimed" as success (idempotent operation)
-      if (response.statusCode == 400) {
-        try {
-          final body = jsonDecode(response.body);
-          final errorMsg = (body['error'] ?? body['message'] ?? '')
-              .toString()
-              .toLowerCase();
-          if (errorMsg.contains('already claimed') ||
-              errorMsg.contains('already collected')) {
-            // Not an error - just means the bonus was already claimed
-            // Return success with a flag so sync service knows not to retry
-            AppLogger.network(
-              'Daily bonus already claimed today (treating as success)',
-            );
-            return {'success': true, 'alreadyClaimed': true};
-          }
-        } catch (_) {
-          // If we can't parse the body, fall through to normal error handling
-        }
-      }
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error claiming daily bonus', e);
-      return null;
-    }
-  }
-
-  // ==================== Daily Challenges ====================
-
-  /// Get today's daily challenges with user progress
-  Future<Map<String, dynamic>?> getDailyChallenges() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/dailychallenges'), headers: _authHeaders)
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error getting daily challenges', e);
-      return null;
-    }
-  }
-
-  /// Update progress for daily challenges (called after each game)
-  Future<Map<String, dynamic>?> updateChallengeProgress({
-    required String type,
-    required int value,
-    String? gameMode,
-  }) async {
-    try {
-      final body = <String, dynamic>{'type': type, 'value': value};
-      if (gameMode != null) {
-        body['gameMode'] = gameMode;
-      }
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/dailychallenges/progress'),
-            headers: _authHeaders,
-            body: jsonEncode(body),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error updating challenge progress', e);
-      return null;
-    }
-  }
-
-  /// Claim reward for a completed challenge
-  Future<Map<String, dynamic>?> claimChallengeReward(String challengeId) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/dailychallenges/claim/$challengeId'),
-            headers: _authHeaders,
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error claiming challenge reward', e);
-      return null;
-    }
-  }
-
-  /// Batch claim rewards for multiple completed challenges in a single call
-  Future<Map<String, dynamic>?> batchClaimChallengeRewards(
-    List<String> challengeIds,
-  ) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/dailychallenges/claim-batch'),
-            headers: _authHeaders,
-            body: jsonEncode({'challenge_ids': challengeIds}),
-          )
-          .timeout(_timeout);
-
-      return _handleResponse(response);
-    } catch (e) {
-      AppLogger.error('Error batch claiming challenge rewards', e);
-      return null;
-    }
-  }
-
   // ==================== Notifications ====================
 
-  /// Register FCM token. Also forwards the device's UTC offset so the
-  /// backend can land the daily notification at each user's local 9 AM.
+  /// Register FCM token. Forwards the device's UTC offset so the
+  /// backend can land daily notifications at each user's local 9 AM.
   Future<bool> registerFcmToken({
     required String fcmToken,
     String platform = 'flutter',
@@ -1609,142 +442,4 @@ class ApiService {
       return false;
     }
   }
-
-  /// Trigger the backend's test-notification endpoint (`POST /test/send-test-notification`).
-  /// Authenticated — the endpoint is `[Authorize]` on the server. Body
-  /// uses `token` (camelCase) to match the backend's
-  /// `TestNotificationRequest(string Token, ...)` record contract; the
-  /// older snake_case `fcm_token` field went to a null property and
-  /// the request blew up server-side with no auth header.
-  Future<bool> sendTestNotification({
-    required String fcmToken,
-    String title = '🐍 Backend Test',
-    String body = 'This notification was sent from the Snake Classic backend!',
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/test/send-test-notification'),
-            headers: _authHeaders,
-            body: jsonEncode({
-              'token': fcmToken,
-              'title': title,
-              'body': body,
-            }),
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        AppLogger.network('Test notification dispatched via backend');
-        return true;
-      }
-      AppLogger.error(
-        'Backend test notification failed: ${response.statusCode}',
-        response.body,
-      );
-      return false;
-    } catch (e) {
-      AppLogger.error('Error sending test notification via backend', e);
-      return false;
-    }
-  }
-
-  /// Subscribe to notification topic
-  Future<bool> subscribeToTopic(String fcmToken, String topic) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/notifications/topics/subscribe'),
-            headers: _authHeaders,
-            body: jsonEncode({'fcm_token': fcmToken, 'topic': topic}),
-          )
-          .timeout(_timeout);
-
-      return response.statusCode == 200;
-    } catch (e) {
-      AppLogger.error('Error subscribing to topic', e);
-      return false;
-    }
-  }
-
-  /// Batch subscribe to multiple notification topics in a single call
-  Future<bool> batchSubscribeToTopics(
-    String fcmToken,
-    List<String> topics,
-  ) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/notifications/topics/subscribe-batch'),
-            headers: _authHeaders,
-            body: jsonEncode({'fcm_token': fcmToken, 'topics': topics}),
-          )
-          .timeout(_timeout);
-
-      return response.statusCode == 200;
-    } catch (e) {
-      AppLogger.error('Error batch subscribing to topics', e);
-      return false;
-    }
-  }
-
-  /// Unsubscribe from notification topic
-  Future<bool> unsubscribeFromTopic(String fcmToken, String topic) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/notifications/topics/unsubscribe'),
-            headers: _authHeaders,
-            body: jsonEncode({'fcm_token': fcmToken, 'topic': topic}),
-          )
-          .timeout(_timeout);
-
-      return response.statusCode == 200;
-    } catch (e) {
-      AppLogger.error('Error unsubscribing from topic', e);
-      return false;
-    }
-  }
-
-  // ==================== Health Check ====================
-
-  /// Check backend health
-  Future<bool> checkHealth() async {
-    try {
-      final healthUrl = baseUrl.replaceFirst('/api/v1', '/health/status');
-      final response = await http
-          .get(
-            Uri.parse(healthUrl),
-            headers: {'Content-Type': 'application/json'},
-          )
-          .timeout(const Duration(seconds: 5));
-
-      return response.statusCode == 200;
-    } catch (e) {
-      AppLogger.error('Error checking backend health', e);
-      return false;
-    }
-  }
-}
-
-/// Outcome of POST /achievements/claim. Tagged so callers can reconcile
-/// local state on `notUnlocked` / `notFound` instead of looping forever.
-enum AchievementClaimOutcome {
-  success,
-  alreadyClaimed,
-  notUnlocked,
-  notFound,
-  networkError,
-}
-
-class AchievementClaimResult {
-  final AchievementClaimOutcome outcome;
-  final int xpAwarded;
-  final int coinsAwarded;
-
-  const AchievementClaimResult({
-    required this.outcome,
-    this.xpAwarded = 0,
-    this.coinsAwarded = 0,
-  });
 }

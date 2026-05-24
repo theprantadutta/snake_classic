@@ -13,7 +13,6 @@ import 'package:timezone/data/latest_10y.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import '../utils/logger.dart';
 import 'api_service.dart';
-import 'backend_service.dart';
 import 'data_sync_service.dart';
 import 'navigation_service.dart';
 
@@ -752,7 +751,6 @@ class NotificationService {
 
       if (success) {
         AppLogger.network('FCM token registered with backend successfully');
-        await _syncTopicSubscriptions(token);
         return true;
       } else {
         AppLogger.error(
@@ -772,45 +770,6 @@ class NotificationService {
     } catch (e) {
       AppLogger.error('Error registering token with backend', e);
       return false;
-    }
-  }
-
-  Future<void> _syncTopicSubscriptions(String token) async {
-    try {
-      AppLogger.network('Syncing topic subscriptions with backend');
-
-      // Get recommended topics based on user preferences
-      // ignore: deprecated_member_use
-      final topics = BackendService().getRecommendedTopics(
-        tournamentsEnabled:
-            _notificationPreferences[NotificationType.tournament] ?? true,
-        socialEnabled:
-            _notificationPreferences[NotificationType.social] ?? true,
-        achievementsEnabled:
-            _notificationPreferences[NotificationType.achievement] ?? true,
-        dailyRemindersEnabled:
-            _notificationPreferences[NotificationType.dailyReminder] ?? true,
-        specialEventsEnabled:
-            _notificationPreferences[NotificationType.specialEvent] ?? true,
-      );
-
-      // Use batch endpoint to subscribe to all topics in a single API call
-      final apiService = ApiService();
-      final success = await apiService.batchSubscribeToTopics(token, topics);
-
-      if (success) {
-        AppLogger.network(
-          'Topic subscriptions synced (batch): ${topics.join(', ')}',
-        );
-      } else {
-        AppLogger.warning('Batch topic subscription failed, trying individually');
-        // Fallback to individual subscriptions
-        for (final topic in topics) {
-          await apiService.subscribeToTopic(token, topic);
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error syncing topic subscriptions', e);
     }
   }
 
@@ -874,84 +833,31 @@ class NotificationService {
     _backendIntegrationDone = false;
   }
 
-  /// Send achievement notification via backend
+  /// Fire an achievement notification locally. Pre-refactor this went
+  /// through the backend; post-refactor every notification is fired by
+  /// the device itself.
   Future<void> triggerAchievementNotification(
     String achievementName,
     String achievementId,
   ) async {
-    if (_fcmToken == null) {
-      AppLogger.warning('Cannot send achievement notification: No FCM token');
-      return;
-    }
-
-    try {
-      // ignore: deprecated_member_use
-      await BackendService().sendAchievementNotification(
-        fcmToken: _fcmToken!,
-        achievementName: achievementName,
-        achievementId: achievementId,
-      );
-
-      AppLogger.info(
-        '🏆 Achievement notification sent via backend: $achievementName',
-      );
-    } catch (e) {
-      AppLogger.error('Failed to send achievement notification via backend', e);
-      // Fallback to local notification
-      await showAchievementNotification(achievementName);
-    }
+    await showAchievementNotification(achievementName);
   }
 
-  /// Send friend request notification via backend
+  /// No-op in the offline-first build — friends/social features are
+  /// disabled. Kept so existing call sites compile until the social
+  /// code is cleaned up.
   Future<void> triggerFriendRequestNotification({
     required String targetUserId,
     required String targetFcmToken,
     required String senderName,
     required String senderId,
-  }) async {
-    try {
-      // ignore: deprecated_member_use
-      await BackendService().sendFriendRequestNotification(
-        targetFcmToken: targetFcmToken,
-        senderName: senderName,
-        senderId: senderId,
-      );
+  }) async {}
 
-      AppLogger.info('👥 Friend request notification sent via backend');
-    } catch (e) {
-      AppLogger.error(
-        'Failed to send friend request notification via backend',
-        e,
-      );
-    }
-  }
-
-  /// Send test notification via backend.
-  ///
-  /// Goes through ApiService rather than the legacy BackendService so the
-  /// JWT auth header is attached — without it the [Authorize] endpoint
-  /// returned 401. Field naming also corrected: backend's
-  /// TestNotificationRequest uses `Token` (camelCase-binds from `token`),
-  /// not the snake_case `fcm_token` BackendService was sending.
+  /// Fire a local test notification. The backend test endpoint was
+  /// removed in the offline-first refactor; this is now identical to
+  /// [sendTestLocalNotification] from the user's perspective.
   Future<void> sendTestNotificationViaBackend() async {
-    if (_fcmToken == null) {
-      AppLogger.warning('Cannot send test notification: No FCM token');
-      return;
-    }
-
-    try {
-      final success = await ApiService().sendTestNotification(
-        fcmToken: _fcmToken!,
-      );
-
-      if (success) {
-        AppLogger.info('✅ Test notification sent via backend');
-      } else {
-        AppLogger.error('❌ Backend test notification failed');
-      }
-    } catch (e) {
-      AppLogger.error('Error sending test notification via backend', e);
-    }
+    await sendTestLocalNotification();
   }
 
   /// Update notification preferences and sync with backend
@@ -968,10 +874,8 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notification_${type.key}', enabled);
 
-    // Sync with backend if token is available
-    if (_fcmToken != null) {
-      await _syncTopicSubscriptions(_fcmToken!);
-    }
+    // No backend topic sync in the offline-first build — preferences
+    // are device-local and only gate which local notifications fire.
   }
 
   /// Load notification preferences from storage

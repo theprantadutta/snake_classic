@@ -728,11 +728,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: GradientButton(
-                      onPressed: () => context.push(AppRoutes.leaderboard),
-                      text: 'LEADERBOARD',
+                      onPressed: () => context.push(AppRoutes.replays),
+                      text: 'REPLAYS',
                       primaryColor: theme.accentColor,
                       secondaryColor: theme.foodColor,
-                      icon: Icons.leaderboard,
+                      icon: Icons.video_library,
                     ),
                   ),
                 ],
@@ -754,11 +754,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                 Expanded(
                   child: GradientButton(
-                    onPressed: () => context.push(AppRoutes.leaderboard),
-                    text: 'LEADERBOARD',
+                    onPressed: () => context.push(AppRoutes.replays),
+                    text: 'REPLAYS',
                     primaryColor: theme.accentColor,
                     secondaryColor: theme.foodColor,
-                    icon: Icons.leaderboard,
+                    icon: Icons.video_library,
                   ),
                 ),
               ],

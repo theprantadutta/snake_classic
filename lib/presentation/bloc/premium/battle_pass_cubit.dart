@@ -4,11 +4,11 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
+import 'package:get_it/get_it.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
-import 'package:snake_classic/services/api_service.dart';
-import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
-import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 import 'battle_pass_state.dart';
@@ -20,9 +20,6 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   final StorageService _storageService;
   final PremiumCubit? _premiumCubit;
   final AnalyticsFacade _analytics;
-  final DataSyncService _dataSyncService = DataSyncService();
-  final ApiService _apiService = ApiService();
-  final ConnectivityService _connectivityService = ConnectivityService();
 
   // Watches PremiumCubit so the moment a Pro purchase resolves we re-fetch
   // battle-pass progress and pick up the server-side HasPremium snapshot
@@ -62,13 +59,8 @@ class BattlePassCubit extends Cubit<BattlePassState> {
         'BattlePassCubit initialized from local storage. Active: ${state.isActive}, Tier: ${state.currentTier}',
       );
 
-      // Then refresh from backend silently (don't block)
-      if (_apiService.isAuthenticated) {
-        _refreshFromBackendSilently();
-      }
-
-      // Watch Pro status — when it flips on (post-IAP verification) we need
-      // to re-fetch progress so isActive reflects the new entitlement.
+      // Watch Pro status — when it flips on (post-IAP verification) we
+      // flip isActive locally so the premium-pass UI unlocks immediately.
       _watchPremiumCubit();
     } catch (e) {
       AppLogger.error('Error initializing BattlePassCubit', e);
@@ -81,136 +73,31 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     }
   }
 
-  void _refreshFromBackendSilently() {
-    _loadFromBackend().catchError((e) {
-      AppLogger.error('Background battle pass refresh failed', e);
-      return false;
-    });
-  }
-
-  /// Subscribe to PremiumCubit so a Pro purchase (or restore) triggers a
-  /// re-fetch of battle-pass progress. We only react on the *rising edge*
-  /// of hasPremium (false → true) — a lapse the other way doesn't need to
-  /// re-fetch since the snapshot is sticky on the server for the season.
+  /// Subscribe to PremiumCubit so a Pro purchase (or restore) flips
+  /// `state.isActive` to true locally. In the offline-first build the
+  /// premium-pass entitlement is the *only* signal for `isActive` —
+  /// there's no separate backend snapshot.
   void _watchPremiumCubit() {
     final premium = _premiumCubit;
     if (premium == null) return;
     _lastSeenHasPremium = premium.state.hasPremium;
-    // Handle the case where Pro was already active at startup (e.g., a
-    // restart after a Pro purchase) but our cached BP state still says
-    // isActive=false — force one refresh through.
-    if (_lastSeenHasPremium && !state.isActive && _apiService.isAuthenticated) {
-      _refreshFromBackendSilently();
+    if (_lastSeenHasPremium && !state.isActive) {
+      emit(state.copyWith(isActive: true));
+      unawaited(_saveState());
+      _syncBattlePassToPremium();
     }
     _premiumSub = premium.stream.listen((premiumState) {
       final nowPro = premiumState.hasPremium;
-      if (nowPro && !_lastSeenHasPremium) {
-        AppLogger.info('Pro active → refreshing battle pass progress');
-        _refreshFromBackendSilently();
+      if (nowPro != _lastSeenHasPremium) {
+        emit(state.copyWith(isActive: nowPro));
+        unawaited(_saveState());
+        _syncBattlePassToPremium();
       }
       _lastSeenHasPremium = nowPro;
     });
   }
 
-  /// Load battle pass data from backend
-  Future<bool> _loadFromBackend() async {
-    try {
-      // Fetch season and progress in parallel
-      final results = await Future.wait([
-        _apiService.getCurrentBattlePassSeason(),
-        _apiService.getBattlePassProgress(),
-      ]);
-      final seasonData = results[0];
-      if (seasonData == null) {
-        return false;
-      }
-
-      // Parse season from backend
-      BattlePassSeason? season;
-      try {
-        season = BattlePassSeason.fromJson(seasonData);
-      } catch (e) {
-        AppLogger.error('Failed to parse season from backend', e);
-      }
-
-      // Detect season transition: if the backend season ID differs from the
-      // locally stored one, reset local progress before loading the new season.
-      final newSeasonId = seasonData['id']?.toString();
-      final currentSeasonId = state.season?.id;
-      if (newSeasonId != null &&
-          currentSeasonId != null &&
-          newSeasonId != currentSeasonId) {
-        AppLogger.info(
-          'Season transition detected: $currentSeasonId -> $newSeasonId',
-        );
-        await reset();
-      }
-
-      final progressData = results[1];
-      if (progressData == null) {
-        // Season exists but user has no progress yet - start fresh
-        final endDate = DateTime.tryParse(
-          seasonData['end_date'] ?? seasonData['endDate'] ?? '',
-        );
-        emit(
-          state.copyWith(
-            status: BattlePassStatus.ready,
-            isActive: false,
-            currentTier: 0,
-            currentXP: 0,
-            xpForNextTier: 100,
-            expiryDate: endDate,
-            seasonName: seasonData['name'] ?? 'Season 1',
-            season: season,
-          ),
-        );
-        await _saveState();
-        return true;
-      }
-
-      // Parse progress data
-      final hasPremium = progressData['has_premium'] ?? false;
-      final currentLevel = progressData['current_level'] ?? 0;
-      final currentXp = progressData['current_xp'] ?? 0;
-      final xpToNextLevel = progressData['xp_to_next_level'] ?? 100;
-      final claimedFree = (progressData['claimed_free_rewards'] as List<dynamic>?)
-              ?.map((e) => e as int)
-              .toSet() ??
-          {};
-      final claimedPremium =
-          (progressData['claimed_premium_rewards'] as List<dynamic>?)
-                  ?.map((e) => e as int)
-                  .toSet() ??
-              {};
-
-      final endDate = DateTime.tryParse(
-        seasonData['end_date'] ?? seasonData['endDate'] ?? '',
-      );
-
-      emit(
-        state.copyWith(
-          status: BattlePassStatus.ready,
-          isActive: hasPremium,
-          currentTier: currentLevel,
-          currentXP: currentXp,
-          xpForNextTier: xpToNextLevel,
-          expiryDate: endDate,
-          claimedFreeTiers: claimedFree,
-          claimedPremiumTiers: claimedPremium,
-          seasonName: progressData['season_name'] ?? 'Season 1',
-          season: season,
-        ),
-      );
-      await _saveState();
-      _syncBattlePassToPremium();
-      return true;
-    } catch (e) {
-      AppLogger.error('Error loading battle pass from backend', e);
-      return false;
-    }
-  }
-
-  /// Load from local storage (offline fallback)
+  /// Load from local storage (the only source in the offline-first build).
   Future<void> _loadFromLocalStorage() async {
     // Load cached season separately
     BattlePassSeason? season;
@@ -262,13 +149,10 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     }
   }
 
-  /// Refresh data from backend (silent — no loading state)
+  /// Reload local state. Backend refresh path was removed in the
+  /// offline-first refactor.
   Future<void> refresh() async {
-    if (_apiService.isAuthenticated) {
-      await _loadFromBackend();
-    } else {
-      await _loadFromLocalStorage();
-    }
+    await _loadFromLocalStorage();
   }
 
   Future<void> _saveState() async {
@@ -321,62 +205,16 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     await addXP(totalXP, source: combinedSource);
   }
 
-  /// Add XP to battle pass (syncs with backend if online)
+  /// Add XP to the battle pass. Local-only in the offline-first build —
+  /// tier-up math runs against the locally cached season's curve.
   Future<void> addXP(int xp, {String source = 'gameplay'}) async {
     if (state.currentTier >= state.maxTier) return;
 
-    // Try to sync with backend first. Gate on connectivity so offline games
-    // don't wait the full 15s HTTP timeout per addXP call — _postGameSync
-    // calls this synchronously inside Future.wait, and that wait was
-    // delaying every downstream step (notably AppDataCache.refreshStatistics)
-    // by the timeout duration when the device was offline.
-    if (_apiService.isAuthenticated && _connectivityService.isOnline) {
-      final result = await _apiService.addBattlePassXP(xp: xp, source: source);
-      if (result != null) {
-        // Check if no active season - this is not an error, just skip
-        final noActiveSeason = result['noActiveSeason'] == true ||
-            result['no_active_season'] == true;
-        if (noActiveSeason) {
-          AppLogger.info('No active battle pass season - XP not added');
-          return;
-        }
-
-        // Update state from backend response
-        final newLevel = result['newLevel'] ??
-            result['current_level'] ??
-            state.currentTier;
-        final newXp = result['newXp'] ?? result['current_xp'] ?? state.currentXP;
-        final xpToNext = result['xpToNextLevel'] ??
-            result['xp_to_next_level'] ??
-            state.xpForNextTier;
-
-        final oldTier = state.currentTier;
-        emit(
-          state.copyWith(
-            currentXP: newXp,
-            currentTier: newLevel,
-            xpForNextTier: xpToNext,
-          ),
-        );
-        await _saveState();
-        _syncBattlePassToPremium();
-        if (newLevel > oldTier) {
-          _analytics.trackBattlePassTierReached(newLevel);
-        }
-        AppLogger.info(
-          'Added $xp XP via backend. New tier: $newLevel, XP: $newXp/$xpToNext',
-        );
-        return;
-      }
-    }
-
-    // Fallback to local calculation
     var newXP = state.currentXP + xp;
     final oldTier = state.currentTier;
     var newTier = state.currentTier;
     var xpForNext = state.xpForNextTier;
 
-    // Level up logic
     while (newXP >= xpForNext && newTier < state.maxTier) {
       newXP -= xpForNext;
       newTier++;
@@ -396,15 +234,8 @@ class BattlePassCubit extends Cubit<BattlePassState> {
       _analytics.trackBattlePassTierReached(newTier);
     }
 
-    // Queue for background sync if offline
-    _dataSyncService.queueSync('battle_pass_xp', {
-      'xp': xp,
-      'source': source,
-      'added_at': DateTime.now().toIso8601String(),
-    }, priority: SyncPriority.normal);
-
     AppLogger.info(
-      'Added $xp XP locally. New tier: $newTier, XP: $newXP/$xpForNext',
+      'Added $xp XP locally ($source). New tier: $newTier, XP: $newXP/$xpForNext',
     );
   }
 
@@ -434,29 +265,43 @@ class BattlePassCubit extends Cubit<BattlePassState> {
           _premiumCubit.unlockPowerUp(reward.itemId!);
         }
         break;
-      case BattlePassRewardType.theme:
-      case BattlePassRewardType.xp:
       case BattlePassRewardType.coins:
+        // Credit coins locally via CoinsCubit. Backend used to grant
+        // these atomically with the claim; offline-first does it here.
+        if (GetIt.I.isRegistered<CoinsCubit>()) {
+          unawaited(GetIt.I<CoinsCubit>().earnCoins(
+            CoinEarningSource.battlePassReward,
+            customAmount: reward.quantity,
+            itemName: reward.name,
+          ));
+        }
+        break;
+      case BattlePassRewardType.theme:
+        // Theme unlocks require a GameTheme enum value, not a string id.
+        // The local-season generator only emits cosmetic/coin rewards
+        // for now, so this branch is dormant; if a season ever issues
+        // a theme reward, hand the unlock off to the store flow.
+        break;
+      case BattlePassRewardType.xp:
       case BattlePassRewardType.title:
       case BattlePassRewardType.avatar:
       case BattlePassRewardType.special:
-        // These reward types are handled by the backend or are cosmetic-only
+        // Cosmetic / metadata-only — the reward record itself is
+        // enough; no separate inventory bump needed.
         break;
     }
     AppLogger.info('Granted reward item: ${reward.type.name} (${reward.itemId})');
   }
 
-  /// Claim free tier reward (offline-first: updates locally, syncs with backend)
+  /// Claim a free-tier reward locally.
   Future<bool> claimFreeReward(int tier) async {
     if (tier > state.currentTier) return false;
     if (state.claimedFreeTiers.contains(tier)) return false;
 
-    // Update local state immediately
     final updatedClaimed = {...state.claimedFreeTiers, tier};
     emit(state.copyWith(claimedFreeTiers: updatedClaimed));
     await _saveState();
 
-    // Grant the actual item
     final season = state.season;
     if (season != null && tier >= 1 && tier <= season.levels.length) {
       final reward = season.levels[tier - 1].freeReward;
@@ -467,41 +312,22 @@ class BattlePassCubit extends Cubit<BattlePassState> {
       );
     }
 
-    // Try to sync with backend
-    if (_apiService.isAuthenticated) {
-      final result = await _apiService.claimBattlePassReward(
-        level: tier,
-        tier: 'free',
-      );
-      if (result != null) {
-        AppLogger.info('Claimed free reward for tier $tier via backend');
-        return true;
-      }
-    }
-
-    // Queue for background sync if offline
-    _dataSyncService.queueSync('battle_pass_claim', {
-      'level': tier,
-      'tier': 'free',
-      'claimed_at': DateTime.now().toIso8601String(),
-    }, priority: SyncPriority.high);
-
-    AppLogger.info('Claimed free reward for tier $tier (queued for sync)');
+    AppLogger.info('Claimed free reward for tier $tier');
     return true;
   }
 
-  /// Claim premium tier reward (offline-first: updates locally, syncs with backend)
+  /// Claim a premium-tier reward locally. Gated on the user owning
+  /// the premium pass — [PremiumCubit.hasPremium] is the source of
+  /// truth, mirrored into [state.isActive] via [_watchPremiumCubit].
   Future<bool> claimPremiumReward(int tier) async {
     if (!state.isValid) return false;
     if (tier > state.currentTier) return false;
     if (state.claimedPremiumTiers.contains(tier)) return false;
 
-    // Update local state immediately
     final updatedClaimed = {...state.claimedPremiumTiers, tier};
     emit(state.copyWith(claimedPremiumTiers: updatedClaimed));
     await _saveState();
 
-    // Grant the actual item
     final season = state.season;
     if (season != null && tier >= 1 && tier <= season.levels.length) {
       final reward = season.levels[tier - 1].premiumReward;
@@ -512,26 +338,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
       );
     }
 
-    // Try to sync with backend
-    if (_apiService.isAuthenticated) {
-      final result = await _apiService.claimBattlePassReward(
-        level: tier,
-        tier: 'premium',
-      );
-      if (result != null) {
-        AppLogger.info('Claimed premium reward for tier $tier via backend');
-        return true;
-      }
-    }
-
-    // Queue for background sync if offline
-    _dataSyncService.queueSync('battle_pass_claim', {
-      'level': tier,
-      'tier': 'premium',
-      'claimed_at': DateTime.now().toIso8601String(),
-    }, priority: SyncPriority.high);
-
-    AppLogger.info('Claimed premium reward for tier $tier (queued for sync)');
+    AppLogger.info('Claimed premium reward for tier $tier');
     return true;
   }
 

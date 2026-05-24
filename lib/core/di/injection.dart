@@ -216,9 +216,7 @@ Future<void> configureDependencies() async {
     ),
   );
 
-  getIt.registerLazySingleton<PowerUpCubit>(
-    () => PowerUpCubit(api: getIt<ApiService>()),
-  );
+  getIt.registerLazySingleton<PowerUpCubit>(() => PowerUpCubit());
 }
 
 /// Reset all dependencies (useful for testing)

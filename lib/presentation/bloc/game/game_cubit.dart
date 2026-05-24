@@ -27,7 +27,6 @@ import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
-import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
@@ -57,7 +56,6 @@ class GameCubit extends Cubit<GameCubitState> {
   final CoinsCubit _coinsCubit;
   final BattlePassCubit _battlePassCubit;
   final AnalyticsFacade _analytics;
-  final DataSyncService _dataSyncService = DataSyncService();
   final DailyChallengeService _dailyChallengeService = DailyChallengeService();
 
   Timer? _gameTimer;
@@ -1622,37 +1620,12 @@ class GameCubit extends Cubit<GameCubitState> {
         (sum, count) => sum + count,
       );
 
-      // Queue regular score sync (counts toward the global leaderboard +
-      // high-score + lifetime stats, regardless of tournament mode).
-      final nowMs = DateTime.now().millisecondsSinceEpoch;
-      _dataSyncService.queueSync('score', {
-        'score': gameState.score,
-        'gameDuration': gameDurationSeconds,
-        'foodsEaten': foodEaten,
-        'gameMode':
-            state.isTournamentMode ? 'tournament' : gameState.gameMode.name,
-        'difficulty': 'normal',
-        'playedAt': DateTime.now().toIso8601String(),
-        'idempotencyKey': '${nowMs}_${gameState.score}',
-      }, priority: SyncPriority.high);
-
-      // Tournament dual-write: when a tournament-mode game ends, ALSO
-      // submit to the tournament-specific endpoint so the tournament
-      // leaderboard receives the score. Without this the score only
-      // lands on the global leaderboard and the user never appears in
-      // the tournament's standings. Distinct idempotency key keeps the
-      // two paths' retries from colliding on the server.
-      if (state.isTournamentMode && state.tournamentId != null) {
-        _dataSyncService.queueSync('tournament_score', {
-          'tournamentId': state.tournamentId,
-          'score': gameState.score,
-          'gameDuration': gameDurationSeconds,
-          'foodsEaten': foodEaten,
-          'playedAt': DateTime.now().toIso8601String(),
-          'idempotencyKey':
-              'tour_${state.tournamentId}_${nowMs}_${gameState.score}',
-        }, priority: SyncPriority.critical);
-      }
+      // Offline-first build: score submission to the backend was
+      // removed along with the global leaderboard and tournament
+      // endpoints. The score is still persisted locally below via
+      // StatisticsService / GameDao (the `STEP A — Local stats update`
+      // block), and the high score lives in GameSettingsCubit's
+      // Drift-backed state. Nothing to queue here.
 
       // Award coins for game completion (local)
       await _awardGameCompletionCoins(

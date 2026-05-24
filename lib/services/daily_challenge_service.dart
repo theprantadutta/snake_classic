@@ -1,47 +1,48 @@
-import 'dart:convert';
+import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
-import 'package:snake_classic/services/api_service.dart';
-import 'package:snake_classic/services/connectivity_service.dart';
-import 'package:snake_classic/services/data_sync_service.dart';
-import 'package:snake_classic/services/offline_cache_service.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
+/// Daily challenges service.
+///
+/// Source of truth (eventually): the backend generator. Until that's
+/// wired up the in-memory list is empty — the screen just shows the
+/// empty state.
+///
+/// Drift is **claim-only**: we never persist a challenge until the
+/// user actually claims its reward. That way the Drift table only
+/// holds rows the user cared enough about to collect, and there's no
+/// drift between a stale local copy and whatever the backend feeds us
+/// later. Progress accumulated in-memory during a session is lost on
+/// app close — that's fine, it's just optimistic UI.
 class DailyChallengeService extends ChangeNotifier {
   static final DailyChallengeService _instance =
       DailyChallengeService._internal();
   factory DailyChallengeService() => _instance;
   DailyChallengeService._internal();
 
-  final ApiService _apiService = ApiService();
-  final ConnectivityService _connectivityService = ConnectivityService();
-  final OfflineCacheService _cacheService = OfflineCacheService();
-  SharedPreferences? _prefs;
-
-  // Cache keys
-  static const String _challengesKey = 'daily_challenges';
-  static const String _localProgressKey = 'daily_challenges_local_progress';
+  final StorageService _storageService = StorageService();
 
   List<DailyChallenge> _challenges = [];
   int _completedCount = 0;
   int _totalCount = 0;
   bool _allCompleted = false;
-  int _bonusCoins = 0;
+  // ignore: prefer_final_fields
   bool _isLoading = false;
   String? _lastLoadDate;
-
-  // Pending progress updates to sync
-  final Map<ChallengeType, int> _pendingProgress = {};
 
   List<DailyChallenge> get challenges => _challenges;
   int get completedCount => _completedCount;
   int get totalCount => _totalCount;
   bool get allCompleted => _allCompleted;
-  int get bonusCoins => _bonusCoins;
+  int get bonusCoins => 0;
   bool get isLoading => _isLoading;
 
   bool get hasUnclaimedRewards =>
@@ -51,259 +52,77 @@ class DailyChallengeService extends ChangeNotifier {
       _challenges.where((c) => c.isCompleted && !c.claimedReward).length;
 
   Future<void> initialize() async {
-    await _loadFromCache();
-    // Refresh silently in background — don't block initialization
-    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-      _refreshInBackground();
-    }
+    // Nothing to load locally — challenges arrive from the backend
+    // call we haven't wired yet. Claimed rows live in Drift but we
+    // don't surface them on the daily-challenges screen because the
+    // screen wants the full *today's* catalog, not the user's history.
   }
 
-  void _refreshInBackground() {
-    refreshChallenges().catchError((e) {
-      AppLogger.error('Background refresh failed', e);
-    });
-  }
-
-  Future<void> _loadFromCache() async {
-    try {
-      final cached = await _cacheService
-          .getCachedFallback<Map<String, dynamic>>(
-            _challengesKey,
-            (data) => Map<String, dynamic>.from(data as Map),
-          );
-
-      if (cached != null) {
-        _updateFromResponse(cached);
-      }
-
-      // Load local progress
-      await _loadLocalProgress();
-    } catch (e) {
-      AppLogger.error('Error loading daily challenges from cache', e);
-    }
-  }
-
-  Future<void> _initPrefs() async {
-    _prefs ??= await SharedPreferences.getInstance();
-  }
-
-  Future<void> _loadLocalProgress() async {
-    try {
-      await _initPrefs();
-      final localProgress = _prefs?.getString(_localProgressKey);
-      if (localProgress != null) {
-        final data = jsonDecode(localProgress) as Map<String, dynamic>;
-        final savedDate = data['date'] as String?;
-        final today = DateTime.now().toIso8601String().split('T')[0];
-
-        // Only apply if it's from today
-        if (savedDate == today) {
-          final progress = Map<String, int>.from(data['progress'] as Map);
-          for (final entry in progress.entries) {
-            final type = ChallengeType.fromString(entry.key);
-            _pendingProgress[type] = entry.value;
-          }
-        } else {
-          // Clear old progress
-          await _prefs?.remove(_localProgressKey);
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error loading local progress', e);
-    }
-  }
-
-  Future<void> _saveLocalProgress() async {
-    try {
-      await _initPrefs();
-      final today = DateTime.now().toIso8601String().split('T')[0];
-      final data = {
-        'date': today,
-        'progress': _pendingProgress.map((k, v) => MapEntry(k.apiValue, v)),
-      };
-      await _prefs?.setString(_localProgressKey, jsonEncode(data));
-    } catch (e) {
-      AppLogger.error('Error saving local progress', e);
-    }
-  }
-
+  /// Backend fetch placeholder. Wire the API call here when the
+  /// backend's daily-challenges endpoint is back in service.
   Future<void> refreshChallenges() async {
-    if (_isLoading) return;
+    // TODO: fetch today's challenges from the backend and feed them
+    // through [setChallengesFromBackend].
+  }
 
-    _isLoading = true;
-    // DON'T notifyListeners() here — no spinner
+  /// Entry point for the backend wiring: feed the freshly-fetched
+  /// challenge list in, and mark any whose claim is already recorded
+  /// in Drift as claimed so the UI doesn't ask the user to claim
+  /// twice across reinstalls.
+  Future<void> setChallengesFromBackend(
+    List<DailyChallenge> fromBackend,
+  ) async {
+    final claimedIds = await _loadClaimedIdsForToday();
 
+    _challenges = [
+      for (final c in fromBackend)
+        if (claimedIds.contains(c.id))
+          c.copyWith(isCompleted: true, claimedReward: true)
+        else
+          c,
+    ];
+    _totalCount = _challenges.length;
+    _completedCount = _challenges.where((c) => c.isCompleted).length;
+    _allCompleted = _completedCount == _totalCount && _totalCount > 0;
+    _lastLoadDate = DateTime.now().toIso8601String().split('T')[0];
+    notifyListeners();
+  }
+
+  Future<Set<String>> _loadClaimedIdsForToday() async {
     try {
-      if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-        final response = await _apiService.getDailyChallenges();
-        if (response != null) {
-          _updateFromResponse(response);
-
-          // Cache the response with 12h TTL (challenges change once per day)
-          await _cacheService.setCache<Map<String, dynamic>>(
-            _challengesKey,
-            response,
-            (data) => data,
-            customTtl: const Duration(hours: 12),
-          );
-
-          // Sync any pending progress
-          await _syncPendingProgress();
-        }
-      }
+      final rows = await _storageService.gameDao.getTodaysChallenges();
+      return rows
+          .where((r) => r.rewardClaimed)
+          .map((r) => r.challengeId)
+          .toSet();
     } catch (e) {
-      AppLogger.error('Error refreshing daily challenges', e);
-    } finally {
-      _isLoading = false;
-      notifyListeners(); // Only notify ONCE when data is ready
+      AppLogger.error('Error loading claimed challenge ids', e);
+      return const {};
     }
   }
 
-  void _updateFromResponse(Map<String, dynamic> response) {
-    try {
-      final challengesResponse = DailyChallengesResponse.fromJson(response);
-      _challenges = challengesResponse.challenges;
-      _completedCount = challengesResponse.completedCount;
-      _totalCount = challengesResponse.totalCount;
-      _allCompleted = challengesResponse.allCompleted;
-      _bonusCoins = challengesResponse.bonusCoins;
-      _lastLoadDate = DateTime.now().toIso8601String().split('T')[0];
-    } catch (e) {
-      AppLogger.error('Error parsing daily challenges response', e);
-    }
-  }
-
-  /// Update progress for a specific challenge type
-  /// Called after each game ends
+  /// Update progress for a specific challenge type. In-memory only —
+  /// the buffer is never persisted because the backend authoritatively
+  /// tracks per-user progress and we don't want a stale local copy.
   Future<void> updateProgress(
     ChallengeType type,
     int value, {
     String? gameMode,
   }) async {
     if (value <= 0) return;
-
-    // Accumulate local progress
-    _pendingProgress[type] = (_pendingProgress[type] ?? 0) + value;
-    await _saveLocalProgress();
-
-    // Update local challenges optimistically
     _updateLocalProgress(type, value, gameMode: gameMode);
-
-    // Try to sync with backend
-    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-      try {
-        final response = await _apiService.updateChallengeProgress(
-          type: type.apiValue,
-          value: value,
-          gameMode: gameMode,
-        );
-
-        if (response != null) {
-          // Update challenges from response
-          final updatedChallenges = (response['updatedChallenges'] as List?)
-              ?.map((c) => DailyChallenge.fromJson(c as Map<String, dynamic>))
-              .toList();
-
-          if (updatedChallenges != null) {
-            for (final updated in updatedChallenges) {
-              final index = _challenges.indexWhere((c) => c.id == updated.id);
-              if (index >= 0) {
-                _challenges[index] = updated;
-              }
-            }
-          }
-
-          // Check for newly completed
-          final newlyCompleted = response['newlyCompletedIds'] as List?;
-          if (newlyCompleted != null && newlyCompleted.isNotEmpty) {
-            _completedCount = _challenges.where((c) => c.isCompleted).length;
-            _allCompleted = _completedCount == _totalCount && _totalCount > 0;
-            AppLogger.info(
-              'Daily challenges completed: ${newlyCompleted.length}',
-            );
-          }
-
-          // Clear pending progress for synced type
-          _pendingProgress.remove(type);
-          await _saveLocalProgress();
-        }
-      } catch (e) {
-        AppLogger.error('Error syncing challenge progress', e);
-        // Keep in pending for later sync
-      }
-    }
-
     notifyListeners();
   }
 
-  /// Batch update progress for multiple challenge types in a single API call.
-  /// Each entry: {type: ChallengeType, value: int, gameMode: String?}
+  /// Batched per-game progress update.
   Future<void> updateProgressBatch(
     List<({ChallengeType type, int value, String? gameMode})> updates,
   ) async {
     if (updates.isEmpty) return;
-
-    // Apply all local progress updates first (instant)
     for (final update in updates) {
       if (update.value <= 0) continue;
-      _pendingProgress[update.type] =
-          (_pendingProgress[update.type] ?? 0) + update.value;
       _updateLocalProgress(update.type, update.value, gameMode: update.gameMode);
     }
-    await _saveLocalProgress();
-
-    // Try batch sync with backend
-    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-      try {
-        final apiUpdates = updates
-            .where((u) => u.value > 0)
-            .map((u) => <String, dynamic>{
-                  'type': u.type.apiValue,
-                  'value': u.value,
-                  if (u.gameMode != null) 'gameMode': u.gameMode,
-                })
-            .toList();
-
-        final response =
-            await _apiService.batchUpdateChallengeProgress(apiUpdates);
-
-        if (response != null) {
-          // Update challenges from response
-          final updatedChallenges = (response['updatedChallenges'] as List?)
-              ?.map((c) => DailyChallenge.fromJson(c as Map<String, dynamic>))
-              .toList();
-
-          if (updatedChallenges != null) {
-            for (final updated in updatedChallenges) {
-              final index = _challenges.indexWhere((c) => c.id == updated.id);
-              if (index >= 0) {
-                _challenges[index] = updated;
-              }
-            }
-          }
-
-          // Check for newly completed
-          final newlyCompleted = response['newlyCompletedIds'] as List?;
-          if (newlyCompleted != null && newlyCompleted.isNotEmpty) {
-            _completedCount = _challenges.where((c) => c.isCompleted).length;
-            _allCompleted = _completedCount == _totalCount && _totalCount > 0;
-            AppLogger.info(
-              'Daily challenges completed: ${newlyCompleted.length}',
-            );
-          }
-
-          // Clear pending progress for synced types
-          for (final update in updates) {
-            _pendingProgress.remove(update.type);
-          }
-          await _saveLocalProgress();
-        }
-      } catch (e) {
-        AppLogger.error('Error batch syncing challenge progress', e);
-        // Keep in pending for later sync
-      }
-    }
-
     notifyListeners();
   }
 
@@ -314,7 +133,6 @@ class DailyChallengeService extends ChangeNotifier {
       if (challenge.type != type) continue;
       if (challenge.isCompleted) continue;
 
-      // Check game mode match if required
       if (type == ChallengeType.gameMode &&
           challenge.requiredGameMode != null &&
           gameMode != null &&
@@ -322,7 +140,6 @@ class DailyChallengeService extends ChangeNotifier {
         continue;
       }
 
-      // Calculate new progress
       int newProgress;
       if (type == ChallengeType.score || type == ChallengeType.survival) {
         // Take max value for score/survival
@@ -330,7 +147,6 @@ class DailyChallengeService extends ChangeNotifier {
             ? value
             : challenge.currentProgress;
       } else {
-        // Accumulate for food/games
         newProgress = challenge.currentProgress + value;
       }
 
@@ -346,34 +162,9 @@ class DailyChallengeService extends ChangeNotifier {
     _allCompleted = _completedCount == _totalCount && _totalCount > 0;
   }
 
-  Future<void> _syncPendingProgress() async {
-    if (_pendingProgress.isEmpty) return;
-
-    // Use batch endpoint instead of individual calls
-    try {
-      final apiUpdates = _pendingProgress.entries
-          .map((entry) => <String, dynamic>{
-                'type': entry.key.apiValue,
-                'value': entry.value,
-              })
-          .toList();
-
-      final response =
-          await _apiService.batchUpdateChallengeProgress(apiUpdates);
-
-      if (response != null) {
-        // All synced successfully — clear pending
-        _pendingProgress.clear();
-      }
-    } catch (e) {
-      AppLogger.error('Error batch syncing pending progress', e);
-      // Keep pending for next sync attempt
-    }
-
-    await _saveLocalProgress();
-  }
-
-  /// Claim reward for a completed challenge (optimistic update)
+  /// Claim a single completed challenge. Writes the row to Drift (the
+  /// only thing that *does* get persisted locally), credits the coin
+  /// reward, and grants battle-pass XP.
   Future<bool> claimReward(String challengeId) async {
     final index = _challenges.indexWhere((c) => c.id == challengeId);
     if (index < 0) return false;
@@ -381,118 +172,81 @@ class DailyChallengeService extends ChangeNotifier {
     final challenge = _challenges[index];
     if (!challenge.isCompleted || challenge.claimedReward) return false;
 
-    // Optimistic local update FIRST — and persist it to disk before the
-    // network attempt so a crash between the claim and the sync queue
-    // draining can't lose the flag. _saveLocalProgress serializes the full
-    // _challenges list to Drift; the existing initialize() path re-loads
-    // it on next launch, so the UI stays consistent across restarts.
     _challenges[index] = challenge.copyWith(claimedReward: true);
-    await _saveLocalProgress();
-    notifyListeners();
+    await _persistClaim(_challenges[index]);
 
-    // Grant battle-pass XP for the claim — fire-and-forget. Goes through
-    // the cubit's flush path so it pipes through the server's anti-cheat
-    // validator with the right source key.
-    _grantBattlePassXp(['daily_challenge']);
-
-    // Sync with backend in background
-    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-      try {
-        final response = await _apiService.claimChallengeReward(challengeId);
-        if (response != null) {
-          final bonus = response['bonusCoins'] as int? ?? 0;
-          if (bonus > 0) {
-            _bonusCoins = bonus;
-            AppLogger.info('All challenges completed! Bonus: $bonus coins');
-          }
-          notifyListeners();
-        }
-      } catch (e) {
-        AppLogger.error('Error claiming challenge reward', e);
-        // Queue for retry — local state already updated
-        DataSyncService().queueSync('challenge_claim', {
-          'challengeId': challengeId,
-          'claimed_at': DateTime.now().toIso8601String(),
-        }, priority: SyncPriority.high);
-      }
-    } else {
-      // Offline — queue for sync
-      DataSyncService().queueSync('challenge_claim', {
-        'challengeId': challengeId,
-        'claimed_at': DateTime.now().toIso8601String(),
-      }, priority: SyncPriority.high);
+    if (challenge.coinReward > 0 && GetIt.I.isRegistered<CoinsCubit>()) {
+      await GetIt.I<CoinsCubit>().earnCoins(
+        CoinEarningSource.dailyChallenge,
+        customAmount: challenge.coinReward,
+        itemName: challenge.title,
+      );
     }
 
-    return true; // Always succeeds locally
+    _grantBattlePassXp(['daily_challenge']);
+
+    notifyListeners();
+    return true;
   }
 
-  /// Claim all unclaimed rewards in a single batch API call
+  /// Claim every unclaimed-but-completed challenge in one go.
   Future<int> claimAllRewards() async {
     final claimable = _challenges.where((c) => c.canClaim).toList();
     if (claimable.isEmpty) return 0;
 
-    // Optimistic local update for all claimable challenges — persist the
-    // batch to disk before the network attempt so a crash between the tap
-    // and the sync draining can't revert these flags.
     int totalClaimed = 0;
     for (final challenge in claimable) {
       final index = _challenges.indexWhere((c) => c.id == challenge.id);
-      if (index >= 0) {
-        _challenges[index] = challenge.copyWith(claimedReward: true);
-        totalClaimed += challenge.coinReward;
-      }
+      if (index < 0) continue;
+      _challenges[index] = challenge.copyWith(claimedReward: true);
+      await _persistClaim(_challenges[index]);
+      totalClaimed += challenge.coinReward;
     }
-    await _saveLocalProgress();
+
+    if (totalClaimed > 0 && GetIt.I.isRegistered<CoinsCubit>()) {
+      await GetIt.I<CoinsCubit>().earnCoins(
+        CoinEarningSource.dailyChallenge,
+        customAmount: totalClaimed,
+        itemName: 'Daily challenges',
+      );
+    }
+
+    _grantBattlePassXp(
+      List<String>.filled(claimable.length, 'daily_challenge'),
+    );
+
     notifyListeners();
-
-    // Grant battle-pass XP for each claimed challenge in a single flush.
-    // Multiple sources are combined into one POST (Phase E validator
-    // tolerates comma-separated source strings up to summed-amount × 5).
-    final sources = List<String>.filled(claimable.length, 'daily_challenge');
-    _grantBattlePassXp(sources);
-
-    // Batch claim via backend
-    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-      try {
-        final challengeIds = claimable.map((c) => c.id).toList();
-        final response =
-            await _apiService.batchClaimChallengeRewards(challengeIds);
-
-        if (response != null) {
-          final bonus = response['bonusCoins'] as int? ?? 0;
-          if (bonus > 0) {
-            _bonusCoins = bonus;
-            AppLogger.info('All challenges completed! Bonus: $bonus coins');
-          }
-          notifyListeners();
-        }
-      } catch (e) {
-        AppLogger.error('Error batch claiming rewards', e);
-        // Queue individual claims for retry
-        for (final challenge in claimable) {
-          DataSyncService().queueSync('challenge_claim', {
-            'challengeId': challenge.id,
-            'claimed_at': DateTime.now().toIso8601String(),
-          }, priority: SyncPriority.high);
-        }
-      }
-    } else {
-      // Offline — queue for sync
-      for (final challenge in claimable) {
-        DataSyncService().queueSync('challenge_claim', {
-          'challengeId': challenge.id,
-          'claimed_at': DateTime.now().toIso8601String(),
-        }, priority: SyncPriority.high);
-      }
-    }
-
     return totalClaimed;
+  }
+
+  Future<void> _persistClaim(DailyChallenge challenge) async {
+    try {
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      await _storageService.gameDao.upsertDailyChallenge(
+        db.DailyChallengesCompanion(
+          challengeId: Value(challenge.id),
+          challengeType: Value(challenge.type.apiValue),
+          title: Value(challenge.title),
+          description: Value(challenge.description),
+          currentProgress: Value(challenge.currentProgress),
+          targetProgress: Value(challenge.targetValue),
+          rewardCoins: Value(challenge.coinReward),
+          isCompleted: Value(challenge.isCompleted),
+          rewardClaimed: const Value(true),
+          challengeDate: Value(startOfDay),
+          expiresAt: Value(endOfDay),
+          completedAt: Value(today),
+        ),
+      );
+    } catch (e) {
+      AppLogger.error('Error persisting claimed challenge to Drift', e);
+    }
   }
 
   /// Buffer + flush battle-pass XP for one or more claim sources.
   /// Fire-and-forget: failure here must not roll back the user-visible claim.
-  /// We grab the cubit from get_it instead of an injected dependency to keep
-  /// this singleton service free of Bloc/UI plumbing.
   void _grantBattlePassXp(List<String> sources) {
     if (sources.isEmpty) return;
     if (!GetIt.I.isRegistered<BattlePassCubit>()) return;
@@ -501,26 +255,22 @@ class DailyChallengeService extends ChangeNotifier {
       final xp = BattlePassXpSource.getXpForAction(source);
       if (xp > 0) cubit.bufferXP(xp, source: source);
     }
-    // Flush immediately — these are not in-game milestones that benefit from
-    // batching with other game-end events.
     cubit.flushXP();
   }
 
-  /// Force sync with backend
+  /// Legacy entry point. In the offline-first build "sync" = re-fetch
+  /// from the backend, so this is a thin alias for [refreshChallenges].
   Future<void> syncWithBackend() async {
-    if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-      await _syncPendingProgress();
-      await refreshChallenges();
-    }
+    await refreshChallenges();
   }
 
-  /// Check if we need to refresh (new day)
+  /// True when the in-memory snapshot is stale and the screen should
+  /// kick a refresh.
   bool get needsRefresh {
     final today = DateTime.now().toIso8601String().split('T')[0];
     return _lastLoadDate != today || _challenges.isEmpty;
   }
 
-  /// Get challenge by ID
   DailyChallenge? getChallengeById(String id) {
     try {
       return _challenges.firstWhere((c) => c.id == id);
@@ -529,13 +279,14 @@ class DailyChallengeService extends ChangeNotifier {
     }
   }
 
-  /// Clear cache
+  /// Clear in-memory state. Doesn't touch Drift — claimed rows are
+  /// historical and stay.
   Future<void> clearCache() async {
-    await _initPrefs();
-    await _cacheService.invalidateCache(_challengesKey);
-    await _prefs?.remove(_localProgressKey);
     _challenges = [];
-    _pendingProgress.clear();
+    _completedCount = 0;
+    _totalCount = 0;
+    _allCompleted = false;
+    _lastLoadDate = null;
     notifyListeners();
   }
 }

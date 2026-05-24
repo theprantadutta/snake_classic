@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/game_statistics.dart';
-import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
@@ -13,7 +12,6 @@ class StatisticsService {
   final StorageService _storageService = StorageService();
   final DataSyncService _syncService = DataSyncService();
   final UnifiedUserService _userService = UnifiedUserService();
-  final ApiService _apiService = ApiService();
 
   GameStatistics _currentStatistics = GameStatistics.initial();
   bool _initialized = false;
@@ -106,85 +104,15 @@ class StatisticsService {
     }
   }
 
-  Future<void> _syncWithCloud() async {
-    if (!_userService.isSignedIn) return;
-
-    try {
-      // Step 1: pull authoritative cumulative aggregates from the server.
-      // The /scores/me/stats endpoint aggregates over the user's full
-      // score history across every device, so totals are correct even
-      // when the player has played on multiple devices. This is the new
-      // path; the legacy max-merge below is retained for fields the
-      // server doesn't aggregate (food/powerup breakdowns, achievement
-      // progress, streaks, dailyPlayTime).
-      final serverStats = await _apiService.getUserScoreStats();
-      if (serverStats != null && (serverStats['totalGamesPlayed'] ?? 0) > 0) {
-        _currentStatistics = _applyServerAggregates(
-          _currentStatistics,
-          serverStats,
-        );
-        await _saveLocalStatistics();
-
-        // Propagate the post-merge high score to the separate
-        // StorageService.highScore key. Without this, a server-restored
-        // value (e.g. server has 2033, local statistics now reflect that)
-        // wouldn't be visible to GameSettingsCubit — which reads the
-        // separate key on next init — until an app restart triggered
-        // the reconciliation in _loadLocalStatistics. The never-decrease
-        // guard in saveHighScore makes this a no-op if it's already up
-        // to date or lower, so this is safe to call unconditionally.
-        await _storageService.saveHighScore(_currentStatistics.highScore);
-
-        if (kDebugMode) {
-          print('Statistics: cumulative fields refreshed from server');
-        }
-      }
-
-      // Step 2: existing JSON-snapshot merge for the locally-derived
-      // fields (food/powerup breakdowns, streaks, etc.). These aren't
-      // aggregated server-side, so we still need the legacy path. The
-      // cumulative fields will be re-overwritten by step 1's result on
-      // the next sync, so any drift here is bounded.
-      final cloudStats = await _syncService.getData('statistics');
-      final localEmpty = _currentStatistics.totalGamesPlayed <= 0;
-      final cloudEmpty = cloudStats == null ||
-          (cloudStats['totalGamesPlayed'] ?? 0) <= 0;
-
-      if (localEmpty && !cloudEmpty) {
-        _currentStatistics = GameStatistics.fromJson(cloudStats);
-        await _saveLocalStatistics();
-        if (kDebugMode) {
-          print('Statistics: restored from cloud (fresh device)');
-        }
-      } else if (!localEmpty && cloudEmpty) {
-        await _uploadToCloud();
-        if (kDebugMode) {
-          print('Statistics: uploaded local to cloud (cloud was empty)');
-        }
-      } else if (!localEmpty && !cloudEmpty) {
-        final cloudStatistics = GameStatistics.fromJson(cloudStats);
-        _currentStatistics = _mergeStatistics(
-          _currentStatistics,
-          cloudStatistics,
-        );
-        await _saveLocalStatistics();
-        await _uploadToCloud();
-        if (kDebugMode) {
-          print('Statistics: merged local + cloud');
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error syncing with cloud: $e');
-      }
-    }
-  }
+  /// No-op in the offline-first build — statistics live entirely in
+  /// Drift. Kept as a method so existing callers (initialize,
+  /// resetStatistics, forceSync) compile unchanged.
+  Future<void> _syncWithCloud() async {}
 
   /// Overlay server-aggregated cumulative fields onto a local GameStatistics
-  /// snapshot. Server values win for additive metrics (totalGamesPlayed,
-  /// totalScore, highScore, totalGameTime, totalFoodConsumed,
-  /// gamesSurvived30s). Local-only metrics (food/powerup breakdowns,
-  /// streaks, dailyPlayTime, achievement progress) are preserved.
+  /// snapshot. Dormant in the offline-first build but retained in case the
+  /// server merge path is revived.
+  // ignore: unused_element
   GameStatistics _applyServerAggregates(
     GameStatistics local,
     Map<String, dynamic> server,
@@ -250,7 +178,9 @@ class StatisticsService {
   }
 
   /// Merge two GameStatistics by taking max values for each field.
-  /// Cumulative and record fields use max; derived fields are recalculated.
+  /// Dormant in the offline-first build but kept in case cloud merge
+  /// is revived.
+  // ignore: unused_element
   GameStatistics _mergeStatistics(
     GameStatistics a,
     GameStatistics b,
@@ -386,24 +316,12 @@ class StatisticsService {
     return a.isAfter(b) ? a : b;
   }
 
-  Future<void> _uploadToCloud() async {
-    if (!_userService.isSignedIn) return;
-    // Never overwrite cloud data with empty local stats
-    if (_currentStatistics.totalGamesPlayed <= 0) return;
-
-    try {
-      final statisticsWithTimestamp = {
-        ..._currentStatistics.toJson(),
-        'lastUpdated': DateTime.now().toIso8601String(),
-      };
-
-      await _syncService.queueSync('statistics', statisticsWithTimestamp);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error uploading to cloud: $e');
-      }
-    }
-  }
+  /// No-op in the offline-first build — stats live in Drift, and the
+  /// `statistics` sync handler was removed when the backend endpoint
+  /// went away. Earlier this still queued an item that immediately
+  /// short-circuited through the default-true sync case, producing
+  /// misleading "Synced: statistics" log noise on every game-end.
+  Future<void> _uploadToCloud() async {}
 
   Future<void> recordGameResult({
     required int score,
@@ -621,14 +539,8 @@ class StatisticsService {
     // would decrease the stored value, by design.
     await _storageService.resetHighScore();
 
-    if (_userService.isSignedIn) {
-      // Reset on backend
-      final apiService = ApiService();
-      await apiService.resetUserStatistics();
-
-      // Also sync the empty local stats
-      await _syncService.queueSync('statistics', _currentStatistics.toJson());
-    }
+    // No backend reset call in the offline-first build — local state
+    // is authoritative.
   }
 
   // Force sync with cloud (for manual sync)

@@ -323,20 +323,11 @@ class UsernameService {
     }
   }
 
-  /// Search users by username (partial match)
-  Future<List<Map<String, dynamic>>> searchUsersByUsername(String query) async {
-    if (query.length < 2) return [];
-
-    try {
-      final results = await _apiService.searchUsers(query);
-      return results ?? [];
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error searching users by username: $e');
-      }
-      return [];
-    }
-  }
+  /// Search users by username. Disabled in the offline-first build —
+  /// the user-search endpoint backed the now-hidden friends flow and
+  /// has no local equivalent.
+  Future<List<Map<String, dynamic>>> searchUsersByUsername(String query) async =>
+      const [];
 
   /// Reserve a username (now handled by backend automatically)
   Future<void> reserveUsername(String username, String userId) async {
