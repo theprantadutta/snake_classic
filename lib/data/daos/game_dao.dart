@@ -164,6 +164,13 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   Future<Achievement?> getAchievementById(String id) =>
       (select(achievements)..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  /// Fetch many achievements in a single query. Used by SyncEngine
+  /// drain to avoid one round-trip per achievement id.
+  Future<List<Achievement>> getAchievementsByIds(Set<String> ids) {
+    if (ids.isEmpty) return Future.value(<Achievement>[]);
+    return (select(achievements)..where((t) => t.id.isIn(ids))).get();
+  }
+
   /// Update achievement progress
   Future<void> updateAchievementProgress(
     String achievementId,
@@ -279,16 +286,30 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
         .toList());
   }
 
-  /// Load achievements from JSON. Bulk-load path that bypasses the
-  /// outbox enqueue — the data is coming FROM the backend (or local
-  /// seed) and shouldn't trigger an outbound sync.
-  /// Supports both List format (full achievement data) and Map format
-  /// (progress only).
-  Future<void> loadAchievementsFromJson(String jsonData) async {
+  /// Load achievements from JSON. Supports both List format (full
+  /// achievement data, used by the cloud-snapshot restore path) and
+  /// Map format (progress-only, keyed by id — used by the in-game
+  /// AchievementService's local save path).
+  ///
+  /// [enqueueSync] defaults to false so the historical restore caller
+  /// doesn't echo the data back as a push. The local-save path passes
+  /// `true` so AchievementService progress actually round-trips to the
+  /// backend via the SyncEngine outbox. When `enqueueSync` is true, an
+  /// outbox row is only enqueued for rows whose synced fields (progress
+  /// / isUnlocked / unlockedAt / rewardClaimed) actually changed —
+  /// without that diff, every `_saveProgress` would queue all ~50
+  /// achievements every time and bloat the outbox.
+  Future<void> loadAchievementsFromJson(
+    String jsonData, {
+    bool enqueueSync = false,
+  }) async {
     final decoded = json.decode(jsonData);
 
     if (decoded is List) {
-      // List format: full achievement data from backend or old format
+      // List format: full achievement data from backend or old format.
+      // Restore-only path — never enqueue, regardless of the caller's
+      // [enqueueSync] preference (the data is already authoritative
+      // server-side).
       for (final item in decoded) {
         await upsertAchievement(
           AchievementsCompanion(
@@ -309,7 +330,7 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
         );
       }
     } else if (decoded is Map) {
-      // Map format: progress-only data keyed by achievement id
+      // Map format: progress-only data keyed by achievement id.
       for (final entry in decoded.entries) {
         final id = entry.key.toString();
         final data = entry.value;
@@ -317,25 +338,39 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
 
         final existing = await getAchievementById(id);
         if (existing != null) {
+          final newProgress =
+              (data['currentProgress'] as int?) ?? existing.currentProgress;
+          final newUnlocked =
+              (data['isUnlocked'] as bool?) ?? existing.isUnlocked;
+          final newRewardClaimed =
+              (data['rewardClaimed'] as bool?) ?? existing.rewardClaimed;
+          final rawUnlockedAt = data['unlockedAt'] as String?;
+          final newUnlockedAt = rawUnlockedAt != null
+              ? DateTime.tryParse(rawUnlockedAt)
+              : existing.unlockedAt;
+
+          final synced = enqueueSync &&
+              (newProgress != existing.currentProgress ||
+                  newUnlocked != existing.isUnlocked ||
+                  newRewardClaimed != existing.rewardClaimed ||
+                  newUnlockedAt != existing.unlockedAt);
+
           await upsertAchievement(
             AchievementsCompanion(
               id: Value(id),
               name: Value(existing.name),
               description: Value(existing.description),
               category: Value(existing.category),
-              currentProgress:
-                  Value(data['currentProgress'] ?? existing.currentProgress),
+              currentProgress: Value(newProgress),
               targetProgress: Value(existing.targetProgress),
-              isUnlocked: Value(data['isUnlocked'] ?? existing.isUnlocked),
-              unlockedAt: data['unlockedAt'] != null
-                  ? Value(DateTime.parse(data['unlockedAt']))
-                  : (existing.unlockedAt != null
-                      ? Value(existing.unlockedAt!)
-                      : const Value.absent()),
+              isUnlocked: Value(newUnlocked),
+              unlockedAt: newUnlockedAt != null
+                  ? Value(newUnlockedAt)
+                  : const Value.absent(),
               rewardCoins: Value(existing.rewardCoins),
-              rewardClaimed: Value(existing.rewardClaimed),
+              rewardClaimed: Value(newRewardClaimed),
             ),
-            enqueueSync: false,
+            enqueueSync: synced,
           );
         }
       }
@@ -440,30 +475,6 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
               t.challengeDate.isBiggerOrEqualValue(startOfDay) &
               t.challengeDate.isSmallerThanValue(endOfDay)))
         .get();
-  }
-
-  /// Update challenge progress. Not used in the offline-first build —
-  /// progress lives in-memory — but kept for parity with the schema.
-  Future<void> updateChallengeProgress(String challengeId, int progress) async {
-    final challenge = await (select(dailyChallenges)
-          ..where((t) => t.challengeId.equals(challengeId)))
-        .getSingleOrNull();
-
-    if (challenge == null) return;
-
-    final isNowCompleted = progress >= challenge.targetProgress;
-    final now = DateTime.now();
-
-    await (update(dailyChallenges)
-          ..where((t) => t.challengeId.equals(challengeId)))
-        .write(DailyChallengesCompanion(
-      currentProgress: Value(progress),
-      isCompleted: Value(isNowCompleted),
-      completedAt: isNowCompleted && !challenge.isCompleted
-          ? Value(now)
-          : const Value.absent(),
-      updatedAt: Value(now),
-    ));
   }
 
   /// Claim challenge reward. Marks the row claimed + enqueues an

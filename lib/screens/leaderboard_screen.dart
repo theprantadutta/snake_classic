@@ -95,6 +95,16 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 builder: (context, _) => _buildSubtitle(theme),
               ),
 
+              // Cache freshness chip — surfaces when the Drift cache for
+              // the active board was last refreshed from the server so
+              // the user knows if they're looking at stale data (offline,
+              // or a recent disconnect).
+              AnimatedBuilder(
+                animation: _tabController,
+                builder: (context, _) =>
+                    _buildStalenessChip(theme, leaderboardState),
+              ),
+
               // User Rank Card
               if (authState.isSignedIn && leaderboardState.userRank != null)
                 _buildUserRankCard(authState, theme, leaderboardState.userRank!),
@@ -212,6 +222,78 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         ],
       ),
     );
+  }
+
+  /// Tiny inline chip reading "Updated 3m ago · tap to refresh" for the
+  /// active board. The Drift cache survives offline launches, so this
+  /// is the user's signal for "is what I'm looking at stale?". Tap
+  /// triggers a forced refresh.
+  Widget _buildStalenessChip(
+    GameTheme theme,
+    CombinedLeaderboardState state,
+  ) {
+    final isWeekly = _tabController.index == 1;
+    final ts =
+        isWeekly ? state.weeklyLastRefreshedAt : state.globalLastRefreshedAt;
+    final hasData = isWeekly
+        ? state.weeklyEntries.isNotEmpty
+        : state.globalEntries.isNotEmpty;
+    // No chip until the cache has at least once been populated. A
+    // brand-new install hitting an offline state would just look
+    // confusing with a "Never updated" label.
+    if (ts == null && !hasData) return const SizedBox.shrink();
+
+    final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: InkWell(
+          onTap: () =>
+              ref.read(combinedLeaderboardProvider.notifier).refresh(),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.18),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.refresh_rounded,
+                  color: theme.accentColor.withValues(alpha: 0.7),
+                  size: 12,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.75),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _relativeAge(DateTime ts) {
+    final diff = DateTime.now().difference(ts);
+    if (diff.inSeconds < 5) return 'just now';
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 
   Widget _buildUserRankCard(AuthState authState, GameTheme theme, Map<String, dynamic> userRank) {

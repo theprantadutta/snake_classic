@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/models/user_profile.dart';
-import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/providers/providers.dart';
 
@@ -16,6 +15,11 @@ class FriendsState {
   final bool isSearching;
   final String searchQuery;
   final String? error;
+  /// Drift-cache freshness — null until the first successful refresh
+  /// of each list. Surfaced to the screen so a stale offline view
+  /// can be labelled rather than silently passed off as live.
+  final DateTime? friendsLastRefreshedAt;
+  final DateTime? requestsLastRefreshedAt;
 
   const FriendsState({
     this.friends = const [],
@@ -25,6 +29,8 @@ class FriendsState {
     this.isSearching = false,
     this.searchQuery = '',
     this.error,
+    this.friendsLastRefreshedAt,
+    this.requestsLastRefreshedAt,
   });
 
   /// Get received friend requests
@@ -47,6 +53,8 @@ class FriendsState {
     bool? isSearching,
     String? searchQuery,
     String? error,
+    DateTime? friendsLastRefreshedAt,
+    DateTime? requestsLastRefreshedAt,
   }) {
     return FriendsState(
       friends: friends ?? this.friends,
@@ -56,6 +64,10 @@ class FriendsState {
       isSearching: isSearching ?? this.isSearching,
       searchQuery: searchQuery ?? this.searchQuery,
       error: error,
+      friendsLastRefreshedAt:
+          friendsLastRefreshedAt ?? this.friendsLastRefreshedAt,
+      requestsLastRefreshedAt:
+          requestsLastRefreshedAt ?? this.requestsLastRefreshedAt,
     );
   }
 }
@@ -64,7 +76,6 @@ class FriendsState {
 class FriendsNotifier extends StateNotifier<FriendsState> {
   final Ref _ref;
   final SocialService _service;
-  final AppDataCache _appCache;
   Timer? _ttlTimer;
   Timer? _searchDebounce;
 
@@ -73,26 +84,14 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
 
   FriendsNotifier(this._ref)
     : _service = SocialService(),
-      _appCache = AppDataCache(),
       super(const FriendsState(isLoading: true)) {
     _initialize();
   }
 
   void _initialize() {
-    // Check cache first - use preloaded data if available
-    if (_appCache.isFullyLoaded && _appCache.friendsList != null) {
-      // Use cached data immediately - no loading state!
-      state = FriendsState(
-        friends: _appCache.friendsList!,
-        friendRequests: _appCache.friendRequests ?? [],
-        isLoading: false,
-      );
-      // Refresh in background (silent, no loading indicator)
-      _refreshInBackground();
-    } else {
-      // No cache - load normally
-      _loadData();
-    }
+    // Drift-first paint: hydrate from the local cache immediately,
+    // then kick a background refresh that re-hydrates when it lands.
+    _loadData();
 
     // Set up TTL-based refresh
     _startTtlTimer();
@@ -108,23 +107,6 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
     });
   }
 
-  Future<void> _refreshInBackground() async {
-    // Silent refresh - don't set isLoading
-    try {
-      final results = await Future.wait([
-        _service.getFriends(),
-        _service.getFriendRequests(),
-      ]);
-
-      state = state.copyWith(
-        friends: results[0] as List<UserProfile>,
-        friendRequests: results[1] as List<FriendRequest>,
-      );
-    } catch (_) {
-      // Ignore errors in background refresh
-    }
-  }
-
   void _startTtlTimer() {
     _ttlTimer?.cancel();
     _ttlTimer = Timer.periodic(_ttl, (_) {
@@ -136,45 +118,65 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
   }
 
   Future<void> _loadData() async {
-    state = state.copyWith(isLoading: true, error: null);
+    // Cache-first paint: pull whatever's in Drift right now. Only show
+    // the spinner if the cache is genuinely empty (brand-new install
+    // or post-signOut wipe).
+    await _hydrateFromCache(isLoading: false);
+    final hadCache =
+        state.friends.isNotEmpty || state.friendRequests.isNotEmpty;
+    state = state.copyWith(isLoading: !hadCache, error: null);
 
     try {
-      final results = await Future.wait([
-        _service.getFriends(),
-        _service.getFriendRequests(),
+      await Future.wait([
+        _service.refreshFriends(),
+        _service.refreshFriendRequests(),
       ]);
-
-      state = state.copyWith(
-        friends: results[0] as List<UserProfile>,
-        friendRequests: results[1] as List<FriendRequest>,
-        isLoading: false,
-      );
+      await _hydrateFromCache(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Failed to load friends');
+      state = state.copyWith(
+        isLoading: false,
+        error: hadCache ? null : 'Failed to load friends',
+      );
     }
   }
 
-  /// Refresh friends data from the server
+  /// Refresh friends data from the server. Keeps the cached entries
+  /// on screen while the network round-trip is in flight.
   Future<void> refresh() async {
-    state = state.copyWith(isLoading: true, error: null);
+    final hadCache =
+        state.friends.isNotEmpty || state.friendRequests.isNotEmpty;
+    state = state.copyWith(isLoading: !hadCache, error: null);
 
     try {
-      final results = await Future.wait([
-        _service.getFriends(),
-        _service.getFriendRequests(),
+      await Future.wait([
+        _service.refreshFriends(),
+        _service.refreshFriendRequests(),
       ]);
-
-      state = state.copyWith(
-        friends: results[0] as List<UserProfile>,
-        friendRequests: results[1] as List<FriendRequest>,
-        isLoading: false,
-      );
+      await _hydrateFromCache(isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Failed to refresh friends',
+        error: hadCache ? null : 'Failed to refresh friends',
       );
     }
+  }
+
+  /// Read whatever's in the Drift cache into state. Called on init
+  /// (for cache-first paint), after every refresh, and after every
+  /// successful mutation so the screen reflects the latest local
+  /// truth without waiting for the next TTL tick.
+  Future<void> _hydrateFromCache({bool? isLoading}) async {
+    final friends = await _service.getFriends();
+    final requests = await _service.getFriendRequests();
+    state = state.copyWith(
+      friends: friends,
+      friendRequests: requests,
+      isLoading: isLoading,
+      friendsLastRefreshedAt:
+          await _service.getLastRefreshedAt('friends'),
+      requestsLastRefreshedAt:
+          await _service.getLastRefreshedAt('requests'),
+    );
   }
 
   /// Search for users (debounced)
@@ -210,43 +212,32 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
     );
   }
 
-  /// Send friend request
+  /// Send friend request. Service drops the request into the
+  /// outbound queue (live API) and refreshes the cache on success;
+  /// we just need to re-read the cache to surface the update.
   Future<bool> sendFriendRequest(String userId) async {
     final success = await _service.sendFriendRequest(userId);
-    if (success) {
-      // Refresh to get updated requests list
-      await refresh();
-    }
+    if (success) await _hydrateFromCache();
     return success;
   }
 
-  /// Accept friend request
+  /// Accept friend request (resolved by sender userId — see
+  /// SocialService.acceptFriendRequest).
   Future<bool> acceptFriendRequest(String fromUserId) async {
     final success = await _service.acceptFriendRequest(fromUserId);
-    if (success) {
-      // Refresh to get updated friends and requests lists
-      await refresh();
-    }
+    if (success) await _hydrateFromCache();
     return success;
   }
 
-  /// Reject friend request
   Future<bool> rejectFriendRequest(String fromUserId) async {
     final success = await _service.rejectFriendRequest(fromUserId);
-    if (success) {
-      // Refresh to get updated requests list
-      await refresh();
-    }
+    if (success) await _hydrateFromCache();
     return success;
   }
 
-  /// Remove friend
   Future<bool> removeFriend(String friendUserId) async {
     final success = await _service.removeFriend(friendUserId);
-    if (success) {
-      // Refresh to get updated friends list
-      await refresh();
-    }
+    if (success) await _hydrateFromCache();
     return success;
   }
 

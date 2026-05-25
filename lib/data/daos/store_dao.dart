@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 
 part 'store_dao.g.dart';
+
+const _uuid = Uuid();
 
 @DriftAccessor(
     tables: [Coins, CoinTransactions, PremiumStatus, UnlockedItems, BattlePasses, PurchaseHistory])
@@ -24,6 +27,12 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
         .getSingleOrNull();
     return coin?.balance ?? 0;
   }
+
+  /// Get the full singleton coins row. Used by SyncEngine to read the
+  /// authentic `updatedAt` (rather than stamping `now` at dispatch
+  /// time, which would break server-side last-write-wins).
+  Future<Coin?> getCoinBalanceRow() =>
+      (select(coins)..where((t) => t.id.equals(1))).getSingleOrNull();
 
   /// Add coins (from game, achievement, etc.). Bumps balance, appends
   /// a transaction record, and enqueues both rows for sync inside a
@@ -54,7 +63,10 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
         updatedAt: Value(now),
       ));
 
-      final txnKey = 'coin_transaction:${now.microsecondsSinceEpoch}';
+      // Mint a stable, clock-skew-safe idempotency key client-side.
+      // Stored in the outbox payload so retries keep the same key.
+      final idempotencyKey = _uuid.v4();
+      final txnKey = 'coin_transaction:$idempotencyKey';
       await attachedDatabase.enqueueSyncOutbox(
         dataType: SyncDataType.coinBalance,
         entityKey: 'coin_balance:1',
@@ -68,6 +80,7 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
           'source': source,
           'description': description,
           'created_at': now.toUtc().toIso8601String(),
+          'idempotency_key': idempotencyKey,
         },
       );
     });
@@ -100,7 +113,8 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
         updatedAt: Value(now),
       ));
 
-      final txnKey = 'coin_transaction:${now.microsecondsSinceEpoch}';
+      final idempotencyKey = _uuid.v4();
+      final txnKey = 'coin_transaction:$idempotencyKey';
       await attachedDatabase.enqueueSyncOutbox(
         dataType: SyncDataType.coinBalance,
         entityKey: 'coin_balance:1',
@@ -113,7 +127,13 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
           'type': 'spent',
           'source': source,
           'description': description,
-          'createdAt': now.toIso8601String(),
+          // Snake-case + UTC to match the backend's SnakeCaseLower
+          // JSON policy. The previous camelCase / local-time payload
+          // bound to DateTime.MinValue server-side, which made every
+          // spend share idempotency_key="0" so the server silently
+          // dropped every spend after the first.
+          'created_at': now.toUtc().toIso8601String(),
+          'idempotency_key': idempotencyKey,
         },
       );
     });
@@ -207,13 +227,23 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
         premiumExpirationDate: Value(expirationDate),
       ));
 
-  /// Cloud-snapshot apply path. Mirrors [_writePremiumStatus] but
-  /// without the outbox enqueue, so a first-sign-in restore can write
-  /// the row without immediately echoing it back as a push.
-  Future<void> applyPremiumStatusSnapshot(PremiumStatusCompanion patch) =>
-      _writePremiumStatus(patch, enqueueSync: false);
+  /// Cloud-snapshot apply path for premium status. Robust against the
+  /// singleton row not yet existing — uses insertOnConflictUpdate so
+  /// init-order regressions can't silently swallow the snapshot
+  /// section.
+  Future<void> applyPremiumStatusSnapshot(PremiumStatusCompanion patch) async {
+    final now = DateTime.now();
+    await into(premiumStatus).insertOnConflictUpdate(
+      patch.copyWith(
+        id: const Value(1),
+        lastUpdated: Value(now),
+        updatedAt: Value(now),
+      ),
+    );
+  }
 
-  /// Cloud-snapshot apply path for coin balance.
+  /// Cloud-snapshot apply path for coin balance. Same insert-or-update
+  /// robustness as [applyPremiumStatusSnapshot].
   Future<void> applyCoinBalanceSnapshot({
     required int balance,
     int? totalEarned,
@@ -221,13 +251,18 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     DateTime? updatedAt,
   }) async {
     final ts = updatedAt ?? DateTime.now();
-    await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
-      balance: Value(balance),
-      totalEarned: totalEarned == null ? const Value.absent() : Value(totalEarned),
-      totalSpent: totalSpent == null ? const Value.absent() : Value(totalSpent),
-      lastUpdated: Value(ts),
-      updatedAt: Value(ts),
-    ));
+    await into(coins).insertOnConflictUpdate(
+      CoinsCompanion(
+        id: const Value(1),
+        balance: Value(balance),
+        totalEarned:
+            totalEarned == null ? const Value.absent() : Value(totalEarned),
+        totalSpent:
+            totalSpent == null ? const Value.absent() : Value(totalSpent),
+        lastUpdated: Value(ts),
+        updatedAt: Value(ts),
+      ),
+    );
   }
 
   /// Get premium expiration date as string
@@ -331,9 +366,12 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     });
   }
 
-  /// Replace all items for a given type. Used by server-restore /
-  /// admin-debug paths. [enqueueSync] defaults true; pass false when
-  /// hydrating from a cloud pull.
+  /// Replace all items for a given type — wipes the local set then
+  /// re-inserts. Use ONLY for cases that need replace semantics like a
+  /// one-shot id migration. For the "mirror what the server says I
+  /// own" case, prefer [applyUnlockedItemsFromServer] instead: it
+  /// merges without deleting and skips the outbox enqueue so the
+  /// server's data doesn't bounce straight back as a push.
   Future<void> setUnlockedItems(
     String itemType,
     List<String> itemIds, {
@@ -344,6 +382,25 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
           .go();
       for (final itemId in itemIds) {
         await unlockItem(itemId, itemType, enqueueSync: enqueueSync);
+      }
+    });
+  }
+
+  /// Server-entitlement apply path. Adds any items the server says we
+  /// own that we don't already have locally, without deleting anything
+  /// (UnlockedItems is append-only on the wire — the server has no
+  /// "revoke" semantic, so divergence between server views and local
+  /// state should be resolved by union, not subtraction). Skips the
+  /// outbox enqueue: the data came from the server, so echoing it back
+  /// is pure bandwidth waste.
+  Future<void> applyUnlockedItemsFromServer(
+    String itemType,
+    List<String> itemIds,
+  ) async {
+    if (itemIds.isEmpty) return;
+    await transaction(() async {
+      for (final itemId in itemIds) {
+        await unlockItem(itemId, itemType, enqueueSync: false);
       }
     });
   }
@@ -365,6 +422,19 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   Future<void> setUnlockedGameModes(List<String> ids) => setUnlockedItems('game_mode', ids);
   Future<void> setUnlockedBundles(List<String> ids) => setUnlockedItems('bundle', ids);
 
+  // Server-apply variants — use these in the `_applyBackendEntitlements`
+  // path so server data doesn't echo back as a push and local items
+  // unknown to the server (e.g., achievement-rewarded) survive the
+  // refresh.
+  Future<void> applyUnlockedThemesFromServer(List<String> ids) =>
+      applyUnlockedItemsFromServer('theme', ids);
+  Future<void> applyUnlockedSkinsFromServer(List<String> ids) =>
+      applyUnlockedItemsFromServer('skin', ids);
+  Future<void> applyUnlockedTrailsFromServer(List<String> ids) =>
+      applyUnlockedItemsFromServer('trail', ids);
+  Future<void> applyUnlockedBundlesFromServer(List<String> ids) =>
+      applyUnlockedItemsFromServer('bundle', ids);
+
   // ==================== Battle Pass ====================
 
   /// Watch battle pass
@@ -376,6 +446,16 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   Future<BattlePassesData?> getBattlePass(String seasonId) =>
       (select(battlePasses)..where((t) => t.seasonId.equals(seasonId)))
           .getSingleOrNull();
+
+  /// Batch fetch — used by SyncEngine drain so multiple season ids
+  /// resolve in one query instead of N round-trips.
+  Future<List<BattlePassesData>> getBattlePassesBySeasonIds(
+    Set<String> seasonIds,
+  ) {
+    if (seasonIds.isEmpty) return Future.value(<BattlePassesData>[]);
+    return (select(battlePasses)..where((t) => t.seasonId.isIn(seasonIds)))
+        .get();
+  }
 
   /// Get current battle pass (any season)
   Future<BattlePassesData?> getCurrentBattlePass() =>
@@ -403,48 +483,122 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     });
   }
 
-  /// Get battle pass as JSON
+  /// Decode the [claimedRewards] text column into the
+  /// `{"free": [...], "premium": [...]}` split that BattlePassCubit
+  /// expects. Tolerates legacy rows where the column holds a flat
+  /// JSON array (everything is treated as a free-tier claim in that
+  /// case — the cubit re-saves with the structured shape on the next
+  /// claim).
+  static Map<String, List<int>> _decodeClaimedRewards(String raw) {
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is Map) {
+        return {
+          'free': (decoded['free'] as List?)
+                  ?.map((e) => (e as num).toInt())
+                  .toList() ??
+              <int>[],
+          'premium': (decoded['premium'] as List?)
+                  ?.map((e) => (e as num).toInt())
+                  .toList() ??
+              <int>[],
+        };
+      }
+      if (decoded is List) {
+        return {
+          'free': decoded.map((e) => (e as num).toInt()).toList(),
+          'premium': <int>[],
+        };
+      }
+    } catch (_) {
+      // Malformed payload — fall through to empty defaults.
+    }
+    return {'free': <int>[], 'premium': <int>[]};
+  }
+
+  /// Read battle pass as a snake_case JSON blob matching the keys
+  /// BattlePassCubit writes/reads. Returns null when no row exists.
   Future<String?> getBattlePassData() async {
     final pass = await getCurrentBattlePass();
     if (pass == null) return null;
 
+    final split = _decodeClaimedRewards(pass.claimedRewards);
+
     return json.encode({
-      'seasonId': pass.seasonId,
-      'currentTier': pass.currentTier,
-      'currentXp': pass.currentXp,
-      'xpForNextTier': pass.xpForNextTier,
-      'isPremiumPass': pass.isPremiumPass,
-      'claimedRewards': json.decode(pass.claimedRewards),
-      'seasonStartDate': pass.seasonStartDate?.toIso8601String(),
-      'seasonEndDate': pass.seasonEndDate?.toIso8601String(),
+      'season_id': pass.seasonId,
+      'current_tier': pass.currentTier,
+      'current_xp': pass.currentXp,
+      'xp_for_next_tier': pass.xpForNextTier,
+      'is_active': pass.isPremiumPass,
+      'expiry_date': pass.seasonEndDate?.toIso8601String(),
+      'claimed_free_tiers': split['free'],
+      'claimed_premium_tiers': split['premium'],
+      // Preserved for the cubit's display layer; the Drift schema
+      // doesn't have a column for it so the cubit's own copy on
+      // disk (via setBattlePassData below) is the source of truth.
+      'season_name': null,
+      'season_start_date': pass.seasonStartDate?.toIso8601String(),
+      'season_end_date': pass.seasonEndDate?.toIso8601String(),
     });
   }
 
-  /// Set battle pass from JSON. Used by the server pull on first
-  /// sign-in; doesn't enqueue an outbox row.
-  Future<void> setBattlePassData(String? jsonData) async {
+  /// Persist battle pass state from the cubit's snake_case JSON blob.
+  /// [enqueueSync] defaults to true so local saves ride the SyncEngine
+  /// drain; the first-sign-in restore caller passes false.
+  Future<void> setBattlePassData(
+    String? jsonData, {
+    bool enqueueSync = true,
+  }) async {
     if (jsonData == null) {
       await delete(battlePasses).go();
       return;
     }
 
     final data = json.decode(jsonData) as Map<String, dynamic>;
+
+    // Encode free/premium split into the single claimedRewards text
+    // column. SyncEngine's wire mapping unions these into List<int>
+    // when sending to the backend (the wire schema is flat).
+    final claimedFree = (data['claimed_free_tiers'] as List?)
+            ?.map((e) => (e as num).toInt())
+            .toList() ??
+        <int>[];
+    final claimedPremium = (data['claimed_premium_tiers'] as List?)
+            ?.map((e) => (e as num).toInt())
+            .toList() ??
+        <int>[];
+    final claimedJson = json.encode({
+      'free': claimedFree,
+      'premium': claimedPremium,
+    });
+
+    final expiry = data['expiry_date'] as String?;
+    final seasonStart = data['season_start_date'] as String?;
+    final seasonEnd = data['season_end_date'] as String? ?? expiry;
+
     await saveBattlePass(
       BattlePassesCompanion(
-        seasonId: Value(data['seasonId'] ?? 'default'),
-        currentTier: Value(data['currentTier'] ?? 0),
-        currentXp: Value(data['currentXp'] ?? 0),
-        xpForNextTier: Value(data['xpForNextTier'] ?? 100),
-        isPremiumPass: Value(data['isPremiumPass'] ?? false),
-        claimedRewards: Value(json.encode(data['claimedRewards'] ?? [])),
-        seasonStartDate: data['seasonStartDate'] != null
-            ? Value(DateTime.parse(data['seasonStartDate']))
+        // BattlePassCubit doesn't carry a stable seasonId — fall back
+        // to season_name (cubit's display label) so re-saves stick to
+        // the same row instead of churning new rows per season name.
+        seasonId: Value(
+          (data['season_id'] as String?) ??
+              (data['season_name'] as String?) ??
+              'default',
+        ),
+        currentTier: Value((data['current_tier'] as int?) ?? 0),
+        currentXp: Value((data['current_xp'] as int?) ?? 0),
+        xpForNextTier: Value((data['xp_for_next_tier'] as int?) ?? 100),
+        isPremiumPass: Value((data['is_active'] as bool?) ?? false),
+        claimedRewards: Value(claimedJson),
+        seasonStartDate: seasonStart != null
+            ? Value(DateTime.tryParse(seasonStart))
             : const Value.absent(),
-        seasonEndDate: data['seasonEndDate'] != null
-            ? Value(DateTime.parse(data['seasonEndDate']))
+        seasonEndDate: seasonEnd != null
+            ? Value(DateTime.tryParse(seasonEnd))
             : const Value.absent(),
       ),
-      enqueueSync: false,
+      enqueueSync: enqueueSync,
     );
   }
 

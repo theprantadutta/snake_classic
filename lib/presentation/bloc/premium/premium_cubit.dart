@@ -429,30 +429,30 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> unlockTheme(GameTheme theme) async {
     final updatedThemes = {...state.ownedThemes, theme};
     emit(state.copyWith(ownedThemes: updatedThemes));
-    await _storageService.setUnlockedThemes(
-      updatedThemes.map((t) => t.name).toList(),
-    );
+    // Single-item write: only the new theme goes into the outbox,
+    // not every theme the user already owns.
+    await _storageService.unlockItem(theme.name, 'theme');
   }
 
   /// Unlock a skin
   Future<void> unlockSkin(String skinId) async {
     final updatedSkins = {...state.ownedSkins, skinId};
     emit(state.copyWith(ownedSkins: updatedSkins));
-    await _storageService.setUnlockedSkins(updatedSkins.toList());
+    await _storageService.unlockItem(skinId, 'skin');
   }
 
   /// Unlock a trail
   Future<void> unlockTrail(String trailId) async {
     final updatedTrails = {...state.ownedTrails, trailId};
     emit(state.copyWith(ownedTrails: updatedTrails));
-    await _storageService.setUnlockedTrails(updatedTrails.toList());
+    await _storageService.unlockItem(trailId, 'trail');
   }
 
   /// Unlock a power-up
   Future<void> unlockPowerUp(String powerUpId) async {
     final updatedPowerUps = {...state.ownedPowerUps, powerUpId};
     emit(state.copyWith(ownedPowerUps: updatedPowerUps));
-    await _storageService.setUnlockedPowerUps(updatedPowerUps.toList());
+    await _storageService.unlockItem(powerUpId, 'powerup');
     AppLogger.info('Power-up unlocked: $powerUpId');
   }
 
@@ -460,7 +460,7 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> unlockBoardSize(String boardSizeId) async {
     final updatedBoardSizes = {...state.ownedBoardSizes, boardSizeId};
     emit(state.copyWith(ownedBoardSizes: updatedBoardSizes));
-    await _storageService.setUnlockedBoardSizes(updatedBoardSizes.toList());
+    await _storageService.unlockItem(boardSizeId, 'board_size');
     AppLogger.info('Board size unlocked: $boardSizeId');
   }
 
@@ -470,7 +470,7 @@ class PremiumCubit extends Cubit<PremiumState> {
 
     final updatedBundles = {...state.ownedBundles, bundleId};
     emit(state.copyWith(ownedBundles: updatedBundles));
-    await _storageService.setUnlockedBundles(updatedBundles.toList());
+    await _storageService.unlockItem(bundleId, 'bundle');
 
     // Unlock cosmetic bundle contents (skins + trails)
     final cosmeticBundle = CosmeticBundle.availableBundles
@@ -691,7 +691,10 @@ class PremiumCubit extends Cubit<PremiumState> {
           .toSet();
       if (serverThemes != state.ownedThemes) {
         emit(state.copyWith(ownedThemes: serverThemes));
-        await _storageService.setUnlockedThemes(
+        // Merge-only: locally-owned themes the server doesn't know
+        // about (e.g., achievement rewards that bypass /premium-content)
+        // are preserved, and we don't echo the server's data back.
+        await _storageService.applyUnlockedThemesFromServer(
           serverThemes.map((t) => t.name).toList(),
         );
       }
@@ -703,7 +706,9 @@ class PremiumCubit extends Cubit<PremiumState> {
           (data['owned_skins'] as List).whereType<String>().toSet();
       if (serverSkins != state.ownedSkins) {
         emit(state.copyWith(ownedSkins: serverSkins));
-        await _storageService.setUnlockedSkins(serverSkins.toList());
+        await _storageService.applyUnlockedSkinsFromServer(
+          serverSkins.toList(),
+        );
       }
     }
 
@@ -713,7 +718,9 @@ class PremiumCubit extends Cubit<PremiumState> {
           (data['owned_trails'] as List).whereType<String>().toSet();
       if (serverTrails != state.ownedTrails) {
         emit(state.copyWith(ownedTrails: serverTrails));
-        await _storageService.setUnlockedTrails(serverTrails.toList());
+        await _storageService.applyUnlockedTrailsFromServer(
+          serverTrails.toList(),
+        );
       }
     }
 
@@ -723,7 +730,9 @@ class PremiumCubit extends Cubit<PremiumState> {
           (data['owned_bundles'] as List).whereType<String>().toSet();
       if (serverBundles != state.ownedBundles) {
         emit(state.copyWith(ownedBundles: serverBundles));
-        await _storageService.setUnlockedBundles(serverBundles.toList());
+        await _storageService.applyUnlockedBundlesFromServer(
+          serverBundles.toList(),
+        );
       }
     }
 

@@ -54,6 +54,14 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                 children: [
                   _buildHeader(theme),
                   _buildTabBar(theme),
+                  // "Updated X ago" chip — surfaces Drift cache
+                  // freshness for the currently-active tab so the user
+                  // can tell if they're looking at stale offline data.
+                  AnimatedBuilder(
+                    animation: _tabController,
+                    builder: (context, _) =>
+                        _buildStalenessChip(theme, tournamentsState),
+                  ),
                   Expanded(
                     child: tournamentsState.isLoading
                         ? _buildLoadingIndicator(theme)
@@ -124,6 +132,86 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         ],
       ),
     );
+  }
+
+  /// Inline chip showing how stale the Drift cache for the active tab
+  /// is. Tap triggers a forced refresh. The My Stats tab has no cache
+  /// of its own — fall back to whichever list was most recently
+  /// touched so the user still gets a signal.
+  Widget _buildStalenessChip(
+    GameTheme theme,
+    TournamentsState state,
+  ) {
+    final tabIndex = _tabController.index;
+    DateTime? ts;
+    bool hasData;
+    switch (tabIndex) {
+      case 0:
+        ts = state.activeLastRefreshedAt;
+        hasData = state.activeTournaments.isNotEmpty;
+        break;
+      case 1:
+        ts = state.historyLastRefreshedAt;
+        hasData = state.historyTournaments.isNotEmpty;
+        break;
+      default:
+        ts = state.activeLastRefreshedAt ?? state.historyLastRefreshedAt;
+        hasData = state.activeTournaments.isNotEmpty ||
+            state.historyTournaments.isNotEmpty;
+    }
+
+    if (ts == null && !hasData) return const SizedBox.shrink();
+    final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: InkWell(
+          onTap: () => ref.read(tournamentsProvider.notifier).refresh(),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.18),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.refresh_rounded,
+                  color: theme.accentColor.withValues(alpha: 0.7),
+                  size: 12,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.75),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _relativeAge(DateTime ts) {
+    final diff = DateTime.now().difference(ts);
+    if (diff.inSeconds < 5) return 'just now';
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 
   Widget _buildLoadingIndicator(GameTheme theme) {

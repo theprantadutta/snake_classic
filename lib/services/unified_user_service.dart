@@ -8,6 +8,7 @@ import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
@@ -1177,6 +1178,24 @@ class UnifiedUserService extends ChangeNotifier {
         AppLogger.user('Backend logout failed (continuing)', e);
       }
 
+      // Wipe local sync state so the *next* user — whether the same
+      // account on the same device or a different one — starts from a
+      // clean slate. Without this:
+      //   * The previous user's Drift tables (settings, stats, coins,
+      //     achievements, unlocked items, battle pass, daily challenge
+      //     claims, replays, sync queue) stay populated.
+      //   * The `sync_engine_has_ever_signed_in` SharedPref stays true,
+      //     so `maybeRunFirstSignInPull` short-circuits with
+      //     `alreadyDone` for the next sign-in.
+      //   * Pending outbox rows from user A drain under user B's JWT,
+      //     leaking A's data onto B's backend account.
+      // Best-effort — failures here don't block the rest of sign-out.
+      try {
+        await _wipeLocalSyncState();
+      } catch (e) {
+        AppLogger.user('Local sync-state wipe failed (continuing)', e);
+      }
+
       // Sign out from Google + Firebase. The Firebase auth listener will
       // fire with firebaseUser=null and clear _currentUser; we also clear
       // it explicitly to handle the edge case where the listener is slow.
@@ -1199,6 +1218,24 @@ class UnifiedUserService extends ChangeNotifier {
       // can route to the sign-in screen instead of getting stuck.
       _currentUser = null;
       notifyListeners();
+    }
+  }
+
+  /// Reset every device-local store that's scoped to the authenticated
+  /// user, so the next sign-in (any account) runs through a clean
+  /// first-sign-in flow.
+  Future<void> _wipeLocalSyncState() async {
+    // Drift: deletes every synced table + the outbox, then reinstalls
+    // the singleton defaults so subsequent loads find a usable row.
+    if (GetIt.I.isRegistered<AppDatabase>()) {
+      await GetIt.I<AppDatabase>().clearAllData();
+    }
+
+    // SharedPrefs: the SyncEngine reads this to decide whether to run
+    // the first-sign-in pull. Clearing forces the next sign-in through
+    // the welcoming / restore flow.
+    if (_prefs != null) {
+      await _prefs!.remove('sync_engine_has_ever_signed_in');
     }
   }
 

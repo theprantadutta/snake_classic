@@ -5,13 +5,19 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
 
 import 'package:snake_classic/data/daos/settings_dao.dart';
 import 'package:snake_classic/data/daos/game_dao.dart';
 import 'package:snake_classic/data/daos/store_dao.dart';
 import 'package:snake_classic/data/daos/sync_dao.dart';
+import 'package:snake_classic/data/daos/leaderboard_dao.dart';
+import 'package:snake_classic/data/daos/tournament_dao.dart';
+import 'package:snake_classic/data/daos/friends_dao.dart';
 
 part 'app_database.g.dart';
+
+const _outboxIdGen = Uuid();
 
 /// String constants for the `dataType` column on [SyncQueue] rows.
 /// Each one corresponds to a class of mutation the SyncEngine drains
@@ -368,6 +374,159 @@ class CacheStore extends Table {
 }
 
 // =====================================================
+// TABLE: Leaderboard cache
+// =====================================================
+//
+// Drift-cached snapshot of the server-rendered leaderboards. The
+// SyncEngine doesn't drain these (they're read-only from the device's
+// POV — the user's own score syncs via the settings/statistics tables
+// and shows up here only after the backend's score-aggregation has
+// landed). Refreshes are write-through replace operations from the
+// LeaderboardService.
+//
+// `boardType` is the discriminator — 'global', 'weekly', 'daily',
+// 'friends'. Each board can have N entries; we cache up to ~100 per
+// board to keep the table size bounded.
+class LeaderboardEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get boardType => text()();
+  IntColumn get rank => integer()();
+  TextColumn get userId => text()();
+  TextColumn get username => text().nullable()();
+  TextColumn get displayName => text().nullable()();
+  TextColumn get photoUrl => text().nullable()();
+  IntColumn get score => integer().withDefault(const Constant(0))();
+  IntColumn get level => integer().withDefault(const Constant(1))();
+  DateTimeColumn get achievedAt => dateTime().nullable()();
+  IntColumn get totalGamesPlayed => integer().withDefault(const Constant(0))();
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+// Per-board metadata. One row per boardType holds the last refresh
+// timestamp + the global "you are rank X of Y" the server returned so
+// the UI can render an "Updated X ago" chip without having to scan
+// every cached entry.
+class LeaderboardMeta extends Table {
+  TextColumn get boardType => text()();
+  DateTimeColumn get lastRefreshedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+  IntColumn get totalPlayers => integer().withDefault(const Constant(0))();
+  IntColumn get currentUserRank => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {boardType};
+}
+
+// =====================================================
+// TABLE: Tournament cache
+// =====================================================
+//
+// Mirrors the server-rendered tournament lists locally so the screen
+// has something to show offline. Like the leaderboard cache, the
+// TournamentService writes through to these tables and the screen
+// reads from them; no SyncEngine round-trip — tournaments are a
+// server-side concept the device only consumes.
+//
+// `dataJson` holds the full Tournament model JSON verbatim so the
+// existing Tournament.fromJson() consumer keeps working unchanged.
+// `status` / `endDate` are duplicated as typed columns purely for
+// fast filtering / ordering.
+class TournamentsCache extends Table {
+  TextColumn get id => text()(); // server Guid as string
+  TextColumn get dataJson => text()();
+  TextColumn get status =>
+      text()(); // 'upcoming' | 'active' | 'ended' | 'completed'
+  DateTimeColumn get endDate => dateTime()();
+  // True iff this row was last seen in the "active" list (vs the
+  // history list). Used to discriminate between the two list views
+  // without re-parsing the JSON blob on every read.
+  BoolColumn get isActiveList => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class TournamentLeaderboardCache extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get tournamentId => text()();
+  IntColumn get rank => integer()();
+  TextColumn get userId => text()();
+  TextColumn get username => text().nullable()();
+  TextColumn get displayName => text().nullable()();
+  TextColumn get photoUrl => text().nullable()();
+  IntColumn get bestScore => integer().withDefault(const Constant(0))();
+  IntColumn get gamesPlayed => integer().withDefault(const Constant(0))();
+  BoolColumn get prizeClaimed => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+class TournamentMeta extends Table {
+  // metaKey discriminates the various per-resource staleness markers:
+  //   'active'           — list of active tournaments
+  //   'history'          — list of past tournaments
+  //   'detail:{id}'      — single tournament detail refresh
+  //   'leaderboard:{id}' — per-tournament leaderboard refresh
+  TextColumn get metaKey => text()();
+  DateTimeColumn get lastRefreshedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+  IntColumn get currentUserRank => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {metaKey};
+}
+
+// =====================================================
+// TABLE: Friends cache
+// =====================================================
+//
+// Server-rendered friend graph mirrored locally. Cache-first reads
+// give the screen something to show offline; mutations (send /
+// accept / reject / remove) are live API calls — accepting a friend
+// request that already 410'd server-side and queueing it for retry
+// would be confusing for the user, so we keep these synchronous.
+
+class FriendsCache extends Table {
+  TextColumn get userId => text()(); // server Guid as string
+  TextColumn get username => text().nullable()();
+  TextColumn get displayName => text().nullable()();
+  TextColumn get photoUrl => text().nullable()();
+  TextColumn get status =>
+      text().withDefault(const Constant('offline'))(); // online | offline | playing
+  IntColumn get highScore => integer().withDefault(const Constant(0))();
+  IntColumn get level => integer().withDefault(const Constant(1))();
+  DateTimeColumn get friendsSince =>
+      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {userId};
+}
+
+class FriendRequestsCache extends Table {
+  TextColumn get requestId => text()(); // server Guid as string
+  TextColumn get fromUserId => text()();
+  TextColumn get fromUsername => text().nullable()();
+  TextColumn get fromDisplayName => text().nullable()();
+  TextColumn get fromPhotoUrl => text().nullable()();
+  DateTimeColumn get sentAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {requestId};
+}
+
+class FriendsMeta extends Table {
+  // 'friends' | 'requests'
+  TextColumn get metaKey => text()();
+  DateTimeColumn get lastRefreshedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {metaKey};
+}
+
+// =====================================================
 // TABLE 12: User Profile (for offline access)
 // =====================================================
 class UserProfile extends Table {
@@ -426,19 +585,30 @@ class PurchaseHistory extends Table {
     CacheStore,
     UserProfile,
     PurchaseHistory,
+    LeaderboardEntries,
+    LeaderboardMeta,
+    TournamentsCache,
+    TournamentLeaderboardCache,
+    TournamentMeta,
+    FriendsCache,
+    FriendRequestsCache,
+    FriendsMeta,
   ],
   daos: [
     SettingsDao,
     GameDao,
     StoreDao,
     SyncDao,
+    LeaderboardDao,
+    TournamentDao,
+    FriendsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -489,6 +659,45 @@ class AppDatabase extends _$AppDatabase {
             "UPDATE \"$t\" SET \"updated_at\" = CAST(strftime('%s', 'now') AS INTEGER)",
           );
         }
+      }
+      if (from < 5) {
+        // v5: leaderboard cache + meta. Server-rendered leaderboards
+        // are mirrored locally so the screen has something to show
+        // when offline; refreshes are write-through replaces from
+        // LeaderboardService.
+        await m.createTable(leaderboardEntries);
+        await m.createTable(leaderboardMeta);
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_leaderboard_entries_board_rank '
+          'ON leaderboard_entries(board_type, rank)',
+        );
+      }
+      if (from < 6) {
+        // v6: tournament cache (list + per-tournament leaderboard +
+        // staleness meta). Same pattern as the leaderboard cache.
+        await m.createTable(tournamentsCache);
+        await m.createTable(tournamentLeaderboardCache);
+        await m.createTable(tournamentMeta);
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_tournaments_cache_active_end '
+          'ON tournaments_cache(is_active_list, end_date)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_tournament_leaderboard_tid_rank '
+          'ON tournament_leaderboard_cache(tournament_id, rank)',
+        );
+      }
+      if (from < 7) {
+        // v7: friends cache (friend list + friend requests +
+        // staleness meta). Mutations are live API calls, the cache
+        // only serves the read path.
+        await m.createTable(friendsCache);
+        await m.createTable(friendRequestsCache);
+        await m.createTable(friendsMeta);
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_friend_requests_from_user '
+          'ON friend_requests_cache(from_user_id)',
+        );
       }
     },
   );
@@ -560,7 +769,11 @@ class AppDatabase extends _$AppDatabase {
     Map<String, dynamic>? payload,
     int priority = 2,
   }) async {
-    final id = '$dataType:$entityKey:${DateTime.now().microsecondsSinceEpoch}';
+    // UUID-suffixed primary key rather than microsecondsSinceEpoch:
+    // two enqueues for the same entity key in the same microsecond
+    // used to share an id, and InsertMode.insertOrIgnore would drop
+    // the second one. UUIDs make collisions effectively impossible.
+    final id = '$dataType:$entityKey:${_outboxIdGen.v4()}';
     await into(syncQueue).insert(
       SyncQueueCompanion.insert(
         id: id,
@@ -602,7 +815,10 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  /// Clear all data (for logout/reset)
+  /// Clear all data (for logout/reset). Wipes per-user tables AND the
+  /// drift-cached views (leaderboards, tournaments) so an account
+  /// switch on the same device doesn't show the previous user's
+  /// join states, friend ranks, or any per-user-flagged rows.
   Future<void> clearAllData() async {
     await transaction(() async {
       await delete(gameSettings).go();
@@ -619,6 +835,18 @@ class AppDatabase extends _$AppDatabase {
       await delete(cacheStore).go();
       await delete(userProfile).go();
       await delete(purchaseHistory).go();
+      // Drift-cached server views — these mix in per-user fields
+      // (currentUserRank, isJoined, …) so they must be cleared too.
+      await delete(leaderboardEntries).go();
+      await delete(leaderboardMeta).go();
+      await delete(tournamentsCache).go();
+      await delete(tournamentLeaderboardCache).go();
+      await delete(tournamentMeta).go();
+      // Friend graph is per-user by definition — must not leak
+      // across an account switch on the same device.
+      await delete(friendsCache).go();
+      await delete(friendRequestsCache).go();
+      await delete(friendsMeta).go();
     });
 
     // Reinitialize defaults

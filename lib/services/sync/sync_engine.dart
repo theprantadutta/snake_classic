@@ -92,6 +92,10 @@ class SyncEngine {
 
   static const int _maxRetries = 5;
   static const Duration _debounce = Duration(seconds: 3);
+  /// Hard ceiling on how far a burst of mutations can defer the drain.
+  /// Without this, a sustained mutation rate >1 / 3s would keep
+  /// resetting [_debounceTimer] indefinitely and starve the drain.
+  static const Duration _debounceMaxDefer = Duration(seconds: 10);
   static const Duration _periodic = Duration(minutes: 2);
 
   /// Device-scoped flag — flips true the first time ANY user signs in
@@ -105,6 +109,17 @@ class SyncEngine {
   StreamSubscription<bool>? _connectivityWatcher;
   Timer? _debounceTimer;
   Timer? _periodicTimer;
+  Timer? _failedDismissTimer;
+  /// The earliest moment a debounce-deferred drain MUST run by, set
+  /// the first time the debounce begins ticking. Rapid mutations can
+  /// keep restarting [_debounceTimer] but can never push the actual
+  /// drain past this deadline.
+  DateTime? _debounceDeadline;
+
+  /// How long to leave the "Couldn't restore" modal visible before
+  /// auto-transitioning to [FirstSignInState.done] so the rest of the
+  /// UI becomes interactive. The user can still retry on next launch.
+  static const Duration _failedDismissDelay = Duration(seconds: 2);
 
   /// Signals that [initialize] has finished. Callers that race the
   /// init (notably [maybeRunFirstSignInPull] when sign-in fires
@@ -124,6 +139,23 @@ class SyncEngine {
   void _emitFirstSignInState(FirstSignInState state) {
     _firstSignInState = state;
     _firstSignInStateController.add(state);
+  }
+
+  /// Emit [FirstSignInState.failed] and schedule a transition to
+  /// [FirstSignInState.done] so the modal auto-dismisses. Without
+  /// this, every pull-failure path left the overlay blocking the UI
+  /// indefinitely (the user had to kill and relaunch the app).
+  void _emitFailedAndScheduleDismiss() {
+    _emitFirstSignInState(FirstSignInState.failed);
+    _failedDismissTimer?.cancel();
+    _failedDismissTimer = Timer(_failedDismissDelay, () {
+      // Only auto-dismiss if we're still in `failed` — a later flow
+      // (e.g., a retry on the same session) could have moved the
+      // engine past this state already.
+      if (_firstSignInState == FirstSignInState.failed) {
+        _emitFirstSignInState(FirstSignInState.done);
+      }
+    });
   }
 
   /// One-shot init. Hook this from app boot after the database +
@@ -201,7 +233,7 @@ class SyncEngine {
         'SyncEngine.maybeRunFirstSignInPull: initialize did not complete',
         e,
       );
-      _emitFirstSignInState(FirstSignInState.failed);
+      _emitFailedAndScheduleDismiss();
       return FirstSignInResult.pullFailed;
     }
 
@@ -255,7 +287,7 @@ class SyncEngine {
         'SyncEngine: returning user but offline — will retry next launch',
       );
       await _ensureMinModalTime(pullingStart);
-      _emitFirstSignInState(FirstSignInState.failed);
+      _emitFailedAndScheduleDismiss();
       return FirstSignInResult.pullFailed;
     }
 
@@ -290,7 +322,7 @@ class SyncEngine {
       }
     } catch (e) {
       AppLogger.error('SyncEngine: pull threw, will retry next launch', e);
-      _emitFirstSignInState(FirstSignInState.failed);
+      _emitFailedAndScheduleDismiss();
       return FirstSignInResult.pullFailed;
     }
 
@@ -306,7 +338,7 @@ class SyncEngine {
         "Flag NOT set — will retry next launch. Local data preserved.",
       );
       await _ensureMinModalTime(pullingStart);
-      _emitFirstSignInState(FirstSignInState.failed);
+      _emitFailedAndScheduleDismiss();
       return FirstSignInResult.pullFailed;
     }
 
@@ -342,7 +374,7 @@ class SyncEngine {
       AppLogger.error('SyncEngine: snapshot apply failed', e);
       // Don't set the flag — next launch retries the whole flow.
       await _ensureMinModalTime(pullingStart);
-      _emitFirstSignInState(FirstSignInState.failed);
+      _emitFailedAndScheduleDismiss();
       return FirstSignInResult.pullFailed;
     }
   }
@@ -361,13 +393,31 @@ class SyncEngine {
 
   /// Schedule a drain after the debounce window. Pass `immediate`
   /// to skip the debounce (e.g. on connectivity restore).
+  ///
+  /// Sustained bursts can keep resetting the debounce; [_debounceMaxDefer]
+  /// caps how far the actual drain can be pushed back from the FIRST
+  /// scheduling so the queue isn't starved.
   void _scheduleDrain({bool immediate = false}) {
     _debounceTimer?.cancel();
     if (immediate) {
+      _debounceDeadline = null;
       _drain();
-    } else {
-      _debounceTimer = Timer(_debounce, _drain);
+      return;
     }
+
+    final now = DateTime.now();
+    _debounceDeadline ??= now.add(_debounceMaxDefer);
+    final remainingDefer = _debounceDeadline!.difference(now);
+    final delay =
+        remainingDefer < _debounce ? remainingDefer : _debounce;
+
+    _debounceTimer = Timer(
+      delay.isNegative ? Duration.zero : delay,
+      () {
+        _debounceDeadline = null;
+        _drain();
+      },
+    );
   }
 
   Future<void> _drain() async {
@@ -467,10 +517,13 @@ class SyncEngine {
         case SyncDataType.coinBalance:
           return _dispatchSnapshot(
             read: () async {
-              final balance = await _storeDao!.getCoinBalance();
+              final row = await _storeDao!.getCoinBalanceRow();
+              if (row == null) return null;
               return {
-                'balance': balance,
-                'updated_at': DateTime.now().toUtc().toIso8601String(),
+                'balance': row.balance,
+                // Use the row's actual updatedAt — sending now() here
+                // would break server-side LWW (every push would win).
+                'updated_at': _utcIso(row.updatedAt),
               };
             },
             send: _api.syncCoinBalance,
@@ -487,41 +540,34 @@ class SyncEngine {
 
         case SyncDataType.achievement:
           // Per-row snapshot: collect the unique achievement ids the
-          // outbox references, read their current state from Drift,
-          // send as a batch.
+          // outbox references, read their current state from Drift
+          // in a single batched query, send as a batch.
           final ids = _extractIds(items, prefix: 'achievement:');
           if (ids.isEmpty) return _DispatchResult.success;
-          final rows = <Map<String, dynamic>>[];
-          for (final id in ids) {
-            final row = await _gameDao!.getAchievementById(id);
-            if (row != null) rows.add(_achievementToPayload(row));
-          }
-          if (rows.isEmpty) return _DispatchResult.success;
-          final result = await _api.syncAchievements(rows);
-          return result == null ? _DispatchResult.notReady : _DispatchResult.success;
+          final achievementRows =
+              await _gameDao!.getAchievementsByIds(ids);
+          if (achievementRows.isEmpty) return _DispatchResult.success;
+          final payload =
+              achievementRows.map(_achievementToPayload).toList();
+          return _mapOutcome(await _api.syncAchievements(payload));
 
         case SyncDataType.battlePass:
           final ids = _extractIds(items, prefix: 'battle_pass:');
           if (ids.isEmpty) return _DispatchResult.success;
-          final rows = <Map<String, dynamic>>[];
-          for (final seasonId in ids) {
-            final row = await _storeDao!.getBattlePass(seasonId);
-            if (row != null) rows.add(_battlePassToPayload(row));
-          }
-          if (rows.isEmpty) return _DispatchResult.success;
-          final result = await _api.syncBattlePass(rows);
-          return result == null ? _DispatchResult.notReady : _DispatchResult.success;
+          final passes =
+              await _storeDao!.getBattlePassesBySeasonIds(ids);
+          if (passes.isEmpty) return _DispatchResult.success;
+          final passPayload = passes.map(_battlePassToPayload).toList();
+          return _mapOutcome(await _api.syncBattlePass(passPayload));
 
         case SyncDataType.coinTransaction:
           // Event-typed: payload was frozen at outbox-write time.
           final payloads = _extractPayloads(items);
-          final result = await _api.syncCoinTransactions(payloads);
-          return result == null ? _DispatchResult.notReady : _DispatchResult.success;
+          return _mapOutcome(await _api.syncCoinTransactions(payloads));
 
         case SyncDataType.unlockedItem:
           final payloads = _extractPayloads(items);
-          final result = await _api.syncUnlockedItems(payloads);
-          return result == null ? _DispatchResult.notReady : _DispatchResult.success;
+          return _mapOutcome(await _api.syncUnlockedItems(payloads));
 
         case SyncDataType.dailyChallengeClaim:
           // Per-row snapshot keyed by challenge id — read the current
@@ -535,17 +581,16 @@ class SyncEngine {
               .map(_dailyChallengeToPayload)
               .toList();
           if (rows.isEmpty) return _DispatchResult.success;
-          final result = await _api.syncDailyChallengeClaims(rows);
-          return result == null ? _DispatchResult.notReady : _DispatchResult.success;
+          return _mapOutcome(await _api.syncDailyChallengeClaims(rows));
 
         default:
-          // Unknown outbox type — shouldn't happen if SyncDataType is
-          // the source of truth. Drop silently so the queue doesn't
-          // grow unbounded.
-          if (kDebugMode) {
-            AppLogger.warning('SyncEngine: unknown outbox dataType $dataType');
-          }
-          return _DispatchResult.success;
+          // Unknown outbox type — likely a new SyncDataType constant
+          // wasn't wired into this switch. Treat as permanent failure
+          // so retries bump the counter and the items eventually move
+          // to the failed bucket instead of silently dropping (which
+          // the previous `return success` did, masking the regression).
+          AppLogger.warning('SyncEngine: unknown outbox dataType $dataType');
+          return _DispatchResult.failed;
       }
     } catch (e) {
       AppLogger.error('SyncEngine dispatch ($dataType) errored', e);
@@ -553,14 +598,25 @@ class SyncEngine {
     }
   }
 
+  /// Map an ApiService [SyncOutcome] onto the engine's drain result.
+  _DispatchResult _mapOutcome(SyncOutcome outcome) {
+    switch (outcome.kind) {
+      case SyncOutcomeKind.success:
+        return _DispatchResult.success;
+      case SyncOutcomeKind.transient:
+        return _DispatchResult.notReady;
+      case SyncOutcomeKind.permanent:
+        return _DispatchResult.failed;
+    }
+  }
+
   Future<_DispatchResult> _dispatchSnapshot({
     required Future<Map<String, dynamic>?> Function() read,
-    required Future<Map<String, dynamic>?> Function(Map<String, dynamic>) send,
+    required Future<SyncOutcome> Function(Map<String, dynamic>) send,
   }) async {
     final payload = await read();
     if (payload == null) return _DispatchResult.success; // nothing to send
-    final result = await send(payload);
-    return result == null ? _DispatchResult.notReady : _DispatchResult.success;
+    return _mapOutcome(await send(payload));
   }
 
   Set<String> _extractIds(List<SyncQueueData> items, {required String prefix}) {
@@ -665,11 +721,43 @@ class SyncEngine {
         'current_xp': r.currentXp,
         'xp_for_next_tier': r.xpForNextTier,
         'is_premium_pass': r.isPremiumPass,
-        'claimed_rewards': jsonDecode(r.claimedRewards),
+        // Wire schema is a flat List<int>; the local Drift column
+        // stores `{"free": [...], "premium": [...]}` (see StoreDao).
+        // Flatten via union+sort here. Cross-device restore loses the
+        // free-vs-premium split — acceptable until the wire format is
+        // updated to carry the structure.
+        'claimed_rewards': _flattenClaimedRewards(r.claimedRewards),
         'season_start_date': _utcIsoNullable(r.seasonStartDate),
         'season_end_date': _utcIsoNullable(r.seasonEndDate),
         'updated_at': _utcIso(r.updatedAt),
       };
+
+  /// Reduce the structured `{"free":[...], "premium":[...]}` Drift
+  /// payload (or a legacy flat array) to the flat `List<int>` the
+  /// backend expects.
+  List<int> _flattenClaimedRewards(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        final free = (decoded['free'] as List?)
+                ?.map((e) => (e as num).toInt())
+                .toList() ??
+            const <int>[];
+        final premium = (decoded['premium'] as List?)
+                ?.map((e) => (e as num).toInt())
+                .toList() ??
+            const <int>[];
+        final union = <int>{...free, ...premium}.toList()..sort();
+        return union;
+      }
+      if (decoded is List) {
+        return decoded.map((e) => (e as num).toInt()).toList()..sort();
+      }
+    } catch (_) {
+      // Malformed payload — send empty rather than crashing the drain.
+    }
+    return const <int>[];
+  }
 
   Map<String, dynamic> _dailyChallengeToPayload(DailyChallenge r) => {
         'challenge_id': r.challengeId,
@@ -749,22 +837,48 @@ class SyncEngine {
       }
 
       // ----- coin transactions (event-typed, append-only) -----
+      //
+      // Re-insert via the bare table to skip outbox enqueue AND the
+      // running-balance touch — backend already gave us the
+      // authoritative balance separately.
+      //
+      // Dedup by (createdAt, amount, type, source) fingerprint: the
+      // local table has an autoIncrement primary key, so
+      // InsertMode.insertOrIgnore alone never catches conflicts. Today
+      // the apply runs at most once per install (gated by the
+      // `sync_engine_has_ever_signed_in` flag), but a future re-import
+      // / admin tool / repeated apply would otherwise duplicate every
+      // historical row on each run.
       final transactions = snapshot['coin_transactions'];
-      if (transactions is List) {
+      if (transactions is List && transactions.isNotEmpty) {
+        final existing = await _db!.select(_db!.coinTransactions).get();
+        final fingerprints = <String>{};
+        for (final row in existing) {
+          fingerprints.add(_coinTxnFingerprint(
+            row.createdAt,
+            row.amount,
+            row.type,
+            row.source,
+          ));
+        }
         for (final raw in transactions) {
           if (raw is! Map<String, dynamic>) continue;
-          // Note: we re-insert via the bare table to skip outbox enqueue
-          // AND the running-balance touch — backend already gave us
-          // the authoritative balance separately.
+          final createdAt =
+              _parseDate(raw['created_at']) ?? DateTime.now();
+          final amount = raw['amount'] as int? ?? 0;
+          final type = raw['type'] as String? ?? 'earned';
+          final source = raw['source'] as String? ?? 'cloud';
+          final fingerprint =
+              _coinTxnFingerprint(createdAt, amount, type, source);
+          if (!fingerprints.add(fingerprint)) continue; // duplicate
           await _db!.into(_db!.coinTransactions).insert(
                 CoinTransactionsCompanion.insert(
-                  amount: raw['amount'] as int? ?? 0,
-                  type: raw['type'] as String? ?? 'earned',
-                  source: raw['source'] as String? ?? 'cloud',
+                  amount: amount,
+                  type: type,
+                  source: source,
                   description: Value(raw['description'] as String?),
-                  createdAt: Value(_parseDate(raw['created_at']) ?? DateTime.now()),
+                  createdAt: Value(createdAt),
                 ),
-                mode: InsertMode.insertOrIgnore,
               );
         }
       }
@@ -778,17 +892,22 @@ class SyncEngine {
       // screen), we look up the metadata from the local default
       // catalog so the insert satisfies the not-null columns.
       final achievements = snapshot['achievements'];
-      if (achievements is List) {
+      if (achievements is List && achievements.isNotEmpty) {
         final defaultsById = {
           for (final a in ach_model.Achievement.getDefaultAchievements())
             a.id: a,
         };
+        // Pre-fetch existing rows in a single query instead of doing
+        // one Drift round-trip per snapshot entry. 50 achievements ×
+        // per-call overhead adds up, even though each lookup is cheap.
+        final existingRows = await _gameDao!.getAllAchievements();
+        final existingById = {for (final r in existingRows) r.id: r};
         for (final raw in achievements) {
           if (raw is! Map<String, dynamic>) continue;
           final id = raw['id'] as String?;
           if (id == null) continue;
 
-          final existing = await _gameDao!.getAchievementById(id);
+          final existing = existingById[id];
           final ach_model.Achievement? defaultEntry = defaultsById[id];
 
           Value<String> nameValue = const Value.absent();
@@ -864,7 +983,18 @@ class SyncEngine {
           if (raw is! Map<String, dynamic>) continue;
           final seasonId = raw['season_id'] as String?;
           if (seasonId == null) continue;
-          final rewards = raw['claimed_rewards'];
+          // Wire payload is a flat List<int>; store under "free" in the
+          // structured local format. The free-vs-premium split is lost
+          // on restore (see [_flattenClaimedRewards] comment) — a user
+          // who reinstalls may need to re-claim premium-side rewards.
+          final wireRewards = raw['claimed_rewards'];
+          final freeList = wireRewards is List
+              ? wireRewards.map((e) => (e as num).toInt()).toList()
+              : const <int>[];
+          final claimedJson = jsonEncode({
+            'free': freeList,
+            'premium': <int>[],
+          });
           await _storeDao!.saveBattlePass(
             BattlePassesCompanion(
               seasonId: Value(seasonId),
@@ -872,7 +1002,7 @@ class SyncEngine {
               currentXp: Value(raw['current_xp'] as int? ?? 0),
               xpForNextTier: Value(raw['xp_for_next_tier'] as int? ?? 100),
               isPremiumPass: Value(raw['is_premium_pass'] as bool? ?? false),
-              claimedRewards: Value(rewards is List ? jsonEncode(rewards) : '[]'),
+              claimedRewards: Value(claimedJson),
               seasonStartDate: Value(_parseDate(raw['season_start_date'])),
               seasonEndDate: Value(_parseDate(raw['season_end_date'])),
             ),
@@ -937,6 +1067,17 @@ class SyncEngine {
     }
   }
 
+  /// Stable identity for a coin-transaction row that doesn't depend
+  /// on the local autoIncrement PK. Used by the snapshot apply to
+  /// skip rows that already exist locally.
+  String _coinTxnFingerprint(
+    DateTime createdAt,
+    int amount,
+    String type,
+    String source,
+  ) =>
+      '${createdAt.toUtc().toIso8601String()}|$amount|$type|$source';
+
   DateTime? _parseDate(dynamic raw) {
     if (raw == null) return null;
     if (raw is DateTime) return raw;
@@ -950,9 +1091,11 @@ class SyncEngine {
     await _connectivityWatcher?.cancel();
     _debounceTimer?.cancel();
     _periodicTimer?.cancel();
+    _failedDismissTimer?.cancel();
     _outboxWatcher = null;
     _connectivityWatcher = null;
     _debounceTimer = null;
     _periodicTimer = null;
+    _failedDismissTimer = null;
   }
 }

@@ -15,12 +15,17 @@ class LeaderboardState {
   final Map<String, dynamic>? userRank;
   final bool isLoading;
   final String? error;
+  /// When the Drift cache for this board was last successfully refreshed
+  /// from the server. Null until the first refresh lands. Used by the
+  /// "Updated X ago" chip.
+  final DateTime? lastRefreshedAt;
 
   const LeaderboardState({
     this.entries = const [],
     this.userRank,
     this.isLoading = false,
     this.error,
+    this.lastRefreshedAt,
   });
 
   LeaderboardState copyWith({
@@ -28,12 +33,14 @@ class LeaderboardState {
     Map<String, dynamic>? userRank,
     bool? isLoading,
     String? error,
+    DateTime? lastRefreshedAt,
   }) {
     return LeaderboardState(
       entries: entries ?? this.entries,
       userRank: userRank ?? this.userRank,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      lastRefreshedAt: lastRefreshedAt ?? this.lastRefreshedAt,
     );
   }
 }
@@ -123,51 +130,93 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
   }
 
   Future<void> _loadData() async {
-    state = state.copyWith(isLoading: true, error: null);
+    // Cache-first paint. Falling through to the in-place refresh below
+    // means the spinner only shows when the cache is genuinely empty.
+    final cached = await _readCached();
+    state = state.copyWith(
+      entries: cached,
+      isLoading: cached.isEmpty,
+      error: null,
+      lastRefreshedAt: await _service.getLastRefreshedAt(_boardTypeStr()),
+    );
 
-    try {
-      final entries = await _fetchEntries();
-      state = state.copyWith(entries: entries, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to load leaderboard',
-      );
-    }
+    await _doRefresh();
+    final refreshed = await _readCached();
+    state = state.copyWith(
+      entries: refreshed,
+      isLoading: false,
+      lastRefreshedAt: await _service.getLastRefreshedAt(_boardTypeStr()),
+    );
   }
 
   /// Silent network refresh — does not toggle isLoading, so the cached
   /// entries stay on screen until the fetch lands.
   Future<void> _refreshInBackground() async {
     try {
-      final entries = await _fetchEntries();
-      state = state.copyWith(entries: entries);
+      await _doRefresh();
+      final entries = await _readCached();
+      state = state.copyWith(
+        entries: entries,
+        lastRefreshedAt: await _service.getLastRefreshedAt(_boardTypeStr()),
+      );
     } catch (_) {
       // Background refresh failures stay silent — the cached data is still
       // good enough to show; the next TTL tick will retry.
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchEntries({int limit = 50}) async {
+  Future<void> _doRefresh() async {
     switch (_type) {
       case LeaderboardType.global:
-        return await _service.getGlobalLeaderboard(limit: limit);
+        return _service.refreshGlobal();
       case LeaderboardType.weekly:
-        return await _service.getWeeklyLeaderboard(limit: limit);
+        return _service.refreshWeekly();
       case LeaderboardType.daily:
-        return await _service.getDailyLeaderboard(limit: limit);
+        return _service.refreshDaily();
       case LeaderboardType.friends:
-        return await _service.getFriendsLeaderboard([], limit: limit);
+        return _service.refreshFriends();
     }
   }
 
-  /// Refresh leaderboard from the server
+  Future<List<Map<String, dynamic>>> _readCached({int limit = 50}) async {
+    switch (_type) {
+      case LeaderboardType.global:
+        return _service.getGlobalLeaderboard(limit: limit);
+      case LeaderboardType.weekly:
+        return _service.getWeeklyLeaderboard(limit: limit);
+      case LeaderboardType.daily:
+        return _service.getDailyLeaderboard(limit: limit);
+      case LeaderboardType.friends:
+        return _service.getFriendsLeaderboard(const [], limit: limit);
+    }
+  }
+
+  String _boardTypeStr() {
+    switch (_type) {
+      case LeaderboardType.global:
+        return 'global';
+      case LeaderboardType.weekly:
+        return 'weekly';
+      case LeaderboardType.daily:
+        return 'daily';
+      case LeaderboardType.friends:
+        return 'friends';
+    }
+  }
+
+  /// Refresh leaderboard from the server, holding the cached entries
+  /// on screen until the network call lands.
   Future<void> refresh() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: state.entries.isEmpty, error: null);
 
     try {
-      final entries = await _fetchEntries();
-      state = state.copyWith(entries: entries, isLoading: false);
+      await _doRefresh();
+      final entries = await _readCached();
+      state = state.copyWith(
+        entries: entries,
+        isLoading: false,
+        lastRefreshedAt: await _service.getLastRefreshedAt(_boardTypeStr()),
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -210,6 +259,11 @@ class CombinedLeaderboardState {
   final bool isLoadingWeekly;
   final String? globalError;
   final String? weeklyError;
+  /// Drift-cache freshness timestamps; null until the first network
+  /// refresh lands. Surfaced to the screen so it can show an
+  /// "Updated X ago" chip per board.
+  final DateTime? globalLastRefreshedAt;
+  final DateTime? weeklyLastRefreshedAt;
 
   const CombinedLeaderboardState({
     this.globalEntries = const [],
@@ -219,6 +273,8 @@ class CombinedLeaderboardState {
     this.isLoadingWeekly = false,
     this.globalError,
     this.weeklyError,
+    this.globalLastRefreshedAt,
+    this.weeklyLastRefreshedAt,
   });
 
   bool get isLoading => isLoadingGlobal || isLoadingWeekly;
@@ -231,6 +287,8 @@ class CombinedLeaderboardState {
     bool? isLoadingWeekly,
     String? globalError,
     String? weeklyError,
+    DateTime? globalLastRefreshedAt,
+    DateTime? weeklyLastRefreshedAt,
   }) {
     return CombinedLeaderboardState(
       globalEntries: globalEntries ?? this.globalEntries,
@@ -240,6 +298,10 @@ class CombinedLeaderboardState {
       isLoadingWeekly: isLoadingWeekly ?? this.isLoadingWeekly,
       globalError: globalError,
       weeklyError: weeklyError,
+      globalLastRefreshedAt:
+          globalLastRefreshedAt ?? this.globalLastRefreshedAt,
+      weeklyLastRefreshedAt:
+          weeklyLastRefreshedAt ?? this.weeklyLastRefreshedAt,
     );
   }
 }
@@ -311,8 +373,15 @@ class CombinedLeaderboardNotifier
   }
 
   Future<void> _refreshInBackground() async {
-    // Silent refresh - don't set isLoading
+    // Silent refresh - don't set isLoading. Each branch hits the
+    // network then re-reads the (post-refresh) cache so the UI sees
+    // whatever the server returned (or the previous good cache when
+    // the network is down).
     try {
+      await Future.wait([
+        _service.refreshGlobal(),
+        _service.refreshWeekly(),
+      ]);
       final results = await Future.wait([
         _service.getGlobalLeaderboard(),
         _service.getWeeklyLeaderboard(),
@@ -320,6 +389,10 @@ class CombinedLeaderboardNotifier
       state = state.copyWith(
         globalEntries: results[0],
         weeklyEntries: results[1],
+        globalLastRefreshedAt:
+            await _service.getLastRefreshedAt('global'),
+        weeklyLastRefreshedAt:
+            await _service.getLastRefreshedAt('weekly'),
       );
     } catch (_) {
       // Ignore errors in background refresh
@@ -354,27 +427,52 @@ class CombinedLeaderboardNotifier
   }
 
   Future<void> _loadGlobal() async {
-    state = state.copyWith(isLoadingGlobal: true, globalError: null);
+    // Show cache (might be empty on a fresh install). The spinner only
+    // surfaces when there's nothing yet — once cache is populated, all
+    // subsequent loads silently overlay fresh data on top.
+    final cached = await _service.getGlobalLeaderboard();
+    state = state.copyWith(
+      globalEntries: cached,
+      isLoadingGlobal: cached.isEmpty,
+      globalError: null,
+      globalLastRefreshedAt: await _service.getLastRefreshedAt('global'),
+    );
     try {
+      await _service.refreshGlobal();
       final entries = await _service.getGlobalLeaderboard();
-      state = state.copyWith(globalEntries: entries, isLoadingGlobal: false);
+      state = state.copyWith(
+        globalEntries: entries,
+        isLoadingGlobal: false,
+        globalLastRefreshedAt: await _service.getLastRefreshedAt('global'),
+      );
     } catch (e) {
       state = state.copyWith(
         isLoadingGlobal: false,
-        globalError: 'Failed to load leaderboard',
+        globalError: cached.isEmpty ? 'Failed to load leaderboard' : null,
       );
     }
   }
 
   Future<void> _loadWeekly() async {
-    state = state.copyWith(isLoadingWeekly: true, weeklyError: null);
+    final cached = await _service.getWeeklyLeaderboard();
+    state = state.copyWith(
+      weeklyEntries: cached,
+      isLoadingWeekly: cached.isEmpty,
+      weeklyError: null,
+      weeklyLastRefreshedAt: await _service.getLastRefreshedAt('weekly'),
+    );
     try {
+      await _service.refreshWeekly();
       final entries = await _service.getWeeklyLeaderboard();
-      state = state.copyWith(weeklyEntries: entries, isLoadingWeekly: false);
+      state = state.copyWith(
+        weeklyEntries: entries,
+        isLoadingWeekly: false,
+        weeklyLastRefreshedAt: await _service.getLastRefreshedAt('weekly'),
+      );
     } catch (e) {
       state = state.copyWith(
         isLoadingWeekly: false,
-        weeklyError: 'Failed to load weekly leaderboard',
+        weeklyError: cached.isEmpty ? 'Failed to load weekly leaderboard' : null,
       );
     }
   }
@@ -417,27 +515,47 @@ class CombinedLeaderboardNotifier
   }
 
   Future<void> _refreshGlobal() async {
-    state = state.copyWith(isLoadingGlobal: true, globalError: null);
+    state = state.copyWith(
+      isLoadingGlobal: state.globalEntries.isEmpty,
+      globalError: null,
+    );
     try {
+      await _service.refreshGlobal();
       final entries = await _service.getGlobalLeaderboard();
-      state = state.copyWith(globalEntries: entries, isLoadingGlobal: false);
+      state = state.copyWith(
+        globalEntries: entries,
+        isLoadingGlobal: false,
+        globalLastRefreshedAt: await _service.getLastRefreshedAt('global'),
+      );
     } catch (e) {
       state = state.copyWith(
         isLoadingGlobal: false,
-        globalError: 'Failed to refresh leaderboard',
+        globalError: state.globalEntries.isEmpty
+            ? 'Failed to refresh leaderboard'
+            : null,
       );
     }
   }
 
   Future<void> _refreshWeekly() async {
-    state = state.copyWith(isLoadingWeekly: true, weeklyError: null);
+    state = state.copyWith(
+      isLoadingWeekly: state.weeklyEntries.isEmpty,
+      weeklyError: null,
+    );
     try {
+      await _service.refreshWeekly();
       final entries = await _service.getWeeklyLeaderboard();
-      state = state.copyWith(weeklyEntries: entries, isLoadingWeekly: false);
+      state = state.copyWith(
+        weeklyEntries: entries,
+        isLoadingWeekly: false,
+        weeklyLastRefreshedAt: await _service.getLastRefreshedAt('weekly'),
+      );
     } catch (e) {
       state = state.copyWith(
         isLoadingWeekly: false,
-        weeklyError: 'Failed to refresh weekly leaderboard',
+        weeklyError: state.weeklyEntries.isEmpty
+            ? 'Failed to refresh weekly leaderboard'
+            : null,
       );
     }
   }

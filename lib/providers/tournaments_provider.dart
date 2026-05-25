@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/models/tournament.dart';
-import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/providers/providers.dart';
 
@@ -15,6 +14,11 @@ class TournamentsState {
   final bool isLoading;
   final bool isOffline;
   final String? error;
+  /// Drift-cache freshness — null until the first successful refresh
+  /// per list. Surfaced to the screen so a stale offline view is
+  /// labelled rather than silently presented as live.
+  final DateTime? activeLastRefreshedAt;
+  final DateTime? historyLastRefreshedAt;
 
   const TournamentsState({
     this.activeTournaments = const [],
@@ -23,6 +27,8 @@ class TournamentsState {
     this.isLoading = false,
     this.isOffline = false,
     this.error,
+    this.activeLastRefreshedAt,
+    this.historyLastRefreshedAt,
   });
 
   TournamentsState copyWith({
@@ -32,6 +38,8 @@ class TournamentsState {
     bool? isLoading,
     bool? isOffline,
     String? error,
+    DateTime? activeLastRefreshedAt,
+    DateTime? historyLastRefreshedAt,
   }) {
     return TournamentsState(
       activeTournaments: activeTournaments ?? this.activeTournaments,
@@ -40,6 +48,10 @@ class TournamentsState {
       isLoading: isLoading ?? this.isLoading,
       isOffline: isOffline ?? this.isOffline,
       error: error,
+      activeLastRefreshedAt:
+          activeLastRefreshedAt ?? this.activeLastRefreshedAt,
+      historyLastRefreshedAt:
+          historyLastRefreshedAt ?? this.historyLastRefreshedAt,
     );
   }
 }
@@ -48,7 +60,6 @@ class TournamentsState {
 class TournamentsNotifier extends StateNotifier<TournamentsState> {
   final Ref _ref;
   final TournamentService _service;
-  final AppDataCache _appCache;
   Timer? _ttlTimer;
   StreamSubscription<String>? _joinSubscription;
 
@@ -56,33 +67,18 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
 
   TournamentsNotifier(this._ref)
     : _service = TournamentService(),
-      _appCache = AppDataCache(),
       super(const TournamentsState(isLoading: true)) {
     _initialize();
   }
 
   void _initialize() {
-    // Check cache first - use preloaded data if available.
-    // Critical: require non-null AND non-empty. If startup preload's
-    // fetch failed, AppDataCache stores an empty [] — those still pass
-    // `!= null` but rendering empty would lock the screen on its
-    // 'No active tournaments' state until a manual refresh.
-    if (_appCache.isFullyLoaded &&
-        _appCache.activeTournaments != null &&
-        _appCache.activeTournaments!.isNotEmpty) {
-      // Use cached data immediately - no loading state!
-      state = TournamentsState(
-        activeTournaments: _appCache.activeTournaments!,
-        historyTournaments: _appCache.historyTournaments ?? [],
-        isLoading: false,
-        isOffline: !_ref.read(isOnlineSyncProvider),
-      );
-      // Refresh in background (silent, no loading indicator)
-      _refreshInBackground();
-    } else {
-      // No useful cache - load fresh from network with proper UX.
-      _loadData();
-    }
+    // Drift-first paint: hydrate from the local cache immediately,
+    // then trigger a background refresh that re-hydrates when it
+    // lands. The legacy AppDataCache preload path is left intact
+    // for the (still in-memory) FE startup pipeline but the Drift
+    // cache survives across cold starts so the user always sees
+    // their last-known data first.
+    _loadData();
 
     // Set up TTL-based refresh
     _startTtlTimer();
@@ -110,20 +106,15 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
   }
 
   Future<void> _refreshInBackground() async {
-    // Silent refresh - don't set isLoading
+    // Silent refresh - don't set isLoading. Cache-first: re-read from
+    // Drift after the network refresh lands so the screen sees whatever
+    // the server returned (or the previous good cache when offline).
     try {
-      final results = await Future.wait([
-        _service.getActiveTournaments(),
-        _service.getTournamentHistory(),
-        _service.getUserTournamentStats(),
+      await Future.wait([
+        _service.refreshActive(),
+        _service.refreshHistory(),
       ]);
-
-      state = state.copyWith(
-        activeTournaments: results[0] as List<Tournament>,
-        historyTournaments: results[1] as List<Tournament>,
-        userStats: results[2] as Map<String, dynamic>,
-        isOffline: !_ref.read(isOnlineSyncProvider),
-      );
+      await _hydrateFromCache();
     } catch (_) {
       // Ignore errors in background refresh
     }
@@ -140,54 +131,73 @@ class TournamentsNotifier extends StateNotifier<TournamentsState> {
   }
 
   Future<void> _loadData() async {
-    state = state.copyWith(isLoading: true, error: null);
+    // Cache-first paint: show whatever's in Drift immediately. The
+    // spinner only surfaces when there's nothing yet — the screen
+    // hides the empty-state flash on subsequent opens.
+    await _hydrateFromCache(isLoading: false);
+    final hadCache = state.activeTournaments.isNotEmpty ||
+        state.historyTournaments.isNotEmpty;
+    state = state.copyWith(
+      isLoading: !hadCache,
+      error: null,
+    );
 
     try {
-      final results = await Future.wait([
-        _service.getActiveTournaments(),
-        _service.getTournamentHistory(),
-        _service.getUserTournamentStats(),
+      await Future.wait([
+        _service.refreshActive(),
+        _service.refreshHistory(),
       ]);
-
-      state = state.copyWith(
-        activeTournaments: results[0] as List<Tournament>,
-        historyTournaments: results[1] as List<Tournament>,
-        userStats: results[2] as Map<String, dynamic>,
-        isLoading: false,
-        isOffline: !_ref.read(isOnlineSyncProvider),
-      );
+      await _hydrateFromCache(isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Failed to load tournaments',
+        // Only surface an error when we have nothing to show at all.
+        error: hadCache ? null : 'Failed to load tournaments',
       );
     }
   }
 
-  /// Refresh tournaments from the server
+  /// Refresh tournaments from the server. Keeps the cached entries on
+  /// screen while the network call is in flight so the user never
+  /// stares at an empty page mid-refresh.
   Future<void> refresh() async {
-    state = state.copyWith(isLoading: true, error: null);
+    final hadCache = state.activeTournaments.isNotEmpty ||
+        state.historyTournaments.isNotEmpty;
+    state = state.copyWith(isLoading: !hadCache, error: null);
 
     try {
-      final results = await Future.wait([
-        _service.getActiveTournaments(),
-        _service.getTournamentHistory(),
-        _service.getUserTournamentStats(),
+      await Future.wait([
+        _service.refreshActive(),
+        _service.refreshHistory(),
       ]);
-
-      state = state.copyWith(
-        activeTournaments: results[0] as List<Tournament>,
-        historyTournaments: results[1] as List<Tournament>,
-        userStats: results[2] as Map<String, dynamic>,
-        isLoading: false,
-        isOffline: !_ref.read(isOnlineSyncProvider),
-      );
+      await _hydrateFromCache(isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Failed to refresh tournaments',
+        error: hadCache ? null : 'Failed to refresh tournaments',
       );
     }
+  }
+
+  /// Pull whatever's currently in the Drift cache into Riverpod state.
+  /// Called immediately on init (for the cache-first paint), after a
+  /// network refresh lands, and whenever the underlying Drift stream
+  /// notifies of an update from elsewhere (join / submit / restore).
+  Future<void> _hydrateFromCache({bool? isLoading}) async {
+    final active = await _service.getActiveTournaments();
+    final history = await _service.getTournamentHistory(limit: 50);
+    final activeMeta =
+        await _service.getLastRefreshedAt('active');
+    final historyMeta =
+        await _service.getLastRefreshedAt('history');
+    state = state.copyWith(
+      activeTournaments: active,
+      historyTournaments: history,
+      isLoading: isLoading,
+      isOffline: !_ref.read(isOnlineSyncProvider),
+      activeLastRefreshedAt: activeMeta,
+      historyLastRefreshedAt: historyMeta,
+    );
   }
 
   /// Join a tournament

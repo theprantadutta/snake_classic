@@ -32,14 +32,6 @@ import 'package:snake_classic/core/network/network_info.dart';
 import 'package:snake_classic/data/datasources/local/cache_datasource.dart';
 import 'package:snake_classic/data/datasources/remote/api_datasource.dart';
 
-// Repositories
-import 'package:snake_classic/domain/repositories/leaderboard_repository.dart';
-import 'package:snake_classic/domain/repositories/social_repository.dart';
-import 'package:snake_classic/domain/repositories/tournament_repository.dart';
-import 'package:snake_classic/data/repositories/leaderboard_repository_impl.dart';
-import 'package:snake_classic/data/repositories/social_repository_impl.dart';
-import 'package:snake_classic/data/repositories/tournament_repository_impl.dart';
-
 // Cubits
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -127,33 +119,6 @@ Future<void> configureDependencies() async {
 
   getIt.registerLazySingleton<ApiDataSource>(
     () => ApiDataSource(getIt<ApiService>()),
-  );
-
-  // ==================== Repositories ====================
-  // Repositories with caching pattern: cache → network → stale fallback
-
-  getIt.registerLazySingleton<LeaderboardRepository>(
-    () => LeaderboardRepositoryImpl(
-      remote: getIt<ApiDataSource>(),
-      cache: getIt<CacheDataSource>(),
-      network: getIt<NetworkInfo>(),
-    ),
-  );
-
-  getIt.registerLazySingleton<SocialRepository>(
-    () => SocialRepositoryImpl(
-      remote: getIt<ApiDataSource>(),
-      cache: getIt<CacheDataSource>(),
-      network: getIt<NetworkInfo>(),
-    ),
-  );
-
-  getIt.registerLazySingleton<TournamentRepository>(
-    () => TournamentRepositoryImpl(
-      remote: getIt<ApiDataSource>(),
-      cache: getIt<CacheDataSource>(),
-      network: getIt<NetworkInfo>(),
-    ),
   );
 
   // ==================== Cubits ====================

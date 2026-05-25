@@ -7,6 +7,7 @@ import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -58,11 +59,43 @@ class DailyChallengeService extends ChangeNotifier {
     // screen wants the full *today's* catalog, not the user's history.
   }
 
-  /// Backend fetch placeholder. Wire the API call here when the
-  /// backend's daily-challenges endpoint is back in service.
+  /// Fetch today's daily challenges from the backend and apply them
+  /// to the in-memory list via [setChallengesFromBackend]. When the
+  /// request fails (offline / 5xx) the in-memory list is left as-is
+  /// — the screen continues to show whatever the previous successful
+  /// refresh produced, or an empty state on a first-launch offline.
   Future<void> refreshChallenges() async {
-    // TODO: fetch today's challenges from the backend and feed them
-    // through [setChallengesFromBackend].
+    if (!ApiService().isAuthenticated) return;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final body = await ApiService().getTodaysChallengesRemote();
+      if (body == null) return;
+      final raw = body['challenges'];
+      if (raw is! List) {
+        AppLogger.warning(
+          'DailyChallengeService.refreshChallenges: missing challenges list',
+        );
+        return;
+      }
+      final parsed = <DailyChallenge>[];
+      for (final entry in raw) {
+        if (entry is! Map<String, dynamic>) continue;
+        try {
+          parsed.add(DailyChallenge.fromJson(entry));
+        } catch (e) {
+          AppLogger.warning(
+            'DailyChallengeService.refreshChallenges: skipping malformed entry: $e',
+          );
+        }
+      }
+      await setChallengesFromBackend(parsed);
+    } catch (e) {
+      AppLogger.error('DailyChallengeService.refreshChallenges errored', e);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   /// Entry point for the backend wiring: feed the freshly-fetched

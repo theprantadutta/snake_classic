@@ -63,6 +63,15 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                   _buildHeader(theme),
                   _buildSearchBar(theme, friendsState),
                   _buildTabBar(theme, friendsState),
+                  // "Updated X ago" — Drift cache freshness signal so
+                  // an offline view doesn't look identical to a live
+                  // one. Hidden when no refresh has ever landed AND
+                  // there's no cached data to put a date on.
+                  AnimatedBuilder(
+                    animation: _tabController,
+                    builder: (context, _) =>
+                        _buildStalenessChip(theme, friendsState),
+                  ),
                   Expanded(
                     child: friendsState.isLoading
                         ? _buildLoadingIndicator(theme)
@@ -231,6 +240,82 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         ],
       ),
     );
+  }
+
+  /// Inline chip surfacing Drift cache freshness for the active tab.
+  /// Tap → forced refresh. Hidden when the cache has never been
+  /// populated AND there's no data — avoids a "Never updated" label
+  /// on a first-launch offline session.
+  Widget _buildStalenessChip(GameTheme theme, FriendsState state) {
+    final tabIndex = _tabController.index;
+    DateTime? ts;
+    bool hasData;
+    switch (tabIndex) {
+      case 1:
+        ts = state.requestsLastRefreshedAt;
+        hasData = state.friendRequests.isNotEmpty;
+        break;
+      case 2:
+        // Search tab — no cache. Suppress the chip entirely; the
+        // search box itself is the freshness signal there.
+        return const SizedBox.shrink();
+      case 0:
+      default:
+        ts = state.friendsLastRefreshedAt;
+        hasData = state.friends.isNotEmpty;
+    }
+    if (ts == null && !hasData) return const SizedBox.shrink();
+    final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: InkWell(
+          onTap: () => ref.read(friendsProvider.notifier).refresh(),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.18),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.refresh_rounded,
+                  color: theme.accentColor.withValues(alpha: 0.7),
+                  size: 12,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.75),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _relativeAge(DateTime ts) {
+    final diff = DateTime.now().difference(ts);
+    if (diff.inSeconds < 5) return 'just now';
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 
   Widget _buildLoadingIndicator(GameTheme theme) {

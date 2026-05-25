@@ -196,7 +196,13 @@ class StorageService {
   }
 
   Future<void> saveAchievements(String achievementsJson) async {
-    await _gameDao?.loadAchievementsFromJson(achievementsJson);
+    // Local-save path: enqueue outbox rows so AchievementService progress
+    // actually rides the SyncEngine drain. loadAchievementsFromJson's
+    // diff check ensures only rows whose synced fields changed get queued.
+    await _gameDao?.loadAchievementsFromJson(
+      achievementsJson,
+      enqueueSync: true,
+    );
   }
 
   // ==================== Replays ====================
@@ -341,6 +347,38 @@ class StorageService {
     return await _storeDao?.getUnlockedBundles() ?? [];
   }
 
+  /// Single-item unlock (additive, idempotent). Preferred over
+  /// setUnlockedXxx(fullSet) for the "user just unlocked one new item"
+  /// case — the wipe-and-reinsert path queues every owned item to the
+  /// outbox, not just the new one.
+  Future<void> unlockItem(
+    String itemId,
+    String itemType, {
+    String? unlockedBy,
+  }) async {
+    await _storeDao?.unlockItem(itemId, itemType, unlockedBy: unlockedBy);
+  }
+
+  // Server-apply (merge-only, no outbox enqueue). Use these from
+  // PremiumCubit._applyBackendEntitlements so refreshing entitlements
+  // doesn't echo back to the server or delete locally-owned items
+  // unknown to /purchases/premium-content.
+  Future<void> applyUnlockedThemesFromServer(List<String> ids) async {
+    await _storeDao?.applyUnlockedThemesFromServer(ids);
+  }
+
+  Future<void> applyUnlockedSkinsFromServer(List<String> ids) async {
+    await _storeDao?.applyUnlockedSkinsFromServer(ids);
+  }
+
+  Future<void> applyUnlockedTrailsFromServer(List<String> ids) async {
+    await _storeDao?.applyUnlockedTrailsFromServer(ids);
+  }
+
+  Future<void> applyUnlockedBundlesFromServer(List<String> ids) async {
+    await _storeDao?.applyUnlockedBundlesFromServer(ids);
+  }
+
   Future<void> setUnlockedBundles(List<String> bundles) async {
     await _storeDao?.setUnlockedBundles(bundles);
   }
@@ -362,7 +400,9 @@ class StorageService {
   }
 
   Future<void> setBattlePassData(String? data) async {
-    await _storeDao?.setBattlePassData(data);
+    // Local-save path: enqueue an outbox row so BattlePassCubit
+    // progress rides the SyncEngine drain.
+    await _storeDao?.setBattlePassData(data, enqueueSync: true);
   }
 
   Future<DateTime?> getLastPlayDate() async {

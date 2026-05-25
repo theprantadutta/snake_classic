@@ -1359,11 +1359,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final isVerySmallScreen = screenHeight < 650;
     final isSmallScreen = screenHeight < 750;
     // Note: isMediumScreen not needed in bottom navigation
-    // Offline-first build: BOARD (leaderboard), EVENTS (tournaments),
-    // and FRIENDS are removed from this grid because the backing API
-    // is unreliable. The screens still exist behind their routes for
-    // a future revive — only the entry points are gone. REPLAYS takes
-    // a slot so the grid keeps a balanced 3+3 layout.
+    // All three feature buttons (BOARD / EVENTS / FRIENDS) are back —
+    // each drift-cached locally with a background refresh on open
+    // and an "Updated X ago" chip. STATS and REPLAYS stayed in the
+    // compact stats row above so they're still one tap away.
     final navigationItems = [
       _NavItem(
         Icons.calendar_today,
@@ -1378,11 +1377,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _NavItem(Icons.timeline, 'BATTLE', Colors.deepPurple, () {
         context.push(AppRoutes.battlePass);
       }),
-      _NavItem(Icons.analytics, 'STATS', Colors.teal, () {
-        context.push(AppRoutes.statistics);
+      _NavItem(Icons.emoji_events, 'EVENTS', Colors.deepOrange, () {
+        context.push(AppRoutes.tournaments);
       }),
-      _NavItem(Icons.video_library, 'REPLAYS', Colors.amber, () {
-        context.push(AppRoutes.replays);
+      _NavItem(Icons.leaderboard, 'BOARD', Colors.lightBlue, () {
+        context.push(AppRoutes.leaderboard);
+      }),
+      _NavItem(Icons.people, 'FRIENDS', Colors.pinkAccent, () {
+        context.push(AppRoutes.friends);
       }),
       _NavItem(
         Icons.palette,
@@ -1398,17 +1400,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       }),
     ];
 
-    return Column(
-      children: [
-        // First row - 3 items
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: navigationItems.take(3).toList().asMap().entries.map((
-            entry,
-          ) {
-            final index = entry.key;
-            final item = entry.value;
+    // Two-row layout, balanced. Ceiling-divide so 7 items become 4+3,
+    // 6 stays 3+3, 8 becomes 4+4, etc. — keeps the larger row on top
+    // visually anchoring the grid.
+    final firstRowCount = (navigationItems.length + 1) ~/ 2;
+    final firstRow = navigationItems.take(firstRowCount).toList();
+    final secondRow = navigationItems.skip(firstRowCount).toList();
 
+    Widget buildRow(List<_NavItem> items, int indexOffset) => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: items.asMap().entries.map((entry) {
+            final index = entry.key + indexOffset;
+            final item = entry.value;
             return _buildNavButton(
                   icon: item.icon,
                   label: item.label,
@@ -1422,8 +1425,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 )
                 .gameGridItem(index);
           }).toList(),
-        ),
+        );
 
+    return Column(
+      children: [
+        buildRow(firstRow, 0),
         SizedBox(
           height: isVerySmallScreen
               ? 8
@@ -1431,35 +1437,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ? 12
               : 16,
         ),
-
-        // Second row - 3 items
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: navigationItems
-              .skip(3)
-              .take(3)
-              .toList()
-              .asMap()
-              .entries
-              .map((entry) {
-                final index = entry.key + 3;
-                final item = entry.value;
-
-                return _buildNavButton(
-                      icon: item.icon,
-                      label: item.label,
-                      color: item.color,
-                      onTap: item.onTap,
-                      theme: theme,
-                      isSmallScreen: isVerySmallScreen || isSmallScreen,
-                      screenHeight: screenHeight,
-                      badge: item.badge,
-                      widgetKey: item.widgetKey,
-                    )
-                    .gameGridItem(index);
-              })
-              .toList(),
-        ),
+        buildRow(secondRow, firstRowCount),
       ],
     );
   }

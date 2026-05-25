@@ -19,11 +19,16 @@ class SyncDao extends DatabaseAccessor<AppDatabase> with _$SyncDaoMixin {
             ..orderBy([(t) => OrderingTerm.asc(t.priority)]))
           .watch();
 
-  /// Get pending sync items
-  Future<List<SyncQueueData>> getPendingSyncItems() =>
+  /// Get pending sync items. [limit] caps the number of rows returned
+  /// per call so a long offline session (thousands of outbox rows)
+  /// doesn't load everything into memory or produce a single batch
+  /// that times out the 15s HTTP window. The SyncEngine's debounce +
+  /// periodic timer will drain the remainder on subsequent ticks.
+  Future<List<SyncQueueData>> getPendingSyncItems({int limit = 500}) =>
       (select(syncQueue)
             ..where((t) => t.status.equals(0) | t.status.equals(2))
-            ..orderBy([(t) => OrderingTerm.asc(t.priority)]))
+            ..orderBy([(t) => OrderingTerm.asc(t.priority)])
+            ..limit(limit))
           .get();
 
   /// Get all sync queue items
@@ -88,10 +93,15 @@ class SyncDao extends DatabaseAccessor<AppDatabase> with _$SyncDaoMixin {
     await delete(syncQueue).go();
   }
 
-  /// Get sync queue count
+  /// Get sync queue count. Uses a COUNT(*) so the result is accurate
+  /// regardless of the [getPendingSyncItems] page-limit cap.
   Future<int> getPendingSyncCount() async {
-    final items = await getPendingSyncItems();
-    return items.length;
+    final countExp = syncQueue.id.count();
+    final row = await (selectOnly(syncQueue)
+          ..addColumns([countExp])
+          ..where(syncQueue.status.equals(0) | syncQueue.status.equals(2)))
+        .getSingle();
+    return row.read(countExp) ?? 0;
   }
 
   /// Get failed sync count
