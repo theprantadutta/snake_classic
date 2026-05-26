@@ -1359,10 +1359,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final isVerySmallScreen = screenHeight < 650;
     final isSmallScreen = screenHeight < 750;
     // Note: isMediumScreen not needed in bottom navigation
-    // All three feature buttons (BOARD / EVENTS / FRIENDS) are back —
-    // each drift-cached locally with a background refresh on open
-    // and an "Updated X ago" chip. STATS and REPLAYS stayed in the
-    // compact stats row above so they're still one tap away.
+    // 8 items split 4+4 across two rows. STATS is duplicated in the
+    // compact stats row above the nav (left of high score) AND in the
+    // grid here — the upper instance keeps stats one tap away from the
+    // home eyeline, the grid instance makes the 4x4 layout balance.
     final navigationItems = [
       _NavItem(
         Icons.calendar_today,
@@ -1397,6 +1397,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
       _NavItem(Icons.military_tech, 'AWARDS', Colors.orange, () {
         context.push(AppRoutes.achievements);
+      }),
+      _NavItem(Icons.analytics, 'STATS', Colors.teal, () {
+        context.push(AppRoutes.statistics);
       }),
     ];
 
@@ -1454,11 +1457,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     GlobalKey? widgetKey,
   }) {
     final buttonSize = _getResponsiveNavButtonSize(screenHeight);
+    // Icon size tracks the button bump from _getResponsiveNavButtonSize
+    // so the icon-to-button ratio stays balanced (~40-45% of the button
+    // width). Going too big crowds the rounded-corner padding; this is
+    // the sweet spot.
     final iconSize = screenHeight < 600
-        ? 18.0
-        : screenHeight < 700
         ? 20.0
-        : 24.0;
+        : screenHeight < 700
+        ? 22.0
+        : 26.0;
 
     return GestureDetector(
       onTap: onTap,
@@ -1972,10 +1979,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   double _getResponsiveNavButtonSize(double screenHeight) {
-    if (screenHeight < 600) return 38.0;
-    if (screenHeight < 700) return 44.0;
-    if (screenHeight < 850) return 50.0;
-    return 56.0;
+    // Each tier bumped ~6dp from the previous values (38/44/50/56) to
+    // make the buttons easier to hit. The small-screen size now lands
+    // close to the Material Design 48dp minimum tap target, and the
+    // large-screen size reads more solidly without crowding the row.
+    if (screenHeight < 600) return 44.0;
+    if (screenHeight < 700) return 50.0;
+    if (screenHeight < 850) return 56.0;
+    return 62.0;
   }
 
   /// Get the badge count for daily challenges (unclaimed rewards).
