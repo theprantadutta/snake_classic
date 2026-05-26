@@ -482,6 +482,71 @@ class ApiService {
   ) =>
       _postSync('daily-challenge-claims', {'items': items});
 
+  Future<SyncOutcome> syncWeeklyQuestClaims(
+    List<Map<String, dynamic>> items,
+  ) =>
+      _postSync('weekly-quests', {'items': items});
+
+  // ==================== Weekly Quests ====================
+
+  /// Fetch the current week's quests with the user's progress.
+  /// Backend route shape mirrors daily-challenges.
+  Future<Map<String, dynamic>?> getCurrentWeeklyQuestsRemote() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/weekly-quests/current'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /weekly-quests/current', e);
+      return null;
+    }
+  }
+
+  /// Batch progress reports — backend takes a raw JSON array of
+  /// `{ type, increment_by, game_mode? }`. Used from GameCubit's
+  /// post-game flow so a single round can credit multiple weekly-quest
+  /// types in one round-trip.
+  Future<Map<String, dynamic>?> updateWeeklyQuestProgressBatch(
+    List<Map<String, dynamic>> updates,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/weekly-quests/progress/batch'),
+            headers: _authHeaders,
+            body: jsonEncode(updates),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error POST /weekly-quests/progress/batch', e);
+      return null;
+    }
+  }
+
+  /// Claim a completed weekly quest. Returns `{ success, coinReward,
+  /// battlePassXp, balance? }` on 200. Server is the authority on the
+  /// reward grant; the client UI optimistically credits the local
+  /// CoinsCubit before this returns and reconciles afterwards.
+  Future<Map<String, dynamic>?> claimWeeklyQuestRewardRemote(String questId) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/weekly-quests/claim/$questId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error POST /weekly-quests/claim', e);
+      return null;
+    }
+  }
+
   // ==================== Daily Challenges ====================
 
   /// Fetch today's daily challenges with the user's progress. Backend

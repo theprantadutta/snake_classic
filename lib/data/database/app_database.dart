@@ -32,6 +32,7 @@ class SyncDataType {
   static const String unlockedItem = 'unlocked_item';
   static const String battlePass = 'battle_pass';
   static const String dailyChallengeClaim = 'daily_challenge_claim';
+  static const String weeklyQuestClaim = 'weekly_quest_claim';
 }
 
 // =====================================================
@@ -319,6 +320,29 @@ class DailyChallenges extends Table {
 }
 
 // =====================================================
+// TABLE 8b: Weekly Quests (claim mirror — analogous to DailyChallenges)
+// =====================================================
+class WeeklyQuests extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get questId => text()();
+  TextColumn get questType => text()(); // WeeklyQuestType.apiValue
+  TextColumn get title => text()();
+  TextColumn get description => text()();
+  IntColumn get currentProgress => integer().withDefault(const Constant(0))();
+  IntColumn get targetValue => integer()();
+  IntColumn get coinReward => integer().withDefault(const Constant(0))();
+  IntColumn get battlePassXpReward =>
+      integer().withDefault(const Constant(0))();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
+  BoolColumn get claimedReward => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get weekStartDate => dateTime()();
+  DateTimeColumn get completedAt => dateTime().nullable()();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+// =====================================================
 // TABLE 9: Replays
 // =====================================================
 class Replays extends Table {
@@ -580,6 +604,7 @@ class PurchaseHistory extends Table {
     UnlockedItems,
     BattlePasses,
     DailyChallenges,
+    WeeklyQuests,
     Replays,
     SyncQueue,
     CacheStore,
@@ -608,7 +633,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -699,6 +724,22 @@ class AppDatabase extends _$AppDatabase {
           'ON friend_requests_cache(from_user_id)',
         );
       }
+      if (from < 8) {
+        // v8: weekly quests claim mirror, analogous to daily_challenges.
+        // Sync engine writes here; backend's UserWeeklyQuestClaim table
+        // is the canonical sync destination. The legacy
+        // /weekly-quests/progress endpoint still maintains the
+        // gameplay-side UserWeeklyQuest table; the two coexist.
+        await m.createTable(weeklyQuests);
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_weekly_quests_week_start '
+          'ON weekly_quests(week_start_date)',
+        );
+        await customStatement(
+          'CREATE UNIQUE INDEX IF NOT EXISTS idx_weekly_quests_quest_id '
+          'ON weekly_quests(quest_id)',
+        );
+      }
     },
   );
 
@@ -721,6 +762,14 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_daily_challenges_expires ON daily_challenges(expires_at)',
+    );
+
+    // WeeklyQuests index for week-based queries + unique quest id
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_weekly_quests_week_start ON weekly_quests(week_start_date)',
+    );
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_weekly_quests_quest_id ON weekly_quests(quest_id)',
     );
 
     // CoinTransactions index for timestamp-based queries

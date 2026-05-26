@@ -5,7 +5,8 @@ import 'package:snake_classic/data/database/app_database.dart';
 
 part 'game_dao.g.dart';
 
-@DriftAccessor(tables: [Statistics, Achievements, Replays, DailyChallenges])
+@DriftAccessor(
+    tables: [Statistics, Achievements, Replays, DailyChallenges, WeeklyQuests])
 class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   GameDao(super.db);
 
@@ -534,5 +535,80 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   Future<void> cleanupExpiredChallenges() async {
     final now = DateTime.now();
     await (delete(dailyChallenges)..where((t) => t.expiresAt.isSmallerThanValue(now))).go();
+  }
+
+  // =========================================================================
+  // WEEKLY QUESTS — mirrors the DailyChallenges DAO surface.
+  // =========================================================================
+
+  /// All weekly-quest rows currently in Drift. The service hydrates this
+  /// to mark already-claimed rewards across reinstalls.
+  Future<List<WeeklyQuest>> getAllWeeklyQuests() {
+    return select(weeklyQuests).get();
+  }
+
+  /// Quests for the ISO week that contains [reference] (default: now).
+  Future<List<WeeklyQuest>> getWeeklyQuestsForWeek({DateTime? reference}) {
+    final ref = reference ?? DateTime.now();
+    final monday = ref.subtract(Duration(days: ref.weekday - 1));
+    final weekStart = DateTime(monday.year, monday.month, monday.day);
+    final weekEnd = weekStart.add(const Duration(days: 7));
+    return (select(weeklyQuests)
+          ..where((t) =>
+              t.weekStartDate.isBiggerOrEqualValue(weekStart) &
+              t.weekStartDate.isSmallerThanValue(weekEnd)))
+        .get();
+  }
+
+  /// Insert or update a weekly quest claim row. Same shape as the daily-
+  /// challenge equivalent — used both for hydrating from the backend
+  /// (enqueueSync=false) and for persisting a local claim
+  /// (enqueueSync=true).
+  Future<void> upsertWeeklyQuest(
+    WeeklyQuestsCompanion quest, {
+    bool enqueueSync = true,
+  }) async {
+    final id = quest.questId.present ? quest.questId.value : null;
+    final now = DateTime.now();
+    final stamped = quest.copyWith(updatedAt: Value(now));
+    await transaction(() async {
+      await into(weeklyQuests).insertOnConflictUpdate(stamped);
+      if (enqueueSync && id != null) {
+        await attachedDatabase.enqueueSyncOutbox(
+          dataType: SyncDataType.weeklyQuestClaim,
+          entityKey: 'weekly_quest_claim:$id',
+        );
+      }
+    });
+  }
+
+  /// Claim weekly-quest reward. Marks the row claimed + enqueues an
+  /// outbox row so the backend records the claim. Returns the coin
+  /// reward (or 0 if the quest wasn't claimable / found).
+  Future<int> claimWeeklyQuestReward(String questId) async {
+    final quest = await (select(weeklyQuests)
+          ..where((t) => t.questId.equals(questId)))
+        .getSingleOrNull();
+
+    if (quest == null || quest.claimedReward || !quest.isCompleted) {
+      return 0;
+    }
+
+    final now = DateTime.now();
+    await transaction(() async {
+      await (update(weeklyQuests)
+            ..where((t) => t.questId.equals(questId)))
+          .write(WeeklyQuestsCompanion(
+        claimedReward: const Value(true),
+        completedAt: Value(quest.completedAt ?? now),
+        updatedAt: Value(now),
+      ));
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.weeklyQuestClaim,
+        entityKey: 'weekly_quest_claim:$questId',
+      );
+    });
+
+    return quest.coinReward;
   }
 }

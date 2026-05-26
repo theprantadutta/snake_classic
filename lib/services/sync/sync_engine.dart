@@ -583,6 +583,20 @@ class SyncEngine {
           if (rows.isEmpty) return _DispatchResult.success;
           return _mapOutcome(await _api.syncDailyChallengeClaims(rows));
 
+        case SyncDataType.weeklyQuestClaim:
+          // Mirrors the daily-challenge drain: read current Drift rows by
+          // quest id so we send the live state (progress + claim) instead
+          // of whatever was frozen into the outbox payload at write time.
+          final wqIds = _extractIds(items, prefix: 'weekly_quest_claim:');
+          if (wqIds.isEmpty) return _DispatchResult.success;
+          final allWq = await _gameDao!.getAllWeeklyQuests();
+          final wqRows = allWq
+              .where((q) => wqIds.contains(q.questId))
+              .map(_weeklyQuestToPayload)
+              .toList();
+          if (wqRows.isEmpty) return _DispatchResult.success;
+          return _mapOutcome(await _api.syncWeeklyQuestClaims(wqRows));
+
         default:
           // Unknown outbox type — likely a new SyncDataType constant
           // wasn't wired into this switch. Treat as permanent failure
@@ -661,6 +675,7 @@ class SyncEngine {
       case SyncDataType.unlockedItem:
       case SyncDataType.battlePass:
       case SyncDataType.dailyChallengeClaim:
+      case SyncDataType.weeklyQuestClaim:
         return true;
       default:
         return false;
@@ -771,6 +786,24 @@ class SyncEngine {
         'reward_claimed': r.rewardClaimed,
         'challenge_date': _utcIso(r.challengeDate),
         'expires_at': _utcIso(r.expiresAt),
+        'completed_at': _utcIsoNullable(r.completedAt),
+        'updated_at': _utcIso(r.updatedAt),
+      };
+
+  // Mirrors _dailyChallengeToPayload — keys match SyncWeeklyQuestClaimPayload
+  // on the backend (snake_case via JsonNamingPolicy.SnakeCaseLower).
+  Map<String, dynamic> _weeklyQuestToPayload(WeeklyQuest r) => {
+        'quest_id': r.questId,
+        'quest_type': r.questType,
+        'title': r.title,
+        'description': r.description,
+        'current_progress': r.currentProgress,
+        'target_value': r.targetValue,
+        'coin_reward': r.coinReward,
+        'battle_pass_xp_reward': r.battlePassXpReward,
+        'is_completed': r.isCompleted,
+        'claimed_reward': r.claimedReward,
+        'week_start_date': _utcIso(r.weekStartDate),
         'completed_at': _utcIsoNullable(r.completedAt),
         'updated_at': _utcIso(r.updatedAt),
       };
