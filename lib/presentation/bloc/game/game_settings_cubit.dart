@@ -25,11 +25,22 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
   // sources go stale and the home screen showed a fixed lower number.
   StreamSubscription<GameSetting?>? _settingsSubscription;
 
+  /// Coalesces concurrent initialize() calls onto a shared completion
+  /// future. Matches the pattern in [CoinsCubit] — AuthCubit fires
+  /// syncWithBackend before main.dart's BlocProvider has finished
+  /// loading from Drift, and we cannot let the sync read state.highScore
+  /// while it's still the default 0.
+  Completer<void>? _initCompleter;
+
   GameSettingsCubit(this._storageService) : super(GameSettingsState.initial());
 
   /// Initialize settings from storage
   Future<void> initialize() async {
     if (state.status == GameSettingsStatus.ready) return;
+    final inFlight = _initCompleter;
+    if (inFlight != null) return inFlight.future;
+    final completer = Completer<void>();
+    _initCompleter = completer;
 
     emit(state.copyWith(status: GameSettingsStatus.loading));
 
@@ -101,9 +112,11 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       // syncWithBackend after the user is authenticated (see
       // AuthCubit._firePostAuthSyncs). Firing here would race with auth
       // and 401 on first launch.
+      completer.complete();
     } catch (e) {
       AppLogger.error('Error initializing GameSettingsCubit', e);
       emit(state.copyWith(status: GameSettingsStatus.ready));
+      completer.complete();
     }
   }
 
@@ -117,6 +130,16 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
   /// and emits new state, so the UI rebuilds without any further plumbing.
   Future<void> syncWithBackend() async {
     try {
+      // Block on initialize() so state.highScore reflects the Drift
+      // settings row, not the default 0. AuthCubit._firePostAuthSyncs
+      // fires this on every successful authentication — well before
+      // main.dart's BlocProvider.create has finished loading. Without
+      // the await, local=0 races server=N and the sync log misreports
+      // "local=0, server=2033 (synced)" while writing a value the
+      // never-decrease saveHighScore guard might have suppressed.
+      await initialize();
+      if (state.status != GameSettingsStatus.ready) return;
+
       if (!_apiService.isAuthenticated) return;
       final data = await _apiService.getCurrentUser();
       if (data == null) return;
@@ -126,9 +149,18 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           ?? 0;
       final localHighScore = state.highScore;
 
-      if (serverHighScore <= localHighScore) {
+      if (serverHighScore == localHighScore) {
         AppLogger.info(
-          'High score sync: local=$localHighScore, server=$serverHighScore (no change)',
+          'High score sync: local=$localHighScore, server=$serverHighScore (in sync)',
+        );
+        return;
+      }
+      if (serverHighScore < localHighScore) {
+        // Local ahead — keep it. The score-submit / statistics sync
+        // paths will push the higher local value up on the next tick.
+        AppLogger.info(
+          'High score sync: local=$localHighScore, server=$serverHighScore '
+          '(kept local; server is behind by ${localHighScore - serverHighScore})',
         );
         return;
       }

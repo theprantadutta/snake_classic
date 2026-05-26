@@ -390,18 +390,28 @@ class StatisticsService {
 
   Future<void> _saveLocalStatistics() async {
     try {
+      // Single source of truth for high score: GameSettings.highScore.
+      // Mirror our in-memory model's highScore UP to settings first
+      // (saveHighScore is never-decrease, so this only takes effect
+      // when stats has the higher number), then pull back the canonical
+      // value so the JSON we serialize agrees with GameSettings. Without
+      // this reconciliation Statistics.modelJson.highScore and
+      // GameSettings.highScore could drift apart — game_cubit writes to
+      // settings on a new high, this service writes to the stats model
+      // on every game-end, and if one path executed without the other
+      // the two locations diverged.
+      await _storageService.saveHighScore(_currentStatistics.highScore);
+      final canonical = await _storageService.getHighScore();
+      if (canonical != _currentStatistics.highScore) {
+        _currentStatistics = _currentStatistics.withHighScore(canonical);
+      }
+
+      // Drift's statistics row is the only persistent store of the full
+      // stats blob; SyncEngine reads it and pushes to /sync/statistics.
+      // updateStatisticsFromJson enqueues an outbox row in the same
+      // transaction, so the next drain ships the latest model JSON.
       final json = _currentStatistics.toJsonString();
-      // SharedPreferences kept as the fast in-memory hydration source for
-      // the local statistics screen — the legacy code path everything
-      // already reads from. Don't break that.
       await _storageService.saveStatistics(json);
-      // Drift is what SyncEngine reads from to push to /sync/statistics.
-      // Without this dual-write the backend never sees stats updates —
-      // the admin dashboard would show all zeros despite real local play.
-      // updateStatisticsFromJson(enqueueSync: true) writes the row AND
-      // appends a sync_outbox entry in the same transaction, so the
-      // next SyncEngine tick will POST the verbatim model JSON.
-      await _storageService.gameDao.updateStatisticsFromJson(json);
     } catch (e) {
       if (kDebugMode) {
         print('Error saving local statistics: $e');

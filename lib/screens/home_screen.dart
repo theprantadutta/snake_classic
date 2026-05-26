@@ -206,11 +206,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         theme: theme,
         status: status,
         onClaim: () async {
-          if (mounted) {
-            await context.read<CoinsCubit>().collectDailyBonus();
+          if (!mounted) return false;
+          final success = await context.read<CoinsCubit>().collectDailyBonus();
+          if (success) {
+            getIt<AnalyticsFacade>().trackDailyBonusCollected();
           }
-          getIt<AnalyticsFacade>().trackDailyBonusCollected();
-          return true;
+          return success;
         },
       );
     } catch (e) {

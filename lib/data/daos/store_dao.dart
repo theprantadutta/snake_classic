@@ -21,6 +21,24 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
           .watchSingleOrNull()
           .map((c) => c?.balance ?? 0);
 
+  /// Watch the full singleton coins row — used by CoinsCubit so the
+  /// breakdown (balance + totalEarned + totalSpent + lastUpdated) stays
+  /// in lock-step with Drift writes. Snapshot-apply, addCoins, and
+  /// spendCoins all flow through here, which keeps the cubit's emitted
+  /// state synchronous with Drift even when the mutation didn't come
+  /// from the cubit itself.
+  Stream<Coin?> watchCoinBalanceRow() =>
+      (select(coins)..where((t) => t.id.equals(1))).watchSingleOrNull();
+
+  /// Watch the most-recent N coin transactions. CoinsCubit consumes
+  /// this stream so the transactions list re-renders whenever a new
+  /// row lands (regardless of which DAO method inserted it).
+  Stream<List<CoinTransaction>> watchCoinTransactions({int limit = 200}) =>
+      (select(coinTransactions)
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..limit(limit))
+          .watch();
+
   /// Get current coin balance
   Future<int> getCoinBalance() async {
     final coin = await (select(coins)..where((t) => t.id.equals(1)))
@@ -33,6 +51,30 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   /// time, which would break server-side last-write-wins).
   Future<Coin?> getCoinBalanceRow() =>
       (select(coins)..where((t) => t.id.equals(1))).getSingleOrNull();
+
+  /// Force-enqueue a coin_balance sync outbox row so the next drain
+  /// pushes the current Drift balance up to the backend's
+  /// UserCoinBalance mirror table (which is what the admin dashboard
+  /// reads).
+  ///
+  /// Why this exists: the backend has TWO coin records per user — the
+  /// canonical `users.Coins` ledger (mutated by gameplay/claim handlers
+  /// via raw SQL UPDATEs) and the `UserCoinBalance` client-mirror table
+  /// (mutated by /sync/coin-balance pushes). When a client push has
+  /// historically set UserCoinBalance to a value that users.Coins never
+  /// caught up to (because the corresponding gain never landed in a
+  /// server-side ledger transaction), the two diverge. /auth/me returns
+  /// users.Coins, the dashboard shows UserCoinBalance. Calling this
+  /// after CoinsCubit.syncWithBackend reconciles its in-memory state
+  /// with /auth/me ensures the next drain re-pushes the new
+  /// authoritative value to UserCoinBalance, eliminating the
+  /// "Flutter says 13856 / Dashboard says 14656" class of bugs.
+  Future<void> enqueueCoinBalanceSync() async {
+    await attachedDatabase.enqueueSyncOutbox(
+      dataType: SyncDataType.coinBalance,
+      entityKey: 'coin_balance:1',
+    );
+  }
 
   /// Add coins (from game, achievement, etc.). Bumps balance, appends
   /// a transaction record, and enqueues both rows for sync inside a

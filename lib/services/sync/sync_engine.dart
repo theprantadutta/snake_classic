@@ -105,6 +105,11 @@ class SyncEngine {
   static const String _hasEverSignedInPrefsKey = 'sync_engine_has_ever_signed_in';
 
   bool _isDraining = false;
+  /// Future of the currently-running [_drain] call, or null if idle.
+  /// Callers that need to block on the active drain (notably the
+  /// first-sign-in pull's pre-fetch step) await this before kicking
+  /// off their own drain.
+  Future<void>? _drainInFlight;
   StreamSubscription<List<SyncQueueData>>? _outboxWatcher;
   StreamSubscription<bool>? _connectivityWatcher;
   Timer? _debounceTimer;
@@ -291,6 +296,29 @@ class SyncEngine {
       return FirstSignInResult.pullFailed;
     }
 
+    // Ship any pre-existing outbox rows BEFORE we fetch the snapshot
+    // so the server's view reflects the latest local state. Without
+    // this, a row that the cubits enqueued during boot (e.g., the
+    // legacy SharedPreferences→Drift coin migration, the +50 starting
+    // bonus seed, a settings write that landed during init) would be
+    // stranded by the clearSyncQueue at the end of this method:
+    //   * pull returns the stale server number
+    //   * snapshot apply writes the stale number to local Drift
+    //     (cloud-wins for plain fields, or max-merge for the few we
+    //     bumped down below — either way, an unflushed local delta
+    //     never reaches the server)
+    //   * clearSyncQueue removes the outbox row that was supposed to
+    //     carry the delta up
+    // Flushing first means the pull reads a server that already knows
+    // about the local-side gains, so the snapshot equals what local
+    // already has and the apply is a no-op.
+    try {
+      await _drain();
+      AppLogger.network('SyncEngine: pre-pull drain complete');
+    } catch (e) {
+      AppLogger.warning('SyncEngine: pre-pull drain errored (continuing): $e');
+    }
+
     Map<String, dynamic>? snapshot;
     try {
       AppLogger.network('SyncEngine: GET /sync/pull …');
@@ -357,8 +385,16 @@ class SyncEngine {
     // for the offline-first build.
     _emitFirstSignInState(FirstSignInState.applying);
     try {
-      await _applyCloudSnapshot(snapshot);
+      // Clear the queue FIRST. The pre-pull drain has already shipped
+      // any rows that were pending when this method started; the rest
+      // are either orphans or rows that landed during the pull HTTP
+      // call (rare). The snapshot apply below will RE-ENQUEUE any
+      // fields where local is ahead of cloud (max-merge), so the
+      // next drain still ships those local deltas to the server. If
+      // we cleared AFTER the apply (the prior ordering), those
+      // re-enqueues would be wiped instantly.
       await _syncDao!.clearSyncQueue();
+      await _applyCloudSnapshot(snapshot);
       await prefs.setBool(_hasEverSignedInPrefsKey, true);
       await _ensureMinModalTime(pullingStart);
       // Show "Restore complete" briefly before dismissing.
@@ -421,12 +457,21 @@ class SyncEngine {
   }
 
   Future<void> _drain() async {
-    if (_isDraining) return;
+    if (_isDraining) {
+      // Coalesce concurrent calls onto the in-flight future so the
+      // caller still gets a meaningful completion signal (used by the
+      // first-sign-in pre-pull blocking drain).
+      final inFlight = _drainInFlight;
+      if (inFlight != null) return inFlight;
+      return;
+    }
     if (_db == null || _syncDao == null) return;
     if (!_api.isAuthenticated) return;
     if (!_connectivity.isOnline) return;
 
     _isDraining = true;
+    final completer = Completer<void>();
+    _drainInFlight = completer.future;
     try {
       final items = await _syncDao!.getPendingSyncItems();
       // Only handle outbox-owned dataTypes — the legacy
@@ -447,6 +492,8 @@ class SyncEngine {
       AppLogger.error('SyncEngine drain failed', e);
     } finally {
       _isDraining = false;
+      _drainInFlight = null;
+      completer.complete();
     }
   }
 
@@ -829,6 +876,34 @@ class SyncEngine {
       // ----- settings -----
       final settings = snapshot['settings'];
       if (settings is Map<String, dynamic>) {
+        // High score is max-merged: if local is ahead (e.g., a personal
+        // best earned offline before this device ever signed in), the
+        // pre-pull drain should have pushed it up, but as a defense in
+        // depth we never let the snapshot apply drop a higher local
+        // value. All other settings columns are cloud-wins — they're
+        // preferences the user explicitly set on whichever device they
+        // signed in from most recently, and re-applying old values would
+        // surprise them.
+        final localSettings = await _settingsDao!.getSettings();
+        final cloudHighScore = settings['high_score'] as int? ?? 0;
+        final localHighScore = localSettings?.highScore ?? 0;
+        final mergedHighScore = cloudHighScore >= localHighScore
+            ? cloudHighScore
+            : localHighScore;
+        if (localHighScore > cloudHighScore) {
+          AppLogger.network(
+            'SyncEngine: high score restore — local ($localHighScore) ahead '
+            'of cloud ($cloudHighScore); keeping local',
+          );
+          // Re-enqueue so the post-clearSyncQueue drain can push the
+          // higher local value to the server. Enqueueing INSIDE the apply
+          // transaction is safe — the outbox table is part of the same DB.
+          await _db!.enqueueSyncOutbox(
+            dataType: SyncDataType.settings,
+            entityKey: 'settings:1',
+          );
+        }
+
         await _settingsDao!.applySettingsSnapshot(
           GameSettingsCompanion(
             themeIndex: Value(settings['theme_index'] as int? ?? 0),
@@ -838,7 +913,7 @@ class SyncEngine {
             dPadPositionIndex:
                 Value(settings['d_pad_position_index'] as int? ?? 1),
             boardSizeIndex: Value(settings['board_size_index'] as int? ?? 1),
-            highScore: Value(settings['high_score'] as int? ?? 0),
+            highScore: Value(mergedHighScore),
             crashFeedbackDurationSeconds: Value(
                 settings['crash_feedback_duration_seconds'] as int? ?? 3),
             trailSystemEnabled:
@@ -861,12 +936,38 @@ class SyncEngine {
       }
 
       // ----- coin balance -----
+      // Max-merged for the same reason as high score: if a local Drift
+      // write happened during boot (legacy SP migration, +50 starting
+      // bonus, an offline earn) and the pre-pull drain didn't manage to
+      // ship it (e.g., transient backend hiccup), the snapshot apply
+      // would otherwise overwrite the higher local total and the
+      // subsequent clearSyncQueue would strand the delta. Taking max
+      // and re-enqueueing keeps the local value AND ensures the next
+      // drain pushes it up to the server.
       final balance = snapshot['coin_balance'];
       if (balance is Map<String, dynamic>) {
-        await _storeDao!.applyCoinBalanceSnapshot(
-          balance: balance['balance'] as int? ?? 0,
-          updatedAt: _parseDate(balance['updated_at']),
-        );
+        final cloudBalance = balance['balance'] as int? ?? 0;
+        final localRow = await _storeDao!.getCoinBalanceRow();
+        final localBalance = localRow?.balance ?? 0;
+        if (cloudBalance >= localBalance) {
+          await _storeDao!.applyCoinBalanceSnapshot(
+            balance: cloudBalance,
+            updatedAt: _parseDate(balance['updated_at']),
+          );
+        } else {
+          AppLogger.network(
+            'SyncEngine: coin balance restore — local ($localBalance) ahead '
+            'of cloud ($cloudBalance) by ${localBalance - cloudBalance}; '
+            'keeping local and re-enqueueing for push',
+          );
+          // Re-enqueue so the next drain ships the local-greater value
+          // even after the caller's clearSyncQueue wipes the queue.
+          await _db!.enqueueSyncOutbox(
+            dataType: SyncDataType.coinBalance,
+            entityKey: 'coin_balance:1',
+          );
+          // No Drift write — local already holds the correct value.
+        }
       }
 
       // ----- coin transactions (event-typed, append-only) -----
