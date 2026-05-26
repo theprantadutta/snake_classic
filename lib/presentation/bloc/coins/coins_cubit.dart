@@ -30,6 +30,21 @@ class CoinsCubit extends Cubit<CoinsState> {
       _prefs = await SharedPreferences.getInstance();
       await _loadData();
 
+      // Historical-state backfill — earnCoins USED to only write to
+      // SharedPreferences, so any coin gain prior to the StoreDao routing
+      // fix lives only in CoinsCubit's local state and was never seen
+      // by Drift, SyncEngine, or the backend. The result: dashboard
+      // shows a smaller balance than the Flutter user sees.
+      //
+      // On first init after the fix, if SharedPreferences holds more
+      // coins than the Drift coins row, push the delta through
+      // StoreDao.addCoins so it (a) lands in Drift, (b) writes a
+      // 'historical_backfill' CoinTransactions audit row, and (c) gets
+      // enqueued for sync. The next SyncEngine tick reconciles the
+      // backend. Idempotent — once Drift catches up, the delta is 0
+      // and the backfill no-ops.
+      await _backfillDriftFromSharedPreferences();
+
       emit(state.copyWith(status: CoinsStatus.ready));
       AppLogger.info('CoinsCubit initialized. Balance: ${state.balance.total}');
 
@@ -86,6 +101,43 @@ class CoinsCubit extends Cubit<CoinsState> {
       );
     } catch (e) {
       AppLogger.error('Error syncing coins with backend', e);
+    }
+  }
+
+  /// One-shot reconcile of historical SharedPreferences-only coin gains
+  /// into Drift. See the call site in [initialize] for context. Safe to
+  /// call repeatedly — once Drift catches up to SharedPreferences the
+  /// delta is 0 and this no-ops.
+  Future<void> _backfillDriftFromSharedPreferences() async {
+    try {
+      final storageService = StorageService();
+      if (!storageService.isInitialized) return;
+      final driftRow = await storageService.storeDao.getCoinBalanceRow();
+      if (driftRow == null) return; // Drift not seeded yet — initializeDefaults
+      // will have created the row before this code path runs, but bail
+      // safely on the off chance.
+
+      final driftBalance = driftRow.balance;
+      final cubitBalance = state.balance.total;
+      if (cubitBalance <= driftBalance) {
+        return; // Drift already at or ahead — nothing to backfill.
+      }
+
+      final delta = cubitBalance - driftBalance;
+      AppLogger.info(
+        'CoinsCubit: backfilling +$delta to Drift '
+        '(SharedPreferences=$cubitBalance, Drift=$driftBalance) — '
+        'historical gains made before earnCoins started routing through '
+        'StoreDao. Enqueued for sync via the regular coin_balance / '
+        'coin_transaction outbox path.',
+      );
+      await storageService.storeDao.addCoins(
+        delta,
+        'historical_backfill',
+        description: 'Reconcile of pre-sync SharedPreferences gains',
+      );
+    } catch (e) {
+      AppLogger.warning('CoinsCubit: Drift backfill failed: $e');
     }
   }
 
