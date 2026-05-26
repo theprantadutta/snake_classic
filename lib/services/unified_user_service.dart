@@ -11,7 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
-import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -1248,20 +1247,13 @@ class UnifiedUserService extends ChangeNotifier {
       // Initialize backend integration (FCM token register + topic subscribe)
       await NotificationService().initializeBackendIntegration();
 
-      // Schedule the local daily reminder. This replaces the old
-      // server-side daily-challenge-morning-reminder cron — each device
-      // now owns its own daily ping at OS level, naturally local-time
-      // aware and reachable even when the backend is unreachable.
-      final stats = StatisticsService().statistics;
-      await NotificationService().scheduleSmartDailyReminder(
-        currentWinStreak: stats.currentWinStreak,
-        // hasIncompleteDailyChallenge is wired in once the next game ends
-        // (we don't synchronously know the per-user challenge state at
-        // launch). Falling back to the streak/high-score branches keeps
-        // the message meaningful in the meantime.
-        hasIncompleteDailyChallenge: false,
-        highScore: stats.highScore,
-      );
+      // Daily reminder scheduling lives in the backend now — the Hangfire
+      // job `send-daily-reminder` evaluates each user's local 20:00 anchor
+      // against their stored timezone offset and pushes via FCM. The local
+      // OS scheduler isn't reliable enough for this on OEM Android (Doze,
+      // Samsung alarm cap, etc.). RegisterFcmTokenCommandHandler keeps the
+      // timezone offset fresh on every token register, which is the only
+      // device → backend handoff we still need here.
     } catch (e) {
       AppLogger.user('Error initializing notification integration', e);
     }

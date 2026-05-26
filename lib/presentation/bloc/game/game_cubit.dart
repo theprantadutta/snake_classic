@@ -25,7 +25,6 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
-import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
@@ -1719,14 +1718,10 @@ class GameCubit extends Cubit<GameCubitState> {
         dailyPlayTime: stats.dailyPlayTime,
       );
 
-      // Refresh the daily local reminder with the now-current streak so
-      // tomorrow's notification reflects this game's outcome. Fire-and-
-      // forget — replaces whatever was previously scheduled.
-      unawaited(NotificationService().scheduleSmartDailyReminder(
-        currentWinStreak: stats.currentWinStreak,
-        hasIncompleteDailyChallenge: false,
-        highScore: stats.highScore,
-      ));
+      // Daily reminder scheduling moved server-side — the Hangfire job
+      // `send-daily-reminder` (backend) reads streak / challenge / high-
+      // score state from the DB at each 30-min tick and pushes via FCM.
+      // No per-game refresh needed here.
 
       await getIt<AppDataCache>().refreshStatistics();
 

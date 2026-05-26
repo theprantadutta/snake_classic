@@ -183,11 +183,22 @@ class ApiService {
     try {
       AppLogger.network('Authenticating with backend using Firebase token');
 
+      // Send the device's current UTC offset at signup so brand-new
+      // accounts get a real local-time anchor immediately, without
+      // depending on the FCM-token-register path (which never runs for
+      // users who deny notification permission). Backend backfills
+      // existing users with NULL offsets too — see
+      // AuthenticateWithFirebaseCommandHandler.
+      final tzOffsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
+
       final response = await http
           .post(
             Uri.parse('$baseUrl/auth/firebase'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'firebase_token': firebaseIdToken}),
+            body: jsonEncode({
+              'firebase_token': firebaseIdToken,
+              'time_zone_offset_minutes': tzOffsetMinutes,
+            }),
           )
           .timeout(_timeout);
 
@@ -942,8 +953,9 @@ class ApiService {
 
   // ==================== Notifications ====================
 
-  /// Register FCM token. Forwards the device's UTC offset so the
-  /// backend can land daily notifications at each user's local 9 AM.
+  /// Register FCM token. Forwards the device's UTC offset so the backend
+  /// can land daily notifications at each user's local 20:00 (see Hangfire
+  /// send-daily-reminder job + DailyChallengeJobService.SendDailyReminder).
   Future<bool> registerFcmToken({
     required String fcmToken,
     String platform = 'flutter',
@@ -969,6 +981,107 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       AppLogger.error('Error registering FCM token', e);
+      return false;
+    }
+  }
+
+  // ==================== Dev-only test notifications ====================
+  //
+  // All four endpoints below back the kDebugMode test panel in
+  // settings_screen.dart. They mirror the real production push path
+  // (backend → FCM → device) so the dev panel verifies end-to-end
+  // delivery, not just OS-local rendering.
+
+  /// POST /test/send-to-me — immediate FCM push to every token the
+  /// backend has on file for the caller. Returns true on success.
+  Future<bool> sendTestPushToMe({String? title, String? body}) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/test/send-to-me'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'title': ?title,
+              'body': ?body,
+            }),
+          )
+          .timeout(_timeout);
+      return response.statusCode == 200;
+    } catch (e) {
+      AppLogger.error('Error sending test push via backend', e);
+      return false;
+    }
+  }
+
+  /// POST /test/preview-daily-reminder — fires the EXACT variant the
+  /// daily reminder would send to this user on the next applicable tick.
+  /// Returns the variant name (streak_at_risk / daily_challenge /
+  /// high_score_nudge) or null when no variant applies / user has no tokens.
+  Future<String?> previewDailyReminderViaBackend() async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/test/preview-daily-reminder'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      final parsed = _handleResponse(response);
+      if (parsed == null) return null;
+      if (parsed['success'] == true) {
+        return parsed['variant']?.toString();
+      }
+      return null;
+    } catch (e) {
+      AppLogger.error('Error previewing daily reminder via backend', e);
+      return null;
+    }
+  }
+
+  /// POST /test/schedule — schedules a one-off FCM push at the given UTC
+  /// moment using Hangfire.BackgroundJob.Schedule. Returns the Hangfire
+  /// job id so the caller can cancel later. Returns null on failure.
+  Future<String?> scheduleTestNotification({
+    required DateTime fireAtUtc,
+    String? title,
+    String? body,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/test/schedule'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'fire_at_utc': fireAtUtc.toUtc().toIso8601String(),
+              'title': ?title,
+              'body': ?body,
+            }),
+          )
+          .timeout(_timeout);
+      final parsed = _handleResponse(response);
+      if (parsed == null) return null;
+      return parsed['job_id']?.toString();
+    } catch (e) {
+      AppLogger.error('Error scheduling test notification via backend', e);
+      return null;
+    }
+  }
+
+  /// DELETE /test/schedule/{jobId} — cancel a previously scheduled one-off.
+  /// Idempotent on the backend side; returns true on HTTP 200 regardless
+  /// of whether the job still existed (i.e., already-cancelled / fired
+  /// jobs return true too — the caller's "clear pending test" UX expects
+  /// that).
+  Future<bool> cancelScheduledTestNotification(String jobId) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/test/schedule/$jobId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return response.statusCode == 200;
+    } catch (e) {
+      AppLogger.error('Error cancelling scheduled test via backend', e);
       return false;
     }
   }

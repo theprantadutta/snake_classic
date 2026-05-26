@@ -1488,9 +1488,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Pick date + time. Uses OS scheduler so it fires even if the '
-            'app is killed. Inexact mode — may run up to ~15 min late in '
-            'Doze. Re-scheduling overwrites the pending test.',
+            'Pick date + time. Backend schedules a one-off Hangfire job to '
+            'fire an FCM push at that instant — fires even if the app is '
+            'killed and even if the device clock drifts. Cancel via the '
+            'next button.',
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.6),
               fontSize: 12,
@@ -1518,10 +1519,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Fires the exact content the daily reminder would show '
-            'tomorrow — pulls your current streak / high score from '
-            'statistics so you see your real message variant. Bypasses '
-            'the 23h schedule for instant verification.',
+            'Backend fires the exact daily reminder variant this user '
+            'would receive at the next 20:00-local tick — streak / '
+            'challenge / high-score branches all evaluated server-side '
+            'from your real DB state. Bypasses the timing gate for '
+            'instant verification.',
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.6),
               fontSize: 12,
@@ -1544,14 +1546,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _sendTestPushViaBackend() async {
-    await _notificationService.sendTestNotificationViaBackend();
+    final ok = await _notificationService.sendTestNotificationViaBackend();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(
-          'Push request sent. Should arrive within ~5s if FCM is wired up.',
+          ok
+              ? 'Backend accepted the push. Should arrive within ~5s.'
+              : 'Backend rejected. Check API logs (FCM token registered?).',
         ),
-        duration: Duration(seconds: 4),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -1608,50 +1612,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
-    await _notificationService.scheduleTestNotificationAt(fireAt);
+    final ok = await _notificationService.scheduleTestNotificationAt(fireAt);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Scheduled for ${_formatScheduledTime(fireAt)}'),
+        content: Text(
+          ok
+              ? 'Scheduled via backend for ${_formatScheduledTime(fireAt)}'
+              : 'Backend rejected the schedule. Check the API logs.',
+        ),
         duration: const Duration(seconds: 4),
       ),
     );
   }
 
   Future<void> _cancelScheduledTest() async {
-    await _notificationService.cancelScheduledTestNotification();
+    final ok = await _notificationService.cancelScheduledTestNotification();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Scheduled test cancelled'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Scheduled test cancelled (backend job deleted)'
+              : 'Cancel returned non-200 — local handle cleared anyway',
+        ),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
 
   Future<void> _previewDailyReminder() async {
-    // Pull live stats from AppDataCache so the previewed message reflects
-    // what the user would actually see in the wild. hasIncompleteDailyChallenge
-    // would require the DailyChallengeService — passing false here keeps
-    // the preview self-contained; if streak >= 3 or highScore > 0, those
-    // higher-priority branches fire anyway. Worst case: user sees the
-    // generic message variant. Better tradeoff than coupling Settings to
-    // another service for a debug-only feature.
-    final stats = _appCache.statistics ?? {};
-    final winStreak = (stats['winStreak'] as int?) ?? 0;
-    final highScore = (stats['highScore'] as int?) ?? 0;
-
-    await _notificationService.previewDailyReminder(
-      currentWinStreak: winStreak,
-      hasIncompleteDailyChallenge: false,
-      highScore: highScore,
-    );
+    // Backend reads streak / challenge / high-score state from the DB
+    // directly — no need to pass anything from here. Variant matches
+    // exactly what the wild user would see at the next 20:00-local tick.
+    final variant = await _notificationService.previewDailyReminder();
 
     if (!mounted) return;
+    final message = variant == null
+        ? 'No variant applied (no streak / no challenge / no high score yet, or no FCM token registered).'
+        : 'Preview fired via backend (variant: $variant). Check your tray.';
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Daily reminder preview fired — check your tray.'),
-        duration: Duration(seconds: 3),
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
