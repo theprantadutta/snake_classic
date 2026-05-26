@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 import 'coins_state.dart';
@@ -320,6 +321,33 @@ class CoinsCubit extends Cubit<CoinsState> {
     );
 
     await _saveData();
+
+    // Route through StoreDao so the gain lands in Drift AND the sync
+    // engine outbox — without this, every CoinsCubit.earnCoins call
+    // stayed local-only (in-memory + SharedPreferences) and never
+    // propagated to the backend. The dashboard's UserCoinBalance.Balance
+    // therefore drifted behind whatever the Flutter user actually saw
+    // (e.g. 800-coin gap when claim handlers credited server-side
+    // User.Coins but the client-side optimistic credit never reached
+    // the ledger). StoreDao.addCoins writes Drift + enqueues both
+    // `coin_balance` snapshot and `coin_transaction` event syncs with
+    // an idempotency key — the next SyncEngine tick PUSHes them.
+    try {
+      await StorageService().storeDao.addCoins(
+        amount,
+        source.name,
+        description: itemName,
+      );
+    } catch (e) {
+      // Local in-memory + SharedPreferences state was already updated
+      // above; a Drift write failure shouldn't roll that back. Worst
+      // case: this single gain doesn't reach the server until the
+      // next opportunity (e.g. /auth/me pull bumps User.Coins, max
+      // policy keeps the local value).
+      AppLogger.warning(
+        'CoinsCubit: Drift propagation failed for +$amount from ${source.name}: $e',
+      );
+    }
 
     AppLogger.info(
       'Earned $amount coins from ${source.displayName}${wasCapped ? ' (capped)' : ''}',

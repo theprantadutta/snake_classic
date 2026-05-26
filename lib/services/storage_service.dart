@@ -43,6 +43,12 @@ class StorageService {
   /// rows). Throws if accessed before [initialize].
   GameDao get gameDao => _gameDao!;
 
+  /// Direct StoreDao access — used by CoinsCubit.earnCoins so client-side
+  /// coin gains propagate to the Drift coins table + sync engine outbox.
+  /// Without this, the gain stays in CoinsCubit's SharedPreferences only
+  /// and the backend UserCoinBalance falls behind.
+  StoreDao get storeDao => _storeDao!;
+
   // ==================== High Score ====================
 
   Future<int> getHighScore() async {
