@@ -35,6 +35,30 @@ Create a classic Snake game in Flutter with premium game-quality UI/UX, running 
 ### Store Layout
 The unified store screen (`lib/screens/store_screen.dart`) has exactly 6 tabs in this order: **Pro / Coins / Themes / Skins / Trails / Power-Ups**. Modes and Boards are NOT sold as standalone products — modes are uniformly free, premium board sizes unlock with the Pro subscription. See `STORE_SETUP.md` for the full Play Store catalog (44 products).
 
+### Offline-First Sync Architecture (LOAD-BEARING)
+
+**Every user-mutable piece of state writes to Drift first, and the SyncEngine pushes it to the backend.** The app must remain fully functional offline — playing a game, earning coins, claiming a challenge, picking a cosmetic, changing settings — and any state that changes during the offline window must converge to the server on the next online tick.
+
+The rule, applied to every new code path:
+
+1. **Write through Drift.** No `SharedPreferences`-only writes for state the server cares about. SharedPreferences is fine for ephemeral UI state (toast preferences, last-tab-index), but anything the dashboard or another device should see goes into a Drift table.
+
+2. **Enqueue a sync_outbox row in the same transaction.** Drift DAOs that mutate a synced table must call `attachedDatabase.enqueueSyncOutbox(dataType: ..., entityKey: ...)` inside the same `transaction { ... }` block. If the row write succeeds but the outbox enqueue fails, the sync engine never learns about the change. See `GameDao.upsertWeeklyQuest`, `StoreDao.addCoins`, `GameDao.updateStatisticsFromJson` for the pattern.
+
+3. **SyncEngine is the single pusher.** No service-level direct `api.postX(...)` calls for stateful writes. The SyncEngine drains the outbox, dispatches to the matching `ApiService.syncX(...)` method, and handles retries / failure buckets. A direct `unawaited(api.claim...)` "fast path" is only acceptable as a duplicate signal on top of the sync (the canonical claim still goes through Drift + outbox).
+
+4. **Cubits hydrate from Drift on cold start, then optionally refresh from the server.** `initialize()` should set up usable in-memory state from Drift before any network call. Background refresh from the server is fine but never blocking. See `WeeklyQuestService.initialize`, `DailyChallengeService.refreshChallenges`.
+
+5. **Backend client-mirror tables are what the dashboard reads.** `UserCoinBalance`, `UserBattlePassSnapshot`, `UserDailyChallengeClaim`, `UserWeeklyQuestClaim`, `UserStatistics.ModelJson` — these are the targets of the sync endpoints, and `GetUserDetailQueryHandler` reads from them (NOT the canonical `User.Coins` / `UserBattlePassProgress` / `UserDailyChallenge` gameplay tables). The operator wants to see what the client believes.
+
+6. **Sync handlers must accept the client snapshot as authoritative for client-mirror state.** Reject-on-stale-timestamp is the wrong reconciliation strategy for any field the client owns — the client's local clock is the only place that fully captures offline writes. Per-field absorbing merges (MAX for monotonic counters, OR for absorbing-true flags) are the correct pattern for shared-write fields like achievements; pure last-write-wins is correct for client-owned fields like coin balance, settings, statistics.
+
+### Anti-patterns to refuse
+- Adding a service method that writes to a Drift table without enqueueing a sync_outbox row.
+- Adding a cubit method that writes to `SharedPreferences` for state the dashboard or another device should see.
+- Calling `ApiService.x()` from a service for a stateful mutation when a sync handler exists for that data type.
+- A backend sync handler that silently rejects a client push because `server.UpdatedAt > client.UpdatedAt`. Either accept it (last-write-wins) or do a per-field merge — never drop on the floor.
+
 ### Development Commands
 - `flutter pub get` - Install dependencies
 - `flutter run` - Run the app (ask user for platform preference first)
