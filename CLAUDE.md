@@ -39,6 +39,12 @@ The unified store screen (`lib/screens/store_screen.dart`) has exactly 6 tabs in
 
 **Every user-mutable piece of state writes to Drift first, and the SyncEngine pushes it to the backend.** The app must remain fully functional offline — playing a game, earning coins, claiming a challenge, picking a cosmetic, changing settings — and any state that changes during the offline window must converge to the server on the next online tick.
 
+**Single source of truth per piece of data.** Pick exactly ONE storage layer per data point:
+- **Drift** — anything the backend cares about, anything that should travel with the user across devices (coin balance, high score, statistics, owned cosmetics, claim history, etc.). Cubits / services hydrate FROM Drift, write THROUGH Drift, and SyncEngine pushes from Drift outbox rows.
+- **SharedPreferences** — device-only state that never travels. First-run flags (`hasSeenGameModePicker`, `hasAcceptedPrivacyPolicy`), UI preferences (`lastSelectedTabIndex`), debug toggles, FCM token cache, JWT — things the user re-picks if they switch devices.
+
+The rule is **strictly mutually exclusive**: a given piece of data lives in ONE of those two storage layers, not both. Loading the same value from SharedPreferences in one place and Drift in another guarantees drift, which guarantees mismatched dashboard / device displays, which is the bug class we keep hitting.
+
 The rule, applied to every new code path:
 
 1. **Write through Drift.** No `SharedPreferences`-only writes for state the server cares about. SharedPreferences is fine for ephemeral UI state (toast preferences, last-tab-index), but anything the dashboard or another device should see goes into a Drift table.
