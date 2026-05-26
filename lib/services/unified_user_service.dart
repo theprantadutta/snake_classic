@@ -272,26 +272,31 @@ class UnifiedUserService extends ChangeNotifier {
           _isInitializing = false;
         }
       } else {
-        // No Firebase user - try cached session first
+        // No Firebase user — try cached session first, otherwise fall back
+        // to a purely-local offline guest so the privacy/login screen has
+        // something to render against.
+        //
+        // IMPORTANT: do NOT eagerly fire Firebase anonymous sign-in here.
+        // Anonymous Firebase auth is reserved for the explicit "Continue
+        // as Guest" tap on first_time_auth_screen.dart, which calls
+        // authCubit.signInAnonymously() with user intent. Auto-firing it
+        // on every cold start created an orphan backend user every time
+        // someone reinstalled and never clicked anything — exactly the
+        // pattern the prune-orphan-anonymous-users job has to clean up.
+        // The offline guest below is purely local (no Firebase, no
+        // backend) so it costs nothing to keep around.
         final cachedUser = await _loadCachedUserSession();
         if (cachedUser != null) {
           AppLogger.user('Using cached user session (no Firebase auth)');
           _currentUser = cachedUser;
           _isInitialized = true; // Mark initialized with cached user
           notifyListeners();
-
-          // Try anonymous sign-in in background (non-blocking)
-          _tryAnonymousSignInBackground();
         } else {
-          // No cache - create offline guest IMMEDIATELY, then try Firebase in background
           AppLogger.user('No cache found, creating offline guest user immediately');
           _currentUser = await _createOfflineGuestUser();
           await _cacheUserSession(_currentUser!);
           _isInitialized = true; // Mark initialized with offline guest
           notifyListeners();
-
-          // Try to upgrade to Firebase anonymous in background (non-blocking)
-          _tryAnonymousSignInBackground();
         }
       }
 
@@ -731,21 +736,6 @@ class UnifiedUserService extends ChangeNotifier {
   Future<void> _clearCachedUserSession() async {
     if (_prefs == null) return;
     await _prefs!.remove(_cachedUserKey);
-  }
-
-  /// Try anonymous sign-in in background without blocking initialization
-  void _tryAnonymousSignInBackground() {
-    Future.microtask(() async {
-      try {
-        final success = await _signInAnonymously();
-        if (success) {
-          AppLogger.user('Background anonymous sign-in successful');
-        }
-      } catch (e) {
-        AppLogger.user('Background anonymous sign-in failed (expected if offline): $e');
-        // Ignore errors - we already have a local user
-      }
-    });
   }
 
   /// Create a purely offline guest user (no Firebase auth required)

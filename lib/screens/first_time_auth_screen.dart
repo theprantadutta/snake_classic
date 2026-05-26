@@ -344,7 +344,10 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
                               const SizedBox(height: 16),
 
-                              // Guest Button
+                              // Guest Button — gated behind a confirm modal
+                              // that spells out the guest-account tradeoffs
+                              // (90-day data retention, no purchases) so
+                              // first-time users can't miss the warning.
                               _buildAuthButton(
                                     context,
                                     'Continue as Guest',
@@ -357,7 +360,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                       theme.primaryColor.withValues(alpha: 0.8),
                                       theme.primaryColor,
                                     ],
-                                    () => _handleGuestLogin(authCubit),
+                                    () => _confirmGuestLogin(authCubit),
                                   )
                                   .gameZoomIn(delay: 400.ms),
 
@@ -737,6 +740,105 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     }
   }
 
+  /// Shows a confirmation modal explaining the guest-account tradeoffs
+  /// before firing the actual anonymous sign-in. The user has to
+  /// explicitly tap "Proceed Anyway" to continue — closing the dialog
+  /// or tapping "I Changed My Mind" no-ops and leaves them on the auth
+  /// screen so they can pick Google / Email instead.
+  Future<void> _confirmGuestLogin(AuthCubit authCubit) async {
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      // Force an explicit choice — the warning matters too much to dismiss
+      // by tapping outside the dialog.
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: theme.accentColor.withValues(alpha: 0.3),
+          ),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: theme.foodColor,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Heads up',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _GuestWarningBullet(
+              icon: Icons.delete_outline_rounded,
+              text: 'Guest data is automatically deleted from our '
+                  'servers after 90 days of inactivity.',
+              theme: theme,
+            ),
+            const SizedBox(height: 14),
+            _GuestWarningBullet(
+              icon: Icons.cloud_sync_rounded,
+              text: 'To save your progress permanently and play across '
+                  'devices, sign in with Google or Email instead.',
+              theme: theme,
+            ),
+            const SizedBox(height: 14),
+            _GuestWarningBullet(
+              icon: Icons.shopping_cart_outlined,
+              text: 'Guest accounts cannot purchase products or '
+                  'subscriptions. Sign in if you want to upgrade to Pro '
+                  'or buy cosmetics.',
+              theme: theme,
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(
+              'I changed my mind',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              'Proceed anyway',
+              style: TextStyle(
+                color: theme.foodColor.withValues(alpha: 0.85),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _handleGuestLogin(authCubit);
+    }
+  }
+
   Future<void> _handleGuestLogin(AuthCubit authCubit) async {
     setState(() => _isLoading = true);
 
@@ -788,6 +890,46 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
       ),
+    );
+  }
+}
+
+/// Single-line warning row used inside the guest-confirmation dialog —
+/// theme-tinted icon on the left, body text on the right. Kept private
+/// to this file because no other screen renders the same pattern.
+class _GuestWarningBullet extends StatelessWidget {
+  const _GuestWarningBullet({
+    required this.icon,
+    required this.text,
+    required this.theme,
+  });
+
+  final IconData icon;
+  final String text;
+  final GameTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          color: theme.accentColor.withValues(alpha: 0.85),
+          size: 20,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: theme.accentColor.withValues(alpha: 0.85),
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
