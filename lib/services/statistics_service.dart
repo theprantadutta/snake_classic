@@ -32,6 +32,26 @@ class StatisticsService {
       // Load local statistics first — fast, disk-only.
       await _loadLocalStatistics();
 
+      // One-shot backfill: copy SharedPreferences stats into the Drift
+      // statistics table if Drift doesn't have them yet. Existing users
+      // installed before the dual-write fix have years of game history
+      // in SharedPreferences but Drift empty — without this backfill
+      // SyncEngine sees no row and never pushes to the backend, so the
+      // admin dashboard would stay all-zeros until they happened to play
+      // another game. Idempotent: once Drift has the row, subsequent
+      // launches hit getStatistics() == not-null and skip.
+      try {
+        final driftRow = await _storageService.gameDao.getStatistics();
+        if (driftRow == null) {
+          await _storageService.gameDao
+              .updateStatisticsFromJson(_currentStatistics.toJsonString());
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Drift statistics backfill failed (non-fatal): $e');
+        }
+      }
+
       // Mark ready as soon as local data is available so callers that
       // await initialize() (GameSettingsCubit, AppDataCache, etc.) are
       // never blocked on a network round-trip. Previously this was set
@@ -370,7 +390,18 @@ class StatisticsService {
 
   Future<void> _saveLocalStatistics() async {
     try {
-      await _storageService.saveStatistics(_currentStatistics.toJsonString());
+      final json = _currentStatistics.toJsonString();
+      // SharedPreferences kept as the fast in-memory hydration source for
+      // the local statistics screen — the legacy code path everything
+      // already reads from. Don't break that.
+      await _storageService.saveStatistics(json);
+      // Drift is what SyncEngine reads from to push to /sync/statistics.
+      // Without this dual-write the backend never sees stats updates —
+      // the admin dashboard would show all zeros despite real local play.
+      // updateStatisticsFromJson(enqueueSync: true) writes the row AND
+      // appends a sync_outbox entry in the same transaction, so the
+      // next SyncEngine tick will POST the verbatim model JSON.
+      await _storageService.gameDao.updateStatisticsFromJson(json);
     } catch (e) {
       if (kDebugMode) {
         print('Error saving local statistics: $e');
