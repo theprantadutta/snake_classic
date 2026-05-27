@@ -618,9 +618,17 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 const SizedBox(height: 2),
                 Text(
                   '$pointsInLevel/$pointsNeeded',
+                  // height:1.0 strips the inherent line-height padding
+                  // (default ~1.5) so the text occupies exactly fontSize
+                  // pixels. Without this, fontSize 9 actually renders at
+                  // ~14px tall and combined with the progress bar +
+                  // 2px gap exceeds the 20px content slot the secondary
+                  // row reserves on small screens, producing a 1px
+                  // overflow warning.
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.5),
                     fontSize: isSmallScreen ? 8 : 9,
+                    height: 1.0,
                   ),
                 ),
               ],
