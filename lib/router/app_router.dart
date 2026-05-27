@@ -75,9 +75,17 @@ CustomTransitionPage<void> _scalePage(GoRouterState state, Widget child) {
 /// Late-initialized global GoRouter instance.
 late final GoRouter appRouter;
 
+/// Global key on the root Navigator. SyncEngine uses it to insert the
+/// first-sign-in OverlayEntry above whatever route the user is on when
+/// sign-in fires (could be FirstTimeAuthScreen, LoadingScreen, or
+/// ProfileScreen's "Save your progress" upgrade — anywhere).
+final GlobalKey<NavigatorState> rootNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'rootNavigator');
+
 /// Creates a [GoRouter] with optional [NavigatorObserver]s for analytics.
 GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
   initialLocation: AppRoutes.loading,
+  navigatorKey: rootNavigatorKey,
   debugLogDiagnostics: true,
   observers: observers ?? [],
   routes: [

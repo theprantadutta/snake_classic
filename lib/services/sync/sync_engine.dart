@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/data/daos/game_dao.dart';
@@ -10,9 +12,11 @@ import 'package:snake_classic/data/daos/settings_dao.dart';
 import 'package:snake_classic/data/daos/store_dao.dart';
 import 'package:snake_classic/data/daos/sync_dao.dart';
 import 'package:snake_classic/models/achievement.dart' as ach_model;
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/widgets/sync_restore_overlay.dart';
 
 /// Result of a single backend dispatch.
 enum _DispatchResult {
@@ -58,6 +62,10 @@ enum FirstSignInResult {
 /// the user still sees a setup modal during their first sign-in
 /// (even when there's nothing to pull).
 enum FirstSignInState { idle, welcoming, pulling, applying, restored, failed, done }
+
+/// User-driven resolution of the failed-modal. Used by the engine to
+/// distinguish "Try Again" (loop) from "Continue Anyway" (give up).
+enum _ModalAction { retry, dismiss }
 
 /// Drains the local outbox (the `SyncQueue` Drift table) to the
 /// backend. Owns the periodic + reactive (Drift-stream-driven)
@@ -110,21 +118,34 @@ class SyncEngine {
   /// first-sign-in pull's pre-fetch step) await this before kicking
   /// off their own drain.
   Future<void>? _drainInFlight;
+  /// True once the watcher + periodic-timer + connectivity drain
+  /// triggers are attached. Set by [_armDrainLoop]; the method is
+  /// idempotent so repeated calls (initialize fast-path + every
+  /// maybeRunFirstSignInPull tail + markFirstSignInSkipped) are safe.
+  /// The flag also doubles as a gate on [_drain]: until the drain
+  /// loop is armed, the engine is "asleep" — cubit-init enqueues
+  /// pile up in the outbox without ever shipping, so the cloud
+  /// restore gets a clean first crack at populating Drift.
+  bool _drainLoopArmed = false;
   StreamSubscription<List<SyncQueueData>>? _outboxWatcher;
   StreamSubscription<bool>? _connectivityWatcher;
   Timer? _debounceTimer;
   Timer? _periodicTimer;
-  Timer? _failedDismissTimer;
   /// The earliest moment a debounce-deferred drain MUST run by, set
   /// the first time the debounce begins ticking. Rapid mutations can
   /// keep restarting [_debounceTimer] but can never push the actual
   /// drain past this deadline.
   DateTime? _debounceDeadline;
 
-  /// How long to leave the "Couldn't restore" modal visible before
-  /// auto-transitioning to [FirstSignInState.done] so the rest of the
-  /// UI becomes interactive. The user can still retry on next launch.
-  static const Duration _failedDismissDelay = Duration(seconds: 2);
+  /// Active waiter for the failed-modal's user action ("Try Again" vs
+  /// "Continue Anyway"). [maybeRunFirstSignInPull] sets this when it
+  /// emits a `failed` state and awaits it before returning, which
+  /// keeps the caller (UnifiedUserService._loadOrCreateUser →
+  /// signInWithGoogle) blocked — so AuthCubit doesn't emit
+  /// authenticated and the router doesn't navigate to home until the
+  /// user resolves the modal. [retryFirstSignInPull] /
+  /// [dismissFirstSignInOverlay] complete the future to break out.
+  Completer<_ModalAction>? _userActionCompleter;
 
   /// Signals that [initialize] has finished. Callers that race the
   /// init (notably [maybeRunFirstSignInPull] when sign-in fires
@@ -141,30 +162,135 @@ class SyncEngine {
   FirstSignInState _firstSignInState = FirstSignInState.idle;
   FirstSignInState get firstSignInState => _firstSignInState;
 
+  /// Root navigator key, wired from main.dart via [attachNavigatorKey].
+  /// SyncEngine uses it to grab the Overlay above the current route
+  /// without depending on which screen the user is on when sign-in
+  /// fires. The sign-in entry point isn't always FirstTimeAuthScreen —
+  /// guests upgrading to Google from ProfileScreen, for example, never
+  /// visit a dedicated login screen — so the overlay can't be mounted
+  /// per-screen.
+  GlobalKey<NavigatorState>? _rootNavigatorKey;
+
+  /// The OverlayEntry hosting [SyncRestoreOverlay]. Inserted on the
+  /// first non-idle/non-done state emission, removed when state
+  /// transitions back to done (success or auto-dismissed failure).
+  OverlayEntry? _restoreOverlayEntry;
+
+  /// Wire the root navigator key so this engine can imperatively
+  /// insert the first-sign-in overlay above whatever route is active.
+  /// Call once during app bootstrap, before any sign-in can fire.
+  void attachNavigatorKey(GlobalKey<NavigatorState> key) {
+    _rootNavigatorKey = key;
+  }
+
   void _emitFirstSignInState(FirstSignInState state) {
     _firstSignInState = state;
     _firstSignInStateController.add(state);
+
+    final shouldShowOverlay = switch (state) {
+      FirstSignInState.welcoming ||
+      FirstSignInState.pulling ||
+      FirstSignInState.applying ||
+      FirstSignInState.restored ||
+      FirstSignInState.failed =>
+        true,
+      FirstSignInState.idle || FirstSignInState.done => false,
+    };
+
+    if (shouldShowOverlay) {
+      _ensureRestoreOverlayInserted();
+    } else {
+      _removeRestoreOverlay();
+    }
   }
 
-  /// Emit [FirstSignInState.failed] and schedule a transition to
-  /// [FirstSignInState.done] so the modal auto-dismisses. Without
-  /// this, every pull-failure path left the overlay blocking the UI
-  /// indefinitely (the user had to kill and relaunch the app).
-  void _emitFailedAndScheduleDismiss() {
+  void _ensureRestoreOverlayInserted() {
+    if (_restoreOverlayEntry != null) return;
+    final overlay = _rootNavigatorKey?.currentState?.overlay;
+    if (overlay == null) {
+      // Navigator not mounted yet (extremely early sign-in race). The
+      // state stream still fires; if any screen subscribes to it later
+      // the UI will catch up — and the next emission will retry the
+      // insert anyway. Logging so we notice if it actually happens.
+      AppLogger.warning(
+        'SyncEngine: no Navigator overlay available — first-sign-in '
+        'modal could not be inserted. Was attachNavigatorKey called?',
+      );
+      return;
+    }
+    final entry = OverlayEntry(builder: (_) => const SyncRestoreOverlay());
+    _restoreOverlayEntry = entry;
+    overlay.insert(entry);
+  }
+
+  void _removeRestoreOverlay() {
+    final entry = _restoreOverlayEntry;
+    if (entry == null) return;
+    _restoreOverlayEntry = null;
+    entry.remove();
+  }
+
+  /// Emit [FirstSignInState.failed] and leave the modal up. The
+  /// overlay renders two buttons in this state — "Try Again" (calls
+  /// [retryFirstSignInPull]) and "Continue Anyway" (calls
+  /// [dismissFirstSignInOverlay]) — so the user decides what to do
+  /// instead of the engine silently giving up.
+  void _emitFailed() {
     _emitFirstSignInState(FirstSignInState.failed);
-    _failedDismissTimer?.cancel();
-    _failedDismissTimer = Timer(_failedDismissDelay, () {
-      // Only auto-dismiss if we're still in `failed` — a later flow
-      // (e.g., a retry on the same session) could have moved the
-      // engine past this state already.
-      if (_firstSignInState == FirstSignInState.failed) {
-        _emitFirstSignInState(FirstSignInState.done);
-      }
-    });
+  }
+
+  /// Signal the in-flight [maybeRunFirstSignInPull] to re-attempt the
+  /// pull. Called from the overlay's "Try Again" button. The retry
+  /// runs inside the same maybeRunFirstSignInPull invocation that's
+  /// already being awaited by sign-in — so the awaiter (signInWithGoogle)
+  /// stays blocked until the retry resolves, keeping the user on the
+  /// login screen.
+  void retryFirstSignInPull() {
+    final c = _userActionCompleter;
+    if (c != null && !c.isCompleted) {
+      c.complete(_ModalAction.retry);
+    }
+  }
+
+  /// Public dismiss hook for the overlay's "Continue Anyway" button.
+  /// The first-sign-in flag stays UNSET so the next launch retries the
+  /// pull automatically; the user just chose to keep using the app
+  /// without restored data for now. Completing the action completer
+  /// also unblocks the awaiting sign-in flow → AuthCubit emits
+  /// authenticated → router navigates to home.
+  void dismissFirstSignInOverlay() {
+    final c = _userActionCompleter;
+    if (c != null && !c.isCompleted) {
+      c.complete(_ModalAction.dismiss);
+      return;
+    }
+    // Safety net: no in-flight wait (overlay shown without a pending
+    // action). Hide it directly.
+    _emitFirstSignInState(FirstSignInState.done);
+  }
+
+  /// Block until the user resolves the failed modal. Used by every
+  /// failure branch in [maybeRunFirstSignInPull] so the caller stays
+  /// awaited until the user explicitly chooses.
+  Future<_ModalAction> _awaitUserModalAction() async {
+    final c = Completer<_ModalAction>();
+    _userActionCompleter = c;
+    final action = await c.future;
+    _userActionCompleter = null;
+    return action;
   }
 
   /// One-shot init. Hook this from app boot after the database +
   /// connectivity + auth singletons are ready.
+  ///
+  /// Init wires DAOs and signals readiness via [_initialized], but only
+  /// arms the drain loop (outbox watcher / connectivity watcher /
+  /// periodic timer) when the device has already completed first-sign-in
+  /// on a prior launch. For first-time devices, the drain loop is armed
+  /// later from [maybeRunFirstSignInPull]'s tail — that way the cloud
+  /// restore runs first and any cubit-init outbox enqueues (legacy SP
+  /// migration, +50 starting bonus) wait their turn instead of racing
+  /// the pull.
   Future<void> initialize(AppDatabase db) async {
     if (_db != null) return; // already initialized
     _db = db;
@@ -172,6 +298,33 @@ class SyncEngine {
     _gameDao = db.gameDao;
     _storeDao = db.storeDao;
     _settingsDao = db.settingsDao;
+
+    if (!_initialized.isCompleted) _initialized.complete();
+
+    // Returning-device fast path: if the flag is already set in
+    // SharedPreferences, restore has happened before — go straight to
+    // the normal drain loop. First-time devices go through
+    // maybeRunFirstSignInPull's arming branch instead.
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_hasEverSignedInPrefsKey) == true) {
+      _armDrainLoop();
+    }
+
+    if (kDebugMode) {
+      AppLogger.network(
+        'SyncEngine initialized (drainLoopArmed=$_drainLoopArmed)',
+      );
+    }
+  }
+
+  /// Attach the outbox watcher, connectivity watcher, and periodic
+  /// drain timer. Idempotent — repeated calls are safe so every
+  /// settled branch of [maybeRunFirstSignInPull] (plus
+  /// [markFirstSignInSkipped]) can call this without worrying about
+  /// duplicate subscriptions.
+  void _armDrainLoop() {
+    if (_drainLoopArmed) return;
+    _drainLoopArmed = true;
 
     // Drift's watch stream fires whenever a row gets added to the
     // outbox. We debounce 3s so a burst of mutations (e.g. a
@@ -192,14 +345,23 @@ class SyncEngine {
     // silently.
     _periodicTimer = Timer.periodic(_periodic, (_) => _scheduleDrain());
 
-    // Try once on init in case there's already a pending backlog.
+    // Try once on arm in case there's already a pending backlog
+    // (cubits enqueued during boot, before first-sign-in resolved).
     _scheduleDrain(immediate: true);
 
-    if (!_initialized.isCompleted) _initialized.complete();
-
     if (kDebugMode) {
-      AppLogger.network('SyncEngine initialized');
+      AppLogger.network('SyncEngine drain loop armed');
     }
+  }
+
+  /// Public escape hatch for code paths that DECIDE not to run a real
+  /// first-sign-in pull this session but still want the drain loop
+  /// running — e.g., anonymous Firebase users (no cross-install
+  /// persistence to restore) and users where the backend never
+  /// returned a user id. Without this, the engine would stay asleep
+  /// and these users' offline gains would never sync.
+  void markFirstSignInSkipped() {
+    _armDrainLoop();
   }
 
   /// Run the first-sign-in flow.
@@ -238,7 +400,11 @@ class SyncEngine {
         'SyncEngine.maybeRunFirstSignInPull: initialize did not complete',
         e,
       );
-      _emitFailedAndScheduleDismiss();
+      // Engine never came up — retry can't help, but still wait for
+      // user dismissal so we don't navigate to home behind their back.
+      _emitFailed();
+      await _awaitUserModalAction();
+      _emitFirstSignInState(FirstSignInState.done);
       return FirstSignInResult.pullFailed;
     }
 
@@ -254,6 +420,12 @@ class SyncEngine {
       AppLogger.network(
         'SyncEngine.maybeRunFirstSignInPull: flag already set, no-op',
       );
+      // initialize() should have already armed the drain loop in this
+      // case, but call again idempotently in case of an init-order edge
+      // (drain loop only arms in initialize when the flag was true; if
+      // a prior session set the flag AFTER initialize ran, we'd land
+      // here unarmed).
+      _armDrainLoop();
       return FirstSignInResult.alreadyDone;
     }
 
@@ -263,61 +435,75 @@ class SyncEngine {
     );
 
     if (isNewUser) {
-      // Backend just created the user — no cloud data exists.
-      // Leave local alone (user's pre-signin play is preserved
-      // and will sync up via the outbox drain). Set the flag.
-      // Emit `welcoming` so the global overlay shows a setup modal
-      // briefly — without this, brand-new users see zero feedback
-      // during sign-in and assume the auth flow is broken.
-      _emitFirstSignInState(FirstSignInState.welcoming);
+      // Backend just created the user — no cloud data exists, no
+      // restore needed, and we don't want to flash any overlay either
+      // (a brand-new user signing in for the first time shouldn't see
+      // "Loading your previous data" — there IS no previous data).
+      // Credit the welcome bonus through CoinsCubit so it rides the
+      // normal outbox path and lands on both UserCoinBalance and
+      // users.Coins via the next drain, then arm the drain loop.
       AppLogger.network(
-        'SyncEngine: brand-new user (no cloud data to restore), '
-        'showing welcome modal for 1.5s',
+        'SyncEngine: brand-new user — no overlay, seeding +50, arming drain',
       );
-      await Future.delayed(const Duration(milliseconds: 1500));
+      try {
+        await GetIt.I<CoinsCubit>().seedStartingBonus();
+      } catch (e) {
+        AppLogger.warning(
+          'SyncEngine: seedStartingBonus errored (continuing): $e',
+        );
+      }
       await prefs.setBool(_hasEverSignedInPrefsKey, true);
-      _emitFirstSignInState(FirstSignInState.done);
+      _armDrainLoop();
       return FirstSignInResult.brandNew;
     }
 
-    // Returning user — must successfully pull (or confirm null
-    // snapshot from the backend) before we set the flag.
+    // Returning user — pull, apply, and set the flag. Wrapped in a
+    // retry loop: a failure emits FirstSignInState.failed and waits
+    // for the user to tap "Try Again" or "Continue Anyway" via the
+    // overlay. signInWithGoogle is awaiting THIS method, so navigation
+    // to home stays blocked until the user resolves the modal.
+    //
+    // The pre-flight `_connectivity.isOnline` check was removed: on
+    // some Android configs (LAN-only dev backends, captive WiFi, VPN
+    // routing) it reports offline even when HTTP works fine. The pull
+    // itself is the source of truth — if it can't reach the backend
+    // it throws, and we land in the failed branch.
+    while (true) {
+      final attempt = await _runReturningUserPullAttempt(prefs, userId);
+      if (attempt != FirstSignInResult.pullFailed) {
+        _armDrainLoop();
+        return attempt;
+      }
+      // Failed → modal is in `failed` state with retry/dismiss buttons.
+      // Block here until the user chooses.
+      final action = await _awaitUserModalAction();
+      if (action == _ModalAction.dismiss) {
+        // User gave up. Hide the overlay, arm the drain so the rest of
+        // the app can use the network normally, leave the flag unset
+        // so next launch retries the pull automatically.
+        _emitFirstSignInState(FirstSignInState.done);
+        _armDrainLoop();
+        return FirstSignInResult.pullFailed;
+      }
+      // _ModalAction.retry — loop and run another pull attempt.
+    }
+  }
+
+  /// One attempt at the returning-user pull + apply. Returns
+  /// [FirstSignInResult.restored] on success or
+  /// [FirstSignInResult.pullFailed] on any failure (HTTP throw, null
+  /// snapshot, or apply throw). The failed-modal is emitted but NOT
+  /// dismissed — the outer loop in [maybeRunFirstSignInPull] handles
+  /// the user-action wait.
+  Future<FirstSignInResult> _runReturningUserPullAttempt(
+    SharedPreferences prefs,
+    String userId,
+  ) async {
     // Track the pulling-state start time so we can hold the modal
     // visible for a minimum duration (the actual HTTP call often
     // completes faster than the user's eye can register).
     final pullingStart = DateTime.now();
     _emitFirstSignInState(FirstSignInState.pulling);
-    if (!_connectivity.isOnline) {
-      AppLogger.warning(
-        'SyncEngine: returning user but offline — will retry next launch',
-      );
-      await _ensureMinModalTime(pullingStart);
-      _emitFailedAndScheduleDismiss();
-      return FirstSignInResult.pullFailed;
-    }
-
-    // Ship any pre-existing outbox rows BEFORE we fetch the snapshot
-    // so the server's view reflects the latest local state. Without
-    // this, a row that the cubits enqueued during boot (e.g., the
-    // legacy SharedPreferences→Drift coin migration, the +50 starting
-    // bonus seed, a settings write that landed during init) would be
-    // stranded by the clearSyncQueue at the end of this method:
-    //   * pull returns the stale server number
-    //   * snapshot apply writes the stale number to local Drift
-    //     (cloud-wins for plain fields, or max-merge for the few we
-    //     bumped down below — either way, an unflushed local delta
-    //     never reaches the server)
-    //   * clearSyncQueue removes the outbox row that was supposed to
-    //     carry the delta up
-    // Flushing first means the pull reads a server that already knows
-    // about the local-side gains, so the snapshot equals what local
-    // already has and the apply is a no-op.
-    try {
-      await _drain();
-      AppLogger.network('SyncEngine: pre-pull drain complete');
-    } catch (e) {
-      AppLogger.warning('SyncEngine: pre-pull drain errored (continuing): $e');
-    }
 
     Map<String, dynamic>? snapshot;
     try {
@@ -334,8 +520,6 @@ class SyncEngine {
           'SyncEngine: pull returned snapshot with sections '
           '${snapshot.keys.toList()}',
         );
-        // Dump per-section summary so the user can see what's actually
-        // populated vs missing.
         for (final entry in snapshot.entries) {
           final v = entry.value;
           final summary = v == null
@@ -349,55 +533,37 @@ class SyncEngine {
         }
       }
     } catch (e) {
-      AppLogger.error('SyncEngine: pull threw, will retry next launch', e);
-      _emitFailedAndScheduleDismiss();
+      AppLogger.error('SyncEngine: pull threw', e);
+      await _ensureMinModalTime(pullingStart);
+      _emitFailed();
       return FirstSignInResult.pullFailed;
     }
 
     if (snapshot == null) {
-      // Returning user but backend has no data for them. Could be:
-      //   (a) Their previous syncs never actually landed.
-      //   (b) Transient null parse from the API.
-      // Either way: don't set the flag, retry next launch. If it
-      // really is (a), the outbox drain on this session will seed
-      // cloud, and on the next launch the pull will succeed.
-      AppLogger.warning(
-        'SyncEngine: returning user but pull returned null. '
-        "Flag NOT set — will retry next launch. Local data preserved.",
-      );
       await _ensureMinModalTime(pullingStart);
-      _emitFailedAndScheduleDismiss();
+      _emitFailed();
       return FirstSignInResult.pullFailed;
     }
 
-    // Cloud has data → apply each non-null section to local. We do
-    // NOT clearAllData() — the backend auto-creates a
-    // UserPremiumContent row for every authenticated user, so every
-    // returning user's snapshot is non-null even before any
-    // gameplay sync has landed. A blanket wipe-and-replace would
-    // nuke stats/coins/achievements/etc. that were never in the
-    // snapshot, leaving the user with zeros.
-    //
-    // The DAO apply helpers use insertOnConflictUpdate semantics, so
-    // each section that IS in the snapshot replaces the matching
-    // local row; sections that aren't in the snapshot leave local
-    // alone. This is the right "cloud-wins-per-section" behaviour
-    // for the offline-first build.
+    // Cloud has data → apply each non-null section to local. The DAO
+    // apply helpers use insertOnConflictUpdate semantics, so each
+    // section that IS in the snapshot replaces the matching local
+    // row; sections absent from the snapshot leave local alone. This
+    // is the right "cloud-wins-per-section" behaviour for the
+    // offline-first build.
     _emitFirstSignInState(FirstSignInState.applying);
     try {
-      // Clear the queue FIRST. The pre-pull drain has already shipped
-      // any rows that were pending when this method started; the rest
-      // are either orphans or rows that landed during the pull HTTP
-      // call (rare). The snapshot apply below will RE-ENQUEUE any
-      // fields where local is ahead of cloud (max-merge), so the
-      // next drain still ships those local deltas to the server. If
-      // we cleared AFTER the apply (the prior ordering), those
+      // Clear the queue FIRST. Any outbox rows that cubits enqueued
+      // during boot (settings writes, etc.) get wiped before apply so
+      // the cloud snapshot is the only thing writing to Drift. The
+      // snapshot apply below RE-ENQUEUES any fields where local is
+      // ahead of cloud (max-merge), so local-ahead deltas still ship
+      // up after the drain arms. If we cleared AFTER the apply, those
       // re-enqueues would be wiped instantly.
       await _syncDao!.clearSyncQueue();
       await _applyCloudSnapshot(snapshot);
       await prefs.setBool(_hasEverSignedInPrefsKey, true);
       await _ensureMinModalTime(pullingStart);
-      // Show "Restore complete" briefly before dismissing.
       _emitFirstSignInState(FirstSignInState.restored);
       AppLogger.network(
         'SyncEngine: first-sign-in restore complete '
@@ -408,9 +574,8 @@ class SyncEngine {
       return FirstSignInResult.restored;
     } catch (e) {
       AppLogger.error('SyncEngine: snapshot apply failed', e);
-      // Don't set the flag — next launch retries the whole flow.
       await _ensureMinModalTime(pullingStart);
-      _emitFailedAndScheduleDismiss();
+      _emitFailed();
       return FirstSignInResult.pullFailed;
     }
   }
@@ -1225,11 +1390,10 @@ class SyncEngine {
     await _connectivityWatcher?.cancel();
     _debounceTimer?.cancel();
     _periodicTimer?.cancel();
-    _failedDismissTimer?.cancel();
     _outboxWatcher = null;
     _connectivityWatcher = null;
     _debounceTimer = null;
     _periodicTimer = null;
-    _failedDismissTimer = null;
+    _removeRestoreOverlay();
   }
 }

@@ -203,6 +203,14 @@ class UnifiedUserService extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isLoadingUser = false; // Prevents concurrent user loading
   String? _loadingUserId; // Track which user is being loaded
+  /// Future of the currently-running _loadOrCreateUser, or null when idle.
+  /// Concurrent callers (auth state listener + signInWithGoogle's explicit
+  /// await) coalesce onto this future so they both block until the SAME
+  /// in-flight load finishes — including maybeRunFirstSignInPull. Without
+  /// this, the second caller hits the dedup guard, `return`s immediately,
+  /// and signInWithGoogle reports success before the cloud restore has
+  /// even started — so router navigates to home BEFORE the overlay shows.
+  Future<void>? _loadingFuture;
   bool _isInitializing = false; // Prevents auth listener from duplicating work during initialize()
 
   /// True if the most recent `_loadOrCreateUser` call corresponded to a
@@ -354,14 +362,32 @@ class UnifiedUserService extends ChangeNotifier {
   }
 
   Future<void> _loadOrCreateUser(User firebaseUser) async {
-    // Prevent concurrent loading of the same user
-    if (_isLoadingUser && _loadingUserId == firebaseUser.uid) {
-      AppLogger.user('Already loading user ${firebaseUser.uid}, skipping');
+    // Dedup concurrent loads of the same user by AWAITING the in-flight
+    // call instead of returning immediately. Two callers race in here:
+    // the Firebase auth state listener (line ~349) and signInWithGoogle's
+    // explicit `await _loadOrCreateUser(...)` (line ~878). The listener
+    // almost always wins by a microsecond, so the explicit caller used
+    // to hit a `return;` here and signInWithGoogle would resolve before
+    // the backend handoff (and especially maybeRunFirstSignInPull) had
+    // run. That made AuthCubit emit authenticated and the router navigate
+    // to home BEFORE the first-sign-in overlay could appear — so the
+    // restore modal ended up rendering above home instead of above the
+    // login screen the user came from. Awaiting the in-flight future
+    // here means signInWithGoogle stays blocked until the WHOLE flow
+    // (Firebase + backend + cloud restore) is complete.
+    final inFlight = _loadingFuture;
+    if (inFlight != null && _loadingUserId == firebaseUser.uid) {
+      AppLogger.user(
+        'Already loading user ${firebaseUser.uid}, awaiting in-flight',
+      );
+      await inFlight;
       return;
     }
 
     _isLoadingUser = true;
     _loadingUserId = firebaseUser.uid;
+    final completer = Completer<void>();
+    _loadingFuture = completer.future;
 
     try {
       AppLogger.user('Loading/creating user for UID: ${firebaseUser.uid}');
@@ -416,10 +442,11 @@ class UnifiedUserService extends ChangeNotifier {
             //    cloud data exists yet" vs "transient pull failure
             //    that should retry next launch".
             //
-            // Awaited so the global SyncRestoreOverlay stays
-            // visible until the pull/apply finishes — otherwise
-            // the user lands on home with empty defaults before
-            // the snapshot arrives.
+            // Awaited so the SyncRestoreOverlay (inserted by SyncEngine
+            // into the root navigator's Overlay during the pull/apply
+            // states) stays visible above whatever route is active
+            // until restore finishes. Otherwise the user could land on
+            // home with empty defaults before the snapshot arrives.
             final backendUserId = _apiService.currentUserId;
             final isAnonFirebaseUser = firebaseUser.isAnonymous;
             if (backendUserId != null && !isAnonFirebaseUser) {
@@ -447,12 +474,29 @@ class UnifiedUserService extends ChangeNotifier {
                   'First-sign-in pull errored, continuing with local data',
                   e,
                 );
+                // Even on an unexpected throw, arm the drain loop so
+                // this session can still sync. The pull-failed branches
+                // inside SyncEngine already do this, but a defensive
+                // catch out here covers any path that bypasses them.
+                GetIt.I<SyncEngine>().markFirstSignInSkipped();
               }
             } else if (isAnonFirebaseUser) {
               AppLogger.network(
                 'Skipping first-sign-in pull for anonymous Firebase user '
                 '(no cross-install persistence to restore)',
               );
+              // Anonymous users skip restore but still need the drain
+              // loop armed so any local-side syncable state (a +50
+              // starting bonus enqueued during cubit init, settings
+              // changes, etc.) ships to the backend.
+              GetIt.I<SyncEngine>().markFirstSignInSkipped();
+            } else if (backendUserId == null) {
+              AppLogger.warning(
+                'Skipping first-sign-in pull — backend never returned '
+                'a user id. Arming drain loop anyway so this session '
+                "isn't completely silent on sync.",
+              );
+              GetIt.I<SyncEngine>().markFirstSignInSkipped();
             }
           } else {
             // /auth/me returned null — backend was reachable for the
@@ -506,6 +550,8 @@ class UnifiedUserService extends ChangeNotifier {
     } finally {
       _isLoadingUser = false;
       _loadingUserId = null;
+      _loadingFuture = null;
+      if (!completer.isCompleted) completer.complete();
     }
   }
 

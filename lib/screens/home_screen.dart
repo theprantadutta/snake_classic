@@ -15,6 +15,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
+import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -87,6 +88,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (mounted) {
         _checkWalkthrough();
       }
+    });
+
+    // First-launch initialization of the notification service. Used to
+    // live in main.dart but the OS permission dialog as a side effect
+    // was firing before the user had ever seen the app — so we moved
+    // it here, where it fires once the user has actually landed on
+    // home. NotificationService.initialize() guards itself against
+    // double-init (the _initialized flag), so re-entering home doesn't
+    // re-prompt.
+    _maybeInitNotifications();
+  }
+
+  void _maybeInitNotifications() {
+    if (NotificationService().initialized) return;
+    // Small delay so the home screen finishes its first layout +
+    // animations before the permission dialog pops over it.
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (!mounted) return;
+      NotificationService().initialize().then((_) {
+        AppLogger.success('Notification service initialized from home');
+      }).catchError((e) {
+        AppLogger.error('Notification service init failed', e);
+      });
     });
   }
 

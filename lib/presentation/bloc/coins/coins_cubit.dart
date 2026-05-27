@@ -93,11 +93,12 @@ class CoinsCubit extends Cubit<CoinsState> {
       // is the sole owner of balance + transactions.
       await _migrateLegacySharedPreferencesToDrift();
 
-      // Drift might be cold-empty (fresh install, no legacy SP either)
-      // — seed the starting bonus through the canonical addCoins path
-      // so the gain rides the outbox and the backend sees +50 on first
-      // sync. Idempotent: skipped once Drift shows any activity.
-      await _maybeSeedStartingBonus();
+      // The +50 starting bonus is NOT seeded here — that was a foot-gun
+      // for returning users signing in on a fresh device, because the
+      // seed would race the cloud restore and risk overwriting their
+      // actual server balance. The seed now lives inside the SyncEngine's
+      // brandNew branch (see [seedStartingBonus]), so it only fires for
+      // users the backend just minted.
 
       await _loadFromDrift();
       _loadDeviceState();
@@ -256,18 +257,28 @@ class CoinsCubit extends Cubit<CoinsState> {
     }
   }
 
-  /// On a fresh install with no legacy SharedPreferences data and a
-  /// virgin Drift coins row (balance=0, totalEarned=0), credit the
-  /// starting bonus through the canonical [StoreDao.addCoins] path so
-  /// the gain syncs to the backend like any other earn event.
-  Future<void> _maybeSeedStartingBonus() async {
+  /// Credit the +50 welcome bonus through the canonical addCoins path
+  /// so the gain rides the outbox and the backend's UserCoinBalance +
+  /// users.Coins both reflect the seed via the next drain.
+  ///
+  /// Called from [SyncEngine.maybeRunFirstSignInPull]'s brandNew branch
+  /// — only for users the backend just minted (isNewUser == true).
+  /// Idempotent: skipped if Drift already shows any prior activity, so
+  /// double-invocation can't double-credit.
+  Future<void> seedStartingBonus() async {
     final storageService = StorageService();
     if (!storageService.isInitialized) return;
     final row = await storageService.storeDao.getCoinBalanceRow();
     if (row == null) return;
-    if (row.balance > 0 || row.totalEarned > 0) return;
+    if (row.balance > 0 || row.totalEarned > 0) {
+      AppLogger.info(
+        'CoinsCubit.seedStartingBonus skipped — Drift not virgin '
+        '(balance=${row.balance}, totalEarned=${row.totalEarned})',
+      );
+      return;
+    }
 
-    AppLogger.info('CoinsCubit: seeding +50 starting bonus to fresh Drift row');
+    AppLogger.info('CoinsCubit: seeding +50 starting bonus for brand-new user');
     await storageService.storeDao.addCoins(
       50,
       'starting_bonus',

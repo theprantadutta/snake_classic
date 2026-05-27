@@ -32,7 +32,6 @@ import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
-import 'package:snake_classic/widgets/sync_restore_overlay.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/typography.dart';
@@ -112,12 +111,12 @@ void main() async {
     );
     AppLogger.success('Audio service initialized');
 
-    // Fire-and-forget — don't block startup
-    NotificationService().initialize().then((_) {
-      AppLogger.success('Notification service initialized');
-    }).catchError((e) {
-      AppLogger.error('Notification service init failed', e);
-    });
+    // NotificationService.initialize() is no longer called here — it
+    // requests the OS notification permission as a side effect, and
+    // showing that dialog before the user has seen the app would feel
+    // intrusive. The call has moved to home_screen.dart's initState,
+    // so the request only fires once the user has actually landed on
+    // home and signed in (if applicable).
 
     InAppUpdateService().checkForUpdate().then((_) {
       AppLogger.success('In-app update check completed');
@@ -140,10 +139,17 @@ void main() async {
     };
 
     // Boot the outbox drain engine. It owns the SyncQueue → backend
-    // batch sync. Gated internally on auth + connectivity, so it's
-    // safe to fire before sign-in completes — drains start once
-    // ApiService.isAuthenticated flips true.
+    // batch sync. Gated internally on auth + connectivity AND on the
+    // first-sign-in restore having settled, so it's safe to fire
+    // before sign-in completes — the drain stays asleep until
+    // maybeRunFirstSignInPull arms it.
     unawaited(getIt<SyncEngine>().initialize(getIt<AppDatabase>()));
+
+    // Hand the root navigator key to the engine so it can imperatively
+    // insert the first-sign-in OverlayEntry above whatever route is
+    // active when sign-in fires (could be a login screen, but could
+    // also be ProfileScreen's "Save your progress" upgrade flow).
+    getIt<SyncEngine>().attachNavigatorKey(rootNavigatorKey);
 
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -339,22 +345,12 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
                   color: themeState.currentTheme.accentColor,
                 ),
               ),
-              // Global overlay for the first-sign-in cloud-pull modal.
-              // The auth flow that triggers the pull may happen on the
-              // loading screen, the first-time-auth screen, OR the
-              // email-auth screen depending on the path the user takes
-              // — putting it here makes sure it shows regardless of
-              // which screen the user is currently on.
-              builder: (context, child) {
-                return Stack(
-                  children: [
-                    ?child,
-                    SyncRestoreOverlay(
-                      theme: themeState.currentTheme,
-                    ),
-                  ],
-                );
-              },
+              // The first-sign-in cloud-restore overlay is mounted on the
+              // three screens the restore can possibly be active on
+              // (LoadingScreen / FirstTimeAuthScreen / EmailAuthScreen),
+              // not globally — once the user lands on home, restore is
+              // already done and the home tree shouldn't carry the
+              // subscription.
             );
           },
         ),
