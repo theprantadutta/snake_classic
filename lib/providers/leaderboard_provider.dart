@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/leaderboard_service.dart';
 import 'package:snake_classic/providers/providers.dart';
+import 'package:snake_classic/utils/logger.dart';
 
 /// Leaderboard types
 enum LeaderboardType { global, weekly, daily, friends }
@@ -427,53 +428,106 @@ class CombinedLeaderboardNotifier
   }
 
   Future<void> _loadGlobal() async {
-    // Show cache (might be empty on a fresh install). The spinner only
-    // surfaces when there's nothing yet — once cache is populated, all
-    // subsequent loads silently overlay fresh data on top.
-    final cached = await _service.getGlobalLeaderboard();
-    state = state.copyWith(
-      globalEntries: cached,
-      isLoadingGlobal: cached.isEmpty,
-      globalError: null,
-      globalLastRefreshedAt: await _service.getLastRefreshedAt('global'),
-    );
+    // The whole body lives in a try/finally so the loading flag ALWAYS
+    // resolves to false, regardless of where a throw happens. Earlier
+    // version only wrapped the network call; the Drift-cache reads
+    // (`getGlobalLeaderboard` / `getLastRefreshedAt`) were outside the
+    // try, and if EITHER threw the spinner spun forever because the
+    // state never got a chance to update.
+    bool cachedWasEmpty = true;
     try {
+      List<Map<String, dynamic>> cached = const [];
+      try {
+        cached = await _service.getGlobalLeaderboard();
+      } catch (e) {
+        AppLogger.error('Global leaderboard cache read failed', e);
+      }
+      cachedWasEmpty = cached.isEmpty;
+
+      DateTime? refreshedAt;
+      try {
+        refreshedAt = await _service.getLastRefreshedAt('global');
+      } catch (_) {/* non-fatal */}
+
+      state = state.copyWith(
+        globalEntries: cached,
+        isLoadingGlobal: cached.isEmpty,
+        globalError: null,
+        globalLastRefreshedAt: refreshedAt,
+      );
+
       await _service.refreshGlobal();
       final entries = await _service.getGlobalLeaderboard();
+      DateTime? refreshedAfter;
+      try {
+        refreshedAfter = await _service.getLastRefreshedAt('global');
+      } catch (_) {/* non-fatal */}
       state = state.copyWith(
         globalEntries: entries,
         isLoadingGlobal: false,
-        globalLastRefreshedAt: await _service.getLastRefreshedAt('global'),
+        globalLastRefreshedAt: refreshedAfter,
       );
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('Global leaderboard load failed', e, st);
       state = state.copyWith(
         isLoadingGlobal: false,
-        globalError: cached.isEmpty ? 'Failed to load leaderboard' : null,
+        globalError: cachedWasEmpty ? 'Failed to load leaderboard' : null,
       );
+    } finally {
+      // Defense-in-depth: even if the catch above somehow doesn't fire
+      // (re-emit in a future Dart version, etc.), force the flag off so
+      // the screen can never get stuck on the spinner.
+      if (state.isLoadingGlobal) {
+        state = state.copyWith(isLoadingGlobal: false);
+      }
     }
   }
 
   Future<void> _loadWeekly() async {
-    final cached = await _service.getWeeklyLeaderboard();
-    state = state.copyWith(
-      weeklyEntries: cached,
-      isLoadingWeekly: cached.isEmpty,
-      weeklyError: null,
-      weeklyLastRefreshedAt: await _service.getLastRefreshedAt('weekly'),
-    );
+    bool cachedWasEmpty = true;
     try {
+      List<Map<String, dynamic>> cached = const [];
+      try {
+        cached = await _service.getWeeklyLeaderboard();
+      } catch (e) {
+        AppLogger.error('Weekly leaderboard cache read failed', e);
+      }
+      cachedWasEmpty = cached.isEmpty;
+
+      DateTime? refreshedAt;
+      try {
+        refreshedAt = await _service.getLastRefreshedAt('weekly');
+      } catch (_) {/* non-fatal */}
+
+      state = state.copyWith(
+        weeklyEntries: cached,
+        isLoadingWeekly: cached.isEmpty,
+        weeklyError: null,
+        weeklyLastRefreshedAt: refreshedAt,
+      );
+
       await _service.refreshWeekly();
       final entries = await _service.getWeeklyLeaderboard();
+      DateTime? refreshedAfter;
+      try {
+        refreshedAfter = await _service.getLastRefreshedAt('weekly');
+      } catch (_) {/* non-fatal */}
       state = state.copyWith(
         weeklyEntries: entries,
         isLoadingWeekly: false,
-        weeklyLastRefreshedAt: await _service.getLastRefreshedAt('weekly'),
+        weeklyLastRefreshedAt: refreshedAfter,
       );
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('Weekly leaderboard load failed', e, st);
       state = state.copyWith(
         isLoadingWeekly: false,
-        weeklyError: cached.isEmpty ? 'Failed to load weekly leaderboard' : null,
+        weeklyError:
+            cachedWasEmpty ? 'Failed to load weekly leaderboard' : null,
       );
+    } finally {
+      if (state.isLoadingWeekly) {
+        state = state.copyWith(isLoadingWeekly: false);
+      }
     }
   }
 
