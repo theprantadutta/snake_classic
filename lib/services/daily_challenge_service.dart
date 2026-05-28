@@ -175,12 +175,21 @@ class DailyChallengeService extends ChangeNotifier {
 
       int newProgress;
       if (type == ChallengeType.score || type == ChallengeType.survival) {
-        // Take max value for score/survival
+        // Take max value for score/survival — keep the user's actual peak
+        // because "scored 230 against a 200 target" is a meaningful flex
+        // worth preserving in the mirror.
         newProgress = value > challenge.currentProgress
             ? value
             : challenge.currentProgress;
       } else {
-        newProgress = challenge.currentProgress + value;
+        // Cumulative challenges (games played, foods eaten, etc.) — cap at
+        // target so the synced mirror doesn't end up with values like
+        // "125 / 10" once the user keeps playing after the daily goal hits.
+        // Overshoot has no semantic value here (challenge is done at first
+        // crossing) and reads as a bug on the admin dashboard.
+        final raw = challenge.currentProgress + value;
+        newProgress =
+            raw > challenge.targetValue ? challenge.targetValue : raw;
       }
 
       final isNowCompleted = newProgress >= challenge.targetValue;
