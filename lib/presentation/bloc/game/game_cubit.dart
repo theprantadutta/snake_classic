@@ -294,10 +294,14 @@ class GameCubit extends Cubit<GameCubitState> {
     // from inventory + clearing the armed slot is handled by the cubit.
     _activateArmedPowerUpIfAny();
 
-    _audioService.playSound('game_start');
     // Tournament-mode start sounds louder + adds a medium haptic so the
     // moment registers as different from a casual run. Casual play keeps
     // the original 0.8 game_start volume with no haptic.
+    //
+    // Single service only — a previous build also called the legacy
+    // _audioService.playSound('game_start') here, which double-played
+    // the cue on cold start (one service warm, one loading lazily =
+    // two audible plays ~half a second apart).
     if (state.isTournamentMode) {
       _enhancedAudioService.playSfx('game_start', volume: 1.0);
       unawaited(_hapticService.mediumImpact());
@@ -345,7 +349,8 @@ class GameCubit extends Cubit<GameCubitState> {
         ],
       );
       emit(state.copyWith(gameState: updated));
-      _audioService.playSound('power_up_collect');
+      // Single service only — see startGame() for the cold-start
+      // double-play story this avoids.
       _enhancedAudioService.playSfx('power_up_collect', volume: 0.8);
     });
   }
