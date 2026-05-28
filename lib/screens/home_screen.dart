@@ -812,11 +812,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
 
-              SizedBox(height: spacing),
+              // Tighter gap directly above the action buttons so the
+              // taller button row below doesn't grow the column —
+              // ~half of the standard inter-section spacing, clamped so
+              // a very tall screen doesn't open the gap back up.
+              SizedBox(
+                height: (spacing * 0.4).clamp(2.0, 6.0),
+              ),
 
-              // Action buttons row - Store and Premium (compact)
+              // Action buttons row - Store and Premium. Taller container
+              // (~20 px more) for a more tappable target; the column's
+              // spaceEvenly distribution absorbs the extra height by
+              // shrinking the implicit gap below, keeping the total
+              // play-area height constant. Both maxHeight and minHeight
+              // grow together so the constraint stays responsive on the
+              // smallest screens.
               Container(
-                constraints: const BoxConstraints(maxHeight: 52, minHeight: 40),
+                constraints: const BoxConstraints(maxHeight: 72, minHeight: 56),
                 child: _buildActionButtonsRow(
                   context: context,
                   theme: theme,
@@ -1294,10 +1306,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Reduced button height
+        // Track the parent's max height so the button fills the wider
+        // 72 px container we now give it from _buildMainPlayArea (was
+        // 48 before). Clamped to keep small-screen sanity; on a 750+ px
+        // device this lands at ~64 px tall.
         final buttonHeight = constraints.maxHeight > 0
-            ? (constraints.maxHeight * 0.9).clamp(36.0, 48.0)
-            : 42.0;
+            ? (constraints.maxHeight * 0.92).clamp(48.0, 66.0)
+            : 56.0;
+        // Drive icon + text sizing off the height so the visual weight
+        // scales with the button instead of staying frozen at the old
+        // 48-px values. The clamps keep the geometry within sensible
+        // bounds on extreme screen sizes.
+        final iconBgPadding = (buttonHeight * 0.14).clamp(6.0, 9.0);
+        final iconSize = (buttonHeight * 0.32).clamp(16.0, 22.0);
+        final labelSize = (buttonHeight * 0.24).clamp(12.0, 16.0);
+        final iconTextGap = (buttonHeight * 0.18).clamp(8.0, 12.0);
 
         return GestureDetector(
           onTap: onTap,
@@ -1308,7 +1331,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               minWidth: 100,
               maxWidth: constraints.maxWidth,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -1318,16 +1341,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   gradient[1].withValues(alpha: 0.1),
                 ],
               ),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: gradient[0].withValues(alpha: 0.4),
-                width: 1,
+                width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: gradient[0].withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: gradient[0].withValues(alpha: 0.22),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -1336,31 +1359,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(5),
+                  padding: EdgeInsets.all(iconBgPadding),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(colors: gradient),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
                         color: gradient[0].withValues(alpha: 0.3),
-                        blurRadius: 4,
+                        blurRadius: 5,
                         offset: const Offset(0, 1),
                       ),
                     ],
                   ),
-                  child: Icon(icon, color: Colors.white, size: 14),
+                  child: Icon(icon, color: Colors.white, size: iconSize),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: iconTextGap),
                 Flexible(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       label,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: labelSize,
                         fontWeight: FontWeight.w800,
                         color: gradient[0],
-                        letterSpacing: 0.8,
+                        letterSpacing: 0.9,
                       ),
                     ),
                   ),
