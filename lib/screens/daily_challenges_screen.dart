@@ -633,7 +633,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                       ),
                     ),
                     Text(
-                      'Bonus reward earned',
+                      challengesState.isBonusClaimed
+                          ? 'Bonus reward claimed'
+                          : 'Bonus reward pending — claim any challenge',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 14,
@@ -654,7 +656,13 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.monetization_on, color: Colors.white, size: 20),
+                    Icon(
+                      challengesState.isBonusClaimed
+                          ? Icons.check_circle
+                          : Icons.monetization_on,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '+${challengesState.bonusCoins}',

@@ -15,6 +15,7 @@ class DailyChallengesState {
   final int totalCount;
   final bool allCompleted;
   final int bonusCoins;
+  final bool isBonusClaimed;
   final bool isLoading;
   final bool hasUnclaimedRewards;
   final String? error;
@@ -25,6 +26,7 @@ class DailyChallengesState {
     this.totalCount = 0,
     this.allCompleted = false,
     this.bonusCoins = 0,
+    this.isBonusClaimed = false,
     this.isLoading = false,
     this.hasUnclaimedRewards = false,
     this.error,
@@ -36,6 +38,7 @@ class DailyChallengesState {
     int? totalCount,
     bool? allCompleted,
     int? bonusCoins,
+    bool? isBonusClaimed,
     bool? isLoading,
     bool? hasUnclaimedRewards,
     String? error,
@@ -46,6 +49,7 @@ class DailyChallengesState {
       totalCount: totalCount ?? this.totalCount,
       allCompleted: allCompleted ?? this.allCompleted,
       bonusCoins: bonusCoins ?? this.bonusCoins,
+      isBonusClaimed: isBonusClaimed ?? this.isBonusClaimed,
       isLoading: isLoading ?? this.isLoading,
       hasUnclaimedRewards: hasUnclaimedRewards ?? this.hasUnclaimedRewards,
       error: error,
@@ -138,6 +142,7 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
       totalCount: _service.totalCount,
       allCompleted: _service.allCompleted,
       bonusCoins: _service.bonusCoins,
+      isBonusClaimed: _service.isBonusClaimed,
       isLoading: false, // Never propagate loading from background refresh
       hasUnclaimedRewards: _service.hasUnclaimedRewards,
     );

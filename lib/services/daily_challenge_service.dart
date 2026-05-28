@@ -31,10 +31,19 @@ class DailyChallengeService extends ChangeNotifier {
 
   final StorageService _storageService = StorageService();
 
+  // Flat coin + XP bonus granted exactly once on the day the player
+  // completes every daily challenge. Persisted as a synthetic
+  // [DailyChallenge] row in Drift (id = 'all_complete_bonus_$YYYY-MM-DD')
+  // so the existing dailyChallengeClaim sync push carries it to the
+  // backend mirror automatically — no new outbox dataType needed.
+  static const int allCompleteBonusCoins = 50;
+  static const int allCompleteBonusXp = 100;
+
   List<DailyChallenge> _challenges = [];
   int _completedCount = 0;
   int _totalCount = 0;
   bool _allCompleted = false;
+  bool _bonusClaimedToday = false;
   // ignore: prefer_final_fields
   bool _isLoading = false;
   String? _lastLoadDate;
@@ -43,11 +52,14 @@ class DailyChallengeService extends ChangeNotifier {
   int get completedCount => _completedCount;
   int get totalCount => _totalCount;
   bool get allCompleted => _allCompleted;
-  int get bonusCoins => 0;
+  int get bonusCoins => allCompleteBonusCoins;
+  int get bonusXp => allCompleteBonusXp;
+  bool get isBonusClaimed => _bonusClaimedToday;
   bool get isLoading => _isLoading;
 
   bool get hasUnclaimedRewards =>
-      _challenges.any((c) => c.isCompleted && !c.claimedReward);
+      _challenges.any((c) => c.isCompleted && !c.claimedReward) ||
+      (_allCompleted && !_bonusClaimedToday);
 
   int get unclaimedRewardsCount =>
       _challenges.where((c) => c.isCompleted && !c.claimedReward).length;
@@ -117,6 +129,11 @@ class DailyChallengeService extends ChangeNotifier {
     _totalCount = _challenges.length;
     _completedCount = _challenges.where((c) => c.isCompleted).length;
     _allCompleted = _completedCount == _totalCount && _totalCount > 0;
+    // The synthetic bonus row uses today's local-day-anchored id; if
+    // it's already in Drift (this device claimed earlier OR another
+    // device claimed and the cold-start sync pulled it in) the bonus
+    // is locked.
+    _bonusClaimedToday = claimedIds.contains(_todayBonusId());
     _lastLoadDate = DateTime.now().toIso8601String().split('T')[0];
     notifyListeners();
   }
@@ -131,6 +148,75 @@ class DailyChallengeService extends ChangeNotifier {
     } catch (e) {
       AppLogger.error('Error loading claimed challenge ids', e);
       return const {};
+    }
+  }
+
+  /// Synthetic challenge id for today's all-complete bonus. Local-day
+  /// anchored so a new day creates a new claim row even if the user
+  /// completed yesterday's challenges. Stays stable across app launches
+  /// within the same calendar day.
+  static String _todayBonusId() {
+    final today = DateTime.now();
+    final y = today.year.toString().padLeft(4, '0');
+    final m = today.month.toString().padLeft(2, '0');
+    final d = today.day.toString().padLeft(2, '0');
+    return 'all_complete_bonus_$y-$m-$d';
+  }
+
+  /// Auto-credit the all-complete bonus on the first claim that lands
+  /// after every daily challenge is completed. Idempotent — the Drift
+  /// upsert + the in-memory flag guarantee at-most-once per local day.
+  Future<void> _tryAutoClaimAllCompleteBonus() async {
+    if (!_allCompleted || _bonusClaimedToday) return;
+    if (_totalCount == 0) return; // sanity: never bonus on an empty set
+    try {
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      final bonusId = _todayBonusId();
+
+      // Drift gate + sync push in one shot. The existing
+      // dailyChallengeClaim outbox dataType carries this row to the
+      // backend's UserDailyChallengeClaims mirror table, so the
+      // dashboard sees the bonus as a regular claimed row and other
+      // devices pick it up on their next pull.
+      await _storageService.gameDao.upsertDailyChallenge(
+        db.DailyChallengesCompanion(
+          challengeId: Value(bonusId),
+          challengeType: const Value('bonus'),
+          title: const Value('All Challenges Bonus'),
+          description: const Value(
+            'Completed every daily challenge today.',
+          ),
+          currentProgress: const Value(1),
+          targetProgress: const Value(1),
+          rewardCoins: const Value(allCompleteBonusCoins),
+          isCompleted: const Value(true),
+          rewardClaimed: const Value(true),
+          challengeDate: Value(startOfDay),
+          expiresAt: Value(endOfDay),
+          completedAt: Value(today),
+        ),
+      );
+
+      if (GetIt.I.isRegistered<CoinsCubit>()) {
+        await GetIt.I<CoinsCubit>().earnCoins(
+          CoinEarningSource.dailyChallenge,
+          customAmount: allCompleteBonusCoins,
+          itemName: 'All Challenges Bonus',
+          metadata: {'bonus_id': bonusId},
+        );
+      }
+
+      _grantBattlePassXp(['daily_challenge']);
+
+      _bonusClaimedToday = true;
+      AppLogger.info(
+        'All-challenges bonus auto-claimed: +$allCompleteBonusCoins coins '
+        '(bonusId=$bonusId)',
+      );
+    } catch (e) {
+      AppLogger.error('Failed to auto-claim all-complete bonus', e);
     }
   }
 
@@ -227,6 +313,10 @@ class DailyChallengeService extends ChangeNotifier {
 
     _grantBattlePassXp(['daily_challenge']);
 
+    // If this claim made the user all-complete (or they already were
+    // and this is the first claim since), credit the bonus too.
+    await _tryAutoClaimAllCompleteBonus();
+
     notifyListeners();
     return true;
   }
@@ -256,6 +346,9 @@ class DailyChallengeService extends ChangeNotifier {
     _grantBattlePassXp(
       List<String>.filled(claimable.length, 'daily_challenge'),
     );
+
+    // Auto-claim the all-complete bonus if every challenge is done.
+    await _tryAutoClaimAllCompleteBonus();
 
     notifyListeners();
     return totalClaimed;
@@ -328,6 +421,7 @@ class DailyChallengeService extends ChangeNotifier {
     _completedCount = 0;
     _totalCount = 0;
     _allCompleted = false;
+    _bonusClaimedToday = false;
     _lastLoadDate = null;
     notifyListeners();
   }
