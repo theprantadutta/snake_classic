@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +8,6 @@ import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
-import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -22,100 +23,60 @@ class ReplaysScreen extends StatefulWidget {
 class _ReplaysScreenState extends State<ReplaysScreen>
     with SingleTickerProviderStateMixin {
   final StorageService _storageService = StorageService();
-  final AppDataCache _appCache = AppDataCache();
   List<GameReplay> _replays = [];
   bool _isLoading = true;
   late TabController _tabController;
+  StreamSubscription<List<GameReplay>>? _replaysSub;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _initializeReplays();
+    _subscribeToReplays();
   }
 
   @override
   void dispose() {
+    _replaysSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }
 
-  void _initializeReplays() {
-    // Check if we have cached replay keys for instant display
-    if (_appCache.isFullyLoaded && _appCache.replayKeys != null) {
-      // Load replays using cached keys (still need to load full replay data)
-      _loadReplaysFromKeys(_appCache.replayKeys!);
-    } else {
-      // No cache - load normally
-      _loadReplays();
-    }
-  }
-
-  Future<void> _loadReplaysFromKeys(List<String> replayKeys) async {
-    final replays = await _hydrateAndSanitize(replayKeys);
-    if (mounted) {
-      setState(() {
-        _replays = replays;
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _loadReplays() async {
-    try {
-      final replayKeys = await _storageService.getReplayKeys();
-      final replays = await _hydrateAndSanitize(replayKeys);
-      if (mounted) {
-        setState(() {
-          _replays = replays;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  /// Shared load path used by both the cache-fast and cold-load entries.
-  /// Parses every replay JSON, skips corrupted rows, and *deletes* any
-  /// 0-frame replay it finds so the bad row can't crash the layout on
-  /// the next read. 0-frame rows can sneak in from earlier code paths
-  /// or truncated storage blobs — the current `finishRecording` write
-  /// path can't produce one, but historical data still exists.
-  Future<List<GameReplay>> _hydrateAndSanitize(List<String> keys) async {
-    final replays = <GameReplay>[];
-    final toDelete = <String>[];
-
-    for (final key in keys) {
-      final replayJson = await _storageService.getReplay(key);
-      if (replayJson == null) continue;
-      try {
-        final replay = GameReplay.fromJsonString(replayJson);
-        if (replay.frames.isEmpty || replay.totalFrames == 0) {
-          toDelete.add(key);
-        } else {
-          replays.add(replay);
+  /// Subscribe to Drift's reactive replay stream. Every save (from the
+  /// game-over flow) and every delete (from sanitize / the trash icon)
+  /// emits a new list, so the screen is always live — no manual refresh
+  /// needed. Previous code held an AppDataCache snapshot of replay keys
+  /// taken at app launch, which is why fresh games weren't appearing.
+  void _subscribeToReplays() {
+    _replaysSub = _storageService.watchReplays().listen(
+      (replays) {
+        if (!mounted) return;
+        // Sanitize empty-frame rows in the background — they shouldn't
+        // exist in the fresh write path, but a historical bug let them
+        // accumulate. Schedule deletes off the stream callback so the
+        // delete-then-watch-re-emits loop is well-behaved.
+        final bad = replays
+            .where((r) => r.frames.isEmpty || r.totalFrames == 0)
+            .map((r) => r.id)
+            .toList();
+        if (bad.isNotEmpty) {
+          for (final id in bad) {
+            unawaited(_storageService.deleteReplay(id));
+          }
+          return; // skip render of this transient bad state
         }
-      } catch (_) {
-        // Corrupted blob — drop the key so it can't keep returning.
-        toDelete.add(key);
-      }
-    }
-
-    for (final key in toDelete) {
-      try {
-        await _storageService.deleteReplay(key);
-      } catch (_) {
-        // Best-effort cleanup; ignore if the delete fails.
-      }
-    }
-
-    replays.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return replays;
+        final sorted = [...replays]
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        setState(() {
+          _replays = sorted;
+          _isLoading = false;
+        });
+      },
+      onError: (_) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+      },
+    );
   }
 
   // Tab views — no .take() cap because GameDao's saveReplay retention
@@ -175,12 +136,8 @@ class _ReplaysScreenState extends State<ReplaysScreen>
           icon: Icon(Icons.arrow_back, color: theme.primaryColor),
           onPressed: () => context.pop(),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: theme.primaryColor),
-            onPressed: _loadReplays,
-          ),
-        ],
+        // No refresh button: the screen subscribes to Drift's reactive
+        // replay stream, so the list updates the instant a row changes.
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: theme.accentColor,
@@ -511,8 +468,8 @@ class _ReplaysScreenState extends State<ReplaysScreen>
 
     if (confirmed == true) {
       try {
+        // Drift watch re-emits automatically — no manual reload.
         await _storageService.deleteReplay(replay.id);
-        await _loadReplays();
         if (mounted) {
           ScaffoldMessenger.of(
             context,

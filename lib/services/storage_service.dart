@@ -6,6 +6,7 @@ import 'package:snake_classic/data/daos/settings_dao.dart';
 import 'package:snake_classic/data/daos/game_dao.dart';
 import 'package:snake_classic/data/daos/store_dao.dart';
 import 'package:snake_classic/data/daos/sync_dao.dart';
+import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 class StorageService {
@@ -267,23 +268,43 @@ class StorageService {
   Future<String?> getReplay(String replayId) async {
     final replay = await _gameDao?.getReplay(replayId);
     if (replay == null) return null;
-
-    return json.encode({
-      'id': replay.id,
-      'name': replay.name,
-      'score': replay.score,
-      'snakeLength': replay.snakeLength,
-      'gameDurationSeconds': replay.gameDurationSeconds,
-      'gameMode': replay.gameMode,
-      'boardSize': replay.boardSize,
-      'replayData': json.decode(replay.replayData),
-      'isFavorite': replay.isFavorite,
-      'recordedAt': replay.recordedAt.toIso8601String(),
-    });
+    // Drift stores the full GameReplay JSON (frames + metadata) in
+    // replayData. Earlier this method wrapped that string in a second
+    // envelope — but every caller (ReplaysScreen, ReplayViewerScreen)
+    // passes the result straight into GameReplay.fromJsonString which
+    // expects the *inner* shape. The wrapper made fromJson see no
+    // frames / no totalFrames / no playerName at the top level, so
+    // every freshly-saved replay deserialized as empty and was then
+    // auto-deleted by the screen's 0-frame sanitize step.
+    return replay.replayData;
   }
 
   Future<List<String>> getReplayKeys() async {
     return await _gameDao?.getReplayKeys() ?? [];
+  }
+
+  /// Reactive stream of all stored replays as GameReplay models, sorted
+  /// newest-first by recordedAt. Drift wires this to the underlying
+  /// `replays` table so any insert / delete (e.g. saving a fresh replay
+  /// from the game-over flow, or the screen's auto-cleanup of bad rows)
+  /// emits a new list immediately — the Replays screen subscribes to
+  /// this instead of doing a one-shot DB read on entry, so it always
+  /// shows the latest data without needing a manual refresh.
+  Stream<List<GameReplay>> watchReplays() {
+    final dao = _gameDao;
+    if (dao == null) return const Stream.empty();
+    return dao.watchReplays().map((rows) {
+      final out = <GameReplay>[];
+      for (final row in rows) {
+        try {
+          out.add(GameReplay.fromJsonString(row.replayData));
+        } catch (_) {
+          // Malformed row — skip it here; the screen's sanitize pass
+          // will delete it on the next sweep.
+        }
+      }
+      return out;
+    });
   }
 
   Future<void> deleteReplay(String replayId) async {

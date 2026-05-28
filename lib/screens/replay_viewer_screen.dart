@@ -248,24 +248,39 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
             ],
           ),
 
-          if (frame?.gameEvent != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _formatGameEvent(frame!.gameEvent!),
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+          // Reserve a fixed slot for the event chip so the surrounding
+          // card doesn't grow/shrink each time a frame has (or stops
+          // having) a `gameEvent`. AnimatedSwitcher fades the chip in
+          // and out within the fixed slot. Height = 12 (gap) + ~28
+          // (chip with v6 padding around a 12-px text line).
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 28,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: frame?.gameEvent != null
+                  ? Container(
+                      key: ValueKey('event-${frame!.frameNumber}'),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.accentColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _formatGameEvent(frame.gameEvent!),
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('event-empty')),
             ),
-          ],
+          ),
         ],
       ),
     );
