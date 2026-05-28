@@ -174,7 +174,12 @@ class GameReplay {
     return null;
   }
 
-  // Get summary statistics for this replay
+  // Get summary statistics for this replay. Guards against empty
+  // `frames` — older / malformed rows can deserialize with no frames
+  // (the fresh write path can't produce one, but pre-existing storage
+  // rows from earlier formats or truncated blobs can), and unguarded
+  // `frames.map(...).reduce(...)` throws StateError("No element") which
+  // cascades through the entire ReplaysScreen ListView during layout.
   Map<String, dynamic> getSummary() {
     final totalFood = frames
         .where((f) => f.gameEvent?['type'] == 'food_consumed')
@@ -182,9 +187,11 @@ class GameReplay {
     final totalPowerUps = frames
         .where((f) => f.gameEvent?['type'] == 'power_up_collected')
         .length;
-    final maxSnakeLength = frames
-        .map((f) => f.snakePositions.length)
-        .reduce((a, b) => a > b ? a : b);
+    final maxSnakeLength = frames.isEmpty
+        ? 0
+        : frames
+            .map((f) => f.snakePositions.length)
+            .reduce((a, b) => a > b ? a : b);
 
     return {
       'duration': formattedDuration,

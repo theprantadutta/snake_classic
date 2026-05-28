@@ -52,23 +52,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
   }
 
   Future<void> _loadReplaysFromKeys(List<String> replayKeys) async {
-    // Show loading only briefly while we parse the replays
-    final replays = <GameReplay>[];
-
-    for (final key in replayKeys) {
-      final replayJson = await _storageService.getReplay(key);
-      if (replayJson != null) {
-        try {
-          final replay = GameReplay.fromJsonString(replayJson);
-          replays.add(replay);
-        } catch (e) {
-          // Silently skip corrupted replays
-        }
-      }
-    }
-
-    replays.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
+    final replays = await _hydrateAndSanitize(replayKeys);
     if (mounted) {
       setState(() {
         _replays = replays;
@@ -80,22 +64,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
   Future<void> _loadReplays() async {
     try {
       final replayKeys = await _storageService.getReplayKeys();
-      final replays = <GameReplay>[];
-
-      for (final key in replayKeys) {
-        final replayJson = await _storageService.getReplay(key);
-        if (replayJson != null) {
-          try {
-            final replay = GameReplay.fromJsonString(replayJson);
-            replays.add(replay);
-          } catch (e) {
-            // Silently skip corrupted replays
-          }
-        }
-      }
-
-      replays.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
+      final replays = await _hydrateAndSanitize(replayKeys);
       if (mounted) {
         setState(() {
           _replays = replays;
@@ -111,16 +80,57 @@ class _ReplaysScreenState extends State<ReplaysScreen>
     }
   }
 
-  List<GameReplay> get _recentReplays => _replays.take(20).toList();
+  /// Shared load path used by both the cache-fast and cold-load entries.
+  /// Parses every replay JSON, skips corrupted rows, and *deletes* any
+  /// 0-frame replay it finds so the bad row can't crash the layout on
+  /// the next read. 0-frame rows can sneak in from earlier code paths
+  /// or truncated storage blobs — the current `finishRecording` write
+  /// path can't produce one, but historical data still exists.
+  Future<List<GameReplay>> _hydrateAndSanitize(List<String> keys) async {
+    final replays = <GameReplay>[];
+    final toDelete = <String>[];
+
+    for (final key in keys) {
+      final replayJson = await _storageService.getReplay(key);
+      if (replayJson == null) continue;
+      try {
+        final replay = GameReplay.fromJsonString(replayJson);
+        if (replay.frames.isEmpty || replay.totalFrames == 0) {
+          toDelete.add(key);
+        } else {
+          replays.add(replay);
+        }
+      } catch (_) {
+        // Corrupted blob — drop the key so it can't keep returning.
+        toDelete.add(key);
+      }
+    }
+
+    for (final key in toDelete) {
+      try {
+        await _storageService.deleteReplay(key);
+      } catch (_) {
+        // Best-effort cleanup; ignore if the delete fails.
+      }
+    }
+
+    replays.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return replays;
+  }
+
+  // Tab views — no .take() cap because GameDao's saveReplay retention
+  // already caps storage at top-10-by-score + 10-most-recent (~20 rows),
+  // so a manual cap here would just hide rows the user actually has.
+  List<GameReplay> get _recentReplays => _replays;
 
   List<GameReplay> get _highScoreReplays {
     final sorted = [..._replays];
     sorted.sort((a, b) => b.finalScore.compareTo(a.finalScore));
-    return sorted.take(20).toList();
+    return sorted;
   }
 
   List<GameReplay> get _crashReplays =>
-      _replays.where((r) => r.crashReason != null).take(20).toList();
+      _replays.where((r) => r.crashReason != null).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -129,9 +139,35 @@ class _ReplaysScreenState extends State<ReplaysScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Game Replays',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        title: Row(
+          children: [
+            const Text(
+              'Game Replays',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+            ),
+            if (!_isLoading && _replays.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Text(
+                  '${_replays.length}',
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,

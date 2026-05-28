@@ -64,6 +64,7 @@ The rule, applied to every new code path:
 - Adding a cubit method that writes to `SharedPreferences` for state the dashboard or another device should see.
 - Calling `ApiService.x()` from a service for a stateful mutation when a sync handler exists for that data type.
 - A backend sync handler that silently rejects a client push because `server.UpdatedAt > client.UpdatedAt`. Either accept it (last-write-wins) or do a per-field merge — never drop on the floor.
+- Storing replays on the backend. Replays are phone-only — they live in the Drift `replays` table and never enter the sync surface (no outbox row, no API endpoint, no DTO). Do not add a `GameReplay` entity or any cloud-side storage for them.
 
 ### Development Commands
 - `flutter pub get` - Install dependencies
