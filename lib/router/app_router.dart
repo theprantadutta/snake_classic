@@ -20,6 +20,7 @@ import 'package:snake_classic/screens/leaderboard_screen.dart';
 import 'package:snake_classic/screens/loading_screen.dart';
 import 'package:snake_classic/screens/multiplayer_game_screen.dart';
 import 'package:snake_classic/screens/multiplayer_lobby_screen.dart';
+import 'package:snake_classic/screens/pre_game_loading_screen.dart';
 import 'package:snake_classic/screens/premium_benefits_screen.dart';
 import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/replay_viewer_screen.dart';
@@ -125,6 +126,12 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
     ),
 
     // Game flow
+    GoRoute(
+      path: AppRoutes.playLoading,
+      name: 'playLoading',
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const PreGameLoadingScreen()),
+    ),
     GoRoute(
       path: AppRoutes.game,
       name: 'game',

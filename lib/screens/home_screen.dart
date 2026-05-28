@@ -869,7 +869,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             // first game; no-op for users who've already picked.
             await _maybeShowGameModePrompt();
             if (!context.mounted) return;
-            context.push(AppRoutes.game);
+            // Detour through the themed pre-game loader. It self-advances
+            // to /game on completion via pushReplacement so back from the
+            // game lands on Home rather than the loader.
+            context.push(AppRoutes.playLoading);
           },
           child: AnimatedBuilder(
             animation: _playButtonPulseAnimation,
