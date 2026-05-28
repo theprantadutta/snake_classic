@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -27,6 +28,15 @@ class PremiumCubit extends Cubit<PremiumState> {
   final CoinsCubit? _coinsCubit;
   final AnalyticsFacade _analytics;
   StreamSubscription<String>? _purchaseStatusSubscription;
+
+  /// Drift watch on the `premium_status` singleton. Keeps the Pro
+  /// entitlement state in lock-step with writes from elsewhere —
+  /// most importantly the first-sign-in snapshot apply, which lands
+  /// the cloud's IsPremiumActive / expiry AFTER initialize() ran.
+  /// Without the watch, a returning Pro user briefly sees free-tier
+  /// UI on a fresh install (until something else triggers a reload).
+  StreamSubscription<db.PremiumStatusData?>? _premiumStatusWatch;
+  bool _reloadingFromDrift = false;
 
   PremiumCubit({
     required PurchaseService purchaseService,
@@ -148,6 +158,11 @@ class PremiumCubit extends Cubit<PremiumState> {
 
       // Listen to purchase updates
       _setupPurchaseListener();
+
+      // Subscribe to PremiumStatus Drift writes so a cloud-restore /
+      // server reconcile that lands AFTER this init flips the local
+      // entitlement state without a screen rebuild.
+      _wireDriftWatch();
 
       // Backend reconcile (which is what catches server-side Pro
       // revocations) is no longer fired here — AuthCubit triggers it
@@ -913,6 +928,80 @@ class PremiumCubit extends Cubit<PremiumState> {
   @override
   Future<void> close() {
     _purchaseStatusSubscription?.cancel();
+    _premiumStatusWatch?.cancel();
     return super.close();
+  }
+
+  /// Subscribe to the `premium_status` Drift singleton so any later
+  /// write (snapshot apply on first sign-in, purchase echo, server
+  /// reconcile) reactively re-projects into [state]. Emits immediately
+  /// with the current row on subscribe, which is fine — that's the
+  /// same data initialize() just loaded synchronously.
+  void _wireDriftWatch() {
+    _premiumStatusWatch?.cancel();
+    _premiumStatusWatch =
+        _storageService.storeDao.watchPremiumStatus().listen((_) {
+      if (_reloadingFromDrift) return;
+      _reloadingFromDrift = true;
+      _reloadEntitlementFromDrift()
+          .catchError((Object e) {
+            AppLogger.error('PremiumStatus Drift-watch reload failed', e);
+          })
+          .whenComplete(() => _reloadingFromDrift = false);
+    });
+  }
+
+  /// Re-read the Pro entitlement fields from Drift and emit a new
+  /// state. Owned-items lists are intentionally NOT re-read here —
+  /// those land in the UnlockedItems table, not PremiumStatus, and
+  /// the snapshot apply path already calls [_storageService.setX]
+  /// helpers which trigger Drift writes the screens re-read on next
+  /// navigation. Keeping this method tight to the fields the watch
+  /// is actually firing for.
+  Future<void> _reloadEntitlementFromDrift() async {
+    final isPremiumActive = await _storageService.isPremiumActive();
+    final expiryDateStr = await _storageService.getPremiumExpirationDate();
+    final trialData = await _storageService.getTrialData();
+    final tournamentEntries = await _storageService.getTournamentEntries();
+
+    DateTime? expiryDate;
+    if (expiryDateStr != null) {
+      expiryDate = DateTime.tryParse(expiryDateStr);
+    }
+    DateTime? trialStartDate;
+    DateTime? trialEndDate;
+    if (trialData['trialStartDate'] != null) {
+      trialStartDate = DateTime.tryParse(trialData['trialStartDate']);
+    }
+    if (trialData['trialEndDate'] != null) {
+      trialEndDate = DateTime.tryParse(trialData['trialEndDate']);
+    }
+
+    final newTier = isPremiumActive ? PremiumTier.pro : PremiumTier.free;
+    final entitlementChanged = state.tier != newTier ||
+        state.subscriptionExpiry != expiryDate ||
+        state.isOnTrial != (trialData['isOnTrial'] ?? false) ||
+        state.trialStartDate != trialStartDate ||
+        state.trialEndDate != trialEndDate;
+
+    if (!entitlementChanged &&
+        state.bronzeTournamentEntries == (tournamentEntries['bronze'] ?? 0) &&
+        state.silverTournamentEntries == (tournamentEntries['silver'] ?? 0) &&
+        state.goldTournamentEntries == (tournamentEntries['gold'] ?? 0)) {
+      // No-op emit — Drift wrote the same values back to disk (common
+      // on echoed pushes / reseed flows).
+      return;
+    }
+
+    emit(state.copyWith(
+      tier: newTier,
+      subscriptionExpiry: expiryDate,
+      isOnTrial: trialData['isOnTrial'] ?? false,
+      trialStartDate: trialStartDate,
+      trialEndDate: trialEndDate,
+      bronzeTournamentEntries: tournamentEntries['bronze'] ?? 0,
+      silverTournamentEntries: tournamentEntries['silver'] ?? 0,
+      goldTournamentEntries: tournamentEntries['gold'] ?? 0,
+    ));
   }
 }

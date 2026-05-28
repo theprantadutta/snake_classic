@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
+import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
@@ -50,6 +52,22 @@ class AchievementService extends ChangeNotifier {
   /// re-celebrate it.
   final Set<String> _shownGameOverIds = {};
 
+  /// Drift watch on the `achievements` table. Keeps [_achievements] in
+  /// lock-step with Drift writes — most importantly the first-sign-in
+  /// snapshot apply, which lands cloud achievement progress AFTER this
+  /// service's initialize() finishes. Without the watch, the in-memory
+  /// list would stay at whatever local storage had at boot (typically
+  /// the default catalog with zero progress) for the rest of the
+  /// session — symptom: cloud unlocks don't appear until next launch.
+  StreamSubscription<List<db.Achievement>>? _achievementsWatch;
+
+  /// True while [_refreshFromDrift] is writing the projected progress
+  /// back into [_achievements]. Suppresses re-entrant `_saveProgress`
+  /// calls from the same flow that triggered the watch emit. Pure
+  /// defensive — `_saveProgress` only fires from explicit unlock /
+  /// claim / reset paths, not from the watch handler itself.
+  bool _applyingDriftWatch = false;
+
   List<Achievement> get achievements => _achievements;
   List<Achievement> get recentUnlocks => _recentUnlocks;
   List<Achievement> get lastGameUnlocks => List.unmodifiable(_lastGameUnlocks);
@@ -98,7 +116,68 @@ class AchievementService extends ChangeNotifier {
       }
     }
     await _loadUserProgress();
+    _wireDriftWatch();
     notifyListeners();
+  }
+
+  /// Subscribe to the `achievements` Drift table so any later write
+  /// (snapshot apply, gameplay unlock, debug reset) reactively
+  /// refreshes [_achievements] and notifies UI listeners. The watch
+  /// emits immediately with the current rows, so this also doubles
+  /// as a belt-and-braces re-hydration after [_loadFromLocalStorage].
+  void _wireDriftWatch() {
+    _achievementsWatch?.cancel();
+    _achievementsWatch =
+        _storageService.gameDao.watchAchievements().listen((_) {
+      // We don't apply the Drift rows directly because the model has
+      // a few client-only fields (gameModeFilter, difficultyFilter,
+      // type-derived metadata) that the Drift schema doesn't carry.
+      // Round-tripping through the same JSON path the storage service
+      // already exposes keeps the projection logic in one place.
+      unawaited(_refreshFromDrift());
+    });
+  }
+
+  /// Re-load the projected progress from Drift via the storage
+  /// service's JSON-list view and apply it to [_achievements].
+  /// Bypasses the offline cache — the cache is only consulted on the
+  /// initial load, the watch always reads fresh.
+  Future<void> _refreshFromDrift() async {
+    if (_applyingDriftWatch) return;
+    _applyingDriftWatch = true;
+    try {
+      final localData = await _storageService.getAchievements();
+      if (localData == null || localData.isEmpty) return;
+      final decoded = jsonDecode(localData);
+      Map<String, dynamic>? mapData;
+      if (decoded is Map<String, dynamic>) {
+        mapData = decoded;
+      } else if (decoded is List) {
+        mapData = <String, dynamic>{};
+        for (final item in decoded) {
+          if (item is Map && item['id'] != null) {
+            mapData[item['id'].toString()] =
+                Map<String, dynamic>.from(item);
+          }
+        }
+      }
+      if (mapData == null || mapData.isEmpty) return;
+      _updateAchievementsFromData(mapData);
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Achievement Drift-watch refresh failed: $e');
+      }
+    } finally {
+      _applyingDriftWatch = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _achievementsWatch?.cancel();
+    _achievementsWatch = null;
+    super.dispose();
   }
 
   Future<void> _loadUserProgress() async {

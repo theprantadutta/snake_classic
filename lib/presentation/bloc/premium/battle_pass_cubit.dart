@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:get_it/get_it.dart';
@@ -29,6 +30,18 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   StreamSubscription<PremiumState>? _premiumSub;
   bool _lastSeenHasPremium = false;
 
+  /// Drift watch on the `battle_passes` table. Keeps the cubit's
+  /// projected state in lock-step with writes from elsewhere — most
+  /// importantly the first-sign-in snapshot apply, which lands cloud
+  /// battle-pass progress AFTER this cubit's initialize() finished.
+  /// Without the watch, tier / XP / claimed rewards stay at whatever
+  /// the local row held at boot (typically the empty-table sample
+  /// season) for the rest of the session.
+  StreamSubscription<db.BattlePassesData?>? _battlePassWatch;
+  // Tracks whether a Drift-driven reload is currently in flight so a
+  // single emit doesn't race itself.
+  bool _reloadingFromDrift = false;
+
   BattlePassCubit({
     required StorageService storageService,
     PremiumCubit? premiumCubit,
@@ -41,6 +54,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   @override
   Future<void> close() {
     _premiumSub?.cancel();
+    _battlePassWatch?.cancel();
     return super.close();
   }
 
@@ -62,6 +76,7 @@ class BattlePassCubit extends Cubit<BattlePassState> {
       // Watch Pro status — when it flips on (post-IAP verification) we
       // flip isActive locally so the premium-pass UI unlocks immediately.
       _watchPremiumCubit();
+      _wireDriftWatch();
     } catch (e) {
       AppLogger.error('Error initializing BattlePassCubit', e);
       emit(
@@ -94,6 +109,26 @@ class BattlePassCubit extends Cubit<BattlePassState> {
         _syncBattlePassToPremium();
       }
       _lastSeenHasPremium = nowPro;
+    });
+  }
+
+  /// Subscribe to the `battle_passes` Drift table so any write
+  /// (snapshot apply on first sign-in, sync restore, server XP-grant
+  /// echo) reactively re-projects into [state]. Emits immediately
+  /// with the current row on subscribe, which is fine — that's the
+  /// same data [_loadFromLocalStorage] just read.
+  void _wireDriftWatch() {
+    _battlePassWatch?.cancel();
+    _battlePassWatch =
+        _storageService.storeDao.watchCurrentBattlePass().listen((_) {
+      if (_reloadingFromDrift) return;
+      _reloadingFromDrift = true;
+      _loadFromLocalStorage()
+          .then((_) => _syncBattlePassToPremium())
+          .catchError((Object e) {
+            AppLogger.error('BattlePass Drift-watch reload failed', e);
+          })
+          .whenComplete(() => _reloadingFromDrift = false);
     });
   }
 
