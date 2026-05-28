@@ -574,39 +574,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
             SizedBox(width: isSmallScreen ? 8 : 12),
 
-            // Profile button
+            // Profile button. Same rounded-square chip shape as the other
+            // top-bar buttons (matches the 48/36 px footprint). When the
+            // user has a photo, the photo fills the inner space as a
+            // rounded square that mirrors the chip's curvature, leaving a
+            // thin amber ring as the border. Icon fallback keeps the
+            // original look.
             GestureDetector(
               onTap: () {
                 context.push(AppRoutes.profile);
               },
-              child: Container(
-                key: HomeWalkthrough.profileKey,
-                padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.amber.withValues(alpha: 0.2),
-                      Colors.orange.withValues(alpha: 0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
-                  border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: authState.isSignedIn && authState.photoURL != null
-                    ? CircleAvatar(
-                        radius: isSmallScreen ? 12 : 16,
-                        backgroundImage: NetworkImage(authState.photoURL!),
-                        onBackgroundImageError: (e, s) {},
-                      )
-                    : Icon(
-                        Icons.account_circle,
-                        color: Colors.amber,
-                        size: isSmallScreen ? 20 : 24,
+              child: () {
+                final hasPhoto =
+                    authState.isSignedIn && authState.photoURL != null;
+                final outerSize = isSmallScreen ? 36.0 : 48.0;
+                final outerRadius = isSmallScreen ? 16.0 : 20.0;
+                if (hasPhoto) {
+                  // Tiny padding so the gradient/border still reads as a
+                  // ring around the photo. Inner radius is the outer
+                  // curvature minus the padding so the photo's corners
+                  // sit flush with the chip's inner curve.
+                  const padding = 2.0;
+                  final innerRadius = outerRadius - padding;
+                  return Container(
+                    key: HomeWalkthrough.profileKey,
+                    width: outerSize,
+                    height: outerSize,
+                    padding: const EdgeInsets.all(padding),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.amber.withValues(alpha: 0.2),
+                          Colors.orange.withValues(alpha: 0.1),
+                        ],
                       ),
-              ),
+                      borderRadius: BorderRadius.circular(outerRadius),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(innerRadius),
+                      child: Image.network(
+                        authState.photoURL!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Icon(
+                          Icons.account_circle,
+                          color: Colors.amber,
+                          size: isSmallScreen ? 20 : 24,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return Container(
+                  key: HomeWalkthrough.profileKey,
+                  padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.amber.withValues(alpha: 0.2),
+                        Colors.orange.withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(outerRadius),
+                    border: Border.all(
+                      color: Colors.amber.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.account_circle,
+                    color: Colors.amber,
+                    size: isSmallScreen ? 20 : 24,
+                  ),
+                );
+              }(),
             ),
           ],
         ),
