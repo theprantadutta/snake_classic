@@ -291,7 +291,9 @@ class GameConstants {
   static const String achievementsKey = 'achievements';
   static const String boardSizeKey = 'board_size';
   static const String crashFeedbackDurationKey = 'crash_feedback_duration';
-  static const String statisticsKey = 'game_statistics';
+  // statisticsKey ('game_statistics') retired — stats are Drift-first via
+  // `gameDao.getStatisticsAsJson()` / `updateStatisticsFromJson()`. No
+  // SharedPreferences blob is read or written for stats anymore.
   static const String trailSystemEnabledKey = 'trail_system_enabled';
 }
 

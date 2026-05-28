@@ -21,7 +21,31 @@ import 'package:snake_classic/utils/logger.dart';
 class AppDataCache extends ChangeNotifier {
   static final AppDataCache _instance = AppDataCache._internal();
   factory AppDataCache() => _instance;
-  AppDataCache._internal();
+  AppDataCache._internal() {
+    _wireStatisticsListener();
+  }
+
+  // True once we've installed the cross-listener so the singleton can't
+  // double-subscribe if [AppDataCache._internal] ever runs twice (e.g.
+  // hot-reload tests).
+  bool _statisticsListenerWired = false;
+
+  /// Subscribe to StatisticsService.notifyListeners() so any reactive
+  /// Drift update there (snapshot apply on first sign-in, end-of-game
+  /// writes) refreshes our cached display maps. Without this, the cache
+  /// captures whatever StatisticsService had at preload time — which on
+  /// fresh install is [GameStatistics.initial()] (zeros), and the
+  /// screens stay stuck on zeros even after the cloud restore lands.
+  void _wireStatisticsListener() {
+    if (_statisticsListenerWired) return;
+    _statisticsListenerWired = true;
+    StatisticsService().addListener(() {
+      // Re-pull and notify our own listeners (statistics screens).
+      // Swallow errors to keep the listener alive past a transient
+      // disk hiccup.
+      unawaited(refreshStatistics());
+    });
+  }
 
   // === Cached Data ===
 

@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/game_statistics.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 
-class StatisticsService {
+class StatisticsService extends ChangeNotifier {
   static StatisticsService? _instance;
   final StorageService _storageService = StorageService();
   final DataSyncService _syncService = DataSyncService();
@@ -15,6 +16,14 @@ class StatisticsService {
 
   GameStatistics _currentStatistics = GameStatistics.initial();
   bool _initialized = false;
+
+  /// Drift watch keeps [_currentStatistics] in lock-step with the
+  /// `statistics` row. Critical for the first-sign-in flow: the
+  /// snapshot apply writes the cloud stats to Drift AFTER this
+  /// service's initial _loadFromDrift saw an empty row, and without a
+  /// watch the in-memory state would stay at [GameStatistics.initial()]
+  /// (= zeros) for the rest of the session.
+  StreamSubscription<db.Statistic?>? _statisticsWatch;
 
   StatisticsService._internal();
 
@@ -29,28 +38,9 @@ class StatisticsService {
     if (_initialized) return;
 
     try {
-      // Load local statistics first — fast, disk-only.
-      await _loadLocalStatistics();
-
-      // One-shot backfill: copy SharedPreferences stats into the Drift
-      // statistics table if Drift doesn't have them yet. Existing users
-      // installed before the dual-write fix have years of game history
-      // in SharedPreferences but Drift empty — without this backfill
-      // SyncEngine sees no row and never pushes to the backend, so the
-      // admin dashboard would stay all-zeros until they happened to play
-      // another game. Idempotent: once Drift has the row, subsequent
-      // launches hit getStatistics() == not-null and skip.
-      try {
-        final driftRow = await _storageService.gameDao.getStatistics();
-        if (driftRow == null) {
-          await _storageService.gameDao
-              .updateStatisticsFromJson(_currentStatistics.toJsonString());
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Drift statistics backfill failed (non-fatal): $e');
-        }
-      }
+      // Hydrate from Drift (the single source of truth for stats).
+      await _loadFromDrift();
+      _wireDriftWatch();
 
       // Mark ready as soon as local data is available so callers that
       // await initialize() (GameSettingsCubit, AppDataCache, etc.) are
@@ -72,53 +62,104 @@ class StatisticsService {
       if (kDebugMode) {
         print('Error initializing statistics service: $e');
       }
-      // Continue with local statistics only
+      // Mark ready anyway — UI gets [GameStatistics.initial()] and the
+      // next gameplay write or cloud snapshot apply will populate Drift.
       _initialized = true;
     }
   }
 
-  Future<void> _loadLocalStatistics() async {
+  /// Subscribe to the Drift `statistics` singleton so any write
+  /// (snapshot apply on first sign-in, gameplay end, debug reset)
+  /// reactively refreshes [_currentStatistics] and notifies listeners.
+  /// AppDataCache subscribes to this service so the screens auto-update
+  /// instead of capturing a stale [GameStatistics.initial()] snapshot.
+  void _wireDriftWatch() {
+    _statisticsWatch?.cancel();
+    final dao = _storageService.gameDao;
+    _statisticsWatch = dao.watchStatistics().listen((row) {
+      if (row == null) {
+        // Drift was wiped or never populated — keep the current
+        // in-memory state. Avoid emitting an all-zeros snapshot just
+        // because the row hasn't landed yet; the snapshot apply will
+        // emit a real row a moment later.
+        return;
+      }
+      GameStatistics parsed;
+      try {
+        parsed = GameStatistics.fromJsonString(row.modelJson);
+      } catch (_) {
+        return;
+      }
+      if (identical(parsed, _currentStatistics)) return;
+      _currentStatistics = parsed;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _statisticsWatch?.cancel();
+    _statisticsWatch = null;
+    super.dispose();
+  }
+
+  /// Hydrate [_currentStatistics] from the Drift `statistics` singleton.
+  ///
+  /// **Empty row is a valid initial state** — it means "no stats yet
+  /// on this device." We DO NOT write anything back to Drift here.
+  /// Earlier builds had a "backfill empty row" branch that initialized
+  /// Drift with [GameStatistics.initial()] (zeros) and enqueued a
+  /// statistics outbox push, which on fresh-install + cloud-restore
+  /// flows raced the snapshot pull and wiped the server's real stats.
+  /// The new contract: only [recordGameResult] and the snapshot apply
+  /// in `SyncEngine._applyCloudSnapshot` ever write a row.
+  Future<void> _loadFromDrift() async {
     try {
-      final statisticsJson = await _storageService.getStatistics();
-      if (statisticsJson != null) {
-        _currentStatistics = GameStatistics.fromJsonString(statisticsJson);
+      final row = await _storageService.gameDao.getStatistics();
+      if (row != null) {
+        _currentStatistics = GameStatistics.fromJsonString(row.modelJson);
       } else {
         _currentStatistics = GameStatistics.initial();
       }
 
-      // Sync high score between statistics and the separate highScore key
-      // This ensures both sources stay in sync
+      // Reconcile the stats-model's highScore with the canonical
+      // GameSettings.highScore (Drift singleton). When the two
+      // disagree, the higher value wins: a personal best earned in
+      // gameplay always lives in GameSettings.highScore via the
+      // never-decrease guard, and we mirror it into the stats model
+      // so downstream UIs reading either source agree.
       final separateHighScore = await _storageService.getHighScore();
       final statsHighScore = _currentStatistics.highScore;
 
       if (separateHighScore != statsHighScore) {
-        // Take the maximum of both values
         final syncedHighScore = separateHighScore > statsHighScore
             ? separateHighScore
             : statsHighScore;
 
-        // Update statistics if separate key had higher value
         if (separateHighScore > statsHighScore) {
-          _currentStatistics = _currentStatistics.withHighScore(
-            syncedHighScore,
-          );
-          await _saveLocalStatistics();
+          _currentStatistics =
+              _currentStatistics.withHighScore(syncedHighScore);
+          // Only persist if we actually had a row to begin with; an
+          // empty Drift row shouldn't be created just to mirror the
+          // canonical high score — that would re-introduce the empty
+          // push bug.
+          if (row != null) await _persistToDrift();
         }
 
-        // Update separate key if statistics had higher value
         if (statsHighScore > separateHighScore) {
           await _storageService.saveHighScore(syncedHighScore);
         }
 
         if (kDebugMode) {
           print(
-            'High score synced: stats=$statsHighScore, separate=$separateHighScore -> $syncedHighScore',
+            'High score synced: stats=$statsHighScore, '
+            'separate=$separateHighScore -> $syncedHighScore',
           );
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error loading local statistics: $e');
+        print('Error loading statistics from Drift: $e');
       }
       _currentStatistics = GameStatistics.initial();
     }
@@ -380,7 +421,7 @@ class StatisticsService {
     );
 
     // Save locally
-    await _saveLocalStatistics();
+    await _persistToDrift();
 
     // Upload to cloud if signed in
     if (_userService.isSignedIn) {
@@ -388,7 +429,7 @@ class StatisticsService {
     }
   }
 
-  Future<void> _saveLocalStatistics() async {
+  Future<void> _persistToDrift() async {
     try {
       // Single source of truth for high score: GameSettings.highScore.
       // Mirror our in-memory model's highScore UP to settings first
@@ -414,7 +455,7 @@ class StatisticsService {
       await _storageService.saveStatistics(json);
     } catch (e) {
       if (kDebugMode) {
-        print('Error saving local statistics: $e');
+        print('Error persisting statistics to Drift: $e');
       }
     }
   }
@@ -425,7 +466,7 @@ class StatisticsService {
     }
 
     _currentStatistics = _currentStatistics.startNewSession();
-    await _saveLocalStatistics();
+    await _persistToDrift();
 
     if (_userService.isSignedIn) {
       await _uploadToCloud();
@@ -573,7 +614,7 @@ class StatisticsService {
   // Reset statistics (for testing or user request)
   Future<void> resetStatistics() async {
     _currentStatistics = GameStatistics.initial();
-    await _saveLocalStatistics();
+    await _persistToDrift();
 
     // Reset high score in storage. Has to go through the explicit
     // resetHighScore path — saveHighScore now refuses any write that
