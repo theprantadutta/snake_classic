@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/data/daos/store_dao.dart';
 import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/api_service.dart';
@@ -28,14 +29,16 @@ export 'coins_state.dart';
 ///
 /// **SharedPreferences usage** is limited strictly to device-only state
 /// that never leaves the install:
-///   * `coin_daily_earnings` / `coin_last_earning_reset` — anti-grind
-///     cap (resets at UTC midnight; a fresh device gets a fresh cap
-///     by design).
-///   * `coin_daily_bonuses` — which weekly login bonus has been
-///     collected on this device. The COIN gain still lands in Drift
-///     and syncs; only the "which day was claimed" picker is local.
-///   * `last_daily_bonus_claim_date` — guards the home-screen claim
-///     CTA on this device.
+///   * `daily_earnings` / `last_earning_reset` — anti-grind cap
+///     (resets at UTC midnight; a fresh device gets a fresh cap by
+///     design).
+///
+/// Daily login bonus state lived in SharedPreferences in an earlier
+/// build (`daily_bonuses`, `last_daily_bonus_claim_date`) but is now
+/// Drift-first via the `daily_bonus_state` singleton table — the
+/// SyncEngine pushes it to the backend's DailyLoginBonus table, so the
+/// gate is multi-device consistent. The legacy keys are cleared by a
+/// one-shot migration in [initialize].
 class CoinsCubit extends Cubit<CoinsState> {
   CoinsCubit() : super(CoinsState.initial());
 
@@ -43,6 +46,7 @@ class CoinsCubit extends Cubit<CoinsState> {
 
   StreamSubscription<db.Coin?>? _coinsRowWatch;
   StreamSubscription<List<db.CoinTransaction>>? _transactionsWatch;
+  StreamSubscription<db.DailyBonusStateData?>? _dailyBonusWatch;
 
   /// Tracks the in-flight initialize() call so concurrent callers
   /// (notably AuthCubit._firePostAuthSyncs → syncWithBackend) await
@@ -57,8 +61,11 @@ class CoinsCubit extends Cubit<CoinsState> {
   // Device-only SharedPreferences keys. Any synced state moved to Drift.
   static const String _dailyEarningsKey = 'daily_earnings';
   static const String _lastEarningResetKey = 'last_earning_reset';
-  static const String _dailyBonusesKey = 'daily_bonuses';
-  static const String _lastBonusClaimDateKey = 'last_daily_bonus_claim_date';
+  // Retired daily-bonus prefs keys — daily bonus is now Drift-first
+  // (`daily_bonus_state` table). Kept as constants so the one-shot
+  // migration in [initialize] can find and clean up the legacy values.
+  static const String _legacyDailyBonusesKey = 'daily_bonuses';
+  static const String _legacyLastBonusClaimDateKey = 'last_daily_bonus_claim_date';
 
   /// Retired SharedPreferences keys — the Drift-first refactor moves
   /// balance and transactions into Drift. Kept here so the one-shot
@@ -100,8 +107,12 @@ class CoinsCubit extends Cubit<CoinsState> {
       // brandNew branch (see [seedStartingBonus]), so it only fires for
       // users the backend just minted.
 
+      // Drain the legacy SharedPreferences daily-bonus keys into the new
+      // Drift singleton (one-shot per install). Runs BEFORE the initial
+      // Drift seed so [_loadFromDrift] already sees the migrated row.
+      await _migrateLegacyDailyBonusToDrift();
       await _loadFromDrift();
-      _loadDeviceState();
+      await _loadDailyEarningsCap();
       _wireDriftWatches();
 
       emit(state.copyWith(status: CoinsStatus.ready));
@@ -293,11 +304,25 @@ class CoinsCubit extends Cubit<CoinsState> {
 
     final row = await storageService.storeDao.getCoinBalanceRow();
     final txns = await storageService.storeDao.getCoinTransactions(limit: 200);
+    // Seed daily-bonus state synchronously so the home-screen gate is
+    // correct on the very first frame. The watch stream wired in
+    // [_wireDriftWatches] will emit the same value moments later (and
+    // every subsequent change), but blocking here avoids a window
+    // where state.dailyBonusLastClaimUtcMs is null even though Drift
+    // already holds a row.
+    final bonusRow = await storageService.storeDao.getDailyBonusRow();
 
     final balance = _balanceFromRow(row);
     final transactions = txns.map(_modelFromDriftTxn).toList();
 
-    emit(state.copyWith(balance: balance, transactions: transactions));
+    emit(state.copyWith(
+      balance: balance,
+      transactions: transactions,
+      dailyBonuses: _dailyBonusesFromRow(bonusRow),
+      dailyBonusLastClaimUtcMs: bonusRow?.lastClaimUtcMs,
+      dailyBonusLastClaimTzOffsetMinutes: bonusRow?.lastClaimTzOffsetMinutes,
+      dailyBonusCurrentStreak: bonusRow?.currentStreak ?? 0,
+    ));
   }
 
   /// Subscribe to Drift watches so any later write (snapshot apply,
@@ -309,6 +334,7 @@ class CoinsCubit extends Cubit<CoinsState> {
 
     _coinsRowWatch?.cancel();
     _transactionsWatch?.cancel();
+    _dailyBonusWatch?.cancel();
 
     _coinsRowWatch = storageService.storeDao.watchCoinBalanceRow().listen(
       (row) {
@@ -325,6 +351,49 @@ class CoinsCubit extends Cubit<CoinsState> {
         emit(state.copyWith(transactions: modelTxns));
       },
     );
+
+    _dailyBonusWatch =
+        storageService.storeDao.watchDailyBonusRow().listen(
+      (row) {
+        emit(state.copyWith(
+          dailyBonuses: _dailyBonusesFromRow(row),
+          dailyBonusLastClaimUtcMs: row?.lastClaimUtcMs,
+          dailyBonusLastClaimTzOffsetMinutes: row?.lastClaimTzOffsetMinutes,
+          dailyBonusCurrentStreak: row?.currentStreak ?? 0,
+        ));
+      },
+    );
+  }
+
+  /// Project the Drift singleton into the 7-day cycle list used by the
+  /// popup grid. Each day picks up `isCollected` + `collectedAt` from
+  /// `weeklyClaimsJson` (a `{ "1": "<utcIso>", ... }` map written by
+  /// the DAO). The 7-day reward template (coins + bonusItem) is the
+  /// authoritative client-side economy table — backend rewards mirror
+  /// it via `EconomyConstants.WeeklyLoginRewards`.
+  List<DailyLoginBonus> _dailyBonusesFromRow(db.DailyBonusStateData? row) {
+    final template = DailyLoginBonus.getWeeklyBonuses();
+    if (row == null) return template;
+    Map<String, dynamic> claimedMap;
+    try {
+      claimedMap = json.decode(row.weeklyClaimsJson) as Map<String, dynamic>;
+    } catch (_) {
+      claimedMap = const <String, dynamic>{};
+    }
+    return template.map((bonus) {
+      final raw = claimedMap[bonus.day.toString()];
+      if (raw is! String) return bonus;
+      DateTime? collectedAt;
+      try {
+        collectedAt = DateTime.parse(raw);
+      } catch (_) {
+        collectedAt = null;
+      }
+      return bonus.copyWith(
+        isCollected: true,
+        collectedAt: collectedAt,
+      );
+    }).toList();
   }
 
   /// Build a [CoinBalance] from a Drift `Coins` row. Drift's `totalEarned`
@@ -385,21 +454,14 @@ class CoinsCubit extends Cubit<CoinsState> {
     );
   }
 
-  Future<void> _loadDeviceState() async {
+  /// Load the device-only anti-grind daily cap from prefs and reset it
+  /// if the UTC date has rolled. Daily-bonus state is no longer loaded
+  /// here — that's Drift-backed and lands via [_wireDriftWatches].
+  Future<void> _loadDailyEarningsCap() async {
     final prefs = _prefs;
     if (prefs == null) return;
 
     try {
-      // Daily bonuses
-      final bonusesJson = prefs.getStringList(_dailyBonusesKey) ?? [];
-      List<DailyLoginBonus> dailyBonuses = DailyLoginBonus.getWeeklyBonuses();
-      if (bonusesJson.isNotEmpty) {
-        dailyBonuses = bonusesJson
-            .map((jsonStr) => DailyLoginBonus.fromJson(json.decode(jsonStr)))
-            .toList();
-      }
-
-      // Daily earning cap data
       final dailyEarnings = prefs.getInt(_dailyEarningsKey) ?? 0;
       final lastResetStr = prefs.getString(_lastEarningResetKey);
       DateTime lastEarningReset = DateTime.now().toUtc();
@@ -419,7 +481,6 @@ class CoinsCubit extends Cubit<CoinsState> {
 
       emit(
         state.copyWith(
-          dailyBonuses: dailyBonuses,
           dailyEarnings: shouldReset ? 0 : dailyEarnings,
           lastEarningReset: shouldReset ? now : lastEarningReset,
         ),
@@ -433,12 +494,95 @@ class CoinsCubit extends Cubit<CoinsState> {
     }
   }
 
-  Future<void> _saveDailyBonuses() async {
+  /// One-shot migration: if the legacy daily-bonus prefs keys exist and
+  /// the new Drift `daily_bonus_state` row is empty, seed Drift from
+  /// the prefs values so a user mid-week doesn't get re-prompted on
+  /// the day they upgrade. Then delete the legacy keys.
+  ///
+  /// Seeding heuristics:
+  ///   * `last_daily_bonus_claim_date` (YYYY-MM-DD local) becomes
+  ///     `lastClaimUtcMs` at noon-UTC of that day (no streak math —
+  ///     we don't know the actual instant). The current device tz is
+  ///     used as `lastClaimTzOffsetMinutes`.
+  ///   * `daily_bonuses` (JSON list with `is_collected` / `collected_at`
+  ///     per day) is folded into `weeklyClaimsJson` and the count of
+  ///     collected entries becomes the seed for `currentStreak`. Best
+  ///     effort — the next online sync will reconcile with the server's
+  ///     authoritative `DailyLoginBonus` record.
+  Future<void> _migrateLegacyDailyBonusToDrift() async {
     final prefs = _prefs;
     if (prefs == null) return;
-    final bonusesJson =
-        state.dailyBonuses.map((b) => json.encode(b.toJson())).toList();
-    await prefs.setStringList(_dailyBonusesKey, bonusesJson);
+
+    final hasLegacyClaimDate =
+        prefs.containsKey(_legacyLastBonusClaimDateKey);
+    final hasLegacyBonuses = prefs.containsKey(_legacyDailyBonusesKey);
+    if (!hasLegacyClaimDate && !hasLegacyBonuses) return;
+
+    try {
+      final storageService = StorageService();
+      if (!storageService.isInitialized) return;
+
+      final existing = await storageService.storeDao.getDailyBonusRow();
+      if (existing == null) {
+        int? lastClaimUtcMs;
+        int? lastClaimTzOffsetMinutes;
+        final lastClaimDate = prefs.getString(_legacyLastBonusClaimDateKey);
+        if (lastClaimDate != null && lastClaimDate.length == 10) {
+          try {
+            // Treat the legacy date as user-local; pin to noon-UTC so
+            // the day stays stable across reasonable tz offsets.
+            final parsedDate = DateTime.parse('${lastClaimDate}T12:00:00Z');
+            lastClaimUtcMs = parsedDate.millisecondsSinceEpoch;
+            lastClaimTzOffsetMinutes =
+                DateTime.now().timeZoneOffset.inMinutes;
+          } catch (_) {
+            // Malformed legacy value — ignore.
+          }
+        }
+
+        int currentStreak = 0;
+        final weeklyClaimsJson = <String, dynamic>{};
+        final bonusesJson = prefs.getStringList(_legacyDailyBonusesKey) ?? [];
+        if (bonusesJson.isNotEmpty) {
+          for (final entry in bonusesJson) {
+            try {
+              final map = json.decode(entry) as Map<String, dynamic>;
+              final day = map['day'];
+              final isCollected = map['is_collected'] == true;
+              final collectedAt = map['collected_at'];
+              if (isCollected && day is int) {
+                currentStreak++;
+                weeklyClaimsJson[day.toString()] =
+                    collectedAt ?? DateTime.now().toUtc().toIso8601String();
+              }
+            } catch (_) {
+              // Skip malformed entries.
+            }
+          }
+        }
+
+        if (lastClaimUtcMs != null || weeklyClaimsJson.isNotEmpty) {
+          await storageService.storeDao.applyDailyBonusSnapshot(
+            lastClaimUtcMs: lastClaimUtcMs,
+            lastClaimTzOffsetMinutes: lastClaimTzOffsetMinutes,
+            currentStreak: currentStreak,
+            totalClaims: currentStreak,
+            weeklyClaimsJson: json.encode(weeklyClaimsJson),
+          );
+          AppLogger.info(
+            'Migrated legacy daily-bonus prefs into Drift '
+            '(streak=$currentStreak, lastClaimUtcMs=$lastClaimUtcMs)',
+          );
+        }
+      }
+
+      // Always clear the legacy keys after the migration attempt so the
+      // next launch doesn't try to migrate again (idempotent + small).
+      await prefs.remove(_legacyDailyBonusesKey);
+      await prefs.remove(_legacyLastBonusClaimDateKey);
+    } catch (e) {
+      AppLogger.error('Daily-bonus legacy prefs migration failed', e);
+    }
   }
 
   Future<void> _saveDailyCapData() async {
@@ -676,47 +820,66 @@ class CoinsCubit extends Cubit<CoinsState> {
     emit(state.copyWith(balance: newBalance));
   }
 
-  /// Collect daily login bonus
+  /// Collect today's daily login bonus.
+  ///
+  /// Flow:
+  ///   1. Call [StoreDao.claimDailyBonusToday] — the gate + atomic
+  ///      Drift write + outbox enqueue, all in one transaction. This
+  ///      is the only place the daily-bonus row is mutated.
+  ///   2. If already claimed today, return false. The watch stream
+  ///      doesn't emit (no row change) so the UI doesn't churn.
+  ///   3. Otherwise, look up the reward for the new currentDay from
+  ///      the local economy table and grant it via [earnCoins] — which
+  ///      itself writes Drift + enqueues the coin_balance sync outbox.
   Future<bool> collectDailyBonus() async {
     try {
-      final bonus = state.availableDailyBonus;
-      if (bonus == null) {
-        AppLogger.warning('No daily bonus available to collect');
+      final storageService = StorageService();
+      if (!storageService.isInitialized) {
+        AppLogger.warning(
+          'Storage not initialized; cannot claim daily bonus yet',
+        );
         return false;
       }
 
-      final success = await earnCoins(
-        CoinEarningSource.dailyLogin,
-        customAmount: bonus.coins,
-        itemName: 'Day ${bonus.day} Bonus',
-        metadata: {'day': bonus.day, 'bonus_item': bonus.bonusItem},
-      );
+      final outcome = await storageService.storeDao.claimDailyBonusToday();
 
-      if (success) {
-        final updatedBonus = bonus.copyWith(
-          isCollected: true,
-          collectedAt: DateTime.now(),
-        );
-
-        final updatedBonuses = state.dailyBonuses.map((b) {
-          return b.day == bonus.day ? updatedBonus : b;
-        }).toList();
-
-        emit(state.copyWith(dailyBonuses: updatedBonuses));
-        await _saveDailyBonuses();
-
-        await _prefs?.setString(
-          _lastBonusClaimDateKey,
-          DateTime.now().toIso8601String().substring(0, 10),
-        );
-
-        AppLogger.info(
-          'Collected daily bonus: Day ${bonus.day} - ${bonus.coins} coins',
-        );
-        return true;
+      switch (outcome) {
+        case DailyBonusAlreadyClaimedToday _:
+          AppLogger.info('Daily bonus already claimed today (Drift gate)');
+          return false;
+        case DailyBonusClaimed claimed:
+          final templates = DailyLoginBonus.getWeeklyBonuses();
+          final idx = claimed.currentDay - 1;
+          if (idx < 0 || idx >= templates.length) {
+            AppLogger.warning(
+              'Daily bonus claim landed on out-of-range day '
+              '${claimed.currentDay}; skipping coin grant',
+            );
+            return true;
+          }
+          final reward = templates[idx];
+          final granted = await earnCoins(
+            CoinEarningSource.dailyLogin,
+            customAmount: reward.coins,
+            itemName: 'Day ${reward.day} Bonus',
+            metadata: {
+              'day': reward.day,
+              'bonus_item': reward.bonusItem,
+              'streak': claimed.newStreak,
+            },
+          );
+          if (!granted) {
+            AppLogger.warning(
+              'Daily bonus row updated but coin grant failed for day '
+              '${reward.day}',
+            );
+          }
+          AppLogger.info(
+            'Collected daily bonus: day=${reward.day} '
+            '(streak=${claimed.newStreak}) → ${reward.coins} coins',
+          );
+          return true;
       }
-
-      return false;
     } catch (e) {
       AppLogger.error('Error collecting daily bonus', e);
       return false;
@@ -759,11 +922,19 @@ class CoinsCubit extends Cubit<CoinsState> {
     return spending;
   }
 
-  /// Reset daily bonuses for a new week
+  /// Reset daily bonuses for a new week. Now a Drift-side operation —
+  /// clears the singleton row so the next claim seeds a fresh cycle.
   Future<void> resetDailyBonuses() async {
     try {
-      emit(state.copyWith(dailyBonuses: DailyLoginBonus.getWeeklyBonuses()));
-      await _saveDailyBonuses();
+      final storageService = StorageService();
+      if (!storageService.isInitialized) return;
+      await storageService.storeDao.applyDailyBonusSnapshot(
+        lastClaimUtcMs: null,
+        lastClaimTzOffsetMinutes: null,
+        currentStreak: 0,
+        totalClaims: 0,
+        weeklyClaimsJson: '{}',
+      );
       AppLogger.info('Daily bonuses reset for new week');
     } catch (e) {
       AppLogger.error('Error resetting daily bonuses', e);
@@ -796,13 +967,11 @@ class CoinsCubit extends Cubit<CoinsState> {
     }
   }
 
-  /// Whether the daily bonus was already claimed today (calendar day)
-  bool get wasDailyBonusClaimedToday {
-    final lastClaim = _prefs?.getString(_lastBonusClaimDateKey);
-    if (lastClaim == null) return false;
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-    return lastClaim == today;
-  }
+  /// Whether the daily bonus was already claimed today, in the user's
+  /// local-tz day. Delegates to [CoinsState.wasDailyBonusClaimedToday]
+  /// which reads the Drift-backed `lastClaimUtcMs` / `tzOffsetMinutes`
+  /// fields. Pure read — no prefs, no side effects.
+  bool get wasDailyBonusClaimedToday => state.wasDailyBonusClaimedToday;
 
   /// Check if user can afford a purchase
   bool canAfford(int amount) => state.balance.total >= amount;
@@ -819,6 +988,7 @@ class CoinsCubit extends Cubit<CoinsState> {
   Future<void> close() async {
     await _coinsRowWatch?.cancel();
     await _transactionsWatch?.cancel();
+    await _dailyBonusWatch?.cancel();
     return super.close();
   }
 }

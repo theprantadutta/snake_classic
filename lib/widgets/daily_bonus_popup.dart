@@ -117,10 +117,14 @@ class DailyBonusPopup extends StatefulWidget {
           status: status,
           isLoading: false, // Never show loading - instant feedback
           onClaim: () async {
-            // Close popup immediately for instant feedback
-            dialogContext.pop();
-            // Call the claim handler (handles coins + background sync)
+            // Await the claim BEFORE dismissing the dialog so the
+            // Drift write + sync-outbox enqueue lands before
+            // showDialog resolves. Previously the popup closed first
+            // and the claim ran in the background — a fast remount of
+            // home in that window could re-trigger the popup because
+            // the Drift gate hadn't been flipped yet.
             await onClaim();
+            if (dialogContext.mounted) dialogContext.pop();
           },
           onClose: () => dialogContext.pop(),
         );

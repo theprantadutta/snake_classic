@@ -487,6 +487,16 @@ class ApiService {
   ) =>
       _postSync('weekly-quests', {'items': items});
 
+  /// Push the per-user daily-bonus snapshot to the backend's absorbing-
+  /// merge handler at `/sync/daily-bonus`. Payload includes:
+  ///   `last_claim_utc` (ISO instant, nullable),
+  ///   `last_claim_tz_offset_minutes` (int, nullable),
+  ///   `current_streak`, `total_claims`,
+  ///   `weekly_claims` (map),
+  ///   `updated_at`.
+  Future<SyncOutcome> syncDailyBonusClaim(Map<String, dynamic> payload) =>
+      _postSync('daily-bonus', payload);
+
   // ==================== Weekly Quests ====================
 
   /// Fetch the current week's quests with the user's progress.

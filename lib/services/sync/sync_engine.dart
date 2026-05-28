@@ -809,6 +809,38 @@ class SyncEngine {
           if (wqRows.isEmpty) return _DispatchResult.success;
           return _mapOutcome(await _api.syncWeeklyQuestClaims(wqRows));
 
+        case SyncDataType.dailyBonusClaim:
+          // Singleton snapshot: read the current Drift row and send it
+          // to the backend's absorbing-merge handler. Outbox payload is
+          // ignored; the latest row state is authoritative.
+          return _dispatchSnapshot(
+            read: () async {
+              final row = await _storeDao!.getDailyBonusRow();
+              if (row == null) return null;
+              Map<String, dynamic> weekly;
+              try {
+                weekly =
+                    jsonDecode(row.weeklyClaimsJson) as Map<String, dynamic>;
+              } catch (_) {
+                weekly = const <String, dynamic>{};
+              }
+              return {
+                'last_claim_utc': row.lastClaimUtcMs == null
+                    ? null
+                    : DateTime.fromMillisecondsSinceEpoch(
+                        row.lastClaimUtcMs!,
+                        isUtc: true,
+                      ).toIso8601String(),
+                'last_claim_tz_offset_minutes': row.lastClaimTzOffsetMinutes,
+                'current_streak': row.currentStreak,
+                'total_claims': row.totalClaims,
+                'weekly_claims': weekly,
+                'updated_at': _utcIso(row.updatedAt),
+              };
+            },
+            send: _api.syncDailyBonusClaim,
+          );
+
         default:
           // Unknown outbox type — likely a new SyncDataType constant
           // wasn't wired into this switch. Treat as permanent failure
@@ -888,6 +920,7 @@ class SyncEngine {
       case SyncDataType.battlePass:
       case SyncDataType.dailyChallengeClaim:
       case SyncDataType.weeklyQuestClaim:
+      case SyncDataType.dailyBonusClaim:
         return true;
       default:
         return false;
@@ -1184,12 +1217,14 @@ class SyncEngine {
 
       // ----- achievements -----
       // Backend doesn't echo name/description because the catalog is
-      // client-seeded. If a local row already exists (post-seed) we leave
-      // name/description as Value.absent() to preserve them. If the row
-      // doesn't exist yet (reinstall — snapshot apply can race the
-      // AchievementService seed running in parallel on the loading
-      // screen), we look up the metadata from the local default
-      // catalog so the insert satisfies the not-null columns.
+      // client-seeded. Drift's `insertOnConflictUpdate` validates the
+      // companion as an INSERT even when the row exists, so EVERY
+      // not-null-no-default column has to be present — leaving
+      // name/description/category as `Value.absent()` for the "row
+      // already exists" path throws InvalidDataException. Always
+      // populate them: prefer the existing Drift row (which has
+      // already been seeded), fall back to the local default catalog
+      // for ids not yet seeded.
       final achievements = snapshot['achievements'];
       if (achievements is List && achievements.isNotEmpty) {
         final defaultsById = {
@@ -1209,42 +1244,51 @@ class SyncEngine {
           final existing = existingById[id];
           final ach_model.Achievement? defaultEntry = defaultsById[id];
 
-          Value<String> nameValue = const Value.absent();
-          Value<String> descriptionValue = const Value.absent();
-          Value<String> categoryValue = const Value.absent();
-          Value<int> rewardCoinsValue = const Value.absent();
-          Value<String> iconNameValue = const Value.absent();
-          Value<bool> isSecretValue = const Value.absent();
+          String? name;
+          String? description;
+          String? category;
+          int? rewardCoins;
+          String? iconName;
+          bool? isSecret;
 
-          if (existing == null) {
-            // Row doesn't exist locally — fill required columns from the
-            // local default catalog. If a server-side achievement id has
-            // no local default (shouldn't happen but defend), skip it
-            // rather than crash the whole snapshot apply.
-            if (defaultEntry == null) {
-              AppLogger.network(
-                'SyncEngine: skipping unknown achievement "$id" — '
-                'no local default catalog entry',
-              );
-              continue;
-            }
-            nameValue = Value(defaultEntry.title);
-            descriptionValue = Value(defaultEntry.description);
-            categoryValue = Value(defaultEntry.type.name);
-            rewardCoinsValue = Value(defaultEntry.coinReward);
-            iconNameValue = Value(defaultEntry.icon.codePoint.toString());
-            isSecretValue = const Value(false);
+          if (existing != null) {
+            // Preserve the local catalog metadata. The synced payload
+            // only carries progress/unlock fields; everything else
+            // came from the client seed and should not be regenerated
+            // from defaults (the catalog can evolve between releases).
+            name = existing.name;
+            description = existing.description;
+            category = existing.category;
+            rewardCoins = existing.rewardCoins;
+            iconName = existing.iconName;
+            isSecret = existing.isSecret;
+          } else if (defaultEntry != null) {
+            name = defaultEntry.title;
+            description = defaultEntry.description;
+            category = defaultEntry.type.name;
+            rewardCoins = defaultEntry.coinReward;
+            iconName = defaultEntry.icon.codePoint.toString();
+            isSecret = false;
+          } else {
+            // Server-side id with no local row and no local default
+            // catalog entry. Shouldn't happen but defend — skip rather
+            // than crash the whole snapshot apply.
+            AppLogger.network(
+              'SyncEngine: skipping unknown achievement "$id" — '
+              'no local default catalog entry',
+            );
+            continue;
           }
 
           await _gameDao!.upsertAchievement(
             AchievementsCompanion(
               id: Value(id),
-              name: nameValue,
-              description: descriptionValue,
-              category: categoryValue,
-              rewardCoins: rewardCoinsValue,
-              iconName: iconNameValue,
-              isSecret: isSecretValue,
+              name: Value(name),
+              description: Value(description),
+              category: Value(category),
+              rewardCoins: Value(rewardCoins),
+              iconName: Value(iconName),
+              isSecret: Value(isSecret),
               currentProgress: Value(raw['current_progress'] as int? ?? 0),
               targetProgress: Value(raw['target_progress'] as int? ?? 1),
               isUnlocked: Value(raw['is_unlocked'] as bool? ?? false),
@@ -1359,11 +1403,83 @@ class SyncEngine {
           );
         }
       }
+
+      // ----- daily login bonus (singleton) -----
+      //
+      // Compare server's user-local day against any existing local row
+      // and adopt whichever is at-or-newer. If local is ahead, we
+      // re-enqueue an outbox row so the next drain ships our value up.
+      final dailyBonus = snapshot['daily_bonus'];
+      if (dailyBonus is Map<String, dynamic>) {
+        final lastClaimUtcStr = dailyBonus['last_claim_utc'] as String?;
+        final lastClaimTzMin =
+            dailyBonus['last_claim_tz_offset_minutes'] as int?;
+        final currentStreak = dailyBonus['current_streak'] as int? ?? 0;
+        final totalClaims = dailyBonus['total_claims'] as int? ?? 0;
+        final weeklyMap = dailyBonus['weekly_claims'];
+        final weeklyJson = weeklyMap is Map
+            ? jsonEncode(weeklyMap)
+            : '{}';
+
+        final cloudLastUtcMs = lastClaimUtcStr == null
+            ? null
+            : DateTime.parse(lastClaimUtcStr).millisecondsSinceEpoch;
+
+        final localRow = await _storeDao!.getDailyBonusRow();
+
+        // Compare in user-local days using each side's own tz snapshot.
+        String? cloudLocalDay;
+        if (cloudLastUtcMs != null) {
+          cloudLocalDay = _userLocalDay(
+            DateTime.fromMillisecondsSinceEpoch(cloudLastUtcMs, isUtc: true),
+            lastClaimTzMin ?? 0,
+          );
+        }
+        String? localLocalDay;
+        if (localRow?.lastClaimUtcMs != null) {
+          localLocalDay = _userLocalDay(
+            DateTime.fromMillisecondsSinceEpoch(
+                localRow!.lastClaimUtcMs!, isUtc: true),
+            localRow.lastClaimTzOffsetMinutes ?? 0,
+          );
+        }
+
+        final adoptCloud = localLocalDay == null ||
+            (cloudLocalDay != null && cloudLocalDay.compareTo(localLocalDay) >= 0);
+
+        if (adoptCloud) {
+          await _storeDao!.applyDailyBonusSnapshot(
+            lastClaimUtcMs: cloudLastUtcMs,
+            lastClaimTzOffsetMinutes: lastClaimTzMin,
+            currentStreak: currentStreak,
+            totalClaims: totalClaims,
+            weeklyClaimsJson: weeklyJson,
+          );
+        } else {
+          AppLogger.network(
+            'SyncEngine: daily-bonus restore — local ($localLocalDay) '
+            'ahead of cloud ($cloudLocalDay); keeping local and '
+            're-enqueueing for push',
+          );
+          await _db!.enqueueSyncOutbox(
+            dataType: SyncDataType.dailyBonusClaim,
+            entityKey: 'daily_bonus_claim:1',
+          );
+        }
+      }
     });
 
     if (kDebugMode) {
       AppLogger.network('SyncEngine: snapshot apply committed');
     }
+  }
+
+  /// Shared math contract — mirrors StoreDao + CoinsState + the backend
+  /// handler so client and server agree on which calendar day a UTC
+  /// instant belongs to.
+  static String _userLocalDay(DateTime utc, int tzOffsetMinutes) {
+    final local = utc.add(Duration(minutes: tzOffsetMinutes));
+    return local.toIso8601String().substring(0, 10);
   }
 
   /// Stable identity for a coin-transaction row that doesn't depend

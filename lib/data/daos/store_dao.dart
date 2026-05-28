@@ -9,7 +9,7 @@ part 'store_dao.g.dart';
 const _uuid = Uuid();
 
 @DriftAccessor(
-    tables: [Coins, CoinTransactions, PremiumStatus, UnlockedItems, BattlePasses, PurchaseHistory])
+    tables: [Coins, CoinTransactions, PremiumStatus, UnlockedItems, BattlePasses, PurchaseHistory, DailyBonusState])
 class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   StoreDao(super.db);
 
@@ -503,6 +503,13 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   Future<BattlePassesData?> getCurrentBattlePass() =>
       (select(battlePasses)..limit(1)).getSingleOrNull();
 
+  /// Watch the current battle pass row regardless of seasonId. Used by
+  /// BattlePassCubit to react to writes (snapshot apply, sync restore)
+  /// without knowing the active season id up front. When the table is
+  /// empty (fresh install pre-restore) emits null.
+  Stream<BattlePassesData?> watchCurrentBattlePass() =>
+      (select(battlePasses)..limit(1)).watchSingleOrNull();
+
   /// Save battle pass data. [enqueueSync] defaults true.
   Future<void> saveBattlePass(
     BattlePassesCompanion pass, {
@@ -688,4 +695,193 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
       receiptData: Value(data['receiptData']),
     ));
   }
+
+  // ==================== Daily Login Bonus ====================
+
+  /// Watch the singleton daily_bonus_state row. CoinsCubit subscribes to
+  /// this stream so the popup gate stays in lock-step with Drift writes
+  /// (claim-today on this device, or a cold-start sync pull from
+  /// another device).
+  Stream<DailyBonusStateData?> watchDailyBonusRow() =>
+      (select(dailyBonusState)..where((t) => t.id.equals(1)))
+          .watchSingleOrNull();
+
+  /// Read the daily_bonus_state row. Used by the SyncEngine to read
+  /// the latest snapshot at drain time and by CoinsCubit's seed path.
+  Future<DailyBonusStateData?> getDailyBonusRow() =>
+      (select(dailyBonusState)..where((t) => t.id.equals(1)))
+          .getSingleOrNull();
+
+  /// Apply a server snapshot to the local daily_bonus_state row. Used
+  /// by SyncEngine on cold-start pull so a multi-device user's other
+  /// devices see the canonical claim state before the home screen
+  /// renders. Skips the outbox enqueue — the value came FROM the
+  /// server, no need to push it back.
+  Future<void> applyDailyBonusSnapshot({
+    required int? lastClaimUtcMs,
+    required int? lastClaimTzOffsetMinutes,
+    required int currentStreak,
+    required int totalClaims,
+    required String weeklyClaimsJson,
+  }) async {
+    final now = DateTime.now();
+    final existing = await getDailyBonusRow();
+    if (existing == null) {
+      await into(dailyBonusState).insert(DailyBonusStateCompanion.insert(
+        lastClaimUtcMs: Value(lastClaimUtcMs),
+        lastClaimTzOffsetMinutes: Value(lastClaimTzOffsetMinutes),
+        currentStreak: Value(currentStreak),
+        totalClaims: Value(totalClaims),
+        weeklyClaimsJson: Value(weeklyClaimsJson),
+        updatedAt: Value(now),
+      ));
+    } else {
+      await (update(dailyBonusState)..where((t) => t.id.equals(1)))
+          .write(DailyBonusStateCompanion(
+        lastClaimUtcMs: Value(lastClaimUtcMs),
+        lastClaimTzOffsetMinutes: Value(lastClaimTzOffsetMinutes),
+        currentStreak: Value(currentStreak),
+        totalClaims: Value(totalClaims),
+        weeklyClaimsJson: Value(weeklyClaimsJson),
+        updatedAt: Value(now),
+      ));
+    }
+  }
+
+  /// Attempt to claim today's daily login bonus. Returns a result that
+  /// the caller (CoinsCubit) maps to the reward grant + UI dismissal.
+  ///
+  /// All math is in the user's local-tz day:
+  ///   userLocalDay(utc, tzMin) = (utc + tzMin minutes).date
+  ///
+  /// The tz offset at claim time is snapshotted into the row so a
+  /// future cold-start can replay the same boundary even if the
+  /// device's tz has changed since.
+  Future<DailyBonusClaimOutcome> claimDailyBonusToday() async {
+    final nowUtc = DateTime.now().toUtc();
+    final tzOffsetMin = DateTime.now().timeZoneOffset.inMinutes;
+
+    DailyBonusClaimOutcome? outcome;
+    await transaction(() async {
+      final row = await (select(dailyBonusState)..where((t) => t.id.equals(1)))
+          .getSingleOrNull();
+
+      final todayLocal = _userLocalDay(nowUtc, tzOffsetMin);
+
+      String? lastLocal;
+      if (row?.lastClaimUtcMs != null) {
+        final lastUtc = DateTime.fromMillisecondsSinceEpoch(
+          row!.lastClaimUtcMs!,
+          isUtc: true,
+        );
+        lastLocal = _userLocalDay(lastUtc, row.lastClaimTzOffsetMinutes ?? 0);
+      }
+
+      if (lastLocal == todayLocal) {
+        outcome = const DailyBonusClaimOutcome.alreadyClaimedToday();
+        return;
+      }
+
+      final yesterdayLocal = _addDaysToIsoDate(todayLocal, -1);
+      final isStreakContinuation = lastLocal == yesterdayLocal;
+      final newStreak = isStreakContinuation ? (row?.currentStreak ?? 0) + 1 : 1;
+      final currentDay = ((newStreak - 1) % 7) + 1;
+
+      // Update the weekly-claims map. If the new streak landed on day 1
+      // (start of a fresh cycle — either a streak reset OR a cycle wrap),
+      // start over with a clean map. Otherwise carry forward the existing
+      // entries and add today's.
+      final priorMap = row?.weeklyClaimsJson == null
+          ? <String, dynamic>{}
+          : (json.decode(row!.weeklyClaimsJson) as Map<String, dynamic>);
+      final Map<String, dynamic> newMap =
+          currentDay == 1 ? <String, dynamic>{} : Map.of(priorMap);
+      newMap[currentDay.toString()] = nowUtc.toIso8601String();
+      final newMapJson = json.encode(newMap);
+
+      final nowEpochMs = nowUtc.millisecondsSinceEpoch;
+      final newTotalClaims = (row?.totalClaims ?? 0) + 1;
+      final now = DateTime.now();
+
+      if (row == null) {
+        await into(dailyBonusState).insert(DailyBonusStateCompanion.insert(
+          lastClaimUtcMs: Value(nowEpochMs),
+          lastClaimTzOffsetMinutes: Value(tzOffsetMin),
+          currentStreak: Value(newStreak),
+          totalClaims: Value(newTotalClaims),
+          weeklyClaimsJson: Value(newMapJson),
+          updatedAt: Value(now),
+        ));
+      } else {
+        await (update(dailyBonusState)..where((t) => t.id.equals(1)))
+            .write(DailyBonusStateCompanion(
+          lastClaimUtcMs: Value(nowEpochMs),
+          lastClaimTzOffsetMinutes: Value(tzOffsetMin),
+          currentStreak: Value(newStreak),
+          totalClaims: Value(newTotalClaims),
+          weeklyClaimsJson: Value(newMapJson),
+          updatedAt: Value(now),
+        ));
+      }
+
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.dailyBonusClaim,
+        entityKey: 'daily_bonus_claim:1',
+      );
+
+      outcome = DailyBonusClaimOutcome.claimed(
+        currentDay: currentDay,
+        newStreak: newStreak,
+        claimedAtUtc: nowUtc,
+      );
+    });
+
+    return outcome ?? const DailyBonusClaimOutcome.alreadyClaimedToday();
+  }
+
+  /// Shared math contract — kept identical to the server's
+  /// SyncDailyBonusCommandHandler.UserLocalDay().
+  static String _userLocalDay(DateTime utc, int tzOffsetMinutes) {
+    final local = utc.add(Duration(minutes: tzOffsetMinutes));
+    return local.toIso8601String().substring(0, 10);
+  }
+
+  /// Add/subtract a calendar day from a YYYY-MM-DD string. Used to
+  /// derive yesterday's local date without round-tripping through a
+  /// DateTime — keeps the math purely string-anchored to the same day
+  /// the gate compares.
+  static String _addDaysToIsoDate(String isoDate, int days) {
+    final dt = DateTime.parse(isoDate);
+    return dt.add(Duration(days: days)).toIso8601String().substring(0, 10);
+  }
+}
+
+/// Result of [StoreDao.claimDailyBonusToday]. Either the row was bumped
+/// and an outbox entry was enqueued, or today's claim was already in
+/// the row and we no-op'd.
+sealed class DailyBonusClaimOutcome {
+  const DailyBonusClaimOutcome();
+
+  const factory DailyBonusClaimOutcome.alreadyClaimedToday() =
+      DailyBonusAlreadyClaimedToday;
+  const factory DailyBonusClaimOutcome.claimed({
+    required int currentDay,
+    required int newStreak,
+    required DateTime claimedAtUtc,
+  }) = DailyBonusClaimed;
+}
+
+class DailyBonusAlreadyClaimedToday extends DailyBonusClaimOutcome {
+  const DailyBonusAlreadyClaimedToday();
+}
+
+class DailyBonusClaimed extends DailyBonusClaimOutcome {
+  final int currentDay;
+  final int newStreak;
+  final DateTime claimedAtUtc;
+  const DailyBonusClaimed({
+    required this.currentDay,
+    required this.newStreak,
+    required this.claimedAtUtc,
+  });
 }

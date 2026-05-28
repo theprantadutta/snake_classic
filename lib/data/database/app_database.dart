@@ -33,6 +33,7 @@ class SyncDataType {
   static const String battlePass = 'battle_pass';
   static const String dailyChallengeClaim = 'daily_challenge_claim';
   static const String weeklyQuestClaim = 'weekly_quest_claim';
+  static const String dailyBonusClaim = 'daily_bonus_claim';
 }
 
 // =====================================================
@@ -343,6 +344,39 @@ class WeeklyQuests extends Table {
 }
 
 // =====================================================
+// TABLE 8c: Daily Login Bonus state (singleton)
+// =====================================================
+//
+// Drift-first source of truth for the daily login bonus popup gate.
+// One row per device (id = 1). The SyncEngine pushes this snapshot to
+// the backend's existing DailyLoginBonus table via the new
+// /sync/daily-bonus endpoint, and pulls it back on cold start.
+//
+// Why we snapshot the tz offset at claim time: "today" is computed as
+// `(lastClaimUtc + tzOffsetMinutes).date`, so we can replay the user-
+// local day boundary even if the device's timezone changes later.
+class DailyBonusState extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  // UTC moment the most recent claim happened, ms since epoch. Null
+  // means "never claimed."
+  IntColumn get lastClaimUtcMs => integer().nullable()();
+  // The user's tz offset (in minutes east of UTC) at claim time. Used
+  // together with [lastClaimUtcMs] to derive the user-local day.
+  IntColumn get lastClaimTzOffsetMinutes => integer().nullable()();
+  IntColumn get currentStreak => integer().withDefault(const Constant(0))();
+  IntColumn get totalClaims => integer().withDefault(const Constant(0))();
+  // JSON map { "1": "<utcIso>", "2": "<utcIso>", ... } tracking which
+  // days of the current 7-day cycle have been claimed. Resets on a
+  // streak break or cycle wrap (newStreak < oldStreak or newStreak %
+  // 7 == 1).
+  TextColumn get weeklyClaimsJson =>
+      text().withDefault(const Constant('{}'))();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+// =====================================================
 // TABLE 9: Replays
 // =====================================================
 class Replays extends Table {
@@ -605,6 +639,7 @@ class PurchaseHistory extends Table {
     BattlePasses,
     DailyChallenges,
     WeeklyQuests,
+    DailyBonusState,
     Replays,
     SyncQueue,
     CacheStore,
@@ -633,7 +668,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -739,6 +774,13 @@ class AppDatabase extends _$AppDatabase {
           'CREATE UNIQUE INDEX IF NOT EXISTS idx_weekly_quests_quest_id '
           'ON weekly_quests(quest_id)',
         );
+      }
+      if (from < 9) {
+        // v9: daily bonus state singleton. Drift-first replacement for
+        // the legacy SharedPreferences-only gate ('last_daily_bonus_claim_date',
+        // 'daily_bonuses'). SyncEngine pushes the snapshot to the
+        // backend's DailyLoginBonus table.
+        await m.createTable(dailyBonusState);
       }
     },
   );
