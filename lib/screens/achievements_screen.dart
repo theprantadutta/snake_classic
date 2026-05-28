@@ -109,81 +109,81 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   }
 
   Widget _buildProgressSummary(GameTheme theme) {
-    final totalAchievements = _achievementService.achievements.length;
-    final unlockedAchievements = _achievementService
-        .getUnlockedAchievements()
-        .length;
+    // Stat counts use the same logic as the dashboard's AchievementsGrid:
+    // - Total: every row in the catalog
+    // - Unlocked: isUnlocked = true
+    // - Claimed: rewardClaimed = true
+    // - Pending: isUnlocked = false (locked, regardless of progress)
+    final all = _achievementService.achievements;
+    final total = all.length;
+    final unlocked = all.where((a) => a.isUnlocked).length;
+    final claimed = all.where((a) => a.rewardClaimed).length;
+    final pending = all.where((a) => !a.isUnlocked).length;
     final completionPercentage = _achievementService.completionPercentage;
-    final totalPoints = _achievementService.totalAchievementPoints;
+    final claimedOfUnlocked =
+        unlocked > 0 ? ((claimed / unlocked) * 100).round() : 0;
+    final completionPct = (completionPercentage * 100).round();
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.primaryColor.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.3)),
+        color: theme.primaryColor.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.primaryColor.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         children: [
+          // 4-tile grid — same labels and counting logic as the dashboard
+          // AchievementsGrid header so the operator and the player see the
+          // same numbers when troubleshooting.
           Row(
             children: [
-              Icon(Icons.emoji_events, color: Colors.amber, size: 32),
-              const SizedBox(width: 12),
-
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Achievement Progress',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      '$unlockedAchievements / $totalAchievements unlocked',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
+                child: _StatTile(
+                  label: 'TOTAL',
+                  value: '$total',
+                  accent: Colors.white70,
                 ),
               ),
-
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${(completionPercentage * 100).round()}%',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: theme.accentColor,
-                    ),
-                  ),
-                  Text(
-                    '$totalPoints pts',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatTile(
+                  label: 'UNLOCKED',
+                  value: '$unlocked',
+                  accent: Colors.amber,
+                  hint: '$completionPct% complete',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatTile(
+                  label: 'CLAIMED',
+                  value: '$claimed',
+                  accent: Colors.green,
+                  hint:
+                      unlocked > 0 ? '$claimedOfUnlocked% of unlocked' : null,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatTile(
+                  label: 'PENDING',
+                  value: '$pending',
+                  accent: Colors.white70,
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 14),
 
-          const SizedBox(height: 15),
-
-          // Progress Bar
+          // Completion bar — gradient matches the dashboard's emerald→cyan.
           Container(
             height: 8,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4),
             ),
             child: FractionallySizedBox(
@@ -489,5 +489,72 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     } else {
       return 'just now';
     }
+  }
+}
+
+/// Compact stat tile used by the Achievements header grid. Mirrors the
+/// dashboard's StatTile primitive so a Total/Unlocked/Claimed/Pending
+/// row reads identically in both surfaces.
+class _StatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color accent;
+  final String? hint;
+
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.accent,
+    this.hint,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: accent.withValues(alpha: 0.30)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: accent,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
+          ),
+          if (hint != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              hint!,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.55),
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
