@@ -71,6 +71,32 @@ class AchievementService extends ChangeNotifier {
 
   Future<void> initialize() async {
     _achievements = Achievement.getDefaultAchievements();
+    // Ensure the Drift achievements catalog has a row for every default
+    // slug before any unlock fires _saveProgress. Without this seed,
+    // GameDao.loadAchievementsFromJson's Map branch silently skips
+    // entries whose id isn't already in Drift, which means the
+    // sync_outbox never sees the unlock, which means the backend
+    // /sync/achievements endpoint is never called, which means the
+    // dashboard's Achievements tab stays empty. Idempotent.
+    try {
+      await _storageService.seedAchievementCatalog(
+        _achievements
+            .map((a) => (
+                  id: a.id,
+                  title: a.title,
+                  description: a.description,
+                  category: a.type.name,
+                  targetValue: a.targetValue,
+                  coinReward: a.coinReward,
+                  iconCodePoint: a.icon.codePoint,
+                ))
+            .toList(growable: false),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Achievement catalog seed failed: $e');
+      }
+    }
     await _loadUserProgress();
     notifyListeners();
   }

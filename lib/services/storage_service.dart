@@ -211,6 +211,42 @@ class StorageService {
     );
   }
 
+  /// Seed the Drift achievements catalog from the client's default
+  /// definitions. Idempotent (insert-or-ignore on the id primary key) so
+  /// it's safe to call on every cold start. Without this seed a fresh
+  /// install's `achievements` table starts empty, and the Map-format
+  /// branch of [GameDao.loadAchievementsFromJson] silently skips every
+  /// row (existing == null guard), so [_saveProgress] in AchievementService
+  /// never enqueues a sync_outbox row — which is why a freshly-installed
+  /// user's achievements never reached the dashboard.
+  Future<void> seedAchievementCatalog(
+    List<({
+      String id,
+      String title,
+      String description,
+      String category,
+      int targetValue,
+      int coinReward,
+      int iconCodePoint,
+    })> defaults,
+  ) async {
+    if (_gameDao == null) return;
+    final companions = defaults.map((d) => AchievementsCompanion(
+          id: Value(d.id),
+          name: Value(d.title),
+          description: Value(d.description),
+          category: Value(d.category),
+          currentProgress: const Value(0),
+          targetProgress: Value(d.targetValue),
+          isUnlocked: const Value(false),
+          rewardCoins: Value(d.coinReward),
+          rewardClaimed: const Value(false),
+          iconName: Value(d.iconCodePoint.toString()),
+          isSecret: const Value(false),
+        ));
+    await _gameDao!.seedDefaultAchievementsIfMissing(companions);
+  }
+
   // ==================== Replays ====================
 
   Future<void> saveReplay(String replayId, String replayJson) async {

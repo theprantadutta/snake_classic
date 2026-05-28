@@ -22,7 +22,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
-import 'package:snake_classic/widgets/achievement_notification.dart';
+import 'package:snake_classic/widgets/achievement_reveal_overlay.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/particle_effect.dart';
@@ -109,24 +109,25 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     }
   }
 
-  // Deduplicates _showUnlockToasts across reloads — the achievement service
-  // can fire a second time after the post-game sync confirms server-side
-  // unlocks, and we don't want the same toast queue twice.
-  final Set<String> _toastedIds = <String>{};
+  // Deduplicates reveals across reloads — the achievement service can
+  // fire a second time after the post-game sync confirms server-side
+  // unlocks, and we don't want the same reveal queue twice. The overlay
+  // itself also de-dupes against its in-flight queue, but tracking here
+  // keeps the wait time before the first reveal predictable.
+  final Set<String> _revealedIds = <String>{};
 
   void _showUnlockToasts(List<Achievement> unlocks) {
-    final fresh = unlocks.where((a) => !_toastedIds.contains(a.id)).toList();
+    final fresh =
+        unlocks.where((a) => !_revealedIds.contains(a.id)).toList();
     if (fresh.isEmpty) return;
-    _toastedIds.addAll(fresh.map((a) => a.id));
-    const initialDelay = Duration(milliseconds: 1200);
-    const staggerStep = Duration(milliseconds: 600);
-    for (int i = 0; i < fresh.length; i++) {
-      final achievement = fresh[i];
-      Future.delayed(initialDelay + staggerStep * i, () {
-        if (!mounted) return;
-        AchievementNotification.show(context, achievement);
-      });
-    }
+    _revealedIds.addAll(fresh.map((a) => a.id));
+    // Wait until the game-over hero + score have landed before stealing
+    // the screen — the trophy reveal should feel like the climax, not a
+    // pop-up obscuring the result.
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (!mounted) return;
+      AchievementRevealOverlay.show(context, fresh);
+    });
   }
 
   Future<void> _claimReward(DailyChallenge challenge) async {

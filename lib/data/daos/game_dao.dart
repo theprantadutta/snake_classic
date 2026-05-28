@@ -247,6 +247,25 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
     return achievement.rewardCoins;
   }
 
+  /// Seed the Drift achievements catalog from the client's default
+  /// definitions. Insert-or-ignore semantics: rows that already exist
+  /// (with whatever progress / unlocked state the user has accumulated)
+  /// are left untouched; only missing slugs get created. Never enqueues
+  /// a sync — these are catalog rows the server already owns. Called
+  /// once at startup from `AchievementService.initialize`; without it
+  /// `loadAchievementsFromJson`'s Map branch silently skips every entry
+  /// because `getAchievementById` returns null on a fresh install, which
+  /// is the bug class that left achievements unsynced to the dashboard.
+  Future<void> seedDefaultAchievementsIfMissing(
+    Iterable<AchievementsCompanion> defaults,
+  ) async {
+    await batch((b) {
+      for (final companion in defaults) {
+        b.insert(achievements, companion, mode: InsertMode.insertOrIgnore);
+      }
+    });
+  }
+
   /// Insert or update achievement.
   ///
   /// [enqueueSync] defaults true; pass false when seeding the catalog
