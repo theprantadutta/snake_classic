@@ -36,6 +36,16 @@ class GameCubitState extends Equatable {
   /// Reset to 0 on each new game start; read by the game-over screen.
   final int coinsEarnedThisGame;
 
+  /// True while the post-crash "Continue / revive" offer is on screen (the
+  /// game has crashed but we're waiting on the player to revive or decline
+  /// before transitioning to game-over). Drives [ReviveOverlay].
+  final bool offeringRevive;
+
+  /// True while the Time-Attack "+30s / watch ad" offer is on screen (the
+  /// timer hit zero but the run is frozen awaiting the player's choice before
+  /// transitioning to game-over). Drives [TimeBonusOverlay].
+  final bool offeringTimeBonus;
+
   const GameCubitState({
     this.status = GamePlayStatus.initial,
     this.gameState,
@@ -47,6 +57,8 @@ class GameCubitState extends Equatable {
     this.lastAcceptedInputAt,
     this.lastAcceptedDirection,
     this.coinsEarnedThisGame = 0,
+    this.offeringRevive = false,
+    this.offeringTimeBonus = false,
   });
 
   /// Initial state
@@ -64,6 +76,8 @@ class GameCubitState extends Equatable {
     DateTime? lastAcceptedInputAt,
     Direction? lastAcceptedDirection,
     int? coinsEarnedThisGame,
+    bool? offeringRevive,
+    bool? offeringTimeBonus,
     bool clearTournament = false,
     bool clearPreviousGameState = false,
     bool clearRejectedInput = false,
@@ -92,6 +106,8 @@ class GameCubitState extends Equatable {
           ? null
           : (lastAcceptedDirection ?? this.lastAcceptedDirection),
       coinsEarnedThisGame: coinsEarnedThisGame ?? this.coinsEarnedThisGame,
+      offeringRevive: offeringRevive ?? this.offeringRevive,
+      offeringTimeBonus: offeringTimeBonus ?? this.offeringTimeBonus,
     );
   }
 
@@ -164,5 +180,7 @@ class GameCubitState extends Equatable {
     lastAcceptedInputAt,
     lastAcceptedDirection,
     coinsEarnedThisGame,
+    offeringRevive,
+    offeringTimeBonus,
   ];
 }

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,6 +21,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
@@ -46,6 +48,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
   final ProgressionService _progressionService = ProgressionService();
   final AudioService _audioService = AudioService();
   bool _levelUpShown = false;
+  bool _doubledCoins = false; // once-per-run "watch to double coins" guard
   List<Achievement> _recentAchievements = [];
   List<Achievement> _progressAchievements = [];
   bool _achievementsLoaded = false;
@@ -110,6 +113,71 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
       final theme = context.read<ThemeCubit>().state.currentTheme;
       LevelUpPopup.show(context: context, theme: theme, level: level);
     });
+  }
+
+  /// "Watch to double your coins" — rewarded ad, once per game-over screen.
+  /// Self-hides for Pro / when no coins were earned / after it's been used.
+  Widget _buildDoubleCoinsButton(GameTheme theme, int coins) {
+    if (coins <= 0 || _doubledCoins) return const SizedBox.shrink();
+    if (!getIt.isRegistered<AdService>() || !getIt<AdService>().adsEnabled) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: GestureDetector(
+        onTap: () async {
+          final ads = getIt<AdService>();
+          if (!ads.isRewardedReady) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No ad available right now, try again shortly'),
+                ),
+              );
+            }
+            return;
+          }
+          final coinsCubit = context.read<CoinsCubit>();
+          await ads.showRewarded(
+            onReward: () {
+              coinsCubit.earnCoins(
+                CoinEarningSource.watchedAd,
+                customAmount: coins,
+                itemName: 'Game coins 2x',
+                metadata: const {'doubled': true},
+              );
+              if (mounted) setState(() => _doubledCoins = true);
+            },
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [
+              Colors.amber.withValues(alpha: 0.20),
+              Colors.orange.withValues(alpha: 0.12),
+            ]),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.play_circle_fill, color: Colors.amber, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                'Watch to double your $coins coins',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _loadAchievements() async {
@@ -298,6 +366,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                 challenges.where((c) => c.canClaim).toList(growable: false);
 
             return Scaffold(
+              bottomNavigationBar: const SnakeBannerAd(),
               body: AppBackground(
                 theme: theme,
                 child: SafeArea(
@@ -374,6 +443,10 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                             .coinsEarnedThisGame,
                                         scoreController: _scoreController,
                                         compact: compact,
+                                      ),
+                                      _buildDoubleCoinsButton(
+                                        theme,
+                                        gameCubitState.coinsEarnedThisGame,
                                       ),
                                       if (claimable.isNotEmpty) ...[
                                         SizedBox(height: compact ? 10 : 14),
@@ -1492,9 +1565,12 @@ class _BottomActionBar extends StatelessWidget {
             child: GradientButton(
               width: double.infinity,
               height: compact ? 50 : 56,
-              onPressed: () {
-                final gameCubit = context.read<GameCubit>();
-                gameCubit.resetGame();
+              onPressed: () async {
+                // Frequency-capped + Pro/connectivity-gated inside AdService;
+                // a no-op when an ad shouldn't show.
+                await getIt<AdService>().maybeShowInterstitialOnGameOver();
+                if (!context.mounted) return;
+                context.read<GameCubit>().resetGame();
                 context.go(AppRoutes.game);
               },
               text: 'PLAY AGAIN',
@@ -1508,7 +1584,9 @@ class _BottomActionBar extends StatelessWidget {
             child: GradientButton(
               width: double.infinity,
               height: compact ? 50 : 56,
-              onPressed: () {
+              onPressed: () async {
+                await getIt<AdService>().maybeShowInterstitialOnGameOver();
+                if (!context.mounted) return;
                 context.read<GameCubit>().backToMenu();
                 context.go(AppRoutes.home);
               },

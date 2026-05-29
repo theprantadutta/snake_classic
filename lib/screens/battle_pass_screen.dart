@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
+import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -148,6 +152,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
             }
 
             return Scaffold(
+              bottomNavigationBar: const SnakeBannerAd(),
               body: AppBackground(
                 theme: theme,
                 child: SafeArea(
@@ -166,6 +171,27 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                           theme: theme,
                           state: bpState,
                           season: season,
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: RewardedActionButton(
+                            theme: theme,
+                            icon: Icons.bolt,
+                            label: 'Watch ad — +50 Battle Pass XP',
+                            capKey: AdService.capBattlePassXp,
+                            onWatch: () async {
+                              final bp = context.read<BattlePassCubit>();
+                              await getIt<AdService>().showRewardedCapped(
+                                capKey: AdService.capBattlePassXp,
+                                onReward: () {
+                                  bp.bufferXP(50, source: 'ad_boost');
+                                  bp.flushXP();
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ),
                       SliverToBoxAdapter(

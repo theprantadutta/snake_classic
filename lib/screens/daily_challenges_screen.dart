@@ -11,6 +11,8 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -86,6 +88,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
       HapticFeedback.heavyImpact();
       _audioService.playSound('coin_collect');
       if (mounted) {
+        // Offer a rewarded "2×" on the claimed total when an ad is available.
+        final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+        final canDouble = ads != null && ads.adsEnabled && ads.isRewardedReady;
+        final coins = context.read<CoinsCubit>();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -96,7 +102,21 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
               ],
             ),
             backgroundColor: Colors.green.shade700,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: canDouble ? 6 : 2),
+            action: canDouble
+                ? SnackBarAction(
+                    label: 'WATCH TO 2×',
+                    textColor: Colors.amber,
+                    onPressed: () => ads.showRewarded(
+                      onReward: () => coins.earnCoins(
+                        CoinEarningSource.dailyChallenge,
+                        customAmount: totalClaimed,
+                        itemName: 'Daily Challenges 2x',
+                        metadata: const {'doubled': true},
+                      ),
+                    ),
+                  )
+                : null,
           ),
         );
       }
@@ -123,6 +143,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     final allCompleted = challengesState.allCompleted;
 
     return Scaffold(
+      bottomNavigationBar: const SnakeBannerAd(),
       appBar: AppBar(
         title: const Text(
           'Daily Challenges',

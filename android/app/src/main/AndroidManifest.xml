@@ -58,6 +58,13 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
+
+        <!-- AdMob App ID (real — from admob_ad_list.md). The SDK reads this at
+             init; it must be the app id, not an ad unit id. Ad UNIT ids live in
+             lib/services/ads/ad_config.dart (test ids in debug). -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-9242904787767394~9115144122" />
             
         <!-- flutter_local_notifications ForegroundService block intentionally
              omitted — that's only used by showWithForegroundService() which

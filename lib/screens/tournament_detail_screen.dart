@@ -4,6 +4,8 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
@@ -160,6 +162,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         final theme = themeState.currentTheme;
 
         return Scaffold(
+          bottomNavigationBar: const SnakeBannerAd(),
           body: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -1399,6 +1402,24 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                 style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
               ),
             ),
+            // Free Bronze entry via rewarded ad (free users only, bronze tier
+            // only — never devalue the paid Silver/Gold entries).
+            if (tier == 'bronze' &&
+                getIt.isRegistered<AdService>() &&
+                getIt<AdService>().adsEnabled &&
+                getIt<AdService>().isRewardedReady)
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  getIt<AdService>().showRewarded(
+                    onReward: () => premiumCubit.addTournamentEntry('bronze'),
+                  );
+                },
+                icon: const Icon(Icons.play_circle_fill,
+                    color: Colors.amber, size: 18),
+                label: Text('Free entry (ad)',
+                    style: TextStyle(color: theme.accentColor)),
+              ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,

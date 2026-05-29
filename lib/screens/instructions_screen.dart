@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,7 @@ class InstructionsScreen extends StatelessWidget {
         final theme = state.currentTheme;
 
         return Scaffold(
+          bottomNavigationBar: const SnakeBannerAd(),
           extendBodyBehindAppBar: true,
           appBar: AppBar(
             title: Text(

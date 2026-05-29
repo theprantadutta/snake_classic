@@ -128,6 +128,11 @@ class PowerUpCubit extends Cubit<PowerUpState> {
     return coins.state.balance.total;
   }
 
+  /// Grant one free basic power-up (a Speed Boost) — used by the rewarded-ad
+  /// "watch for a free power-up" placement. Inventory is device-only
+  /// (SharedPreferences), so there's no sync row to enqueue.
+  Future<void> grantFreePowerUp() => _grantToInventory(const {'speed_boost': 1});
+
   /// Decrement one use of a power-up. Called by the pre-game
   /// activation flow at the moment the power-up activates in-game.
   /// Also clears the armed slot — once a power-up is used the user

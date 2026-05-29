@@ -11,6 +11,7 @@ import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -51,6 +52,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final theme = state.currentTheme;
 
         return Scaffold(
+          bottomNavigationBar: const SnakeBannerAd(),
           body: AppBackground(
             theme: theme,
             child: SafeArea(

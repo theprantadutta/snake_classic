@@ -89,6 +89,11 @@ class DailyBonusPopup extends StatefulWidget {
   final VoidCallback onClose;
   final bool isLoading;
 
+  /// Optional "claim + watch ad to double" action. When non-null a secondary
+  /// button is shown. The caller (home) only supplies this when ads are
+  /// available and the user isn't Pro, so the popup stays ad-agnostic.
+  final Future<void> Function()? onClaimDoubled;
+
   const DailyBonusPopup({
     super.key,
     required this.theme,
@@ -96,6 +101,7 @@ class DailyBonusPopup extends StatefulWidget {
     required this.onClaim,
     required this.onClose,
     this.isLoading = false,
+    this.onClaimDoubled,
   });
 
   /// Show the daily bonus popup as a dialog
@@ -106,6 +112,7 @@ class DailyBonusPopup extends StatefulWidget {
     required GameTheme theme,
     required DailyBonusStatus status,
     required Future<bool> Function() onClaim,
+    Future<void> Function()? onClaimDoubled,
   }) async {
     await showDialog(
       context: context,
@@ -126,6 +133,12 @@ class DailyBonusPopup extends StatefulWidget {
             await onClaim();
             if (dialogContext.mounted) dialogContext.pop();
           },
+          onClaimDoubled: onClaimDoubled == null
+              ? null
+              : () async {
+                  await onClaimDoubled();
+                  if (dialogContext.mounted) dialogContext.pop();
+                },
           onClose: () => dialogContext.pop(),
         );
       },
@@ -154,6 +167,16 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
     } finally {
       // onClaim normally pops the dialog, so this State is usually gone by
       // now — only reset if we're somehow still mounted (claim failed).
+      if (mounted) setState(() => _isClaiming = false);
+    }
+  }
+
+  Future<void> _handleClaimDoubled() async {
+    if (_isClaiming || widget.onClaimDoubled == null) return;
+    setState(() => _isClaiming = true);
+    try {
+      await widget.onClaimDoubled!();
+    } finally {
       if (mounted) setState(() => _isClaiming = false);
     }
   }
@@ -594,7 +617,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
       );
     }
 
-    return GestureDetector(
+    final claimButton = GestureDetector(
       onTap: (widget.isLoading || _isClaiming) ? null : _handleClaim,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -637,7 +660,58 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
                 ],
               ),
       ),
-    ).animate(delay: 300.ms).fadeIn().scale(begin: const Offset(0.9, 0.9));
+    );
+
+    Widget animate(Widget w) =>
+        w.animate(delay: 300.ms).fadeIn().scale(begin: const Offset(0.9, 0.9));
+
+    // No ad option → just the normal claim button.
+    if (widget.onClaimDoubled == null) return animate(claimButton);
+
+    // Ad available → claim button + a "claim and double via ad" option.
+    return animate(
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          claimButton,
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: (widget.isLoading || _isClaiming)
+                ? null
+                : _handleClaimDoubled,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: widget.theme.accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: widget.theme.accentColor.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.play_circle_fill,
+                      color: widget.theme.accentColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'CLAIM 2× — WATCH AD',
+                    style: TextStyle(
+                      color: widget.theme.accentColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildCloseButton() {

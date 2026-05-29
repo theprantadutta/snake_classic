@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
@@ -198,6 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final theme = themeState.currentTheme;
 
                     return Scaffold(
+                      bottomNavigationBar: const SnakeBannerAd(),
                       extendBodyBehindAppBar: true,
                       appBar: AppBar(
                         title: Text(
@@ -466,6 +469,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     _buildReplayTutorialButton(theme),
                                     const SizedBox(height: 16),
                                     _buildCreditsButton(theme),
+                                    _buildPrivacyChoicesButton(theme),
                                   ], theme),
 
                                   const SizedBox(height: 32),
@@ -1667,6 +1671,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final hh = dt.hour.toString().padLeft(2, '0');
     final mm = dt.minute.toString().padLeft(2, '0');
     return '${dt.month}/${dt.day} $hh:$mm';
+  }
+
+  /// Re-opens Google's UMP privacy options form so users can change their
+  /// personalized-ad consent. Only shown to free users with ads enabled.
+  Widget _buildPrivacyChoicesButton(GameTheme theme) {
+    final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+    if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 16),
+        GradientButton(
+          onPressed: () => ads.showPrivacyOptions(),
+          text: 'PRIVACY & AD CHOICES',
+          primaryColor: theme.accentColor,
+          secondaryColor: theme.foodColor,
+          icon: Icons.privacy_tip,
+          width: double.infinity,
+          outlined: true,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Manage personalized ad consent',
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildCreditsButton(GameTheme theme) {

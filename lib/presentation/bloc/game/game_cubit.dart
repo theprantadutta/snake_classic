@@ -21,6 +21,7 @@ import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
@@ -180,6 +181,19 @@ class GameCubit extends Cubit<GameCubitState> {
   }
 
   /// Start a new game
+  /// Coin cost of an offline / no-ad revive. Also the rewarded-ad alternative.
+  static const int reviveCoinCost = 1500;
+
+  /// One revive per run — flips true on [revive], reset on [startGame].
+  bool _revivedThisGame = false;
+
+  /// Time-Attack rewarded "+30s" extension: how many seconds each ad grants,
+  /// and how many extensions a single run may earn (kept low so it can't beat
+  /// a fresh game). Reset per run on [startGame].
+  static const int timeBonusSeconds = 30;
+  static const int maxTimeBonusesPerRun = 2;
+  int _timeBonusesUsed = 0;
+
   void startGame() {
     debugPrint('🎮 [GameCubit] startGame() called');
 
@@ -224,6 +238,8 @@ class GameCubit extends Cubit<GameCubitState> {
     _updateCount = 0;
     _bpMilestonesThisGame.clear();
     _currentGameCoinsEarned = 0;
+    _revivedThisGame = false;
+    _timeBonusesUsed = 0;
     // Snapshot Pro status once at game start — sticky for the session.
     _isPro = getIt.isRegistered<PremiumCubit>()
         ? getIt<PremiumCubit>().state.hasPremium
@@ -657,6 +673,17 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackTimer = Timer(remaining, () async {
       if (state.status == GamePlayStatus.playing) {
         _timeAttackRemaining = Duration.zero;
+        // Offer a rewarded "+30s" extension before ending the run, if eligible
+        // and an ad is (or can become) ready. Otherwise just end the game.
+        if (_canOfferTimeBonus()) {
+          final hasAds = getIt.isRegistered<AdService>();
+          final adReady = hasAds && getIt<AdService>().isRewardedReady;
+          if (hasAds) getIt<AdService>().preloadRewarded();
+          if (adReady) {
+            _offerTimeBonus();
+            return;
+          }
+        }
         await _gameOver();
       }
     });
@@ -1262,6 +1289,36 @@ class GameCubit extends Cubit<GameCubitState> {
     _enhancedAudioService.playSfx('game_over', volume: 1.0);
     HapticFeedback.heavyImpact();
 
+    // Offer a revive (rewarded ad or coins) before ending the game. Once per
+    // run, single-life modes only, and only when an option is actually
+    // available (an ad is loaded, or the player can afford the coin cost).
+    // The ReviveOverlay drives the choice; revive() / declineRevive() resolve
+    // it. We DON'T schedule game-over here — the overlay owns that timeout.
+    if (_canOfferRevive()) {
+      final hasAds = getIt.isRegistered<AdService>();
+      final adReady = hasAds && getIt<AdService>().isRewardedReady;
+      // Kick a (re)load so the ad can become ready during the offer countdown
+      // — the overlay re-checks readiness live and enables the button then.
+      if (hasAds) getIt<AdService>().preloadRewarded();
+      final canAfford = _coinsCubit.state.balance.total >= reviveCoinCost;
+      if (adReady || canAfford) {
+        emit(
+          state.copyWith(
+            status: GamePlayStatus.crashed,
+            gameState: state.gameState?.copyWith(
+              status: model.GameStatus.crashed,
+              crashReason: reason,
+              crashPosition: crashPosition,
+              collisionBodyPart: collisionBodyPart,
+              showCrashModal: false,
+            ),
+            offeringRevive: true,
+          ),
+        );
+        return;
+      }
+    }
+
     // Get crash feedback duration from settings
     final crashFeedbackDuration = _settingsCubit.state.crashFeedbackDuration;
     final durationSeconds = crashFeedbackDuration.inSeconds;
@@ -1333,6 +1390,136 @@ class GameCubit extends Cubit<GameCubitState> {
         });
       }
     });
+  }
+
+  /// Revive eligibility: once per run, and not in Time Attack (a fresh game
+  /// loop there would hand back a full timer, which would be exploitable).
+  bool _canOfferRevive() {
+    if (_revivedThisGame) return false;
+    final gs = state.gameState;
+    if (gs == null) return false;
+    if (gs.gameMode == GameMode.timeAttack) return false;
+    return true;
+  }
+
+  /// Continue the current run after a crash — this is a true "revive", not a
+  /// restart. The snake the player crashed with is KEPT as-is (same length,
+  /// same position, same score/level/combo/food/power-ups): at crash time the
+  /// fatal move was made on a throwaway copy, so `state.gameState.snake` is
+  /// still the valid pre-crash snake (head in-bounds, no self-overlap).
+  ///
+  /// The only thing we change is the heading — it's still pointed at the wall
+  /// / its own body that killed it, so without turning it the next tick would
+  /// re-crash instantly. We pick a safe direction to continue in and grant a
+  /// short invincibility grace period so the player can reorient.
+  ///
+  /// Driven by the ReviveOverlay after a rewarded ad or coin spend; the caller
+  /// owns the ad/coin side, this just resumes play.
+  void revive() {
+    final current = state.gameState;
+    if (current == null || _revivedThisGame) return;
+    _revivedThisGame = true;
+
+    // Keep the exact snake; only steer it somewhere safe to continue.
+    final snake = current.snake.copy();
+    final safeDir = _safeReviveDirection(snake, current);
+    final revivedSnake = safeDir != null
+        ? Snake.fromPositions(snake.body, safeDir)
+        : snake;
+
+    // 3-second invincibility grace so the immediate surroundings (and the
+    // wall/body it just hit) can't re-kill before the player reacts.
+    final grace = ActivePowerUp(
+      type: PowerUpType.invincibility,
+      duration: const Duration(seconds: 3),
+    );
+
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.playing,
+        offeringRevive: false,
+        gameState: current.copyWith(
+          snake: revivedSnake,
+          activePowerUps: [...current.activePowerUps, grace],
+          status: model.GameStatus.playing,
+          crashReason: null,
+          crashPosition: null,
+          collisionBodyPart: null,
+          showCrashModal: false,
+        ),
+        moveProgress: 0.0,
+      ),
+    );
+
+    // A brief "ready" beat before the first tick, same as startGame.
+    _levelUpSlowdownUntil =
+        DateTime.now().add(const Duration(milliseconds: 600));
+    _startGameLoop();
+    _startSmoothAnimation();
+    _startPowerUpTimer();
+    HapticFeedback.mediumImpact();
+  }
+
+  /// Pick a direction to continue in after a revive that won't immediately
+  /// re-crash: prefer a heading whose next cell is in-bounds and not part of
+  /// the snake's body, and never a 180° reverse into the neck. Returns null
+  /// if the snake is fully boxed in (the invincibility grace then covers it).
+  Direction? _safeReviveDirection(Snake snake, model.GameState gs) {
+    final head = snake.head;
+    final body = snake.body.toSet();
+    final reverse = snake.currentDirection.opposite;
+    for (final dir in Direction.values) {
+      if (dir == reverse) continue; // can't flip straight back into the body
+      final next = head.move(dir);
+      final inBounds = !gs.gameMode.hasWalls ||
+          next.isWithinBounds(gs.boardWidth, gs.boardHeight);
+      if (inBounds && !body.contains(next)) return dir;
+    }
+    return null;
+  }
+
+  /// Dismiss the revive offer and fall through to the normal game-over flow.
+  Future<void> declineRevive() async {
+    if (state.status != GamePlayStatus.crashed) return;
+    emit(state.copyWith(offeringRevive: false));
+    await _gameOver();
+  }
+
+  /// Time-Attack "+30s" eligibility: only in Time Attack, capped per run.
+  bool _canOfferTimeBonus() {
+    final gs = state.gameState;
+    if (gs == null) return false;
+    if (gs.gameMode != GameMode.timeAttack) return false;
+    return _timeBonusesUsed < maxTimeBonusesPerRun;
+  }
+
+  /// The Time-Attack timer hit zero with an extension still available and an ad
+  /// ready. Freeze the run (reusing the pause freeze so power-up timers don't
+  /// bleed during the offer) and flag the offer; the TimeBonusOverlay drives
+  /// [grantTimeBonus] / [declineTimeBonus].
+  void _offerTimeBonus() {
+    pauseGame(); // sets status=paused, cancels loops, stamps wall-clock anchors
+    emit(state.copyWith(offeringTimeBonus: true));
+  }
+
+  /// Player watched a rewarded ad: add [timeBonusSeconds] to the Time-Attack
+  /// clock and resume the frozen run. The caller owns the ad side; this just
+  /// extends the timer and unfreezes (resumeGame reschedules the TA timer with
+  /// the bumped remaining and shifts power-ups past the offer window).
+  void grantTimeBonus() {
+    if (!state.offeringTimeBonus) return;
+    _timeBonusesUsed++;
+    _timeAttackRemaining = (_timeAttackRemaining ?? Duration.zero) +
+        const Duration(seconds: timeBonusSeconds);
+    emit(state.copyWith(offeringTimeBonus: false));
+    resumeGame();
+  }
+
+  /// Dismiss the Time-Attack offer and end the run.
+  Future<void> declineTimeBonus() async {
+    if (!state.offeringTimeBonus) return;
+    emit(state.copyWith(offeringTimeBonus: false));
+    await _gameOver();
   }
 
   /// Local-only game end processing: achievement checks + coin awards + recording.

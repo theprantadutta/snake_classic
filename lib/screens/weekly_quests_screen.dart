@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -74,6 +75,7 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
           listenable: _service,
           builder: (context, _) {
             return Scaffold(
+              bottomNavigationBar: const SnakeBannerAd(),
               body: AppBackground(
                 theme: theme,
                 child: SafeArea(

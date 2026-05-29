@@ -7,6 +7,7 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
@@ -52,6 +53,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
   Widget _buildContent(BuildContext context, GameTheme theme) {
     return Scaffold(
+      bottomNavigationBar: const SnakeBannerAd(),
       appBar: AppBar(
         title: const Text(
           'Achievements',

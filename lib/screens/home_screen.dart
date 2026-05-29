@@ -19,6 +19,10 @@ import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
+import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
@@ -224,6 +228,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
       final theme = context.read<ThemeCubit>().state.currentTheme;
 
+      // Offer a "claim 2×" via rewarded ad when one is available (free users).
+      final bonusCoins = status.todayReward?.coins ?? 0;
+      final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+      final canDouble = ads != null && ads.adsEnabled && ads.isRewardedReady;
+
       await DailyBonusPopup.show(
         context: context,
         theme: theme,
@@ -236,6 +245,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           }
           return success;
         },
+        onClaimDoubled: canDouble
+            ? () async {
+                if (!mounted) return;
+                final coins = context.read<CoinsCubit>();
+                final ok = await coins.collectDailyBonus();
+                if (!ok) return;
+                getIt<AnalyticsFacade>().trackDailyBonusCollected();
+                // Grant the same amount again on ad completion → 2× total.
+                await ads.showRewarded(
+                  onReward: () => coins.earnCoins(
+                    CoinEarningSource.dailyLogin,
+                    customAmount: bonusCoins,
+                    itemName: 'Daily bonus 2x',
+                  ),
+                );
+              }
+            : null,
       );
     } catch (e) {
       AppLogger.error('Error checking daily bonus', e);
@@ -267,6 +293,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       controller: ThemeTransitionController(vsync: this),
                       currentTheme: theme,
                       child: Scaffold(
+                        bottomNavigationBar: const SnakeBannerAd(),
                         body: AppBackground(
                           theme: theme,
                           child: SafeArea(
@@ -1241,7 +1268,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             widgetKey: HomeWalkthrough.storeKey,
           ),
         ),
+        // Watch-for-coins — only for free users with ads enabled (Pro keeps
+        // the clean 2-button row).
+        if (getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled) ...[
+          SizedBox(width: isSmallScreen ? 12 : 16),
+          Expanded(
+            child: _buildModernActionButton(
+              context: context,
+              theme: theme,
+              icon: Icons.play_circle_fill,
+              label: 'COINS',
+              gradient: [Colors.amber.shade400, Colors.yellow.shade700],
+              isSmallScreen: isSmallScreen,
+              onTap: () => _watchForCoins(context),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  /// Rewarded "watch for coins" from the home action row. Honours the daily
+  /// cap; credits offline-first via CoinsCubit.
+  Future<void> _watchForCoins(BuildContext context) async {
+    final ads = getIt<AdService>();
+    if (!ads.canShowFreeCoinAd) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ads.freeCoinAdsRemainingToday == 0
+              ? "You've hit today's free-coin limit — come back tomorrow!"
+              : 'No ad available right now, try again shortly'),
+        ),
+      );
+      return;
+    }
+    final coins = context.read<CoinsCubit>();
+    await ads.showRewardedForCoins(
+      onCoins: (amount) => coins.earnCoins(
+        CoinEarningSource.watchedAd,
+        customAmount: amount,
+        itemName: 'Watched ad',
+        metadata: const {'placement': 'home_free_coins'},
+      ),
     );
   }
 
@@ -1944,6 +2012,20 @@ class _LoadoutBottomSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Rewarded — grab a free Speed Boost without spending coins.
+                RewardedActionButton(
+                  theme: theme,
+                  icon: Icons.bolt,
+                  label: 'Watch ad — free Speed Boost',
+                  capKey: AdService.capFreePowerUp,
+                  onWatch: () async {
+                    final powerUps = context.read<PowerUpCubit>();
+                    await getIt<AdService>().showRewardedCapped(
+                      capKey: AdService.capFreePowerUp,
+                      onReward: powerUps.grantFreePowerUp,
+                    );
+                  },
+                ),
                 if (entries.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 32),

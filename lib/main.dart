@@ -11,6 +11,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:provider/provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
@@ -121,6 +122,10 @@ void main() async {
     InAppUpdateService().checkForUpdate().then((_) {
       AppLogger.success('In-app update check completed');
     });
+
+    // Initialize ads (UMP consent + ATT + SDK). Fire-and-forget — the service
+    // is mobile-only, Pro-gated, and self-disables on web/desktop or for Pro.
+    unawaited(getIt<AdService>().initialize());
 
     AppLogger.success('All critical services initialized');
 

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
@@ -8,10 +9,12 @@ import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/widgets/ads/rewarded_coins_button.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -85,6 +88,7 @@ class _StoreScreenState extends State<StoreScreen>
               builder: (context, coinsState) {
                 final theme = themeState.currentTheme;
                 return Scaffold(
+                  bottomNavigationBar: const SnakeBannerAd(),
                   extendBodyBehindAppBar: true,
                   appBar: AppBar(
                     title: const Text(
@@ -377,6 +381,7 @@ class _StoreScreenState extends State<StoreScreen>
                   cadence: '/month',
                   savingsLabel: null,
                   highlight: false,
+                  trialLabel: '3-day free trial',
                 ),
               ),
               const SizedBox(width: 12),
@@ -389,6 +394,7 @@ class _StoreScreenState extends State<StoreScreen>
                   cadence: '/year',
                   savingsLabel: 'Save 17%',
                   highlight: true,
+                  trialLabel: '7-day free trial',
                 ),
               ),
             ],
@@ -479,6 +485,7 @@ class _StoreScreenState extends State<StoreScreen>
     required String cadence,
     required String? savingsLabel,
     required bool highlight,
+    String? trialLabel,
   }) {
     final price =
         PurchaseService().getStorePriceOrDefault(productId, fallbackPrice);
@@ -564,6 +571,27 @@ class _StoreScreenState extends State<StoreScreen>
                 fontSize: 12,
               ),
             ),
+            if (trialLabel != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.card_giftcard,
+                      size: 12, color: Colors.green.shade400),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      trialLabel,
+                      style: TextStyle(
+                        color: Colors.green.shade400,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -801,11 +829,13 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildProFeatureGrid(GameTheme theme) {
-    // Honest list — every line maps to an entitlement the server actually
-    // grants in VerifyPurchaseCommandHandler's Pro branch. The previous
-    // 'Ad-free' / 'Exclusive Game Modes' / vague 'Power-up perks' / 'VIP
-    // tournaments' promises were either unimplemented or false.
+    // Honest list — every line maps to an entitlement that's actually
+    // granted. 'No ads' is now real: AdService is Pro-gated so Pro/trial
+    // users never see banners, interstitials, or rewarded offers. (The old
+    // 'Exclusive Game Modes' / vague 'Power-up perks' promises were removed
+    // as unimplemented.)
     final features = const [
+      (Icons.block, 'No ads — play completely ad-free'),
       (Icons.color_lens, 'All 6 premium themes'),
       (Icons.pets, 'All 11 premium snake skins'),
       (Icons.gradient, 'All 11 premium trail effects'),
@@ -938,6 +968,8 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
           const SizedBox(height: 16),
+          // Rewarded ad — self-hides for Pro / when no ad is available.
+          RewardedCoinsButton(theme: theme),
           _buildEarnMethodCard(
             'Play Games',
             '5 coins per game',
@@ -2330,6 +2362,70 @@ class _StoreScreenState extends State<StoreScreen>
   // follow-up — for now the inventory accrues server-side and the user
   // can see their count).
 
+  /// Rewarded-ad card granting one free Speed Boost. Self-hides for Pro /
+  /// web / when the SDK isn't ready; disables when no ad is loaded.
+  Widget _buildFreePowerUpAdCard(BuildContext context, GameTheme theme) {
+    final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+    if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
+    final ready = ads.isRewardedReady;
+    return Opacity(
+      opacity: ready ? 1 : 0.5,
+      child: GestureDetector(
+        onTap: ready
+            ? () {
+                final powerUps = context.read<PowerUpCubit>();
+                ads.showRewarded(onReward: powerUps.grantFreePowerUp);
+              }
+            : null,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [
+              theme.accentColor.withValues(alpha: 0.18),
+              theme.foodColor.withValues(alpha: 0.10),
+            ]),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.accentColor.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.play_circle_fill, color: theme.accentColor, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Watch an ad — free Speed Boost',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      ready
+                          ? 'Adds 1 Speed Boost to your loadout'
+                          : 'No ad available right now',
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.65),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.bolt,
+                  color: theme.accentColor.withValues(alpha: 0.9), size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPowerUpsTab(
     GameTheme theme,
     PremiumState premiumState,
@@ -2408,6 +2504,8 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               ),
               const SizedBox(height: 16),
+              // Rewarded ad — free Speed Boost. Self-hides for Pro / no ad.
+              _buildFreePowerUpAdCard(context, theme),
               Text(
                 'Power-Ups',
                 style: TextStyle(

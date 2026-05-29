@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/storage_service.dart';
@@ -102,6 +103,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
     final theme = themeState.currentTheme;
 
     return Scaffold(
+      bottomNavigationBar: const SnakeBannerAd(),
       appBar: AppBar(
         title: Row(
           children: [

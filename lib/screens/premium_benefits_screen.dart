@@ -90,9 +90,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                               _buildFeaturesList(theme),
                               const SizedBox(height: 20),
                               _buildTrialInfo(theme),
-                              const SizedBox(
-                                height: 100,
-                              ), // Space for bottom button
+                              const SizedBox(height: 8),
                             ],
                           ],
                         ),
@@ -443,6 +441,11 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     // were unimplemented — those are now real recurring bundles.
     final features = [
       _FeatureItem(
+        Icons.block,
+        'Remove All Ads',
+        'No banners, no interstitials — play completely ad-free, forever',
+      ),
+      _FeatureItem(
         Icons.palette,
         'All Premium Themes',
         'Crystal, Cyberpunk, Space, Ocean, Desert, Forest',
@@ -721,7 +724,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                     ),
                   ),
                   child: Text(
-                    'Try 3 days free, no payment',
+                    'Try 3 days free',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

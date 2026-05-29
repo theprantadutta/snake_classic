@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:get_it/get_it.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
 import 'analytics/analytics_facade.dart';
@@ -704,15 +705,48 @@ class PurchaseService {
     }
   }
 
+  /// Display price for a product, handling the Google Play **subscription**
+  /// quirk: a subscription's `ProductDetails.price` is derived from its first
+  /// base-plan / offer pricing phase, which reads as "Free" / $0 whenever a
+  /// base plan or free-trial phase is zero-priced — even though the real
+  /// recurring price exists in a later pricing phase. For Android subs we dig
+  /// out the recurring (non-zero) phase's formatted price; otherwise we use the
+  /// cross-platform `price` (correct for one-time products and iOS subs).
+  String? _displayPrice(ProductDetails? product) {
+    if (product == null) return null;
+    final recurring = _androidSubscriptionRecurringPrice(product);
+    if (recurring != null && recurring.isNotEmpty) return recurring;
+    final price = product.price;
+    if (price.isEmpty) return null;
+    return price;
+  }
+
+  /// The formatted price of the recurring (non-zero) pricing phase of an
+  /// Android subscription, or null if not applicable / not found.
+  String? _androidSubscriptionRecurringPrice(ProductDetails product) {
+    if (product is! GooglePlayProductDetails) return null;
+    final offers = product.productDetails.subscriptionOfferDetails;
+    if (offers == null || offers.isEmpty) return null;
+    // Skip free-trial / intro phases (priceAmountMicros == 0); the perpetual
+    // recurring price is the last non-zero phase. Take it from the first offer
+    // that has one (typically the base plan).
+    for (final offer in offers) {
+      PricingPhaseWrapper? recurring;
+      for (final phase in offer.pricingPhases) {
+        if (phase.priceAmountMicros > 0) recurring = phase;
+      }
+      if (recurring != null) return recurring.formattedPrice;
+    }
+    return null;
+  }
+
   /// Get the store-formatted price for a product (e.g. "$1.99").
   /// Returns null if the product hasn't been loaded from the store.
-  String? getStorePrice(String productId) {
-    return getProduct(productId)?.price;
-  }
+  String? getStorePrice(String productId) => _displayPrice(getProduct(productId));
 
   /// Get the store price, falling back to a formatted default.
   String getStorePriceOrDefault(String productId, double fallbackPrice) {
-    return getProduct(productId)?.price ??
+    return _displayPrice(getProduct(productId)) ??
         '\$${fallbackPrice.toStringAsFixed(2)}';
   }
 

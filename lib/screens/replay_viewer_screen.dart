@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -102,6 +103,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     final theme = themeState.currentTheme;
 
     return Scaffold(
+      bottomNavigationBar: const SnakeBannerAd(),
       appBar: AppBar(
         title: Text(
           _replay != null ? 'Replay: ${_replay!.playerName}' : 'Loading Replay...',

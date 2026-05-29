@@ -9,6 +9,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -76,6 +77,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     });
 
     return Scaffold(
+      bottomNavigationBar: const SnakeBannerAd(),
       body: AppBackground(
         theme: theme,
         child: SafeArea(

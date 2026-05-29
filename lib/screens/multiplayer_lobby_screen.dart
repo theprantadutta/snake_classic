@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -140,6 +141,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   }
 
                   return Scaffold(
+                    bottomNavigationBar: const SnakeBannerAd(),
                     body: AppBackground(
                       theme: theme,
                       child: SafeArea(

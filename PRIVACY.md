@@ -202,6 +202,15 @@ We may disclose your information if required by law, regulation, legal process, 
 ### 4. Business Transfers
 In the event of a merger, acquisition, or sale of assets, your information may be transferred to the new entity, subject to the same privacy protections.
 
+### 5. Advertising (Google AdMob)
+We show ads to support the free version of the app using **Google AdMob**. Pro subscribers (and users in an active trial) see **no ads at all**.
+
+- **Ad partners:** Google AdMob and its mediation partners may collect device identifiers, approximate usage data, and an advertising ID to serve and measure ads (including banner, full-screen interstitial, and opt-in rewarded ads).
+- **Consent:** In regions where it's required (e.g. the EEA/UK), we present Google's UMP consent form before serving personalized ads. On iOS we also request **App Tracking Transparency** permission. If you decline, you'll see **non-personalized** ads (or no ads) instead.
+- **Your control:** You can review or change your ad/privacy choices any time from **Settings → Privacy & ad choices**, and reset your advertising ID in your device settings.
+- **Rewarded ads are optional:** rewarded ads (for coins, a revive, bonuses, etc.) are only shown when you choose to watch them.
+- More on how Google uses data: https://policies.google.com/technologies/ads
+
 ## Data Storage and Security
 
 ### 1. Data Storage Locations

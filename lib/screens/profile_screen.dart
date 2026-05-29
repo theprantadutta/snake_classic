@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -81,6 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, _) => BlocBuilder<AuthCubit, AuthState>(
         builder: (context, authState) {
           return Scaffold(
+            bottomNavigationBar: const SnakeBannerAd(),
             extendBodyBehindAppBar: true,
             appBar: AppBar(
               title: Text(

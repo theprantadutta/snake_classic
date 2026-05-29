@@ -3,10 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/models/game_state.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
+import 'package:snake_classic/widgets/revive_overlay.dart';
+import 'package:snake_classic/widgets/time_bonus_overlay.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -1020,7 +1027,17 @@ class _GameScreenState extends State<GameScreen>
                     child: Scaffold(
                       backgroundColor: theme.backgroundColor,
                       body: SafeArea(
-                        child: Stack(
+                        child: Column(
+                          children: [
+                            // Aggressive monetization: a banner anchored at the
+                            // very top — above the HUD and OUTSIDE the
+                            // SwipeDetector — so it's far from the board/d-pad
+                            // (no accidental clicks) and never intercepts a
+                            // swipe. Pro users get a zero-height widget, so the
+                            // board stays full size for them.
+                            const SnakeBannerAd(),
+                            Expanded(
+                              child: Stack(
                           children: [
                             // SwipeDetector only wraps the game content, not overlays.
                             // No onTap handler — pause is reserved for the HUD's
@@ -1150,8 +1167,13 @@ class _GameScreenState extends State<GameScreen>
                                     },
                                   ),
 
-                                  // Pause Overlay (don't show during tutorial)
-                                  if (gameState.status == GameStatus.paused && !_tutorialActive)
+                                  // Pause Overlay (don't show during tutorial,
+                                  // or while the Time-Attack bonus offer — which
+                                  // freezes the run via the same paused status —
+                                  // is on screen).
+                                  if (gameState.status == GameStatus.paused &&
+                                      !_tutorialActive &&
+                                      !gameCubitState.offeringTimeBonus)
                                     PauseOverlay(
                                       theme: theme,
                                       onResume: () => context
@@ -1189,6 +1211,61 @@ class _GameScreenState extends State<GameScreen>
                                 duration: settingsState.crashFeedbackDuration,
                               ),
 
+                            // Revive offer — shown instead of the crash modal
+                            // while the cubit is awaiting a revive decision.
+                            // Outside SwipeDetector so the buttons receive taps.
+                            if (gameCubitState.offeringRevive)
+                              ReviveOverlay(
+                                theme: theme,
+                                coinCost: GameCubit.reviveCoinCost,
+                                isAdReady: () =>
+                                    getIt<AdService>().isRewardedReady,
+                                canAffordCoins: context
+                                        .read<CoinsCubit>()
+                                        .state
+                                        .balance
+                                        .total >=
+                                    GameCubit.reviveCoinCost,
+                                onWatchAd: () {
+                                  final gc = context.read<GameCubit>();
+                                  getIt<AdService>()
+                                      .showRewarded(onReward: gc.revive);
+                                },
+                                onUseCoins: () async {
+                                  final gc = context.read<GameCubit>();
+                                  final ok = await context
+                                      .read<CoinsCubit>()
+                                      .spendCoins(
+                                        GameCubit.reviveCoinCost,
+                                        CoinSpendingCategory.extraLives,
+                                        itemName: 'Revive',
+                                      );
+                                  if (ok) gc.revive();
+                                },
+                                onDecline: () =>
+                                    context.read<GameCubit>().declineRevive(),
+                              ),
+
+                            // Time-Attack "+30s" offer — shown when the clock
+                            // hits zero with an extension still available.
+                            // Outside SwipeDetector so the buttons receive taps.
+                            if (gameCubitState.offeringTimeBonus)
+                              TimeBonusOverlay(
+                                theme: theme,
+                                bonusSeconds: GameCubit.timeBonusSeconds,
+                                isAdReady: () =>
+                                    getIt<AdService>().isRewardedReady,
+                                onWatchAd: () {
+                                  final gc = context.read<GameCubit>();
+                                  getIt<AdService>().showRewarded(
+                                    onReward: gc.grantTimeBonus,
+                                  );
+                                },
+                                onDecline: () => context
+                                    .read<GameCubit>()
+                                    .declineTimeBonus(),
+                              ),
+
                             // Game Tutorial Overlay
                             if (_tutorialActive && _tutorialController != null)
                               GameTutorialOverlay(
@@ -1207,6 +1284,9 @@ class _GameScreenState extends State<GameScreen>
                             // to the play area and rides the existing 60fps
                             // repaint cycle — no extra full-screen paints.
                             const _RejectedInputFlash(),
+                          ],
+                              ),
+                            ),
                           ],
                         ),
                       ),

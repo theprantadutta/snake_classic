@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -105,6 +106,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
         final currentUid = authState.isSignedIn ? authState.userId : null;
 
         return Scaffold(
+          bottomNavigationBar: const SnakeBannerAd(),
           body: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(

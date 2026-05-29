@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -47,6 +48,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         final theme = themeState.currentTheme;
 
         return Scaffold(
+          bottomNavigationBar: const SnakeBannerAd(),
           body: AppBackground(
             theme: theme,
             child: SafeArea(
