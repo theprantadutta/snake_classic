@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/utils/privacy_policy.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -33,17 +33,14 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
   }
 
   Future<void> _checkPreviousPrivacyAcceptance() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final alreadyAccepted = prefs.getBool('privacy_policy_accepted') ?? false;
-      if (alreadyAccepted && mounted) {
-        setState(() {
-          _showPrivacyPolicy = false;
-          _privacyAccepted = true;
-        });
-      }
-    } catch (e) {
-      // If there's an error reading preferences, show the privacy policy
+    // Accepted only when it's the CURRENT policy version — a version bump in
+    // PRIVACY.md re-shows the policy here.
+    final alreadyAccepted = await PrivacyPolicy.isCurrentVersionAccepted();
+    if (alreadyAccepted && mounted) {
+      setState(() {
+        _showPrivacyPolicy = false;
+        _privacyAccepted = true;
+      });
     }
   }
 
@@ -534,18 +531,9 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                           setState(() {
                             _privacyAccepted = value ?? false;
                           });
-                          // Save privacy acceptance immediately when checked
+                          // Save privacy acceptance (by version) when checked.
                           if (_privacyAccepted) {
-                            try {
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.setBool(
-                                'privacy_policy_accepted',
-                                true,
-                              );
-                            } catch (e) {
-                              // Ignore errors - not critical
-                            }
+                            await PrivacyPolicy.recordAccepted();
                           }
                         },
                         activeColor: theme.accentColor,

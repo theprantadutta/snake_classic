@@ -1,7 +1,15 @@
 # Privacy Policy for Snake Classic
 
-**Effective Date: January 17, 2025**  
-**Last Updated: January 17, 2025**
+**Policy Version: 2.0**  
+**Effective Date: May 29, 2026**  
+**Last Updated: May 29, 2026**
+
+> **What changed in version 2.0 (May 29, 2026):** Snake Classic now shows
+> advertising in the free version of the app (banner, interstitial, and opt-in
+> rewarded ads) through Google AdMob. This update explains what that means for
+> your data and your choices. Pro subscribers and users in an active trial see
+> no ads. Because this is a material change, you'll be asked to review and
+> accept this updated policy.
 
 ## Introduction
 
@@ -286,9 +294,10 @@ Your information may be transferred to and processed in countries other than you
 - **Custom Events:** Game progression tracking for feature improvement
 
 ### 3. Advertising
-- Snake Classic currently does not display third-party advertisements
-- Premium subscription removes any promotional content
-- Future advertising implementations will update this policy accordingly
+- Snake Classic displays third-party advertising in the free version of the app through **Google AdMob** (see *Information Sharing and Disclosure → Advertising (Google AdMob)* for full details)
+- Ads may use an advertising ID and device identifiers to serve and measure ads; in the EEA/UK we request consent first, and on iOS we request App Tracking Transparency permission
+- **Rewarded ads are entirely optional** — they only appear when you choose to watch them in exchange for in-game rewards
+- A **Pro subscription (or an active trial) removes all ads**
 
 ## Changes to This Privacy Policy
 
@@ -337,6 +346,10 @@ Privacy-related disputes are subject to the dispute resolution procedures outlin
 
 *This Privacy Policy is designed to comply with Google Play Store policies and international privacy regulations including GDPR, CCPA, and other applicable laws.*
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Compliance:** Google Play Store, GDPR, CCPA, COPPA  
 **Language:** English (additional translations available in-app)
+
+### Version History
+- **2.0 — May 29, 2026:** Disclosed in-app advertising via Google AdMob (banner, interstitial, and opt-in rewarded ads), UMP/GDPR consent and iOS App Tracking Transparency, and the ad-free Pro/trial experience. Aligned the "Cookies and Tracking → Advertising" section with the new ad integration. Introduced policy versioning so material changes prompt renewed acceptance.
+- **1.0 — January 17, 2025:** Initial privacy policy.

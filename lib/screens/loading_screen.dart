@@ -10,6 +10,7 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/utils/privacy_policy.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
@@ -217,6 +218,15 @@ class _LoadingScreenState extends State<LoadingScreen>
           context.go(AppRoutes.firstTimeAuth);
           return;
         }
+      }
+
+      // Returning user: if the privacy policy has changed version since they
+      // last accepted it, gate them through the re-consent screen first.
+      final policyAccepted = await PrivacyPolicy.isCurrentVersionAccepted();
+      if (!policyAccepted) {
+        if (!mounted) return;
+        context.go(AppRoutes.privacyConsent);
+        return;
       }
 
       // Step 9: Complete (for returning users)

@@ -9,6 +9,7 @@ import 'package:snake_classic/screens/daily_challenges_screen.dart';
 import 'package:snake_classic/screens/weekly_quests_screen.dart';
 import 'package:snake_classic/screens/email_auth_screen.dart';
 import 'package:snake_classic/screens/first_time_auth_screen.dart';
+import 'package:snake_classic/screens/privacy_consent_screen.dart';
 import 'package:snake_classic/screens/username_setup_screen.dart';
 import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
 import 'package:snake_classic/screens/friends_screen.dart';
@@ -101,6 +102,12 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       name: 'firstTimeAuth',
       pageBuilder: (context, state) =>
           _zoomPage(state, const FirstTimeAuthScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.privacyConsent,
+      name: 'privacyConsent',
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const PrivacyConsentScreen()),
     ),
     GoRoute(
       path: AppRoutes.emailAuth,
