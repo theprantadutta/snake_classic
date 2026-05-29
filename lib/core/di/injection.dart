@@ -20,6 +20,7 @@ import 'package:snake_classic/services/multiplayer_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/review_service.dart';
@@ -88,6 +89,7 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<AchievementService>(() => AchievementService());
   getIt.registerLazySingleton<StatisticsService>(() => StatisticsService());
+  getIt.registerLazySingleton<ProgressionService>(() => ProgressionService());
   getIt.registerLazySingleton<PurchaseService>(() => PurchaseService());
   getIt.registerLazySingleton<AppDataCache>(() => AppDataCache());
   getIt.registerLazySingleton<ReviewService>(
@@ -179,6 +181,7 @@ Future<void> configureDependencies() async {
       storageService: getIt<StorageService>(),
       premiumCubit: getIt<PremiumCubit>(),
       analytics: getIt<AnalyticsFacade>(),
+      progressionService: getIt<ProgressionService>(),
     ),
   );
 

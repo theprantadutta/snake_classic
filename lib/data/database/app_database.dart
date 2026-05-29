@@ -34,6 +34,7 @@ class SyncDataType {
   static const String dailyChallengeClaim = 'daily_challenge_claim';
   static const String weeklyQuestClaim = 'weekly_quest_claim';
   static const String dailyBonusClaim = 'daily_bonus_claim';
+  static const String playerProgress = 'player_progress';
 }
 
 // =====================================================
@@ -625,6 +626,24 @@ class PurchaseHistory extends Table {
 }
 
 // =====================================================
+// TABLE: Player Progress (singleton — lifetime XP + level)
+// =====================================================
+// Offline-first lifetime progression, parallel to (and independent of) the
+// per-season BattlePasses table. Single row (autoIncrement id, like
+// Statistics). `totalXp` is the source of truth; `level` is derived from the
+// PlayerLevel curve and stored for sync/display. SyncEngine pushes this to the
+// backend's User.Experience/Level via the `player_progress` dataType.
+@DataClassName('PlayerProgressRow')
+class PlayerProgressTable extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get totalXp => integer().withDefault(const Constant(0))();
+  IntColumn get level => integer().withDefault(const Constant(1))();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+// =====================================================
 // DATABASE CLASS
 // =====================================================
 @DriftDatabase(
@@ -653,6 +672,7 @@ class PurchaseHistory extends Table {
     FriendsCache,
     FriendRequestsCache,
     FriendsMeta,
+    PlayerProgressTable,
   ],
   daos: [
     SettingsDao,
@@ -668,7 +688,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -782,6 +802,29 @@ class AppDatabase extends _$AppDatabase {
         // backend's DailyLoginBonus table.
         await m.createTable(dailyBonusState);
       }
+      if (from < 10) {
+        // v10: lifetime player progression singleton (XP + level), parallel
+        // to the per-season battle pass. SyncEngine pushes it to the
+        // backend's User.Experience/Level via the player_progress dataType.
+        await m.createTable(playerProgressTable);
+      }
+      if (from < 11) {
+        // v11: daily_challenges had no unique index on challenge_id, so
+        // upsertDailyChallenge (insertOnConflictUpdate) kept INSERTing new
+        // rows instead of upserting — once offline-first progress writes
+        // started, duplicate rows piled up and the sync batch shipped the
+        // same challenge_id twice, 500ing the backend. Dedupe (keep the
+        // latest row per challenge_id) then add the unique index so upserts
+        // behave like weekly_quests.
+        await customStatement(
+          'DELETE FROM daily_challenges WHERE id NOT IN '
+          '(SELECT MAX(id) FROM daily_challenges GROUP BY challenge_id)',
+        );
+        await customStatement(
+          'CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_challenges_challenge_id '
+          'ON daily_challenges(challenge_id)',
+        );
+      }
     },
   );
 
@@ -804,6 +847,12 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_daily_challenges_expires ON daily_challenges(expires_at)',
+    );
+    // Unique per challenge so upsertDailyChallenge (insertOnConflictUpdate)
+    // updates in place instead of inserting duplicate rows — matches the
+    // weekly_quests setup.
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_challenges_challenge_id ON daily_challenges(challenge_id)',
     );
 
     // WeeklyQuests index for week-based queries + unique quest id

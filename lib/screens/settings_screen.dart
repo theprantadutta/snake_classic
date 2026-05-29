@@ -20,6 +20,7 @@ import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/credits_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -463,6 +464,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   // 6. Help & Tutorial Section
                                   _buildSection('HELP & TUTORIAL', [
                                     _buildReplayTutorialButton(theme),
+                                    const SizedBox(height: 16),
+                                    _buildCreditsButton(theme),
                                   ], theme),
 
                                   const SizedBox(height: 32),
@@ -1664,6 +1667,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final hh = dt.hour.toString().padLeft(2, '0');
     final mm = dt.minute.toString().padLeft(2, '0');
     return '${dt.month}/${dt.day} $hh:$mm';
+  }
+
+  Widget _buildCreditsButton(GameTheme theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GradientButton(
+          onPressed: () => showCreditsDialog(context, theme),
+          text: 'ABOUT & CREDITS',
+          primaryColor: theme.accentColor,
+          secondaryColor: theme.foodColor,
+          icon: Icons.info_outline,
+          width: double.infinity,
+          outlined: true,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'App version, credits, and links',
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildReplayTutorialButton(GameTheme theme) {

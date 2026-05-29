@@ -10,6 +10,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -327,6 +328,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+
+          // Lifetime player progression (level + XP)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: PlayerProgressionCard(theme: theme),
           ),
           const SizedBox(height: 24),
 

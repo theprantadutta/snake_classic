@@ -2,11 +2,18 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:snake_classic/data/database/app_database.dart';
+import 'package:snake_classic/models/player_level.dart';
 
 part 'game_dao.g.dart';
 
-@DriftAccessor(
-    tables: [Statistics, Achievements, Replays, DailyChallenges, WeeklyQuests])
+@DriftAccessor(tables: [
+  Statistics,
+  Achievements,
+  Replays,
+  DailyChallenges,
+  WeeklyQuests,
+  PlayerProgressTable,
+])
 class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   GameDao(super.db);
 
@@ -18,6 +25,86 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
 
   /// Get current statistics
   Future<Statistic?> getStatistics() => select(statistics).getSingleOrNull();
+
+  // ==================== Player Progress (lifetime XP + level) ====================
+
+  /// Watch the lifetime player-progress singleton for reactive UI.
+  Stream<PlayerProgressRow?> watchPlayerProgress() =>
+      select(playerProgressTable).watchSingleOrNull();
+
+  /// Current lifetime player progress (null until the first XP grant).
+  Future<PlayerProgressRow?> getPlayerProgress() =>
+      select(playerProgressTable).getSingleOrNull();
+
+  /// Add [delta] lifetime XP, recompute the level from the [PlayerLevel]
+  /// curve, and enqueue a `player_progress` sync outbox row — all in one
+  /// transaction so the row write and its sync marker land atomically
+  /// (offline-first). Returns the updated row.
+  Future<PlayerProgressRow> addPlayerXp(int delta) async {
+    return transaction(() async {
+      final current = await getPlayerProgress();
+      final safeDelta = delta < 0 ? 0 : delta;
+      final newTotal = (current?.totalXp ?? 0) + safeDelta;
+      final newLevel = PlayerLevel.levelForXp(newTotal);
+      final now = DateTime.now();
+
+      if (current == null) {
+        await into(playerProgressTable).insert(
+          PlayerProgressTableCompanion.insert(
+            totalXp: Value(newTotal),
+            level: Value(newLevel),
+            updatedAt: Value(now),
+          ),
+        );
+      } else {
+        await (update(playerProgressTable)
+              ..where((t) => t.id.equals(current.id)))
+            .write(PlayerProgressTableCompanion(
+          totalXp: Value(newTotal),
+          level: Value(newLevel),
+          updatedAt: Value(now),
+        ));
+      }
+
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.playerProgress,
+        entityKey: 'player_progress:1',
+      );
+
+      return (await getPlayerProgress())!;
+    });
+  }
+
+  /// Apply an authoritative XP value from a cloud snapshot restore. MAX-merge
+  /// so a restore never regresses local lifetime XP. Does NOT enqueue sync
+  /// (the value came FROM the backend). Returns the resulting row.
+  Future<void> applyPlayerProgressSnapshot(int snapshotTotalXp) async {
+    await transaction(() async {
+      final current = await getPlayerProgress();
+      final merged = (current?.totalXp ?? 0) > snapshotTotalXp
+          ? (current?.totalXp ?? 0)
+          : snapshotTotalXp;
+      final level = PlayerLevel.levelForXp(merged);
+      final now = DateTime.now();
+      if (current == null) {
+        await into(playerProgressTable).insert(
+          PlayerProgressTableCompanion.insert(
+            totalXp: Value(merged),
+            level: Value(level),
+            updatedAt: Value(now),
+          ),
+        );
+      } else {
+        await (update(playerProgressTable)
+              ..where((t) => t.id.equals(current.id)))
+            .write(PlayerProgressTableCompanion(
+          totalXp: Value(merged),
+          level: Value(level),
+          updatedAt: Value(now),
+        ));
+      }
+    });
+  }
 
   /// Update statistics after a game
   Future<void> updateGameStats({
@@ -468,8 +555,9 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
   }
 
   // ==================== Daily Challenges ====================
-  // Only the *claim* writes to Drift in the offline-first build —
-  // progress is held in-memory by DailyChallengeService.
+  // Offline-first: both progress and claims write to Drift (one row per
+  // challenge_id — a unique index + an upsert targeting challenge_id keep it
+  // single). DailyChallengeService pushes via the sync outbox.
 
   /// Watch today's challenges
   Stream<List<DailyChallenge>> watchTodaysChallenges() {
@@ -540,7 +628,17 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
     final now = DateTime.now();
     final stamped = challenge.copyWith(updatedAt: Value(now));
     await transaction(() async {
-      await into(dailyChallenges).insertOnConflictUpdate(stamped);
+      // Upsert keyed on challenge_id, NOT the autoIncrement PK — Drift's
+      // insertOnConflictUpdate targets the PK, so it would insert a fresh row
+      // every time (and now throw against the unique challenge_id index).
+      // DoUpdate(target: challengeId) makes it a real per-challenge upsert.
+      await into(dailyChallenges).insert(
+        stamped,
+        onConflict: DoUpdate(
+          (_) => stamped,
+          target: [dailyChallenges.challengeId],
+        ),
+      );
       if (enqueueSync && id != null) {
         await attachedDatabase.enqueueSyncOutbox(
           dataType: SyncDataType.dailyChallengeClaim,
@@ -591,7 +689,15 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
     final now = DateTime.now();
     final stamped = quest.copyWith(updatedAt: Value(now));
     await transaction(() async {
-      await into(weeklyQuests).insertOnConflictUpdate(stamped);
+      // Upsert keyed on quest_id, NOT the autoIncrement PK (same reason as
+      // upsertDailyChallenge). Relies on the unique quest_id index (v8).
+      await into(weeklyQuests).insert(
+        stamped,
+        onConflict: DoUpdate(
+          (_) => stamped,
+          target: [weeklyQuests.questId],
+        ),
+      );
       if (enqueueSync && id != null) {
         await attachedDatabase.enqueueSyncOutbox(
           dataType: SyncDataType.weeklyQuestClaim,

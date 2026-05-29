@@ -772,6 +772,18 @@ class SyncEngine {
           final passPayload = passes.map(_battlePassToPayload).toList();
           return _mapOutcome(await _api.syncBattlePass(passPayload));
 
+        case SyncDataType.playerProgress:
+          // Lifetime XP + level singleton. Read the current Drift row and
+          // send it to the backend's absorbing-merge handler (MAX on totalXp).
+          return _dispatchSnapshot(
+            read: () async {
+              final row = await _gameDao!.getPlayerProgress();
+              if (row == null) return null;
+              return _playerProgressToPayload(row);
+            },
+            send: _api.syncPlayerProgress,
+          );
+
         case SyncDataType.coinTransaction:
           // Event-typed: payload was frozen at outbox-write time.
           final payloads = _extractPayloads(items);
@@ -921,6 +933,7 @@ class SyncEngine {
       case SyncDataType.dailyChallengeClaim:
       case SyncDataType.weeklyQuestClaim:
       case SyncDataType.dailyBonusClaim:
+      case SyncDataType.playerProgress:
         return true;
       default:
         return false;
@@ -972,6 +985,12 @@ class SyncEngine {
         'bronze_tournament_entries': r.bronzeTournamentEntries,
         'silver_tournament_entries': r.silverTournamentEntries,
         'gold_tournament_entries': r.goldTournamentEntries,
+        'updated_at': _utcIso(r.updatedAt),
+      };
+
+  Map<String, dynamic> _playerProgressToPayload(PlayerProgressRow r) => {
+        'total_xp': r.totalXp,
+        'level': r.level,
         'updated_at': _utcIso(r.updatedAt),
       };
 
@@ -1352,6 +1371,17 @@ class SyncEngine {
             enqueueSync: false,
           );
         }
+      }
+
+      // ----- player progress (lifetime XP + level singleton) -----
+      //
+      // MAX-merge so a restore never regresses local lifetime XP (the level
+      // is recomputed from the merged total inside the DAO). No-op if the
+      // snapshot omits it.
+      final playerProgress = snapshot['player_progress'];
+      if (playerProgress is Map<String, dynamic>) {
+        final totalXp = (playerProgress['total_xp'] as num?)?.toInt() ?? 0;
+        await _gameDao!.applyPlayerProgressSnapshot(totalXp);
       }
 
       // ----- premium status -----

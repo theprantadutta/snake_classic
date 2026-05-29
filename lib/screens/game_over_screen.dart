@@ -20,11 +20,13 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/achievement_reveal_overlay.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/level_up_popup.dart';
 import 'package:snake_classic/widgets/particle_effect.dart';
 
 class GameOverScreen extends ConsumerStatefulWidget {
@@ -41,7 +43,9 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
   late AnimationController _achievementController;
 
   final AchievementService _achievementService = AchievementService();
+  final ProgressionService _progressionService = ProgressionService();
   final AudioService _audioService = AudioService();
+  bool _levelUpShown = false;
   List<Achievement> _recentAchievements = [];
   List<Achievement> _progressAchievements = [];
   bool _achievementsLoaded = false;
@@ -80,10 +84,32 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     // GameCubit._postGameSync fires server-confirmed unlocks asynchronously —
     // they show up in lastGameUnlocks ~300ms-1s after this screen first builds.
     _achievementService.addListener(_onAchievementsChanged);
+
+    // Player XP is flushed during the same post-game sync, so a level-up
+    // lands a beat after this screen mounts — listen, plus check once in
+    // case it already landed.
+    _progressionService.addListener(_maybeShowLevelUp);
+    _maybeShowLevelUp();
   }
 
   void _onAchievementsChanged() {
     if (mounted) _loadAchievements();
+  }
+
+  /// Show the level-up celebration if the latest game crossed a threshold.
+  /// Guarded so it fires at most once per game-over screen, and delayed so it
+  /// lands after the score + achievement reveals rather than over them.
+  void _maybeShowLevelUp() {
+    if (_levelUpShown || !mounted) return;
+    final level = _progressionService.pendingLevelUp;
+    if (level == null) return;
+    _levelUpShown = true;
+    _progressionService.clearPendingLevelUp();
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      final theme = context.read<ThemeCubit>().state.currentTheme;
+      LevelUpPopup.show(context: context, theme: theme, level: level);
+    });
   }
 
   Future<void> _loadAchievements() async {
@@ -227,6 +253,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
   @override
   void dispose() {
     _achievementService.removeListener(_onAchievementsChanged);
+    _progressionService.removeListener(_maybeShowLevelUp);
     _explosionController.dispose();
     _scoreController.dispose();
     _achievementController.dispose();

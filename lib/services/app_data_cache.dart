@@ -10,6 +10,7 @@ import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/leaderboard_service.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -135,6 +136,7 @@ class AppDataCache extends ChangeNotifier {
         _loadReplayKeys(),
         _loadSettingsData(),
         _loadDailyChallenges(),
+        _loadPlayerProgress(),
 
         // Group 2: Network data (with timeout + fallback)
         _loadLeaderboards().timeout(const Duration(seconds: 4), onTimeout: () {
@@ -173,6 +175,14 @@ class AppDataCache extends ChangeNotifier {
       _playPatterns = statsService.getPlayPatterns();
     } catch (e) {
       if (kDebugMode) print('AppDataCache: Stats load warning: $e');
+    }
+  }
+
+  Future<void> _loadPlayerProgress() async {
+    try {
+      await getIt<ProgressionService>().initialize();
+    } catch (e) {
+      if (kDebugMode) print('AppDataCache: Player progress load warning: $e');
     }
   }
 

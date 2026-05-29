@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,13 +21,13 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
+import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:talker_flutter/talker_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -441,56 +440,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   ) {
     return Row(
       children: [
-        // Settings entry point
-        GestureDetector(
-          onTap: () {
-            context.push(AppRoutes.settings);
-          },
-          child: Container(
-            key: HomeWalkthrough.settingsKey,
-            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              Icons.settings_rounded,
-              color: theme.accentColor,
-              size: isSmallScreen ? 20 : 24,
-            ),
-          ),
+        // Left: player identity — avatar + level + XP bar → profile.
+        PlayerIdentityBadge(
+          key: HomeWalkthrough.profileKey,
+          theme: theme,
+          isSmallScreen: isSmallScreen,
+          photoUrl: authState.isSignedIn ? authState.photoURL : null,
+          onTap: () => context.push(AppRoutes.profile),
         ),
 
-        SizedBox(width: isSmallScreen ? 8 : 12),
-
-        // Credits button
-        GestureDetector(
-          onTap: () {
-            _showCreditsDialog(context, theme);
-          },
-          child: Container(
-            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-            decoration: BoxDecoration(
-              color: theme.foodColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
-              border: Border.all(
-                color: theme.foodColor.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              Icons.info_outline,
-              color: theme.foodColor,
-              size: isSmallScreen ? 20 : 24,
-            ),
-          ),
-        ),
-
-        // Center: Coins display
+        // Center: coins pill → store.
         Expanded(
           child: Center(
             child: BlocBuilder<CoinsCubit, CoinsState>(
@@ -546,10 +505,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ),
 
-        // Right side: Help and Profile
+        // Right: tools — settings + how-to-play.
         Row(
           children: [
-            // Help button
+            // Settings
+            GestureDetector(
+              onTap: () {
+                context.push(AppRoutes.settings);
+              },
+              child: Container(
+                key: HomeWalkthrough.settingsKey,
+                padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+                decoration: BoxDecoration(
+                  color: theme.accentColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.settings_rounded,
+                  color: theme.accentColor,
+                  size: isSmallScreen ? 20 : 24,
+                ),
+              ),
+            ),
+
+            SizedBox(width: isSmallScreen ? 8 : 12),
+
+            // How to play
             GestureDetector(
               onTap: () {
                 context.push(AppRoutes.instructions);
@@ -570,87 +555,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   size: isSmallScreen ? 20 : 24,
                 ),
               ),
-            ),
-
-            SizedBox(width: isSmallScreen ? 8 : 12),
-
-            // Profile button. Same rounded-square chip shape as the other
-            // top-bar buttons (matches the 48/36 px footprint). When the
-            // user has a photo, the photo fills the inner space as a
-            // rounded square that mirrors the chip's curvature, leaving a
-            // thin amber ring as the border. Icon fallback keeps the
-            // original look.
-            GestureDetector(
-              onTap: () {
-                context.push(AppRoutes.profile);
-              },
-              child: () {
-                final hasPhoto =
-                    authState.isSignedIn && authState.photoURL != null;
-                final outerSize = isSmallScreen ? 36.0 : 48.0;
-                final outerRadius = isSmallScreen ? 16.0 : 20.0;
-                if (hasPhoto) {
-                  // Tiny padding so the gradient/border still reads as a
-                  // ring around the photo. Inner radius is the outer
-                  // curvature minus the padding so the photo's corners
-                  // sit flush with the chip's inner curve.
-                  const padding = 2.0;
-                  final innerRadius = outerRadius - padding;
-                  return Container(
-                    key: HomeWalkthrough.profileKey,
-                    width: outerSize,
-                    height: outerSize,
-                    padding: const EdgeInsets.all(padding),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.amber.withValues(alpha: 0.2),
-                          Colors.orange.withValues(alpha: 0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(outerRadius),
-                      border: Border.all(
-                        color: Colors.amber.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(innerRadius),
-                      child: Image.network(
-                        authState.photoURL!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Icon(
-                          Icons.account_circle,
-                          color: Colors.amber,
-                          size: isSmallScreen ? 20 : 24,
-                        ),
-                      ),
-                    ),
-                  );
-                }
-                return Container(
-                  key: HomeWalkthrough.profileKey,
-                  padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.amber.withValues(alpha: 0.2),
-                        Colors.orange.withValues(alpha: 0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(outerRadius),
-                    border: Border.all(
-                      color: Colors.amber.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.account_circle,
-                    color: Colors.amber,
-                    size: isSmallScreen ? 20 : 24,
-                  ),
-                );
-              }(),
             ),
           ],
         ),
@@ -1644,301 +1548,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  void _showCreditsDialog(BuildContext context, GameTheme theme) async {
-    final currentYear = DateTime.now().year;
-    final packageInfo = await PackageInfo.fromPlatform();
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 380),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.backgroundColor,
-                    Color.alphaBlend(
-                      theme.primaryColor.withValues(alpha: 0.10),
-                      theme.backgroundColor,
-                    ),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.35),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.accentColor.withValues(alpha: 0.18),
-                    blurRadius: 24,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            colors: [
-                              theme.primaryColor.withValues(alpha: 0.28),
-                              theme.accentColor.withValues(alpha: 0.08),
-                            ],
-                          ),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: theme.accentColor.withValues(alpha: 0.25),
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(6),
-                        child: Image.asset(
-                          'assets/images/snake_classic_transparent.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ShaderMask(
-                              shaderCallback: (bounds) => LinearGradient(
-                                colors: [
-                                  theme.primaryColor,
-                                  theme.accentColor,
-                                ],
-                              ).createShader(bounds),
-                              child: const Text(
-                                'Snake Classic',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 22,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'v${packageInfo.version} · build ${packageInfo.buildNumber}',
-                              style: TextStyle(
-                                color: theme.accentColor.withValues(alpha: 0.65),
-                                fontSize: 11,
-                                fontFeatures: const [FontFeature.tabularFigures()],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      InkResponse(
-                        onTap: () => Navigator.of(dialogContext).pop(),
-                        radius: 20,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: theme.accentColor.withValues(alpha: 0.10),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close_rounded,
-                            color: theme.accentColor.withValues(alpha: 0.8),
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  Text(
-                    'The classic snake game, reimagined.',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.75),
-                      fontSize: 13,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _buildAboutChip('Modes', Icons.sports_esports, theme),
-                      _buildAboutChip('Achievements', Icons.emoji_events, theme),
-                      _buildAboutChip('Daily', Icons.today, theme),
-                      _buildAboutChip('Leaderboards', Icons.leaderboard, theme),
-                      _buildAboutChip('Cosmetics', Icons.palette, theme),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: theme.accentColor.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: theme.accentColor.withValues(alpha: 0.12),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: theme.primaryColor.withValues(alpha: 0.18),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.code_rounded,
-                            color: theme.accentColor,
-                            size: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Crafted by',
-                                style: TextStyle(
-                                  color: theme.accentColor.withValues(alpha: 0.55),
-                                  fontSize: 10,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              Text(
-                                'Pranta Dutta',
-                                style: TextStyle(
-                                  color: theme.accentColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () async {
-                            final url = Uri.parse('https://pranta.dev');
-                            if (await canLaunchUrl(url)) {
-                              await launchUrl(
-                                url,
-                                mode: LaunchMode.externalApplication,
-                              );
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.primaryColor.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: theme.primaryColor.withValues(alpha: 0.35),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'pranta.dev',
-                                  style: TextStyle(
-                                    color: theme.accentColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.open_in_new_rounded,
-                                  color: theme.accentColor.withValues(alpha: 0.8),
-                                  size: 12,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Text(
-                    '© $currentYear Pranta Dutta · All rights reserved',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.45),
-                      fontSize: 10,
-                      letterSpacing: 0.3,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAboutChip(String label, IconData icon, GameTheme theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.22),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: theme.accentColor.withValues(alpha: 0.85)),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.9),
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // void _showComingSoonDialog(
   //   BuildContext context,

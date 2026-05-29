@@ -463,6 +463,9 @@ class ApiService {
   Future<SyncOutcome> syncPremiumStatus(Map<String, dynamic> payload) =>
       _postSync('premium-status', payload);
 
+  Future<SyncOutcome> syncPlayerProgress(Map<String, dynamic> payload) =>
+      _postSync('player-progress', payload);
+
   Future<SyncOutcome> syncAchievements(List<Map<String, dynamic>> items) =>
       _postSync('achievements', {'items': items});
 

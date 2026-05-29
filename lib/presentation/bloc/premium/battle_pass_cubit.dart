@@ -9,6 +9,7 @@ import 'package:get_it/get_it.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -21,6 +22,10 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   final StorageService _storageService;
   final PremiumCubit? _premiumCubit;
   final AnalyticsFacade _analytics;
+  // Lifetime player progression runs in parallel to the battle pass. Every XP
+  // grant funnels through bufferXP/flushXP, so forwarding here is the single
+  // hook that feeds the player level from all the same events.
+  final ProgressionService _progression;
 
   // Watches PremiumCubit so the moment a Pro purchase resolves we re-fetch
   // battle-pass progress and pick up the server-side HasPremium snapshot
@@ -46,9 +51,11 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     required StorageService storageService,
     PremiumCubit? premiumCubit,
     required AnalyticsFacade analytics,
+    required ProgressionService progressionService,
   }) : _storageService = storageService,
        _premiumCubit = premiumCubit,
        _analytics = analytics,
+       _progression = progressionService,
        super(BattlePassState.initial());
 
   @override
@@ -219,7 +226,13 @@ class BattlePassCubit extends Cubit<BattlePassState> {
 
   /// Buffer XP locally without any API call. Call [flushXP] once at game end.
   void bufferXP(int xp, {String source = 'gameplay'}) {
-    if (xp <= 0 || state.currentTier >= state.maxTier) return;
+    if (xp <= 0) return;
+    // Feed lifetime player progression FIRST, before the battle-pass max-tier
+    // gate below — player level is lifetime and must keep accruing even once
+    // the season pass is capped (or when no season is loaded).
+    _progression.bufferXp(xp, source: source);
+
+    if (state.currentTier >= state.maxTier) return;
     _bufferedXP += xp;
     if (!_bufferedSources.contains(source)) {
       _bufferedSources.add(source);
@@ -228,6 +241,10 @@ class BattlePassCubit extends Cubit<BattlePassState> {
 
   /// Flush all buffered XP in a single API call, then clear the buffer.
   Future<void> flushXP() async {
+    // Always flush lifetime progression, even when there's no battle-pass XP
+    // to flush (e.g. the season is maxed out).
+    await _progression.flushXp();
+
     if (_bufferedXP <= 0) return;
 
     final totalXP = _bufferedXP;
