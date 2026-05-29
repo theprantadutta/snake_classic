@@ -59,14 +59,17 @@ class _ReplaysScreenState extends State<ReplaysScreen>
             .where((r) => r.frames.isEmpty || r.totalFrames == 0)
             .map((r) => r.id)
             .toList();
-        if (bad.isNotEmpty) {
-          for (final id in bad) {
-            unawaited(_storageService.deleteReplay(id));
-          }
-          return; // skip render of this transient bad state
+        // Purge the bad rows in the background, but DON'T skip the render —
+        // show the valid replays immediately. If a delete ever fails the
+        // bad rows would re-emit forever, and the old early-return left the
+        // screen stuck on the loading spinner.
+        for (final id in bad) {
+          unawaited(_storageService.deleteReplay(id));
         }
-        final sorted = [...replays]
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        final sorted = [
+          for (final r in replays)
+            if (r.frames.isNotEmpty && r.totalFrames != 0) r,
+        ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         setState(() {
           _replays = sorted;
           _isLoading = false;

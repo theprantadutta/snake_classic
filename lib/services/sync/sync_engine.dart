@@ -1404,6 +1404,39 @@ class SyncEngine {
         }
       }
 
+      // ----- weekly quest claims -----
+      //
+      // Mirrors the daily-challenge-claims block above. Keys match
+      // [_weeklyQuestToPayload] / SyncWeeklyQuestClaimPayload. Treated as
+      // authoritative client-mirror state; no-op if the snapshot omits it.
+      final weeklyClaims = snapshot['weekly_quest_claims'];
+      if (weeklyClaims is List) {
+        for (final raw in weeklyClaims) {
+          if (raw is! Map<String, dynamic>) continue;
+          final questId = raw['quest_id'] as String?;
+          if (questId == null || questId.isEmpty) continue;
+          await _gameDao!.upsertWeeklyQuest(
+            WeeklyQuestsCompanion(
+              questId: Value(questId),
+              questType: Value(raw['quest_type'] as String? ?? ''),
+              title: Value(raw['title'] as String? ?? ''),
+              description: Value(raw['description'] as String? ?? ''),
+              currentProgress: Value(raw['current_progress'] as int? ?? 0),
+              targetValue: Value(raw['target_value'] as int? ?? 0),
+              coinReward: Value(raw['coin_reward'] as int? ?? 0),
+              battlePassXpReward:
+                  Value(raw['battle_pass_xp_reward'] as int? ?? 0),
+              isCompleted: Value(raw['is_completed'] as bool? ?? false),
+              claimedReward: Value(raw['claimed_reward'] as bool? ?? false),
+              weekStartDate:
+                  Value(_parseDate(raw['week_start_date']) ?? DateTime.now()),
+              completedAt: Value(_parseDate(raw['completed_at'])),
+            ),
+            enqueueSync: false,
+          );
+        }
+      }
+
       // ----- daily login bonus (singleton) -----
       //
       // Compare server's user-local day against any existing local row
@@ -1510,6 +1543,11 @@ class SyncEngine {
     _connectivityWatcher = null;
     _debounceTimer = null;
     _periodicTimer = null;
+    // Reset the arm latch so a later initialize() / markFirstSignInSkipped()
+    // can reattach the watchers we just cancelled. Without this, _armDrainLoop
+    // short-circuits on the stale `true` and the engine stays asleep after a
+    // dispose → re-init cycle (e.g. sign-out then sign-in).
+    _drainLoopArmed = false;
     _removeRestoreOverlay();
   }
 }

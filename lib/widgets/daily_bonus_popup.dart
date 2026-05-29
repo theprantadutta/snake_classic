@@ -85,7 +85,7 @@ class DailyBonusStatus {
 class DailyBonusPopup extends StatefulWidget {
   final GameTheme theme;
   final DailyBonusStatus status;
-  final VoidCallback onClaim;
+  final Future<void> Function() onClaim;
   final VoidCallback onClose;
   final bool isLoading;
 
@@ -139,6 +139,24 @@ class DailyBonusPopup extends StatefulWidget {
 class _DailyBonusPopupState extends State<DailyBonusPopup>
     with SingleTickerProviderStateMixin {
   late AnimationController _shimmerController;
+
+  // Guards against a fast double-tap firing the claim (and crediting the
+  // reward) twice before the dialog pops. We deliberately don't flip to a
+  // loading spinner here — the popup is meant to feel instant — we just
+  // make the button inert while the claim is in flight.
+  bool _isClaiming = false;
+
+  Future<void> _handleClaim() async {
+    if (_isClaiming) return;
+    setState(() => _isClaiming = true);
+    try {
+      await widget.onClaim();
+    } finally {
+      // onClaim normally pops the dialog, so this State is usually gone by
+      // now — only reset if we're somehow still mounted (claim failed).
+      if (mounted) setState(() => _isClaiming = false);
+    }
+  }
 
   @override
   void initState() {
@@ -577,7 +595,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
     }
 
     return GestureDetector(
-      onTap: widget.isLoading ? null : widget.onClaim,
+      onTap: (widget.isLoading || _isClaiming) ? null : _handleClaim,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),

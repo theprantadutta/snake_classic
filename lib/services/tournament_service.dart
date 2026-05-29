@@ -139,6 +139,7 @@ class TournamentService {
     final companions = raw
         .whereType<Map<String, dynamic>>()
         .map(_companionFromWire)
+        .whereType<TournamentsCacheCompanion>()
         .toList();
     await _dao.replaceActive(
       tournaments: companions,
@@ -164,6 +165,7 @@ class TournamentService {
         .whereType<Map<String, dynamic>>()
         .take(limit)
         .map(_companionFromWire)
+        .whereType<TournamentsCacheCompanion>()
         .toList();
     await _dao.replaceHistory(
       tournaments: companions,
@@ -176,10 +178,13 @@ class TournamentService {
   Future<Tournament?> refreshTournament(String tournamentId) async {
     final body = await _safeFetch(() => _api.getTournament(tournamentId));
     if (body == null) return getTournament(tournamentId);
-    await _dao.upsertTournament(
-      tournament: _companionFromWire(body),
-      refreshedAt: DateTime.now(),
-    );
+    final companion = _companionFromWire(body);
+    if (companion != null) {
+      await _dao.upsertTournament(
+        tournament: companion,
+        refreshedAt: DateTime.now(),
+      );
+    }
     return getTournament(tournamentId);
   }
 
@@ -245,10 +250,13 @@ class TournamentService {
     if (!_api.isAuthenticated) return false;
     final body = await _safeFetch(() => _api.joinTournamentRemote(tournamentId));
     if (body == null) return false;
-    await _dao.upsertTournament(
-      tournament: _companionFromWire(body),
-      refreshedAt: DateTime.now(),
-    );
+    final companion = _companionFromWire(body);
+    if (companion != null) {
+      await _dao.upsertTournament(
+        tournament: companion,
+        refreshedAt: DateTime.now(),
+      );
+    }
     _joinedController.add(tournamentId);
     return true;
   }
@@ -298,8 +306,14 @@ class TournamentService {
   /// Build a [TournamentsCacheCompanion] from a wire response payload.
   /// Stores the full payload in `data_json` so the existing
   /// [Tournament.fromJson] consumer keeps reading it untouched.
-  TournamentsCacheCompanion _companionFromWire(Map<String, dynamic> raw) {
+  /// Returns null for a payload with no usable id — persisting it would
+  /// collapse every malformed row onto the same empty-string cache key.
+  TournamentsCacheCompanion? _companionFromWire(Map<String, dynamic> raw) {
     final id = (raw['id'] ?? raw['tournament_id'] ?? '').toString();
+    if (id.isEmpty) {
+      AppLogger.warning('TournamentService: dropping cache row with no id');
+      return null;
+    }
     final status = (raw['status'] as String?) ?? 'upcoming';
     final endDateRaw = raw['end_date'] ?? raw['endDate'];
     final endDate = endDateRaw is String

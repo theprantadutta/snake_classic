@@ -185,14 +185,15 @@ class AchievementService extends ChangeNotifier {
       // First load from local cache/storage
       await _loadFromLocalStorage();
 
-      // Sync with backend in background — don't block
-      if (_connectivityService.isOnline && _apiService.isAuthenticated) {
-        _syncWithBackend().catchError((e) {
-          if (kDebugMode) {
-            print('Background achievement sync failed: $e');
-          }
-        }); // No await!
-      }
+      // Credit any unclaimed achievement coin rewards. This is local-only
+      // work (Drift + CoinsCubit), so it must run for offline and guest
+      // users too — not just authenticated/online sessions. Fire-and-forget
+      // so it never blocks the load.
+      _syncWithBackend().catchError((e) {
+        if (kDebugMode) {
+          print('Achievement reward claim failed: $e');
+        }
+      }); // No await!
     } catch (e) {
       if (kDebugMode) {
         print('Error loading achievement progress: $e');
@@ -279,12 +280,23 @@ class AchievementService extends ChangeNotifier {
       if (!a.isUnlocked || a.rewardClaimed) continue;
 
       final reward = a.coinReward;
-      if (reward > 0 && coinsCubit != null) {
-        await coinsCubit.earnCoins(
-          CoinEarningSource.achievementUnlocked,
-          customAmount: reward,
-          itemName: a.title,
-        );
+      if (reward > 0) {
+        // Can't credit the coins yet (cubit not registered) — leave the
+        // reward unclaimed so the next launch retries instead of silently
+        // dropping it.
+        if (coinsCubit == null) continue;
+        try {
+          await coinsCubit.earnCoins(
+            CoinEarningSource.achievementUnlocked,
+            customAmount: reward,
+            itemName: a.title,
+          );
+        } catch (e) {
+          if (kDebugMode) {
+            print('Failed to credit reward for ${a.id}, will retry: $e');
+          }
+          continue; // keep rewardClaimed false so it retries next launch
+        }
       }
 
       _achievements[i] = a.copyWith(rewardClaimed: true);

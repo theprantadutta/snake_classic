@@ -144,23 +144,17 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
   ) {
     final tabIndex = _tabController.index;
     DateTime? ts;
-    bool hasData;
     switch (tabIndex) {
       case 0:
         ts = state.activeLastRefreshedAt;
-        hasData = state.activeTournaments.isNotEmpty;
         break;
       case 1:
         ts = state.historyLastRefreshedAt;
-        hasData = state.historyTournaments.isNotEmpty;
         break;
       default:
         ts = state.activeLastRefreshedAt ?? state.historyLastRefreshedAt;
-        hasData = state.activeTournaments.isNotEmpty ||
-            state.historyTournaments.isNotEmpty;
     }
 
-    if (ts == null && !hasData) return const SizedBox.shrink();
     final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
 
     return Padding(

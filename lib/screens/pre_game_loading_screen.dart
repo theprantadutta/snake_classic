@@ -665,7 +665,14 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                       color: theme.accentColor.withValues(alpha: 0.22),
                     ),
                   ),
-                  child: Stack(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Travel the shimmer across the actual progress-bar
+                      // width, not the whole screen — otherwise the streak
+                      // overshoots the bar (which is screen-width minus the
+                      // card padding).
+                      final barWidth = constraints.maxWidth;
+                      return Stack(
                     children: [
                       FractionallySizedBox(
                         widthFactor: progress,
@@ -693,9 +700,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                         animation: _shimmerController,
                         builder: (context, _) {
                           return Positioned(
-                            left: _shimmerController.value *
-                                    (MediaQuery.of(context).size.width) -
-                                60,
+                            left: _shimmerController.value * barWidth - 60,
                             top: 0,
                             bottom: 0,
                             child: IgnorePointer(
@@ -716,6 +721,8 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                         },
                       ),
                     ],
+                      );
+                    },
                   ),
                 ),
               ),

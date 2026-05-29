@@ -177,6 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // boot-time snapshot that can go stale.
     return BlocListener<GameSettingsCubit, GameSettingsState>(
       listenWhen: (prev, curr) =>
+          prev.isReady != curr.isReady ||
           prev.dPadEnabled != curr.dPadEnabled ||
           prev.dPadPosition != curr.dPadPosition ||
           prev.screenShakeEnabled != curr.screenShakeEnabled ||

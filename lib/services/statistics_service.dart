@@ -17,6 +17,13 @@ class StatisticsService extends ChangeNotifier {
   GameStatistics _currentStatistics = GameStatistics.initial();
   bool _initialized = false;
 
+  /// The raw JSON the last applied [_currentStatistics] was parsed from.
+  /// Used to skip redundant notifies when the Drift watch re-emits an
+  /// identical row (GameStatistics has no value equality, so an object
+  /// `identical` check never short-circuits — the parse always makes a
+  /// fresh instance).
+  String? _lastStatsJson;
+
   /// Drift watch keeps [_currentStatistics] in lock-step with the
   /// `statistics` row. Critical for the first-sign-in flow: the
   /// snapshot apply writes the cloud stats to Drift AFTER this
@@ -84,14 +91,15 @@ class StatisticsService extends ChangeNotifier {
         // emit a real row a moment later.
         return;
       }
+      if (row.modelJson == _lastStatsJson) return;
       GameStatistics parsed;
       try {
         parsed = GameStatistics.fromJsonString(row.modelJson);
       } catch (_) {
         return;
       }
-      if (identical(parsed, _currentStatistics)) return;
       _currentStatistics = parsed;
+      _lastStatsJson = row.modelJson;
       notifyListeners();
     });
   }

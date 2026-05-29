@@ -35,7 +35,12 @@ class WeeklyQuestService extends ChangeNotifier {
   bool _isLoading = false;
   DateTime? _lastSuccessfulRefresh;
 
-  List<WeeklyQuest> get quests => _quests;
+  /// The user id whose quests are currently hydrated in memory. This is a
+  /// singleton, so on a user switch (sign-out → sign-in) we must re-hydrate
+  /// instead of serving the previous user's stale list.
+  String? _hydratedUserId;
+
+  List<WeeklyQuest> get quests => List.unmodifiable(_quests);
   bool get isLoading => _isLoading;
 
   int get completedCount => _quests.where((q) => q.isCompleted).length;
@@ -55,11 +60,14 @@ class WeeklyQuestService extends ChangeNotifier {
   /// from the backend if the user is authenticated. Safe to call from
   /// build() — only loads if not already loaded.
   Future<void> initialize() async {
-    if (_quests.isNotEmpty) {
-      // Already hydrated — let a manual refresh handle staleness.
+    final currentUserId = ApiService().currentUserId;
+    if (_quests.isNotEmpty && _hydratedUserId == currentUserId) {
+      // Already hydrated for this user — let a manual refresh handle
+      // staleness.
       return;
     }
     await _hydrateFromDrift();
+    _hydratedUserId = currentUserId;
     if (ApiService().isAuthenticated) {
       // Fire-and-forget — never block UI on the network round-trip.
       unawaited(refresh());
@@ -98,22 +106,21 @@ class WeeklyQuestService extends ChangeNotifier {
         }
       }
 
-      // Merge in the claimed bit from Drift — the backend's
-      // /weekly-quests/current endpoint may return canonical state, but
-      // if the client claimed offline since the last server sync, the
-      // local Drift row is the more recent authority for that field.
-      final claimedIds = await _loadClaimedIds();
+      // Reconcile each backend quest against its local Drift row, which is
+      // the offline-durable source of truth. currentProgress is monotonic so
+      // we take MAX (client-ahead offline gains win); isCompleted /
+      // claimedReward are absorbing-true. Without the MAX-merge a refresh
+      // would clobber progress the client earned offline but hasn't pushed.
+      final localById = await _loadLocalById();
       _quests = [
-        for (final q in parsed)
-          if (claimedIds.contains(q.id))
-            q.copyWith(isCompleted: true, claimedReward: true)
-          else
-            q,
+        for (final q in parsed) _mergeWithLocal(q, localById[q.id]),
       ];
 
-      // Persist freshly-fetched quests to Drift so the next cold-start
-      // can hydrate from cache without a network round-trip. Don't
-      // enqueue sync — these came FROM the backend.
+      // Persist the reconciled quests to Drift so the next cold-start can
+      // hydrate from cache without a network round-trip. enqueueSync: false —
+      // the backend half came FROM the backend, and any client-ahead delta
+      // already carries its own outbox row from when reportProgressBatch
+      // wrote it.
       for (final q in _quests) {
         await _storageService.gameDao.upsertWeeklyQuest(
           _toCompanion(q),
@@ -130,17 +137,36 @@ class WeeklyQuestService extends ChangeNotifier {
     }
   }
 
-  Future<Set<String>> _loadClaimedIds() async {
+  /// Local Drift quest rows keyed by quest id — the offline-durable source
+  /// of truth used to reconcile a backend refresh (see [_mergeWithLocal]).
+  Future<Map<String, db.WeeklyQuest>> _loadLocalById() async {
     try {
       final rows = await _storageService.gameDao.getAllWeeklyQuests();
-      return rows
-          .where((r) => r.claimedReward)
-          .map((r) => r.questId)
-          .toSet();
+      return {for (final r in rows) r.questId: r};
     } catch (e) {
-      AppLogger.error('WeeklyQuestService: error loading claimed ids', e);
+      AppLogger.error('WeeklyQuestService: error loading local quests', e);
       return const {};
     }
+  }
+
+  /// Reconcile a backend quest with its local Drift row: MAX on the
+  /// monotonic progress (client-ahead wins), OR on the absorbing-true
+  /// completed / claimed flags. Claimed implies completed.
+  WeeklyQuest _mergeWithLocal(WeeklyQuest backend, db.WeeklyQuest? local) {
+    if (local == null) return backend;
+    final mergedProgress = local.currentProgress > backend.currentProgress
+        ? local.currentProgress
+        : backend.currentProgress;
+    final mergedClaimed = backend.claimedReward || local.claimedReward;
+    final mergedCompleted = mergedClaimed ||
+        backend.isCompleted ||
+        local.isCompleted ||
+        mergedProgress >= backend.targetValue;
+    return backend.copyWith(
+      currentProgress: mergedProgress,
+      isCompleted: mergedCompleted,
+      claimedReward: mergedClaimed,
+    );
   }
 
   Future<void> _hydrateFromDrift() async {
@@ -167,44 +193,75 @@ class WeeklyQuestService extends ChangeNotifier {
     ]);
   }
 
-  /// Batched per-game progress events. Fires the backend update +
-  /// updates the in-memory list optimistically so the UI reflects the
-  /// gain immediately without waiting for a refresh.
+  /// Batched per-game progress events. Offline-first: the canonical write
+  /// is Drift (which enqueues a sync_outbox row), so progress survives an
+  /// app-kill or offline window and the SyncEngine pushes the live snapshot
+  /// to the backend's UserWeeklyQuestClaim mirror on the next online tick.
+  /// The in-memory list is updated optimistically so the UI reflects the
+  /// gain immediately.
   Future<void> reportProgressBatch(
     List<({WeeklyQuestType type, int incrementBy, String? gameMode})> updates,
   ) async {
     final positive = updates.where((u) => u.incrementBy > 0).toList();
     if (positive.isEmpty) return;
 
-    // Optimistic local update — apply the deltas to in-memory quests so
-    // the user sees the bump right away. Refresh later will reconcile.
+    // 1. Optimistic in-memory update — apply the deltas so the user sees the
+    //    bump right away, and collect the quests that actually changed.
+    final changed = <String, WeeklyQuest>{};
     for (final u in positive) {
-      _applyLocalProgress(u.type, u.incrementBy, gameMode: u.gameMode);
+      for (final q
+          in _applyLocalProgress(u.type, u.incrementBy, gameMode: u.gameMode)) {
+        changed[q.id] = q; // last state wins if several updates touch one quest
+      }
     }
     notifyListeners();
+    if (changed.isEmpty) return;
 
-    if (!ApiService().isAuthenticated) return;
+    // 2. Canonical write: persist each changed quest to Drift. upsertWeeklyQuest
+    //    enqueues a weekly_quest_claim outbox row in the same transaction, so
+    //    the SyncEngine drains it and pushes the snapshot when online. This is
+    //    the offline-durable source of truth — no SharedPreferences, no direct
+    //    API dependency for the write to land.
+    for (final quest in changed.values) {
+      try {
+        await _storageService.gameDao.upsertWeeklyQuest(_toCompanion(quest));
+      } catch (e) {
+        AppLogger.error(
+          'WeeklyQuestService.reportProgressBatch: Drift persist failed',
+          e,
+        );
+      }
+    }
 
-    // Fire the backend batch — its handler is the authoritative writer
-    // of canonical UserWeeklyQuest rows. We don't await an update of
-    // _quests from the response; the next refresh will reconcile.
-    try {
-      await ApiService().updateWeeklyQuestProgressBatch(
-        positive
-            .map((u) => {
-                  'type': u.type.apiValue,
-                  'increment_by': u.incrementBy,
-                  if (u.gameMode != null) 'game_mode': u.gameMode,
-                })
-            .toList(),
-      );
-    } catch (e) {
-      AppLogger.error('WeeklyQuestService.reportProgressBatch errored', e);
+    // 3. Best-effort duplicate signal to the legacy /weekly-quests/progress
+    //    endpoint, which keeps the gameplay-side UserWeeklyQuest table warm.
+    //    NOT the canonical path (that's Drift + outbox above) — purely a
+    //    redundant nudge, safely skipped when offline / unauthenticated.
+    if (ApiService().isAuthenticated) {
+      try {
+        await ApiService().updateWeeklyQuestProgressBatch(
+          positive
+              .map((u) => {
+                    'type': u.type.apiValue,
+                    'increment_by': u.incrementBy,
+                    if (u.gameMode != null) 'game_mode': u.gameMode,
+                  })
+              .toList(),
+        );
+      } catch (e) {
+        AppLogger.error(
+          'WeeklyQuestService.reportProgressBatch: legacy progress push errored',
+          e,
+        );
+      }
     }
   }
 
-  void _applyLocalProgress(WeeklyQuestType type, int incrementBy,
+  /// Applies the delta to matching in-memory quests and returns the quests
+  /// that actually changed, so the caller can persist exactly those to Drift.
+  List<WeeklyQuest> _applyLocalProgress(WeeklyQuestType type, int incrementBy,
       {String? gameMode}) {
+    final changed = <WeeklyQuest>[];
     for (int i = 0; i < _quests.length; i++) {
       final quest = _quests[i];
       if (quest.type != type) continue;
@@ -227,11 +284,21 @@ class WeeklyQuestService extends ChangeNotifier {
       }
       final isNowCompleted = newProgress >= quest.targetValue;
 
-      _quests[i] = quest.copyWith(
+      // Skip no-op updates (e.g. a lower score for a max-wins quest) so we
+      // don't churn the Drift row / sync outbox for nothing.
+      if (newProgress == quest.currentProgress &&
+          isNowCompleted == quest.isCompleted) {
+        continue;
+      }
+
+      final updated = quest.copyWith(
         currentProgress: newProgress,
         isCompleted: isNowCompleted,
       );
+      _quests[i] = updated;
+      changed.add(updated);
     }
+    return changed;
   }
 
   /// Claim a completed quest. Writes the row to Drift (the sync engine

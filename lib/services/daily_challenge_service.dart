@@ -17,12 +17,13 @@ import 'package:snake_classic/utils/logger.dart';
 /// wired up the in-memory list is empty — the screen just shows the
 /// empty state.
 ///
-/// Drift is **claim-only**: we never persist a challenge until the
-/// user actually claims its reward. That way the Drift table only
-/// holds rows the user cared enough about to collect, and there's no
-/// drift between a stale local copy and whatever the backend feeds us
-/// later. Progress accumulated in-memory during a session is lost on
-/// app close — that's fine, it's just optimistic UI.
+/// Offline-first: both progress AND claims are written to Drift, which
+/// enqueues a `dailyChallengeClaim` sync_outbox row in the same
+/// transaction. So in-session progress survives an app-kill / offline
+/// window, and the SyncEngine pushes the live snapshot (progress + claim
+/// state) to the backend's UserDailyChallengeClaims mirror on the next
+/// online tick. The in-memory list is the optimistic UI mirror that the
+/// screen renders; the next backend refresh reconciles it.
 class DailyChallengeService extends ChangeNotifier {
   static final DailyChallengeService _instance =
       DailyChallengeService._internal();
@@ -117,14 +118,15 @@ class DailyChallengeService extends ChangeNotifier {
   Future<void> setChallengesFromBackend(
     List<DailyChallenge> fromBackend,
   ) async {
-    final claimedIds = await _loadClaimedIdsForToday();
+    // Reconcile each backend challenge against its local Drift row, which is
+    // the offline-durable source of truth. currentProgress is monotonic so we
+    // take MAX (client-ahead offline gains win); isCompleted / claimedReward
+    // are absorbing-true. Without the MAX-merge a refresh would clobber
+    // progress the client earned offline but hasn't pushed yet.
+    final localById = await _loadTodaysLocalById();
 
     _challenges = [
-      for (final c in fromBackend)
-        if (claimedIds.contains(c.id))
-          c.copyWith(isCompleted: true, claimedReward: true)
-        else
-          c,
+      for (final c in fromBackend) _mergeWithLocal(c, localById[c.id]),
     ];
     _totalCount = _challenges.length;
     _completedCount = _challenges.where((c) => c.isCompleted).length;
@@ -133,22 +135,57 @@ class DailyChallengeService extends ChangeNotifier {
     // it's already in Drift (this device claimed earlier OR another
     // device claimed and the cold-start sync pulled it in) the bonus
     // is locked.
-    _bonusClaimedToday = claimedIds.contains(_todayBonusId());
+    _bonusClaimedToday = localById[_todayBonusId()]?.rewardClaimed ?? false;
     _lastLoadDate = DateTime.now().toIso8601String().split('T')[0];
+
+    // Persist the reconciled challenges to Drift so its rows reflect the
+    // merged state (e.g. a backend-ahead value from another device lands
+    // locally). enqueueSync: false — any client-ahead delta already carries
+    // its own outbox row from updateProgress.
+    for (final c in _challenges) {
+      try {
+        await _storageService.gameDao
+            .upsertDailyChallenge(_toCompanion(c), enqueueSync: false);
+      } catch (e) {
+        AppLogger.error('DailyChallengeService: refresh persist failed', e);
+      }
+    }
     notifyListeners();
   }
 
-  Future<Set<String>> _loadClaimedIdsForToday() async {
+  /// Today's local Drift challenge rows keyed by challenge id — the
+  /// offline-durable source of truth used to reconcile a backend refresh.
+  Future<Map<String, db.DailyChallenge>> _loadTodaysLocalById() async {
     try {
       final rows = await _storageService.gameDao.getTodaysChallenges();
-      return rows
-          .where((r) => r.rewardClaimed)
-          .map((r) => r.challengeId)
-          .toSet();
+      return {for (final r in rows) r.challengeId: r};
     } catch (e) {
-      AppLogger.error('Error loading claimed challenge ids', e);
+      AppLogger.error('Error loading local challenges', e);
       return const {};
     }
+  }
+
+  /// Reconcile a backend challenge with its local Drift row: MAX on the
+  /// monotonic progress (client-ahead wins), OR on the absorbing-true
+  /// completed / claimed flags. Claimed implies completed.
+  DailyChallenge _mergeWithLocal(
+    DailyChallenge backend,
+    db.DailyChallenge? local,
+  ) {
+    if (local == null) return backend;
+    final mergedProgress = local.currentProgress > backend.currentProgress
+        ? local.currentProgress
+        : backend.currentProgress;
+    final mergedClaimed = backend.claimedReward || local.rewardClaimed;
+    final mergedCompleted = mergedClaimed ||
+        backend.isCompleted ||
+        local.isCompleted ||
+        mergedProgress >= backend.targetValue;
+    return backend.copyWith(
+      currentProgress: mergedProgress,
+      isCompleted: mergedCompleted,
+      claimedReward: mergedClaimed,
+    );
   }
 
   /// Synthetic challenge id for today's all-complete bonus. Local-day
@@ -208,7 +245,13 @@ class DailyChallengeService extends ChangeNotifier {
         );
       }
 
-      _grantBattlePassXp(['daily_challenge']);
+      // Grant the dedicated all-complete bonus XP (not the per-challenge
+      // 'daily_challenge' amount, which is far smaller). bonusXp == 100.
+      if (GetIt.I.isRegistered<BattlePassCubit>()) {
+        final cubit = GetIt.I<BattlePassCubit>();
+        cubit.bufferXP(allCompleteBonusXp, source: 'all_complete_bonus');
+        cubit.flushXP();
+      }
 
       _bonusClaimedToday = true;
       AppLogger.info(
@@ -220,17 +263,20 @@ class DailyChallengeService extends ChangeNotifier {
     }
   }
 
-  /// Update progress for a specific challenge type. In-memory only —
-  /// the buffer is never persisted because the backend authoritatively
-  /// tracks per-user progress and we don't want a stale local copy.
+  /// Update progress for a specific challenge type. Offline-first: the
+  /// in-memory list is updated optimistically and the changed challenges
+  /// are persisted to Drift (which enqueues a sync_outbox row), so the
+  /// gain survives an app-kill / offline window and reaches the backend
+  /// mirror via the SyncEngine.
   Future<void> updateProgress(
     ChallengeType type,
     int value, {
     String? gameMode,
   }) async {
     if (value <= 0) return;
-    _updateLocalProgress(type, value, gameMode: gameMode);
+    final changed = _updateLocalProgress(type, value, gameMode: gameMode);
     notifyListeners();
+    await _persistProgress(changed);
   }
 
   /// Batched per-game progress update.
@@ -238,14 +284,23 @@ class DailyChallengeService extends ChangeNotifier {
     List<({ChallengeType type, int value, String? gameMode})> updates,
   ) async {
     if (updates.isEmpty) return;
+    final changed = <String, DailyChallenge>{};
     for (final update in updates) {
       if (update.value <= 0) continue;
-      _updateLocalProgress(update.type, update.value, gameMode: update.gameMode);
+      for (final c in _updateLocalProgress(update.type, update.value,
+          gameMode: update.gameMode)) {
+        changed[c.id] = c; // last state wins if updates touch the same one
+      }
     }
     notifyListeners();
+    await _persistProgress(changed.values);
   }
 
-  void _updateLocalProgress(ChallengeType type, int value, {String? gameMode}) {
+  /// Applies the delta to matching in-memory challenges and returns the
+  /// ones that actually changed, so the caller can persist exactly those.
+  List<DailyChallenge> _updateLocalProgress(ChallengeType type, int value,
+      {String? gameMode}) {
+    final changed = <DailyChallenge>[];
     for (int i = 0; i < _challenges.length; i++) {
       final challenge = _challenges[i];
 
@@ -280,14 +335,64 @@ class DailyChallengeService extends ChangeNotifier {
 
       final isNowCompleted = newProgress >= challenge.targetValue;
 
-      _challenges[i] = challenge.copyWith(
+      // Skip no-op updates (e.g. a lower score for a max-wins challenge) so
+      // we don't churn the Drift row / sync outbox for nothing.
+      if (newProgress == challenge.currentProgress &&
+          isNowCompleted == challenge.isCompleted) {
+        continue;
+      }
+
+      final updated = challenge.copyWith(
         currentProgress: newProgress,
         isCompleted: isNowCompleted,
       );
+      _challenges[i] = updated;
+      changed.add(updated);
     }
 
     _completedCount = _challenges.where((c) => c.isCompleted).length;
     _allCompleted = _completedCount == _totalCount && _totalCount > 0;
+    return changed;
+  }
+
+  /// Persist changed challenges to Drift. upsertDailyChallenge enqueues a
+  /// dailyChallengeClaim outbox row in the same transaction, so the
+  /// SyncEngine drains it and pushes the snapshot when online. This is the
+  /// offline-durable source of truth for in-progress challenges.
+  Future<void> _persistProgress(Iterable<DailyChallenge> challenges) async {
+    for (final c in challenges) {
+      try {
+        await _storageService.gameDao.upsertDailyChallenge(_toCompanion(c));
+      } catch (e) {
+        AppLogger.error(
+          'DailyChallengeService: progress persist to Drift failed',
+          e,
+        );
+      }
+    }
+  }
+
+  /// Build a Drift companion from a challenge's current state. The day
+  /// anchors (challengeDate / expiresAt) mirror [_persistClaim]; rewardClaimed
+  /// and completedAt reflect the live challenge rather than being forced.
+  db.DailyChallengesCompanion _toCompanion(DailyChallenge c) {
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    return db.DailyChallengesCompanion(
+      challengeId: Value(c.id),
+      challengeType: Value(c.type.apiValue),
+      title: Value(c.title),
+      description: Value(c.description),
+      currentProgress: Value(c.currentProgress),
+      targetProgress: Value(c.targetValue),
+      rewardCoins: Value(c.coinReward),
+      isCompleted: Value(c.isCompleted),
+      rewardClaimed: Value(c.claimedReward),
+      challengeDate: Value(startOfDay),
+      expiresAt: Value(endOfDay),
+      completedAt: c.isCompleted ? Value(today) : const Value.absent(),
+    );
   }
 
   /// Claim a single completed challenge. Writes the row to Drift (the
