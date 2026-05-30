@@ -29,6 +29,12 @@ class AdService {
   bool _initialized = false;
   bool _sdkReady = false;
   bool _consentGathered = false;
+  // Whether UMP says a privacy-options entry point should be offered. Only
+  // true when a consent form is actually available + required for this user —
+  // so we never surface a "Privacy & ad choices" button that opens nothing
+  // (e.g. when no form is configured in the AdMob console, or consent isn't
+  // required in the user's region).
+  bool _privacyOptionsRequired = false;
 
   InterstitialAd? _interstitial;
   bool _interstitialLoading = false;
@@ -113,6 +119,16 @@ class AdService {
       );
       await completer.future;
       _consentGathered = true;
+      // Cache whether a privacy-options form should be offered, so the
+      // Settings entry point can gate on it synchronously.
+      try {
+        final status = await ConsentInformation.instance
+            .getPrivacyOptionsRequirementStatus();
+        _privacyOptionsRequired =
+            status == PrivacyOptionsRequirementStatus.required;
+      } catch (_) {
+        _privacyOptionsRequired = false;
+      }
     } catch (e) {
       AppLogger.warning('Consent gathering errored: $e');
     }
@@ -129,13 +145,24 @@ class AdService {
     } catch (_) {/* ATT optional — ignore */}
   }
 
+  /// Whether a "Privacy & ad choices" entry point should be shown. False when
+  /// no consent form is available/required (so we don't show a dead button).
+  bool get privacyOptionsRequired => _privacyOptionsRequired;
+
   /// Re-show the consent form so users can change their choice (Settings).
-  Future<void> showPrivacyOptions() async {
+  /// Returns true if the form was shown, false if it failed (e.g. no form is
+  /// configured for this app ID in the AdMob console).
+  Future<bool> showPrivacyOptions() async {
+    final completer = Completer<bool>();
     try {
-      await ConsentForm.showPrivacyOptionsForm((_) {});
+      await ConsentForm.showPrivacyOptionsForm((FormError? error) {
+        if (!completer.isCompleted) completer.complete(error == null);
+      });
     } catch (e) {
       AppLogger.warning('Privacy options form failed: $e');
+      if (!completer.isCompleted) completer.complete(false);
     }
+    return completer.future;
   }
 
   bool get consentGathered => _consentGathered;

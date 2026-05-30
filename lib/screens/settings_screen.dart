@@ -507,21 +507,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                     ], theme),
 
-                                  if (premiumState.isInitialized)
-                                    const SizedBox(height: 32),
+                                  const SizedBox(height: 16),
 
-                                  const SizedBox(height: 40),
-
-                                  // Back Button
-                                  Center(
-                                    child: GradientButton(
-                                      onPressed: () => context.pop(),
-                                      text: 'BACK TO GAME',
-                                      primaryColor: theme.accentColor,
-                                      secondaryColor: theme.foodColor,
-                                      icon: Icons.arrow_back,
-                                      width: 200,
-                                    ),
+                                  // Back Button — full width
+                                  GradientButton(
+                                    onPressed: () => context.pop(),
+                                    text: 'BACK TO GAME',
+                                    primaryColor: theme.accentColor,
+                                    secondaryColor: theme.foodColor,
+                                    icon: Icons.arrow_back,
+                                    width: double.infinity,
                                   ),
                                 ],
                               ),
@@ -1648,13 +1643,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// personalized-ad consent. Only shown to free users with ads enabled.
   Widget _buildPrivacyChoicesButton(GameTheme theme) {
     final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
-    if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
+    // Only show when ads are enabled AND a consent form is actually available
+    // to present. Without the form check this button opened nothing (and logged
+    // a "no form(s) configured" UMP error) when no consent form exists for the
+    // app ID or consent isn't required in the user's region.
+    if (ads == null || !ads.adsEnabled || !ads.privacyOptionsRequired) {
+      return const SizedBox.shrink();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 16),
         GradientButton(
-          onPressed: () => ads.showPrivacyOptions(),
+          onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            final shown = await ads.showPrivacyOptions();
+            if (!shown) {
+              messenger.showSnackBar(
+                const SnackBar(
+                  content:
+                      Text("Ad privacy options aren't available right now."),
+                ),
+              );
+            }
+          },
           text: 'PRIVACY & AD CHOICES',
           primaryColor: theme.accentColor,
           secondaryColor: theme.foodColor,
