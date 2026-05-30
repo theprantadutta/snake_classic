@@ -24,6 +24,7 @@ import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
@@ -467,13 +468,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   ) {
     return Row(
       children: [
-        // Left: player identity — avatar + level + XP bar → profile.
+        // Left: player identity (profile) + About — two tools, mirroring the
+        // settings + how-to-play pair on the right.
         PlayerIdentityBadge(
           key: HomeWalkthrough.profileKey,
           theme: theme,
           isSmallScreen: isSmallScreen,
           photoUrl: authState.isSignedIn ? authState.photoURL : null,
           onTap: () => context.push(AppRoutes.profile),
+        ),
+
+        SizedBox(width: isSmallScreen ? 8 : 12),
+
+        // About & credits (app version, credits, links).
+        GestureDetector(
+          onTap: () => showCreditsDialog(context, theme),
+          child: Container(
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+            decoration: BoxDecoration(
+              color: theme.accentColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              Icons.info_outline,
+              color: theme.accentColor,
+              size: isSmallScreen ? 20 : 24,
+            ),
+          ),
         ),
 
         // Center: coins pill → store.

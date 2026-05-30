@@ -102,9 +102,18 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   void _watchPremiumCubit() {
     final premium = _premiumCubit;
     if (premium == null) return;
-    _lastSeenHasPremium = premium.state.hasPremium;
-    if (_lastSeenHasPremium && !state.isActive) {
-      emit(state.copyWith(isActive: true));
+    final realPremium = premium.state.hasPremium;
+    _lastSeenHasPremium = realPremium;
+    // Reconcile isActive to the REAL Pro entitlement in BOTH directions. The
+    // old code only flipped it false→true, so a NON-Pro user whose isActive had
+    // been left true (stale Drift row, a past trial, or a snapshot) stayed
+    // "active" forever. That let a free user SEE premium reward chips and claim
+    // them locally — the claim then reverts (the server / a reload correctly
+    // rejects a premium claim from a non-premium account), producing the
+    // claim→toast→reappear loop. Forcing the match hides premium claim UI from
+    // free users entirely (isActive=false → isValid=false → no premium chips).
+    if (realPremium != state.isActive) {
+      emit(state.copyWith(isActive: realPremium));
       unawaited(_saveState());
       _syncBattlePassToPremium();
     }
@@ -335,6 +344,13 @@ class BattlePassCubit extends Cubit<BattlePassState> {
         // a theme reward, hand the unlock off to the store flow.
         break;
       case BattlePassRewardType.xp:
+        // XP rewards (e.g. "XP Boost" / "Mega XP") grant battle-pass XP so the
+        // pass visibly advances when claimed. Run after this microtask so it
+        // layers onto the just-emitted claimed-tiers state instead of racing
+        // it. Quantities are small (15–25) relative to tier costs, so this
+        // can't runaway-unlock tiers.
+        unawaited(addXP(reward.quantity, source: 'battle_pass_reward'));
+        break;
       case BattlePassRewardType.title:
       case BattlePassRewardType.avatar:
       case BattlePassRewardType.special:

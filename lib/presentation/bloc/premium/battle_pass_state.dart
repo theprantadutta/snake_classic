@@ -68,10 +68,15 @@ class BattlePassState extends Equatable {
     );
   }
 
-  /// Whether battle pass is expired
+  /// Whether battle pass is expired. [expiryDate] is only populated from saved
+  /// data and is frequently null (it was never derived from the season), so we
+  /// fall back to the live season's end date. Without this fallback a null
+  /// expiry reads as "expired", which makes [isValid] false and silently
+  /// rejects every premium reward claim even though the season is live.
   bool get isExpired {
-    if (expiryDate == null) return true;
-    return DateTime.now().isAfter(expiryDate!);
+    final expiry = expiryDate ?? season?.endDate;
+    if (expiry == null) return true;
+    return DateTime.now().isAfter(expiry);
   }
 
   /// Whether battle pass is valid (active and not expired)

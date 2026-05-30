@@ -5,6 +5,7 @@ import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 import 'game_settings_state.dart';
@@ -193,7 +194,10 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       final width = savedSize.width ?? savedSize['width'] ?? 20;
       final height = savedSize.height ?? savedSize['height'] ?? 20;
 
-      return BoardSize.all.firstWhere(
+      // Look up against the FULL list (availableBoardSizes), not BoardSize.all
+      // (which only holds the 4 original sizes) — otherwise a larger size read
+      // from a legacy map shape would silently fall back to Classic.
+      return GameConstants.availableBoardSizes.firstWhere(
         (size) => size.width == width && size.height == height,
         orElse: () => BoardSize.classic,
       );

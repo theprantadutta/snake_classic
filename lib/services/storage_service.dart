@@ -115,16 +115,30 @@ class StorageService {
 
   Future<BoardSize> getBoardSize() async {
     final settings = await _settingsDao?.getSettings();
-    final boardSizeIndex = settings?.boardSizeIndex ?? 1;
-    return GameConstants.availableBoardSizes[boardSizeIndex.clamp(
-      0,
-      GameConstants.availableBoardSizes.length - 1,
-    )];
+    return _resolveBoardSize(settings?.boardSizeIndex ?? 1);
   }
 
   Future<void> saveBoardSize(BoardSize boardSize) async {
-    final index = GameConstants.availableBoardSizes.indexOf(boardSize);
-    await _settingsDao?.updateBoardSize(index >= 0 ? index : 1);
+    // Persist the board's WIDTH (a stable identifier), not its position in
+    // availableBoardSizes. Index-based storage silently remapped everyone's
+    // saved board whenever that list was reordered/trimmed. Widths are >= 15
+    // and legacy index values are 0..6, so the ranges never overlap and old
+    // saves still resolve correctly (see [_resolveBoardSize]).
+    await _settingsDao?.updateBoardSize(boardSize.width);
+  }
+
+  /// Resolve a stored board-size value to a [BoardSize]. Values >= 15 are a
+  /// board WIDTH (the stable format written by [saveBoardSize]); smaller values
+  /// are a legacy list index. Unknown values fall back to Classic.
+  BoardSize _resolveBoardSize(int stored) {
+    final sizes = GameConstants.availableBoardSizes;
+    if (stored >= 15) {
+      return sizes.firstWhere(
+        (s) => s.width == stored,
+        orElse: () => BoardSize.classic,
+      );
+    }
+    return sizes[stored.clamp(0, sizes.length - 1)];
   }
 
   // ==================== Crash Feedback ====================

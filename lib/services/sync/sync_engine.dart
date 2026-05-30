@@ -1350,12 +1350,28 @@ class SyncEngine {
           // on restore (see [_flattenClaimedRewards] comment) — a user
           // who reinstalls may need to re-claim premium-side rewards.
           final wireRewards = raw['claimed_rewards'];
-          final freeList = wireRewards is List
-              ? wireRewards.map((e) => (e as num).toInt()).toList()
-              : const <int>[];
+          final wireSet = wireRewards is List
+              ? wireRewards.map((e) => (e as num).toInt()).toSet()
+              : <int>{};
+          // Preserve the LOCAL free/premium split. The wire payload flattens
+          // both tracks into one list and can't be un-flattened, so blindly
+          // writing it with premium=[] WIPES premium-track claims the user
+          // already made locally — which is why a just-claimed premium reward
+          // reappeared after a sync. Merge instead: keep local premium claims
+          // as-is, and union any wire tiers we don't already know as premium
+          // into the free track.
+          final existing = await _storeDao!.getBattlePass(seasonId);
+          final localSplit = StoreDao.decodeClaimedRewards(
+            existing?.claimedRewards ?? '',
+          );
+          final localPremium = localSplit['premium']!.toSet();
+          final mergedFree = <int>{
+            ...localSplit['free']!,
+            ...wireSet.difference(localPremium),
+          };
           final claimedJson = jsonEncode({
-            'free': freeList,
-            'premium': <int>[],
+            'free': mergedFree.toList()..sort(),
+            'premium': localPremium.toList()..sort(),
           });
           await _storeDao!.saveBattlePass(
             BattlePassesCompanion(

@@ -102,67 +102,105 @@ class PlayerIdentityBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final progression = getIt<ProgressionService>();
     final avatarSize = isSmallScreen ? 36.0 : 44.0;
-    final iconSize = isSmallScreen ? 22.0 : 28.0;
+    final iconSize = isSmallScreen ? 20.0 : 26.0;
+    // The progress gauge ring sits just outside the avatar.
+    final ringSize = avatarSize + 8;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: ListenableBuilder(
         listenable: progression,
         builder: (context, _) {
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: avatarSize,
-                height: avatarSize,
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [theme.accentColor, theme.foodColor],
+          final level = progression.level;
+          final progress = progression.levelProgress.clamp(0.0, 1.0);
+          return SizedBox(
+            width: ringSize,
+            // Extra vertical room so the "LV" badge can overhang the bottom.
+            height: ringSize + 6,
+            child: Stack(
+              alignment: Alignment.topCenter,
+              clipBehavior: Clip.none,
+              children: [
+                // Circular XP gauge — fills like a battery ring as the
+                // player levels up. Replaces the old loose "Lv N + bar".
+                SizedBox(
+                  width: ringSize,
+                  height: ringSize,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 3,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: theme.accentColor.withValues(alpha: 0.18),
+                    valueColor: AlwaysStoppedAnimation(theme.foodColor),
                   ),
                 ),
-                child: ClipOval(
-                  child: photoUrl != null
-                      ? Image.network(
-                          photoUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) =>
-                              _fallbackAvatar(iconSize),
-                        )
-                      : _fallbackAvatar(iconSize),
-                ),
-              ),
-              SizedBox(width: isSmallScreen ? 6 : 8),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Lv ${progression.level}',
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: isSmallScreen ? 13 : 15,
-                      fontWeight: FontWeight.w800,
+                // Avatar nested inside the gauge, with its own gradient ring.
+                Positioned(
+                  top: 4,
+                  child: Container(
+                    width: avatarSize,
+                    height: avatarSize,
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [theme.accentColor, theme.foodColor],
+                      ),
+                    ),
+                    child: ClipOval(
+                      child: photoUrl != null
+                          ? Image.network(
+                              photoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  _fallbackAvatar(iconSize),
+                            )
+                          : _fallbackAvatar(iconSize),
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  SizedBox(
-                    width: isSmallScreen ? 44 : 56,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: progression.levelProgress,
-                        minHeight: 4,
-                        backgroundColor:
-                            theme.accentColor.withValues(alpha: 0.15),
-                        valueColor: AlwaysStoppedAnimation(theme.accentColor),
+                ),
+                // "LV N" badge pill overhanging the bottom of the gauge —
+                // mirrors the rounded, gradient look of the coins pill.
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 5 : 6,
+                        vertical: 1.5,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [theme.accentColor, theme.foodColor],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: theme.backgroundColor,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        'LV $level',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 8.5 : 9.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           );
         },
       ),

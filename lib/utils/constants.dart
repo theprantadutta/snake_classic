@@ -107,12 +107,13 @@ class GameConstants {
     BoardSize(20, 20, 'Classic', 'The original Snake experience', icon: '🐍'),
     BoardSize(25, 25, 'Large', 'More room to grow', icon: '📏'),
     BoardSize(30, 30, 'Huge', 'Maximum challenge and space', icon: '🏟️'),
+    // All board sizes are FREE — anyone can pick any size. (The `isPremium`
+    // flag is kept on the model for compatibility but is false everywhere.)
     BoardSize(
       35,
       35,
       'Epic',
-      'Premium board for advanced players',
-      isPremium: true,
+      'A big board for advanced players',
       icon: '⭐',
     ),
     BoardSize(
@@ -120,7 +121,6 @@ class GameConstants {
       40,
       'Massive',
       'Enormous board for epic games',
-      isPremium: true,
       icon: '🏆',
     ),
     BoardSize(
@@ -128,16 +128,14 @@ class GameConstants {
       50,
       'Ultimate',
       'The largest possible board',
-      isPremium: true,
       icon: '👑',
     ),
   ];
 
-  // Free board sizes (accessible without premium)
+  // Every board size is free now; these partitions are kept for any callers
+  // but `premiumBoardSizes` is always empty.
   static List<BoardSize> get freeBoardSizes =>
       availableBoardSizes.where((size) => !size.isPremium).toList();
-
-  // Premium board sizes (require premium subscription)
   static List<BoardSize> get premiumBoardSizes =>
       availableBoardSizes.where((size) => size.isPremium).toList();
 

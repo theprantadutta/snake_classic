@@ -499,16 +499,26 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
         .get();
   }
 
-  /// Get current battle pass (any season)
+  /// Get current battle pass (any season). Returns the NEWEST row — the table's
+  /// PK is an autoincrement id, so the most-recently-written row carries the
+  /// latest state. (Historically the table accumulated duplicate rows; ordering
+  /// by id desc guarantees reads reflect the latest save even if strays exist.)
   Future<BattlePassesData?> getCurrentBattlePass() =>
-      (select(battlePasses)..limit(1)).getSingleOrNull();
+      (select(battlePasses)
+            ..orderBy([(t) => OrderingTerm.desc(t.id)])
+            ..limit(1))
+          .getSingleOrNull();
 
   /// Watch the current battle pass row regardless of seasonId. Used by
   /// BattlePassCubit to react to writes (snapshot apply, sync restore)
   /// without knowing the active season id up front. When the table is
-  /// empty (fresh install pre-restore) emits null.
+  /// empty (fresh install pre-restore) emits null. Mirrors
+  /// [getCurrentBattlePass] — newest row wins.
   Stream<BattlePassesData?> watchCurrentBattlePass() =>
-      (select(battlePasses)..limit(1)).watchSingleOrNull();
+      (select(battlePasses)
+            ..orderBy([(t) => OrderingTerm.desc(t.id)])
+            ..limit(1))
+          .watchSingleOrNull();
 
   /// Save battle pass data. [enqueueSync] defaults true.
   Future<void> saveBattlePass(
@@ -522,12 +532,36 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     );
     final seasonId = stamped.seasonId.present ? stamped.seasonId.value : null;
     await transaction(() async {
-      await into(battlePasses).insertOnConflictUpdate(stamped);
-      if (enqueueSync && seasonId != null) {
-        await attachedDatabase.enqueueSyncOutbox(
-          dataType: SyncDataType.battlePass,
-          entityKey: 'battle_pass:$seasonId',
-        );
+      // The BattlePasses PK is an autoincrement `id` and `seasonId` has NO
+      // unique constraint, so insertOnConflictUpdate never finds a conflict —
+      // it INSERTS A NEW ROW on every save. Duplicate rows then pile up and a
+      // stale one gets read back, so claims (and XP) appear to revert a second
+      // after they're made. Upsert by seasonId manually instead: update the
+      // existing row in place, prune any leftover duplicates from the old
+      // insert-happy behaviour, and only insert when no row exists yet.
+      if (seasonId != null) {
+        final rows = await (select(battlePasses)
+              ..where((t) => t.seasonId.equals(seasonId)))
+            .get();
+        if (rows.isEmpty) {
+          await into(battlePasses).insert(stamped);
+        } else {
+          await (update(battlePasses)
+                ..where((t) => t.id.equals(rows.first.id)))
+              .write(stamped);
+          if (rows.length > 1) {
+            final dupeIds = rows.skip(1).map((r) => r.id).toList();
+            await (delete(battlePasses)..where((t) => t.id.isIn(dupeIds))).go();
+          }
+        }
+        if (enqueueSync) {
+          await attachedDatabase.enqueueSyncOutbox(
+            dataType: SyncDataType.battlePass,
+            entityKey: 'battle_pass:$seasonId',
+          );
+        }
+      } else {
+        await into(battlePasses).insertOnConflictUpdate(stamped);
       }
     });
   }
@@ -538,7 +572,7 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   /// JSON array (everything is treated as a free-tier claim in that
   /// case — the cubit re-saves with the structured shape on the next
   /// claim).
-  static Map<String, List<int>> _decodeClaimedRewards(String raw) {
+  static Map<String, List<int>> decodeClaimedRewards(String raw) {
     try {
       final decoded = json.decode(raw);
       if (decoded is Map) {
@@ -571,7 +605,7 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     final pass = await getCurrentBattlePass();
     if (pass == null) return null;
 
-    final split = _decodeClaimedRewards(pass.claimedRewards);
+    final split = decodeClaimedRewards(pass.claimedRewards);
 
     return json.encode({
       'season_id': pass.seasonId,
@@ -625,16 +659,22 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     final seasonStart = data['season_start_date'] as String?;
     final seasonEnd = data['season_end_date'] as String? ?? expiry;
 
+    // Pin to the EXISTING row's seasonId when one is present. BattlePassCubit
+    // doesn't carry a stable seasonId, so deriving it from its display label
+    // (season_name) can disagree with the seasonId the cloud snapshot wrote —
+    // producing a SECOND row. getCurrentBattlePass() (limit 1) then reads the
+    // other row, so a just-saved claim looks like it reverted (the claimed
+    // reward chip vanishes then reappears). Reusing the current row's id keeps
+    // every read and write on the same single row.
+    final existing = await getCurrentBattlePass();
+    final resolvedSeasonId = existing?.seasonId ??
+        (data['season_id'] as String?) ??
+        (data['season_name'] as String?) ??
+        'default';
+
     await saveBattlePass(
       BattlePassesCompanion(
-        // BattlePassCubit doesn't carry a stable seasonId — fall back
-        // to season_name (cubit's display label) so re-saves stick to
-        // the same row instead of churning new rows per season name.
-        seasonId: Value(
-          (data['season_id'] as String?) ??
-              (data['season_name'] as String?) ??
-              'default',
-        ),
+        seasonId: Value(resolvedSeasonId),
         currentTier: Value((data['current_tier'] as int?) ?? 0),
         currentXp: Value((data['current_xp'] as int?) ?? 0),
         xpForNextTier: Value((data['xp_for_next_tier'] as int?) ?? 100),

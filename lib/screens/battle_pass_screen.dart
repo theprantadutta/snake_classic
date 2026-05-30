@@ -183,11 +183,39 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                             capKey: AdService.capBattlePassXp,
                             onWatch: () async {
                               final bp = context.read<BattlePassCubit>();
+                              // Capture the messenger up front — onReward fires
+                              // after the ad is dismissed (an async gap), so we
+                              // can't safely read context then.
+                              final messenger =
+                                  ScaffoldMessenger.of(context);
                               await getIt<AdService>().showRewardedCapped(
                                 capKey: AdService.capBattlePassXp,
                                 onReward: () {
                                   bp.bufferXP(50, source: 'ad_boost');
                                   bp.flushXP();
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: const Row(
+                                        children: [
+                                          Icon(Icons.bolt,
+                                              color: Colors.white, size: 20),
+                                          SizedBox(width: 10),
+                                          Text('+50 Battle Pass XP earned!',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600)),
+                                        ],
+                                      ),
+                                      backgroundColor: Colors.green.shade700,
+                                      behavior: SnackBarBehavior.floating,
+                                      margin: const EdgeInsets.fromLTRB(
+                                          16, 0, 16, 16),
+                                      duration: const Duration(seconds: 2),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  );
                                 },
                               );
                             },
@@ -820,7 +848,9 @@ class _AvailableNowSection extends StatelessWidget {
 
   List<({BattlePassReward reward, int tier, bool isPremium})>
       _gatherAvailable() {
-    final hasPremium = state.isActive;
+    // Gate premium chips on isValid (not just isActive) so we never surface a
+    // chip the claim path (claimPremiumReward → requires isValid) would reject.
+    final hasPremium = state.isValid;
     final out = <({BattlePassReward reward, int tier, bool isPremium})>[];
     for (int i = 1; i <= state.currentTier && i <= season.levels.length; i++) {
       final level = season.levels[i - 1];

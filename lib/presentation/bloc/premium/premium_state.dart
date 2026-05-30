@@ -36,7 +36,6 @@ class PremiumState extends Equatable {
   final Set<String> ownedSkins;
   final Set<String> ownedTrails;
   final Set<String> ownedPowerUps;
-  final Set<String> ownedBoardSizes;
   final Set<String> ownedBundles;
   final String selectedSkinId;
   final String selectedTrailId;
@@ -71,7 +70,6 @@ class PremiumState extends Equatable {
     this.ownedSkins = const {},
     this.ownedTrails = const {},
     this.ownedPowerUps = const {},
-    this.ownedBoardSizes = const {},
     this.ownedBundles = const {},
     this.selectedSkinId = 'classic',
     this.selectedTrailId = 'none',
@@ -101,7 +99,6 @@ class PremiumState extends Equatable {
     Set<String>? ownedSkins,
     Set<String>? ownedTrails,
     Set<String>? ownedPowerUps,
-    Set<String>? ownedBoardSizes,
     Set<String>? ownedBundles,
     String? selectedSkinId,
     String? selectedTrailId,
@@ -128,7 +125,6 @@ class PremiumState extends Equatable {
       ownedSkins: ownedSkins ?? this.ownedSkins,
       ownedTrails: ownedTrails ?? this.ownedTrails,
       ownedPowerUps: ownedPowerUps ?? this.ownedPowerUps,
-      ownedBoardSizes: ownedBoardSizes ?? this.ownedBoardSizes,
       ownedBundles: ownedBundles ?? this.ownedBundles,
       selectedSkinId: selectedSkinId ?? this.selectedSkinId,
       selectedTrailId: selectedTrailId ?? this.selectedTrailId,
@@ -200,15 +196,6 @@ class PremiumState extends Equatable {
   /// Check if a power-up is unlocked
   bool isPowerUpUnlocked(String powerUpId) => ownedPowerUps.contains(powerUpId);
 
-  /// Check if a board size is unlocked
-  bool isBoardSizeUnlocked(String boardSizeId) {
-    final boardSize = GameConstants.availableBoardSizes
-        .where((b) => b.id == boardSizeId)
-        .firstOrNull;
-    if (boardSize == null) return false;
-    return !boardSize.isPremium || hasPremium || ownedBoardSizes.contains(boardSizeId);
-  }
-
   /// Check if a bundle is owned
   bool isBundleOwned(String bundleId) => ownedBundles.contains(bundleId);
 
@@ -262,7 +249,6 @@ class PremiumState extends Equatable {
     ownedSkins,
     ownedTrails,
     ownedPowerUps,
-    ownedBoardSizes,
     ownedBundles,
     selectedSkinId,
     selectedTrailId,

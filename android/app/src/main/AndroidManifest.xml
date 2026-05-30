@@ -8,6 +8,13 @@
 
     <uses-permission android:name="com.android.vending.BILLING" />
 
+    <!-- AdMob / Google Mobile Ads advertising ID. Required on Android 13+ for
+         the SDK to read the advertising ID used to serve and measure ads.
+         Recent google_mobile_ads versions no longer auto-declare this (Play
+         policy leaves the choice to the app), so we declare it explicitly.
+         Pro users still see no ads — gating is in AdService, not the manifest. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
     <!-- Defensive: tell the Android manifest merger to STRIP any merged-in
          exact-alarm permissions that come from plugin dependencies. Google
          Play requires a special-use declaration for these (restricted to

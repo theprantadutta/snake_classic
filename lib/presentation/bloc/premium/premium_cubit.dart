@@ -69,7 +69,6 @@ class PremiumCubit extends Cubit<PremiumState> {
       final ownedSkins = await _storageService.getUnlockedSkins();
       final ownedTrails = await _storageService.getUnlockedTrails();
       final ownedPowerUps = await _storageService.getUnlockedPowerUps();
-      final ownedBoardSizes = await _storageService.getUnlockedBoardSizes();
       final ownedBundles = await _storageService.getUnlockedBundles();
       final trialData = await _storageService.getTrialData();
       final tournamentEntries = await _storageService.getTournamentEntries();
@@ -104,7 +103,6 @@ class PremiumCubit extends Cubit<PremiumState> {
           ownedSkins: ownedSkins.toSet(),
           ownedTrails: migratedTrails,
           ownedPowerUps: ownedPowerUps.toSet(),
-          ownedBoardSizes: ownedBoardSizes.toSet(),
           ownedBundles: ownedBundles.toSet(),
           isOnTrial: trialData['isOnTrial'] ?? false,
           trialStartDate: trialStartDate,
@@ -471,14 +469,6 @@ class PremiumCubit extends Cubit<PremiumState> {
     AppLogger.info('Power-up unlocked: $powerUpId');
   }
 
-  /// Unlock a board size
-  Future<void> unlockBoardSize(String boardSizeId) async {
-    final updatedBoardSizes = {...state.ownedBoardSizes, boardSizeId};
-    emit(state.copyWith(ownedBoardSizes: updatedBoardSizes));
-    await _storageService.unlockItem(boardSizeId, 'board_size');
-    AppLogger.info('Board size unlocked: $boardSizeId');
-  }
-
   /// Unlock a bundle (and all its contents — cosmetic or power-up)
   Future<void> unlockBundle(String bundleId) async {
     if (state.ownedBundles.contains(bundleId)) return;
@@ -633,8 +623,6 @@ class PremiumCubit extends Cubit<PremiumState> {
   bool isTrailUnlocked(String trailId) => state.isTrailOwned(trailId);
   bool isPowerUpUnlocked(String powerUpId) =>
       state.isPowerUpUnlocked(powerUpId);
-  bool isBoardSizeUnlocked(String boardSizeId) =>
-      state.isBoardSizeUnlocked(boardSizeId);
   bool isBundleOwned(String bundleId) => state.isBundleOwned(bundleId);
   bool hasTournamentEntry(String type) => state.hasTournamentEntry(type);
 

@@ -853,6 +853,7 @@ class GameCubit extends Cubit<GameCubitState> {
         crashReason,
         snake.head,
         collisionBodyPart: collisionBodyPart,
+        fatalSnake: snake,
       );
       return;
     }
@@ -865,7 +866,11 @@ class GameCubit extends Cubit<GameCubitState> {
     if (previousState.gameMode.enforcesNoRevisit &&
         !hasImmunity &&
         _visitedCells.contains(snake.head)) {
-      _handleCrash(model.CrashReason.selfCollision, snake.head);
+      _handleCrash(
+        model.CrashReason.selfCollision,
+        snake.head,
+        fatalSnake: snake,
+      );
       return;
     }
     _visitedCells.add(snake.head);
@@ -1258,6 +1263,7 @@ class GameCubit extends Cubit<GameCubitState> {
     model.CrashReason reason,
     Position? crashPosition, {
     Position? collisionBodyPart,
+    Snake? fatalSnake,
   }) {
     debugPrint(
       '🎮 [GameCubit] _handleCrash called: reason=$reason, crashPosition=$crashPosition',
@@ -1284,6 +1290,16 @@ class GameCubit extends Cubit<GameCubitState> {
       _respawnAfterCrash(currentGameState);
       return;
     }
+
+    // Crash render: we commit the FATAL snake ([fatalSnake], head on the cell
+    // it died on — into the wall / onto its body) as the crash-frame snake, and
+    // pin previousGameState to the pre-move state (head on the last valid cell).
+    // The board interpolates the head from previousGameState → gameState, so it
+    // gets a clean one-cell delta to lunge across; the board plays that as a
+    // short one-shot "lunge into the wall" on crash (see GameBoard's crash
+    // lunge controller). Without committing the fatal snake the head would stay
+    // a cell back from where it died.
+    final preMoveState = currentGameState;
 
     // Cancel all timers
     _gameTimer?.cancel();
@@ -1320,12 +1336,14 @@ class GameCubit extends Cubit<GameCubitState> {
           state.copyWith(
             status: GamePlayStatus.crashed,
             gameState: state.gameState?.copyWith(
+              snake: fatalSnake,
               status: model.GameStatus.crashed,
               crashReason: reason,
               crashPosition: crashPosition,
               collisionBodyPart: collisionBodyPart,
               showCrashModal: false,
             ),
+            previousGameState: preMoveState,
             offeringRevive: true,
           ),
         );
@@ -1340,6 +1358,7 @@ class GameCubit extends Cubit<GameCubitState> {
     // Skip mode: go directly to game over with minimal feedback
     if (durationSeconds == GameConstants.crashFeedbackSkip) {
       final crashedGameState = state.gameState?.copyWith(
+        snake: fatalSnake,
         status: model.GameStatus.crashed,
         crashReason: reason,
         crashPosition: crashPosition,
@@ -1351,6 +1370,7 @@ class GameCubit extends Cubit<GameCubitState> {
         state.copyWith(
           status: GamePlayStatus.crashed,
           gameState: crashedGameState,
+          previousGameState: preMoveState,
         ),
       );
 
@@ -1365,6 +1385,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
     // First show crash feedback with reason and position details (visual only)
     final crashedGameState = state.gameState?.copyWith(
+      snake: fatalSnake,
       status: model.GameStatus.crashed,
       crashReason: reason,
       crashPosition: crashPosition,
@@ -1376,6 +1397,7 @@ class GameCubit extends Cubit<GameCubitState> {
       state.copyWith(
         status: GamePlayStatus.crashed,
         gameState: crashedGameState,
+        previousGameState: preMoveState,
       ),
     );
 
@@ -1418,9 +1440,11 @@ class GameCubit extends Cubit<GameCubitState> {
 
   /// Continue the current run after a crash — this is a true "revive", not a
   /// restart. The snake the player crashed with is KEPT as-is (same length,
-  /// same position, same score/level/combo/food/power-ups): at crash time the
-  /// fatal move was made on a throwaway copy, so `state.gameState.snake` is
-  /// still the valid pre-crash snake (head in-bounds, no self-overlap).
+  /// same score/level/combo/food/power-ups). The crash FRAME's snake is the
+  /// fatal snake (head lunged into the wall / onto its body, possibly out of
+  /// bounds) used only for the death animation — so we revive from the
+  /// pre-crash snake we pinned into `previousGameState`, which is the last
+  /// valid in-bounds snake.
   ///
   /// The only thing we change is the heading — it's still pointed at the wall
   /// / its own body that killed it, so without turning it the next tick would
@@ -1434,8 +1458,10 @@ class GameCubit extends Cubit<GameCubitState> {
     if (current == null || _revivedThisGame) return;
     _revivedThisGame = true;
 
-    // Keep the exact snake; only steer it somewhere safe to continue.
-    final snake = current.snake.copy();
+    // Restore the last valid (in-bounds) snake from the pinned pre-crash state,
+    // not the fatal crash-frame snake; only steer it somewhere safe to continue.
+    final preCrash = state.previousGameState ?? current;
+    final snake = preCrash.snake.copy();
     final safeDir = _safeReviveDirection(snake, current);
     final revivedSnake = safeDir != null
         ? Snake.fromPositions(snake.body, safeDir)

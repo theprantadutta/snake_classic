@@ -40,6 +40,11 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
   DateTime _lastGameStateChangeTime = DateTime.now();
   GameState? _lastGameStateForAnimation;
 
+  // One-shot "lunge into the wall / onto the body" animation played once when
+  // the game crashes. Drives the head from its last cell into the cell it died
+  // on so the death reads as an impact rather than a freeze a cell short.
+  late AnimationController _crashLungeController;
+
   GameState? _cachedGameState;
   GameTheme? _cachedTheme;
 
@@ -91,6 +96,14 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
     if (widget.gameState.status == GameStatus.playing) {
       _moveAnimationController.repeat();
     }
+
+    // Crash lunge: a quick one-shot. Forwarded once on the playing→crashed
+    // transition (see didUpdateWidget); its value drives the head's final
+    // movement into the wall/body in the paint loop.
+    _crashLungeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
   }
 
   @override
@@ -104,12 +117,24 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
     } else if (!isPlaying && _moveAnimationController.isAnimating) {
       _moveAnimationController.stop();
     }
+
+    // Fire the crash lunge once, on the transition INTO crashed (not on the
+    // later showCrashModal rebuilds, which keep status == crashed). Reset it
+    // when a fresh game starts playing so the next crash lunges again.
+    final wasCrashed = oldWidget.gameState.status == GameStatus.crashed;
+    final isCrashed = widget.gameState.status == GameStatus.crashed;
+    if (isCrashed && !wasCrashed) {
+      _crashLungeController.forward(from: 0.0);
+    } else if (isPlaying && wasCrashed) {
+      _crashLungeController.value = 0.0;
+    }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _moveAnimationController.dispose();
+    _crashLungeController.dispose();
     _particleManager
         .clear(); // Clean up particle emissions to prevent memory leaks
     super.dispose();
@@ -326,12 +351,38 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
                                   // AnimatedBuilder drives 60fps repaints for smooth snake movement
                                   // without causing BlocBuilder rebuilds
                                   return AnimatedBuilder(
-                                    animation: _moveAnimationController,
+                                    // Listen to both the 60fps move ticker AND
+                                    // the one-shot crash lunge so the lunge
+                                    // repaints even after the move ticker stops
+                                    // on crash.
+                                    animation: Listenable.merge([
+                                      _moveAnimationController,
+                                      _crashLungeController,
+                                    ]),
                                     builder: (context, child) {
                                       final gameSpeed = currentGameState.gameSpeed;
-                                      final moveProgress = _calculateMoveProgress(
-                                        gameSpeed,
-                                      );
+                                      final double moveProgress;
+                                      if (currentGameState.status ==
+                                          GameStatus.crashed) {
+                                        // Eased one-shot lunge into the death
+                                        // cell. Wall deaths lunge only partway
+                                        // so the head presses into the wall and
+                                        // isn't fully clipped away; self/other
+                                        // deaths complete the move onto the body.
+                                        final lungeTarget = currentGameState
+                                                    .crashReason ==
+                                                CrashReason.wallCollision
+                                            ? 0.5
+                                            : 1.0;
+                                        moveProgress = Curves.easeOut.transform(
+                                              _crashLungeController.value,
+                                            ) *
+                                            lungeTarget;
+                                      } else {
+                                        moveProgress = _calculateMoveProgress(
+                                          gameSpeed,
+                                        );
+                                      }
                                       // Head-shimmer driver: fade over a
                                       // ~140ms window from the accept stamp
                                       // so the highlight shows for a couple
@@ -573,20 +624,39 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
   ) {
     if (previousState == null) return;
 
-    // Check if food was consumed (score increased)
-    if (currentState.score > previousState.score &&
-        previousState.food != null) {
-      // Calculate food position using actual rendered cell dimensions
-      final foodScreenX =
-          previousState.food!.position.x * _actualCellW +
-          _actualCellW / 2;
-      final foodScreenY =
-          previousState.food!.position.y * _actualCellH +
-          _actualCellH / 2;
-      final foodPosition = Offset(foodScreenX, foodScreenY);
+    // Check if food was consumed. A rising score alone is NOT enough to know
+    // WHERE to burst: in multi-food modes the snake can eat any one of several
+    // foods, and using the primary food's position made the particles appear
+    // at the wrong food. The eaten food is whichever one the head just moved
+    // onto, so match the new head cell against the foods present last frame
+    // (primary + extras) and burst at THAT food's exact position/type. If
+    // nothing matches (e.g. score ticked up for a non-food reason), skip the
+    // burst rather than fire it in the wrong place.
+    if (currentState.score > previousState.score) {
+      final eatenCell = currentState.snake.head;
+      Food? eaten;
+      if (previousState.food != null &&
+          previousState.food!.position == eatenCell) {
+        eaten = previousState.food;
+      } else {
+        for (final f in previousState.foods) {
+          if (f.position == eatenCell) {
+            eaten = f;
+            break;
+          }
+        }
+      }
+      if (eaten != null) {
+        // Calculate food position using actual rendered cell dimensions
+        final foodScreenX =
+            eaten.position.x * _actualCellW + _actualCellW / 2;
+        final foodScreenY =
+            eaten.position.y * _actualCellH + _actualCellH / 2;
+        final foodPosition = Offset(foodScreenX, foodScreenY);
 
-      // Add food consumption particle effect with food type
-      _addFoodParticleEffect(foodPosition, theme, previousState.food!.type);
+        // Add food consumption particle effect with the eaten food's type
+        _addFoodParticleEffect(foodPosition, theme, eaten.type);
+      }
     }
 
     // Check if power-up was collected
