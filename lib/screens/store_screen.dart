@@ -1210,6 +1210,75 @@ class _StoreScreenState extends State<StoreScreen>
   // THEMES TAB
   // ===========================================================================
 
+  /// Banner atop the cosmetic tabs (themes / skins / trails) telling the user
+  /// a Pro subscription unlocks everything in that tab. Tapping it (when not
+  /// already Pro) jumps to the Pro tab. Power-Ups are intentionally excluded —
+  /// Pro doesn't unlock the power-up catalog.
+  Widget _buildProIncludedBanner(
+    GameTheme theme,
+    PremiumState premiumState,
+    String itemNoun,
+  ) {
+    final isPro = premiumState.hasPremium;
+    return GestureDetector(
+      onTap: isPro ? null : () => _tabController.animateTo(0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.purple.shade400.withValues(alpha: 0.22),
+              Colors.indigo.shade400.withValues(alpha: 0.14),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border:
+              Border.all(color: Colors.purple.shade300.withValues(alpha: 0.45)),
+        ),
+        child: Row(
+          children: [
+            Icon(isPro ? Icons.check_circle : Icons.diamond,
+                color: Colors.purple.shade200, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isPro
+                        ? 'Unlocked with Pro'
+                        : 'Included with Snake Classic Pro',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isPro
+                        ? 'Every $itemNoun here is yours with your subscription.'
+                        : 'Subscribe to Pro to unlock every $itemNoun here — no separate purchase needed.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!isPro)
+              Icon(Icons.chevron_right,
+                  color: Colors.white.withValues(alpha: 0.7), size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildThemesTab(GameTheme theme, PremiumState premiumState) {
     // Premium themes — listed as products in the Play Store catalog.
     const premiumThemes = [
@@ -1240,6 +1309,8 @@ class _StoreScreenState extends State<StoreScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildProIncludedBanner(theme, premiumState, 'theme'),
+          const SizedBox(height: 16),
           _buildThemesBundleCard(theme, premiumState),
           const SizedBox(height: 20),
           Text(
@@ -1772,17 +1843,24 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildSkinsTab(GameTheme theme, PremiumState premiumState) {
     _reconcilePendingPurchases(premiumState);
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        // Match the Trails tab aspect ratio so the painted preview
-        // band has room to render the snake silhouette + signature.
-        childAspectRatio: 0.78,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: SnakeSkinType.values.length,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: _buildProIncludedBanner(theme, premiumState, 'skin'),
+        ),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              // Match the Trails tab aspect ratio so the painted preview
+              // band has room to render the snake silhouette + signature.
+              childAspectRatio: 0.78,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: SnakeSkinType.values.length,
       itemBuilder: (context, index) {
         final skin = SnakeSkinType.values[index];
         // Pro subscription unlocks all premium skins (mirrors theme bundling).
@@ -1819,6 +1897,9 @@ class _StoreScreenState extends State<StoreScreen>
           },
         );
       },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1993,17 +2074,24 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildTrailsTab(GameTheme theme, PremiumState premiumState) {
     _reconcilePendingPurchases(premiumState);
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        // Slightly more vertical room than the skins tab so the painted
-        // trail preview has space to breathe.
-        childAspectRatio: 0.78,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: TrailEffectType.values.length,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: _buildProIncludedBanner(theme, premiumState, 'trail'),
+        ),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              // Slightly more vertical room than the skins tab so the painted
+              // trail preview has space to breathe.
+              childAspectRatio: 0.78,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: TrailEffectType.values.length,
       itemBuilder: (context, index) {
         final trail = TrailEffectType.values[index];
         // Pro subscription unlocks all premium trails (mirrors theme bundling).
@@ -2040,6 +2128,9 @@ class _StoreScreenState extends State<StoreScreen>
           },
         );
       },
+          ),
+        ),
+      ],
     );
   }
 

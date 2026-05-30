@@ -820,7 +820,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 height: (spacing * 0.4).clamp(2.0, 6.0),
               ),
 
-              // Action buttons row - Store and Premium. Taller container
+              // Action buttons row - Store and Pro. Taller container
               // (~20 px more) for a more tappable target; the column's
               // spaceEvenly distribution absorbs the extra height by
               // shrinking the implicit gap below, keeping the total
@@ -1274,7 +1274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             context: context,
             theme: theme,
             icon: Icons.diamond,
-            label: 'PREMIUM',
+            label: 'PRO',
             gradient: [Colors.purple.shade400, Colors.indigo.shade400],
             isSmallScreen: isSmallScreen,
             onTap: () => context.push(AppRoutes.premiumBenefits),

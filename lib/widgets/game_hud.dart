@@ -321,21 +321,21 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                     label: 'Score $value',
                     child: Text(
                       '$value',
-                      // Force white for the primary score number — the
-                      // accent-tinted gradient background dropped contrast
-                      // below WCAG AA on several themes (notably the neon
-                      // and pastel palettes). The "SCORE" label keeps the
-                      // accent tint since it's small caps and decorative.
+                      // Use the theme's primary color so the score blends with
+                      // the rest of the HUD instead of standing out as the lone
+                      // white element. The dark drop shadow below keeps it
+                      // legible over the subtle accent-tinted background on
+                      // every theme (incl. neon / pastel palettes).
                       style: TextStyle(
-                        color: Colors.white,
+                        color: theme.primaryColor,
                         fontSize: isSmallScreen ? 26 : 32,
                         fontWeight: FontWeight.w900,
                         height: 1.0,
                         shadows: [
                           Shadow(
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: Colors.black.withValues(alpha: 0.6),
                             offset: const Offset(0.5, 1),
-                            blurRadius: 2,
+                            blurRadius: 3,
                           ),
                         ],
                       ),
