@@ -35,6 +35,8 @@
         android:label="Snake Classic"
         android:name="${applicationName}"
         android:enableOnBackInvokedCallback="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"

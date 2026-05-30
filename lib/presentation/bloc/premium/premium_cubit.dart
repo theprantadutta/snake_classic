@@ -670,6 +670,32 @@ class PremiumCubit extends Cubit<PremiumState> {
     }
   }
 
+  /// Re-evaluate the LOCAL Pro entitlement against its stored expiry,
+  /// with NO network call. This complements [syncWithBackend], which can
+  /// only downgrade when online AND the server says is_premium=false.
+  ///
+  /// The gap it closes: a subscription that lapses while the device is
+  /// offline (or while the app sits foregrounded for a long time). Once
+  /// the stored — now server-authoritative, see [_applyBackendEntitlements]
+  /// — expiry passes, this drops the user to free on the next resume even
+  /// with no connectivity. Reading [StorageService.isPremiumActive] flips
+  /// the persisted flag + enqueues a sync_outbox row when the expiry is in
+  /// the past; the Drift watch then re-projects tier=free into state, and
+  /// the explicit emit below makes the downgrade take effect immediately.
+  Future<void> recheckLocalExpiry() async {
+    if (state.status != PremiumStatus.ready) return;
+    if (state.tier != PremiumTier.pro) return;
+    final stillActive = await _storageService.isPremiumActive();
+    if (!stillActive && state.tier == PremiumTier.pro) {
+      AppLogger.info(
+        'Local Pro expiry passed (${state.subscriptionExpiry}) — '
+        'downgrading to free without waiting for the backend',
+      );
+      emit(state.copyWith(tier: PremiumTier.free));
+      _coinsCubit?.updatePremiumMultiplier(false, state.hasBattlePass);
+    }
+  }
+
   /// Apply entitlements returned by the backend to local state.
   ///
   /// AUTHORITATIVE sync: the server is the source of truth for ownership.
@@ -780,15 +806,35 @@ class PremiumCubit extends Cubit<PremiumState> {
     if (data['is_premium'] == true) {
       final expiryStr = data['subscription_expiry'] as String?;
       final expiry = expiryStr != null ? DateTime.tryParse(expiryStr) : null;
-      if (expiry != null && (state.subscriptionExpiry == null ||
-          expiry.isAfter(state.subscriptionExpiry!))) {
-        emit(state.copyWith(
-          tier: PremiumTier.pro,
-          subscriptionExpiry: expiry,
-        ));
-        _storageService.setPremiumActive(true);
-        _storageService.setPremiumExpirationDate(expiry.toIso8601String());
+      // The server is authoritative for the REAL subscription end date.
+      // Adopt whatever it sends — EARLIER or later — rather than the old
+      // max-merge that only ever extended the local expiry. The previous
+      // behaviour let the optimistic +30d/+365d guess from
+      // _handlePremiumPurchased outlive the true subscription: a cancelled
+      // or short (test) sub kept Pro alive locally until an explicit
+      // is_premium=false arrived, and OFFLINE it never expired at all.
+      // Storing the true expiry lets the local self-expiry
+      // (StoreDao.isPremiumActive / PremiumState.isSubscriptionExpired)
+      // drop the user to free at the correct moment, even with no network.
+      if (expiry != null && expiry.isAfter(DateTime.now())) {
+        if (state.tier != PremiumTier.pro ||
+            state.subscriptionExpiry != expiry) {
+          emit(state.copyWith(
+            tier: PremiumTier.pro,
+            subscriptionExpiry: expiry,
+          ));
+          // Atomic write: setPremiumExpirationDate derives the active flag
+          // from expiry-vs-now and persists BOTH fields in one transaction.
+          // A bare setPremiumActive(true) would null the expiry column.
+          await _storageService.setPremiumExpirationDate(
+            expiry.toIso8601String(),
+          );
+        }
       }
+      // is_premium=true with an absent/already-past expiry is a backend
+      // contract violation (GetPremiumContent only reports true when the
+      // expiry is in the future). Don't grant Pro off it here — the local
+      // self-expiry and the is_premium==false branch settle that case.
     } else if (data['is_premium'] == false && state.tier == PremiumTier.pro) {
       // Subscription was revoked. Downgrade tier locally so paywall gating
       // reactivates immediately, then also revert the per-feature state

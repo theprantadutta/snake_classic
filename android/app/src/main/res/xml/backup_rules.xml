@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup exclusions (Android 11 / API <= 30, via android:fullBackupContent).
+
+  Entitlement + sync state must re-hydrate from the SERVER snapshot on a fresh
+  install, never from an OS backup blob. If Android restores these, a reinstall
+  comes back with stale Pro already on disk AND with the sync flag that makes
+  the first-sign-in cloud restore a no-op — so a lapsed subscription gets
+  smuggled back. Excluding them forces a clean first-sign-in pull that fetches
+  the authoritative (expiry-aware) premium status from the backend.
+
+    - app_flutter/snake_classic.db  -> the Drift database (premium_status etc.)
+    - FlutterSharedPreferences.xml  -> holds sync_engine_has_ever_signed_in
+      (and other device-only state that is meant to be re-derived per device)
+
+  The Drift DB lives at <dataDir>/app_flutter/snake_classic.db because
+  path_provider's getApplicationDocumentsDirectory() resolves to
+  context.getDir("flutter") -> the backup "root" domain.
+-->
+<full-backup-content>
+    <exclude domain="root" path="app_flutter/snake_classic.db" />
+    <exclude domain="root" path="app_flutter/snake_classic.db-wal" />
+    <exclude domain="root" path="app_flutter/snake_classic.db-shm" />
+    <exclude domain="root" path="app_flutter/snake_classic.db-journal" />
+    <exclude domain="sharedpref" path="FlutterSharedPreferences.xml" />
+</full-backup-content>

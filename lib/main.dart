@@ -257,6 +257,10 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
   /// Ensure backend auth is fresh and sync premium/subscription status.
   Future<void> _refreshOnResume() async {
     try {
+      // Network-independent first: if the locally-stored (server-authoritative)
+      // subscription expiry has already passed, drop to free right now —
+      // don't wait on connectivity or a successful backend round-trip.
+      await getIt<PremiumCubit>().recheckLocalExpiry();
       await AuthService().ensureBackendAuthentication();
       // Retry any pending offline purchases
       await PurchaseService().retryPendingVerifications();

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Data extraction rules (Android 12+ / API >= 31, via android:dataExtractionRules).
+  Covers both cloud backup and device-to-device transfer.
+
+  Same rationale as res/xml/backup_rules.xml: the Drift DB (entitlements) and
+  the Flutter SharedPreferences file (which holds sync_engine_has_ever_signed_in)
+  must NOT travel via the OS. They re-hydrate from the server snapshot on the
+  first sign-in after install, so a lapsed Pro can never be restored from a
+  stale backup. See that file for the path derivation.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="app_flutter/snake_classic.db" />
+        <exclude domain="root" path="app_flutter/snake_classic.db-wal" />
+        <exclude domain="root" path="app_flutter/snake_classic.db-shm" />
+        <exclude domain="root" path="app_flutter/snake_classic.db-journal" />
+        <exclude domain="sharedpref" path="FlutterSharedPreferences.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="app_flutter/snake_classic.db" />
+        <exclude domain="root" path="app_flutter/snake_classic.db-wal" />
+        <exclude domain="root" path="app_flutter/snake_classic.db-shm" />
+        <exclude domain="root" path="app_flutter/snake_classic.db-journal" />
+        <exclude domain="sharedpref" path="FlutterSharedPreferences.xml" />
+    </device-transfer>
+</data-extraction-rules>
