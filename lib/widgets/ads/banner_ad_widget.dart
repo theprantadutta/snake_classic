@@ -4,10 +4,15 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:snake_classic/services/ads/ad_config.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 
-/// A self-contained anchored banner for **non-gameplay** list screens
-/// (leaderboard / replays / achievements / statistics). Renders nothing for
-/// Pro users, on web/desktop, before the SDK is ready, or until an ad loads —
-/// so it's always safe to drop into a layout.
+/// A self-contained anchored banner.
+///
+/// For Pro users and non-mobile platforms it renders nothing (takes zero
+/// space). For everyone else it **always reserves the fixed banner height up
+/// front** — even while the ad is still loading, after it fails, or when the
+/// device is offline — and the ad simply fills that reserved box once it
+/// arrives. Reserving the space up front is what prevents the layout shift
+/// users would otherwise see when a banner pops in a moment after the screen
+/// renders.
 class SnakeBannerAd extends StatefulWidget {
   const SnakeBannerAd({super.key});
 
@@ -57,14 +62,30 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro / non-mobile / no AdService → take no space at all.
+    if (!GetIt.I.isRegistered<AdService>() ||
+        !GetIt.I<AdService>().shouldReserveBannerSpace) {
+      return const SizedBox.shrink();
+    }
+
+    // Non-Pro mobile users: reserve the standard banner height NOW and keep it
+    // reserved regardless of load/fill/offline state. The reserved box never
+    // changes size, so the ad fills it without shifting surrounding layout.
     final ad = _ad;
-    if (!_loaded || ad == null) return const SizedBox.shrink();
     return SafeArea(
       top: false,
       child: SizedBox(
-        width: ad.size.width.toDouble(),
-        height: ad.size.height.toDouble(),
-        child: AdWidget(ad: ad),
+        width: double.infinity,
+        height: AdSize.banner.height.toDouble(),
+        child: (_loaded && ad != null)
+            ? Center(
+                child: SizedBox(
+                  width: ad.size.width.toDouble(),
+                  height: ad.size.height.toDouble(),
+                  child: AdWidget(ad: ad),
+                ),
+              )
+            : const SizedBox.shrink(), // reserved but empty until an ad loads
       ),
     );
   }

@@ -9,6 +9,8 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/progression_service.dart';
+import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -196,6 +198,8 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
         final activeMode = tournamentMode?.toGameMode() ?? settingsMode;
         final dPadEnabled = context
             .select<GameSettingsCubit, bool>((c) => c.state.dPadEnabled);
+        final highScore = context
+            .select<GameSettingsCubit, int>((c) => c.state.highScore);
 
         return PopScope(
           // Allow Android back to bail out to Home — there's no game state
@@ -240,7 +244,9 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                                     ),
                                     SizedBox(height: isSmallScreen ? 14 : 20),
                                     _buildControlChip(theme, dPadEnabled),
-                                    SizedBox(height: isSmallScreen ? 18 : 26),
+                                    SizedBox(height: isSmallScreen ? 16 : 24),
+                                    _buildStatsStrip(theme, highScore),
+                                    SizedBox(height: isSmallScreen ? 16 : 24),
                                     _buildTipCard(theme),
                                   ],
                                 ),
@@ -520,6 +526,118 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
         ],
       ),
     ).gameEntrance(delay: 220.ms);
+  }
+
+  /// Compact "your record" strip — gives the pre-game moment some stakes by
+  /// surfacing the player's lifetime level, personal best, and games played.
+  /// All three come from already-hydrated singletons/cubits (no async read).
+  Widget _buildStatsStrip(GameTheme theme, int highScore) {
+    final level = ProgressionService().level;
+    final games = StatisticsService().statistics.totalGamesPlayed;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.backgroundColor.withValues(alpha: 0.50),
+            theme.backgroundColor.withValues(alpha: 0.28),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.28),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _statTile(
+              theme,
+              Icons.military_tech_rounded,
+              '$level',
+              'LEVEL',
+            ),
+          ),
+          _statDivider(theme),
+          Expanded(
+            child: _statTile(
+              theme,
+              Icons.emoji_events_rounded,
+              _compactNumber(highScore),
+              'BEST',
+            ),
+          ),
+          _statDivider(theme),
+          Expanded(
+            child: _statTile(
+              theme,
+              Icons.sports_esports_rounded,
+              _compactNumber(games),
+              'GAMES',
+            ),
+          ),
+        ],
+      ),
+    ).gameEntrance(delay: 260.ms);
+  }
+
+  Widget _statDivider(GameTheme theme) {
+    return Container(
+      width: 1,
+      height: 34,
+      color: theme.accentColor.withValues(alpha: 0.18),
+    );
+  }
+
+  Widget _statTile(
+    GameTheme theme,
+    IconData icon,
+    String value,
+    String label,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: theme.foodColor.withValues(alpha: 0.95)),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: theme.primaryColor,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: theme.accentColor.withValues(alpha: 0.7),
+            letterSpacing: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 1234 -> "1.2K", 1500000 -> "1.5M". Keeps the tiles from overflowing on
+  /// big lifetime numbers.
+  String _compactNumber(int n) {
+    if (n < 1000) return '$n';
+    if (n < 1000000) {
+      final v = (n / 1000);
+      return '${v.toStringAsFixed(v >= 100 ? 0 : 1)}K';
+    }
+    final v = (n / 1000000);
+    return '${v.toStringAsFixed(v >= 100 ? 0 : 1)}M';
   }
 
   Widget _buildTipCard(GameTheme theme) {

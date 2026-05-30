@@ -809,17 +809,26 @@ class GameCubit extends Cubit<GameCubitState> {
       debugPrint('✅ Will collect power-up: $willCollectPowerUp');
     }
 
+    // Immunity (invincibility power-up OR the post-revive grace OR ghost mode)
+    // also bypasses the outer walls — the collision check below skips wall
+    // death while it's active. But bypassing the wall is only safe if the snake
+    // actually STAYS on the board: with wrapAround off, an immune snake driven
+    // into a wall walks out of bounds invisibly and then dies the instant
+    // immunity ends. So while immune we wrap it to the opposite edge (same as
+    // no-wall modes) — it re-enters the board and keeps moving instead of
+    // sailing off into a doomed off-screen state.
+    final hasImmunity =
+        previousState.hasInvincibility || previousState.hasGhostMode;
+
     // Move snake
     snake.move(
       ateFood: willEatFood,
       boardWidth: previousState.boardWidth,
       boardHeight: previousState.boardHeight,
-      wrapAround: !previousState.gameMode.hasWalls,
+      wrapAround: !previousState.gameMode.hasWalls || hasImmunity,
     );
 
     // Check collisions
-    final hasImmunity =
-        previousState.hasInvincibility || previousState.hasGhostMode;
     final wallCollision =
         !hasImmunity &&
         previousState.gameMode.hasWalls &&
@@ -1290,18 +1299,23 @@ class GameCubit extends Cubit<GameCubitState> {
     HapticFeedback.heavyImpact();
 
     // Offer a revive (rewarded ad or coins) before ending the game. Once per
-    // run, single-life modes only, and only when an option is actually
-    // available (an ad is loaded, or the player can afford the coin cost).
-    // The ReviveOverlay drives the choice; revive() / declineRevive() resolve
-    // it. We DON'T schedule game-over here — the overlay owns that timeout.
+    // run, single-life modes only, and whenever a revive path is *possible*:
+    // ads are enabled (so a rewarded ad can be shown — even if it's still
+    // loading), or the player can afford the coin cost. We intentionally gate
+    // on "ads enabled" rather than "ad already loaded" so the popup still
+    // appears while the ad finishes loading; the ReviveOverlay greys the
+    // watch-ad button until it's ready (live re-check) and re-enables it the
+    // moment it loads during the countdown — same UX as the greyed-out coin
+    // button. revive() / declineRevive() resolve it. We DON'T schedule
+    // game-over here — the overlay owns that timeout.
     if (_canOfferRevive()) {
       final hasAds = getIt.isRegistered<AdService>();
-      final adReady = hasAds && getIt<AdService>().isRewardedReady;
+      final adsPossible = hasAds && getIt<AdService>().adsEnabled;
       // Kick a (re)load so the ad can become ready during the offer countdown
       // — the overlay re-checks readiness live and enables the button then.
-      if (hasAds) getIt<AdService>().preloadRewarded();
+      if (adsPossible) getIt<AdService>().preloadRewarded();
       final canAfford = _coinsCubit.state.balance.total >= reviveCoinCost;
-      if (adReady || canAfford) {
+      if (adsPossible || canAfford) {
         emit(
           state.copyWith(
             status: GamePlayStatus.crashed,

@@ -1217,6 +1217,7 @@ class _GameScreenState extends State<GameScreen>
                             if (gameCubitState.offeringRevive)
                               ReviveOverlay(
                                 theme: theme,
+                                seconds: 10,
                                 coinCost: GameCubit.reviveCoinCost,
                                 isAdReady: () =>
                                     getIt<AdService>().isRewardedReady,

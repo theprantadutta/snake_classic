@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -50,6 +51,22 @@ class _LoadingScreenState extends State<LoadingScreen>
   final List<LoadingParticle> _particles = [];
   final Random _random = Random();
 
+  // Rotating "Did you know?" tips shown in the center while loading.
+  Timer? _tipTimer;
+  int _tipIndex = 0;
+  static const List<String> _tips = [
+    'Plan two moves ahead — your tail follows wherever the head just went.',
+    'Bonus food is worth more points, but it disappears fast. Grab it quick!',
+    'Crashed? Watch a quick ad or spend coins to revive and keep your score.',
+    'Chain food without pausing to build a combo multiplier.',
+    'Stuck in a tight spot? Hug the walls to buy yourself a moment.',
+    'Daily challenges and weekly quests stack up coins fast.',
+    'Snake Classic Pro unlocks bigger boards and removes all ads.',
+    'Time Attack rewards speed — and you can watch an ad for +30 seconds.',
+    'Power-ups stack: arm a shield before squeezing through a gap.',
+    'Switch themes, skins, and trails anytime in the store for a fresh look.',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +102,14 @@ class _LoadingScreenState extends State<LoadingScreen>
     // Generate particles for game-like effect
     _generateParticles();
 
+    // Seed a random starting tip so it's not always the same on every launch,
+    // then rotate through them with a gentle fade while loading.
+    _tipIndex = _random.nextInt(_tips.length);
+    _tipTimer = Timer.periodic(const Duration(milliseconds: 3500), (_) {
+      if (!mounted) return;
+      setState(() => _tipIndex = (_tipIndex + 1) % _tips.length);
+    });
+
     // Start the initialization process
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeApp();
@@ -93,6 +118,7 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   void dispose() {
+    _tipTimer?.cancel();
     _logoController.dispose();
     _progressController.dispose();
     _particleController.dispose();
@@ -560,6 +586,11 @@ class _LoadingScreenState extends State<LoadingScreen>
                   // Progress section with game-like design
                   _buildProgressSection(theme, isSmallScreen),
 
+                  SizedBox(height: isSmallScreen ? 14 : 22),
+
+                  // Rotating gameplay tip — keeps the center alive while loading
+                  _buildTipCard(theme, isSmallScreen),
+
                   SizedBox(height: isSmallScreen ? 12 : 20),
 
                   // Game features preview
@@ -878,6 +909,104 @@ class _LoadingScreenState extends State<LoadingScreen>
         ],
       ),
     ).gameZoomIn(delay: 300.ms);
+  }
+
+  Widget _buildTipCard(GameTheme theme, [bool isSmallScreen = false]) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 32),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 16 : 20,
+        vertical: isSmallScreen ? 12 : 16,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.accentColor.withValues(alpha: 0.12),
+            theme.foodColor.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.accentColor.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.accentColor.withValues(alpha: 0.08),
+            blurRadius: 16,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header: glowing bulb + label
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lightbulb_rounded,
+                size: isSmallScreen ? 14 : 16,
+                color: theme.foodColor,
+              )
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .fadeIn(duration: 900.ms)
+                  .then()
+                  .fade(begin: 1.0, end: 0.5, duration: 900.ms),
+              const SizedBox(width: 8),
+              Text(
+                'DID YOU KNOW?',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 10 : 11,
+                  fontWeight: FontWeight.w700,
+                  color: theme.accentColor.withValues(alpha: 0.8),
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: isSmallScreen ? 8 : 10),
+
+          // Rotating tip text with a smooth fade/slide between tips. Fixed
+          // height keeps the layout from jumping as tip lengths change.
+          SizedBox(
+            height: isSmallScreen ? 46 : 54,
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 500),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.25),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                ),
+                child: Text(
+                  _tips[_tipIndex],
+                  key: ValueKey<int>(_tipIndex),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 12 : 13.5,
+                    height: 1.3,
+                    color: theme.primaryColor.withValues(alpha: 0.92),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).gameZoomIn(delay: 400.ms);
   }
 
   Widget _buildFeaturesPreview(GameTheme theme) {
