@@ -17,5 +17,5 @@ class FeatureFlags {
   /// `const false` would make the Flame branch dead code). Flip to a `const`
   /// in the final phase once the legacy renderer is deleted, restoring
   /// tree-shaking of the unused path.
-  static bool useFlameBoard = false;
+  static bool useFlameBoard = true; // TEMP: flipped on for validation testing
 }

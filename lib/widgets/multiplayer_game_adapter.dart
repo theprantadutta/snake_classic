@@ -231,7 +231,7 @@ class _MultiplayerGameAdapterState extends State<MultiplayerGameAdapter>
                         // Grid pattern background
                         Positioned.fill(
                           child: CustomPaint(
-                            painter: _GridBackgroundPainter(theme, boardSize),
+                            painter: MultiplayerGridBackgroundPainter(theme, boardSize),
                           ),
                         ),
 
@@ -244,7 +244,7 @@ class _MultiplayerGameAdapterState extends State<MultiplayerGameAdapter>
                               final moveProgress = _calculateMoveProgress();
 
                               return CustomPaint(
-                                painter: _MultiplayerBoardPainter(
+                                painter: MultiplayerBoardPainter(
                                   game: widget.game,
                                   currentUserId: widget.currentUserId,
                                   localSnake: widget.localSnake,
@@ -281,12 +281,13 @@ class _MultiplayerGameAdapterState extends State<MultiplayerGameAdapter>
   }
 }
 
-/// Grid background painter
-class _GridBackgroundPainter extends CustomPainter {
+/// Grid background painter. Public so the Flame multiplayer renderer can reuse
+/// the exact drawing (see lib/game/flame/multiplayer_flame_game.dart).
+class MultiplayerGridBackgroundPainter extends CustomPainter {
   final GameTheme theme;
   final int boardSize;
 
-  _GridBackgroundPainter(this.theme, this.boardSize);
+  MultiplayerGridBackgroundPainter(this.theme, this.boardSize);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -317,12 +318,12 @@ class _GridBackgroundPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _GridBackgroundPainter oldDelegate) =>
+  bool shouldRepaint(covariant MultiplayerGridBackgroundPainter oldDelegate) =>
       oldDelegate.theme != theme || oldDelegate.boardSize != boardSize;
 }
 
 /// Main painter for all game content - snakes, food, effects
-class _MultiplayerBoardPainter extends CustomPainter {
+class MultiplayerBoardPainter extends CustomPainter {
   final MultiplayerGame game;
   final String currentUserId;
   final List<Position> localSnake;
@@ -333,7 +334,7 @@ class _MultiplayerBoardPainter extends CustomPainter {
   final double moveProgress;
   final int boardSize;
 
-  _MultiplayerBoardPainter({
+  MultiplayerBoardPainter({
     required this.game,
     required this.currentUserId,
     required this.localSnake,
@@ -649,7 +650,7 @@ class _MultiplayerBoardPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _MultiplayerBoardPainter oldDelegate) {
+  bool shouldRepaint(covariant MultiplayerBoardPainter oldDelegate) {
     return oldDelegate.game != game ||
         oldDelegate.localSnake != localSnake ||
         oldDelegate.localDirection != localDirection ||
