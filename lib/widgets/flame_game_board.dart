@@ -38,10 +38,12 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
   @override
   void initState() {
     super.initState();
+    final themeState = context.read<ThemeCubit>().state;
     _game = SnakeFlameGame(
       initialCubitState: context.read<GameCubit>().state,
-      initialTheme: context.read<ThemeCubit>().state.currentTheme,
+      initialTheme: themeState.currentTheme,
       initialPremiumState: context.read<PremiumCubit>().state,
+      initialTrailSystemEnabled: themeState.isTrailSystemEnabled,
     );
   }
 
@@ -75,12 +77,14 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                     initialCubitState: cubitState,
                     initialTheme: themeState.currentTheme,
                     initialPremiumState: premiumState,
+                    initialTrailSystemEnabled: themeState.isTrailSystemEnabled,
                   );
                 }
                 _game.syncState(
                   cubitState,
                   themeState.currentTheme,
                   premiumState,
+                  trailEnabled: themeState.isTrailSystemEnabled,
                 );
                 return GameWidget(
                   key: ValueKey(
