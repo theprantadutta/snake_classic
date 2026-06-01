@@ -74,3 +74,5 @@ notification_backend/
 .claude/
 nul
 _nul
+# Nested Gradle/Flutter build output (root /build/ is anchored)
+android/build/
