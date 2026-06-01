@@ -12,5 +12,10 @@ class FeatureFlags {
   ///
   /// See the migration plan: extract pure simulation -> FlameGame skeleton ->
   /// port visuals -> wire input/overlays -> multiplayer -> delete legacy.
-  static const bool useFlameBoard = false;
+  ///
+  /// Non-`const` during the migration so both render paths stay reachable (a
+  /// `const false` would make the Flame branch dead code). Flip to a `const`
+  /// in the final phase once the legacy renderer is deleted, restoring
+  /// tree-shaking of the unused path.
+  static bool useFlameBoard = false;
 }

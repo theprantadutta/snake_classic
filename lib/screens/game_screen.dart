@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/config/feature_flags.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -17,6 +18,7 @@ import 'package:snake_classic/widgets/time_bonus_overlay.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/flame_game_board.dart';
 import 'package:snake_classic/widgets/game_board.dart';
 import 'package:snake_classic/widgets/game_hud.dart';
 import 'package:snake_classic/widgets/pause_overlay.dart';
@@ -1136,12 +1138,22 @@ class _GameScreenState extends State<GameScreen>
                                                     child: SizedBox(
                                                       width: availableSize,
                                                       height: availableSize,
-                                                      child: GameBoard(
-                                                        gameState: gameState,
-                                                        isTournamentMode:
-                                                            gameCubitState
-                                                                .isTournamentMode,
-                                                      ),
+                                                      child: FeatureFlags
+                                                              .useFlameBoard
+                                                          ? FlameGameBoard(
+                                                              gameState:
+                                                                  gameState,
+                                                              isTournamentMode:
+                                                                  gameCubitState
+                                                                      .isTournamentMode,
+                                                            )
+                                                          : GameBoard(
+                                                              gameState:
+                                                                  gameState,
+                                                              isTournamentMode:
+                                                                  gameCubitState
+                                                                      .isTournamentMode,
+                                                            ),
                                                     ),
                                                   );
                                                 },
