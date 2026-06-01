@@ -36,12 +36,23 @@ class NotificationService {
   // cancelScheduledTestNotification can DELETE it after an app restart.
   static const String _scheduledTestJobIdKey = 'dev_scheduled_test_job_id';
 
+  // SharedPreferences key for the FCM token we last *confirmed* with the
+  // backend. Device-only state (re-derived per install), so SharedPreferences
+  // is the right home per the offline-first storage rules. Lets us detect a
+  // Play Store / FCM token rotation across launches and log it.
+  static const String _lastRegisteredTokenKey = 'fcm_last_registered_token';
+
   late FlutterLocalNotificationsPlugin _localNotifications;
   late FirebaseMessaging _firebaseMessaging;
 
   String? _fcmToken;
   bool _initialized = false;
   bool _backendIntegrationDone = false;
+  // Set when initializeBackendIntegration() runs before getToken() has
+  // resolved. Instead of bailing forever (the old behavior), we arm this
+  // and let the token-arrival path complete the registration — closing the
+  // first-launch race where auth is ready but the token isn't yet.
+  bool _registrationPendingTokenArrival = false;
 
   // Notification preferences - stored in SharedPreferences via PreferencesService
   final Map<NotificationType, bool> _notificationPreferences = {
@@ -170,14 +181,21 @@ class NotificationService {
       }
 
       // Race fix: if the initial getToken() resolves AFTER
-      // _initializeNotificationIntegration() has already run, the
-      // backend integration call would have bailed with "no token" and
-      // never retry. Treat the first-token arrival like a refresh so
-      // _registerTokenWithBackend fires immediately (which queues via
-      // DataSyncService if auth isn't ready yet — see Phase 2).
-      // Anonymous + Google users both benefit.
+      // _initializeNotificationIntegration() has already run, the backend
+      // integration call would previously have bailed with "no token" and
+      // never retried. Now it arms _registrationPendingTokenArrival instead,
+      // so here we complete that deferred integration (which sets the success
+      // latch + persists the token). When integration wasn't pending we still
+      // register directly — treating first-token arrival like a refresh.
+      // _registerTokenWithBackend queues via DataSyncService if auth isn't
+      // ready yet. Anonymous + Google users both benefit.
       if (_fcmToken != null) {
-        unawaited(_registerTokenWithBackend(_fcmToken!));
+        if (_registrationPendingTokenArrival) {
+          _registrationPendingTokenArrival = false;
+          unawaited(initializeBackendIntegration());
+        } else {
+          unawaited(_registerTokenWithBackend(_fcmToken!));
+        }
       }
 
       // Subscribe to token refresh
@@ -234,8 +252,13 @@ class NotificationService {
   }
 
   void _onTokenRefresh(String token) {
-    // Send updated token to backend
-    _registerTokenWithBackend(token);
+    // A rotated token is effectively a new device registration (the old one
+    // is now dead and will be UNREGISTERED-pruned server-side). Reset the
+    // success latch so this re-confirms with the backend and re-persists the
+    // new token. _registerTokenWithBackend queues via DataSyncService if auth
+    // isn't ready yet.
+    _backendIntegrationDone = false;
+    unawaited(_registerTokenWithBackend(token));
   }
 
   void _onNotificationTapped(NotificationResponse response) {
@@ -576,6 +599,7 @@ class NotificationService {
 
       if (success) {
         AppLogger.network('FCM token registered with backend successfully');
+        await _persistRegisteredToken(token);
         return true;
       } else {
         AppLogger.error(
@@ -614,11 +638,19 @@ class NotificationService {
       }
 
       if (_fcmToken == null) {
-        AppLogger.warning(
-          'Cannot initialize backend integration: No FCM token available',
+        // Token not ready yet (getToken() still in flight, or init hit the
+        // 5s timeout before it resolved). Don't give up permanently — arm a
+        // flag so the token-arrival path completes this registration. Auth is
+        // already ready by the time this method runs post-sign-in, so once the
+        // token lands it registers directly without even needing the queue.
+        _registrationPendingTokenArrival = true;
+        AppLogger.info(
+          'Backend integration deferred: FCM token not ready yet — '
+          'will complete on token arrival',
         );
         return;
       }
+      _registrationPendingTokenArrival = false;
 
       AppLogger.info('🔗 Initializing backend integration');
 
@@ -656,6 +688,26 @@ class NotificationService {
   /// re-register the token. Call from auth flow on logout.
   void resetBackendIntegration() {
     _backendIntegrationDone = false;
+    _registrationPendingTokenArrival = false;
+  }
+
+  /// Remember the token we last *confirmed* with the backend. Device-only
+  /// state, so SharedPreferences per the offline-first storage rules. Used to
+  /// surface a Play Store / FCM token rotation across launches — the dominant
+  /// suspected cause of registered-then-pruned token churn.
+  Future<void> _persistRegisteredToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final previous = prefs.getString(_lastRegisteredTokenKey);
+      if (previous != null && previous != token) {
+        AppLogger.info(
+          '🔄 FCM token rotated since last confirmed registration — re-registered',
+        );
+      }
+      await prefs.setString(_lastRegisteredTokenKey, token);
+    } catch (e) {
+      AppLogger.warning('Could not persist last-registered FCM token: $e');
+    }
   }
 
   /// Fire an achievement notification locally. Pre-refactor this went
