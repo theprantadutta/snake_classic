@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -40,6 +41,7 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
     _game = SnakeFlameGame(
       initialCubitState: context.read<GameCubit>().state,
       initialTheme: context.read<ThemeCubit>().state.currentTheme,
+      initialPremiumState: context.read<PremiumCubit>().state,
     );
   }
 
@@ -47,31 +49,46 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
   Widget build(BuildContext context) {
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
-        return BlocBuilder<GameCubit, GameCubitState>(
-          // Rebuild only when the committed tick state changes (not on the
-          // intra-tick interpolation, which the game advances itself).
+        return BlocBuilder<PremiumCubit, PremiumState>(
+          // Only re-sync on cosmetic changes that affect rendering.
           buildWhen: (prev, next) =>
-              !identical(prev.gameState, next.gameState) ||
-              !identical(prev.previousGameState, next.previousGameState),
-          builder: (context, cubitState) {
-            final gs = cubitState.gameState;
-            // Board dimensions can change between runs (settings); the
-            // fixed-resolution camera is baked at construction, so rebuild the
-            // game when they differ.
-            if (gs != null &&
-                (gs.boardWidth != _game.boardWidth ||
-                    gs.boardHeight != _game.boardHeight)) {
-              _game = SnakeFlameGame(
-                initialCubitState: cubitState,
-                initialTheme: themeState.currentTheme,
-              );
-            }
-            _game.syncState(cubitState, themeState.currentTheme);
-            return GameWidget(
-              key: ValueKey(
-                gs == null ? 'none' : '${gs.boardWidth}x${gs.boardHeight}',
-              ),
-              game: _game,
+              prev.selectedSkinId != next.selectedSkinId ||
+              prev.selectedTrailId != next.selectedTrailId ||
+              prev.ownedSkins != next.ownedSkins ||
+              prev.ownedTrails != next.ownedTrails,
+          builder: (context, premiumState) {
+            return BlocBuilder<GameCubit, GameCubitState>(
+              // Rebuild only when the committed tick state changes (not on the
+              // intra-tick interpolation, which the game advances itself).
+              buildWhen: (prev, next) =>
+                  !identical(prev.gameState, next.gameState) ||
+                  !identical(prev.previousGameState, next.previousGameState),
+              builder: (context, cubitState) {
+                final gs = cubitState.gameState;
+                // Board dimensions can change between runs (settings); the
+                // fixed-resolution camera is baked at construction, so rebuild
+                // the game when they differ.
+                if (gs != null &&
+                    (gs.boardWidth != _game.boardWidth ||
+                        gs.boardHeight != _game.boardHeight)) {
+                  _game = SnakeFlameGame(
+                    initialCubitState: cubitState,
+                    initialTheme: themeState.currentTheme,
+                    initialPremiumState: premiumState,
+                  );
+                }
+                _game.syncState(
+                  cubitState,
+                  themeState.currentTheme,
+                  premiumState,
+                );
+                return GameWidget(
+                  key: ValueKey(
+                    gs == null ? 'none' : '${gs.boardWidth}x${gs.boardHeight}',
+                  ),
+                  game: _game,
+                );
+              },
             );
           },
         );

@@ -309,7 +309,7 @@ class _GameBoardState extends State<GameBoard> with TickerProviderStateMixin {
                             // Subtle pattern overlay
                             Positioned.fill(
                               child: CustomPaint(
-                                painter: _GameBoardBackgroundPainter(theme),
+                                painter: GameBoardBackgroundPainter(theme),
                               ),
                             ),
                             // Game content
@@ -3010,11 +3010,13 @@ class OptimizedGameBoardPainter extends CustomPainter {
   }
 }
 
-// Background painter for enhanced visual effects matching home screen
-class _GameBoardBackgroundPainter extends CustomPainter {
+// Background painter for enhanced visual effects matching home screen.
+// Public so the Flame renderer can reuse the exact same drawing during the
+// migration (see lib/game/flame/components/legacy_board_component.dart).
+class GameBoardBackgroundPainter extends CustomPainter {
   final GameTheme theme;
 
-  _GameBoardBackgroundPainter(this.theme);
+  GameBoardBackgroundPainter(this.theme);
 
   @override
   void paint(Canvas canvas, Size size) {
