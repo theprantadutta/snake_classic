@@ -5,6 +5,7 @@ import 'package:snake_classic/game/flame/multiplayer_flame_game.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 
 /// Flame-backed drop-in replacement for [MultiplayerGameAdapter]. Same
@@ -44,7 +45,7 @@ class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
     _game = _createGame(context.read<ThemeCubit>().state.currentTheme);
   }
 
-  MultiplayerFlameGame _createGame(theme) => MultiplayerFlameGame(
+  MultiplayerFlameGame _createGame(GameTheme theme) => MultiplayerFlameGame(
         game: widget.game,
         currentUserId: widget.currentUserId,
         localSnake: widget.localSnake,
