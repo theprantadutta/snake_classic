@@ -5,17 +5,17 @@
 class FeatureFlags {
   FeatureFlags._();
 
-  /// Renders the gameplay board with the new Flame engine instead of the
-  /// legacy `CustomPainter`-based [GameBoard]. Kept `false` while the Flame
-  /// migration is reaching visual/behavioural parity; flipped on once the
-  /// Flame board matches the legacy renderer across every theme/skin/trail.
+  /// Renders gameplay (single-player + multiplayer) with the Flame engine
+  /// instead of the legacy `CustomPainter` widgets ([GameBoard] /
+  /// [MultiplayerGameAdapter]).
   ///
-  /// See the migration plan: extract pure simulation -> FlameGame skeleton ->
-  /// port visuals -> wire input/overlays -> multiplayer -> delete legacy.
+  /// Now defaults to **Flame**. The legacy renderer is intentionally retained
+  /// behind this flag as a production rollback path: the Flame board reuses the
+  /// legacy painters for pixel-parity, so flipping this to `false` instantly
+  /// restores the previous renderer if a regression surfaces in the field.
+  /// Once the Flame path has been validated on-device across the QA matrix,
+  /// the legacy widget call sites can be removed and this flag retired.
   ///
-  /// Non-`const` during the migration so both render paths stay reachable (a
-  /// `const false` would make the Flame branch dead code). Flip to a `const`
-  /// in the final phase once the legacy renderer is deleted, restoring
-  /// tree-shaking of the unused path.
-  static bool useFlameBoard = true; // TEMP: flipped on for validation testing
+  /// Kept non-`const` so both render paths stay reachable for the fallback.
+  static bool useFlameBoard = true;
 }
