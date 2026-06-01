@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
@@ -8,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/data/database/app_database.dart' show ReplaysCompanion;
+import 'package:snake_classic/game/engine/snake_simulation.dart';
+import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
@@ -69,6 +70,11 @@ class GameCubit extends Cubit<GameCubitState> {
 
   final GameRecorder _gameRecorder = GameRecorder();
 
+  /// Pure game mechanics (movement, collision, spawning, combo/level). The
+  /// cubit drives it each tick and translates the returned [TickEvent]s into
+  /// audio / haptic / analytics / coin / XP / replay side effects.
+  final SnakeSimulation _simulation = SnakeSimulation();
+
   // Note: Smooth movement animation is now handled locally in GameBoard widget
 
   // Achievement tracking
@@ -85,10 +91,7 @@ class GameCubit extends Cubit<GameCubitState> {
   int _powerUpsCollectedThisGame = 0;
   int _consecutiveGamesWithoutWallHits = 0;
 
-  // PerfectGame mode: every cell the snake's head has ever occupied during
-  // the current run. A second visit ends the run. Reset on game start and
-  // Survival respawn; left intact when paused.
-  final Set<Position> _visitedCells = {};
+  // PerfectGame mode visited-cell tracking now lives in [_simulation].
 
   // Brief tick-rate slowdown after a level-up so the moment lands. Cleared
   // automatically when the window passes (checked in _scheduleNextGameTick).
@@ -245,40 +248,28 @@ class GameCubit extends Cubit<GameCubitState> {
         ? getIt<PremiumCubit>().state.hasPremium
         : false;
     _achievementService.resetLastGameUnlocks();
-    _visitedCells
-      ..clear()
-      ..addAll(gameState.snake.body);
+    _simulation.reset(snakeBody: gameState.snake.body, isPro: _isPro);
     _powerUpCountdownLastSecond.clear();
 
     // Daily first game XP
     _awardDailyFirstGameXP();
 
     // Generate initial food. MultiFood mode spawns 3 simultaneously.
-    final food = Food.generateRandom(
+    final initialFoods = _simulation.generateInitialFoods(
       gameState.boardWidth,
       gameState.boardHeight,
       gameState.snake,
-      isPremium: _isPro,
+      gameState.gameMode,
     );
-    final List<Food> extraFoods = [];
-    if (gameState.gameMode.hasMultipleFood) {
-      for (var i = 0; i < 2; i++) {
-        extraFoods.add(
-          _generateNonOverlappingFood(
-            gameState.boardWidth,
-            gameState.boardHeight,
-            gameState.snake,
-            existing: [food, ...extraFoods],
-          ),
-        );
-      }
-    }
 
     _gameRecorder.startRecording();
 
     final newState = state.copyWith(
       status: GamePlayStatus.playing,
-      gameState: gameState.copyWith(food: food, foods: extraFoods),
+      gameState: gameState.copyWith(
+        food: initialFoods.primary,
+        foods: initialFoods.extras,
+      ),
       moveProgress: 0.0,
       clearPreviousGameState: true,
     );
@@ -736,262 +727,112 @@ class GameCubit extends Cubit<GameCubitState> {
     }
 
     final previousState = state.gameState!;
-    final snake = previousState.snake.copy();
-    final isMultiFood = previousState.gameMode.hasMultipleFood;
 
-    // Check for expired food
-    var currentFood = previousState.food;
-    if (currentFood?.isExpired == true) {
-      currentFood = Food.generateRandom(
-        previousState.boardWidth,
-        previousState.boardHeight,
-        snake,
-        isPremium: _isPro,
+    // Advance the pure simulation by one tick. It returns the next state plus
+    // a list of domain events; the cubit translates those into side effects.
+    final result = _simulation.step(previousState);
+
+    if (result.crashed) {
+      final crash = result.crashEvent!;
+      _handleCrash(
+        crash.reason,
+        crash.position,
+        collisionBodyPart: crash.collisionBodyPart,
+        fatalSnake: crash.fatalSnake,
       );
+      return;
     }
 
-    // MultiFood: refresh any expired extras so the board always has the
-    // target count of simultaneously-visible foods.
-    var extraFoods = List<Food>.from(previousState.foods);
-    if (isMultiFood) {
-      for (var i = 0; i < extraFoods.length; i++) {
-        if (extraFoods[i].isExpired) {
-          extraFoods[i] = _generateNonOverlappingFood(
-            previousState.boardWidth,
-            previousState.boardHeight,
-            snake,
-            existing: [
-              ?currentFood,
-              ...extraFoods.where((f) => f != extraFoods[i]),
-            ],
+    final newGameState = result.nextState!;
+    var ateFood = false;
+    var collectedPowerUp = false;
+    var leveledUp = false;
+
+    for (final event in result.events) {
+      switch (event) {
+        case FoodEatenEvent():
+          ateFood = true;
+          _foodTypesEatenThisGame.add(event.food.type.name);
+          _currentGameFoodTypes[event.food.type.name] =
+              (_currentGameFoodTypes[event.food.type.name] ?? 0) + 1;
+          _currentGameFoodPoints += event.awardedPoints;
+
+          // Combo tier crossing — 1.0→1.5 at 5, 1.5→2.0 at 10, 2.0→3.0 at 20.
+          // Each crossing earns a medium haptic; the 3.0 tier earns an extra
+          // heavy on top. SFX reuses score_milestone at low volume so it
+          // doesn't drown the food-eat sound.
+          if (event.comboTierIncreased) {
+            unawaited(_hapticService.mediumImpact());
+            if (event.newMultiplier >= 3.0) {
+              unawaited(_hapticService.heavyImpact());
+            }
+            _enhancedAudioService.playSfx('score_milestone', volume: 0.45);
+          }
+
+          // Battle pass score milestones - deferred to avoid event loop
+          // contention during the tick (addXP can trigger HTTP on first call).
+          Future.microtask(() => _checkScoreMilestones(newGameState.score));
+        case LeveledUpEvent():
+          leveledUp = true;
+          debugPrint(
+            '🎮 [GameCubit] LEVEL UP! ${event.fromLevel} -> ${event.toLevel} (next target: ${model.GameState.getTargetScoreForLevel(event.toLevel + 1)})',
           );
-        }
+          _audioService.playSound('level_up');
+          unawaited(_hapticService.levelUp());
+          // 300ms tick slowdown so the level transition reads as an event
+          // rather than a silent counter increment.
+          _levelUpSlowdownUntil =
+              DateTime.now().add(const Duration(milliseconds: 300));
+          _analytics.trackLevelUp(event.toLevel);
+
+          // Award coins for every level gained this tick.
+          for (var lvl = event.fromLevel + 1; lvl <= event.toLevel; lvl++) {
+            final levelForCoins = lvl;
+            Future.microtask(() => _earnAndTrack(
+                  CoinEarningSource.levelUp,
+                  metadata: {'level': levelForCoins},
+                ));
+          }
+        case PowerUpCollectedEvent():
+          collectedPowerUp = true;
+          debugPrint('🎁 Collecting power-up: ${event.powerUp.type.name}');
+          _hapticService.powerUpCollected();
+          _powerUpsCollectedThisGame++;
+          _analytics.trackPowerUpUsed(event.powerUp.type.name);
+
+          // Buffer battle pass XP for power-up collection (flushed at game end).
+          _battlePassCubit.bufferXP(
+            BattlePassXpSource.getXpForAction('power_up_collected'),
+            source: 'power_up_collected',
+          );
+
+          // Track power-up type for statistics.
+          _currentGamePowerUpTypes[event.powerUp.type.name] =
+              (_currentGamePowerUpTypes[event.powerUp.type.name] ?? 0) + 1;
+
+          // Pre-credit the full duration to the power-up-time counter; at
+          // game-end we subtract any leftover time on still-active power-ups.
+          _currentGamePowerUpTime += event.powerUp.type.duration.inSeconds;
+          _audioService.playSound('power_up');
+        case CrashEvent():
+          break; // Handled above via result.crashed.
       }
     }
 
-    // Check for expired power-up
-    var currentPowerUp = previousState.powerUp;
-    var shouldClearPowerUp = false;
-    if (currentPowerUp?.isExpired == true) {
-      currentPowerUp = null;
-      shouldClearPowerUp = true;
+    // Eat sound + haptic only when no level-up fired this tick (the level-up
+    // cue takes precedence — mirrors the original eat-vs-levelup branch).
+    if (ateFood && !leveledUp) {
+      _audioService.playSound('eat');
+      unawaited(_hapticService.foodEaten());
     }
-
-    // Check collisions before moving
-    final nextHeadPosition = snake.head.move(snake.currentDirection);
-    final willEatPrimaryFood =
-        currentFood != null &&
-        nextHeadPosition == currentFood.position;
-    // MultiFood: also check the extras list. Track which index was eaten
-    // so we can regenerate just that slot.
-    int eatenExtraIndex = -1;
-    if (!willEatPrimaryFood && isMultiFood) {
-      for (var i = 0; i < extraFoods.length; i++) {
-        if (extraFoods[i].position == nextHeadPosition) {
-          eatenExtraIndex = i;
-          break;
-        }
-      }
-    }
-    final willEatFood = willEatPrimaryFood || eatenExtraIndex >= 0;
-
-    // Check power-up collision: both current position AND next position
-    // This ensures we don't miss collection if snake spawned on or passed through
-    final willCollectPowerUp =
-        currentPowerUp != null &&
-        (nextHeadPosition == currentPowerUp.position ||
-         snake.head == currentPowerUp.position);
-
-    // Debug logging for power-up collision detection (throttled to avoid perf impact)
-    if (currentPowerUp != null && (_updateCount <= 5 || _updateCount % 100 == 0)) {
-      debugPrint('🎯 Power-up at: ${currentPowerUp.position} (type: ${currentPowerUp.type.name})');
-      debugPrint('🐍 Snake head: ${snake.head}, next: $nextHeadPosition');
-      debugPrint('✅ Will collect power-up: $willCollectPowerUp');
-    }
-
-    // Immunity (invincibility power-up OR the post-revive grace OR ghost mode)
-    // also bypasses the outer walls — the collision check below skips wall
-    // death while it's active. But bypassing the wall is only safe if the snake
-    // actually STAYS on the board: with wrapAround off, an immune snake driven
-    // into a wall walks out of bounds invisibly and then dies the instant
-    // immunity ends. So while immune we wrap it to the opposite edge (same as
-    // no-wall modes) — it re-enters the board and keeps moving instead of
-    // sailing off into a doomed off-screen state.
-    final hasImmunity =
-        previousState.hasInvincibility || previousState.hasGhostMode;
-
-    // Move snake
-    snake.move(
-      ateFood: willEatFood,
-      boardWidth: previousState.boardWidth,
-      boardHeight: previousState.boardHeight,
-      wrapAround: !previousState.gameMode.hasWalls || hasImmunity,
-    );
-
-    // Check collisions
-    final wallCollision =
-        !hasImmunity &&
-        previousState.gameMode.hasWalls &&
-        snake.checkWallCollision(
-          previousState.boardWidth,
-          previousState.boardHeight,
-        );
-    final selfCollision = !hasImmunity && snake.checkSelfCollision();
-
-    if (wallCollision || selfCollision) {
-      final crashReason = wallCollision
-          ? model.CrashReason.wallCollision
-          : model.CrashReason.selfCollision;
-
-      // Get collision body part for self-collision feedback
-      Position? collisionBodyPart;
-      if (selfCollision) {
-        collisionBodyPart = snake.getSelfCollisionBodyPart();
-      }
-
-      _handleCrash(
-        crashReason,
-        snake.head,
-        collisionBodyPart: collisionBodyPart,
-        fatalSnake: snake,
-      );
-      return;
-    }
-
-    // PerfectGame: head re-entering a previously-visited cell is fatal,
-    // regardless of food/immunity. Skip if this tick the head landed on a
-    // cell that is currently part of the snake's body — that case is already
-    // caught by the self-collision branch above, so any revisit reaching this
-    // point is a true trail-cross.
-    if (previousState.gameMode.enforcesNoRevisit &&
-        !hasImmunity &&
-        _visitedCells.contains(snake.head)) {
-      _handleCrash(
-        model.CrashReason.selfCollision,
-        snake.head,
-        fatalSnake: snake,
-      );
-      return;
-    }
-    _visitedCells.add(snake.head);
-
-    // Handle food consumption
-    var newScore = previousState.score;
-    var newLevel = previousState.level;
-    var newCombo = previousState.currentCombo;
-    var newMaxCombo = previousState.maxCombo;
-    var newComboMultiplier = previousState.comboMultiplier;
-
-    if (willEatFood) {
-      // Identify which food was actually consumed (primary vs an extra).
-      final eatenFood = willEatPrimaryFood ? currentFood : extraFoods[eatenExtraIndex];
-
-      _foodTypesEatenThisGame.add(eatenFood.type.name);
-      _currentGameFoodTypes[eatenFood.type.name] =
-          (_currentGameFoodTypes[eatenFood.type.name] ?? 0) + 1;
-
-      newCombo++;
-      newMaxCombo = max(newMaxCombo, newCombo);
-      newComboMultiplier = model.GameState.calculateComboMultiplier(newCombo);
-
-      // Combo tier crossing — 1.0→1.5 at 5, 1.5→2.0 at 10, 2.0→3.0 at 20.
-      // Each crossing earns a medium haptic; the 3.0 tier earns an extra
-      // heavy on top so 20-bite streaks land with weight. SFX reuses the
-      // existing score_milestone key at low volume so it doesn't drown the
-      // food-eat sound (a dedicated combo_milestone asset is a follow-up).
-      if (newComboMultiplier > previousState.comboMultiplier) {
-        unawaited(_hapticService.mediumImpact());
-        if (newComboMultiplier >= 3.0) {
-          unawaited(_hapticService.heavyImpact());
-        }
-        _enhancedAudioService.playSfx('score_milestone', volume: 0.45);
-      }
-
-      final basePoints = eatenFood.type.points;
-      final comboBonus = (basePoints * newComboMultiplier).round();
-      final multipliedPoints = comboBonus * previousState.scoreMultiplier;
-      newScore += multipliedPoints;
-      _currentGameFoodPoints += multipliedPoints;
-
-      // Battle pass score milestones - deferred to avoid event loop contention
-      // during the game tick (addXP can trigger HTTP calls on first invocation)
-      Future.microtask(() => _checkScoreMilestones(newScore));
-
-      // Level up (unlimited levels with progressive difficulty).
-      // Loop so that a high-combo or multiplied bite can cross multiple
-      // level thresholds in a single tick.
-      final previousLevel = newLevel;
-      while (newScore >= model.GameState.getTargetScoreForLevel(newLevel + 1)) {
-        newLevel++;
-      }
-      if (newLevel > previousLevel) {
-        debugPrint(
-          '🎮 [GameCubit] LEVEL UP! $previousLevel -> $newLevel (next target: ${model.GameState.getTargetScoreForLevel(newLevel + 1)})',
-        );
-        _audioService.playSound('level_up');
-        unawaited(_hapticService.levelUp());
-        // 300ms tick slowdown so the level transition reads as an event
-        // rather than a silent counter increment.
-        _levelUpSlowdownUntil =
-            DateTime.now().add(const Duration(milliseconds: 300));
-        _analytics.trackLevelUp(newLevel);
-
-        // Award coins for every level gained this tick.
-        for (var lvl = previousLevel + 1; lvl <= newLevel; lvl++) {
-          final levelForCoins = lvl;
-          Future.microtask(() => _earnAndTrack(
-            CoinEarningSource.levelUp,
-            metadata: {'level': levelForCoins},
-          ));
-        }
-      } else {
-        _audioService.playSound('eat');
-        // Standardize through the service so intensity stays consistent with
-        // the power-up collect / bonus / special variants. The direct
-        // HapticFeedback.lightImpact() call was an inconsistency with the
-        // rest of the audio/haptic plumbing.
-        unawaited(_hapticService.foodEaten());
-      }
-
-      // Regenerate only the eaten food slot. In single-food mode this just
-      // replaces currentFood; in multi-food mode it preserves the other
-      // visible foods so the board stays populated.
-      if (willEatPrimaryFood) {
-        currentFood = _generateNonOverlappingFood(
-          previousState.boardWidth,
-          previousState.boardHeight,
-          snake,
-          existing: extraFoods,
-        );
-      } else {
-        extraFoods[eatenExtraIndex] = _generateNonOverlappingFood(
-          previousState.boardWidth,
-          previousState.boardHeight,
-          snake,
-          existing: [
-            ?currentFood,
-            ...extraFoods.where((f) => f != extraFoods[eatenExtraIndex]),
-          ],
-        );
-      }
-    }
-
-    // Handle power-up collection
-    // Performance: inline filter instead of removeExpiredPowerUps() which
-    // creates a throwaway GameState copy with 20+ fields just to get a list
-    var activePowerUps = previousState.activePowerUps
-        .where((p) => !p.isExpired)
-        .toList();
 
     // Power-up countdown haptic: fire once when each active power-up's
-    // remaining time first dips below 3s, 2s, and 1s. Visual flash already
-    // pulses in the last 3 seconds (game_hud.dart:758) — this adds a felt
-    // cue so a player whose eyes are on the snake still gets the warning.
-    for (final p in activePowerUps) {
+    // remaining time first dips below 3s, 2s, and 1s. The visual flash already
+    // pulses in the last 3 seconds — this adds a felt cue for eyes-on-snake.
+    for (final p in newGameState.activePowerUps) {
       final remainingMs = p.remainingTime.inMilliseconds;
       if (remainingMs <= 0 || remainingMs > 3000) continue;
-      // Bucket = ceil(remainingMs / 1000) → 3, 2, 1.
-      final bucket = (remainingMs + 999) ~/ 1000;
+      final bucket = (remainingMs + 999) ~/ 1000; // ceil → 3, 2, 1.
       final lastBucket = _powerUpCountdownLastSecond[p.type];
       if (lastBucket == null || lastBucket > bucket) {
         _powerUpCountdownLastSecond[p.type] = bucket;
@@ -1001,67 +842,10 @@ class GameCubit extends Cubit<GameCubitState> {
     // Drop entries for power-ups that have expired since the last tick so a
     // fresh future collection of the same type re-arms the countdown.
     if (_powerUpCountdownLastSecond.isNotEmpty) {
-      final activeTypes = activePowerUps.map((p) => p.type).toSet();
+      final activeTypes = newGameState.activePowerUps.map((p) => p.type).toSet();
       _powerUpCountdownLastSecond
           .removeWhere((type, _) => !activeTypes.contains(type));
     }
-
-    if (willCollectPowerUp) {
-      debugPrint('🎁 Collecting power-up: ${currentPowerUp.type.name}');
-      _hapticService.powerUpCollected();
-      _powerUpsCollectedThisGame++;
-      _analytics.trackPowerUpUsed(currentPowerUp.type.name);
-
-      // Buffer battle pass XP for power-up collection (flushed at game end)
-      _battlePassCubit.bufferXP(
-        BattlePassXpSource.getXpForAction('power_up_collected'),
-        source: 'power_up_collected',
-      );
-
-      // Track power-up type for statistics
-      _currentGamePowerUpTypes[currentPowerUp.type.name] =
-          (_currentGamePowerUpTypes[currentPowerUp.type.name] ?? 0) + 1;
-
-      // Pre-credit the full duration to the power-up-time counter. At
-      // game-end (_trackGameEndLocal) we subtract any leftover time on
-      // power-ups that are still active. Net effect: every expired
-      // power-up contributes its full duration; active-at-end power-ups
-      // contribute the time actually spent under the effect. Previously
-      // the counter was computed only from active-at-end power-ups,
-      // erasing every expired one entirely.
-      _currentGamePowerUpTime += currentPowerUp.type.duration.inSeconds;
-
-      activePowerUps = [
-        ...activePowerUps,
-        ActivePowerUp(type: currentPowerUp.type),
-      ];
-      currentPowerUp = null;
-      shouldClearPowerUp = true;
-      _audioService.playSound('power_up');
-    }
-
-    // PerfectGame: snapshot the visited-cells set into state so the painter
-    // can render the dim trail overlay. Out of mode, emit empty so the
-    // painter early-outs (zero cost for 95% of play).
-    final visitedSnapshot = previousState.gameMode.enforcesNoRevisit
-        ? Set<Position>.of(_visitedCells)
-        : const <Position>{};
-
-    final newGameState = previousState.copyWith(
-      snake: snake,
-      food: currentFood,
-      foods: extraFoods,
-      powerUp: currentPowerUp,
-      clearPowerUp: shouldClearPowerUp,
-      score: newScore,
-      level: newLevel,
-      currentCombo: newCombo,
-      maxCombo: newMaxCombo,
-      comboMultiplier: newComboMultiplier,
-      activePowerUps: activePowerUps,
-      lastMoveTime: now, // Reuse timestamp from start of tick instead of calling DateTime.now() again
-      visitedCells: visitedSnapshot,
-    );
 
     final newCubitState = state.copyWith(
       gameState: newGameState,
@@ -1071,23 +855,22 @@ class GameCubit extends Cubit<GameCubitState> {
 
     if (_updateCount <= 5) {
       debugPrint(
-        '🎮 [GameCubit] _updateGame #$_updateCount emitting: snake moved to ${snake.head}',
+        '🎮 [GameCubit] _updateGame #$_updateCount emitting: snake moved to ${newGameState.snake.head}',
       );
     }
 
     emit(newCubitState);
 
-    // Note: No need to restart game loop on level-up anymore.
-    // The new timer pattern (_scheduleNextGameTick) reads speed fresh each tick,
-    // so speed changes from level-ups apply immediately without a pause.
+    // Note: No need to restart the game loop on level-up — _scheduleNextGameTick
+    // reads speed fresh each tick, so level-up speed changes apply immediately.
 
     _recordFrame(
-      snake,
-      currentFood,
-      currentPowerUp,
+      newGameState.snake,
+      newGameState.food,
+      newGameState.powerUp,
       newGameState,
-      willEatFood,
-      willCollectPowerUp,
+      ateFood,
+      collectedPowerUp,
     );
   }
 
@@ -1128,73 +911,14 @@ class GameCubit extends Cubit<GameCubitState> {
     );
   }
 
-  /// Generate a Food whose position doesn't overlap the snake, any of the
-  /// already-placed foods, or the active power-up. Used by MultiFood mode so
-  /// the simultaneous foods don't stack onto the same cell or land on a
-  /// power-up that the player would then "eat" instead of collect.
-  Food _generateNonOverlappingFood(
-    int boardWidth,
-    int boardHeight,
-    Snake snake, {
-    Iterable<Food> existing = const [],
-  }) {
-    final taken = <Position>{
-      ...existing.map((f) => f.position),
-      ?state.gameState?.powerUp?.position,
-    };
-    // Bounded retry: at most 32 attempts. If everything collides (effectively
-    // never on a normal-size board) fall back to the unguarded generator so
-    // we never deadlock the game tick.
-    for (var attempt = 0; attempt < 32; attempt++) {
-      final candidate = Food.generateRandom(
-        boardWidth,
-        boardHeight,
-        snake,
-        isPremium: _isPro,
-      );
-      if (!taken.contains(candidate.position)) {
-        return candidate;
-      }
-    }
-    return Food.generateRandom(
-      boardWidth,
-      boardHeight,
-      snake,
-      isPremium: _isPro,
-    );
-  }
-
   void _trySpawnPowerUp() {
     if (state.status != GamePlayStatus.playing) return;
-    if (state.gameState?.powerUp != null) return;
+    final current = state.gameState;
+    if (current == null || current.powerUp != null) return;
 
-    final random = Random();
-    final baseChance =
-        state.gameState?.gameMode.powerUpSpawnChanceOverride ?? 0.5;
-    // Pro perk: 30% more in-game power-up spawns. Capped at 0.95 so a mode
-    // that already overrides to ~0.9 doesn't become a 100% guarantee.
-    final spawnChance = _isPro
-        ? min(0.95, baseChance * 1.3)
-        : baseChance;
-    if (random.nextDouble() < spawnChance) {
-      final current = state.gameState!;
-      // Avoid every visible food (primary + multi-food extras) so the new
-      // power-up doesn't share a cell with an eatable target.
-      final powerUp = PowerUp.generateRandom(
-        current.boardWidth,
-        current.boardHeight,
-        current.snake,
-        foodPosition: current.food?.position,
-        foodPositions: current.foods.map((f) => f.position),
-      );
-
-      if (powerUp != null) {
-        emit(
-          state.copyWith(
-            gameState: state.gameState?.copyWith(powerUp: powerUp),
-          ),
-        );
-      }
+    final powerUp = _simulation.trySpawnPowerUp(current);
+    if (powerUp != null) {
+      emit(state.copyWith(gameState: current.copyWith(powerUp: powerUp)));
     }
   }
 
@@ -1209,36 +933,21 @@ class GameCubit extends Cubit<GameCubitState> {
     final newSnake = Snake.initial();
     // PerfectGame respawns get a fresh visited-cell map; the rule applies
     // per-life rather than across the whole run.
-    _visitedCells
-      ..clear()
-      ..addAll(newSnake.body);
-    final newFood = Food.generateRandom(
+    _simulation.reset(snakeBody: newSnake.body);
+    // Re-seed food (and MultiFood extras) for the fresh snake.
+    final respawnFoods = _simulation.generateInitialFoods(
       current.boardWidth,
       current.boardHeight,
       newSnake,
-      isPremium: _isPro,
+      current.gameMode,
     );
-    // Re-seed extras list if the active mode wants multiple simultaneous foods.
-    final extras = <Food>[];
-    if (current.gameMode.hasMultipleFood) {
-      for (var i = 0; i < 2; i++) {
-        extras.add(
-          _generateNonOverlappingFood(
-            current.boardWidth,
-            current.boardHeight,
-            newSnake,
-            existing: [newFood, ...extras],
-          ),
-        );
-      }
-    }
 
     emit(
       state.copyWith(
         gameState: current.copyWith(
           snake: newSnake,
-          food: newFood,
-          foods: extras,
+          food: respawnFoods.primary,
+          foods: respawnFoods.extras,
           activePowerUps: const [],
           clearPowerUp: true,
           // Survival respawn: preserve combo across lives instead of zeroing
