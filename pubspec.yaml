@@ -108,6 +108,8 @@ dependencies:
   # For Splash Screen
   flutter_native_splash: ^2.4.6
   package_info_plus: ^10.1.0
+  flame: ^1.37.0
+  flame_bloc: ^1.12.23
 
 # TODO: Remove this override once firebase_analytics > 12.4.1 ships with the AGP 9 / built-in Kotlin fix.
 # Tracking: https://github.com/firebase/flutterfire/issues/18297 (PR branch: analytics_18297)
