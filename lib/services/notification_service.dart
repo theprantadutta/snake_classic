@@ -8,6 +8,7 @@ import '../utils/logger.dart';
 import 'api_service.dart';
 import 'data_sync_service.dart';
 import 'navigation_service.dart';
+import 'unified_user_service.dart';
 
 enum NotificationType {
   tournament('tournament', 'Tournament Update'),
@@ -575,9 +576,20 @@ class NotificationService {
     try {
       final apiService = ApiService();
 
+      // EVERY user must be reachable by push — including the offline guests
+      // who never sign in and therefore have no backend JWT. Registration is
+      // JWT-authed, so before giving up we try to establish a (silent,
+      // anonymous) backend identity. This is online-gated and progress-safe
+      // inside UnifiedUserService; if it can't complete (offline) we fall
+      // through to the queue below and retry on the next online launch —
+      // offline play is never blocked.
+      if (!apiService.isAuthenticated) {
+        await UnifiedUserService().ensureBackendIdentityForPush();
+      }
+
       if (!apiService.isAuthenticated) {
         AppLogger.warning(
-          'Auth not ready — queueing FCM token registration for later',
+          'No backend identity yet — queueing FCM token registration for later',
         );
         await DataSyncService().queueSync(
           'fcm_token_register',

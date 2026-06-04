@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
@@ -929,6 +930,52 @@ class UnifiedUserService extends ChangeNotifier {
   /// Public wrapper for anonymous sign-in
   Future<bool> signInAnonymously() async {
     return _signInAnonymously();
+  }
+
+  bool _ensuringPushIdentity = false;
+
+  /// Ensure this device has a backend identity (JWT) so server-driven
+  /// features — specifically push notifications — can target it.
+  ///
+  /// Most users never sign in and live as purely-local offline guests with no
+  /// backend account, so the backend has nothing to push to (this was the
+  /// "200 DAU but ~5 FCM tokens" registration funnel: `/users/register-token`
+  /// is JWT-authed, and a guest has no JWT). When such a guest is online, this
+  /// silently upgrades them to a Firebase ANONYMOUS account, which yields a
+  /// backend JWT and lets their FCM token register.
+  ///
+  /// Safe by construction:
+  ///  * No-op when already authenticated (Google / email / anonymous).
+  ///  * Only upgrades a `guest`; never disturbs a real signed-in session and
+  ///    never re-anons an existing anonymous user whose JWT is just refreshing.
+  ///  * Online-gated — offline guests keep playing and this retries on the next
+  ///    online launch, so offline play is never blocked.
+  ///  * Progress-safe — the anonymous path skips the first-sign-in cloud pull
+  ///    (no overwrite) and there is NO local wipe on sign-in (the only
+  ///    `clearAllData()` is in [signOut]). The guest's local Drift progress is
+  ///    preserved and synced UP under the new identity.
+  Future<bool> ensureBackendIdentityForPush() async {
+    if (_apiService.isAuthenticated) return true;
+    if (_ensuringPushIdentity) return false;
+
+    final user = _currentUser;
+    if (user != null && user.userType != UserType.guest) return false;
+
+    if (GetIt.I.isRegistered<ConnectivityService>() &&
+        !GetIt.I<ConnectivityService>().isOnline) {
+      return false;
+    }
+
+    _ensuringPushIdentity = true;
+    try {
+      AppLogger.user(
+        'Upgrading offline guest → anonymous identity so push can reach this user',
+      );
+      await _signInAnonymously();
+      return _apiService.isAuthenticated;
+    } finally {
+      _ensuringPushIdentity = false;
+    }
   }
 
   /// Sign in with an existing email/password account.
