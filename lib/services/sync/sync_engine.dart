@@ -1299,6 +1299,28 @@ class SyncEngine {
             continue;
           }
 
+          // Per-field absorbing merge against the local row. The client OWNS
+          // unlock state in this offline-first model, so a backend snapshot
+          // must NEVER re-lock, un-claim, or rewind an achievement the user
+          // already earned locally — the local unlock may simply not have been
+          // pushed to the server yet. Mirrors the CLAUDE.md sync rule: OR for
+          // absorbing-true flags, MAX for monotonic counters. Without this, a
+          // snapshot apply on sign-in/launch re-locked rows in Drift and the
+          // next cold start re-fired the unlock (e.g. "First Game" popping up
+          // every launch).
+          final rawProgress = raw['current_progress'] as int? ?? 0;
+          final mergedProgress =
+              (existing != null && existing.currentProgress > rawProgress)
+                  ? existing.currentProgress
+                  : rawProgress;
+          final mergedUnlocked = (raw['is_unlocked'] as bool? ?? false) ||
+              (existing?.isUnlocked ?? false);
+          final mergedClaimed = (raw['reward_claimed'] as bool? ?? false) ||
+              (existing?.rewardClaimed ?? false);
+          // Keep the local unlock timestamp if we already had one.
+          final mergedUnlockedAt =
+              existing?.unlockedAt ?? _parseDate(raw['unlocked_at']);
+
           await _gameDao!.upsertAchievement(
             AchievementsCompanion(
               id: Value(id),
@@ -1308,11 +1330,11 @@ class SyncEngine {
               rewardCoins: Value(rewardCoins),
               iconName: Value(iconName),
               isSecret: Value(isSecret),
-              currentProgress: Value(raw['current_progress'] as int? ?? 0),
+              currentProgress: Value(mergedProgress),
               targetProgress: Value(raw['target_progress'] as int? ?? 1),
-              isUnlocked: Value(raw['is_unlocked'] as bool? ?? false),
-              unlockedAt: Value(_parseDate(raw['unlocked_at'])),
-              rewardClaimed: Value(raw['reward_claimed'] as bool? ?? false),
+              isUnlocked: Value(mergedUnlocked),
+              unlockedAt: Value(mergedUnlockedAt),
+              rewardClaimed: Value(mergedClaimed),
               updatedAt:
                   Value(_parseDate(raw['updated_at']) ?? DateTime.now()),
             ),
