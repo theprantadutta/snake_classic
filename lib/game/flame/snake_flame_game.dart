@@ -111,6 +111,19 @@ class SnakeFlameGame extends FlameGame {
       _interpolatedReset(incoming);
     }
     cubitState = newState;
+
+    // Battery: while the game is paused the board is frozen behind the pause
+    // overlay, so there's nothing to animate — stop the engine's update/render
+    // loop entirely instead of redrawing the whole board at 60fps. The last
+    // rendered frame stays on screen (the frozen board), and resuming to any
+    // non-paused state restarts the loop. We don't pause on crashed/game-over
+    // because the death-lunge and explosion particles still need to animate.
+    final isPaused = incoming?.status == model.GameStatus.paused;
+    if (isPaused && !paused) {
+      pauseEngine();
+    } else if (!isPaused && paused) {
+      resumeEngine();
+    }
   }
 
   model.GameState? _interpolatedFrom;

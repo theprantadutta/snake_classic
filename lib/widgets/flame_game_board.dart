@@ -47,6 +47,85 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
     );
   }
 
+  /// Boundary frame for the playfield — glowing border plus the multi-layer
+  /// ambient/depth shadows. Ported verbatim from the legacy `GameBoard`
+  /// decoration (tournament mode swaps in the purple/gold glow) so the Flame
+  /// board frames the playfield identically to the Flutter one.
+  BoxDecoration _boardFrameDecoration(GameTheme theme) {
+    return BoxDecoration(
+      gradient: RadialGradient(
+        center: Alignment.topRight,
+        radius: 1.5,
+        colors: [
+          theme.accentColor.withValues(alpha: 0.12),
+          theme.backgroundColor.withValues(alpha: 0.98),
+          theme.backgroundColor,
+          Colors.black.withValues(alpha: 0.08),
+        ],
+        stops: const [0.0, 0.4, 0.8, 1.0],
+      ),
+      border: Border.all(
+        color: widget.isTournamentMode
+            ? Colors.purple.withValues(alpha: 0.7)
+            : theme.accentColor.withValues(alpha: 0.5),
+        width: widget.isTournamentMode ? 4.0 : 3.0,
+      ),
+      borderRadius: BorderRadius.circular(0),
+      boxShadow: widget.isTournamentMode
+          ? [
+              BoxShadow(
+                color: Colors.purple.withValues(alpha: 0.35),
+                blurRadius: 20,
+                offset: const Offset(0, 0),
+              ),
+              BoxShadow(
+                color: Colors.amber.withValues(alpha: 0.25),
+                blurRadius: 28,
+                spreadRadius: 2,
+                offset: const Offset(0, 0),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 24,
+                spreadRadius: 1,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: Colors.purple.withValues(alpha: 0.2),
+                blurRadius: 48,
+                spreadRadius: -4,
+                offset: const Offset(0, 0),
+              ),
+            ]
+          : [
+              BoxShadow(
+                color: theme.accentColor.withValues(alpha: 0.25),
+                blurRadius: 16,
+                spreadRadius: -1,
+                offset: const Offset(0, 0),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 24,
+                spreadRadius: 1,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: theme.accentColor.withValues(alpha: 0.1),
+                blurRadius: 8,
+                spreadRadius: -4,
+                offset: const Offset(0, -4),
+              ),
+              BoxShadow(
+                color: theme.accentColor.withValues(alpha: 0.15),
+                blurRadius: 48,
+                spreadRadius: -8,
+                offset: const Offset(0, 0),
+              ),
+            ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ThemeCubit, ThemeState>(
@@ -86,11 +165,27 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                   premiumState,
                   trailEnabled: themeState.isTrailSystemEnabled,
                 );
-                return GameWidget(
-                  key: ValueKey(
-                    gs == null ? 'none' : '${gs.boardWidth}x${gs.boardHeight}',
+                // The boundary frame (glowing border + ambient shadow) lives at
+                // the Flutter layer in the legacy GameBoard, not in the shared
+                // painters — so the Flame board must reproduce it here, else the
+                // playfield has no visible edge. Mirrors GameBoard's decorated
+                // Container so both renderers frame the board identically.
+                return RepaintBoundary(
+                  child: Container(
+                    margin: const EdgeInsets.all(8.0),
+                    decoration: _boardFrameDecoration(themeState.currentTheme),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(0),
+                      child: GameWidget(
+                        key: ValueKey(
+                          gs == null
+                              ? 'none'
+                              : '${gs.boardWidth}x${gs.boardHeight}',
+                        ),
+                        game: _game,
+                      ),
+                    ),
                   ),
-                  game: _game,
                 );
               },
             );

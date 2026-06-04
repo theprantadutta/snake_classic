@@ -451,6 +451,15 @@ class GameCubit extends Cubit<GameCubitState> {
         : Duration.zero;
     _pauseStartedAt = null;
 
+    // The end-of-game duration stats are measured from this private anchor, so
+    // it must skip the paused window too — otherwise time spent paused (incl.
+    // the app being backgrounded for hours, which auto-pauses) is recorded as
+    // play time. Mirrors the state.gameStartTime shift applied below for the
+    // HUD; the two anchors must move together to stay consistent.
+    if (pauseDuration > Duration.zero) {
+      _gameStartTime = _gameStartTime?.add(pauseDuration);
+    }
+
     final current = state.gameState;
     if (current != null && pauseDuration > Duration.zero) {
       // Shift every wall-clock anchor forward by the pause window AND

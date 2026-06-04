@@ -445,12 +445,21 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
 
         final existing = await getAchievementById(id);
         if (existing != null) {
-          final newProgress =
+          // Monotonic merge: a local progress save must never re-lock,
+          // un-claim, or rewind an achievement. Saves are fire-and-forget and
+          // each writes the FULL achievement map, so a save whose snapshot was
+          // taken before an unlock can complete AFTER the unlock's save — and
+          // would otherwise clobber the unlocked row back to locked in Drift,
+          // which then re-fires the unlock on the next game.
+          final rawProgress =
               (data['currentProgress'] as int?) ?? existing.currentProgress;
+          final newProgress = rawProgress > existing.currentProgress
+              ? rawProgress
+              : existing.currentProgress;
           final newUnlocked =
-              (data['isUnlocked'] as bool?) ?? existing.isUnlocked;
+              (data['isUnlocked'] as bool?) == true || existing.isUnlocked;
           final newRewardClaimed =
-              (data['rewardClaimed'] as bool?) ?? existing.rewardClaimed;
+              (data['rewardClaimed'] as bool?) == true || existing.rewardClaimed;
           final rawUnlockedAt = data['unlockedAt'] as String?;
           final newUnlockedAt = rawUnlockedAt != null
               ? DateTime.tryParse(rawUnlockedAt)

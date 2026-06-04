@@ -422,13 +422,26 @@ class AchievementService extends ChangeNotifier {
       final savedData = data[achievement.id] as Map<String, dynamic>?;
 
       if (savedData != null) {
+        // Unlocks are monotonic: a load/refresh must NEVER downgrade an
+        // achievement that's already unlocked in memory back to locked.
+        // The Drift watch can fire in the window between an unlock and its
+        // async persist and read a stale `isUnlocked:false`; clobbering the
+        // in-memory unlock here is the "phantom-unlock reset" that made the
+        // per-game evaluator re-fire — re-toasting "First Game" and
+        // re-buffering its XP every single game. Preserve the unlock (and
+        // never let progress / rewardClaimed run backwards) instead.
+        final savedUnlocked = savedData['isUnlocked'] == true;
+        final savedProgress = (savedData['currentProgress'] as int?) ?? 0;
         _achievements[i] = achievement.copyWith(
-          isUnlocked: savedData['isUnlocked'] ?? false,
-          currentProgress: savedData['currentProgress'] ?? 0,
+          isUnlocked: savedUnlocked || achievement.isUnlocked,
+          currentProgress: savedProgress > achievement.currentProgress
+              ? savedProgress
+              : achievement.currentProgress,
           unlockedAt: savedData['unlockedAt'] != null
-              ? DateTime.parse(savedData['unlockedAt'])
+              ? DateTime.tryParse(savedData['unlockedAt'])
               : null,
-          rewardClaimed: savedData['rewardClaimed'] ?? false,
+          rewardClaimed:
+              savedData['rewardClaimed'] == true || achievement.rewardClaimed,
           gameModeFilter: savedData['gameModeFilter'] as String?,
           difficultyFilter: savedData['difficultyFilter'] as String?,
         );

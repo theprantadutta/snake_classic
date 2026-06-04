@@ -33,15 +33,25 @@ class SnakeTrailComponent extends Component
 
   @override
   void update(double dt) {
+    final gs = game.gameState;
+    final status = gs?.status;
+
+    // Paused: freeze the trail in place with the board. Don't advance the
+    // clock (so segments don't age out), don't accumulate, don't clear — the
+    // trail holds exactly as it was until play resumes. (With the engine
+    // paused on the paused state this isn't even reached; the guard keeps the
+    // trail from ever wiping on a pause regardless of engine state.)
+    if (status == model.GameStatus.paused) return;
+
     _elapsed += dt;
 
-    final gs = game.gameState;
     final type = _resolveTrailType();
-    final playing = gs?.status == model.GameStatus.playing;
+    final playing = status == model.GameStatus.playing;
 
     if (!playing || type == TrailType.none) {
-      // Clear stale segments so they don't flash when play resumes.
-      if (!playing && _segments.isNotEmpty) _segments.clear();
+      // Not playing (ready / crashed / game over) or trails disabled — drop
+      // any stale segments so they don't flash when the next game starts.
+      if (_segments.isNotEmpty) _segments.clear();
       return;
     }
 
