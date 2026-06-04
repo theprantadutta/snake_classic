@@ -2,7 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/utils/direction.dart';
-import 'package:snake_classic/widgets/game_board.dart';
+import 'package:snake_classic/game/flame/rendering/game_board_painter.dart';
 
 /// Renders the gameplay board by driving the legacy `CustomPainter`s
 /// ([GameBoardBackgroundPainter] + [OptimizedGameBoardPainter]) inside Flame's

@@ -8,9 +8,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
 
-/// Flame-backed drop-in replacement for the legacy `GameBoard` widget. Shares
-/// the same public constructor so it can be swapped behind
-/// `FeatureFlags.useFlameBoard` without touching the call site's layout.
+/// The single-player gameplay board, rendered with the Flame engine.
 ///
 /// It hosts a single [SnakeFlameGame] instance and forwards each relevant
 /// [GameCubitState] / theme change into it via [SnakeFlameGame.syncState]. The

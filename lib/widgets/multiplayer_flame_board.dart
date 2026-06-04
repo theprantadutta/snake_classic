@@ -8,10 +8,9 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 
-/// Flame-backed drop-in replacement for [MultiplayerGameAdapter]. Same
-/// constructor, swapped behind `FeatureFlags.useFlameBoard`. Reproduces the
-/// adapter's purple/gold framed container and hosts a [MultiplayerFlameGame]
-/// (grid + all snakes + food + particles) inside it.
+/// The multiplayer gameplay board, rendered with the Flame engine. Draws the
+/// purple/gold framed container and hosts a [MultiplayerFlameGame] (grid + all
+/// snakes + food + particles) inside it.
 class MultiplayerFlameBoard extends StatefulWidget {
   const MultiplayerFlameBoard({
     super.key,

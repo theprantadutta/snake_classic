@@ -10,7 +10,7 @@ import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/presentation/bloc/game/game_state.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/advanced_particle_system.dart'
+import 'package:snake_classic/game/flame/rendering/particles.dart'
     show ParticleConfig;
 
 /// The Flame engine root for single-player gameplay.

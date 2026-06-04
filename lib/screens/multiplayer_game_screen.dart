@@ -10,9 +10,8 @@ import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.da
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/direction.dart';
-import 'package:snake_classic/config/feature_flags.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
-import 'package:snake_classic/widgets/multiplayer_game_adapter.dart';
+import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
 import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
@@ -591,27 +590,15 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                         Expanded(
                                           child: Padding(
                                             padding: const EdgeInsets.all(12),
-                                            child: FeatureFlags.useFlameBoard
-                                                ? MultiplayerFlameBoard(
-                                                    game: game,
-                                                    currentUserId:
-                                                        _currentUserId ?? '',
-                                                    localSnake: _mySnake,
-                                                    localDirection:
-                                                        _currentDirection,
-                                                    localScore: _myScore,
-                                                    localIsAlive: _isAlive,
-                                                  )
-                                                : MultiplayerGameAdapter(
-                                                    game: game,
-                                                    currentUserId:
-                                                        _currentUserId ?? '',
-                                                    localSnake: _mySnake,
-                                                    localDirection:
-                                                        _currentDirection,
-                                                    localScore: _myScore,
-                                                    localIsAlive: _isAlive,
-                                                  ),
+                                            child: MultiplayerFlameBoard(
+                                              game: game,
+                                              currentUserId:
+                                                  _currentUserId ?? '',
+                                              localSnake: _mySnake,
+                                              localDirection: _currentDirection,
+                                              localScore: _myScore,
+                                              localIsAlive: _isAlive,
+                                            ),
                                           ),
                                         ),
 

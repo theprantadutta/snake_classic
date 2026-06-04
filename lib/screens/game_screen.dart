@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:snake_classic/config/feature_flags.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -19,7 +18,6 @@ import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/flame_game_board.dart';
-import 'package:snake_classic/widgets/game_board.dart';
 import 'package:snake_classic/widgets/game_hud.dart';
 import 'package:snake_classic/widgets/pause_overlay.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
@@ -1138,22 +1136,12 @@ class _GameScreenState extends State<GameScreen>
                                                     child: SizedBox(
                                                       width: availableSize,
                                                       height: availableSize,
-                                                      child: FeatureFlags
-                                                              .useFlameBoard
-                                                          ? FlameGameBoard(
-                                                              gameState:
-                                                                  gameState,
-                                                              isTournamentMode:
-                                                                  gameCubitState
-                                                                      .isTournamentMode,
-                                                            )
-                                                          : GameBoard(
-                                                              gameState:
-                                                                  gameState,
-                                                              isTournamentMode:
-                                                                  gameCubitState
-                                                                      .isTournamentMode,
-                                                            ),
+                                                      child: FlameGameBoard(
+                                                        gameState: gameState,
+                                                        isTournamentMode:
+                                                            gameCubitState
+                                                                .isTournamentMode,
+                                                      ),
                                                     ),
                                                   );
                                                 },
@@ -1582,10 +1570,10 @@ class _ScorePopupLayerState extends State<_ScorePopupLayer> {
   void _resolveBoardMetrics() {
     if (_boardSize != null && _boardOffset != null) return;
 
-    // Find the GameBoard render object via the element tree.
+    // Find the FlameGameBoard render object via the element tree.
     void visitor(Element element) {
       if (_boardSize != null && _boardOffset != null) return;
-      if (element.widget is GameBoard) {
+      if (element.widget is FlameGameBoard) {
         final box = element.findRenderObject() as RenderBox?;
         if (box != null && box.hasSize) {
           _boardSize = box.size;

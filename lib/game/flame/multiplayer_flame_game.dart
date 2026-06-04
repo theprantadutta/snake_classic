@@ -6,9 +6,9 @@ import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
-import 'package:snake_classic/widgets/advanced_particle_system.dart'
+import 'package:snake_classic/game/flame/rendering/particles.dart'
     show ParticleConfig;
-import 'package:snake_classic/widgets/multiplayer_game_adapter.dart'
+import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart'
     show MultiplayerBoardPainter, MultiplayerGridBackgroundPainter;
 
 /// Flame engine root for multiplayer gameplay (2–4 snakes).

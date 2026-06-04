@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
-import 'package:snake_classic/widgets/advanced_particle_system.dart'
+import 'package:snake_classic/game/flame/rendering/particles.dart'
     show ParticleConfig, ParticleData, ParticleType, ParticleBlendMode;
 
 /// Flame-native explosion/collection particles.

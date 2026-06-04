@@ -7,7 +7,7 @@ import 'package:snake_classic/models/game_state.dart' as model;
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/snake_trail_system.dart'
+import 'package:snake_classic/game/flame/rendering/snake_trail_painter.dart'
     show SnakeTrailPainter, TrailSegment, TrailType;
 
 /// Flame-native snake trail.
