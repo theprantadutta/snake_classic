@@ -169,8 +169,13 @@ class NotificationService {
       '🔔 Notification permission: ${settings.authorizationStatus}',
     );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional) {
+    // Permission governs DISPLAY only — an FCM token is valid regardless of
+    // whether the user granted the notification prompt. Always fetch + register
+    // it so EVERY logged-in user lands in the backend's token table (and can be
+    // reached the instant they later enable notifications), not just those who
+    // accepted the prompt. (Android-only app: getToken() does not require
+    // POST_NOTIFICATIONS; the permission value above is kept for logging.)
+    {
       // Get FCM token
       _fcmToken = await _firebaseMessaging.getToken();
       AppLogger.info('🎫 FCM Token: $_fcmToken');
