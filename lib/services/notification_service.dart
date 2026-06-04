@@ -85,6 +85,11 @@ class NotificationService {
       );
       await _loadNotificationPreferences();
 
+      // Subscribe to the backend's broadcast topics (weekly leaderboard,
+      // tournament-started) now that token + prefs are loaded. Without a
+      // subscription those topic pushes reach nobody.
+      await _syncBroadcastTopicSubscriptions();
+
       _initialized = true;
       AppLogger.success('Notification service initialized successfully');
     } catch (e) {
@@ -197,6 +202,9 @@ class NotificationService {
         } else {
           unawaited(_registerTokenWithBackend(_fcmToken!));
         }
+        // Late token (resolved after initialize()'s sync, or after the 5s
+        // FCM-init timeout) — subscribe to broadcast topics now too. Idempotent.
+        unawaited(_syncBroadcastTopicSubscriptions());
       }
 
       // Subscribe to token refresh
@@ -214,6 +222,8 @@ class NotificationService {
         }
 
         _onTokenRefresh(token);
+        // Topic subscriptions are bound to the token; re-sync on rotation.
+        unawaited(_syncBroadcastTopicSubscriptions());
       });
 
       // Handle foreground messages
@@ -355,6 +365,41 @@ class NotificationService {
     }
   }
 
+  // FCM broadcast topics the backend pushes to. The weekly-leaderboard job
+  // sends to [_leaderboardTopic] and the tournament-started job to
+  // [_tournamentsTopic]; a device only receives those if it has SUBSCRIBED.
+  // Nothing subscribed before, so every topic broadcast reached zero devices —
+  // this wires them up. (Per-tournament `tournament_<id>` topics are
+  // intentionally NOT subscribed: the backend reminder targeting them is
+  // currently dead code, so there's nothing to receive.)
+  static const String _leaderboardTopic = 'leaderboard_updates';
+  static const String _tournamentsTopic = 'tournaments';
+
+  /// Subscribe/unsubscribe the broadcast topics to match the user's category
+  /// preferences. Idempotent and safe to call repeatedly (FCM dedupes). No-op
+  /// until an FCM token exists, since topic ops require one. Re-run on token
+  /// arrival/refresh (subscriptions are bound to the token) and on preference
+  /// changes.
+  Future<void> _syncBroadcastTopicSubscriptions() async {
+    if (_fcmToken == null) return;
+    await _applyTopicSubscription(
+      _tournamentsTopic,
+      _notificationPreferences[NotificationType.tournament] ?? true,
+    );
+    await _applyTopicSubscription(
+      _leaderboardTopic,
+      _notificationPreferences[NotificationType.specialEvent] ?? true,
+    );
+  }
+
+  Future<void> _applyTopicSubscription(String topic, bool enabled) async {
+    if (enabled) {
+      await subscribeToTopic(topic);
+    } else {
+      await unsubscribeFromTopic(topic);
+    }
+  }
+
   // Notification preference methods
   bool isNotificationEnabled(NotificationType type) {
     return _notificationPreferences[type] ?? true;
@@ -396,6 +441,13 @@ class NotificationService {
       AppLogger.info(
         '📤 Queued daily-reminder preference (enabled=$enabled) for backend sync',
       );
+    }
+
+    // The broadcast-topic subscriptions track these two categories — re-sync
+    // so toggling the preference actually (un)subscribes the device.
+    if (type == NotificationType.tournament ||
+        type == NotificationType.specialEvent) {
+      unawaited(_syncBroadcastTopicSubscriptions());
     }
   }
 
