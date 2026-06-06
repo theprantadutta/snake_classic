@@ -22,6 +22,7 @@ import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
+import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
@@ -250,16 +251,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ? () async {
                 if (!mounted) return;
                 final coins = context.read<CoinsCubit>();
+                // Capture before the ad — onReward fires after dismissal,
+                // an async gap where reading context is unsafe.
+                final messenger = ScaffoldMessenger.of(context);
                 final ok = await coins.collectDailyBonus();
                 if (!ok) return;
                 getIt<AnalyticsFacade>().trackDailyBonusCollected();
                 // Grant the same amount again on ad completion → 2× total.
                 await ads.showRewarded(
-                  onReward: () => coins.earnCoins(
-                    CoinEarningSource.dailyLogin,
-                    customAmount: bonusCoins,
-                    itemName: 'Daily bonus 2x',
-                  ),
+                  onReward: () {
+                    coins.earnCoins(
+                      CoinEarningSource.dailyLogin,
+                      customAmount: bonusCoins,
+                      itemName: 'Daily bonus 2x',
+                    );
+                    showRewardToast(
+                      messenger,
+                      '🎉 Daily bonus doubled — +$bonusCoins bonus coins!',
+                    );
+                  },
                 );
               }
             : null,

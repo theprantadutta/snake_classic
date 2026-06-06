@@ -9,6 +9,7 @@ import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/widgets/ads/rewarded_coins_button.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
@@ -2454,18 +2455,35 @@ class _StoreScreenState extends State<StoreScreen>
   // can see their count).
 
   /// Rewarded-ad card granting one free Speed Boost. Self-hides for Pro /
-  /// web / when the SDK isn't ready; disables when no ad is loaded.
+  /// web / when the SDK isn't ready; disables when no ad is loaded or the
+  /// daily cap is hit.
   Widget _buildFreePowerUpAdCard(BuildContext context, GameTheme theme) {
     final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
-    final ready = ads.isRewardedReady;
+    // Capped placement: raw isRewardedReady ignored the documented
+    // 3-per-day free-power-up budget — the raw showRewarded call below it
+    // never recorded the cap either, so it was unlimited.
+    final ready = ads.canShowCapped(AdService.capFreePowerUp);
     return Opacity(
       opacity: ready ? 1 : 0.5,
       child: GestureDetector(
         onTap: ready
             ? () {
                 final powerUps = context.read<PowerUpCubit>();
-                ads.showRewarded(onReward: powerUps.grantFreePowerUp);
+                // Capture before the ad — onReward fires after dismissal,
+                // an async gap where reading context is unsafe.
+                final messenger = ScaffoldMessenger.of(context);
+                ads.showRewardedCapped(
+                  capKey: AdService.capFreePowerUp,
+                  onReward: () {
+                    powerUps.grantFreePowerUp();
+                    showRewardToast(
+                      messenger,
+                      '🎉 Free Speed Boost added to your inventory!',
+                      icon: Icons.flash_on,
+                    );
+                  },
+                );
               }
             : null,
         child: Container(

@@ -270,6 +270,21 @@ class AdService {
   /// the earn callback resumed the game loop behind the ad, so the snake moved
   /// (and re-crashed) before the player closed it. Granting on dismiss means
   /// the player is back in the app when the reward applies.
+  ///
+  /// The returned future resolves AFTER the ad is dismissed, with whether the
+  /// reward was actually granted — so callers can await it for accurate
+  /// "did they earn it" feedback. (Previously it resolved as soon as the ad
+  /// APPEARED, which was always before the user could earn anything, so the
+  /// return value lied to every caller that checked it.)
+  ///
+  /// Race handling: google_mobile_ads delivers onUserEarnedReward and
+  /// onAdDismissedFullScreenContent over the platform channel with NO ordering
+  /// guarantee — the earn event regularly lands a beat AFTER dismissal. The
+  /// old implementation read `earned` exactly once at dismiss time, so every
+  /// time the events arrived flipped, the user watched the whole ad, Google
+  /// granted the reward, and the app silently dropped it. Now the earn
+  /// handler grants late-arriving rewards itself, plus a short post-dismiss
+  /// grace wait before declaring the watch unrewarded.
   Future<bool> showRewarded({required VoidCallback onReward}) async {
     if (!adsEnabled || _rewarded == null) {
       _loadRewarded();
@@ -278,21 +293,56 @@ class AdService {
     final ad = _rewarded!;
     _rewarded = null;
     var earned = false;
+    var dismissed = false;
+    var granted = false;
+    final done = Completer<bool>();
+
+    void grantOnce() {
+      if (granted) return;
+      granted = true;
+      try {
+        onReward();
+      } catch (e) {
+        AppLogger.error('Rewarded onReward callback threw', e);
+      }
+      if (!done.isCompleted) done.complete(true);
+    }
+
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
+        dismissed = true;
         ad.dispose();
         _loadRewarded();
-        if (earned) onReward();
+        if (earned) {
+          grantOnce();
+          return;
+        }
+        // Grace window for the earn event arriving after dismissal (the
+        // plugin race described above). If it lands within the window the
+        // earn handler grants; otherwise the watch genuinely wasn't
+        // completed (user closed early).
+        Future<void>.delayed(const Duration(milliseconds: 800), () {
+          if (!done.isCompleted) done.complete(granted);
+        });
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
         _loadRewarded();
+        AppLogger.warning('Rewarded failed to show: ${error.message}');
+        if (!done.isCompleted) done.complete(false);
       },
     );
     await ad.show(
-      onUserEarnedReward: (_, _) => earned = true,
+      onUserEarnedReward: (_, _) {
+        earned = true;
+        if (dismissed) {
+          // The race case: reward event arrived after the dismiss event.
+          AppLogger.info('Rewarded earn event arrived post-dismiss — granting');
+          grantOnce();
+        }
+      },
     );
-    return earned;
+    return done.future;
   }
 
   // ==================== Daily-capped rewarded helpers ====================

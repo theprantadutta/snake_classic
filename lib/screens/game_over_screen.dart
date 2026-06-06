@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
+import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -138,6 +139,9 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
             return;
           }
           final coinsCubit = context.read<CoinsCubit>();
+          // Capture before the ad — onReward fires after dismissal, an
+          // async gap where reading context is unsafe.
+          final messenger = ScaffoldMessenger.of(context);
           await ads.showRewarded(
             onReward: () {
               coinsCubit.earnCoins(
@@ -147,6 +151,11 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                 metadata: const {'doubled': true},
               );
               if (mounted) setState(() => _doubledCoins = true);
+              showRewardToast(
+                messenger,
+                '🎉 Coins doubled — +$coins bonus coins!',
+                icon: Icons.monetization_on,
+              );
             },
           );
         },

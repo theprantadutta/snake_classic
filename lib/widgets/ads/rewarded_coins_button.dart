@@ -5,6 +5,7 @@ import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/ads/reward_toast.dart';
 
 /// "Watch an ad for coins" card. Self-hides for Pro users / when ads are
 /// unavailable, and disables itself once the daily cap is hit or no ad is
@@ -31,6 +32,9 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
     final ads = _ads;
     if (ads == null) return;
     final coins = context.read<CoinsCubit>();
+    // Capture before the ad — onCoins fires after dismissal, an async gap
+    // where reading context is unsafe.
+    final messenger = ScaffoldMessenger.of(context);
     await ads.showRewardedForCoins(
       onCoins: (amount) {
         coins.earnCoins(
@@ -38,6 +42,11 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
           customAmount: amount,
           itemName: 'Watched ad',
           metadata: const {'placement': 'store_free_coins'},
+        );
+        showRewardToast(
+          messenger,
+          '🎉 +$amount coins added to your wallet!',
+          icon: Icons.monetization_on,
         );
       },
     );

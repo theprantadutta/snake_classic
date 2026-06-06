@@ -13,6 +13,7 @@ import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
+import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -92,7 +93,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
         final canDouble = ads != null && ads.adsEnabled && ads.isRewardedReady;
         final coins = context.read<CoinsCubit>();
-        ScaffoldMessenger.of(context).showSnackBar(
+        // Capture before the ad — onReward fires after dismissal, an async
+        // gap where reading context is unsafe.
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           SnackBar(
             content: Row(
               children: [
@@ -108,12 +112,19 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                     label: 'WATCH TO 2×',
                     textColor: Colors.amber,
                     onPressed: () => ads.showRewarded(
-                      onReward: () => coins.earnCoins(
-                        CoinEarningSource.dailyChallenge,
-                        customAmount: totalClaimed,
-                        itemName: 'Daily Challenges 2x',
-                        metadata: const {'doubled': true},
-                      ),
+                      onReward: () {
+                        coins.earnCoins(
+                          CoinEarningSource.dailyChallenge,
+                          customAmount: totalClaimed,
+                          itemName: 'Daily Challenges 2x',
+                          metadata: const {'doubled': true},
+                        );
+                        showRewardToast(
+                          messenger,
+                          '🎉 Doubled! +$totalClaimed bonus coins!',
+                          icon: Icons.monetization_on,
+                        );
+                      },
                     ),
                   )
                 : null,

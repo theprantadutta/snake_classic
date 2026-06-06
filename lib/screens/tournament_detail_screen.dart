@@ -6,6 +6,7 @@ import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
+import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
@@ -1410,9 +1411,19 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                 getIt<AdService>().isRewardedReady)
               TextButton.icon(
                 onPressed: () {
+                  // Capture before the pop + ad — onReward fires after the
+                  // ad is dismissed, when this dialog's context is gone.
+                  final messenger = ScaffoldMessenger.of(context);
                   Navigator.of(context).pop();
                   getIt<AdService>().showRewarded(
-                    onReward: () => premiumCubit.addTournamentEntry('bronze'),
+                    onReward: () {
+                      premiumCubit.addTournamentEntry('bronze');
+                      showRewardToast(
+                        messenger,
+                        '🎉 Free bronze tournament entry added!',
+                        icon: Icons.emoji_events,
+                      );
+                    },
                   );
                 },
                 icon: const Icon(Icons.play_circle_fill,
