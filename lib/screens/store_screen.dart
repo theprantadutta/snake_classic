@@ -271,6 +271,11 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                 ),
               ),
+            // Compact "watch ad → +25 coins" pill (replaces the COINS
+            // button that used to live on the home action row). Self-hides
+            // for Pro / when ads are unavailable.
+            const SizedBox(width: 8),
+            const RewardedCoinsPill(),
           ],
         ),
       ),
