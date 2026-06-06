@@ -5,6 +5,7 @@ import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/data/daos/sync_dao.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/unified_user_service.dart';
 
 enum SyncStatus { idle, syncing, synced, offline, error }
 
@@ -348,7 +349,13 @@ class DataSyncService extends ChangeNotifier {
   /// Sync specific data type via backend API
   Future<bool> _syncItem(SyncQueueItem item) async {
     if (_currentUserId == null || !_connectivityService.isOnline) return false;
-    if (!_apiService.isAuthenticated) return false;
+    // fcm_token_register is exempt from the auth gate: its handler below
+    // re-establishes the backend identity itself (guest→anonymous upgrade)
+    // before POSTing. Every other type genuinely needs the JWT up front.
+    if (!_apiService.isAuthenticated &&
+        item.dataType != 'fcm_token_register') {
+      return false;
+    }
 
     try {
       switch (item.dataType) {
@@ -369,6 +376,17 @@ class DataSyncService extends ChangeNotifier {
           // at the right local hour.
           final fcmToken = item.data['fcmToken'] as String?;
           if (fcmToken == null || fcmToken.isEmpty) return true;
+          // The register-token endpoint is JWT-authed. If this item was
+          // queued because an offline guest had no backend identity, a
+          // plain re-POST can never succeed — the retry has to first
+          // re-attempt the silent guest→anonymous upgrade (online-gated
+          // and re-entrancy-safe inside UnifiedUserService). Without
+          // this the item burned all its retries against a guaranteed
+          // 401 and the token was lost until the next app launch.
+          if (!_apiService.isAuthenticated) {
+            await UnifiedUserService().ensureBackendIdentityForPush();
+            if (!_apiService.isAuthenticated) return false;
+          }
           return await _apiService.registerFcmToken(
             fcmToken: fcmToken,
             platform: (item.data['platform'] as String?) ?? 'flutter',
@@ -403,7 +421,23 @@ class DataSyncService extends ChangeNotifier {
   /// Perform sync with retry logic
   Future<void> _performSync() async {
     if (!_connectivityService.isOnline || _currentUserId == null) return;
-    if (!_apiService.isAuthenticated) return;
+    if (!_apiService.isAuthenticated) {
+      // A JWT-less offline guest can still hold queued fcm_token_register
+      // items — and those are exactly the items whose handler re-attempts
+      // the silent guest→anonymous identity upgrade. Bailing here meant the
+      // queue could never self-heal for guests: the token item sat pending
+      // until the next app launch's token-arrival path happened to succeed.
+      // Everything else still requires auth, so only proceed when a token
+      // registration is waiting.
+      final hasTokenRegistration = _syncQueue.any(
+        (item) =>
+            item.dataType == 'fcm_token_register' &&
+            (item.status == SyncItemStatus.pending ||
+                (item.status == SyncItemStatus.failed &&
+                    item.retryCount < _maxRetries)),
+      );
+      if (!hasTokenRegistration) return;
+    }
     if (_isSyncing) return; // Prevent concurrent syncs
 
     // Outbox-owned dataTypes (settings/statistics/achievement/coin_balance/...)
@@ -422,7 +456,7 @@ class DataSyncService extends ChangeNotifier {
       SyncDataType.dailyChallengeClaim,
     };
 
-    final pendingItems = _syncQueue
+    var pendingItems = _syncQueue
         .where(
           (item) =>
               !outboxOwned.contains(item.dataType) &&
@@ -431,6 +465,15 @@ class DataSyncService extends ChangeNotifier {
                       item.retryCount < _maxRetries)),
         )
         .toList();
+
+    // Unauthenticated pass (see the gate above): touch ONLY the token
+    // registrations. Other item types would fail their auth check inside
+    // _syncItem and burn retry budget against a guaranteed failure.
+    if (!_apiService.isAuthenticated) {
+      pendingItems = pendingItems
+          .where((item) => item.dataType == 'fcm_token_register')
+          .toList();
+    }
 
     if (pendingItems.isEmpty) return;
 

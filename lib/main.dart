@@ -118,6 +118,14 @@ void main() async {
     // intrusive. The call has moved to home_screen.dart's initState,
     // so the request only fires once the user has actually landed on
     // home and signed in (if applicable).
+    //
+    // The TOKEN, however, doesn't need any permission — so bootstrap it
+    // here. Without this, token registration depended on the user
+    // reaching home and keeping it mounted for 1.5s; a kill before that
+    // meant the install stayed invisible to the backend for the whole
+    // session. Fire-and-forget; the home-screen init repeats the fetch
+    // idempotently if this loses a race.
+    unawaited(NotificationService().bootstrapToken());
 
     InAppUpdateService().checkForUpdate().then((_) {
       AppLogger.success('In-app update check completed');

@@ -98,6 +98,47 @@ class NotificationService {
     }
   }
 
+  // Set once bootstrapToken() has completed a token fetch, so the full
+  // initialize() and the bootstrap never race a duplicate registration.
+  bool _tokenBootstrapDone = false;
+
+  /// Silent token bootstrap — fetch + register the FCM token and sync the
+  /// broadcast-topic subscriptions WITHOUT touching the OS notification
+  /// permission. Called from app bootstrap (main.dart) so token
+  /// registration no longer depends on the user reaching the home screen
+  /// and keeping it mounted for 1.5s (the full initialize() stays on home
+  /// because IT owns the permission prompt, which would feel intrusive
+  /// before the user has seen the app).
+  ///
+  /// An FCM token is valid on Android without POST_NOTIFICATIONS, so this
+  /// gets every fresh install into the backend's token table on the very
+  /// first frame of app life — display ability catches up whenever the
+  /// user grants the prompt.
+  Future<void> bootstrapToken() async {
+    if (_initialized || _tokenBootstrapDone) return;
+    try {
+      _firebaseMessaging = FirebaseMessaging.instance;
+      _fcmToken = await _firebaseMessaging.getToken().timeout(
+        const Duration(seconds: 8),
+      );
+      if (_fcmToken == null) return;
+      _tokenBootstrapDone = true;
+      AppLogger.info('🎫 FCM token bootstrapped pre-home');
+      // Preferences govern the topic subscriptions; load them so the
+      // bootstrap respects a returning user's opt-outs. Defaults are
+      // all-true for a fresh install, matching the full init.
+      await _loadNotificationPreferences();
+      unawaited(_registerTokenWithBackend(_fcmToken!));
+      unawaited(_syncBroadcastTopicSubscriptions());
+    } catch (e) {
+      // Leave _tokenBootstrapDone false — the full initialize() from the
+      // home screen repeats the token fetch and registration anyway.
+      AppLogger.warning(
+        'FCM token bootstrap failed — home-screen init will retry: $e',
+      );
+    }
+  }
+
   Future<void> _initializeLocalNotifications() async {
     // Android initialization settings
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -687,6 +728,23 @@ class NotificationService {
       }
     } catch (e) {
       AppLogger.error('Error registering token with backend', e);
+      // Same recovery as the failure branches above: queue for retry.
+      // Previously an exception here (transient network blip mid-call,
+      // unexpected state) silently dropped the token — the ONLY path in
+      // this method with no second chance.
+      try {
+        await DataSyncService().queueSync(
+          'fcm_token_register',
+          {
+            'fcmToken': token,
+            'platform': 'flutter',
+            'timezoneOffsetMinutes': tzOffsetMinutes,
+          },
+          priority: SyncPriority.high,
+        );
+      } catch (queueError) {
+        AppLogger.error('Failed to queue FCM token registration', queueError);
+      }
       return false;
     }
   }
