@@ -1293,48 +1293,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             widgetKey: HomeWalkthrough.storeKey,
           ),
         ),
-        // Watch-for-coins — only for free users with ads enabled (Pro keeps
-        // the clean 2-button row).
-        if (getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled) ...[
-          SizedBox(width: isSmallScreen ? 12 : 16),
-          Expanded(
-            child: _buildModernActionButton(
-              context: context,
-              theme: theme,
-              icon: Icons.play_circle_fill,
-              label: 'COINS',
-              gradient: [Colors.amber.shade400, Colors.yellow.shade700],
-              isSmallScreen: isSmallScreen,
-              onTap: () => _watchForCoins(context),
-            ),
-          ),
-        ],
       ],
-    );
-  }
-
-  /// Rewarded "watch for coins" from the home action row. Honours the daily
-  /// cap; credits offline-first via CoinsCubit.
-  Future<void> _watchForCoins(BuildContext context) async {
-    final ads = getIt<AdService>();
-    if (!ads.canShowFreeCoinAd) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ads.freeCoinAdsRemainingToday == 0
-              ? "You've hit today's free-coin limit — come back tomorrow!"
-              : 'No ad available right now, try again shortly'),
-        ),
-      );
-      return;
-    }
-    final coins = context.read<CoinsCubit>();
-    await ads.showRewardedForCoins(
-      onCoins: (amount) => coins.earnCoins(
-        CoinEarningSource.watchedAd,
-        customAmount: amount,
-        itemName: 'Watched ad',
-        metadata: const {'placement': 'home_free_coins'},
-      ),
     );
   }
 
