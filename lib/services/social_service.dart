@@ -39,6 +39,15 @@ class SocialService {
 
   FriendsDao get _dao => GetIt.I<AppDatabase>().friendsDao;
 
+  // Outgoing pending requests, held in memory only. The Drift cache table
+  // has received-request columns exclusively (no direction column), and
+  // sent requests are ephemeral server state like search results — not
+  // worth a schema migration. Populated by refreshFriendRequests from the
+  // backend's additive `sent_requests` key; empty until the first online
+  // refresh of a session. Before this existed the "Sent" tab was
+  // permanently zero and duplicate-send protection never engaged.
+  List<FriendRequest> _sentRequests = const [];
+
   // -------------- Reads (cache-first) --------------
 
   Future<List<UserProfile>> getFriends() async {
@@ -48,7 +57,7 @@ class SocialService {
 
   Future<List<FriendRequest>> getFriendRequests() async {
     final rows = await _dao.getRequests();
-    return rows.map(_requestRowToModel).toList();
+    return [...rows.map(_requestRowToModel), ..._sentRequests];
   }
 
   Future<List<UserProfile>> getFriendsLeaderboard() => getFriends();
@@ -82,9 +91,12 @@ class SocialService {
 
   Stream<List<FriendRequest>> watchFriendRequests() => _dao
       .watchRequests()
-      .map((rows) => rows.map(_requestRowToModel).toList());
+      .map((rows) => [...rows.map(_requestRowToModel), ..._sentRequests]);
 
-  Future<void> clearCache() => _dao.clear();
+  Future<void> clearCache() {
+    _sentRequests = const [];
+    return _dao.clear();
+  }
 
   // -------------- Refresh (write-through) --------------
 
@@ -111,7 +123,10 @@ class SocialService {
     );
   }
 
-  /// Pull pending incoming friend requests and replace the cache.
+  /// Pull pending friend requests and replace the cache. The response
+  /// carries incoming requests under `requests` (cached in Drift) and
+  /// outgoing ones under `sent_requests` (held in memory — see
+  /// [_sentRequests]).
   Future<void> refreshFriendRequests() async {
     if (!_api.isAuthenticated) return;
     final body = await _safeFetch(() => _api.getFriendRequestsList());
@@ -132,6 +147,16 @@ class SocialService {
       requests: companions,
       refreshedAt: DateTime.now(),
     );
+
+    // Outgoing requests — additive key, absent on pre-update backends
+    // (then we just keep whatever we had this session).
+    final rawSent = body['sent_requests'];
+    if (rawSent is List) {
+      _sentRequests = [
+        for (final r in rawSent)
+          if (r is Map<String, dynamic>) _sentRequestFromWire(r),
+      ];
+    }
   }
 
   // -------------- Live mutations --------------
@@ -311,6 +336,28 @@ class SocialService {
       fromUserPhotoUrl: row.fromPhotoUrl,
       createdAt: row.sentAt,
       type: FriendRequestType.received,
+    );
+  }
+
+  /// Wire → model for OUTGOING requests (backend `sent_requests` items:
+  /// request_id / to_user_id / to_username / to_display_name / sent_at).
+  /// Sender is implicitly the current user.
+  FriendRequest _sentRequestFromWire(Map<String, dynamic> raw) {
+    return FriendRequest(
+      id: (raw['request_id'] ?? raw['requestId'] ?? '').toString(),
+      fromUserId: '',
+      toUserId: (raw['to_user_id'] ?? raw['toUserId'] ?? '').toString(),
+      fromUserName: '',
+      toUserName: ((raw['to_display_name'] ??
+                  raw['toDisplayName'] ??
+                  raw['to_username'] ??
+                  raw['toUsername']) as String?) ??
+          'Unknown',
+      fromUserPhotoUrl:
+          (raw['to_photo_url'] ?? raw['toPhotoUrl']) as String?,
+      createdAt: _parseDate(raw['sent_at'] ?? raw['sentAt']) ??
+          DateTime.now(),
+      type: FriendRequestType.sent,
     );
   }
 

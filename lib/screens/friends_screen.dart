@@ -8,6 +8,7 @@ import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/providers/friends_provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -879,32 +880,59 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     }
   }
 
+  /// Failure feedback for friend mutations. Previously failures were
+  /// SILENT (snackbar only on success) — a guest with no backend JWT, or
+  /// any network error, tapped the button and nothing happened at all.
+  void _showMutationError(String action) {
+    if (!mounted) return;
+    final signedIn = ApiService().isAuthenticated;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          signedIn
+              ? 'Could not $action — check your connection and try again'
+              : 'Sign in to add friends and use social features',
+        ),
+        backgroundColor: Colors.red.shade700,
+      ),
+    );
+  }
+
   Future<void> _sendFriendRequest(String userId) async {
     final success = await ref.read(friendsProvider.notifier).sendFriendRequest(userId);
-    if (success && mounted) {
+    if (!mounted) return;
+    if (success) {
       getIt<AnalyticsFacade>().trackFriendAdded();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Friend request sent!')));
+    } else {
+      _showMutationError('send the friend request');
     }
   }
 
   Future<void> _acceptFriendRequest(String fromUserId) async {
     final success = await ref.read(friendsProvider.notifier).acceptFriendRequest(fromUserId);
-    if (success && mounted) {
+    if (!mounted) return;
+    if (success) {
       getIt<AnalyticsFacade>().trackFriendAdded();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Friend request accepted!')));
+    } else {
+      _showMutationError('accept the request');
     }
   }
 
   Future<void> _rejectFriendRequest(String fromUserId) async {
     final success = await ref.read(friendsProvider.notifier).rejectFriendRequest(fromUserId);
-    if (success && mounted) {
+    if (!mounted) return;
+    if (success) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Friend request rejected')));
+    } else {
+      _showMutationError('reject the request');
     }
   }
 
