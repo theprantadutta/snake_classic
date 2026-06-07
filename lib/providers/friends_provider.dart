@@ -21,6 +21,11 @@ class FriendsState {
   final DateTime? friendsLastRefreshedAt;
   final DateTime? requestsLastRefreshedAt;
 
+  /// True when the most recent refresh attempt failed WHILE cached data
+  /// was shown. "Updated 3h ago" alone reads as "everything is fine" —
+  /// this flag lets the staleness chip say the refresh itself failed.
+  final bool refreshFailed;
+
   const FriendsState({
     this.friends = const [],
     this.friendRequests = const [],
@@ -31,6 +36,7 @@ class FriendsState {
     this.error,
     this.friendsLastRefreshedAt,
     this.requestsLastRefreshedAt,
+    this.refreshFailed = false,
   });
 
   /// Get received friend requests
@@ -55,6 +61,7 @@ class FriendsState {
     String? error,
     DateTime? friendsLastRefreshedAt,
     DateTime? requestsLastRefreshedAt,
+    bool? refreshFailed,
   }) {
     return FriendsState(
       friends: friends ?? this.friends,
@@ -68,6 +75,7 @@ class FriendsState {
           friendsLastRefreshedAt ?? this.friendsLastRefreshedAt,
       requestsLastRefreshedAt:
           requestsLastRefreshedAt ?? this.requestsLastRefreshedAt,
+      refreshFailed: refreshFailed ?? this.refreshFailed,
     );
   }
 }
@@ -132,10 +140,12 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
         _service.refreshFriendRequests(),
       ]);
       await _hydrateFromCache(isLoading: false);
+      state = state.copyWith(refreshFailed: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: hadCache ? null : 'Failed to load friends',
+        refreshFailed: hadCache,
       );
     }
   }
@@ -153,10 +163,12 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
         _service.refreshFriendRequests(),
       ]);
       await _hydrateFromCache(isLoading: false);
+      state = state.copyWith(refreshFailed: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: hadCache ? null : 'Failed to refresh friends',
+        refreshFailed: hadCache,
       );
     }
   }
@@ -240,6 +252,29 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
     if (success) await _hydrateFromCache();
     return success;
   }
+
+  /// Withdraw a pending request the user sent (resolved by recipient
+  /// userId — see SocialService.cancelSentRequest).
+  Future<bool> cancelSentRequest(String toUserId) async {
+    final success = await _service.cancelSentRequest(toUserId);
+    if (success) await _hydrateFromCache();
+    return success;
+  }
+
+  /// "Wanna play?" ping. Returns (sent, serverMessage) so the screen can
+  /// surface cooldown feedback verbatim.
+  Future<(bool, String?)> pingFriendForMatch(String friendUserId) =>
+      _service.pingFriendForMatch(friendUserId);
+
+  Future<bool> blockUser(String userId) async {
+    final success = await _service.blockUser(userId);
+    if (success) await _hydrateFromCache();
+    return success;
+  }
+
+  Future<bool> unblockUser(String userId) => _service.unblockUser(userId);
+
+  Future<List<UserProfile>> getBlockedUsers() => _service.getBlockedUsers();
 
   /// Get user profile
   Future<UserProfile?> getUserProfile(String userId) async {

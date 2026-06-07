@@ -230,6 +230,77 @@ class SocialService {
     return true;
   }
 
+  /// Withdraw a pending request the current user SENT. The screen passes
+  /// the recipient's userId; we resolve to the requestId via the
+  /// in-memory sent list.
+  Future<bool> cancelSentRequest(String toUserId) async {
+    if (!_api.isAuthenticated) return false;
+    final match = _sentRequests.where((r) => r.toUserId == toUserId).firstOrNull;
+    if (match == null) {
+      unawaited(refreshFriendRequests());
+      return false;
+    }
+    final body = await _safeFetch(
+      () => _api.cancelFriendRequestRemote(match.id),
+    );
+    if (body == null) return false;
+    // Optimistic local drop + background re-sync.
+    _sentRequests = _sentRequests.where((r) => r.id != match.id).toList();
+    unawaited(refreshFriendRequests());
+    return true;
+  }
+
+  /// "Wanna play?" push to a friend. Returns the server message (cooldown
+  /// hints etc.) alongside success so the screen can show WHY a ping was
+  /// refused, not just that it was.
+  Future<(bool, String?)> pingFriendForMatch(
+    String friendUserId, {
+    String? roomCode,
+  }) async {
+    if (!_api.isAuthenticated) return (false, null);
+    final body = await _safeFetch(
+      () => _api.pingFriendForMatchRemote(friendUserId, roomCode: roomCode),
+    );
+    if (body == null) return (false, null);
+    final sent = body['sent'] == true;
+    return (sent, body['message'] as String?);
+  }
+
+  Future<bool> blockUser(String userId) async {
+    if (!_api.isAuthenticated) return false;
+    final body = await _safeFetch(() => _api.blockUserRemote(userId));
+    if (body == null) return false;
+    // Blocking dissolves any friendship/pending request server-side —
+    // mirror locally so the row disappears immediately.
+    await _dao.removeFriend(userId);
+    _sentRequests =
+        _sentRequests.where((r) => r.toUserId != userId).toList();
+    unawaited(refreshFriends());
+    unawaited(refreshFriendRequests());
+    return true;
+  }
+
+  Future<bool> unblockUser(String userId) async {
+    if (!_api.isAuthenticated) return false;
+    final body = await _safeFetch(() => _api.unblockUserRemote(userId));
+    return body != null;
+  }
+
+  /// Users the current user has blocked — live fetch, not cached
+  /// (managing blocks is a rare flow; staleness here is worse than a
+  /// spinner).
+  Future<List<UserProfile>> getBlockedUsers() async {
+    if (!_api.isAuthenticated) return const [];
+    final body = await _safeFetch(() => _api.getBlockedUsersRemote());
+    if (body == null) return const [];
+    final raw = body['blocked'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .map(_searchResultToProfile)
+        .toList();
+  }
+
   /// Live search — results are ephemeral by definition (search is a
   /// query, not a state) so they're not Drift-cached. The caller
   /// (provider) holds the results in memory for as long as the

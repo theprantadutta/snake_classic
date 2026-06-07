@@ -692,6 +692,88 @@ class ApiService {
     }
   }
 
+  /// Withdraw a pending friend request the current user SENT.
+  Future<Map<String, dynamic>?> cancelFriendRequestRemote(
+    String requestId,
+  ) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/social/friends/request/$requestId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error DELETE /social/friends/request/$requestId', e);
+      return null;
+    }
+  }
+
+  /// "Wanna play?" push to an accepted friend. [roomCode] rides along
+  /// when pinging from a multiplayer lobby so the friend's tap lands
+  /// them in the room. Backend enforces a 10-minute per-friend cooldown.
+  Future<Map<String, dynamic>?> pingFriendForMatchRemote(
+    String friendUserId, {
+    String? roomCode,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/social/friends/$friendUserId/ping'),
+            headers: _authHeaders,
+            body: jsonEncode({'room_code': ?roomCode}),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error POST /social/friends/$friendUserId/ping', e);
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getBlockedUsersRemote() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/social/blocked'), headers: _authHeaders)
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /social/blocked', e);
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> blockUserRemote(String userId) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/social/block/$userId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error POST /social/block/$userId', e);
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> unblockUserRemote(String userId) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/social/block/$userId'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error DELETE /social/block/$userId', e);
+      return null;
+    }
+  }
+
   /// User search lives on /users/search (not /social/...) — kept in
   /// the social section here because the only consumer is the
   /// friends screen's "Add Friend" flow.

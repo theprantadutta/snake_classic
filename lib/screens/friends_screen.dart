@@ -118,6 +118,15 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
           ),
           const Spacer(),
           IconButton(
+            tooltip: 'Blocked users',
+            onPressed: _showBlockedUsersDialog,
+            icon: Icon(
+              Icons.block,
+              color: theme.accentColor.withValues(alpha: 0.7),
+              size: 22,
+            ),
+          ),
+          IconButton(
             onPressed: _loadData,
             icon: Icon(
               Icons.refresh,
@@ -268,7 +277,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         hasData = state.friends.isNotEmpty;
     }
     if (ts == null && !hasData) return const SizedBox.shrink();
-    final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
+    // "Updated 3h ago" alone reads as healthy — append the failure note
+    // when the latest refresh attempt errored behind the cached view.
+    final failed = state.refreshFailed;
+    final base = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
+    final label = failed ? '$base · refresh failed, tap to retry' : base;
+    final chipColor = failed ? Colors.orange : theme.accentColor;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
@@ -281,25 +295,25 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.08),
+              color: chipColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.18),
+                color: chipColor.withValues(alpha: 0.18),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.refresh_rounded,
-                  color: theme.accentColor.withValues(alpha: 0.7),
+                  failed ? Icons.cloud_off_rounded : Icons.refresh_rounded,
+                  color: chipColor.withValues(alpha: 0.7),
                   size: 12,
                 ),
                 const SizedBox(width: 5),
                 Text(
                   label,
                   style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.75),
+                    color: chipColor.withValues(alpha: 0.75),
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -369,6 +383,16 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
             ),
             itemBuilder: (context) => [
               PopupMenuItem(
+                value: 'ping_match',
+                child: Row(
+                  children: [
+                    const Icon(Icons.sports_esports, color: Colors.green),
+                    const SizedBox(width: 8),
+                    const Text('Challenge to a Match'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
                 value: 'view_profile',
                 child: Row(
                   children: [
@@ -385,6 +409,16 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                     const Icon(Icons.person_remove, color: Colors.red),
                     const SizedBox(width: 8),
                     const Text('Remove Friend'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'block',
+                child: Row(
+                  children: [
+                    const Icon(Icons.block, color: Colors.red),
+                    const SizedBox(width: 8),
+                    const Text('Block User'),
                   ],
                 ),
               ),
@@ -761,6 +795,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                 ),
               ),
             ),
+            // Withdraw the request — the sender's counterpart to the
+            // recipient's reject button.
+            IconButton(
+              tooltip: 'Cancel request',
+              icon: Icon(
+                Icons.close,
+                size: 20,
+                color: theme.accentColor.withValues(alpha: 0.6),
+              ),
+              onPressed: () => _cancelSentRequest(request.toUserId),
+            ),
           ],
         ),
       ),
@@ -938,6 +983,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   void _handleFriendAction(String action, UserProfile friend) {
     switch (action) {
+      case 'ping_match':
+        _pingFriendForMatch(friend);
+        break;
       case 'view_profile':
         // Navigate to user profile view
         _showUserProfile(friend);
@@ -945,7 +993,146 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
       case 'remove_friend':
         _showRemoveFriendDialog(friend);
         break;
+      case 'block':
+        _showBlockUserDialog(friend);
+        break;
     }
+  }
+
+  Future<void> _cancelSentRequest(String toUserId) async {
+    final success =
+        await ref.read(friendsProvider.notifier).cancelSentRequest(toUserId);
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Friend request cancelled')));
+    } else {
+      _showMutationError('cancel the request');
+    }
+  }
+
+  /// "Wanna play?" ping — the server enforces a 10-minute per-friend
+  /// cooldown and returns the reason when refusing, which we surface
+  /// verbatim so the user knows when to retry.
+  Future<void> _pingFriendForMatch(UserProfile friend) async {
+    final (sent, message) = await ref
+        .read(friendsProvider.notifier)
+        .pingFriendForMatch(friend.uid);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          sent
+              ? '🎮 Challenge sent to ${friend.displayName}!'
+              : (message ?? 'Could not send the challenge — try again'),
+        ),
+        backgroundColor: sent ? Colors.green.shade700 : Colors.red.shade700,
+      ),
+    );
+  }
+
+  void _showBlockUserDialog(UserProfile friend) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Block ${friend.displayName}?'),
+        content: const Text(
+          'They will be removed from your friends and unable to send you '
+          'friend requests or match challenges. They will not be notified.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final success =
+                  await ref.read(friendsProvider.notifier).blockUser(friend.uid);
+              if (!mounted) return;
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${friend.displayName} blocked')),
+                );
+              } else {
+                _showMutationError('block this user');
+              }
+            },
+            child: const Text('Block', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Blocked-users manager — live-fetched list with per-row unblock.
+  Future<void> _showBlockedUsersDialog() async {
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    final blocked =
+        await ref.read(friendsProvider.notifier).getBlockedUsers();
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        title: Text(
+          'Blocked users',
+          style: TextStyle(color: theme.accentColor),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: blocked.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'You have not blocked anyone.',
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: blocked.length,
+                  itemBuilder: (_, i) {
+                    final user = blocked[i];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        user.displayName,
+                        style: TextStyle(color: theme.accentColor),
+                      ),
+                      trailing: TextButton(
+                        onPressed: () async {
+                          Navigator.of(dialogContext).pop();
+                          final ok = await ref
+                              .read(friendsProvider.notifier)
+                              .unblockUser(user.uid);
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(ok
+                                  ? '${user.displayName} unblocked'
+                                  : 'Could not unblock — try again'),
+                            ),
+                          );
+                        },
+                        child: const Text('Unblock'),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showUserProfile(UserProfile friend) {

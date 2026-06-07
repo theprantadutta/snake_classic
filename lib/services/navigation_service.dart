@@ -52,6 +52,15 @@ class NavigationService {
           routePath = AppRoutes.friends;
           break;
 
+        case 'multiplayer':
+          // Match-ping deep link: a room code rides along when the friend
+          // pinged from a lobby — land the user straight in that room.
+          final roomCode = params?['room_code'] as String?;
+          routePath = (roomCode != null && roomCode.isNotEmpty)
+              ? AppRoutes.multiplayerLobbyPath(roomCode)
+              : AppRoutes.multiplayerLobby;
+          break;
+
         case 'leaderboard':
           routePath = AppRoutes.leaderboard;
           break;

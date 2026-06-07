@@ -1441,10 +1441,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final isVerySmallScreen = screenHeight < 650;
     final isSmallScreen = screenHeight < 750;
     // Note: isMediumScreen not needed in bottom navigation
-    // 8 items split 4+4 across two rows. STATS is duplicated in the
-    // compact stats row above the nav (left of high score) AND in the
-    // grid here — the upper instance keeps stats one tap away from the
-    // home eyeline, the grid instance makes the 4x4 layout balance.
+    // 8 items split 4+4 across two rows. STATS lives ONLY in the compact
+    // stats row above the nav (left of the high score) — its old grid
+    // slot now hosts MULTIPLAYER, which had silently dropped off the
+    // home screen entirely.
     final navigationItems = [
       _NavItem(
         Icons.calendar_today,
@@ -1480,8 +1480,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _NavItem(Icons.military_tech, 'AWARDS', Colors.orange, () {
         context.push(AppRoutes.achievements);
       }),
-      _NavItem(Icons.analytics, 'STATS', Colors.teal, () {
-        context.push(AppRoutes.statistics);
+      _NavItem(Icons.sports_esports, 'VERSUS', Colors.green, () {
+        context.push(AppRoutes.multiplayerLobby);
       }),
     ];
 

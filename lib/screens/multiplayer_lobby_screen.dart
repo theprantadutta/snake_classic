@@ -8,8 +8,10 @@ import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/utils/game_animations.dart';
@@ -56,6 +58,103 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     _connectivityService.removeListener(_onConnectivityChanged);
     _roomCodeController.dispose();
     super.dispose();
+  }
+
+  /// Friend picker → match-ping carrying this room's code, so the
+  /// friend's notification tap deep-links them straight into the room.
+  /// Friends come from the Drift cache (instant, works offline-read);
+  /// the ping itself is a live call with a server-side 10-min cooldown
+  /// per friend — refusals (cooldown) surface verbatim.
+  Future<void> _showInviteFriendSheet(GameTheme theme, String roomCode) async {
+    final friends = await SocialService().getFriends();
+    if (!mounted) return;
+    if (friends.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No friends yet — add some from the Friends screen!'),
+        ),
+      );
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: theme.backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Invite a friend to room $roomCode',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: friends.length,
+                itemBuilder: (_, i) => _inviteFriendTile(
+                  sheetContext,
+                  theme,
+                  friends[i],
+                  roomCode,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _inviteFriendTile(
+    BuildContext sheetContext,
+    GameTheme theme,
+    UserProfile friend,
+    String roomCode,
+  ) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: theme.accentColor.withValues(alpha: 0.15),
+        child: Text(
+          friend.displayName.isNotEmpty
+              ? friend.displayName[0].toUpperCase()
+              : '?',
+          style: TextStyle(color: theme.accentColor),
+        ),
+      ),
+      title: Text(
+        friend.displayName,
+        style: TextStyle(color: theme.accentColor),
+      ),
+      trailing: Icon(Icons.send, size: 18, color: theme.foodColor),
+      onTap: () async {
+        Navigator.of(sheetContext).pop();
+        final (sent, message) = await SocialService()
+            .pingFriendForMatch(friend.uid, roomCode: roomCode);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              sent
+                  ? '🎮 Invite sent to ${friend.displayName}!'
+                  : (message ?? 'Could not send the invite — try again'),
+            ),
+            backgroundColor:
+                sent ? Colors.green.shade700 : Colors.red.shade700,
+          ),
+        );
+      },
+    );
   }
 
   void _onConnectivityChanged() {
@@ -446,6 +545,18 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                           child: Icon(
                             Icons.copy,
                             size: 14,
+                            color: theme.foodColor,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Ping a friend with this room code — their push
+                        // deep-links straight into the room.
+                        GestureDetector(
+                          onTap: () =>
+                              _showInviteFriendSheet(theme, game.roomCode!),
+                          child: Icon(
+                            Icons.person_add_alt_1,
+                            size: 15,
                             color: theme.foodColor,
                           ),
                         ),
