@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="default_notification_channel_id">snake_classic_notifications</string>
+    <!-- Channel name/description shown in the system notification settings.
+         MUST stay in sync with NotificationService._channelName /
+         _channelDescription in Dart — both sides describe the SAME channel
+         (same id above); whichever creates it first wins, the other is a
+         no-op. -->
+    <string name="default_notification_channel_name">Snake Classic Notifications</string>
+    <string name="default_notification_channel_desc">Game notifications, daily challenges, and tournament updates</string>
 </resources>
