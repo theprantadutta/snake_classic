@@ -1404,18 +1404,21 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
             ),
             // Free Bronze entry via rewarded ad (free users only, bronze tier
-            // only — never devalue the paid Silver/Gold entries).
+            // only — never devalue the paid Silver/Gold entries). Daily-capped:
+            // entries grant tournament access without playing, so they're on
+            // the same hard-cap system as the other store-style placements.
             if (tier == 'bronze' &&
                 getIt.isRegistered<AdService>() &&
                 getIt<AdService>().adsEnabled &&
-                getIt<AdService>().isRewardedReady)
+                getIt<AdService>().canShowCapped(AdService.capTournamentEntry))
               TextButton.icon(
                 onPressed: () {
                   // Capture before the pop + ad — onReward fires after the
                   // ad is dismissed, when this dialog's context is gone.
                   final messenger = ScaffoldMessenger.of(context);
                   Navigator.of(context).pop();
-                  getIt<AdService>().showRewarded(
+                  getIt<AdService>().showRewardedCapped(
+                    capKey: AdService.capTournamentEntry,
                     onReward: () {
                       premiumCubit.addTournamentEntry('bronze');
                       showRewardToast(

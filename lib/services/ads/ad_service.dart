@@ -350,15 +350,30 @@ class AdService {
   // Per-placement, per-day caps stored device-only (SharedPreferences). These
   // bound how much free currency/XP ad-grinding can produce — it must never be
   // cheaper to grind ads than to buy IAP, so keep the caps modest.
+  //
+  // FULL REWARDED-AD POLICY (the placements NOT listed here are bounded by
+  // gameplay itself, which is the engagement we want, so they stay uncapped
+  // per-day):
+  //   • revive / time-bonus  → once per RUN (latches in GameCubit)
+  //   • game-over coins 2×   → once per game-over screen (_doubledCoins latch)
+  //   • daily-bonus 2×       → intrinsically once/day (bonus claims once)
+  //   • daily-challenges 2×  → intrinsically once/day (claim-all)
+  // Everything below grants value WITHOUT playing, so it gets a hard daily
+  // cap — the store must never be a coin faucet.
 
   /// Cap keys + their per-day limits (used by the rewarded placements).
   static const String capFreeCoins = 'free_coins';
   static const String capFreePowerUp = 'free_powerup';
   static const String capBattlePassXp = 'bp_xp';
+  static const String capTournamentEntry = 'tournament_entry';
   static const Map<String, int> dailyCaps = {
-    capFreeCoins: 5,
+    // 3 × 25 = 75 coins/day from the store — pocket change next to playing
+    // (was 5; tightened so watching ads in the store is a top-up, not an
+    // income source).
+    capFreeCoins: 3,
     capFreePowerUp: 3,
     capBattlePassXp: 3,
+    capTournamentEntry: 2,
   };
 
   /// Coins granted per "watch for coins" ad.
