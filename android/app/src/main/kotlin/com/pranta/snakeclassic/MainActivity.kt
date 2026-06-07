@@ -3,12 +3,16 @@ package com.pranta.snakeclassic
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     // Two things happen here, both required for Android 15+ (SDK 35)
@@ -50,6 +54,29 @@ class MainActivity : FlutterActivity() {
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
         createNotificationChannel()
+    }
+
+    // Deep link straight to THIS app's system notification settings.
+    // Needed by the in-app permission primer: once POST_NOTIFICATIONS has
+    // been permanently denied, Android never re-shows the OS prompt — the
+    // settings page is the only way a user can turn notifications back on.
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "snake_classic/notification_settings"
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "open") {
+                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+                result.success(true)
+            } else {
+                result.notImplemented()
+            }
+        }
     }
 
     // https://github.com/firebase/flutterfire/issues/1327#issuecomment-623399564

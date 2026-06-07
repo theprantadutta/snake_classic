@@ -27,6 +27,7 @@ import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
+import 'package:snake_classic/widgets/notification_permission_primer.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
@@ -106,16 +107,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _maybeInitNotifications() {
-    if (NotificationService().initialized) return;
+    if (NotificationService().initialized) {
+      // Already initialized this session (returning to home) — still give
+      // the permission primer its periodic chance.
+      _maybeShowNotificationPrimer();
+      return;
+    }
     // Small delay so the home screen finishes its first layout +
     // animations before the permission dialog pops over it.
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
       NotificationService().initialize().then((_) {
         AppLogger.success('Notification service initialized from home');
+        _maybeShowNotificationPrimer();
       }).catchError((e) {
         AppLogger.error('Notification service init failed', e);
       });
+    });
+  }
+
+  /// Recurring "turn notifications on" nudge for users who denied/missed
+  /// the OS prompt — they're token-registered on the backend but every
+  /// push to them displays nothing. Primer self-gates (Android-only,
+  /// notifications off, ≥7 days since last ask), so calling it freely
+  /// from here is safe. Small extra delay keeps it from stacking on top
+  /// of the OS prompt when init just requested permission.
+  void _maybeShowNotificationPrimer() {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      final theme = context.read<ThemeCubit>().state.currentTheme;
+      NotificationPermissionPrimer.maybeShow(context, theme);
     });
   }
 

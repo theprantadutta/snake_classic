@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
@@ -101,6 +102,64 @@ class NotificationService {
   // Set once bootstrapToken() has completed a token fetch, so the full
   // initialize() and the bootstrap never race a duplicate registration.
   bool _tokenBootstrapDone = false;
+
+  // Native channel for jumping straight to this app's system notification
+  // settings page (the only recovery path once POST_NOTIFICATIONS has been
+  // permanently denied — Android won't show the OS prompt again). Handler
+  // lives in MainActivity.kt.
+  static const MethodChannel _settingsChannel =
+      MethodChannel('snake_classic/notification_settings');
+
+  /// Whether the OS will actually DISPLAY notifications for this app.
+  ///
+  /// Token registration is deliberately permission-independent, so a user
+  /// can be fully registered on the backend (and counted in the dashboard
+  /// funnel) while seeing nothing — every send to them reports FCM success
+  /// and silently displays nothing. This is the display-side check that
+  /// gap hides behind. Non-Android platforms report true (Android-only app;
+  /// debug runs on desktop shouldn't trip the primer).
+  Future<bool> areNotificationsEnabled() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
+    try {
+      // Fresh plugin instance: this can be called before initialize() has
+      // populated the late _localNotifications field.
+      final androidPlugin = FlutterLocalNotificationsPlugin()
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      return await androidPlugin?.areNotificationsEnabled() ?? false;
+    } catch (e) {
+      AppLogger.error('areNotificationsEnabled check failed', e);
+      return false;
+    }
+  }
+
+  /// Re-fire the OS notification permission prompt. Returns whether the
+  /// permission is granted afterwards. On Android 13+, once the user has
+  /// hard-denied, this silently resolves false without showing anything —
+  /// callers should then fall back to [openSystemNotificationSettings].
+  Future<bool> requestNotificationsPermission() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
+    try {
+      final androidPlugin = FlutterLocalNotificationsPlugin()
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      return await androidPlugin?.requestNotificationsPermission() ?? false;
+    } catch (e) {
+      AppLogger.error('requestNotificationsPermission failed', e);
+      return false;
+    }
+  }
+
+  /// Open the system notification-settings page for this app.
+  Future<void> openSystemNotificationSettings() async {
+    try {
+      await _settingsChannel.invokeMethod<void>('open');
+    } catch (e) {
+      AppLogger.error('Could not open system notification settings', e);
+    }
+  }
 
   /// Silent token bootstrap — fetch + register the FCM token and sync the
   /// broadcast-topic subscriptions WITHOUT touching the OS notification
