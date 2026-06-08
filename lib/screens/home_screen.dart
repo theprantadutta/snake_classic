@@ -104,6 +104,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // double-init (the _initialized flag), so re-entering home doesn't
     // re-prompt.
     _maybeInitNotifications();
+
+    // Home is mounted and the router is on a real route — flush any deep
+    // link captured during the cold-start window (terminated-state
+    // notification tap). Post-frame so the first build completes before we
+    // push the target screen on top. This is what un-sticks the
+    // launch-from-notification splash hang.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().markAppReady();
+    });
   }
 
   void _maybeInitNotifications() {

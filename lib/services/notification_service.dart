@@ -103,6 +103,44 @@ class NotificationService {
   // initialize() and the bootstrap never race a duplicate registration.
   bool _tokenBootstrapDone = false;
 
+  // ---- Cold-start deep-link plumbing ----
+  //
+  // When the app is launched by TAPPING a notification from the terminated
+  // state, the router boots at the loading screen and runs a full async
+  // init before reaching home. Navigating the moment getInitialMessage()
+  // resolves fires a push() against a router that's still on /loading (or
+  // mid loading→home transition) — which wedged the app on the splash.
+  //
+  // Fix: stash the tapped route as PENDING and only act on it once home
+  // signals readiness via markAppReady(). Cold-start deep links then
+  // resolve as home→target (deterministic back stack); taps while the app
+  // is already running navigate immediately (see _routeFromMessage).
+  bool _appReady = false;
+  String? _pendingRoute;
+  Map<String, dynamic>? _pendingRouteData;
+  // Guard so the same launch notification isn't handled twice (once from
+  // bootstrapToken's getInitialMessage, once from initialize's).
+  bool _initialMessageConsumed = false;
+
+  /// Called by the home screen once its widget tree is mounted and the
+  /// router is on a real route. Flushes any deep link captured during the
+  /// cold-start window.
+  void markAppReady() {
+    _appReady = true;
+    final route = _pendingRoute;
+    if (route != null) {
+      _pendingRoute = null;
+      final data = _pendingRouteData ?? const {};
+      _pendingRouteData = null;
+      AppLogger.info('🧭 Flushing pending notification route: $route');
+      // markAppReady fires from home's initState, so home is already the
+      // current route — a plain push yields a clean home→target back
+      // stack. (clearStack/go would leave the target with no home behind
+      // it, so back would exit the app.)
+      NavigationService().navigateFromNotification(route: route, params: data);
+    }
+  }
+
   // Native channel for jumping straight to this app's system notification
   // settings page (the only recovery path once POST_NOTIFICATIONS has been
   // permanently denied — Android won't show the OS prompt again). Handler
@@ -177,6 +215,25 @@ class NotificationService {
     if (_initialized || _tokenBootstrapDone) return;
     try {
       _firebaseMessaging = FirebaseMessaging.instance;
+
+      // Capture a terminated-state launch notification AS EARLY AS
+      // possible and stash it as a pending deep link. This runs from
+      // main() before the loading screen even starts its async init, so
+      // the deep link survives even if the home-screen initialize() is
+      // slow or stalls — markAppReady() flushes it once home mounts.
+      // _initialMessageConsumed guards initialize() from double-handling.
+      if (!_initialMessageConsumed) {
+        try {
+          final initialMessage = await _firebaseMessaging.getInitialMessage();
+          if (initialMessage != null) {
+            _initialMessageConsumed = true;
+            _routeFromData(initialMessage.data, deferIfNotReady: true);
+          }
+        } catch (e) {
+          AppLogger.warning('getInitialMessage in bootstrap failed: $e');
+        }
+      }
+
       _fcmToken = await _firebaseMessaging.getToken().timeout(
         const Duration(seconds: 8),
       );
@@ -337,11 +394,17 @@ class NotificationService {
       // Handle background message taps
       FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
-      // Handle initial message when app is opened from terminated state
-      RemoteMessage? initialMessage = await _firebaseMessaging
-          .getInitialMessage();
-      if (initialMessage != null) {
-        _handleMessageOpenedApp(initialMessage);
+      // Handle initial message when app is opened from terminated state.
+      // DEFER it: at this point the user is mid cold-start and may still be
+      // on the loading screen — stash and let markAppReady() flush it once
+      // home is mounted. Guard against double-handling (bootstrapToken may
+      // have already captured the same launch message).
+      if (!_initialMessageConsumed) {
+        final initialMessage = await _firebaseMessaging.getInitialMessage();
+        if (initialMessage != null) {
+          _initialMessageConsumed = true;
+          _routeFromData(initialMessage.data, deferIfNotReady: true);
+        }
       }
     }
   }
@@ -359,12 +422,30 @@ class NotificationService {
 
   Future<void> _handleMessageOpenedApp(RemoteMessage message) async {
     AppLogger.info('👆 App opened from notification: ${message.messageId}');
+    // Tap while the app is already running (background→foreground): the
+    // router is on a real route, so route immediately.
+    _routeFromData(message.data, deferIfNotReady: false);
+  }
 
-    // Handle deep linking based on notification data
-    final data = message.data;
-    if (data.containsKey('route')) {
-      _navigateToScreen(data['route'], data);
+  /// Route from a notification's data map. When [deferIfNotReady] and the
+  /// app hasn't signalled readiness yet (cold-start window), the route is
+  /// STASHED and flushed by markAppReady() instead of pushing against a
+  /// still-loading router — the fix for the launch-from-notification splash
+  /// hang.
+  void _routeFromData(
+    Map<String, dynamic> data, {
+    required bool deferIfNotReady,
+  }) {
+    final route = data['route'];
+    if (route is! String || route.isEmpty) return;
+
+    if (deferIfNotReady && !_appReady) {
+      _pendingRoute = route;
+      _pendingRouteData = data;
+      AppLogger.info('🧭 Stashed notification route until app ready: $route');
+      return;
     }
+    _navigateToScreen(route, data);
   }
 
   void _onTokenRefresh(String token) {
@@ -382,10 +463,11 @@ class NotificationService {
 
     if (response.payload != null) {
       try {
-        final data = jsonDecode(response.payload!);
-        if (data['route'] != null) {
-          _navigateToScreen(data['route'], data);
-        }
+        final data = Map<String, dynamic>.from(jsonDecode(response.payload!));
+        // Defer if not ready: a local-notification tap can also cold-start
+        // the app (e.g. a foreground message shown while the app was then
+        // killed), so route through the same pending-aware path.
+        _routeFromData(data, deferIfNotReady: true);
       } catch (e) {
         AppLogger.error('Error parsing notification payload', e);
       }
