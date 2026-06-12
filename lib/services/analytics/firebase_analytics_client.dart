@@ -43,6 +43,11 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackSignInApple() {
+    return _analytics.logLogin(loginMethod: 'apple');
+  }
+
+  @override
   Future<void> trackSignInAnonymous() {
     return _analytics.logLogin(loginMethod: 'anonymous');
   }

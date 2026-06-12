@@ -253,6 +253,30 @@ class ApiService {
     }
   }
 
+  /// Permanently delete the authenticated account. The backend purges the
+  /// user row (everything user-owned cascades) and the Firebase identity.
+  /// Unlike [logout], the token is only cleared on SUCCESS — a failed
+  /// deletion must leave the session intact so the user can retry.
+  Future<bool> deleteAccount() async {
+    try {
+      final response = await http
+          .delete(Uri.parse('$baseUrl/users/me'), headers: _authHeaders)
+          .timeout(_timeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        await clearToken();
+        return true;
+      }
+      AppLogger.error(
+        'Delete account failed: ${response.statusCode} ${response.body}',
+      );
+      return false;
+    } catch (e) {
+      AppLogger.error('Error deleting account', e);
+      return false;
+    }
+  }
+
   // ==================== Users ====================
 
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
@@ -1116,9 +1140,13 @@ class ApiService {
   /// Register FCM token. Forwards the device's UTC offset so the backend
   /// can land daily notifications at each user's local 20:00 (see Hangfire
   /// send-daily-reminder job + DailyChallengeJobService.SendDailyReminder).
+  ///
+  /// [platform] must be the real device platform ('ios' / 'android' — see
+  /// NotificationService.devicePlatform), not the old constant 'flutter';
+  /// it's required so no call site silently falls back to the legacy value.
   Future<bool> registerFcmToken({
     required String fcmToken,
-    String platform = 'flutter',
+    required String platform,
     int? timezoneOffsetMinutes,
   }) async {
     try {

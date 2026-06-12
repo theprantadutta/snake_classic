@@ -1095,6 +1095,66 @@ class UnifiedUserService extends ChangeNotifier {
     }
   }
 
+  /// Sign in with Apple (iOS/macOS). Uses firebase_auth's native provider
+  /// flow — no extra plugin needed; Firebase presents the system
+  /// ASAuthorization sheet and returns a credential.
+  Future<bool> signInWithApple() async {
+    try {
+      AppLogger.user('Starting Apple Sign-In from UnifiedUserService...');
+      final appleProvider = AppleAuthProvider()
+        ..addScope('email')
+        ..addScope('name');
+      final UserCredential result =
+          await _auth.signInWithProvider(appleProvider);
+
+      if (result.user != null) {
+        AppLogger.success('Apple sign-in successful: ${result.user!.uid}');
+        // Same rationale as signInWithGoogle: await the backend handoff so
+        // _justLoadedNewUser / _currentUser are authoritative on return.
+        await _loadOrCreateUser(result.user!);
+        return true;
+      }
+      return false;
+    } on FirebaseAuthException catch (e) {
+      // The system sheet's Cancel button surfaces as an exception — treat
+      // it as a normal "no" rather than an error.
+      if (e.code == 'canceled' ||
+          e.code == 'user-cancelled' ||
+          e.code == 'web-context-canceled') {
+        AppLogger.user('Apple Sign-In cancelled by user');
+        return false;
+      }
+      AppLogger.user('Apple Sign-In failed: ${e.code}', e);
+      return false;
+    } catch (e, stackTrace) {
+      AppLogger.user('Error signing in with Apple', e, stackTrace);
+      return false;
+    }
+  }
+
+  /// Promote the current anonymous account to an Apple sign-in.
+  Future<bool> linkAnonymousToApple() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || !user.isAnonymous) {
+        AppLogger.user('linkAnonymousToApple called without anon user');
+        return false;
+      }
+      final appleProvider = AppleAuthProvider()
+        ..addScope('email')
+        ..addScope('name');
+      final result = await user.linkWithProvider(appleProvider);
+      AppLogger.success('Linked anon → Apple: ${result.user?.uid}');
+      if (result.user != null) {
+        await _loadOrCreateUser(result.user!);
+      }
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.user('Error linking anon → Apple', e, stackTrace);
+      rethrow;
+    }
+  }
+
   /// Best-effort password reset. Errors bubble up.
   Future<void> sendPasswordResetEmail(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
@@ -1301,6 +1361,50 @@ class UnifiedUserService extends ChangeNotifier {
       _currentUser = null;
       notifyListeners();
     }
+  }
+
+  /// Permanently delete the user's account (App Store Guideline 5.1.1(v)).
+  ///
+  /// Online-only by design: the backend DELETE is the act of record — it
+  /// purges every server-side table via FK cascade AND deletes the Firebase
+  /// identity through the Admin SDK (so no client-side recent-login
+  /// reauthentication is needed). Only after the server confirms do we tear
+  /// down local state, exactly like [signOut]. Returns false and leaves the
+  /// session fully intact if the backend call fails, so the user can retry.
+  ///
+  /// This is deliberately a direct API call, not a sync-outbox item:
+  /// "delete my account" cannot be queued for later while the app keeps
+  /// running offline.
+  Future<bool> deleteAccount() async {
+    final deleted = await _apiService.deleteAccount();
+    if (!deleted) {
+      AppLogger.user('Account deletion failed — keeping session intact');
+      return false;
+    }
+
+    // Server-side data and Firebase identity are gone. Local teardown
+    // mirrors signOut(); each step is best-effort so one failure can't
+    // strand the UI in a deleted-but-signed-in state.
+    try {
+      await _wipeLocalSyncState();
+    } catch (e) {
+      AppLogger.user('Local sync-state wipe failed (continuing)', e);
+    }
+
+    try {
+      await _googleSignIn.signOut();
+      // The Firebase user no longer exists server-side; signOut() just
+      // discards the now-orphaned local session.
+      await _auth.signOut();
+    } catch (e) {
+      AppLogger.user('Firebase sign-out after deletion failed (continuing)', e);
+    }
+
+    _currentUser = null;
+    await _clearCachedUserSession();
+    notifyListeners();
+    AppLogger.success('Account permanently deleted');
+    return true;
   }
 
   /// Reset every device-local store that's scoped to the authenticated

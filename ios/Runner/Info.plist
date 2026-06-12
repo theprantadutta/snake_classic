@@ -47,6 +47,24 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- Required by google_sign_in on iOS: the OAuth redirect comes back
+		     into the app via this custom URL scheme (REVERSED_CLIENT_ID from
+		     GoogleService-Info.plist). Without it Google sign-in never returns. -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.1035909854421-2ai1gp16nno2dmta3o3266for5jqkfis</string>
+				</array>
+			</dict>
+		</array>
+		<!-- App uses only HTTPS/standard encryption — exempt. Declaring it here
+		     skips the export-compliance question on every App Store upload. -->
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>
