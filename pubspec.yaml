@@ -92,7 +92,7 @@ dependencies:
   in_app_purchase_android: ^0.5.0+2
 
   # Ads (AdMob). Bundles the UMP consent SDK. Pro/trial users never see ads.
-  google_mobile_ads: ^8.0.0
+  google_mobile_ads: ^9.0.0
   # iOS App Tracking Transparency prompt (required alongside UMP on iOS 14+).
   app_tracking_transparency: ^2.0.7
 
