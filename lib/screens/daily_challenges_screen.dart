@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,7 +51,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         );
       }
 
-      HapticFeedback.mediumImpact();
+      HapticService().mediumImpact();
       _audioService.playSound('coin_collect');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -86,7 +86,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         );
       }
 
-      HapticFeedback.heavyImpact();
+      HapticService().heavyImpact();
       _audioService.playSound('coin_collect');
       if (mounted) {
         // Offer a rewarded "2×" on the claimed total when an ad is available.

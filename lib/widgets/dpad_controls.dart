@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 
@@ -104,7 +104,7 @@ class DPadControls extends StatelessWidget {
       theme: theme,
       opacity: opacity,
       onPressed: () {
-        HapticFeedback.lightImpact();
+        HapticService().lightImpact();
         onDirection(direction);
       },
     );

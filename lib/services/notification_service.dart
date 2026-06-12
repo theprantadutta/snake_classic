@@ -5,10 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/data/database/app_database.dart';
 import '../utils/logger.dart';
 import 'api_service.dart';
 import 'data_sync_service.dart';
 import 'navigation_service.dart';
+import 'storage_service.dart';
 import 'unified_user_service.dart';
 
 enum NotificationType {
@@ -56,7 +58,9 @@ class NotificationService {
   // first-launch race where auth is ready but the token isn't yet.
   bool _registrationPendingTokenArrival = false;
 
-  // Notification preferences - stored in SharedPreferences via PreferencesService
+  // Notification preferences — in-memory mirror of the Drift settings row's
+  // per-category notify columns (synced to the backend). Hydrated and kept
+  // current by _loadNotificationPreferences.
   final Map<NotificationType, bool> _notificationPreferences = {
     NotificationType.tournament: true,
     NotificationType.social: true,
@@ -64,6 +68,11 @@ class NotificationService {
     NotificationType.dailyReminder: true,
     NotificationType.specialEvent: true,
   };
+
+  // Keeps the map (and the FCM broadcast-topic subscriptions) in lock-step
+  // with Drift writes that don't come through setNotificationEnabled —
+  // first-sign-in snapshot restore, settings synced from another device.
+  StreamSubscription<GameSetting?>? _settingsWatchSubscription;
 
   String? get fcmToken => _fcmToken;
   bool get initialized => _initialized;
@@ -601,33 +610,17 @@ class NotificationService {
       '⚙️ ${type.key} notifications ${enabled ? 'enabled' : 'disabled'}',
     );
 
-    // Save to preferences
+    // Persist through Drift (+ sync outbox). The backend's per-user push
+    // jobs (daily reminder / win-back / morning announcement on
+    // notify_daily_reminder, social pushes on notify_social) gate on the
+    // synced UserGameSettings columns, so this write is what actually
+    // stops/starts those pings in the wild — the local map only gates
+    // foreground rendering. Offline-safe: the outbox drains when
+    // connectivity returns.
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('notification_${type.key}', enabled);
+      await StorageService().setNotificationPref(type.key, enabled);
     } catch (e) {
       AppLogger.error('Failed to save notification preference: $e');
-    }
-
-    if (type == NotificationType.dailyReminder) {
-      // The backend's send-daily-reminder Hangfire job filters on
-      // user_preferences.notifications_enabled. Flipping that DB flag
-      // is what actually stops/starts the daily ping in the wild —
-      // the local _notificationPreferences map only gates which incoming
-      // FCM messages we render in foreground, not what the server sends.
-      //
-      // Queued (not direct PUT) so an offline / auth-not-ready toggle
-      // still propagates once connectivity returns. DataSyncService's
-      // 'preferences' handler POSTs to PUT /users/me with
-      // { preferences: { notifications_enabled } } — partial update.
-      await DataSyncService().queueSync(
-        'preferences',
-        {'notifications_enabled': enabled},
-        priority: SyncPriority.normal,
-      );
-      AppLogger.info(
-        '📤 Queued daily-reminder preference (enabled=$enabled) for backend sync',
-      );
     }
 
     // The broadcast-topic subscriptions track these two categories — re-sync
@@ -1020,20 +1013,44 @@ class NotificationService {
     return ok;
   }
 
-  /// Load notification preferences from storage
+  /// Load notification preferences from the Drift settings row (synced to
+  /// the backend; the legacy SharedPreferences values were imported once at
+  /// startup — see legacy_prefs_import.dart). Also subscribes to settings
+  /// changes so a first-sign-in snapshot restore or a toggle synced from
+  /// another device updates the in-memory map AND re-syncs the FCM
+  /// broadcast-topic subscriptions.
   Future<void> _loadNotificationPreferences() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      _applyNotificationPrefs(await StorageService().getNotificationPrefs());
 
-      for (final type in NotificationType.values) {
-        final key = 'notification_${type.key}';
-        final enabled = prefs.getBool(key) ?? true;
-        _notificationPreferences[type] = enabled;
-      }
+      _settingsWatchSubscription ??=
+          StorageService().watchSettings().listen((row) {
+        if (row == null) return;
+        final incoming = {
+          'daily_reminder': row.notifyDailyReminder,
+          'tournament': row.notifyTournament,
+          'achievement': row.notifyAchievement,
+          'social': row.notifySocial,
+          'special_event': row.notifySpecialEvent,
+        };
+        final current = {
+          for (final t in NotificationType.values)
+            t.key: _notificationPreferences[t] ?? true,
+        };
+        if (mapEquals(incoming, current)) return;
+        _applyNotificationPrefs(incoming);
+        unawaited(_syncBroadcastTopicSubscriptions());
+      });
 
       AppLogger.info('📱 Notification preferences loaded');
     } catch (e) {
       AppLogger.error('Error loading notification preferences', e);
+    }
+  }
+
+  void _applyNotificationPrefs(Map<String, bool> prefs) {
+    for (final type in NotificationType.values) {
+      _notificationPreferences[type] = prefs[type.key] ?? true;
     }
   }
 

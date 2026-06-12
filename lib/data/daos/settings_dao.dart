@@ -78,6 +78,39 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
       _writeSettings(
           GameSettingsCompanion(screenShakeEnabled: Value(enabled)));
 
+  /// Update haptics (vibration) enabled
+  Future<void> updateHapticsEnabled(bool enabled) =>
+      _writeSettings(GameSettingsCompanion(hapticsEnabled: Value(enabled)));
+
+  /// Update one or more per-category notification opt-ins. Null = leave
+  /// unchanged. Single transaction + single outbox row regardless of how
+  /// many categories change.
+  Future<void> updateNotificationPrefs({
+    bool? dailyReminder,
+    bool? tournament,
+    bool? achievement,
+    bool? social,
+    bool? specialEvent,
+  }) =>
+      _writeSettings(GameSettingsCompanion(
+        notifyDailyReminder:
+            dailyReminder == null ? const Value.absent() : Value(dailyReminder),
+        notifyTournament:
+            tournament == null ? const Value.absent() : Value(tournament),
+        notifyAchievement:
+            achievement == null ? const Value.absent() : Value(achievement),
+        notifySocial: social == null ? const Value.absent() : Value(social),
+        notifySpecialEvent:
+            specialEvent == null ? const Value.absent() : Value(specialEvent),
+      ));
+
+  /// One-time SharedPreferences→Drift import (theme, trail, notification
+  /// opt-ins — see legacy_prefs_import.dart). Routed through [_writeSettings]
+  /// so the whole import is one transaction with one sync_outbox row and a
+  /// fresh updatedAt, which correctly wins LWW over any stale backend row.
+  Future<void> applyLegacyPrefsImport(GameSettingsCompanion patch) =>
+      _writeSettings(patch);
+
   /// Update selected skin
   Future<void> updateSelectedSkin(String? skinId) =>
       _writeSettings(GameSettingsCompanion(selectedSkinId: Value(skinId)));

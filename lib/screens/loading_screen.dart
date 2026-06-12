@@ -16,7 +16,6 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
-import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
@@ -159,13 +158,15 @@ class _LoadingScreenState extends State<LoadingScreen>
       );
       await _initializeUserSystem();
 
-      // Step 3: Load User Preferences
+      // Step 3: Preferences checkpoint. Theme/trail/settings now hydrate
+      // from Drift inside their cubits (ThemeCubit/GameSettingsCubit are
+      // initialized via MultiBlocProvider in main.dart) — nothing to load
+      // here anymore.
       await _updateProgress(
         0.4,
         'Loading your preferences...',
         'Syncing themes and settings',
       );
-      await _initializePreferences();
 
       // Step 4a: Bootstrap DataSyncService — fast local op, needed before
       // preload because preload paths call into the sync service.
@@ -309,26 +310,6 @@ class _LoadingScreenState extends State<LoadingScreen>
       AppLogger.success('User system initialization complete');
     } catch (e) {
       AppLogger.error('User system initialization error', e);
-    }
-  }
-
-  Future<void> _initializePreferences() async {
-    try {
-      if (!mounted) return;
-
-      // Cache context before async operations
-      final currentContext = context;
-      final preferencesService = Provider.of<PreferencesService>(
-        currentContext,
-        listen: false,
-      );
-
-      await preferencesService.initialize();
-
-      // ThemeCubit and PremiumCubit are already initialized via MultiBlocProvider in main.dart
-      AppLogger.info('Preferences and Cubits initialized successfully');
-    } catch (e) {
-      AppLogger.prefs('Preferences initialization warning', e);
     }
   }
 

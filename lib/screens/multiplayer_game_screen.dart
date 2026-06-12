@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
@@ -236,7 +237,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     }
 
     // Play crash haptic
-    HapticFeedback.heavyImpact();
+    HapticService().heavyImpact();
 
     setState(() {});
 
@@ -263,7 +264,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     _nextDirection = direction;
     _lastSwipeDirection = direction;
     context.read<MultiplayerCubit>().changeDirection(direction);
-    HapticFeedback.selectionClick();
+    HapticService().selectionClick();
 
     // Animate gesture indicator
     _gestureIndicatorController.forward().then((_) {

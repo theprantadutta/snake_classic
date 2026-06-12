@@ -11,6 +11,7 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/revive_overlay.dart';
 import 'package:snake_classic/widgets/time_bonus_overlay.dart';
@@ -380,7 +381,12 @@ class _GameScreenState extends State<GameScreen>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       if (gameCubit.state.isPlaying) {
-        gameCubit.pauseGame();
+        gameCubit.pauseGame(); // also pauses gameplay music
+      } else {
+        // Already paused (overlay up) — music can still be audible if the
+        // user enabled it from the pause menu; silence it with the app.
+        // It comes back through resumeGame's resumeGameplayMusic.
+        AudioService().pauseGameplayMusic();
       }
     }
   }

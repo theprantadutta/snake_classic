@@ -40,6 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _musicEnabled = true;
   bool _dPadEnabled = false;
   bool _screenShakeEnabled = false;
+  bool _hapticsEnabled = true;
   DPadPosition _dPadPosition = DPadPosition.bottomCenter;
   BoardSize _selectedBoardSize =
       GameConstants.availableBoardSizes[1]; // Default to Classic
@@ -48,8 +49,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       GameConstants.defaultCrashFeedbackDuration;
 
   // Notification preferences. Mirrored from NotificationService at init
-  // and on every toggle; service is the source of truth (persists to
-  // SharedPreferences + triggers backend topic (un)subscribe).
+  // and on every toggle; service is the source of truth (persists through
+  // Drift + sync outbox, and triggers FCM topic (un)subscribe).
   final NotificationService _notificationService = NotificationService();
   bool _notifDailyReminder = true;
   bool _notifTournament = true;
@@ -89,6 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final changed = _dPadEnabled != s.dPadEnabled ||
         _dPadPosition != s.dPadPosition ||
         _screenShakeEnabled != s.screenShakeEnabled ||
+        _hapticsEnabled != s.hapticsEnabled ||
         _selectedBoardSize != s.boardSize ||
         _selectedGameMode != s.gameMode ||
         _selectedCrashFeedbackDuration != s.crashFeedbackDuration;
@@ -97,6 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _dPadEnabled = s.dPadEnabled;
       _dPadPosition = s.dPadPosition;
       _screenShakeEnabled = s.screenShakeEnabled;
+      _hapticsEnabled = s.hapticsEnabled;
       _selectedBoardSize = s.boardSize;
       _selectedGameMode = s.gameMode;
       _selectedCrashFeedbackDuration = s.crashFeedbackDuration;
@@ -157,6 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         .getCrashFeedbackDuration();
     final dPadEnabled = await _storageService.isDPadEnabled();
     final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
+    final hapticsEnabled = await _storageService.isHapticsEnabled();
     final dPadPosition = await _storageService.getDPadPosition();
     final gameMode = await _storageService.getGameMode();
     setState(() {
@@ -164,6 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _musicEnabled = _audioService.isMusicEnabled;
       _dPadEnabled = dPadEnabled;
       _screenShakeEnabled = screenShakeEnabled;
+      _hapticsEnabled = hapticsEnabled;
       _dPadPosition = dPadPosition;
       _selectedBoardSize = boardSize;
       _selectedCrashFeedbackDuration = crashFeedbackDuration;
@@ -184,6 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           prev.dPadEnabled != curr.dPadEnabled ||
           prev.dPadPosition != curr.dPadPosition ||
           prev.screenShakeEnabled != curr.screenShakeEnabled ||
+          prev.hapticsEnabled != curr.hapticsEnabled ||
           prev.boardSize != curr.boardSize ||
           prev.gameMode != curr.gameMode ||
           prev.crashFeedbackDuration != curr.crashFeedbackDuration,
@@ -306,6 +312,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 8),
                                     Text(
                                       'Shake the screen on collisions and game events',
+                                      style: TextStyle(
+                                        color: theme.accentColor.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        fontSize: 12,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 24),
+                                    _buildAudioSwitch(
+                                      'Vibration',
+                                      _hapticsEnabled,
+                                      (value) async {
+                                        setState(() {
+                                          _hapticsEnabled = value;
+                                        });
+                                        await context
+                                            .read<GameSettingsCubit>()
+                                            .setHapticsEnabled(value);
+                                        _analytics.trackSettingChanged(settingName: 'haptics_enabled', value: '$value');
+                                      },
+                                      theme,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Vibrate on game events and button presses',
                                       style: TextStyle(
                                         color: theme.accentColor.withValues(
                                           alpha: 0.6,

@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/services/audio_service.dart';
@@ -140,7 +140,7 @@ class _AchievementRevealStackState extends State<_AchievementRevealStack>
       widget.onDismissed();
       return;
     }
-    HapticFeedback.heavyImpact();
+    HapticService().heavyImpact();
     _audio.playSound('high_score');
     setState(() {
       current = next;
@@ -873,7 +873,7 @@ class _SkipButton extends StatelessWidget {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: () {
-          HapticFeedback.selectionClick();
+          HapticService().selectionClick();
           onTap();
         },
         borderRadius: BorderRadius.circular(24),

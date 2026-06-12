@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -259,7 +259,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
         },
       );
 
-      HapticFeedback.mediumImpact();
+      HapticService().mediumImpact();
       _audioService.playSound('coin_collect');
 
       if (!mounted) return;
@@ -293,7 +293,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
         },
       );
 
-      HapticFeedback.heavyImpact();
+      HapticService().heavyImpact();
       _audioService.playSound('coin_collect');
 
       if (!mounted) return;

@@ -19,6 +19,7 @@ class GameSettingsState extends Equatable {
   final Duration crashFeedbackDuration;
   final int highScore;
   final bool screenShakeEnabled;
+  final bool hapticsEnabled;
 
   const GameSettingsState({
     this.status = GameSettingsStatus.initial,
@@ -30,6 +31,7 @@ class GameSettingsState extends Equatable {
     this.crashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration,
     this.highScore = 0,
     this.screenShakeEnabled = false, // Disabled by default
+    this.hapticsEnabled = true,
   });
 
   /// Initial state
@@ -46,6 +48,7 @@ class GameSettingsState extends Equatable {
     Duration? crashFeedbackDuration,
     int? highScore,
     bool? screenShakeEnabled,
+    bool? hapticsEnabled,
   }) {
     return GameSettingsState(
       status: status ?? this.status,
@@ -59,6 +62,7 @@ class GameSettingsState extends Equatable {
           crashFeedbackDuration ?? this.crashFeedbackDuration,
       highScore: highScore ?? this.highScore,
       screenShakeEnabled: screenShakeEnabled ?? this.screenShakeEnabled,
+      hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
     );
   }
 
@@ -76,5 +80,6 @@ class GameSettingsState extends Equatable {
     crashFeedbackDuration,
     highScore,
     screenShakeEnabled,
+    hapticsEnabled,
   ];
 }

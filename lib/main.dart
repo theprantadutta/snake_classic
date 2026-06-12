@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/data/database/app_database.dart';
+import 'package:snake_classic/data/database/legacy_prefs_import.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
@@ -30,7 +31,6 @@ import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
-import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
@@ -90,6 +90,12 @@ void main() async {
     AppLogger.info('Configuring dependencies...');
     await configureDependencies();
     AppLogger.success('Dependencies configured');
+
+    // One-time SharedPrefs→Drift settings import (theme/trail/notification
+    // opt-ins). Must run after the DB is up but before anything reads
+    // settings — AudioService, ThemeCubit, and NotificationService all
+    // hydrate from the Drift row this writes.
+    await runLegacyPrefsImport(getIt<AppDatabase>());
 
     // Initialize router with analytics observer
     appRouter = createAppRouter(
@@ -341,10 +347,6 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
             lazy: false,
           ),
           ChangeNotifierProvider(create: (_) => DataSyncService(), lazy: false),
-          ChangeNotifierProvider(
-            create: (_) => PreferencesService(),
-            lazy: false,
-          ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeState>(
           builder: (context, themeState) {

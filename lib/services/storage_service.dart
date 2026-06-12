@@ -111,6 +111,44 @@ class StorageService {
     await _settingsDao?.updateMusicEnabled(enabled);
   }
 
+  // ==================== Haptics ====================
+
+  Future<bool> isHapticsEnabled() async {
+    final settings = await _settingsDao?.getSettings();
+    return settings?.hapticsEnabled ?? true;
+  }
+
+  Future<void> setHapticsEnabled(bool enabled) async {
+    await _settingsDao?.updateHapticsEnabled(enabled);
+  }
+
+  // ==================== Notification Preferences ====================
+
+  /// Per-category notification opt-ins, keyed by NotificationType.key
+  /// (daily_reminder, tournament, achievement, social, special_event).
+  /// Returned as a string-keyed map so this layer doesn't depend on
+  /// NotificationService's enum.
+  Future<Map<String, bool>> getNotificationPrefs() async {
+    final settings = await _settingsDao?.getSettings();
+    return {
+      'daily_reminder': settings?.notifyDailyReminder ?? true,
+      'tournament': settings?.notifyTournament ?? true,
+      'achievement': settings?.notifyAchievement ?? true,
+      'social': settings?.notifySocial ?? true,
+      'special_event': settings?.notifySpecialEvent ?? true,
+    };
+  }
+
+  Future<void> setNotificationPref(String typeKey, bool enabled) async {
+    await _settingsDao?.updateNotificationPrefs(
+      dailyReminder: typeKey == 'daily_reminder' ? enabled : null,
+      tournament: typeKey == 'tournament' ? enabled : null,
+      achievement: typeKey == 'achievement' ? enabled : null,
+      social: typeKey == 'social' ? enabled : null,
+      specialEvent: typeKey == 'special_event' ? enabled : null,
+    );
+  }
+
   // ==================== Board Size ====================
 
   Future<BoardSize> getBoardSize() async {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -76,8 +77,13 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       final dPadEnabled = await _storageService.isDPadEnabled();
       final dPadPosition = await _storageService.getDPadPosition();
       final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
+      final hapticsEnabled = await _storageService.isHapticsEnabled();
       final gameMode = await _storageService.getGameMode();
       final gameModePrompted = await _storageService.hasGameModeBeenPrompted();
+
+      // HapticService gates every vibration call on this flag; it has no
+      // storage access of its own, so this cubit owns the fan-out.
+      HapticService().setEnabled(hapticsEnabled);
 
       // Convert saved board size to BoardSize object
       final boardSize = _convertToBoardSize(savedBoardSize);
@@ -91,6 +97,7 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           dPadEnabled: dPadEnabled,
           dPadPosition: dPadPosition,
           screenShakeEnabled: screenShakeEnabled,
+          hapticsEnabled: hapticsEnabled,
           gameMode: gameMode,
           gameModeFirstLaunchPrompted: gameModePrompted,
         ),
@@ -106,6 +113,13 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
         if (row == null) return;
         if (row.highScore != state.highScore) {
           emit(state.copyWith(highScore: row.highScore));
+        }
+        // Haptics can change underneath us via the first-sign-in snapshot
+        // pull (SyncEngine.applySettingsSnapshot) — keep both the state and
+        // the HapticService flag current.
+        if (row.hapticsEnabled != state.hapticsEnabled) {
+          HapticService().setEnabled(row.hapticsEnabled);
+          emit(state.copyWith(hapticsEnabled: row.hapticsEnabled));
         }
       });
 
@@ -302,5 +316,15 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
   /// Toggle screen shake
   Future<void> toggleScreenShake() async {
     await setScreenShakeEnabled(!state.screenShakeEnabled);
+  }
+
+  /// Update haptics (vibration) setting — applies immediately via
+  /// HapticService and persists through Drift (+ sync outbox).
+  Future<void> setHapticsEnabled(bool enabled) async {
+    if (state.hapticsEnabled == enabled) return;
+
+    HapticService().setEnabled(enabled);
+    emit(state.copyWith(hapticsEnabled: enabled));
+    await _storageService.setHapticsEnabled(enabled);
   }
 }

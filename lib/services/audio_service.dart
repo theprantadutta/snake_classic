@@ -2,12 +2,20 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 
 class AudioService {
   static AudioService? _instance;
   AudioPlayer? _musicPlayer;
   final StorageService _storageService = StorageService();
+
+  // EnhancedAudioService keeps its own SFX-enabled flag and has no storage
+  // access of its own — this service is the single owner of the persisted
+  // sound/music settings and fans the sound flag out to it. Without the
+  // fan-out, the half of the game's SFX routed through the enhanced
+  // service ignores the user's "Sound Effects: off".
+  final EnhancedAudioService _enhanced = EnhancedAudioService();
 
   // SoLoud for low-latency game sound effects
   final SoLoud _soloud = SoLoud.instance;
@@ -39,6 +47,7 @@ class AudioService {
 
     _soundEnabled = await _storageService.isSoundEnabled();
     _musicEnabled = await _storageService.isMusicEnabled();
+    _enhanced.setSfxEnabled(_soundEnabled);
 
     // Initialize SoLoud engine
     try {
@@ -101,7 +110,17 @@ class AudioService {
     }
   }
 
-  Future<void> playBackgroundMusic() async {
+  // True from game start until game over / quit-to-home. Music playback is
+  // scoped to a run, but the setting can flip mid-run (settings screen or
+  // pause menu) — this flag is what lets setMusicEnabled(true) start
+  // playback immediately instead of waiting for the next game.
+  bool _musicSessionActive = false;
+
+  /// Start the looping background track for a game run. No-ops (but still
+  /// marks the session active) when music is disabled, so enabling the
+  /// setting mid-run picks the track up.
+  Future<void> startGameplayMusic() async {
+    _musicSessionActive = true;
     if (!_initialized || !_musicEnabled) return;
 
     _musicPlayer ??= AudioPlayer();
@@ -115,7 +134,35 @@ class AudioService {
     }
   }
 
-  Future<void> stopBackgroundMusic() async {
+  /// Freeze music with the game (pause overlay up, app backgrounded).
+  Future<void> pauseGameplayMusic() async {
+    try {
+      await _musicPlayer?.pause();
+    } catch (e) {
+      debugPrint('Error pausing music: $e');
+    }
+  }
+
+  /// Undo [pauseGameplayMusic]. Falls back to a fresh start when there is
+  /// nothing to resume — e.g. the user enabled music from the pause menu
+  /// of a run that began with it disabled.
+  Future<void> resumeGameplayMusic() async {
+    if (!_musicSessionActive || !_musicEnabled) return;
+    try {
+      final player = _musicPlayer;
+      if (player != null && player.state == PlayerState.paused) {
+        await player.resume();
+      } else if (player == null || player.state != PlayerState.playing) {
+        await startGameplayMusic();
+      }
+    } catch (e) {
+      debugPrint('Error resuming music: $e');
+    }
+  }
+
+  /// End-of-run stop (game over, quit to home). Closes the music session.
+  Future<void> stopGameplayMusic() async {
+    _musicSessionActive = false;
     try {
       await _musicPlayer?.stop();
     } catch (e) {
@@ -125,6 +172,7 @@ class AudioService {
 
   Future<void> setSoundEnabled(bool enabled) async {
     _soundEnabled = enabled;
+    _enhanced.setSfxEnabled(enabled);
     await _storageService.setSoundEnabled(enabled);
   }
 
@@ -132,10 +180,16 @@ class AudioService {
     _musicEnabled = enabled;
     await _storageService.setMusicEnabled(enabled);
 
-    if (enabled) {
-      await playBackgroundMusic();
-    } else {
-      await stopBackgroundMusic();
+    if (!enabled) {
+      // Silence immediately, but keep the session flag so re-enabling
+      // during the same run brings the music back.
+      try {
+        await _musicPlayer?.stop();
+      } catch (e) {
+        debugPrint('Error stopping music: $e');
+      }
+    } else if (_musicSessionActive) {
+      await startGameplayMusic();
     }
   }
 

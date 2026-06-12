@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/daily_challenge.dart' show ChallengeDifficulty;
@@ -50,7 +50,7 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
           },
         );
 
-    HapticFeedback.mediumImpact();
+    HapticService().mediumImpact();
     _audioService.playSound('coin_collect');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

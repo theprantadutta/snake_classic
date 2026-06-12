@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 
 class GradientButton extends StatefulWidget {
@@ -80,7 +80,7 @@ class _GradientButtonState extends State<GradientButton>
       onTapCancel: _onTapCancel,
       onTap: widget.onPressed != null
           ? () {
-              HapticFeedback.lightImpact();
+              HapticService().lightImpact();
               AudioService().playSound('button_click');
               widget.onPressed!();
             }

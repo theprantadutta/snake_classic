@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_state.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
-import 'package:snake_classic/services/preferences_service.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 
@@ -12,12 +13,25 @@ import 'theme_state.dart';
 
 export 'theme_state.dart';
 
-/// Cubit for managing app theme state
+/// Cubit for managing app theme state.
+///
+/// Persists through StorageService → Drift GameSettings (themeIndex +
+/// trailSystemEnabled), which the SyncEngine round-trips to the backend.
+/// Previously this went through the SharedPreferences-based
+/// PreferencesService, which meant the synced Drift columns were never
+/// written (they pushed stale defaults) and the trail toggle never crossed
+/// devices.
 class ThemeCubit extends Cubit<ThemeState> {
-  final PreferencesService _preferencesService;
+  final StorageService _storageService;
   final AnalyticsFacade _analytics;
 
-  ThemeCubit(this._preferencesService, this._analytics)
+  // Keeps state in lock-step with DB writes that don't originate here —
+  // most importantly the first-sign-in snapshot pull, where SyncEngine
+  // applies the backend's settings row via applySettingsSnapshot. Emit-only
+  // (never writes back), so it can't loop with the snapshot apply.
+  StreamSubscription<GameSetting?>? _settingsSubscription;
+
+  ThemeCubit(this._storageService, this._analytics)
       : super(ThemeState.initial());
 
   /// Initialize the theme cubit by loading saved preferences
@@ -27,10 +41,8 @@ class ThemeCubit extends Cubit<ThemeState> {
     emit(state.copyWith(status: ThemeStatus.loading));
 
     try {
-      await _preferencesService.initialize();
-
-      final savedTheme = _preferencesService.selectedTheme;
-      final trailEnabled = _preferencesService.trailSystemEnabled;
+      final savedTheme = await _storageService.getSelectedTheme();
+      final trailEnabled = await _storageService.isTrailSystemEnabled();
 
       emit(
         state.copyWith(
@@ -39,6 +51,19 @@ class ThemeCubit extends Cubit<ThemeState> {
           trailSystemEnabled: trailEnabled,
         ),
       );
+
+      _settingsSubscription = _storageService.watchSettings().listen((row) {
+        if (row == null) return;
+        final theme = GameTheme.values[
+            row.themeIndex.clamp(0, GameTheme.values.length - 1)];
+        if (theme != state.currentTheme ||
+            row.trailSystemEnabled != state.trailSystemEnabled) {
+          emit(state.copyWith(
+            currentTheme: theme,
+            trailSystemEnabled: row.trailSystemEnabled,
+          ));
+        }
+      });
     } catch (e) {
       // On error, use defaults and mark as ready
       emit(state.copyWith(status: ThemeStatus.ready));
@@ -50,7 +75,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     if (state.currentTheme == theme) return;
 
     emit(state.copyWith(currentTheme: theme));
-    await _preferencesService.setTheme(theme);
+    await _storageService.saveSelectedTheme(theme);
     _analytics.trackThemeSelected(theme.name);
 
     // Push the choice to the backend so it survives reinstall/device-switch.
@@ -69,7 +94,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     final target = GameTheme.values.where((t) => t.name == themeName).firstOrNull;
     if (target == null || target == GameTheme.classic) return;
     emit(state.copyWith(currentTheme: target));
-    await _preferencesService.setTheme(target);
+    await _storageService.saveSelectedTheme(target);
   }
 
   /// Drop back to Classic if the currently-applied premium theme is no
@@ -82,7 +107,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     if (!PremiumContent.isPremiumTheme(current)) return;
     if (premiumState.isThemeUnlocked(current)) return;
     emit(state.copyWith(currentTheme: GameTheme.classic));
-    await _preferencesService.setTheme(GameTheme.classic);
+    await _storageService.saveSelectedTheme(GameTheme.classic);
   }
 
   /// Cycle to the next theme (only free themes; premium themes require explicit selection)
@@ -106,11 +131,17 @@ class ThemeCubit extends Cubit<ThemeState> {
     if (state.trailSystemEnabled == enabled) return;
 
     emit(state.copyWith(trailSystemEnabled: enabled));
-    await _preferencesService.setTrailSystemEnabled(enabled);
+    await _storageService.setTrailSystemEnabled(enabled);
   }
 
   /// Toggle trail system
   Future<void> toggleTrailSystem() async {
     await setTrailSystemEnabled(!state.trailSystemEnabled);
+  }
+
+  @override
+  Future<void> close() {
+    _settingsSubscription?.cancel();
+    return super.close();
   }
 }

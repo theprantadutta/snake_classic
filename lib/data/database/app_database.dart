@@ -56,6 +56,21 @@ class GameSettings extends Table {
       boolean().withDefault(const Constant(false))();
   BoolColumn get screenShakeEnabled =>
       boolean().withDefault(const Constant(false))();
+  BoolColumn get hapticsEnabled =>
+      boolean().withDefault(const Constant(true))();
+  // Per-category notification opt-ins. dailyReminder also gates the
+  // backend's win-back + morning-announcement jobs; tournament/specialEvent
+  // additionally drive FCM broadcast-topic (un)subscription client-side.
+  BoolColumn get notifyDailyReminder =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get notifyTournament =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get notifyAchievement =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get notifySocial =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get notifySpecialEvent =>
+      boolean().withDefault(const Constant(true))();
   TextColumn get selectedSkinId => text().nullable()();
   TextColumn get selectedTrailId => text().nullable()();
   DateTimeColumn get lastUpdated =>
@@ -688,7 +703,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -824,6 +839,21 @@ class AppDatabase extends _$AppDatabase {
           'CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_challenges_challenge_id '
           'ON daily_challenges(challenge_id)',
         );
+      }
+      if (from < 12) {
+        // v12: haptics toggle + per-category notification opt-ins move into
+        // the synced settings row. Previously haptics had no setting at all
+        // and the notification toggles lived in SharedPreferences
+        // (device-only, never synced). A one-time import of the legacy
+        // SharedPreferences values runs at app start (see
+        // legacy_prefs_import.dart), not here — Drift migrations shouldn't
+        // touch platform channels.
+        await m.addColumn(gameSettings, gameSettings.hapticsEnabled);
+        await m.addColumn(gameSettings, gameSettings.notifyDailyReminder);
+        await m.addColumn(gameSettings, gameSettings.notifyTournament);
+        await m.addColumn(gameSettings, gameSettings.notifyAchievement);
+        await m.addColumn(gameSettings, gameSettings.notifySocial);
+        await m.addColumn(gameSettings, gameSettings.notifySpecialEvent);
       }
     },
   );

@@ -961,6 +961,12 @@ class SyncEngine {
         'crash_feedback_duration_seconds': r.crashFeedbackDurationSeconds,
         'trail_system_enabled': r.trailSystemEnabled,
         'screen_shake_enabled': r.screenShakeEnabled,
+        'haptics_enabled': r.hapticsEnabled,
+        'notify_daily_reminder': r.notifyDailyReminder,
+        'notify_tournament': r.notifyTournament,
+        'notify_achievement': r.notifyAchievement,
+        'notify_social': r.notifySocial,
+        'notify_special_event': r.notifySpecialEvent,
         'selected_skin_id': r.selectedSkinId,
         'selected_trail_id': r.selectedTrailId,
         'updated_at': _utcIso(r.updatedAt),
@@ -1137,6 +1143,16 @@ class SyncEngine {
                 Value(settings['trail_system_enabled'] as bool? ?? false),
             screenShakeEnabled:
                 Value(settings['screen_shake_enabled'] as bool? ?? false),
+            hapticsEnabled: Value(settings['haptics_enabled'] as bool? ?? true),
+            notifyDailyReminder:
+                Value(settings['notify_daily_reminder'] as bool? ?? true),
+            notifyTournament:
+                Value(settings['notify_tournament'] as bool? ?? true),
+            notifyAchievement:
+                Value(settings['notify_achievement'] as bool? ?? true),
+            notifySocial: Value(settings['notify_social'] as bool? ?? true),
+            notifySpecialEvent:
+                Value(settings['notify_special_event'] as bool? ?? true),
             selectedSkinId: Value(settings['selected_skin_id'] as String?),
             selectedTrailId: Value(settings['selected_trail_id'] as String?),
             lastUpdated: Value(_parseDate(settings['updated_at']) ?? DateTime.now()),

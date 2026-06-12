@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 
@@ -85,7 +85,7 @@ class _SwipeDetectorState extends State<SwipeDetector>
     });
 
     // Immediate haptic feedback
-    HapticFeedback.lightImpact();
+    HapticService().lightImpact();
 
     // Visual feedback with longer display time
     if (widget.showFeedback) {
@@ -191,7 +191,7 @@ class _SwipeDetectorState extends State<SwipeDetector>
         _hasTriggeredThisGesture = false;
       },
       onTap: () {
-        HapticFeedback.selectionClick();
+        HapticService().selectionClick();
         widget.onTap?.call(); // Call external tap handler (e.g., toggle pause)
       },
       child: Stack(

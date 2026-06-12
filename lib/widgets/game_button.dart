@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/typography.dart';
@@ -348,7 +348,7 @@ class _GameButtonState extends State<GameButton>
     if (!_isEnabled) return;
 
     if (widget.enableHaptics) {
-      HapticFeedback.lightImpact();
+      HapticService().lightImpact();
     }
     if (widget.enableSound) {
       AudioService().playSound('button_click');
@@ -590,7 +590,7 @@ class _GameIconButtonState extends State<GameIconButton>
       onTapCancel: () => _controller.reverse(),
       onTap: _isEnabled
           ? () {
-              HapticFeedback.lightImpact();
+              HapticService().lightImpact();
               AudioService().playSound('button_click');
               widget.onPressed?.call();
             }

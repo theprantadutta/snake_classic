@@ -3,7 +3,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
-import 'package:flutter/services.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/battle_pass.dart';
@@ -72,7 +72,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
 
       if (!mounted) return;
       if (ok) {
-        HapticFeedback.mediumImpact();
+        HapticService().mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(

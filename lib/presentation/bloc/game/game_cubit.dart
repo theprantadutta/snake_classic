@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/data/database/app_database.dart' show ReplaysCompanion;
@@ -316,6 +315,11 @@ class GameCubit extends Cubit<GameCubitState> {
       _enhancedAudioService.playSfx('game_start', volume: 0.8);
     }
 
+    // Looping background track for the run — gated inside the service on
+    // the user's Background Music setting, paused/resumed with the game,
+    // stopped at game over / quit.
+    unawaited(_audioService.startGameplayMusic());
+
     _analytics.trackGameStarted(
       boardWidth: gameState.boardWidth,
       boardHeight: gameState.boardHeight,
@@ -357,8 +361,10 @@ class GameCubit extends Cubit<GameCubitState> {
       );
       emit(state.copyWith(gameState: updated));
       // Single service only — see startGame() for the cold-start
-      // double-play story this avoids.
-      _enhancedAudioService.playSfx('power_up_collect', volume: 0.8);
+      // double-play story this avoids. The id must be 'power_up' —
+      // that's the shipped asset (power_up.wav); there is no
+      // power_up_collect.wav, and a bad id fails silently.
+      _enhancedAudioService.playSfx('power_up', volume: 0.8);
     });
   }
 
@@ -379,6 +385,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _gameTimer?.cancel();
     _animationTimer?.cancel();
     _powerUpTimer?.cancel();
+    unawaited(_audioService.pauseGameplayMusic());
 
     // TimeAttack: snapshot how much time is left so resume can re-arm.
     if (_timeAttackTimer != null && _timeAttackScheduledAt != null) {
@@ -442,6 +449,8 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Resume the game
   void resumeGame() {
     if (state.status != GamePlayStatus.paused) return;
+
+    unawaited(_audioService.resumeGameplayMusic());
 
     // Shift every wall-clock timer forward by the time we spent paused so
     // power-ups + TimeAttack pick up where they left off instead of losing
@@ -552,7 +561,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
     final accepted = state.gameState!.snake.changeDirection(newDirection);
     if (accepted) {
-      HapticFeedback.selectionClick();
+      _hapticService.selectionClick();
       // Emit timestamp + direction so the edge bloom and snake-head intent
       // shimmer can fire. Clears after 300ms.
       final stamp = DateTime.now();
@@ -570,9 +579,9 @@ class GameCubit extends Cubit<GameCubitState> {
       // Denied: surface a double-buzz haptic + timestamp the rejection so
       // the gesture indicators can flash red. Without this, reverse-into-
       // self attempts look like the game ignored the input entirely.
-      HapticFeedback.selectionClick();
+      _hapticService.selectionClick();
       Future.delayed(const Duration(milliseconds: 80), () {
-        HapticFeedback.selectionClick();
+        _hapticService.selectionClick();
       });
       final stamp = DateTime.now();
       emit(state.copyWith(lastRejectedInputAt: stamp));
@@ -768,14 +777,15 @@ class GameCubit extends Cubit<GameCubitState> {
 
           // Combo tier crossing — 1.0→1.5 at 5, 1.5→2.0 at 10, 2.0→3.0 at 20.
           // Each crossing earns a medium haptic; the 3.0 tier earns an extra
-          // heavy on top. SFX reuses score_milestone at low volume so it
-          // doesn't drown the food-eat sound.
+          // heavy on top. SFX reuses level_up at low volume so it doesn't
+          // drown the food-eat sound (there is no score_milestone.wav asset
+          // — the previous id failed silently).
           if (event.comboTierIncreased) {
             unawaited(_hapticService.mediumImpact());
             if (event.newMultiplier >= 3.0) {
               unawaited(_hapticService.heavyImpact());
             }
-            _enhancedAudioService.playSfx('score_milestone', volume: 0.45);
+            _enhancedAudioService.playSfx('level_up', volume: 0.45);
           }
 
           // Battle pass score milestones - deferred to avoid event loop
@@ -935,9 +945,11 @@ class GameCubit extends Cubit<GameCubitState> {
   /// the current score and level, and decrement livesRemaining by one.
   /// Plays a softer "crash" cue rather than the full game-over flow.
   void _respawnAfterCrash(model.GameState current) {
-    _audioService.playSound('game_over');
+    // Single service only — the legacy _audioService.playSound('game_over')
+    // alongside this double-played the cue. The enhanced call stays because
+    // it supports the softer 0.6 volume this per-life crash wants.
     _enhancedAudioService.playSfx('game_over', volume: 0.6);
-    HapticFeedback.heavyImpact();
+    _hapticService.heavyImpact();
 
     final newSnake = Snake.initial();
     // PerfectGame respawns get a fresh visited-cell map; the rule applies
@@ -1027,10 +1039,12 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackTimer = null;
     _timeAttackRemaining = null;
 
-    // Play crash sound and haptic feedback immediately
-    _audioService.playSound('game_over');
+    // Play crash sound and haptic feedback immediately. Single service —
+    // the legacy playSound('game_over') alongside this double-played the
+    // cue. Music freezes with the run; revive() resumes it.
     _enhancedAudioService.playSfx('game_over', volume: 1.0);
-    HapticFeedback.heavyImpact();
+    unawaited(_audioService.pauseGameplayMusic());
+    _hapticService.heavyImpact();
 
     // Offer a revive (rewarded ad or coins) before ending the game. Once per
     // run, single-life modes only, and whenever a revive path is *possible*:
@@ -1176,6 +1190,10 @@ class GameCubit extends Cubit<GameCubitState> {
     if (current == null || _revivedThisGame) return;
     _revivedThisGame = true;
 
+    // The run continues — pick the music back up from where the crash
+    // paused it (see _handleCrash).
+    unawaited(_audioService.resumeGameplayMusic());
+
     // Restore the last valid (in-bounds) snake from the pinned pre-crash state,
     // not the fatal crash-frame snake; only steer it somewhere safe to continue.
     final preCrash = state.previousGameState ?? current;
@@ -1215,7 +1233,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _startGameLoop();
     _startSmoothAnimation();
     _startPowerUpTimer();
-    HapticFeedback.mediumImpact();
+    _hapticService.mediumImpact();
   }
 
   /// Pick a direction to continue in after a revive that won't immediately
@@ -1449,6 +1467,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackTimer?.cancel();
     _timeAttackTimer = null;
     _timeAttackRemaining = null;
+    unawaited(_audioService.stopGameplayMusic());
     _gameRecorder.stopRecording();
 
     final highScore =
@@ -1502,6 +1521,7 @@ class GameCubit extends Cubit<GameCubitState> {
     debugPrint('🎮 [GameCubit] _gameOver called');
 
     _hapticService.gameOver();
+    unawaited(_audioService.stopGameplayMusic());
 
     final gameState = state.gameState;
     if (gameState == null) return;
@@ -1584,7 +1604,9 @@ class GameCubit extends Cubit<GameCubitState> {
       if (isNewHighScore) {
         await _storageService.saveHighScore(highScore);
         _settingsCubit.updateHighScore(highScore);
-        _audioService.playSound('high_score');
+        // Single service — the legacy playSound('high_score') isn't in
+        // AudioService's preload list, so it degraded to a system click
+        // on top of this fanfare.
         _enhancedAudioService.playSfx('high_score', volume: 1.0);
 
         // Strongest positive signal we have — ask the platform to consider

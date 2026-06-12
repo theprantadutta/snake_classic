@@ -13,7 +13,6 @@ import 'package:snake_classic/services/offline_cache_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
-import 'package:snake_classic/services/preferences_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
@@ -74,7 +73,6 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<ConnectivityService>(() => ConnectivityService());
   getIt.registerLazySingleton<AudioService>(() => AudioService());
   getIt.registerLazySingleton<HapticService>(() => HapticService());
-  getIt.registerLazySingleton<PreferencesService>(() => PreferencesService());
 
   // StorageService needs database initialization
   getIt.registerLazySingleton<StorageService>(() {
@@ -130,7 +128,7 @@ Future<void> configureDependencies() async {
   // This ensures fresh state when navigating to new screens
 
   getIt.registerLazySingleton<ThemeCubit>(
-    () => ThemeCubit(getIt<PreferencesService>(), getIt<AnalyticsFacade>()),
+    () => ThemeCubit(getIt<StorageService>(), getIt<AnalyticsFacade>()),
   );
 
   getIt.registerFactory<AuthCubit>(
