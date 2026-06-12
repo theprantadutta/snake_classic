@@ -421,12 +421,71 @@ class NotificationService {
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     AppLogger.info('📨 Received foreground message: ${message.messageId}');
 
-    // Show local notification for foreground messages
+    final type = _notificationTypeFromData(message.data);
+
+    // Drop stale reminder-class messages. FCM queues undeliverable
+    // messages (OEM-frozen / force-stopped app) and flushes them the
+    // moment the user opens the app — which used to surface yesterday's
+    // 20:00 "Can you beat your best?" as a fresh notification at launch.
+    // The backend now sets short TTLs so most of these die server-side;
+    // this is the client-side belt to the server-side suspenders, and it
+    // covers messages queued within the TTL window. A reminder is about
+    // "play NOW" — if it couldn't reach us near send time, silence is
+    // correct. Social/achievement messages stay relevant and pass through.
+    if (type == NotificationType.dailyReminder &&
+        _isStaleMessage(message.data)) {
+      AppLogger.info(
+        '🕑 Dropped stale reminder delivered late '
+        '(sent_at=${message.data['sent_at']})',
+      );
+      return;
+    }
+
+    // Show local notification for foreground messages. Passing the type
+    // routes it through the per-category preference gate in
+    // _showLocalNotification — previously foreground messages skipped it.
     await _showLocalNotification(
       title: message.notification?.title ?? 'Snake Classic',
       body: message.notification?.body ?? 'You have a new notification',
+      type: type,
       payload: jsonEncode(message.data),
     );
+  }
+
+  /// Map the backend's data-payload `type` discriminator onto the client's
+  /// preference categories. Unknown / absent types (dev test pushes, promo
+  /// grants) return null and are always rendered.
+  NotificationType? _notificationTypeFromData(Map<String, dynamic> data) {
+    switch (data['type']) {
+      case 'streak_at_risk':
+      case 'daily_challenge':
+      case 'high_score_nudge':
+      case 'challenge_announcement':
+      case 'win_back':
+        return NotificationType.dailyReminder;
+      case 'social':
+      case 'match_ping':
+        return NotificationType.social;
+      case 'tournament':
+        return NotificationType.tournament;
+      case 'special_event':
+        return NotificationType.specialEvent;
+      case 'achievement':
+        return NotificationType.achievement;
+      default:
+        return null;
+    }
+  }
+
+  /// True when the message's `sent_at` stamp (set by the backend on every
+  /// push) is over an hour old — i.e. this was queued, not delivered live.
+  bool _isStaleMessage(Map<String, dynamic> data) {
+    final raw = data['sent_at'];
+    if (raw is! String) return false;
+    final sentAt = DateTime.tryParse(raw);
+    if (sentAt == null) return false;
+    return DateTime.now().toUtc().difference(sentAt.toUtc()) >
+        const Duration(hours: 1);
   }
 
   Future<void> _handleMessageOpenedApp(RemoteMessage message) async {
