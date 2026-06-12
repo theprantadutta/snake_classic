@@ -389,7 +389,11 @@ class DataSyncService extends ChangeNotifier {
           }
           return await _apiService.registerFcmToken(
             fcmToken: fcmToken,
-            platform: (item.data['platform'] as String?) ?? 'flutter',
+            // The queue drains on the same device that enqueued it, so the
+            // CURRENT platform is always correct — and it transparently
+            // upgrades stale items queued by older builds that stored the
+            // legacy constant 'flutter'.
+            platform: kIsWeb ? 'web' : defaultTargetPlatform.name.toLowerCase(),
             timezoneOffsetMinutes: item.data['timezoneOffsetMinutes'] as int?,
           );
 
