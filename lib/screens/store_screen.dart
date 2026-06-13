@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -43,6 +44,12 @@ class _StoreScreenState extends State<StoreScreen>
   // so the spinner never spins forever if a webhook is genuinely lost.
   final Set<String> _pendingProductIds = {};
 
+  // Listens for cancel/failure terminal events from the purchase stream so a
+  // product's "Verifying…" spinner is dropped immediately when the user backs
+  // out of the store sheet or the payment fails — instead of spinning until
+  // the 45s safety timeout in _markPending.
+  StreamSubscription<String>? _purchaseStatusSub;
+
   // Tab order: Pro / Coins / Themes / Skins / Trails / Power-Ups.
   // Keeps Coins at index 1 so existing `?tab=1` deep links still land on
   // coins. Themes replaces the old Boards tab (boards aren't products).
@@ -65,6 +72,39 @@ class _StoreScreenState extends State<StoreScreen>
       initialIndex: widget.initialTab.clamp(0, _tabNames.length - 1),
     );
     _tabController.addListener(_onTabChanged);
+    _purchaseStatusSub =
+        PurchaseService().purchaseStatusStream.listen(_onPurchaseStatus);
+  }
+
+  /// Drop the "Verifying…" spinner the moment a purchase is canceled or fails.
+  /// These product-scoped events come from PurchaseService after the async
+  /// purchase stream reports a non-success terminal status — the path that the
+  /// synchronous try/catch around purchaseProduct() can't see.
+  void _onPurchaseStatus(String status) {
+    String? productId;
+    var failed = false;
+    if (status.startsWith('purchase_canceled:')) {
+      productId = status.substring('purchase_canceled:'.length);
+    } else if (status.startsWith('purchase_failed:')) {
+      productId = status.substring('purchase_failed:'.length);
+      failed = true;
+    } else {
+      return;
+    }
+    if (!mounted) return;
+    if (_pendingProductIds.contains(productId)) {
+      setState(() => _pendingProductIds.remove(productId));
+    }
+    // Only surface a message on a genuine failure; a user-initiated cancel
+    // should quietly return the card to its "Buy" state.
+    if (failed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Purchase failed. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _onTabChanged() {
@@ -74,6 +114,7 @@ class _StoreScreenState extends State<StoreScreen>
 
   @override
   void dispose() {
+    _purchaseStatusSub?.cancel();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();

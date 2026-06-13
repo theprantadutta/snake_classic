@@ -349,6 +349,13 @@ class PurchaseService {
       } else {
         if (purchaseDetails.status == PurchaseStatus.error) {
           AppLogger.error('Purchase error: ${purchaseDetails.error}');
+          // Product-scoped terminal event FIRST so the store UI can drop
+          // this item's "Verifying…" spinner the instant the payment fails
+          // (wrong card, declined, etc.) instead of waiting out the 45s
+          // safety timeout. The generic message follows for any plain
+          // status listeners.
+          _purchaseStatusController
+              .add('purchase_failed:${purchaseDetails.productID}');
           _purchaseStatusController.add('Purchase failed');
           _analytics?.trackPurchaseFailed(
             productId: purchaseDetails.productID,
@@ -358,6 +365,10 @@ class PurchaseService {
           AppLogger.info(
             'Purchase canceled by user: ${purchaseDetails.productID}',
           );
+          // Same: clear the spinner the moment the user backs out of the
+          // store sheet, rather than leaving the card stuck on "Verifying…".
+          _purchaseStatusController
+              .add('purchase_canceled:${purchaseDetails.productID}');
           _analytics?.trackPurchaseCancelled(
             productId: purchaseDetails.productID,
           );
