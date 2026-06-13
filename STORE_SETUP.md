@@ -340,6 +340,35 @@ For each non-consumable and consumable product listed above:
 3. Download the `.p8` private key file
 4. Note the **Key ID** and **Issuer ID**
 
+> Not required for the current purchase verification (see below). The `.p8`
+> key / Key ID / Issuer ID are only needed if a future App Store Server API
+> integration is added.
+
+### 5. iOS purchase verification (server-side — automatic)
+
+iOS purchases are **cryptographically verified** on the backend. There is
+nothing extra to configure beyond `APPLE_BUNDLE_ID`.
+
+The client (StoreKit 2 via `in_app_purchase`) sends the **signed transaction
+JWS** as `receipt_data`. On `POST /purchases/verify`, the backend
+(`AppleStoreService` + `AppleJwsVerifier`) validates Apple's ES256 signature
+and the `x5c` certificate chain against the pinned **Apple Root CA - G3**
+(embedded in the build), then enforces:
+
+- bundle ID in the transaction == `APPLE_BUNDLE_ID`,
+- the **signed** product == the product the client claims to have bought,
+- the transaction is not refunded / revoked.
+
+A purchase with a bad signature, wrong bundle, mismatched product, or revoked
+transaction is rejected and **grants nothing**. The same verifier also checks
+the signature on every **App Store Server Notification** before the webhook
+acts on it, so a forged notification can't change entitlements.
+
+No `.p8` key or App Store Server API credentials are needed. The only
+requirement is that **`APPLE_BUNDLE_ID` is set correctly** in the backend
+environment (`com.pranta.snakeclassic`) — an incorrect value makes every iOS
+verify fail on a bundle mismatch.
+
 ---
 
 ## Backend Configuration
@@ -477,6 +506,7 @@ Content-Type: application/json
 - [ ] Equip a skin → uninstall → reinstall → equipped skin is restored from backend
 - [ ] Coin-purchased power-ups debit coins server-side and increment inventory count
 - [ ] RTDN/Server Notifications arrive at webhook endpoints
+- [ ] iOS: a real sandbox purchase verifies and grants; a bogus/tampered `receipt_data` is rejected by `/purchases/verify` (grants nothing)
 - [ ] Purchase restore works on fresh install
 - [ ] Grace period keeps access when payment fails
 - [ ] Subscription cancellation removes access after expiry
