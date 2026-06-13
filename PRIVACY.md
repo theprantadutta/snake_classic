@@ -236,14 +236,14 @@ We show ads to support the free version of the app using **Google AdMob**. Pro s
 - **Active Accounts:** Data retained while your account is active
 - **Inactive Accounts:** Data may be deleted after 24 months of inactivity
 - **Legal Requirements:** Some data retained longer if required by law
-- **User Deletion:** Account deletion removes personal data within 30 days
+- **User Deletion:** In-app account deletion removes your account and associated personal data from our servers immediately; residual copies in encrypted backups are purged within 30 days
 
 ## Your Privacy Rights
 
 ### 1. Access and Control
 - **Profile Settings:** Update your username, display name, and visibility preferences
 - **Data Download:** Request a copy of your personal data through in-app settings
-- **Account Deletion:** Permanently delete your account and associated data
+- **Account Deletion:** Permanently delete your account and associated data directly in the app: **Profile → Account Management → Delete Account**. This immediately removes your scores, statistics, coins, purchased items, progress, and friends from our servers and deletes your sign-in identity. If you can no longer access the app, you can also request deletion through our account deletion request form (linked on the store listing); requests are processed through the same permanent deletion pipeline
 - **Communication Preferences:** Manage push notification categories and preferences
 
 ### 2. Regional Rights (GDPR, CCPA, etc.)

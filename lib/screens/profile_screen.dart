@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -771,6 +773,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Colors.blue.shade700,
                     () => _handleGoogleUpgrade(context, theme),
                   ),
+
+                  // Guideline 4.8: wherever Google sign-in is offered on
+                  // Apple platforms, Sign in with Apple rides along.
+                  if (defaultTargetPlatform == TargetPlatform.iOS ||
+                      defaultTargetPlatform == TargetPlatform.macOS) ...[
+                    const SizedBox(height: 12),
+                    _buildEnhancedButton(
+                      context,
+                      'Sign in with Apple',
+                      const FaIcon(
+                        FontAwesomeIcons.apple,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      Colors.black,
+                      Colors.grey.shade900,
+                      () => _handleAppleUpgrade(context, theme),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -960,6 +981,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Colors.red,
                     Colors.red.shade700,
                     () => _showSignOutDialog(context, theme),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Apple App Store Guideline 5.1.1(v): account deletion must
+                  // be initiable in-app for any app with account creation.
+                  _buildEnhancedButton(
+                    context,
+                    'Delete Account',
+                    const Icon(
+                      Icons.delete_forever_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    Colors.red.shade800,
+                    Colors.red.shade900,
+                    () => _showDeleteAccountDialog(context, theme),
                   ),
                 ],
               ),
@@ -1303,6 +1340,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _handleAppleUpgrade(
+    BuildContext context,
+    GameTheme theme,
+  ) async {
+    try {
+      final authCubit = context.read<AuthCubit>();
+      // Link (not plain sign-in) so the guest's UID — and with it the
+      // backend progress — survives the upgrade.
+      final success = await authCubit.linkAnonymousToApple();
+
+      if (success && context.mounted) {
+        _showStyledSnackBar(
+          context,
+          'Successfully upgraded to Apple account! 🎉',
+          Colors.green,
+          theme,
+        );
+      } else if (context.mounted) {
+        final isInUse = authCubit.state.errorMessage ==
+            'credential-already-in-use';
+        _showStyledSnackBar(
+          context,
+          isInUse
+              ? 'That Apple ID already has an account. Sign out, then sign in with Apple instead.'
+              : 'Failed to upgrade account. Please try again.',
+          Colors.red,
+          theme,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showStyledSnackBar(
+          context,
+          'An error occurred during account upgrade.',
+          Colors.red,
+          theme,
+        );
+      }
+    }
+  }
+
   Future<void> _handleGoogleUpgrade(
     BuildContext context,
     GameTheme theme,
@@ -1336,6 +1414,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, GameTheme theme) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
+        ),
+        title: const Text(
+          'Delete Account?',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'This permanently deletes your account and everything attached '
+          'to it:\n\n'
+          '• High scores and statistics\n'
+          '• Coins and purchased items\n'
+          '• Themes, skins, trails and power-ups\n'
+          '• Battle pass and challenge progress\n'
+          '• Leaderboard entries and friends\n\n'
+          'This cannot be undone. Active subscriptions must be cancelled '
+          'separately in your App Store or Google Play settings.',
+          style: TextStyle(color: Colors.white, fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade800,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final authCubit = context.read<AuthCubit>();
+              final deleted = await authCubit.deleteAccount();
+              if (context.mounted) {
+                _showStyledSnackBar(
+                  context,
+                  deleted
+                      ? 'Your account has been permanently deleted.'
+                      : 'Could not delete your account. Check your connection and try again.',
+                  deleted ? Colors.blue : Colors.red,
+                  theme,
+                );
+              }
+              // Navigation back to the sign-in screen is handled by the
+              // BlocListener watching for AuthStatus.unauthenticated, same
+              // as sign-out.
+            },
+            child: const Text(
+              'Delete Forever',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSignOutDialog(BuildContext context, GameTheme theme) {

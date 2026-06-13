@@ -51,6 +51,10 @@ class AnalyticsFacade implements AnalyticsClient {
       _fire((c) => c.trackSignInGoogle());
 
   @override
+  Future<void> trackSignInApple() async =>
+      _fire((c) => c.trackSignInApple());
+
+  @override
   Future<void> trackSignInAnonymous() async =>
       _fire((c) => c.trackSignInAnonymous());
 

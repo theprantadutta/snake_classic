@@ -856,6 +856,16 @@ class NotificationService {
   }
 
   // Backend integration methods
+
+  /// Real device platform reported with FCM token registrations:
+  /// 'ios' / 'android' (or 'web', 'macos', … on non-mobile builds).
+  /// Was the constant 'flutter', which made it impossible to tell
+  /// APNs-routed tokens from Android ones when debugging delivery —
+  /// the backend maps that legacy value to 'android', since only
+  /// Android builds ever shipped with it.
+  static String get devicePlatform =>
+      kIsWeb ? 'web' : defaultTargetPlatform.name.toLowerCase();
+
   /// Register the FCM token with the backend. Returns true on confirmed
   /// success, false on failure. When auth isn't ready yet (common during
   /// first-launch race with FirebaseAuth) the call is queued via
@@ -886,7 +896,7 @@ class NotificationService {
           'fcm_token_register',
           {
             'fcmToken': token,
-            'platform': 'flutter',
+            'platform': devicePlatform,
             'timezoneOffsetMinutes': tzOffsetMinutes,
           },
           priority: SyncPriority.high,
@@ -896,7 +906,7 @@ class NotificationService {
 
       final success = await apiService.registerFcmToken(
         fcmToken: token,
-        platform: 'flutter',
+        platform: devicePlatform,
         timezoneOffsetMinutes: tzOffsetMinutes,
       );
 
@@ -912,7 +922,7 @@ class NotificationService {
           'fcm_token_register',
           {
             'fcmToken': token,
-            'platform': 'flutter',
+            'platform': devicePlatform,
             'timezoneOffsetMinutes': tzOffsetMinutes,
           },
           priority: SyncPriority.high,
@@ -930,7 +940,7 @@ class NotificationService {
           'fcm_token_register',
           {
             'fcmToken': token,
-            'platform': 'flutter',
+            'platform': devicePlatform,
             'timezoneOffsetMinutes': tzOffsetMinutes,
           },
           priority: SyncPriority.high,

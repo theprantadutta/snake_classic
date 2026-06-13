@@ -197,6 +197,39 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Sign in with Apple (iOS/macOS — App Store Guideline 4.8 companion to
+  /// the Google option).
+  Future<bool> signInWithApple() async {
+    emit(state.copyWith(isLoading: true, clearError: true));
+
+    try {
+      final result = await _userService.signInWithApple();
+
+      if (result) {
+        _analytics.trackSignInApple();
+        final uid = _userService.currentUser?.uid;
+        _analytics.setUserId(uid);
+        _analytics.setUserProperties(authMethod: 'apple');
+
+        // Same as Google: brand-new accounts route through /username-setup.
+        final needsSetup = _userService.consumeJustLoadedNewUser();
+        emit(state.copyWith(needsUsernameSetup: needsSetup));
+      } else {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: 'Apple sign-in failed',
+          ),
+        );
+      }
+
+      return result;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
   /// Sign in anonymously (guest mode)
   Future<bool> signInAnonymously() async {
     emit(state.copyWith(isLoading: true, clearError: true));
@@ -345,6 +378,27 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Link the current anonymous account to an Apple sign-in.
+  Future<bool> linkAnonymousToApple() async {
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.linkAnonymousToApple();
+      if (ok) {
+        _analytics.setUserProperties(authMethod: 'apple');
+        emit(state.copyWith(user: _userService.currentUser, isLoading: false));
+      } else {
+        emit(state.copyWith(isLoading: false, errorMessage: 'link failed'));
+      }
+      return ok;
+    } on FirebaseAuthException catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
   /// Send a Firebase password-reset email. Returns true if accepted.
   Future<bool> sendPasswordResetEmail(String email) async {
     try {
@@ -415,6 +469,54 @@ class AuthCubit extends Cubit<AuthState> {
         isLoading: false,
         errorMessage: e.toString(),
       ));
+    }
+  }
+
+  /// Permanently delete the account (App Store Guideline 5.1.1(v)).
+  ///
+  /// Returns true when the backend confirmed the deletion. On failure the
+  /// user stays signed in (status reverts to authenticated) so the profile
+  /// screen can show an error and let them retry. On success the same
+  /// post-teardown housekeeping as [signOut] runs and the user-service
+  /// listener emits the final unauthenticated state, which triggers the
+  /// caller's BlocListener navigation back to the sign-in screen.
+  Future<bool> deleteAccount() async {
+    emit(state.copyWith(status: AuthStatus.loading, isLoading: true, clearError: true));
+
+    try {
+      final deleted = await _userService.deleteAccount();
+      if (!deleted) {
+        emit(state.copyWith(
+          status: AuthStatus.authenticated,
+          isLoading: false,
+          errorMessage:
+              'Could not delete your account. Check your connection and try again.',
+        ));
+        return false;
+      }
+
+      _analytics.trackSignOut();
+      _analytics.setUserId(null);
+      NotificationService().resetBackendIntegration();
+
+      // Same rationale as signOut(): route the next launch through
+      // FirstTimeAuthScreen instead of silently re-creating a guest.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('first_time_setup_complete', false);
+      } catch (_) {
+        // Best-effort; not critical if it fails.
+      }
+      emit(state.copyWith(isFirstTimeUser: true, clearUser: true));
+      // The user service listener will emit the final unauthenticated state.
+      return true;
+    } catch (e) {
+      emit(state.copyWith(
+        status: AuthStatus.authenticated,
+        isLoading: false,
+        errorMessage: e.toString(),
+      ));
+      return false;
     }
   }
 

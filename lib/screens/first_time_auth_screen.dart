@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -62,7 +64,7 @@ Snake Classic respects your privacy and is committed to protecting your personal
 
 ## Information We Collect
 We collect various types of information to provide and improve our services, including:
-- Authentication data when you sign in with Google
+- Authentication data when you sign in with Apple or Google
 - Game data such as scores, achievements, and progress
 - Device information for app functionality
 - Usage analytics to improve the game experience
@@ -306,6 +308,33 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                         else
                           Column(
                             children: [
+                              // Sign in with Apple — listed first on Apple
+                              // platforms: Guideline 4.8 requires it next to
+                              // third-party logins, and the HIG asks for
+                              // equal-or-greater prominence than the others.
+                              if (defaultTargetPlatform ==
+                                      TargetPlatform.iOS ||
+                                  defaultTargetPlatform ==
+                                      TargetPlatform.macOS) ...[
+                                _buildAuthButton(
+                                      context,
+                                      'Sign in with Apple',
+                                      const FaIcon(
+                                        FontAwesomeIcons.apple,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                      [
+                                        Colors.black,
+                                        Colors.grey.shade900,
+                                      ],
+                                      () => _handleAppleSignIn(authCubit),
+                                    )
+                                    .gameZoomIn(delay: 250.ms),
+
+                                const SizedBox(height: 16),
+                              ],
+
                               // Google Sign-In Button
                               _buildAuthButton(
                                     context,
@@ -367,7 +396,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                   horizontal: 16,
                                 ),
                                 child: Text(
-                                  'Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.',
+                                  'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.white
@@ -682,6 +711,40 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     );
   }
 
+  Future<void> _handleAppleSignIn(AuthCubit authCubit) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final success = await authCubit.signInWithApple();
+
+      if (success && mounted) {
+        await authCubit.markFirstTimeSetupComplete();
+
+        // Same routing as Google: new accounts divert through
+        // username-setup unless a username is already on file.
+        if (mounted) {
+          final existingUsername =
+              authCubit.state.user?.username.trim() ?? '';
+          final showSetup = authCubit.state.needsUsernameSetup &&
+              existingUsername.isEmpty;
+          final route =
+              showSetup ? AppRoutes.usernameSetup : AppRoutes.home;
+          context.go(route);
+        }
+      } else if (mounted) {
+        _showError('Failed to sign in with Apple. Please try again.');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _handleGoogleSignIn(AuthCubit authCubit) async {
     setState(() => _isLoading = true);
 
@@ -783,7 +846,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
             _GuestWarningBullet(
               icon: Icons.cloud_sync_rounded,
               text: 'To save your progress permanently and play across '
-                  'devices, sign in with Google or Email instead.',
+                  'devices, sign in with Apple, Google or Email instead.',
               theme: theme,
             ),
             const SizedBox(height: 14),
