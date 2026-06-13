@@ -983,6 +983,16 @@ class AppDatabase extends _$AppDatabase {
     if (existingPremium == null) {
       await into(premiumStatus).insert(PremiumStatusCompanion.insert());
     }
+
+    // Initialize player progress if not exists. Re-seeding the singleton
+    // here (as we do for stats/coins/premium) means a post-logout
+    // clearAllData() leaves a level-1 row, so ProgressionService's Drift
+    // watch fires and its in-memory level resets instead of holding the
+    // previous account's value until the next app restart.
+    final existingProgress = await select(playerProgressTable).getSingleOrNull();
+    if (existingProgress == null) {
+      await into(playerProgressTable).insert(PlayerProgressTableCompanion.insert());
+    }
   }
 
   /// Clear all data (for logout/reset). Wipes per-user tables AND the
@@ -1000,6 +1010,12 @@ class AppDatabase extends _$AppDatabase {
       await delete(unlockedItems).go();
       await delete(battlePasses).go();
       await delete(dailyChallenges).go();
+      await delete(weeklyQuests).go();
+      // Lifetime XP/level + daily-bonus streak are per-user singletons —
+      // if they survive an account switch the next user inherits the
+      // previous account's level and login streak.
+      await delete(playerProgressTable).go();
+      await delete(dailyBonusState).go();
       await delete(replays).go();
       await delete(syncQueue).go();
       await delete(cacheStore).go();
