@@ -7,6 +7,7 @@ import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
+import 'ads/ad_service.dart';
 import 'analytics/analytics_facade.dart';
 import 'api_service.dart';
 
@@ -300,6 +301,12 @@ class PurchaseService {
         productId: productDetails.id,
         productType: _productTypeFor(productDetails.id),
       );
+
+      // The billing sheet backgrounds the app; suppress the App Open ad that
+      // would otherwise fire when the user returns from it.
+      if (GetIt.I.isRegistered<AdService>()) {
+        GetIt.I<AdService>().suppressNextAppOpen();
+      }
 
       final PurchaseParam purchaseParam = PurchaseParam(
         productDetails: productDetails,

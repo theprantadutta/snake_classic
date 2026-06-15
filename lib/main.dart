@@ -259,12 +259,19 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       DataSyncService().forceSyncNow();
       // Re-authenticate with backend if JWT expired and refresh premium state
       _refreshOnResume();
+      // Show an App Open ad on a genuine return to the foreground. Self-gated:
+      // skips cold start, active gameplay, purchase/consent returns, Pro, and
+      // when another full-screen ad is up.
+      unawaited(getIt<AdService>().maybeShowAppOpenOnResume());
     }
 
     // When app goes to background, attempt to sync pending data
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       DataSyncService().forceSyncNow();
+      // Mark the background trip and warm up an App Open ad for the next resume.
+      getIt<AdService>().markBackgrounded();
+      getIt<AdService>().preloadAppOpen();
     }
   }
 

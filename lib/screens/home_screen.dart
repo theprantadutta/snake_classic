@@ -1307,6 +1307,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     required double screenWidth,
     required bool isSmallScreen,
   }) {
+    // Show the rewarded "FREE" button only to free mobile users; Pro / desktop
+    // keep the clean two-button (PRO / STORE) layout.
+    final adsOn =
+        getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
+    final gapWidth = isSmallScreen ? 10.0 : 14.0;
     return Row(
       children: [
         Expanded(
@@ -1320,7 +1325,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             onTap: () => context.push(AppRoutes.premiumBenefits),
           ),
         ),
-        SizedBox(width: isSmallScreen ? 12 : 16),
+        SizedBox(width: gapWidth),
         Expanded(
           child: _buildModernActionButton(
             context: context,
@@ -1333,7 +1338,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             widgetKey: HomeWalkthrough.storeKey,
           ),
         ),
+        // Rewarded entry point — grants a free Speed Boost (no coins, so the
+        // coin economy / IAP stay safe). Capped at 3/day via capFreePowerUp.
+        if (adsOn) ...[
+          SizedBox(width: gapWidth),
+          Expanded(
+            child: _buildModernActionButton(
+              context: context,
+              theme: theme,
+              icon: Icons.bolt,
+              label: 'FREE',
+              gradient: [Colors.green.shade400, Colors.teal.shade400],
+              isSmallScreen: isSmallScreen,
+              onTap: () => _watchForFreePowerUp(context),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  /// Opt-in rewarded watch from the home action row: grants a free Speed Boost
+  /// power-up (no coins). Gated by the existing capFreePowerUp daily cap; shows
+  /// a gentle message when the cap is hit or no ad is ready.
+  Future<void> _watchForFreePowerUp(BuildContext context) async {
+    final ads = getIt<AdService>();
+    final messenger = ScaffoldMessenger.of(context);
+    final powerUps = context.read<PowerUpCubit>();
+    if (!ads.canShowCapped(AdService.capFreePowerUp)) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No free power-up right now — check back later!'),
+        ),
+      );
+      return;
+    }
+    await ads.showRewardedCapped(
+      capKey: AdService.capFreePowerUp,
+      onReward: powerUps.grantFreePowerUp,
     );
   }
 

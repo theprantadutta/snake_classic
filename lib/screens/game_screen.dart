@@ -74,6 +74,10 @@ class _GameScreenState extends State<GameScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
+    // While the game screen is mounted, suppress App Open ads so backgrounding
+    // and returning mid-run never drops a full-screen ad over live/paused play.
+    getIt<AdService>().setGameActive(true);
+
     // Note: the status bar is hidden app-wide via WindowInsetsController in
     // MainActivity.kt — no per-screen SystemUiMode tweak needed here. The
     // navigation bar stays visible during gameplay so the back gesture
@@ -340,6 +344,7 @@ class _GameScreenState extends State<GameScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    getIt<AdService>().setGameActive(false);
     _keyboardFocusNode.dispose();
     _gestureIndicatorController.dispose();
     _levelUpPopupController.dispose();

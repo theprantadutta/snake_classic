@@ -18,8 +18,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// code (placement-specific), not here — see the rewarded placements.
 class AdService {
   // ---- tunables ----
-  static const int _interstitialEveryNGames = 3;
+  // Show on every other game-over (was 3). The 3-minute min-gap below is the
+  // real UX guard — it stops rapid-fire ads during a hot streak — so counting
+  // every 2 games lifts impressions without surprising the player.
+  static const int _interstitialEveryNGames = 2;
   static const Duration _interstitialMinGap = Duration(minutes: 3);
+
+  // App Open ads expire 4h after load (Google's documented limit) and we never
+  // show one more than once per [_appOpenMinGap] — a light touch on genuine
+  // returns to the app, not on every foreground.
+  static const Duration _appOpenExpiry = Duration(hours: 4);
+  static const Duration _appOpenMinGap = Duration(minutes: 4);
 
   // SharedPreferences keys (device-only, never synced).
   static const _kGamesSinceInterstitial = 'ads_games_since_interstitial';
@@ -40,6 +49,23 @@ class AdService {
   bool _interstitialLoading = false;
   RewardedAd? _rewarded;
   bool _rewardedLoading = false;
+
+  AppOpenAd? _appOpenAd;
+  bool _appOpenLoading = false;
+  int _appOpenLoadedAtMs = 0;
+  int _lastAppOpenShownMs = 0;
+
+  // True while ANY of our full-screen ads (interstitial / rewarded / app-open)
+  // is on screen, so the three can never stack.
+  bool _fullScreenAdShowing = false;
+  // True only after a real background→foreground round trip, so an App Open ad
+  // never shows on the first cold start (over the splash).
+  bool _wasInBackground = false;
+  // One-shot suppression for returns from flows we launch ourselves (a purchase
+  // sheet, the consent form) where an App Open ad would be jarring / off-policy.
+  bool _suppressNextAppOpen = false;
+  // Set by the game screen; we never cover live/paused gameplay with App Open.
+  bool _gameInProgress = false;
 
   SharedPreferences? _prefs;
 
@@ -93,6 +119,7 @@ class AdService {
       if (adsEnabled) {
         _loadInterstitial();
         _loadRewarded();
+        _loadAppOpen();
       }
     } catch (e) {
       AppLogger.error('AdService init failed', e);
@@ -218,18 +245,21 @@ class AdService {
     final shown = Completer<bool>();
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
+        _fullScreenAdShowing = false;
         ad.dispose();
         _interstitial = null;
         if (!shown.isCompleted) shown.complete(true);
         _loadInterstitial();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
+        _fullScreenAdShowing = false;
         ad.dispose();
         _interstitial = null;
         if (!shown.isCompleted) shown.complete(false);
         _loadInterstitial();
       },
     );
+    _fullScreenAdShowing = true;
     await ad.show();
     await prefs.setInt(_kGamesSinceInterstitial, 0);
     await prefs.setInt(
@@ -310,6 +340,7 @@ class AdService {
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
+        _fullScreenAdShowing = false;
         dismissed = true;
         ad.dispose();
         _loadRewarded();
@@ -326,12 +357,14 @@ class AdService {
         });
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
+        _fullScreenAdShowing = false;
         ad.dispose();
         _loadRewarded();
         AppLogger.warning('Rewarded failed to show: ${error.message}');
         if (!done.isCompleted) done.complete(false);
       },
     );
+    _fullScreenAdShowing = true;
     await ad.show(
       onUserEarnedReward: (_, _) {
         earned = true;
@@ -343,6 +376,100 @@ class AdService {
       },
     );
     return done.future;
+  }
+
+  // ==================== App Open ====================
+
+  /// The game screen calls this so App Open never covers a live/paused game.
+  void setGameActive(bool active) => _gameInProgress = active;
+
+  /// Call before launching a purchase / consent flow so the resume it causes
+  /// doesn't pop an App Open ad on return.
+  void suppressNextAppOpen() => _suppressNextAppOpen = true;
+
+  /// Record that the app went to background (from the lifecycle observer). Only
+  /// a genuine background counts — ignored while our own full-screen ad is up
+  /// (those don't represent the user actually leaving the app).
+  void markBackgrounded() {
+    if (_fullScreenAdShowing) return;
+    _wasInBackground = true;
+  }
+
+  bool get _appOpenAvailable {
+    if (_appOpenAd == null) return false;
+    final age = DateTime.now().millisecondsSinceEpoch - _appOpenLoadedAtMs;
+    return age < _appOpenExpiry.inMilliseconds;
+  }
+
+  void _loadAppOpen() {
+    if (!adsEnabled || _appOpenAd != null || _appOpenLoading) return;
+    if (!_isOnline) return;
+    _appOpenLoading = true;
+    AppOpenAd.load(
+      adUnitId: AdConfig.appOpenUnitId,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          _appOpenAd = ad;
+          _appOpenLoadedAtMs = DateTime.now().millisecondsSinceEpoch;
+          _appOpenLoading = false;
+        },
+        onAdFailedToLoad: (error) {
+          _appOpenAd = null;
+          _appOpenLoading = false;
+          AppLogger.warning('App Open failed to load: ${error.message}');
+        },
+      ),
+    );
+  }
+
+  /// Eagerly (re)load an App Open ad — call when the app goes to background so
+  /// one is ready for the next foreground.
+  void preloadAppOpen() => _loadAppOpen();
+
+  /// Show an App Open ad on a genuine return to the foreground, if every guard
+  /// passes. Called from the app lifecycle observer on `resumed`.
+  ///
+  /// Guards (AdMob-compliant): only after a real background→foreground trip
+  /// (never on cold start over the splash), never when suppressed (purchase /
+  /// consent return), never while another full-screen ad is showing, never over
+  /// active gameplay, only with a loaded + unexpired ad, and at most once per
+  /// [_appOpenMinGap].
+  Future<void> maybeShowAppOpenOnResume() async {
+    // Consume the one-shot flags up front, regardless of outcome.
+    final wasBackground = _wasInBackground;
+    _wasInBackground = false;
+    final suppressed = _suppressNextAppOpen;
+    _suppressNextAppOpen = false;
+
+    if (!adsEnabled) return;
+    if (!wasBackground || suppressed) return;
+    if (_fullScreenAdShowing || _gameInProgress) return;
+    if (!_appOpenAvailable) {
+      _loadAppOpen();
+      return;
+    }
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastAppOpenShownMs < _appOpenMinGap.inMilliseconds) return;
+
+    final ad = _appOpenAd!;
+    _appOpenAd = null;
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        _fullScreenAdShowing = false;
+        _lastAppOpenShownMs = DateTime.now().millisecondsSinceEpoch;
+        ad.dispose();
+        _loadAppOpen();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        _fullScreenAdShowing = false;
+        ad.dispose();
+        AppLogger.warning('App Open failed to show: ${error.message}');
+        _loadAppOpen();
+      },
+    );
+    _fullScreenAdShowing = true;
+    await ad.show();
   }
 
   // ==================== Daily-capped rewarded helpers ====================
@@ -439,7 +566,9 @@ class AdService {
   void dispose() {
     _interstitial?.dispose();
     _rewarded?.dispose();
+    _appOpenAd?.dispose();
     _interstitial = null;
     _rewarded = null;
+    _appOpenAd = null;
   }
 }

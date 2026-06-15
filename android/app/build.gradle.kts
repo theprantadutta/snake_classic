@@ -76,6 +76,12 @@ dependencies {
     implementation("androidx.window:window:1.0.0")
     implementation("androidx.window:window-java:1.0.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // NOTE: AdMob mediation adapters are intentionally NOT added yet. At low
+    // traffic they earn nothing (the cross-network auction needs volume to
+    // matter) while adding app size + extra ad-network SDKs that init at
+    // startup. Revisit around ~1k DAU. See admob_ad_list.md → "Mediation" for
+    // the exact adapter lines + console steps when it's time.
 }
 
 flutter {

@@ -25,6 +25,8 @@ class AdConfig {
   static const _testInterstitialIos = 'ca-app-pub-3940256099942544/4411468910';
   static const _testRewardedAndroid = 'ca-app-pub-3940256099942544/5224354917';
   static const _testRewardedIos = 'ca-app-pub-3940256099942544/1712485313';
+  static const _testAppOpenAndroid = 'ca-app-pub-3940256099942544/9257395921';
+  static const _testAppOpenIos = 'ca-app-pub-3940256099942544/5575463023';
 
   // ---- Real PRODUCTION ad unit ids (from admob_ad_list.md) ----
   static const _bannerAndroid = 'ca-app-pub-9242904787767394/3016639636';
@@ -33,6 +35,14 @@ class AdConfig {
   static const _interstitialIos = 'ca-app-pub-9242904787767394/9378033857';
   static const _rewardedAndroid = 'ca-app-pub-9242904787767394/7829982619';
   static const _rewardedIos = 'ca-app-pub-9242904787767394/3896430862';
+
+  // App Open units — CREATE THESE in the AdMob console and paste them here.
+  // See the "App Open ad units" section of admob_ad_list.md for step-by-step
+  // instructions. Until replaced they intentionally point at Google's TEST App
+  // Open ids, so a release build serves test App Open ads (no revenue, but safe
+  // and policy-compliant) rather than requesting a non-existent unit.
+  static const _appOpenAndroid = 'ca-app-pub-9242904787767394/2112367445';
+  static const _appOpenIos = 'ca-app-pub-9242904787767394/9799285770';
 
   static String get bannerUnitId => kDebugMode
       ? (_isIos ? _testBannerIos : _testBannerAndroid)
@@ -45,4 +55,8 @@ class AdConfig {
   static String get rewardedUnitId => kDebugMode
       ? (_isIos ? _testRewardedIos : _testRewardedAndroid)
       : (_isIos ? _rewardedIos : _rewardedAndroid);
+
+  static String get appOpenUnitId => kDebugMode
+      ? (_isIos ? _testAppOpenIos : _testAppOpenAndroid)
+      : (_isIos ? _appOpenIos : _appOpenAndroid);
 }
