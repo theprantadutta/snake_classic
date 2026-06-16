@@ -156,6 +156,20 @@ class ReviewService {
     );
   }
 
+  /// Opens the native store listing for an explicit user action (e.g. a
+  /// "Rate us" button in Settings). Unlike [maybeRequestReview] — the
+  /// quota-limited in-app sheet that the platform may silently skip — this
+  /// always takes the user to the store, which is what Google recommends for
+  /// a deliberate tap. Fire-and-forget safe.
+  Future<void> openStoreListing() async {
+    try {
+      _analytics.trackReviewRequested('manual_store_listing');
+      await _inAppReview.openStoreListing();
+    } catch (e) {
+      AppLogger.info('$_kEligibilityTag openStoreListing failed: $e');
+    }
+  }
+
   Future<void> _dispatch(ReviewTrigger trigger) async {
     try {
       AppLogger.info('$_kEligibilityTag requesting review (trigger: $trigger)');

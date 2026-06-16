@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
@@ -503,6 +504,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     _buildReplayTutorialButton(theme),
                                     const SizedBox(height: 16),
                                     _buildCreditsButton(theme),
+                                    _buildRateUsButton(theme),
                                     _buildPrivacyChoicesButton(theme),
                                   ], theme),
 
@@ -1736,6 +1738,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 8),
         Text(
           'App version, credits, and links',
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Explicit "Rate us" entry — opens the Play Store listing directly (not the
+  /// quota-limited in-app review sheet, which the platform may silently skip on
+  /// a deliberate tap). The in-app sheet still fires automatically at positive
+  /// moments via ReviewService.maybeRequestReview.
+  Widget _buildRateUsButton(GameTheme theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 16),
+        GradientButton(
+          onPressed: () => getIt<ReviewService>().openStoreListing(),
+          text: 'RATE SNAKE CLASSIC',
+          primaryColor: theme.accentColor,
+          secondaryColor: theme.foodColor,
+          icon: Icons.star_rounded,
+          width: double.infinity,
+          outlined: true,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Enjoying the game? Leave a review on Google Play',
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.6),
             fontSize: 12,
