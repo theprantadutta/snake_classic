@@ -542,47 +542,66 @@ class _LoadingScreenState extends State<LoadingScreen>
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenHeight = constraints.maxHeight;
+        final screenWidth = constraints.maxWidth;
         final isSmallScreen = screenHeight < 600;
 
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: screenHeight),
-            child: IntrinsicHeight(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(height: isSmallScreen ? 8 : 16),
+        // Decorative extras are shown only when there's vertical room, so the
+        // core content sits at full size on a normal phone. The footer needs a
+        // medium screen; the features grid needs a tall one.
+        final showFooter = screenHeight >= 660;
+        final showFeatures = !isSmallScreen && screenHeight >= 820;
 
-                  // Game-style header
-                  _buildGameHeader(theme, isSmallScreen),
+        final content = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Game-style header
+            _buildGameHeader(theme, isSmallScreen),
 
-                  SizedBox(height: isSmallScreen ? 12 : 20),
+            SizedBox(height: isSmallScreen ? 12 : 20),
 
-                  // Central loading area with enhanced content
-                  _buildEnhancedLoadingArea(theme, isSmallScreen),
+            // Central loading area with enhanced content
+            _buildEnhancedLoadingArea(theme, isSmallScreen),
 
-                  SizedBox(height: isSmallScreen ? 16 : 24),
+            SizedBox(height: isSmallScreen ? 16 : 24),
 
-                  // Progress section with game-like design
-                  _buildProgressSection(theme, isSmallScreen),
+            // Progress section with game-like design
+            _buildProgressSection(theme, isSmallScreen),
 
-                  SizedBox(height: isSmallScreen ? 14 : 22),
+            SizedBox(height: isSmallScreen ? 14 : 22),
 
-                  // Rotating gameplay tip — keeps the center alive while loading
-                  _buildTipCard(theme, isSmallScreen),
+            // Rotating gameplay tip — keeps the center alive while loading
+            _buildTipCard(theme, isSmallScreen),
 
-                  SizedBox(height: isSmallScreen ? 12 : 20),
+            // Game features preview (only when there's plenty of room)
+            if (showFeatures) ...[
+              const SizedBox(height: 24),
+              _buildFeaturesPreview(theme),
+            ],
 
-                  // Game features preview
-                  if (!isSmallScreen) _buildFeaturesPreview(theme),
-                  if (!isSmallScreen) SizedBox(height: isSmallScreen ? 16 : 24),
+            // Branded footer (dropped on short screens to keep things on-screen)
+            if (showFooter) ...[
+              SizedBox(height: isSmallScreen ? 12 : 20),
+              _buildBrandedFooter(theme, isSmallScreen),
+            ],
+          ],
+        );
 
-                  // Branded footer
-                  _buildBrandedFooter(theme, isSmallScreen),
-
-                  SizedBox(height: isSmallScreen ? 8 : 16),
-                ],
+        // Fill the screen height and center the content. FittedBox(scaleDown)
+        // is the guarantee: if the content would ever still be taller than the
+        // screen, it scales down to fit — so this view NEVER scrolls and NEVER
+        // overflows, on any device.
+        return SizedBox(
+          height: screenHeight,
+          width: screenWidth,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: screenWidth,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 16),
+                child: content,
               ),
             ),
           ),

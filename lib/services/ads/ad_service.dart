@@ -87,12 +87,11 @@ class AdService {
   /// The single master switch. Everything checks this.
   bool get adsEnabled => _sdkReady && _isMobile && !_isPro;
 
-  /// Whether banner placements should reserve their fixed height up front.
-  /// True for any non-Pro mobile user — deliberately independent of SDK
-  /// readiness, network state, and whether an ad actually filled — so the
-  /// reserved space never collapses. That's what prevents the layout from
-  /// shifting when a banner loads late, fails, or the device is offline.
-  /// Pro users and non-mobile platforms reserve nothing (full-screen content).
+  /// Whether a banner placement should reserve its fixed height up front.
+  /// True for any non-Pro mobile user — deliberately INDEPENDENT of SDK
+  /// readiness and whether an ad has filled — so the space is reserved from the
+  /// very first frame and the page never shifts when the ad pops in later.
+  /// Pro users and non-mobile platforms reserve nothing (zero footprint).
   bool get shouldReserveBannerSpace => _isMobile && !_isPro;
 
   /// A rewarded ad is loaded and ready to show right now.

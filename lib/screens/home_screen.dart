@@ -868,7 +868,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               // grow together so the constraint stays responsive on the
               // smallest screens.
               Container(
-                constraints: const BoxConstraints(maxHeight: 72, minHeight: 56),
+                constraints: const BoxConstraints(maxHeight: 60, minHeight: 48),
                 child: _buildActionButtonsRow(
                   context: context,
                   theme: theme,
@@ -1358,25 +1358,100 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  /// Opt-in rewarded watch from the home action row: grants a free Speed Boost
-  /// power-up (no coins). Gated by the existing capFreePowerUp daily cap; shows
-  /// a gentle message when the cap is hit or no ad is ready.
+  /// Opt-in rewarded watch from the home action row. Tells the user up front
+  /// exactly what they'll get (a free Speed Boost power-up), then confirms the
+  /// grant with a toast. Grants no coins, so the economy stays safe. Gated by
+  /// the existing capFreePowerUp daily cap.
   Future<void> _watchForFreePowerUp(BuildContext context) async {
     final ads = getIt<AdService>();
     final messenger = ScaffoldMessenger.of(context);
     final powerUps = context.read<PowerUpCubit>();
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    final remaining = ads.dailyRemaining(AdService.capFreePowerUp);
+
+    // Cap hit or no ad loaded → explain why, don't just do nothing.
     if (!ads.canShowCapped(AdService.capFreePowerUp)) {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('No free power-up right now — check back later!'),
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          content: Text(
+            remaining == 0
+                ? "You've claimed all your free power-ups today — come back tomorrow!"
+                : 'No ad ready just yet — try again in a few seconds.',
+          ),
         ),
       );
       return;
     }
-    await ads.showRewardedCapped(
+
+    // Tell the user what they're opting into BEFORE the ad plays.
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.4)),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.bolt, color: theme.foodColor),
+            const SizedBox(width: 8),
+            Text(
+              'Free Speed Boost',
+              style: TextStyle(color: theme.primaryColor),
+            ),
+          ],
+        ),
+        content: Text(
+          'Watch a short ad to add a free Speed Boost power-up to your loadout. '
+          'It activates 5 seconds into your next game.\n\n'
+          '$remaining free power-up${remaining == 1 ? '' : 's'} left today.',
+          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.85)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Not now',
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: theme.accentColor),
+            icon: const Icon(Icons.play_arrow, size: 18),
+            label: const Text('Watch ad'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final granted = await ads.showRewardedCapped(
       capKey: AdService.capFreePowerUp,
       onReward: powerUps.grantFreePowerUp,
     );
+
+    // Confirm the reward (fires after the ad is dismissed). If the user closed
+    // the ad early, tell them no reward was given rather than leaving them
+    // guessing.
+    if (granted) {
+      showRewardToast(
+        messenger,
+        'Free Speed Boost added to your loadout!',
+        icon: Icons.bolt,
+      );
+    } else {
+      messenger.showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          content: Text('Ad not finished — watch the full ad to earn your reward.'),
+        ),
+      );
+    }
   }
 
   Widget _buildModernActionButton({
@@ -1396,16 +1471,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         // 48 before). Clamped to keep small-screen sanity; on a 750+ px
         // device this lands at ~64 px tall.
         final buttonHeight = constraints.maxHeight > 0
-            ? (constraints.maxHeight * 0.92).clamp(48.0, 66.0)
-            : 56.0;
+            ? (constraints.maxHeight * 0.92).clamp(40.0, 54.0)
+            : 48.0;
         // Drive icon + text sizing off the height so the visual weight
-        // scales with the button instead of staying frozen at the old
-        // 48-px values. The clamps keep the geometry within sensible
-        // bounds on extreme screen sizes.
-        final iconBgPadding = (buttonHeight * 0.14).clamp(6.0, 9.0);
-        final iconSize = (buttonHeight * 0.32).clamp(16.0, 22.0);
-        final labelSize = (buttonHeight * 0.24).clamp(12.0, 16.0);
-        final iconTextGap = (buttonHeight * 0.18).clamp(8.0, 12.0);
+        // scales with the button instead of staying frozen. The clamps keep
+        // the geometry within sensible bounds on extreme screen sizes.
+        final iconBgPadding = (buttonHeight * 0.13).clamp(5.0, 7.0);
+        final iconSize = (buttonHeight * 0.30).clamp(13.0, 18.0);
+        final labelSize = (buttonHeight * 0.23).clamp(11.0, 14.0);
+        final iconTextGap = (buttonHeight * 0.16).clamp(6.0, 10.0);
 
         return GestureDetector(
           onTap: onTap,
@@ -2086,9 +2160,19 @@ class _LoadoutBottomSheet extends StatelessWidget {
                   capKey: AdService.capFreePowerUp,
                   onWatch: () async {
                     final powerUps = context.read<PowerUpCubit>();
+                    // Capture before the ad — onReward fires after dismissal,
+                    // an async gap where reading context is unsafe.
+                    final messenger = ScaffoldMessenger.of(context);
                     await getIt<AdService>().showRewardedCapped(
                       capKey: AdService.capFreePowerUp,
-                      onReward: powerUps.grantFreePowerUp,
+                      onReward: () {
+                        powerUps.grantFreePowerUp();
+                        showRewardToast(
+                          messenger,
+                          '🎉 Free Speed Boost added to your loadout!',
+                          icon: Icons.flash_on,
+                        );
+                      },
                     );
                   },
                 ),
