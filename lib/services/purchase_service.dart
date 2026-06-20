@@ -203,11 +203,17 @@ class PurchaseService {
   Stream<List<ProductDetails>> get productsStream => _productsController.stream;
   Stream<String> get purchaseStatusStream => _purchaseStatusController.stream;
 
-  /// Set user ID getter. Previously used for BackendService verification.
-  /// Now purchase verification uses ApiService which carries the user identity
-  /// via JWT token, so this is retained only for backward compatibility.
+  /// Getter for the backend user id (a Guid string), wired from main.dart.
+  String? Function()? _userIdGetter;
+
+  /// Set a getter for the backend user id. We tag every purchase with it via
+  /// [PurchaseParam.applicationUserName] — on Android this becomes the Play
+  /// Billing obfuscatedAccountId, which Google echoes back to our RTDN webhook
+  /// as obfuscatedExternalAccountId. That lets the backend map a cleared
+  /// deferred payment (PENDING → paid) back to this user even if the app never
+  /// reopens to re-verify. User identity is still carried via JWT on verify.
   void setUserIdGetter(String? Function() getUserId) {
-    // No-op: ApiService.verifyPurchase uses JWT for user identification
+    _userIdGetter = getUserId;
   }
 
   Future<void> initialize() async {
@@ -308,8 +314,14 @@ class PurchaseService {
         GetIt.I<AdService>().suppressNextAppOpen();
       }
 
+      // Tag the purchase with our backend user id so the Play RTDN webhook can
+      // recover a cleared deferred payment (see setUserIdGetter). On Android
+      // this maps to obfuscatedAccountId; on iOS to appAccountToken. Null when
+      // unauthenticated — the purchase still works, just without webhook-side
+      // recovery (the client re-verifies on the next purchased event).
       final PurchaseParam purchaseParam = PurchaseParam(
         productDetails: productDetails,
+        applicationUserName: _userIdGetter?.call(),
       );
 
       bool success;
