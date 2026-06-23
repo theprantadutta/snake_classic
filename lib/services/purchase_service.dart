@@ -146,6 +146,19 @@ class PurchaseService {
   bool _purchasePending = false;
   String? _queryProductError;
 
+  /// Product IDs whose billing flow was launched but haven't produced ANY
+  /// purchaseStream event yet. On Android, backing out of the Play billing
+  /// sheet usually emits nothing, so we use app-resume (see [notifyAppResumed])
+  /// to detect that silent cancel and clear the stuck "verifying" state.
+  final Set<String> _inFlightProductIds = {};
+  Timer? _resumeCancelWatchdog;
+
+  /// Grace window after the app resumes from the billing sheet — a genuine
+  /// purchase often delivers its `purchased` event a beat after resume, so we
+  /// wait this long for a real terminal event before treating a still-in-flight
+  /// product as a silent cancel.
+  static const Duration _resumeCancelGrace = Duration(seconds: 3);
+
   /// SharedPreferences key for persisted pending verifications.
   static const String _pendingVerificationsKey = 'pending_purchase_verifications';
 
@@ -335,7 +348,12 @@ class PurchaseService {
         );
       }
 
-      if (!success) {
+      if (success) {
+        // Track the launched flow so a silent Android cancel (no purchaseStream
+        // event when the user backs out of the sheet) can be detected on app
+        // resume — see notifyAppResumed.
+        _inFlightProductIds.add(productDetails.id);
+      } else {
         _purchasePending = false;
         _purchasePendingController.add(false);
         _purchaseStatusController.add('Failed to initiate purchase');
@@ -348,6 +366,7 @@ class PurchaseService {
       return success;
     } catch (e) {
       AppLogger.error('Error buying product', e);
+      _inFlightProductIds.remove(productDetails.id);
       _purchasePending = false;
       _purchasePendingController.add(false);
       _purchaseStatusController.add('Purchase failed: ${e.toString()}');
@@ -359,10 +378,42 @@ class PurchaseService {
     }
   }
 
+  /// Called when the app returns to the foreground (wired from main.dart's
+  /// lifecycle observer). Detects a SILENT cancel of the store billing sheet:
+  /// on Android, backing out of the Play purchase sheet usually emits no
+  /// purchaseStream event at all, which would otherwise leave `_purchasePending`
+  /// (and every "Verifying…" UI bound to it) stuck forever. After a short grace
+  /// window — so a real `purchased` event that lands just after resume wins —
+  /// any product still in flight is treated as cancelled: we broadcast a
+  /// product-scoped cancel so cards drop their spinner, and reset the global
+  /// pending flag. A late `purchased`/`error` event arriving afterwards is still
+  /// processed normally by the stream listener, so nothing is lost.
+  void notifyAppResumed() {
+    if (_inFlightProductIds.isEmpty) return;
+    _resumeCancelWatchdog?.cancel();
+    _resumeCancelWatchdog = Timer(_resumeCancelGrace, () {
+      if (_inFlightProductIds.isEmpty) return;
+      final abandoned = _inFlightProductIds.toList();
+      _inFlightProductIds.clear();
+      for (final productId in abandoned) {
+        AppLogger.info(
+          'Billing sheet returned with no event for $productId — treating as cancelled',
+        );
+        _purchaseStatusController.add('purchase_canceled:$productId');
+      }
+      _purchasePending = false;
+      _purchasePendingController.add(false);
+    });
+  }
+
   Future<void> _listenToPurchaseUpdated(
     List<PurchaseDetails> purchaseDetailsList,
   ) async {
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
+      // Any event for this product means the billing flow produced a signal,
+      // so it's no longer a silent-cancel candidate for the resume watchdog.
+      _inFlightProductIds.remove(purchaseDetails.productID);
+
       if (purchaseDetails.status == PurchaseStatus.pending) {
         _purchaseStatusController.add('Purchase pending...');
       } else {
@@ -806,6 +857,7 @@ class PurchaseService {
   }
 
   void dispose() {
+    _resumeCancelWatchdog?.cancel();
     _subscription?.cancel();
     _purchasePendingController.close();
     _productsController.close();

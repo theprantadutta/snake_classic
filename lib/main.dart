@@ -255,6 +255,9 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
     // Re-apply immersive mode when app resumes
     if (state == AppLifecycleState.resumed) {
       _setImmersiveMode();
+      // A silently-cancelled Play billing sheet emits no purchaseStream event,
+      // so clear any stuck "Verifying…" state now that we're back in front.
+      PurchaseService().notifyAppResumed();
       // Trigger sync when app comes back to foreground
       DataSyncService().forceSyncNow();
       // Re-authenticate with backend if JWT expired and refresh premium state
