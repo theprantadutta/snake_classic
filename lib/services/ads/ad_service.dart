@@ -18,17 +18,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// code (placement-specific), not here — see the rewarded placements.
 class AdService {
   // ---- tunables ----
-  // Show on every other game-over (was 3). The 3-minute min-gap below is the
-  // real UX guard — it stops rapid-fire ads during a hot streak — so counting
-  // every 2 games lifts impressions without surprising the player.
-  static const int _interstitialEveryNGames = 2;
-  static const Duration _interstitialMinGap = Duration(minutes: 3);
+  // Show on every 4th game-over. The min-gap below is the real UX guard — it
+  // stops rapid-fire ads during a hot streak — and counting 4 games keeps the
+  // interstitial a rare interruption rather than a constant one.
+  static const int _interstitialEveryNGames = 4;
+  static const Duration _interstitialMinGap = Duration(minutes: 5);
 
-  // App Open ads expire 4h after load (Google's documented limit) and we never
-  // show one more than once per [_appOpenMinGap] — a light touch on genuine
-  // returns to the app, not on every foreground.
+  // App Open ads expire 4h after load (Google's documented limit). We only show
+  // one on a genuine return after the user has been AWAY for [_appOpenMinAway],
+  // and never more than once per [_appOpenMinGap] — so a quick app-switch never
+  // pops an ad; only coming back to the game after a real break does.
   static const Duration _appOpenExpiry = Duration(hours: 4);
-  static const Duration _appOpenMinGap = Duration(minutes: 4);
+  static const Duration _appOpenMinGap = Duration(minutes: 30);
+  static const Duration _appOpenMinAway = Duration(minutes: 30);
 
   // SharedPreferences keys (device-only, never synced).
   static const _kGamesSinceInterstitial = 'ads_games_since_interstitial';
@@ -54,6 +56,9 @@ class AdService {
   bool _appOpenLoading = false;
   int _appOpenLoadedAtMs = 0;
   int _lastAppOpenShownMs = 0;
+  // When the app last went to background — App Open only shows after the user
+  // has been away at least [_appOpenMinAway].
+  int _backgroundedAtMs = 0;
 
   // True while ANY of our full-screen ads (interstitial / rewarded / app-open)
   // is on screen, so the three can never stack.
@@ -392,6 +397,7 @@ class AdService {
   void markBackgrounded() {
     if (_fullScreenAdShowing) return;
     _wasInBackground = true;
+    _backgroundedAtMs = DateTime.now().millisecondsSinceEpoch;
   }
 
   bool get _appOpenAvailable {
@@ -430,10 +436,10 @@ class AdService {
   /// passes. Called from the app lifecycle observer on `resumed`.
   ///
   /// Guards (AdMob-compliant): only after a real background→foreground trip
-  /// (never on cold start over the splash), never when suppressed (purchase /
-  /// consent return), never while another full-screen ad is showing, never over
-  /// active gameplay, only with a loaded + unexpired ad, and at most once per
-  /// [_appOpenMinGap].
+  /// (never on cold start over the splash), only once the user has been away at
+  /// least [_appOpenMinAway], never when suppressed (purchase / consent return),
+  /// never while another full-screen ad is showing, never over active gameplay,
+  /// only with a loaded + unexpired ad, and at most once per [_appOpenMinGap].
   Future<void> maybeShowAppOpenOnResume() async {
     // Consume the one-shot flags up front, regardless of outcome.
     final wasBackground = _wasInBackground;
@@ -444,11 +450,14 @@ class AdService {
     if (!adsEnabled) return;
     if (!wasBackground || suppressed) return;
     if (_fullScreenAdShowing || _gameInProgress) return;
+    // Only on a genuine return after a real break — a quick app-switch never
+    // pops an ad. Keep the loaded ad for the next real return.
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _backgroundedAtMs < _appOpenMinAway.inMilliseconds) return;
     if (!_appOpenAvailable) {
       _loadAppOpen();
       return;
     }
-    final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastAppOpenShownMs < _appOpenMinGap.inMilliseconds) return;
 
     final ad = _appOpenAd!;
@@ -471,96 +480,44 @@ class AdService {
     await ad.show();
   }
 
-  // ==================== Daily-capped rewarded helpers ====================
+  // ==================== Opt-in rewarded placements ====================
   //
-  // Per-placement, per-day caps stored device-only (SharedPreferences). These
-  // bound how much free currency/XP ad-grinding can produce — it must never be
-  // cheaper to grind ads than to buy IAP, so keep the caps modest.
-  //
-  // FULL REWARDED-AD POLICY (the placements NOT listed here are bounded by
-  // gameplay itself, which is the engagement we want, so they stay uncapped
-  // per-day):
-  //   • revive / time-bonus  → once per RUN (latches in GameCubit)
-  //   • game-over coins 2×   → once per game-over screen (_doubledCoins latch)
-  //   • daily-bonus 2×       → intrinsically once/day (bonus claims once)
-  //   • daily-challenges 2×  → intrinsically once/day (claim-all)
-  // Everything below grants value WITHOUT playing, so it gets a hard daily
-  // cap — the store must never be a coin faucet.
+  // Rewarded ads are opt-in (the user chooses to watch for a reward) and pay
+  // well, so they are intentionally UNCAPPED — the more a user wants to watch,
+  // the better for both them and revenue. The only gate is "is an ad loaded".
+  // (The daily caps that used to live here were removed; some placements remain
+  // naturally bounded by gameplay — revive/time-bonus once per run, game-over
+  // 2× once per screen, daily-bonus/challenge claims once per day.)
 
-  /// Cap keys + their per-day limits (used by the rewarded placements).
+  /// Placement identifiers, passed through to [showRewardedCapped] so callers
+  /// keep their existing call shape. They no longer impose a cap.
   static const String capFreeCoins = 'free_coins';
   static const String capFreePowerUp = 'free_powerup';
   static const String capBattlePassXp = 'bp_xp';
   static const String capTournamentEntry = 'tournament_entry';
-  static const Map<String, int> dailyCaps = {
-    // 3 × 25 = 75 coins/day from the store — pocket change next to playing
-    // (was 5; tightened so watching ads in the store is a top-up, not an
-    // income source).
-    capFreeCoins: 3,
-    capFreePowerUp: 3,
-    capBattlePassXp: 3,
-    capTournamentEntry: 2,
-  };
 
   /// Coins granted per "watch for coins" ad.
   static const int freeCoinsPerAd = 25;
 
-  String _todayKey() {
-    final n = DateTime.now();
-    return '${n.year}-${n.month}-${n.day}';
-  }
+  /// True when a rewarded ad can be shown now (loaded). No daily cap.
+  bool canShowCapped(String capKey) => isRewardedReady;
 
-  int _dailyUsed(String capKey) {
-    final prefs = _prefs;
-    // Unknown prefs → treat as maxed so we never over-grant before init.
-    if (prefs == null) return 1 << 30;
-    final usedToday = prefs.getString('ads_cap_${capKey}_date') == _todayKey();
-    return usedToday ? (prefs.getInt('ads_cap_${capKey}_count') ?? 0) : 0;
-  }
-
-  /// How many of [capKey] ads the user can still watch today.
-  int dailyRemaining(String capKey) {
-    final max = dailyCaps[capKey] ?? 0;
-    return (max - _dailyUsed(capKey)).clamp(0, max);
-  }
-
-  /// True when a rewarded ad for [capKey] can be shown now (loaded + under cap).
-  bool canShowCapped(String capKey) =>
-      isRewardedReady && dailyRemaining(capKey) > 0;
-
-  Future<void> _recordDaily(String capKey) async {
-    final prefs = _prefs;
-    if (prefs == null) return;
-    final used = _dailyUsed(capKey);
-    await prefs.setString('ads_cap_${capKey}_date', _todayKey());
-    await prefs.setInt('ads_cap_${capKey}_count', used + 1);
-  }
-
-  /// Show a rewarded ad for a daily-capped placement. [onReward] fires (on ad
-  /// dismiss, via [showRewarded]) only if earned; the cap is then recorded.
+  /// Show a rewarded ad for an opt-in placement. [onReward] fires (on ad
+  /// dismiss, via [showRewarded]) only if the user earned it.
   Future<bool> showRewardedCapped({
     required String capKey,
     required VoidCallback onReward,
-  }) async {
-    if (!canShowCapped(capKey)) return false;
-    return showRewarded(onReward: () {
-      onReward();
-      _recordDaily(capKey);
-    });
-  }
+  }) =>
+      showRewarded(onReward: onReward);
 
   /// Convenience wrapper for the free-coins placement.
   Future<bool> showRewardedForCoins({
     required void Function(int coins) onCoins,
   }) =>
-      showRewardedCapped(
-        capKey: capFreeCoins,
-        onReward: () => onCoins(freeCoinsPerAd),
-      );
+      showRewarded(onReward: () => onCoins(freeCoinsPerAd));
 
-  // Back-compat getters used by RewardedCoinsButton.
-  int get freeCoinAdsRemainingToday => dailyRemaining(capFreeCoins);
-  bool get canShowFreeCoinAd => canShowCapped(capFreeCoins);
+  // Back-compat getter used by RewardedCoinsButton.
+  bool get canShowFreeCoinAd => isRewardedReady;
 
   void dispose() {
     _interstitial?.dispose();

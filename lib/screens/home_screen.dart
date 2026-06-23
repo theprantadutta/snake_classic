@@ -1339,7 +1339,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ),
         // Rewarded entry point — grants a free Speed Boost (no coins, so the
-        // coin economy / IAP stay safe). Capped at 3/day via capFreePowerUp.
+        // coin economy / IAP stay safe). Opt-in and uncapped.
         if (adsOn) ...[
           SizedBox(width: gapWidth),
           Expanded(
@@ -1360,26 +1360,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   /// Opt-in rewarded watch from the home action row. Tells the user up front
   /// exactly what they'll get (a free Speed Boost power-up), then confirms the
-  /// grant with a toast. Grants no coins, so the economy stays safe. Gated by
-  /// the existing capFreePowerUp daily cap.
+  /// grant with a toast. Grants no coins, so the economy stays safe. Opt-in and
+  /// uncapped — only gated on a loaded ad.
   Future<void> _watchForFreePowerUp(BuildContext context) async {
     final ads = getIt<AdService>();
     final messenger = ScaffoldMessenger.of(context);
     final powerUps = context.read<PowerUpCubit>();
     final theme = context.read<ThemeCubit>().state.currentTheme;
-    final remaining = ads.dailyRemaining(AdService.capFreePowerUp);
 
-    // Cap hit or no ad loaded → explain why, don't just do nothing.
+    // No ad loaded → explain why, don't just do nothing.
     if (!ads.canShowCapped(AdService.capFreePowerUp)) {
       messenger.showSnackBar(
-        SnackBar(
+        const SnackBar(
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          content: Text(
-            remaining == 0
-                ? "You've claimed all your free power-ups today — come back tomorrow!"
-                : 'No ad ready just yet — try again in a few seconds.',
-          ),
+          margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          content: Text('No ad ready just yet — try again in a few seconds.'),
         ),
       );
       return;
@@ -1406,8 +1401,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         content: Text(
           'Watch a short ad to add a free Speed Boost power-up to your loadout. '
-          'It activates 5 seconds into your next game.\n\n'
-          '$remaining free power-up${remaining == 1 ? '' : 's'} left today.',
+          'It activates 5 seconds into your next game.',
           style: TextStyle(color: theme.accentColor.withValues(alpha: 0.85)),
         ),
         actions: [

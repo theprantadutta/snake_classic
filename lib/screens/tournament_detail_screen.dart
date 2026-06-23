@@ -1404,9 +1404,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
             ),
             // Free Bronze entry via rewarded ad (free users only, bronze tier
-            // only — never devalue the paid Silver/Gold entries). Daily-capped:
-            // entries grant tournament access without playing, so they're on
-            // the same hard-cap system as the other store-style placements.
+            // only — never devalue the paid Silver/Gold entries). Opt-in and
+            // uncapped — gated only on a loaded rewarded ad.
             if (tier == 'bronze' &&
                 getIt.isRegistered<AdService>() &&
                 getIt<AdService>().adsEnabled &&

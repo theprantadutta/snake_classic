@@ -7,8 +7,9 @@ import 'package:snake_classic/utils/constants.dart';
 
 /// Generic "watch an ad for X" card used by the rewarded placements (free
 /// power-up, bonus XP, …). Self-hides for Pro / when ads are disabled, disables
-/// itself when no ad is loaded or the daily cap is hit, and re-checks readiness
-/// live (1s ticker) so it enables the moment the rewarded ad finishes loading.
+/// itself when no ad is loaded, and re-checks readiness live (2s ticker) so it
+/// enables the moment the rewarded ad finishes loading. Rewarded ads are opt-in
+/// and uncapped — the only gate is whether an ad is loaded.
 ///
 /// [onWatch] performs the actual ad show + grant (typically
 /// `AdService.showRewardedCapped(...)`); the button just handles gating + UI.
@@ -17,13 +18,12 @@ class RewardedActionButton extends StatefulWidget {
   final IconData icon;
   final String label;
 
-  /// AdService cap key (e.g. [AdService.capFreePowerUp]). When set, the button
-  /// gates on the daily cap and shows "N left today". Null → gate only on a
-  /// loaded ad.
+  /// AdService placement id (e.g. [AdService.capFreePowerUp]). Identifies the
+  /// placement; gating is purely on a loaded ad either way.
   final String? capKey;
 
   /// Does the ad + grant. Should call AdService.showRewarded(Capped). Awaited so
-  /// the button can refresh its "N left" after.
+  /// the button can refresh its state after.
   final Future<void> Function() onWatch;
 
   const RewardedActionButton({
@@ -78,13 +78,8 @@ class _RewardedActionButtonState extends State<RewardedActionButton> {
 
     final theme = widget.theme;
     final enabled = _enabled(ads);
-    final remaining =
-        widget.capKey != null ? ads.dailyRemaining(widget.capKey!) : null;
-    final subtitle = enabled
-        ? (remaining != null ? '$remaining left today' : 'Opt-in — watch to earn')
-        : (remaining == 0
-            ? 'Come back tomorrow for more'
-            : 'No ad available right now');
+    final subtitle =
+        enabled ? 'Opt-in — watch to earn' : 'No ad available right now';
 
     return Opacity(
       opacity: enabled ? 1 : 0.5,

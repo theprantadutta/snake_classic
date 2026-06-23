@@ -38,8 +38,8 @@ Future<void> watchAdForCoins(
 }
 
 /// "Watch an ad for coins" card. Self-hides for Pro users / when ads are
-/// unavailable, and disables itself once the daily cap is hit or no ad is
-/// loaded. Credits coins offline-first via [CoinsCubit.earnCoins].
+/// unavailable, and disables itself only when no ad is loaded (opt-in, uncapped).
+/// Credits coins offline-first via [CoinsCubit.earnCoins].
 class RewardedCoinsButton extends StatefulWidget {
   final GameTheme theme;
   const RewardedCoinsButton({super.key, required this.theme});
@@ -62,7 +62,7 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
     final ads = _ads;
     if (ads == null) return;
     await watchAdForCoins(context, ads, placement: 'store_free_coins');
-    if (mounted) setState(() {}); // refresh "N left today"
+    if (mounted) setState(() {}); // refresh enabled state
   }
 
   @override
@@ -71,7 +71,6 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
 
     final theme = widget.theme;
-    final remaining = ads.freeCoinAdsRemainingToday;
     final enabled = ads.canShowFreeCoinAd;
 
     return Opacity(
@@ -110,10 +109,8 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
                     const SizedBox(height: 2),
                     Text(
                       enabled
-                          ? '$remaining left today'
-                          : (remaining == 0
-                              ? 'Come back tomorrow for more'
-                              : 'No ad available right now'),
+                          ? 'Opt-in — watch as often as you like'
+                          : 'No ad available right now',
                       style: TextStyle(
                         color: theme.accentColor.withValues(alpha: 0.65),
                         fontSize: 12,
@@ -134,9 +131,9 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
 
 /// Compact "watch ad → +25" pill for tight spots (the store's balance
 /// header). Same gating + grant + toast as [RewardedCoinsButton], just a
-/// pill. Self-hides for Pro / when ads are unavailable; dims when no ad is
-/// loaded or the daily cap is hit. A 1s ticker re-checks readiness so the
-/// pill lights up the moment the rewarded ad finishes loading.
+/// pill. Self-hides for Pro / when ads are unavailable; dims only when no ad is
+/// loaded (opt-in, uncapped). A 1s ticker re-checks readiness so the pill lights
+/// up the moment the rewarded ad finishes loading.
 class RewardedCoinsPill extends StatefulWidget {
   const RewardedCoinsPill({super.key});
 
