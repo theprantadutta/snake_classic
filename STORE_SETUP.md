@@ -194,7 +194,7 @@ Go to **Google Play Console > Your App > Monetize > Products > Subscriptions**.
 - **Billing period:** Monthly
 - **Grace period:** 7 days
 - **Account hold:** 30 days
-- **Free trial:** 3 days (optional)
+- **Free trial:** None
 - **Resubscribe:** Allow
 
 #### Pro Yearly
@@ -205,7 +205,7 @@ Go to **Google Play Console > Your App > Monetize > Products > Subscriptions**.
 - **Billing period:** Yearly
 - **Grace period:** 14 days
 - **Account hold:** 30 days
-- **Free trial:** 7 days (optional)
+- **Free trial:** None
 - **Resubscribe:** Allow
 
 ### 2. Create In-App Products (One-Time)

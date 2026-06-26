@@ -97,7 +97,6 @@ abstract class AnalyticsClient {
   });
 
   Future<void> trackPremiumSubscriptionStarted();
-  Future<void> trackPremiumTrialStarted();
   Future<void> trackCosmeticEquipped({
     required String cosmeticType,
     required String cosmeticId,

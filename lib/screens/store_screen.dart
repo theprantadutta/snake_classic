@@ -347,7 +347,7 @@ class _StoreScreenState extends State<StoreScreen>
       );
     }
 
-    // Trial user — banner with TRIAL badge + feature grid + plan picker
+    // Promo user — banner with FREE PRO badge + feature grid + plan picker
     // below so they can convert without leaving the tab. Banner's
     // "Keep Pro" CTA defaults to monthly; this section lets them choose.
     if (premiumState.hasPremium && premiumState.isOnPromo) {
@@ -361,7 +361,7 @@ class _StoreScreenState extends State<StoreScreen>
             _buildProFeatureGrid(theme),
             const SizedBox(height: 24),
             Text(
-              'Subscribe before the trial ends',
+              'Subscribe before your free Pro ends',
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 18,
@@ -428,7 +428,6 @@ class _StoreScreenState extends State<StoreScreen>
                   cadence: '/month',
                   savingsLabel: null,
                   highlight: false,
-                  trialLabel: '3-day free trial',
                 ),
               ),
               const SizedBox(width: 12),
@@ -441,7 +440,6 @@ class _StoreScreenState extends State<StoreScreen>
                   cadence: '/year',
                   savingsLabel: 'Save 17%',
                   highlight: true,
-                  trialLabel: '7-day free trial',
                 ),
               ),
             ],
@@ -532,7 +530,6 @@ class _StoreScreenState extends State<StoreScreen>
     required String cadence,
     required String? savingsLabel,
     required bool highlight,
-    String? trialLabel,
   }) {
     final price =
         PurchaseService().getStorePriceOrDefault(productId, fallbackPrice);
@@ -618,27 +615,6 @@ class _StoreScreenState extends State<StoreScreen>
                 fontSize: 12,
               ),
             ),
-            if (trialLabel != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.card_giftcard,
-                      size: 12, color: Colors.green.shade400),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      trialLabel,
-                      style: TextStyle(
-                        color: Colors.green.shade400,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -701,8 +677,8 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildProActiveBanner(GameTheme theme, PremiumState premiumState) {
-    // Promo trials (welcome bonus / app-wide giveaway) get amber-orange
-    // theming + a TRIAL chip + a convert CTA so the user knows this is a
+    // Promo grants (welcome bonus / app-wide giveaway) get amber-orange
+    // theming + a FREE PRO chip + a convert CTA so the user knows this is a
     // limited window and there's an action they can take. Paid Pro keeps
     // the original green/teal "verified" treatment.
     final isPromo = premiumState.isOnPromo;
@@ -725,9 +701,9 @@ class _StoreScreenState extends State<StoreScreen>
         ? const LinearGradient(colors: [Colors.amber, Colors.orange])
         : const LinearGradient(colors: [Colors.green, Colors.teal]);
     final icon = isPromo ? Icons.card_giftcard : Icons.verified;
-    final title = isPromo ? "You're on a free Pro trial!" : "You're Pro!";
+    final title = isPromo ? "You're on free Pro!" : "You're Pro!";
     final expiryLabel = isPromo
-        ? (expiry != null ? _formatPromoCountdown(expiry) : 'Free 3-day trial')
+        ? (expiry != null ? _formatPromoCountdown(expiry) : 'Free Pro')
         : (expiry != null ? 'Renews ${_formatDate(expiry)}' : null);
 
     return Container(
@@ -769,7 +745,7 @@ class _StoreScreenState extends State<StoreScreen>
                         ),
                         if (isPromo) ...[
                           const SizedBox(width: 8),
-                          _buildTrialBadge(),
+                          _buildPromoBadge(),
                         ],
                       ],
                     ),
@@ -797,7 +773,7 @@ class _StoreScreenState extends State<StoreScreen>
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // Tap inside the Pro tab — toggle the "free trial active"
+                  // Tap inside the Pro tab — toggle the promo-active
                   // state away so the plan cards become visible (the Pro
                   // tab's active-banner branch hides the plan cards).
                   // Simplest: scroll the user's attention by showing a
@@ -832,7 +808,7 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  Widget _buildTrialBadge() {
+  Widget _buildPromoBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -848,7 +824,7 @@ class _StoreScreenState extends State<StoreScreen>
         ],
       ),
       child: const Text(
-        'TRIAL',
+        'PROMO',
         style: TextStyle(
           color: Colors.white,
           fontSize: 10,
@@ -877,7 +853,7 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildProFeatureGrid(GameTheme theme) {
     // Honest list — every line maps to an entitlement that's actually
-    // granted. 'No ads' is now real: AdService is Pro-gated so Pro/trial
+    // granted. 'No ads' is now real: AdService is Pro-gated so Pro
     // users never see banners, interstitials, or rewarded offers. (The old
     // 'Exclusive Game Modes' / vague 'Power-up perks' promises were removed
     // as unimplemented.)

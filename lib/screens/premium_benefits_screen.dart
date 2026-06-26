@@ -16,18 +16,8 @@ class PremiumBenefitsScreen extends StatefulWidget {
 
 class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     with SingleTickerProviderStateMixin {
-  // Trial lengths mirror the Play Console base-plan offers (monthly: 3-day,
-  // yearly: 7-day). Used to render trial copy in the pricing cards, trial
-  // info card, and Subscribe-button subtitle. Update here AND in Play
-  // Console together if the offer ever changes.
-  static const int _monthlyTrialDays = 3;
-  static const int _yearlyTrialDays = 7;
-
   late TabController _tabController;
   bool _isYearly = true;
-
-  int get _selectedTrialDays =>
-      _isYearly ? _yearlyTrialDays : _monthlyTrialDays;
 
   @override
   void initState() {
@@ -88,8 +78,6 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                               _buildPricingCards(theme),
                               const SizedBox(height: 20),
                               _buildFeaturesList(theme),
-                              const SizedBox(height: 20),
-                              _buildTrialInfo(theme),
                               const SizedBox(height: 8),
                             ],
                           ],
@@ -101,7 +89,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               ),
               bottomNavigationBar: premiumState.hasPremium
                   ? null
-                  : _buildBottomButton(theme, premiumState),
+                  : _buildBottomButton(theme),
             );
           },
         );
@@ -302,7 +290,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           price: PurchaseService().getStorePriceOrDefault(
               ProductIds.snakeClassicProMonthly, 4.99),
           period: '/month',
-          badge: '$_monthlyTrialDays-day free trial',
+          badge: null,
           accentColor: Colors.blue,
           isPopular: false,
           theme: theme,
@@ -316,9 +304,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               : PurchaseService().getStorePriceOrDefault(
                   ProductIds.snakeClassicProMonthly, 4.99),
           period: _isYearly ? '/year' : '/month',
-          badge: _isYearly
-              ? 'Save 33% • $_yearlyTrialDays-day free trial'
-              : '$_monthlyTrialDays-day free trial',
+          badge: _isYearly ? 'Save 33%' : null,
           accentColor: Colors.green,
           isPopular: _isYearly,
           theme: theme,
@@ -331,7 +317,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     required String title,
     required String price,
     required String period,
-    required String badge,
+    String? badge,
     required Color accentColor,
     required bool isPopular,
     required GameTheme theme,
@@ -395,14 +381,16 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      badge,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 14,
+                    if (badge != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        badge,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -564,68 +552,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     );
   }
 
-  Widget _buildTrialInfo(GameTheme theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.green.withValues(alpha: 0.15),
-            Colors.teal.withValues(alpha: 0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.green.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.green, Colors.teal]),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.card_giftcard,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$_selectedTrialDays-Day Free Trial',
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  'Try all premium features risk-free',
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomButton(GameTheme theme, PremiumState premiumState) {
+  Widget _buildBottomButton(GameTheme theme) {
     final productId = _isYearly
         ? ProductIds.snakeClassicProYearly
         : ProductIds.snakeClassicProMonthly;
@@ -634,8 +561,6 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       _isYearly ? 39.99 : 4.99,
     );
     final period = _isYearly ? '/year' : '/month';
-    final canStartInAppTrial =
-        !premiumState.hasUsedTrial && !premiumState.isOnTrial;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -682,58 +607,16 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                     ],
                   ),
                   alignment: Alignment.center,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Subscribe — $price$period',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '$_selectedTrialDays-day free trial via Google Play',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'Subscribe — $price$period',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ),
-            // Secondary CTA — in-app trial, no payment. Hidden once trial used.
-            if (canStartInAppTrial) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: _startInAppTrial,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: theme.accentColor.withValues(alpha: 0.5),
-                      width: 1.5,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    'Try 3 days free',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: theme.accentColor,
-                    ),
-                  ),
-                ),
-              ),
-            ],
             const SizedBox(height: 12),
             Text(
               'No commitment • Cancel anytime • Secure payment',
@@ -769,18 +652,6 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     }
   }
 
-  /// In-app 3-day trial — no payment, no Google Play sheet. One-shot per user
-  /// (PremiumCubit.startFreeTrial enforces single-use via state.hasUsedTrial).
-  void _startInAppTrial() {
-    final messenger = ScaffoldMessenger.of(context);
-    context.read<PremiumCubit>().startFreeTrial();
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text('3-day free trial started — enjoy premium!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
 }
 
 class _FeatureItem {
