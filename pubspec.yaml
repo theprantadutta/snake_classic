@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 3.3.4+31
+version: 3.4.0+32
 
 environment:
   # Bumped from ^3.9.0 — google_mobile_ads 8.0.0 requires Dart >= 3.10.0.
