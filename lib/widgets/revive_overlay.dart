@@ -5,7 +5,9 @@ import 'package:snake_classic/utils/constants.dart';
 
 /// Post-crash "Continue?" offer shown over the frozen board. Counts down, then
 /// auto-declines. The player can revive by watching a rewarded ad or paying
-/// coins. Mirrors the conditional-overlay-in-Stack pattern of pause_overlay /
+/// coins. Pro users never see ads, so instead of the (always-disabled) watch-ad
+/// button they get a single "Get Life · Free for Pro" button that revives for
+/// free. Mirrors the conditional-overlay-in-Stack pattern of pause_overlay /
 /// crash_feedback_overlay (rendered while [GameCubitState.offeringRevive]).
 class ReviveOverlay extends StatefulWidget {
   final GameTheme theme;
@@ -18,6 +20,11 @@ class ReviveOverlay extends StatefulWidget {
   final VoidCallback onWatchAd;
   final VoidCallback onUseCoins;
   final VoidCallback onDecline;
+  /// Pro perk: revive instantly, free, no ad and no coins. When [isPro] is true
+  /// the overlay swaps the watch-ad / coins buttons for a single free-life
+  /// button wired to this callback.
+  final bool isPro;
+  final VoidCallback? onProRevive;
   final int seconds;
 
   const ReviveOverlay({
@@ -29,6 +36,8 @@ class ReviveOverlay extends StatefulWidget {
     required this.onWatchAd,
     required this.onUseCoins,
     required this.onDecline,
+    this.isPro = false,
+    this.onProRevive,
     this.seconds = 6,
   });
 
@@ -147,7 +156,9 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Revive and keep your score · ${_remaining}s',
+                widget.isPro
+                    ? 'Revive and keep your score · Free with Pro'
+                    : 'Revive and keep your score · ${_remaining}s',
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.7),
                   fontSize: 13,
@@ -155,25 +166,37 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
               ),
               const SizedBox(height: 20),
 
-              // Watch ad — primary when available.
-              _ActionButton(
-                theme: theme,
-                icon: Icons.play_circle_fill,
-                label: 'Watch ad to revive',
-                enabled: widget.isAdReady(),
-                filled: true,
-                onTap: _onWatchAd,
-              ),
-              const SizedBox(height: 10),
-              // Coin alternative (works offline).
-              _ActionButton(
-                theme: theme,
-                icon: Icons.monetization_on,
-                label: 'Use ${widget.coinCost} coins',
-                enabled: widget.canAffordCoins,
-                filled: false,
-                onTap: () => _resolve(widget.onUseCoins),
-              ),
+              if (widget.isPro)
+                // Pro perk: one free life, no ad, no coins.
+                _ActionButton(
+                  theme: theme,
+                  icon: Icons.workspace_premium,
+                  label: 'Get Life · Free for Pro',
+                  enabled: true,
+                  filled: true,
+                  onTap: () => _resolve(widget.onProRevive ?? widget.onDecline),
+                )
+              else ...[
+                // Watch ad — primary when available.
+                _ActionButton(
+                  theme: theme,
+                  icon: Icons.play_circle_fill,
+                  label: 'Watch ad to revive',
+                  enabled: widget.isAdReady(),
+                  filled: true,
+                  onTap: _onWatchAd,
+                ),
+                const SizedBox(height: 10),
+                // Coin alternative (works offline).
+                _ActionButton(
+                  theme: theme,
+                  icon: Icons.monetization_on,
+                  label: 'Use ${widget.coinCost} coins',
+                  enabled: widget.canAffordCoins,
+                  filled: false,
+                  onTap: () => _resolve(widget.onUseCoins),
+                ),
+              ],
               const SizedBox(height: 6),
               TextButton(
                 onPressed: () => _resolve(widget.onDecline),

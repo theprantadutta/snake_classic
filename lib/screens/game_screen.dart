@@ -628,7 +628,7 @@ class _GameScreenState extends State<GameScreen>
 
         if (progress < 0.15) {
           // Slide in phase
-          final phase = progress / 0.15;
+          final phase = (progress / 0.15).clamp(0.0, 1.0);
           final curved = Curves.easeOut.transform(phase);
           opacity = curved;
           slideY = 20 * (1 - curved);
@@ -639,8 +639,10 @@ class _GameScreenState extends State<GameScreen>
           slideY = 0;
           scale = 1.0;
         } else {
-          // Fade out phase
-          final phase = (progress - 0.85) / 0.15;
+          // Fade out phase. Clamp the normalized phase: at progress == 1.0,
+          // (1.0 - 0.85) / 0.15 floating-point-rounds to 1.0000000000000002,
+          // which trips Curves.transform's `t <= 1.0` assert (red error flash).
+          final phase = ((progress - 0.85) / 0.15).clamp(0.0, 1.0);
           final curved = Curves.easeIn.transform(phase);
           opacity = 1.0 - curved;
           slideY = -15 * curved;
@@ -1230,6 +1232,10 @@ class _GameScreenState extends State<GameScreen>
                                 theme: theme,
                                 seconds: 10,
                                 coinCost: GameCubit.reviveCoinCost,
+                                isPro:
+                                    context.read<GameCubit>().isProSession,
+                                onProRevive: () =>
+                                    context.read<GameCubit>().revive(),
                                 isAdReady: () =>
                                     getIt<AdService>().isRewardedReady,
                                 canAffordCoins: context

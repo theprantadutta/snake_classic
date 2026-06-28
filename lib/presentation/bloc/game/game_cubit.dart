@@ -134,6 +134,10 @@ class GameCubit extends Cubit<GameCubitState> {
   // the player was just experiencing.
   bool _isPro = false;
 
+  /// Whether this run's player is Pro (snapshotted at game start). Used by the
+  /// revive overlay to offer a free Pro life instead of the watch-ad button.
+  bool get isProSession => _isPro;
+
   // Coins credited during this game session — snapshotted from balance.earned
   // diffs around each earnCoins call so it stays accurate after the daily
   // cap or Pro multiplier adjusts the actual grant. Reset on game start;
@@ -1063,7 +1067,11 @@ class GameCubit extends Cubit<GameCubitState> {
       // — the overlay re-checks readiness live and enables the button then.
       if (adsPossible) getIt<AdService>().preloadRewarded();
       final canAfford = _coinsCubit.state.balance.total >= reviveCoinCost;
-      if (adsPossible || canAfford) {
+      // Pro users never see ads, so the watch-ad path is off for them — but
+      // their revive is FREE: always offer it (the overlay shows a free-life
+      // button instead of watch-ad/coins). Without this, a Pro user short on
+      // coins would get no revive offer at all.
+      if (adsPossible || canAfford || _isPro) {
         emit(
           state.copyWith(
             status: GamePlayStatus.crashed,
