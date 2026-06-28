@@ -33,7 +33,7 @@ Create a classic Snake game in Flutter with premium game-quality UI/UX, running 
 - No tests required for this project
 
 ### Store Layout
-The unified store screen (`lib/screens/store_screen.dart`) has exactly 6 tabs in this order: **Pro / Coins / Themes / Skins / Trails / Power-Ups**. Modes and Boards are NOT sold as standalone products — both modes and board sizes are uniformly free (every `BoardSize` in `GameConstants.availableBoardSizes` is selectable by anyone; the `isPremium` flag on the model is retained for compatibility but is `false` everywhere). See `STORE_SETUP.md` for the full Play Store catalog (44 products).
+The unified store screen (`lib/screens/store_screen.dart`) has exactly 6 tabs in this order: **Pro / Coins / Themes / Skins / Trails / Power-Ups**. Modes and Boards are NOT sold as standalone products — both modes and board sizes are uniformly free (every `BoardSize` in `GameConstants.availableBoardSizes` is selectable by anyone; the `isPremium` flag on the model is retained for compatibility but is `false` everywhere). See `STORE_SETUP.md` for the full Play Store catalog (37 products). The cosmetic bundles, championship/VIP tournament entries, bronze tournament entry, and the battle-pass IAP were removed from the store (App Store cleanup): the Battle Pass remains a gameplay feature earned via XP, and bronze (daily) tournament entries are still earned via rewarded ad / Pro — they're just no longer sold.
 
 ### Offline-First Sync Architecture (LOAD-BEARING)
 

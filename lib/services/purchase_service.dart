@@ -74,27 +74,16 @@ class ProductIds {
   static const String crystalTrail = '${prefix}trail_crystal';
   static const String dragonTrail = '${prefix}trail_dragon';
 
-  // Cosmetic Bundles
-  static const String starterCosmetics = '${prefix}starter_pack';
-  static const String elementalCosmetics = '${prefix}elemental_pack';
-  static const String cosmicCosmetics = '${prefix}cosmic_collection';
-  static const String ultimateCosmetics = '${prefix}ultimate_collection';
-
   // Subscriptions
   static const String snakeClassicProMonthly = '${prefix}pro_monthly';
   static const String snakeClassicProYearly = '${prefix}pro_yearly';
 
-  // Battle Pass — Coming Soon (not registered on stores yet)
-  static const String battlePass = '${prefix}battle_pass_season';
-
-  // Tournament Entries (Consumable)
-  static const String tournamentBronze = '${prefix}tournament_bronze';
+  // Tournament Entries (Consumable). Bronze (daily) entries are earned via
+  // rewarded ad or Pro and are no longer sold as an IAP.
   static const String tournamentSilver = '${prefix}tournament_silver';
   static const String tournamentGold = '${prefix}tournament_gold';
-  static const String championshipEntry = '${prefix}championship_entry';
-  static const String tournamentVipEntry = '${prefix}tournament_vip_entry';
 
-  /// All active store product IDs (44 products).
+  /// All active store product IDs (37 products).
   /// Battle Pass and power-up IAPs are excluded.
   static List<String> get allProductIds => [
     // Themes (7)
@@ -108,21 +97,17 @@ class ProductIds {
     // Trail effects (11)
     particleTrail, glowTrail, rainbowTrail, fireTrail, electricTrail, starTrail,
     cosmicTrail, neonTrail, shadowTrail, crystalTrail, dragonTrail,
-    // Bundles (4)
-    starterCosmetics, elementalCosmetics, cosmicCosmetics, ultimateCosmetics,
     // Subscriptions (2)
     snakeClassicProMonthly, snakeClassicProYearly,
-    // Tournament entries (5)
-    tournamentBronze, tournamentSilver, tournamentGold,
-    championshipEntry, tournamentVipEntry,
+    // Tournament entries (2)
+    tournamentSilver, tournamentGold,
   ];
 
   static List<String> get consumableIds => [
     // Coins
     coinPackSmall, coinPackMedium, coinPackLarge, coinPackMega,
     // Tournament entries
-    tournamentBronze, tournamentSilver, tournamentGold,
-    championshipEntry, tournamentVipEntry,
+    tournamentSilver, tournamentGold,
   ];
 
   static List<String> get subscriptionIds => [
@@ -205,10 +190,7 @@ class PurchaseService {
     if (id.startsWith('skin_')) return 'skin';
     if (id.startsWith('trail_')) return 'trail';
     if (id.endsWith('_theme') || id == 'premium_themes_bundle') return 'theme';
-    if (id.contains('tournament') || id.contains('championship')) {
-      return 'tournament_entry';
-    }
-    if (id.endsWith('_pack') || id.endsWith('_collection')) return 'bundle';
+    if (id.contains('tournament')) return 'tournament_entry';
     return 'other';
   }
 

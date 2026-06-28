@@ -1431,7 +1431,7 @@ class _StoreScreenState extends State<StoreScreen>
     if (stripped.startsWith('trail_')) {
       return premiumState.isTrailOwned(stripped);
     }
-    // Cosmetic bundles (starter_pack etc.) — owned set uses bare ID.
+    // Any remaining bundle products — owned set uses the bare ID.
     return premiumState.isBundleOwned(stripped);
   }
 

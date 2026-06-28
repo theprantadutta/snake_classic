@@ -455,74 +455,9 @@ class CosmeticBundle {
   double get savingsPercentage =>
       originalPrice > 0 ? (savings / originalPrice) * 100 : 0;
 
-  static const List<CosmeticBundle> availableBundles = [
-    CosmeticBundle(
-      id: 'starter_pack',
-      name: 'Starter Pack',
-      description: 'Perfect for new premium players',
-      skins: [SnakeSkinType.golden, SnakeSkinType.fire],
-      trails: [TrailEffectType.particle, TrailEffectType.glow],
-      bundlePrice: 3.99,
-      icon: '🎁',
-    ),
-    CosmeticBundle(
-      id: 'elemental_pack',
-      name: 'Elemental Pack',
-      description: 'Master the elements with style',
-      skins: [SnakeSkinType.fire, SnakeSkinType.ice, SnakeSkinType.electric],
-      trails: [TrailEffectType.fire, TrailEffectType.electric],
-      bundlePrice: 7.99,
-      icon: '🌊',
-    ),
-    CosmeticBundle(
-      id: 'cosmic_collection',
-      name: 'Cosmic Collection',
-      description: 'Explore the universe in style',
-      skins: [
-        SnakeSkinType.galaxy,
-        SnakeSkinType.cosmic,
-        SnakeSkinType.crystal,
-      ],
-      trails: [
-        TrailEffectType.cosmic,
-        TrailEffectType.star,
-        TrailEffectType.crystal,
-      ],
-      bundlePrice: 14.99,
-      icon: '🌌',
-    ),
-    CosmeticBundle(
-      id: 'ultimate_collection',
-      name: 'Ultimate Collection',
-      description: 'Every premium cosmetic item',
-      skins: [
-        SnakeSkinType.golden,
-        SnakeSkinType.rainbow,
-        SnakeSkinType.galaxy,
-        SnakeSkinType.dragon,
-        SnakeSkinType.electric,
-        SnakeSkinType.fire,
-        SnakeSkinType.ice,
-        SnakeSkinType.shadow,
-        SnakeSkinType.neon,
-        SnakeSkinType.crystal,
-        SnakeSkinType.cosmic,
-      ],
-      trails: [
-        TrailEffectType.particle,
-        TrailEffectType.glow,
-        TrailEffectType.rainbow,
-        TrailEffectType.fire,
-        TrailEffectType.electric,
-        TrailEffectType.star,
-        TrailEffectType.cosmic,
-        TrailEffectType.neon,
-        TrailEffectType.shadow,
-        TrailEffectType.crystal,
-        TrailEffectType.dragon,
-      ],
-      bundlePrice: 29.99,
-      icon: '👑',
-    ),
-  ];
+  /// Cosmetic bundles were removed as IAP products (App Store rejection
+  /// cleanup) — they had no purchase UI. Individual skins and trails are
+  /// still sold separately. The generic [CosmeticBundle] type is retained
+  /// because power-up bundles and reconciliation logic still use it.
+  static const List<CosmeticBundle> availableBundles = [];
 }

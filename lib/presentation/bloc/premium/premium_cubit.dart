@@ -295,37 +295,16 @@ class PremiumCubit extends Cubit<PremiumState> {
       return;
     }
 
-    // Cosmetic bundles
-    const bundleIds = {
-      'starter_pack', 'elemental_pack', 'cosmic_collection',
-      'ultimate_collection',
-    };
-    if (bundleIds.contains(internalId)) {
-      await unlockBundle(internalId);
-      return;
-    }
-
-    // Tournament entries — handle all 5 types including championship & VIP
-    if (internalId.contains('tournament') ||
-        internalId.contains('championship')) {
+    // Tournament entries. Only Silver and Gold are sold as IAPs; bronze
+    // entries are earned via rewarded ad / Pro, not purchased.
+    if (internalId.contains('tournament')) {
       if (internalId.contains('bronze')) {
         await addTournamentEntry('bronze');
       } else if (internalId.contains('silver')) {
         await addTournamentEntry('silver');
       } else if (internalId.contains('gold')) {
         await addTournamentEntry('gold');
-      } else if (internalId.contains('championship')) {
-        await addTournamentEntry('gold'); // Championship maps to gold tier
-      } else if (internalId.contains('vip')) {
-        await addTournamentEntry('gold'); // VIP maps to gold tier
       }
-      return;
-    }
-
-    // Battle pass
-    if (internalId.contains('battle_pass')) {
-      emit(state.copyWith(hasBattlePass: true));
-      AppLogger.info('Battle pass activated via purchase');
       return;
     }
 

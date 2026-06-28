@@ -1326,10 +1326,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     final premiumCubit = context.read<PremiumCubit>();
     final entryCount = premiumCubit.state.getTournamentEntryCount(tier);
 
-    String productId;
+    // Bronze (daily) entries are no longer sold — they're earned via the
+    // rewarded-ad path below or granted to Pro subscribers. Only Silver and
+    // Gold have a paid IAP, so productId stays null for bronze.
+    String? productId;
     switch (tier) {
       case 'bronze':
-        productId = ProductIds.tournamentBronze;
+        productId = null;
         break;
       case 'silver':
         productId = ProductIds.tournamentSilver;
@@ -1433,24 +1436,26 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                 label: Text('Free entry (ad)',
                     style: TextStyle(color: theme.accentColor)),
               ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            // Paid entry IAP — Silver and Gold only (bronze has no productId).
+            if (productId != null)
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  final purchaseService = PurchaseService();
+                  final product = purchaseService.getProduct(productId!);
+                  if (product != null) {
+                    purchaseService.buyProduct(product);
+                  }
+                },
+                child: Text('Buy $tierName Entry - ${PurchaseService().getStorePrice(productId) ?? _getDefaultPrice(tier)}'),
               ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                final purchaseService = PurchaseService();
-                final product = purchaseService.getProduct(productId);
-                if (product != null) {
-                  purchaseService.buyProduct(product);
-                }
-              },
-              child: Text('Buy $tierName Entry - ${PurchaseService().getStorePrice(productId) ?? _getDefaultPrice(tier)}'),
-            ),
           ],
         );
       },

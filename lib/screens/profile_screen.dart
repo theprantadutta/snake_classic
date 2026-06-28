@@ -1429,7 +1429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'Delete Account?',
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
-        content: const Text(
+        content: Text(
           'This permanently deletes your account and everything attached '
           'to it:\n\n'
           '• High scores and statistics\n'
@@ -1438,8 +1438,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           '• Battle pass and challenge progress\n'
           '• Leaderboard entries and friends\n\n'
           'This cannot be undone. Active subscriptions must be cancelled '
-          'separately in your App Store or Google Play settings.',
-          style: TextStyle(color: Colors.white, fontSize: 15),
+          'separately in your '
+          '${defaultTargetPlatform == TargetPlatform.iOS ? 'App Store' : 'Google Play'} settings.',
+          style: const TextStyle(color: Colors.white, fontSize: 15),
         ),
         actions: [
           TextButton(

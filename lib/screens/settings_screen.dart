@@ -1767,7 +1767,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Enjoying the game? Leave a review on Google Play',
+          defaultTargetPlatform == TargetPlatform.iOS
+              ? 'Enjoying the game? Leave a review on the App Store'
+              : 'Enjoying the game? Leave a review on Google Play',
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.6),
             fontSize: 12,
@@ -2614,7 +2616,7 @@ extension _SettingsPremium on _SettingsScreenState {
       return 'bundle';
     } else if (bare.contains('battle_pass')) {
       return 'battlepass';
-    } else if (bare.contains('tournament') || bare.contains('championship') || bare.contains('vip')) {
+    } else if (bare.contains('tournament')) {
       return 'tournament';
     }
     return 'unknown';
