@@ -857,53 +857,72 @@ class _StoreScreenState extends State<StoreScreen>
     // users never see banners, interstitials, or rewarded offers. (The old
     // 'Exclusive Game Modes' / vague 'Power-up perks' promises were removed
     // as unimplemented.)
+    // (icon, label, highlight). The always-free revive is highlighted in amber
+    // so it stands out as the headline Pro perk.
     final features = const [
-      (Icons.block, 'No ads — play completely ad-free'),
-      (Icons.color_lens, 'All 6 premium themes'),
-      (Icons.pets, 'All 11 premium snake skins'),
-      (Icons.gradient, 'All 11 premium trail effects'),
-      (Icons.grid_4x4, 'Premium board sizes (35×35, 40×40, 50×50)'),
-      (Icons.monetization_on, '2× coin earnings'),
-      (Icons.flash_on, '5× premium power-ups every cycle'),
-      (Icons.emoji_events, 'Bronze + Silver + Gold tournament entries each cycle'),
-      (Icons.workspace_premium, 'Battle Pass Premium track every season'),
+      (Icons.favorite, 'Always-free extra life — revive every game, no ad, no coins', true),
+      (Icons.block, 'No ads — play completely ad-free', false),
+      (Icons.color_lens, 'All 6 premium themes', false),
+      (Icons.pets, 'All 11 premium snake skins', false),
+      (Icons.gradient, 'All 11 premium trail effects', false),
+      (Icons.grid_4x4, 'Premium board sizes (35×35, 40×40, 50×50)', false),
+      (Icons.monetization_on, '2× coin earnings', false),
+      (Icons.flash_on, '5× premium power-ups every cycle', false),
+      (Icons.emoji_events, 'Bronze + Silver + Gold tournament entries each cycle', false),
+      (Icons.workspace_premium, 'Battle Pass Premium track every season', false),
     ];
     return Column(
       children: features
           .map(
-            (f) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.18),
+            (f) {
+              final hl = f.$3;
+              final accent = hl ? Colors.amber : theme.accentColor;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: hl ? 0.14 : 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: accent.withValues(alpha: hl ? 0.6 : 0.18),
+                    width: hl ? 1.5 : 1,
+                  ),
+                  boxShadow: hl
+                      ? [
+                          BoxShadow(
+                            color: Colors.amber.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(f.$1, color: theme.accentColor, size: 18),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      f.$2,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                child: Row(
+                  children: [
+                    Icon(f.$1, color: accent, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        f.$2,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 13,
+                          fontWeight: hl ? FontWeight.w700 : FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                  Icon(
-                    Icons.check_circle,
-                    color: Colors.green.withValues(alpha: 0.8),
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
+                    Icon(
+                      Icons.check_circle,
+                      color: hl
+                          ? Colors.amber
+                          : Colors.green.withValues(alpha: 0.8),
+                      size: 18,
+                    ),
+                  ],
+                ),
+              );
+            },
           )
           .toList(),
     );

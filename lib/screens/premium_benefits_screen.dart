@@ -429,6 +429,12 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     // were unimplemented — those are now real recurring bundles.
     final features = [
       _FeatureItem(
+        Icons.favorite,
+        'Always-Free Extra Life',
+        'Crash and keep going — Pro members revive instantly for free, no ad and no coins, once every game',
+        highlighted: true,
+      ),
+      _FeatureItem(
         Icons.block,
         'Remove All Ads',
         'No banners, no interstitials — play completely ad-free, forever',
@@ -501,46 +507,91 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildFeatureCard(_FeatureItem feature, GameTheme theme) {
+    final hl = feature.highlighted;
+    final accent = hl ? Colors.amber : theme.accentColor;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
+        color: hl
+            ? Colors.amber.withValues(alpha: 0.12)
+            : theme.accentColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-          width: 1,
+          color: hl
+              ? Colors.amber.withValues(alpha: 0.6)
+              : theme.accentColor.withValues(alpha: 0.2),
+          width: hl ? 2 : 1,
         ),
+        boxShadow: hl
+            ? [
+                BoxShadow(
+                  color: Colors.amber.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.1),
+              color: accent.withValues(alpha: hl ? 0.18 : 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(feature.icon, color: theme.accentColor, size: 20),
+            child: Icon(feature.icon, color: accent, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  feature.title,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        feature.title,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: hl ? 17 : 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (hl) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Colors.amber, Colors.orange],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'PRO PERK',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   feature.description,
                   style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
+                    color: hl
+                        ? Colors.amber.withValues(alpha: 0.85)
+                        : theme.accentColor.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -658,6 +709,10 @@ class _FeatureItem {
   final IconData icon;
   final String title;
   final String description;
+  /// Emphasize this row (amber border/glow + "PRO PERK" badge). Used to make
+  /// the always-free revive stand out from the rest of the list.
+  final bool highlighted;
 
-  _FeatureItem(this.icon, this.title, this.description);
+  _FeatureItem(this.icon, this.title, this.description,
+      {this.highlighted = false});
 }
