@@ -6,6 +6,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/subscription_legal_footer.dart';
 
 class PremiumBenefitsScreen extends StatefulWidget {
   const PremiumBenefitsScreen({super.key});
@@ -677,6 +678,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 12),
+            SubscriptionLegalFooter(theme: theme),
           ],
         ),
       ),

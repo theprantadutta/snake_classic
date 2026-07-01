@@ -31,7 +31,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
 
   Future<void> _loadPolicy() async {
     try {
-      final content = await rootBundle.loadString('PRIVACY.md');
+      final content = await rootBundle.loadString('assets/legal/PRIVACY.md');
       if (mounted) setState(() => _content = content);
     } catch (_) {
       if (mounted) {

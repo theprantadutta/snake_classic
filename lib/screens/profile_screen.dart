@@ -1439,7 +1439,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           '• Leaderboard entries and friends\n\n'
           'This cannot be undone. Active subscriptions must be cancelled '
           'separately in your '
-          '${defaultTargetPlatform == TargetPlatform.iOS ? 'App Store' : 'Google Play'} settings.',
+          "${defaultTargetPlatform == TargetPlatform.iOS ? 'App Store' : "device's app store"} settings.",
           style: const TextStyle(color: Colors.white, fontSize: 15),
         ),
         actions: [

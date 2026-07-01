@@ -1769,7 +1769,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Text(
           defaultTargetPlatform == TargetPlatform.iOS
               ? 'Enjoying the game? Leave a review on the App Store'
-              : 'Enjoying the game? Leave a review on Google Play',
+              : 'Enjoying the game? Leave us a review!',
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.6),
             fontSize: 12,

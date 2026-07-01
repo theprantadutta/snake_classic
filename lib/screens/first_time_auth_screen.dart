@@ -48,7 +48,7 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
 
   Future<void> _loadPrivacyPolicy() async {
     try {
-      final content = await rootBundle.loadString('PRIVACY.md');
+      final content = await rootBundle.loadString('assets/legal/PRIVACY.md');
       setState(() {
         _privacyPolicyContent = content;
       });

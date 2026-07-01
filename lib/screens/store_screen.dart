@@ -12,6 +12,7 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/widgets/ads/rewarded_coins_button.dart';
+import 'package:snake_classic/widgets/subscription_legal_footer.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -455,6 +456,8 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 12),
           _buildProFeatureGrid(theme),
+          const SizedBox(height: 20),
+          SubscriptionLegalFooter(theme: theme),
         ],
       ),
     );
@@ -1013,7 +1016,7 @@ class _StoreScreenState extends State<StoreScreen>
           // Rewarded ad — self-hides for Pro / when no ad is available.
           RewardedCoinsButton(theme: theme),
           _buildEarnMethodCard(
-            'Play Games',
+            'Play a Game',
             '5 coins per game',
             Icons.games,
             theme,
