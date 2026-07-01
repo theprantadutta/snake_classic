@@ -397,6 +397,8 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+            SubscriptionLegalFooter(theme: theme),
           ],
         ),
       );

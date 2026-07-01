@@ -140,7 +140,7 @@ class ReviewService {
     if (!await _inAppReview.isAvailable()) {
       AppLogger.info(
         '$_kEligibilityTag skip ($trigger): platform reports review API '
-        'unavailable (debug build, sideloaded APK, or device without Play)',
+        'unavailable (debug build or unsupported device)',
       );
       return false;
     }
