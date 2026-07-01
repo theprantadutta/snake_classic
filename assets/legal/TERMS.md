@@ -161,7 +161,8 @@ acceptance of the updated Terms.
 ## 15. Contact
 
 For questions about these Terms, contact us at:
-- **Email:** support@snakeclassic.game
+- **Developer:** Pranta Dutta
+- **Email:** prantadutta1997@gmail.com
 
 ---
 
