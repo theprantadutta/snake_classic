@@ -26,11 +26,12 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
   bool _showPrivacyPolicy = true;
   bool _privacyAccepted = false;
   String _privacyPolicyContent = '';
+  String _termsContent = '';
 
   @override
   void initState() {
     super.initState();
-    _loadPrivacyPolicy();
+    _loadLegalDocuments();
     _checkPreviousPrivacyAcceptance();
   }
 
@@ -43,6 +44,25 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
         _showPrivacyPolicy = false;
         _privacyAccepted = true;
       });
+    }
+  }
+
+  Future<void> _loadLegalDocuments() async {
+    await _loadPrivacyPolicy();
+    await _loadTerms();
+  }
+
+  Future<void> _loadTerms() async {
+    try {
+      final content = await rootBundle.loadString('assets/legal/TERMS.md');
+      if (mounted) setState(() => _termsContent = content);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _termsContent =
+            'Our Terms of Use are available at '
+            'https://legal.pranta.dev/terms?projectName=snake_classic. '
+            'By continuing you agree to those terms.');
+      }
     }
   }
 
@@ -423,6 +443,21 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     );
   }
 
+  /// Scrollable body for one legal document tab.
+  Widget _buildLegalScroll(String content, bool isSmallScreen) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        content,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.9),
+          fontSize: isSmallScreen ? 12 : 14,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+
   Widget _buildPrivacyPolicyView(
     GameTheme theme,
     double screenHeight,
@@ -473,7 +508,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Privacy Policy',
+                            'Privacy & Terms',
                             style: TextStyle(
                               color: theme.accentColor,
                               fontSize: isSmallScreen ? 20 : 24,
@@ -481,7 +516,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                             ),
                           ),
                           Text(
-                            'Please review our privacy policy before continuing',
+                            'Please review our Privacy Policy and Terms of Use before continuing',
                             style: TextStyle(
                               color: theme.accentColor.withValues(alpha: 0.7),
                               fontSize: isSmallScreen ? 12 : 14,
@@ -497,35 +532,55 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
           const SizedBox(height: 16),
 
-          // Privacy Policy Content
+          // Privacy Policy + Terms of Use — swipeable tabs.
           Expanded(
             child:
-                Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            theme.backgroundColor.withValues(alpha: 0.4),
-                            theme.backgroundColor.withValues(alpha: 0.2),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: theme.accentColor.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: SingleChildScrollView(
-                        child: Text(
-                          _privacyPolicyContent,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: isSmallScreen ? 12 : 14,
-                            height: 1.5,
+                DefaultTabController(
+                      length: 2,
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              theme.backgroundColor.withValues(alpha: 0.4),
+                              theme.backgroundColor.withValues(alpha: 0.2),
+                            ],
                           ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: theme.accentColor.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            TabBar(
+                              labelColor: theme.accentColor,
+                              unselectedLabelColor:
+                                  Colors.white.withValues(alpha: 0.6),
+                              indicatorColor: theme.accentColor,
+                              labelStyle: TextStyle(
+                                fontSize: isSmallScreen ? 13 : 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              tabs: const [
+                                Tab(text: 'Privacy Policy'),
+                                Tab(text: 'Terms of Use'),
+                              ],
+                            ),
+                            Expanded(
+                              child: TabBarView(
+                                children: [
+                                  _buildLegalScroll(
+                                      _privacyPolicyContent, isSmallScreen),
+                                  _buildLegalScroll(
+                                      _termsContent, isSmallScreen),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )

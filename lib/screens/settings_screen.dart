@@ -13,6 +13,7 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/screens/legal_document_screen.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
@@ -506,6 +507,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     _buildCreditsButton(theme),
                                     _buildRateUsButton(theme),
                                     _buildPrivacyChoicesButton(theme),
+                                  ], theme),
+
+                                  const SizedBox(height: 32),
+
+                                  // 6b. Legal Section
+                                  _buildSection('LEGAL', [
+                                    _buildPrivacyPolicyButton(theme),
+                                    const SizedBox(height: 12),
+                                    _buildTermsButton(theme),
                                   ], theme),
 
                                   const SizedBox(height: 32),
@@ -1744,6 +1754,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _openLegalDoc(String title, String assetPath, IconData icon,
+      String fallbackUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LegalDocumentScreen(
+          title: title,
+          assetPath: assetPath,
+          icon: icon,
+          fallbackUrl: fallbackUrl,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyPolicyButton(GameTheme theme) {
+    return GradientButton(
+      onPressed: () => _openLegalDoc(
+        'Privacy Policy',
+        'assets/legal/PRIVACY.md',
+        Icons.privacy_tip_outlined,
+        'https://legal.pranta.dev/privacy?projectName=snake_classic',
+      ),
+      text: 'PRIVACY POLICY',
+      primaryColor: theme.accentColor,
+      secondaryColor: theme.foodColor,
+      icon: Icons.privacy_tip_outlined,
+      width: double.infinity,
+      outlined: true,
+    );
+  }
+
+  Widget _buildTermsButton(GameTheme theme) {
+    return GradientButton(
+      onPressed: () => _openLegalDoc(
+        'Terms of Use',
+        'assets/legal/TERMS.md',
+        Icons.description_outlined,
+        'https://legal.pranta.dev/terms?projectName=snake_classic',
+      ),
+      text: 'TERMS OF USE',
+      primaryColor: theme.accentColor,
+      secondaryColor: theme.foodColor,
+      icon: Icons.description_outlined,
+      width: double.infinity,
+      outlined: true,
     );
   }
 
