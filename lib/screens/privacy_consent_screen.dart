@@ -4,14 +4,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
-import 'package:snake_classic/utils/privacy_policy.dart';
+import 'package:snake_classic/utils/legal_acceptance.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
-/// Re-consent gate shown to EXISTING (already-onboarded) users when the
-/// privacy policy version has changed since they last accepted it. New users
-/// accept the policy inside [FirstTimeAuthScreen]; this screen handles the
-/// "policy updated, please review again" case for returning users and then
-/// sends them home. Back navigation is blocked so acceptance can't be skipped.
+/// Re-consent gate shown to EXISTING (already-onboarded) users when the shared
+/// legal version has changed since they last accepted it — i.e. whenever the
+/// Privacy Policy OR the Terms of Use is updated. New users accept both inside
+/// [FirstTimeAuthScreen]; this screen handles the "documents updated, please
+/// review again" case for returning users and then sends them home. Back
+/// navigation is blocked so acceptance can't be skipped.
 class PrivacyConsentScreen extends StatefulWidget {
   const PrivacyConsentScreen({super.key});
 
@@ -20,31 +21,51 @@ class PrivacyConsentScreen extends StatefulWidget {
 }
 
 class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
-  String _content = '';
+  String _privacy = '';
+  String _terms = '';
   bool _accepted = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPolicy();
+    _loadDocuments();
   }
 
-  Future<void> _loadPolicy() async {
+  Future<void> _loadDocuments() async {
+    _privacy = await _load('assets/legal/PRIVACY.md',
+        'We have updated our Privacy Policy. By continuing you accept the '
+        'updated policy.');
+    _terms = await _load('assets/legal/TERMS.md',
+        'We have updated our Terms of Use. By continuing you accept the '
+        'updated terms.');
+    if (mounted) setState(() {});
+  }
+
+  Future<String> _load(String assetPath, String fallback) async {
     try {
-      final content = await rootBundle.loadString('assets/legal/PRIVACY.md');
-      if (mounted) setState(() => _content = content);
+      return await rootBundle.loadString(assetPath);
     } catch (_) {
-      if (mounted) {
-        setState(() => _content =
-            'We have updated our Privacy Policy. Please review it in Settings. '
-            'By continuing you accept the updated policy.');
-      }
+      return fallback;
     }
   }
 
   Future<void> _accept() async {
-    await PrivacyPolicy.recordAccepted();
+    await LegalAcceptance.recordAccepted();
     if (mounted) context.go(AppRoutes.home);
+  }
+
+  Widget _buildDocScroll(String content) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        content,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.9),
+          fontSize: 13,
+          height: 1.4,
+        ),
+      ),
+    );
   }
 
   @override
@@ -99,7 +120,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Privacy Policy Updated',
+                                'Privacy & Terms Updated',
                                 style: TextStyle(
                                   color: theme.accentColor,
                                   fontSize: isSmall ? 20 : 24,
@@ -107,7 +128,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                                 ),
                               ),
                               Text(
-                                'Version ${PrivacyPolicy.currentPrivacyPolicyVersion} · please review and accept to continue',
+                                'Version ${LegalAcceptance.currentLegalVersion} · please review and accept to continue',
                                 style: TextStyle(
                                   color: theme.accentColor.withValues(alpha: 0.7),
                                   fontSize: isSmall ? 12 : 14,
@@ -122,42 +143,60 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Policy content
+                  // Privacy Policy + Terms of Use — swipeable tabs.
                   Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            theme.backgroundColor.withValues(alpha: 0.4),
-                            theme.backgroundColor.withValues(alpha: 0.2),
-                          ],
+                    child: DefaultTabController(
+                      length: 2,
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              theme.backgroundColor.withValues(alpha: 0.4),
+                              theme.backgroundColor.withValues(alpha: 0.2),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: theme.accentColor.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: theme.accentColor.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: _content.isEmpty
-                          ? Center(
-                              child: CircularProgressIndicator(
-                                color: theme.accentColor,
-                              ),
-                            )
-                          : SingleChildScrollView(
-                              child: Text(
-                                _content,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 13,
-                                  height: 1.4,
+                        child: (_privacy.isEmpty && _terms.isEmpty)
+                            ? Center(
+                                child: CircularProgressIndicator(
+                                  color: theme.accentColor,
                                 ),
+                              )
+                            : Column(
+                                children: [
+                                  TabBar(
+                                    labelColor: theme.accentColor,
+                                    unselectedLabelColor:
+                                        Colors.white.withValues(alpha: 0.6),
+                                    indicatorColor: theme.accentColor,
+                                    labelStyle: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    tabs: const [
+                                      Tab(text: 'Privacy Policy'),
+                                      Tab(text: 'Terms of Use'),
+                                    ],
+                                  ),
+                                  Expanded(
+                                    child: TabBarView(
+                                      children: [
+                                        _buildDocScroll(_privacy),
+                                        _buildDocScroll(_terms),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
+                      ),
                     ),
                   ),
 
@@ -198,7 +237,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'I have read and agree to the updated Privacy Policy',
+                            'I have read and agree to the updated Privacy Policy and Terms of Use',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.9),
                               fontSize: isSmall ? 14 : 16,

@@ -1,8 +1,9 @@
 # Privacy Policy for Snake Classic
 
+**Legal Version: 3.0** *(shared acceptance version for our Privacy Policy and Terms of Use — when either document changes, this is bumped and you'll be asked to review and accept again)*  
 **Policy Version: 2.0**  
-**Effective Date: May 29, 2026**  
-**Last Updated: May 29, 2026**
+**Effective Date: July 1, 2026**  
+**Last Updated: July 1, 2026**
 
 > **What changed in version 2.0 (May 29, 2026):** Snake Classic now shows
 > advertising in the free version of the app (banner, interstitial, and opt-in

@@ -6,7 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:snake_classic/utils/privacy_policy.dart';
+import 'package:snake_classic/utils/legal_acceptance.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -38,7 +38,7 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
   Future<void> _checkPreviousPrivacyAcceptance() async {
     // Accepted only when it's the CURRENT policy version — a version bump in
     // PRIVACY.md re-shows the policy here.
-    final alreadyAccepted = await PrivacyPolicy.isCurrentVersionAccepted();
+    final alreadyAccepted = await LegalAcceptance.isCurrentVersionAccepted();
     if (alreadyAccepted && mounted) {
       setState(() {
         _showPrivacyPolicy = false;
@@ -617,7 +617,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                           });
                           // Save privacy acceptance (by version) when checked.
                           if (_privacyAccepted) {
-                            await PrivacyPolicy.recordAccepted();
+                            await LegalAcceptance.recordAccepted();
                           }
                         },
                         activeColor: theme.accentColor,
@@ -631,7 +631,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'I have read and agree to the Privacy Policy and Terms of Service',
+                        'I have read and agree to the Privacy Policy and Terms of Use',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontSize: isSmallScreen ? 14 : 16,

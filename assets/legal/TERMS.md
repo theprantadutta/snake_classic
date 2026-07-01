@@ -1,6 +1,7 @@
 # Terms of Use (End User License Agreement) for Snake Classic
 
-**Version: 1.0**  
+**Legal Version: 3.0** *(shared acceptance version for our Privacy Policy and Terms of Use — when either document changes, this is bumped and you'll be asked to review and accept again)*  
+**Document Version: 1.0**  
 **Effective Date: July 1, 2026**  
 **Last Updated: July 1, 2026**
 
