@@ -7,8 +7,8 @@
 
 These Terms of Use ("Terms") form a legal agreement between you ("you" or "user")
 and Snake Classic ("we," "our," or "us") governing your use of the Snake Classic
-mobile application (the "App"), available on the Apple App Store and Google Play
-Store.
+mobile application (the "App"), available on the Apple App Store and other mobile
+app stores.
 
 **By downloading, installing, or using the App, you agree to be bound by these
 Terms and by our [Privacy Policy](https://legal.pranta.dev/privacy?projectName=snake_classic).
@@ -54,12 +54,13 @@ or yearly basis.
 - **Auto-renewal:** Your subscription automatically renews for the same duration
   and price unless it is cancelled at least 24 hours before the end of the current
   period.
-- **Billing:** Payment is charged to your Store account (Apple App Store or Google
-  Play) at confirmation of purchase, and again at each renewal.
+- **Billing:** Payment is charged to your app store account at confirmation of
+  purchase, and again at each renewal.
 - **Managing and cancelling:** You can manage or cancel your subscription at any
-  time in your Store account settings:
+  time in your app store account settings:
   - **iOS:** Settings → your name → Subscriptions.
-  - **Android:** Google Play → Menu → Subscriptions.
+  - **Other platforms:** open your device's app store and go to its Subscriptions
+    section.
   Cancellation stops future renewals; it does not retroactively refund the current
   period. Deleting the App does not cancel your subscription.
 - **Free trials / promotions:** If a free trial or promotional period is offered,
@@ -145,11 +146,11 @@ If you obtained the App from the Apple App Store, the following applies:
 - Apple and its subsidiaries are third-party beneficiaries of these Terms and may
   enforce them against you.
 
-## 13. Google Play-Specific Terms
+## 13. Other App Stores
 
-If you obtained the App from the Google Play Store, your use is also subject to the
-Google Play Terms of Service. Google is not a party to these Terms and is not
-responsible for the App.
+If you obtained the App from an app store other than the Apple App Store, your use
+may also be subject to that store's own terms of service. That store is not a party
+to these Terms and is not responsible for the App.
 
 ## 14. Changes to These Terms
 

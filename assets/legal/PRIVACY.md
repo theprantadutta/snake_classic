@@ -14,7 +14,7 @@
 
 ## Introduction
 
-Snake Classic ("we," "our," or "us") respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application Snake Classic (the "App"), available on the Apple App Store and Google Play Store.
+Snake Classic ("we," "our," or "us") respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application Snake Classic (the "App"), available on the Apple App Store and other mobile app stores.
 
 By downloading and using our App, you agree to the collection and use of information in accordance with this Privacy Policy.
 
@@ -70,7 +70,7 @@ By downloading and using our App, you agree to the collection and use of informa
 
 **In-App Purchases:**
 - Purchase history and transaction records
-- Premium subscription status and billing information (processed by the Apple App Store or Google Play, depending on your device)
+- Premium subscription status and billing information (processed by the app store on your device)
 - Coins balance and spending history
 - Premium content unlocks (themes, skins, trails, power-ups)
 
@@ -152,7 +152,7 @@ By downloading and using our App, you agree to the collection and use of informa
 - Track achievement progress and milestones
 
 ### 5. Premium Services & Monetization
-- Process in-app purchases through the Apple App Store (StoreKit) or Google Play Billing
+- Process in-app purchases through your device's app store billing system
 - Manage premium subscriptions and battle pass access
 - Provide exclusive content to premium users
 - Track purchase history for support and refunds
@@ -190,16 +190,16 @@ By downloading and using our App, you agree to the collection and use of informa
 - Transaction receipts used to verify and restore purchases
 - **Privacy Policy:** https://www.apple.com/legal/privacy/
 
-**Google Play Services:**
-- In-app purchase and subscription processing on Android devices
-- **Privacy Policy:** https://policies.google.com/privacy
+**App Store Billing (your device's app store):**
+- In-app purchase and subscription processing on your device
+- On Android, this is handled by Google; see https://policies.google.com/privacy
 
 **Google Sign-In:**
 - Authentication and profile information
 - Used only with your explicit consent
 - **Privacy Policy:** https://policies.google.com/privacy
 
-*Achievements, leaderboards, and rankings are handled by our own backend service and Firebase — not by Apple Game Center or Google Play Games Services.*
+*Achievements, leaderboards, and rankings are handled by our own backend service and Firebase — not by any third-party platform gaming service such as Apple Game Center.*
 
 ### 2. Public Information
 - Usernames and public profile information are visible to other users
@@ -347,10 +347,10 @@ Privacy-related disputes are subject to the dispute resolution procedures outlin
 
 **By using Snake Classic, you acknowledge that you have read, understood, and agree to this Privacy Policy.**
 
-*This Privacy Policy is designed to comply with Apple App Store and Google Play Store policies and international privacy regulations including GDPR, CCPA, and other applicable laws.*
+*This Privacy Policy is designed to comply with major app store policies and international privacy regulations including GDPR, CCPA, and other applicable laws.*
 
 **Document Version:** 2.0  
-**Compliance:** Apple App Store, Google Play Store, GDPR, CCPA, COPPA  
+**Compliance:** GDPR, CCPA, COPPA  
 **Language:** English (additional translations available in-app)
 
 ### Version History
