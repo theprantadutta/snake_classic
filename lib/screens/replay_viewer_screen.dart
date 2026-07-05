@@ -314,43 +314,55 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
 
   Widget _buildGameBoard(GameTheme theme) {
     final frame = _currentFrame;
-    if (frame == null) {
-      return Container(
-        width: 300,
-        height: 300,
-        decoration: BoxDecoration(
-          color: theme.backgroundColor.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: theme.primaryColor.withValues(alpha: 0.3)),
-        ),
-        child: const Center(
-          child: Text('No frame data', style: TextStyle(color: Colors.white)),
-        ),
-      );
-    }
 
     const boardWidth = 20;
     const boardHeight = 20;
-    const cellSize = 12.0;
 
-    return Container(
-      width: boardWidth * cellSize + 2,
-      height: boardHeight * cellSize + 2,
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.primaryColor.withValues(alpha: 0.5),
-          width: 2,
-        ),
-      ),
-      child: CustomPaint(
-        painter: ReplayBoardPainter(
-          frame: frame,
-          theme: theme,
-          cellSize: cellSize,
-        ),
-      ),
+    // Size the (square) board to the available area rather than a fixed
+    // 240px box, so it scales up on tablets — mirroring the main game
+    // board's min(w,h) approach. cellSize is derived from the chosen side.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final side = math.min(constraints.maxWidth, constraints.maxHeight);
+        final cellSize = (side - 2) / boardWidth;
+
+        if (frame == null) {
+          return Container(
+            width: side,
+            height: side,
+            decoration: BoxDecoration(
+              color: theme.backgroundColor.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+              border:
+                  Border.all(color: theme.primaryColor.withValues(alpha: 0.3)),
+            ),
+            child: const Center(
+              child:
+                  Text('No frame data', style: TextStyle(color: Colors.white)),
+            ),
+          );
+        }
+
+        return Container(
+          width: boardWidth * cellSize + 2,
+          height: boardHeight * cellSize + 2,
+          decoration: BoxDecoration(
+            color: theme.backgroundColor.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: theme.primaryColor.withValues(alpha: 0.5),
+              width: 2,
+            ),
+          ),
+          child: CustomPaint(
+            painter: ReplayBoardPainter(
+              frame: frame,
+              theme: theme,
+              cellSize: cellSize,
+            ),
+          ),
+        );
+      },
     );
   }
 

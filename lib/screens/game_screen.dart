@@ -18,6 +18,7 @@ import 'package:snake_classic/widgets/time_bonus_overlay.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/flame_game_board.dart';
 import 'package:snake_classic/widgets/game_hud.dart';
 import 'package:snake_classic/widgets/pause_overlay.dart';
@@ -762,8 +763,9 @@ class _GameScreenState extends State<GameScreen>
     bool isSmallScreen, {
     required bool dPadEnabled,
   }) {
-    final dpadSize = isSmallScreen ? 115.0 : 135.0;
-    final verticalPadding = isSmallScreen ? 8.0 : 12.0;
+    final scale = context.uiScale;
+    final dpadSize = (isSmallScreen ? 115.0 : 135.0) * scale;
+    final verticalPadding = (isSmallScreen ? 8.0 : 12.0) * scale;
     // Total reserved height = dpad footprint + the row's own padding so the
     // box is the SAME pixel height in every branch and every status.
     final barHeight = dpadSize + verticalPadding * 2;
@@ -773,7 +775,7 @@ class _GameScreenState extends State<GameScreen>
       height: barHeight,
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: 12,
+          horizontal: 12 * scale,
           vertical: verticalPadding,
         ),
         child: dPadEnabled
@@ -1110,6 +1112,7 @@ class _GameScreenState extends State<GameScreen>
                                             onHome: () =>
                                                 _showExitConfirmation(context),
                                             isSmallScreen: isSmallScreen,
+                                            uiScale: context.uiScale,
                                             tournamentId:
                                                 gameCubitState.tournamentId,
                                             tournamentMode:
@@ -1134,8 +1137,10 @@ class _GameScreenState extends State<GameScreen>
                                           Expanded(
                                             child: Container(
                                               padding: EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: isSmallScreen ? 4 : 8,
+                                                horizontal:
+                                                    context.scaled(12),
+                                                vertical: context.scaled(
+                                                    isSmallScreen ? 4 : 8),
                                               ),
                                               child: LayoutBuilder(
                                                 builder: (context, boardConstraints) {
@@ -1348,7 +1353,10 @@ class _GameScreenState extends State<GameScreen>
             : theme.accentColor;
 
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: context.scaled(12),
+            vertical: context.scaled(8),
+          ),
           decoration: BoxDecoration(
             color: theme.backgroundColor.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(20),
@@ -1379,7 +1387,7 @@ class _GameScreenState extends State<GameScreen>
                   child: Icon(
                     Icons.arrow_upward_rounded,
                     color: activeColor.withValues(alpha: isActive ? 1.0 : 0.6),
-                    size: isSmallScreen ? 16 : 18,
+                    size: context.scaled(isSmallScreen ? 16 : 18),
                   ),
                 ),
               ),

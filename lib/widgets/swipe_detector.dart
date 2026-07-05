@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/utils/responsive.dart';
 
 class SwipeDetector extends StatefulWidget {
   final Widget child;
@@ -122,8 +123,10 @@ class _SwipeDetectorState extends State<SwipeDetector>
     final absX = delta.dx.abs();
     final absY = delta.dy.abs();
 
-    // Minimum distance threshold (more generous than per-frame check)
-    const minDistance = 15.0;
+    // Minimum distance threshold (more generous than per-frame check).
+    // Scaled by device class so the swipe feel is consistent on physically
+    // larger tablet screens (1.0x on phones — unchanged).
+    final minDistance = 15.0 * context.uiScale;
 
     // Directional ratio - primary axis must be at least 1.3x the secondary
     // This prevents diagonal swipes from triggering wrong directions

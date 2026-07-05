@@ -13,6 +13,12 @@ class GameHUD extends StatefulWidget {
   final VoidCallback onPause;
   final VoidCallback onHome;
   final bool isSmallScreen;
+  /// Multiplier applied to fixed structural sizes (paddings, icon/button
+  /// sizes, fixed chip/row heights) so the HUD scales up on tablets. `1.0` on
+  /// phones (no change). Font sizes are NOT multiplied here — the root
+  /// `MediaQuery.textScaler` already grows text on tablets, so scaling the
+  /// heights/paddings by this keeps the enlarged text from overflowing.
+  final double uiScale;
   final String? tournamentId;
   final TournamentGameMode? tournamentMode;
   /// Optional GlobalKey attached to the pause button so the tutorial's
@@ -27,6 +33,7 @@ class GameHUD extends StatefulWidget {
     required this.onPause,
     required this.onHome,
     this.isSmallScreen = false,
+    this.uiScale = 1.0,
     this.tournamentId,
     this.tournamentMode,
     this.pauseButtonKey,
@@ -184,12 +191,15 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   String? get tournamentId => widget.tournamentId;
   TournamentGameMode? get tournamentMode => widget.tournamentMode;
 
+  /// Scale a fixed structural dimension for the current device (tablet-aware).
+  double _s(double value) => value * widget.uiScale;
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: isSmallScreen ? 8 : 12,
+        horizontal: _s(16),
+        vertical: _s(isSmallScreen ? 8 : 12),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -250,8 +260,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: isSmallScreen ? 36 : 42,
-        height: isSmallScreen ? 36 : 42,
+        width: _s(isSmallScreen ? 36 : 42),
+        height: _s(isSmallScreen ? 36 : 42),
         decoration: BoxDecoration(
           color: isPrimary
               ? color.withValues(alpha: 0.15)
@@ -271,7 +281,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 ]
               : null,
         ),
-        child: Icon(icon, color: color, size: isSmallScreen ? 18 : 22),
+        child: Icon(icon, color: color, size: _s(isSmallScreen ? 18 : 22)),
       ),
     );
   }
@@ -279,8 +289,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   Widget _buildScoreSection() {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 16 : 24,
-        vertical: isSmallScreen ? 8 : 10,
+        horizontal: _s(isSmallScreen ? 16 : 24),
+        vertical: _s(isSmallScreen ? 8 : 10),
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -365,7 +375,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     // (food / lives / time / level) AND the slightly taller power-up
     // progress-ring indicator — chosen to match so both render
     // identically when present.
-    final rowHeight = isSmallScreen ? 32.0 : 38.0;
+    final rowHeight = _s(isSmallScreen ? 32.0 : 38.0);
     return SizedBox(
       height: rowHeight,
       child: Row(
@@ -413,8 +423,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     final accent = isLow ? Colors.redAccent : Colors.amber;
     final chip = Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 8 : 10,
-        vertical: isSmallScreen ? 6 : 8,
+        horizontal: _s(isSmallScreen ? 8 : 10),
+        vertical: _s(isSmallScreen ? 6 : 8),
       ),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.5),
@@ -429,7 +439,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         children: [
           Icon(
             Icons.timer_outlined,
-            size: isSmallScreen ? 14 : 16,
+            size: _s(isSmallScreen ? 14 : 16),
             color: accent,
           ),
           const SizedBox(width: 4),
@@ -463,8 +473,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   Widget _buildLivesChip() {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 8 : 10,
-        vertical: isSmallScreen ? 6 : 8,
+        horizontal: _s(isSmallScreen ? 8 : 10),
+        vertical: _s(isSmallScreen ? 6 : 8),
       ),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.5),
@@ -482,7 +492,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
             padding: EdgeInsets.only(right: i < gameState.initialLives - 1 ? 2 : 0),
             child: Icon(
               isAlive ? Icons.favorite : Icons.favorite_border,
-              size: isSmallScreen ? 14 : 16,
+              size: _s(isSmallScreen ? 14 : 16),
               color: isAlive
                   ? Colors.redAccent
                   : Colors.redAccent.withValues(alpha: 0.35),
@@ -502,8 +512,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 10 : 12,
-        vertical: isSmallScreen ? 6 : 8,
+        horizontal: _s(isSmallScreen ? 10 : 12),
+        vertical: _s(isSmallScreen ? 6 : 8),
       ),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.5),
@@ -659,7 +669,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     //
     // Heights chosen to match the neighbouring Lives/TimeAttack chips
     // (icon 14/16 + vertical padding 6/8 ≈ 26/32).
-    final chipHeight = isSmallScreen ? 26.0 : 32.0;
+    final chipHeight = _s(isSmallScreen ? 26.0 : 32.0);
 
     return SizedBox(
       height: chipHeight,
@@ -732,8 +742,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
 
     final chip = Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 8 : 10,
-        vertical: isSmallScreen ? 4 : 6,
+        horizontal: _s(isSmallScreen ? 8 : 10),
+        vertical: _s(isSmallScreen ? 4 : 6),
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -813,7 +823,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   }
 
   Widget _buildPowerUpIndicator(ActivePowerUp powerUp) {
-    final size = isSmallScreen ? 22.0 : 28.0;
+    final size = _s(isSmallScreen ? 22.0 : 28.0);
     return _PowerUpRing(
       key: ValueKey(
         '${powerUp.type.name}-${powerUp.activatedAt.microsecondsSinceEpoch}',
