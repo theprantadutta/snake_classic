@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -78,6 +79,15 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     AppLogger.success('Firebase initialized successfully');
+
+    // Crashlytics: collect and upload crash reports in production builds only.
+    // Gated on kReleaseMode so debug AND profile builds never send data to the
+    // dashboard (keeps local crashes/errors out of production analytics).
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(kReleaseMode);
+    AppLogger.success(
+      'Crashlytics collection ${kReleaseMode ? 'enabled' : 'disabled (non-release build)'}',
+    );
 
     // Set preferred orientations
     AppLogger.ui('Setting device orientation...');
@@ -179,13 +189,26 @@ void main() async {
     AppLogger.error('Failed to initialize Snake Classic', error, stackTrace);
   }
 
-  // Setup global error handling — always, not just in debug mode
-  FlutterError.onError = (details) {
-    AppLogger.error('Flutter Error', details.exception, details.stack);
-    if (kDebugMode) {
+  // Setup global error handling. In production (release) builds, fatal errors
+  // are forwarded to Crashlytics; in debug/profile they only get logged (and
+  // presented on the red screen) so nothing pollutes the production dashboard.
+  if (kReleaseMode) {
+    // Fatal Flutter framework errors → Crashlytics.
+    FlutterError.onError = (details) {
+      AppLogger.error('Flutter Error', details.exception, details.stack);
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    };
+    // Async errors thrown outside the Flutter framework (PlatformDispatcher).
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  } else {
+    FlutterError.onError = (details) {
+      AppLogger.error('Flutter Error', details.exception, details.stack);
       FlutterError.presentError(details);
-    }
-  };
+    };
+  }
 
   if (_initSucceeded) {
     runApp(

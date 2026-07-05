@@ -19,9 +19,40 @@
 -dontwarn com.google.android.play.core.tasks.OnSuccessListener
 -dontwarn com.google.android.play.core.tasks.Task
 
-# Keep Firebase classes
+# ---------------------------------------------------------------------------
+# Firebase (Core / Auth / Messaging / Analytics / Crashlytics) + Google Play
+# Services. Broad keeps so the native SDKs' reflection-based init survives R8.
+# ---------------------------------------------------------------------------
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
+# Firebase Crashlytics
+# Preserve source-file names and line numbers so crash reports have readable,
+# de-obfuscated stack traces. The Crashlytics Gradle plugin uploads the R8
+# mapping file automatically, but these attributes must survive shrinking.
+-keepattributes SourceFile,LineNumberTable
+# Keep custom exception types intact so they aren't merged/renamed in reports.
+-keep public class * extends java.lang.Exception
+-keep class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.crashlytics.**
+
+# Firebase Analytics / Measurement
+-keep class com.google.firebase.analytics.** { *; }
+-keep class com.google.android.gms.measurement.** { *; }
+
+# Firebase Cloud Messaging
+-keep class com.google.firebase.messaging.** { *; }
+
+# ---------------------------------------------------------------------------
+# flutter_local_notifications — uses Gson to (de)serialize scheduled
+# notification details. R8 full mode strips the generic TypeToken signatures
+# and crashes on scheduled/rescheduled notifications without these keeps.
+# ---------------------------------------------------------------------------
+-keep class com.dexterous.** { *; }
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
 
 # Keep Gson classes (if used)
 -keepattributes Signature
