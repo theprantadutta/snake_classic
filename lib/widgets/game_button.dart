@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
 
 /// Button size variants
@@ -370,8 +371,11 @@ class _GameButtonState extends State<GameButton>
             scale: _scaleAnimation.value,
             child: Container(
               width: widget.expanded ? double.infinity : widget.width,
-              height: _height,
-              padding: _padding,
+              // Scale the fixed height/padding up on tablets. Font size is
+              // left to the root textScaler; scaling the height keeps that
+              // enlarged text from overflowing. 1.0x on phones (unchanged).
+              height: _height * context.uiScale,
+              padding: _padding * context.uiScale,
               decoration: _buildDecoration(),
               child: _buildContent(),
             ),
@@ -385,8 +389,8 @@ class _GameButtonState extends State<GameButton>
     if (widget.isLoading) {
       return Center(
         child: SizedBox(
-          width: _iconSize,
-          height: _iconSize,
+          width: _iconSize * context.uiScale,
+          height: _iconSize * context.uiScale,
           child: CircularProgressIndicator(
             strokeWidth: 2,
             color: _textColor,
@@ -403,7 +407,7 @@ class _GameButtonState extends State<GameButton>
           Icon(
             widget.icon,
             color: _textColor,
-            size: _iconSize,
+            size: _iconSize * context.uiScale,
           ),
           SizedBox(width: widget.size == GameButtonSize.small ? 6 : 8),
         ],
@@ -422,7 +426,7 @@ class _GameButtonState extends State<GameButton>
           Icon(
             widget.trailingIcon,
             color: _textColor,
-            size: _iconSize,
+            size: _iconSize * context.uiScale,
           ),
         ],
       ],
@@ -601,14 +605,15 @@ class _GameIconButtonState extends State<GameIconButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              width: _size,
-              height: _size,
+              // Scale the circular button up on tablets (1.0x on phones).
+              width: _size * context.uiScale,
+              height: _size * context.uiScale,
               decoration: _buildDecoration(),
               child: Center(
                 child: Icon(
                   widget.icon,
                   color: _iconColor,
-                  size: _iconSize,
+                  size: _iconSize * context.uiScale,
                 ),
               ),
             ),

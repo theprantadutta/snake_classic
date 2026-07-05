@@ -8,6 +8,7 @@ import 'package:snake_classic/providers/leaderboard_provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
@@ -447,7 +448,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     return RefreshIndicator(
       onRefresh: _loadGlobalLeaderboard,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(
+          horizontal: 16 + context.sideInset(),
+          vertical: 16,
+        ),
         itemCount: leaderboardState.globalEntries.length,
         itemBuilder: (context, index) {
           final player = leaderboardState.globalEntries[index];
@@ -530,7 +534,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     return RefreshIndicator(
       onRefresh: _loadWeeklyLeaderboard,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(
+          horizontal: 16 + context.sideInset(),
+          vertical: 16,
+        ),
         itemCount: leaderboardState.weeklyEntries.length,
         itemBuilder: (context, index) {
           final player = leaderboardState.weeklyEntries[index];

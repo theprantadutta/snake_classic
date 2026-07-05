@@ -10,6 +10,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
@@ -98,7 +99,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Widget _buildHeader(GameTheme theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -141,7 +145,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Widget _buildSearchBar(GameTheme theme, FriendsState friendsState) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 8,
+      ),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
@@ -191,7 +198,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     final friendRequests = friendsState.friendRequests;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(horizontal: 16 + context.sideInset()),
       child: TabBar(
         controller: _tabController,
         indicatorColor: theme.accentColor,
@@ -285,7 +292,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     final chipColor = failed ? Colors.orange : theme.accentColor;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      padding: EdgeInsets.fromLTRB(
+        16 + context.sideInset(),
+        6,
+        16 + context.sideInset(),
+        0,
+      ),
       child: Align(
         alignment: Alignment.centerLeft,
         child: InkWell(
@@ -369,7 +381,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       itemCount: friends.length,
       itemBuilder: (context, index) {
         final friend = friends[index];
@@ -444,7 +459,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     }
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       children: [
         if (receivedRequests.isNotEmpty) ...[
           Text(
@@ -507,7 +525,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       itemCount: searchResults.length,
       itemBuilder: (context, index) {
         final user = searchResults[index];

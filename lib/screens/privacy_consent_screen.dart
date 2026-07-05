@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 /// Re-consent gate shown to EXISTING (already-onboarded) users when the shared
@@ -81,7 +82,10 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
           theme: theme,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: 20 + context.sideInset(),
+                vertical: 16,
+              ),
               child: Column(
                 children: [
                   // Header

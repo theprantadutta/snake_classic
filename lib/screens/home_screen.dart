@@ -186,6 +186,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       enableDrag: false,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // Cap width so the sheet centers on tablets instead of spanning the
+      // full width (no-op on phones narrower than 640).
+      constraints: const BoxConstraints(maxWidth: 640),
       builder: (sheetContext) => _GameModeFirstLaunchSheet(
         initialMode: settingsCubit.state.gameMode,
       ),
@@ -1169,6 +1172,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      // Cap width so the sheet centers on tablets (no-op on phones).
+      constraints: const BoxConstraints(maxWidth: 640),
       builder: (sheetContext) {
         return _LoadoutBottomSheet(
           theme: theme,

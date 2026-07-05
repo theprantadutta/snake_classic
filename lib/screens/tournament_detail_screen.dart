@@ -15,6 +15,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
 
@@ -512,7 +513,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
   Widget _buildOverviewTab(GameTheme theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -617,7 +621,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       itemCount: _leaderboard.length,
       itemBuilder: (context, index) {
         final participant = _leaderboard[index];
@@ -634,7 +641,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
   Widget _buildRulesTab(GameTheme theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -9,6 +9,7 @@ import 'package:snake_classic/providers/tournaments_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class TournamentsScreen extends ConsumerStatefulWidget {
@@ -242,7 +243,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       itemCount: activeTournaments.length,
       itemBuilder: (context, index) {
         final tournament = activeTournaments[index];
@@ -266,7 +270,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       itemCount: historyTournaments.length,
       itemBuilder: (context, index) {
         final tournament = historyTournaments[index];
@@ -291,7 +298,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       child: Column(
         children: [
           _buildStatsOverview(theme, userStats),

@@ -11,6 +11,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -145,7 +146,8 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
               return SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isNarrowScreen ? 16.0 : 24.0,
+                  horizontal:
+                      (isNarrowScreen ? 16.0 : 24.0) + context.sideInset(),
                 ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: screenHeight),
@@ -466,7 +468,9 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     bool isNarrowScreen,
   ) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: isNarrowScreen ? 16.0 : 24.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: (isNarrowScreen ? 16.0 : 24.0) + context.sideInset(),
+      ),
       child: Column(
         children: [
           // Header

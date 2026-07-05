@@ -7,6 +7,7 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/username_service.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
@@ -129,7 +130,10 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
                       ),
                       child: IntrinsicHeight(
                         child: Padding(
-                          padding: const EdgeInsets.all(24),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24 + context.sideInset(),
+                            vertical: 24,
+                          ),
                           child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

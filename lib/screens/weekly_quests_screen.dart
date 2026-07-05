@@ -11,6 +11,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class WeeklyQuestsScreen extends StatefulWidget {
@@ -98,8 +99,10 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
                                         ),
                                       )
                                     : ListView.builder(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 8),
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal:
+                                                12 + context.sideInset(),
+                                            vertical: 8),
                                         itemCount: _service.quests.length,
                                         itemBuilder: (context, i) {
                                           final quest = _service.quests[i];

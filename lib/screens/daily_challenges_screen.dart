@@ -17,6 +17,7 @@ import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 class DailyChallengesScreen extends ConsumerStatefulWidget {
@@ -195,7 +196,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
           color: theme.accentColor,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(
+              horizontal: 16 + context.sideInset(),
+              vertical: 16,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

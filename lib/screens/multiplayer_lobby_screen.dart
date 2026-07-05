@@ -13,6 +13,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -79,6 +80,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: theme.backgroundColor,
+      constraints: const BoxConstraints(maxWidth: 640),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -296,7 +298,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         // Main content
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20 + context.sideInset(),
+              vertical: 20,
+            ),
             child: Column(
               children: [
                 // Quick Match Section
@@ -343,7 +348,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             // Game info and players
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 20 + context.sideInset(),
+                  vertical: 20,
+                ),
                 child: Column(
                   children: [
                     // Game mode info

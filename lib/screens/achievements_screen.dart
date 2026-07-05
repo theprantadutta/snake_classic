@@ -6,6 +6,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
@@ -234,7 +235,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       itemCount: achievements.length,
       itemBuilder: (context, index) {
         final achievement = achievements[index];

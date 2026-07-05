@@ -11,6 +11,7 @@ import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/utils/responsive.dart';
 
 class FriendsLeaderboardScreen extends StatefulWidget {
   const FriendsLeaderboardScreen({super.key});
@@ -244,7 +245,12 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
         // Rest of the leaderboard
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: EdgeInsets.fromLTRB(
+              16 + context.sideInset(),
+              0,
+              16 + context.sideInset(),
+              16,
+            ),
             itemCount: _leaderboard.length > 3 ? _leaderboard.length - 3 : 0,
             itemBuilder: (context, index) {
               final actualIndex = index + 3; // Skip top 3

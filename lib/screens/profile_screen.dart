@@ -12,6 +12,7 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
@@ -126,7 +127,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               theme: theme,
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.0 + context.sideInset(),
+                  ),
                   child: _buildBody(context, authState, themeState),
                 ),
               ),

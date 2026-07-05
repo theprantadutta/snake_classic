@@ -12,6 +12,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
 
@@ -110,6 +111,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      constraints: const BoxConstraints(maxWidth: 640),
       builder: (_) => _RewardDetailSheet(
         theme: theme,
         reward: reward,
@@ -156,7 +158,11 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
               body: AppBackground(
                 theme: theme,
                 child: SafeArea(
-                  child: CustomScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.sideInset(),
+                    ),
+                    child: CustomScrollView(
                     physics: const BouncingScrollPhysics(),
                     slivers: [
                       SliverToBoxAdapter(
@@ -281,6 +287,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                           child: SizedBox(height: 24),
                         ),
                     ],
+                    ),
                   ),
                 ),
               ),

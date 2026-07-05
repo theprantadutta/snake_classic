@@ -10,6 +10,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -85,7 +86,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         // Statistics Content
                         Expanded(
                           child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16 + context.sideInset(),
+                              vertical: 16,
+                            ),
                             child: Column(
                               children: [
                                 // Performance Overview

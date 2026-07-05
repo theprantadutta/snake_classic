@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/utils/responsive.dart';
 
 class GradientButton extends StatefulWidget {
   final VoidCallback? onPressed;
@@ -91,8 +92,10 @@ class _GradientButtonState extends State<GradientButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              width: widget.width,
-              height: widget.height,
+              // Scale up on tablets (1.0x on phones). Font size is left to
+              // the root textScaler; scaling height keeps text fitting.
+              width: widget.width * context.uiScale,
+              height: widget.height * context.uiScale,
               decoration: BoxDecoration(
                 gradient: widget.outlined
                     ? null
@@ -128,7 +131,7 @@ class _GradientButtonState extends State<GradientButton>
                           color: widget.outlined
                               ? widget.primaryColor
                               : Colors.white,
-                          size: 24,
+                          size: 24 * context.uiScale,
                         ),
                         const SizedBox(width: 8),
                       ],
