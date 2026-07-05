@@ -77,15 +77,25 @@ class NotificationService {
   String? get fcmToken => _fcmToken;
   bool get initialized => _initialized;
 
-  Future<void> initialize() async {
+  /// Initialize the notification stack.
+  ///
+  /// [requestPermission] controls whether the OS permission prompt is fired
+  /// during init. Pass `false` to set up plugins, channels, listeners and the
+  /// FCM token WITHOUT prompting — the caller then shows a pre-permission
+  /// priming modal ("soft ask") and only triggers the real OS prompt via
+  /// [requestPermissionFlow] once the user opts in. Token registration is
+  /// permission-independent, so deferring the prompt doesn't affect the
+  /// backend token funnel.
+  Future<void> initialize({bool requestPermission = true}) async {
     try {
       AppLogger.info('🔔 Initializing notification service');
 
       _firebaseMessaging = FirebaseMessaging.instance;
       _localNotifications = FlutterLocalNotificationsPlugin();
 
-      await _initializeLocalNotifications();
-      await _initializeFirebaseMessaging().timeout(
+      await _initializeLocalNotifications(requestPermission: requestPermission);
+      await _initializeFirebaseMessaging(requestPermission: requestPermission)
+          .timeout(
         const Duration(seconds: 5),
         onTimeout: () {
           AppLogger.warning(
@@ -199,6 +209,47 @@ class NotificationService {
     }
   }
 
+  /// Fire the real OS permission prompt after the user opts in via the
+  /// pre-permission soft-ask. Cross-platform: on Android this goes through the
+  /// local-notifications plugin (the reliable Android 13+ path); on iOS it
+  /// goes through FCM's requestPermission. Returns whether the permission is
+  /// granted. On grant, (re)fetches and registers the FCM token — important on
+  /// iOS, where the APNS token only becomes available once permission is set.
+  Future<bool> requestPermissionFlow() async {
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        return await requestNotificationsPermission();
+      }
+
+      final settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      final status = settings.authorizationStatus;
+      final granted = status == AuthorizationStatus.authorized ||
+          status == AuthorizationStatus.provisional;
+      AppLogger.info('🔔 Soft-ask permission result: $status');
+
+      if (granted) {
+        // Now that iOS has an APNS token, (re)fetch + register the FCM token.
+        final token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          _fcmToken = token;
+          unawaited(_registerTokenWithBackend(token));
+        }
+      }
+      return granted;
+    } catch (e) {
+      AppLogger.error('requestPermissionFlow failed', e);
+      return false;
+    }
+  }
+
   /// Open the system notification-settings page for this app.
   Future<void> openSystemNotificationSettings() async {
     try {
@@ -264,7 +315,7 @@ class NotificationService {
     }
   }
 
-  Future<void> _initializeLocalNotifications() async {
+  Future<void> _initializeLocalNotifications({bool requestPermission = true}) async {
     // Android initialization settings
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -312,28 +363,39 @@ class NotificationService {
           >();
       await androidPlugin?.createNotificationChannel(channel);
 
-      final granted = await androidPlugin?.requestNotificationsPermission();
-      AppLogger.info(
-        '🔔 Android notifications permission requested. Granted: $granted',
-      );
+      // Only fire the OS permission prompt here when asked. When the caller
+      // is showing a pre-permission soft-ask first, this is skipped so the
+      // Android 13+ one-shot prompt is preserved for requestPermissionFlow().
+      if (requestPermission) {
+        final granted = await androidPlugin?.requestNotificationsPermission();
+        AppLogger.info(
+          '🔔 Android notifications permission requested. Granted: $granted',
+        );
+      }
     }
   }
 
-  Future<void> _initializeFirebaseMessaging() async {
-    // Request permission for iOS
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
+  Future<void> _initializeFirebaseMessaging({bool requestPermission = true}) async {
+    // Request permission for iOS — only when asked. When a pre-permission
+    // soft-ask is being shown first, this is skipped so the iOS system prompt
+    // (which Apple only ever shows once) is preserved for
+    // requestPermissionFlow(). The FCM token below is fetched regardless, so
+    // the backend token funnel is unaffected.
+    if (requestPermission) {
+      final settings = await _firebaseMessaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
 
-    AppLogger.info(
-      '🔔 Notification permission: ${settings.authorizationStatus}',
-    );
+      AppLogger.info(
+        '🔔 Notification permission: ${settings.authorizationStatus}',
+      );
+    }
 
     // Permission governs DISPLAY only — an FCM token is valid regardless of
     // whether the user granted the notification prompt. Always fetch + register

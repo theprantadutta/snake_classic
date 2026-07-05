@@ -29,6 +29,7 @@ import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/notification_permission_primer.dart';
+import 'package:snake_classic/widgets/notification_permission_softask.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
@@ -124,15 +125,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       return;
     }
     // Small delay so the home screen finishes its first layout +
-    // animations before the permission dialog pops over it.
+    // animations before the soft-ask dialog pops over it.
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
-      NotificationService().initialize().then((_) {
+      // Initialize WITHOUT firing the OS prompt — we show a pre-permission
+      // soft-ask first (Apple's recommended priming pattern) and only trigger
+      // the real OS prompt if the user opts in.
+      NotificationService().initialize(requestPermission: false).then((_) {
         AppLogger.success('Notification service initialized from home');
-        _maybeShowNotificationPrimer();
+        _maybeShowNotificationSoftAsk();
       }).catchError((e) {
         AppLogger.error('Notification service init failed', e);
       });
+    });
+  }
+
+  /// First-run: show the pre-permission soft-ask (self-gates to once ever).
+  /// Whatever the user chooses, then hand off to the recurring re-ask primer
+  /// (which self-gates on its own 7-day cadence, so no double dialog).
+  void _maybeShowNotificationSoftAsk() {
+    Future.delayed(const Duration(milliseconds: 800), () async {
+      if (!mounted) return;
+      final theme = context.read<ThemeCubit>().state.currentTheme;
+      await NotificationPermissionSoftAsk.maybeShow(context, theme);
+      if (!mounted) return;
+      _maybeShowNotificationPrimer();
     });
   }
 
