@@ -8,9 +8,17 @@ Create a classic Snake game in Flutter with premium game-quality UI/UX, running 
 ### Technical Requirements
 - **Framework**: Flutter
 - **Performance**: 60FPS smooth gameplay
-- **Platform**: Multi-platform support (Android, iOS, Web, Desktop)
+- **Platform**: Multi-platform support (Android, iOS, Web, Desktop). **We ship a proper tablet/iPad release too** — the app must look and play correctly on large screens, not just phones.
 - **UI Quality**: Professional game-level UI, not placeholder/basic interfaces
 - **Assets**: Generate custom images, audio, and visual effects as needed
+
+### Tablet / iPad Responsiveness (LOAD-BEARING)
+The app is phone-first but ships a proper tablet/iPad experience. It stays **portrait-only on every device** (portrait lock in `main.dart`); tablets get a scaled-up portrait layout, NOT landscape. All responsiveness flows through **`lib/utils/responsive.dart`** — a `BuildContext` extension. When adding or changing UI, use it instead of new ad-hoc `MediaQuery`/`isSmallScreen` checks:
+- `context.isTablet` / `context.deviceSize` — device class via `shortestSide` (≥600 tablet, ≥840 large tablet).
+- `context.uiScale` (1.0 phone / 1.2 / 1.35) — multiply fixed pixel sizes (heights, paddings, icon/button sizes). Do NOT scale `fontSize` — the root `MediaQuery.textScaler` in `main.dart` already grows text on tablets; scaling the surrounding heights is what keeps it fitting.
+- `context.sideInset()` — add to a scroll body's HORIZONTAL padding to cap menu/list content to a centered column on tablets. Prefer this over centered `ConstrainedBox` (it's safe inside `ListView`/`TabBarView`).
+- Card grids use `SliverGridDelegateWithMaxCrossAxisExtent` (not fixed `crossAxisCount`) so columns grow with width.
+- **Invariant: every responsive branch must be a no-op on phones** (`uiScale == 1.0`, `sideInset() == 0`) so phone layouts never regress.
 
 ### Game Features
 - Classic snake gameplay mechanics
