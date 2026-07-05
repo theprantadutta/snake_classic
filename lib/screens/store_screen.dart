@@ -21,6 +21,7 @@ import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -189,16 +190,26 @@ class _StoreScreenState extends State<StoreScreen>
                           ],
                         ),
                         Expanded(
-                          child: TabBarView(
-                            controller: _tabController,
-                            children: [
-                              _buildProTab(theme, premiumState),
-                              _buildCoinsTab(theme, coinsState),
-                              _buildThemesTab(theme, premiumState),
-                              _buildSkinsTab(theme, premiumState),
-                              _buildTrailsTab(theme, premiumState),
-                              _buildPowerUpsTab(theme, premiumState, coinsState),
-                            ],
+                          // Cap tab content width on tablets (via side padding
+                          // so TabBarView keeps its strict height constraints)
+                          // so cards/grids form a centered column instead of
+                          // stretching edge-to-edge. No effect on phones.
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: context.sideInset(maxWidth: 760),
+                            ),
+                            child: TabBarView(
+                              controller: _tabController,
+                              children: [
+                                _buildProTab(theme, premiumState),
+                                _buildCoinsTab(theme, coinsState),
+                                _buildThemesTab(theme, premiumState),
+                                _buildSkinsTab(theme, premiumState),
+                                _buildTrailsTab(theme, premiumState),
+                                _buildPowerUpsTab(
+                                    theme, premiumState, coinsState),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -1899,8 +1910,10 @@ class _StoreScreenState extends State<StoreScreen>
         Expanded(
           child: GridView.builder(
             padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            // Max-extent delegate: 2 columns on phones (unchanged), more
+            // columns as width grows on tablets, instead of two giant cards.
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 220,
               // Match the Trails tab aspect ratio so the painted preview
               // band has room to render the snake silhouette + signature.
               childAspectRatio: 0.78,
@@ -2130,8 +2143,10 @@ class _StoreScreenState extends State<StoreScreen>
         Expanded(
           child: GridView.builder(
             padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            // Max-extent delegate: 2 columns on phones (unchanged), more
+            // columns as width grows on tablets, instead of two giant cards.
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 220,
               // Slightly more vertical room than the skins tab so the painted
               // trail preview has space to breathe.
               childAspectRatio: 0.78,

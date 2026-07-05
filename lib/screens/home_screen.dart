@@ -19,6 +19,7 @@ import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
@@ -340,15 +341,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           child: SafeArea(
                             child: LayoutBuilder(
                               builder: (context, constraints) {
-                                final screenWidth = constraints.maxWidth;
                                 final screenHeight = constraints.maxHeight;
+
+                                // Cap the home hub's content width on tablets
+                                // so it forms a centered column instead of
+                                // stretching edge-to-edge. Unbounded on phones,
+                                // so all the screenWidth-based math below is
+                                // unchanged there.
+                                final maxContentWidth =
+                                    context.responsive<double>(
+                                  phone: double.infinity,
+                                  tablet: 600,
+                                  largeTablet: 640,
+                                );
+                                final screenWidth =
+                                    constraints.maxWidth > maxContentWidth
+                                        ? maxContentWidth
+                                        : constraints.maxWidth;
 
                                 // Enhanced screen size detection with more granular breakpoints
                                 final isVerySmallScreen =
                                     screenHeight < 600 || screenWidth < 350;
 
                                 // Use a simple Column with proper constraints for better stability
-                                return Column(
+                                return Center(
+                                  child: SizedBox(
+                                    width: screenWidth,
+                                    child: Column(
                                   children: [
                                     // Top navigation bar - fixed height
                                     Padding(
@@ -446,6 +465,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                             ),
                                     ),
                                   ],
+                                    ),
+                                  ),
                                 );
                               },
                             ),
@@ -1889,10 +1910,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // make the buttons easier to hit. The small-screen size now lands
     // close to the Material Design 48dp minimum tap target, and the
     // large-screen size reads more solidly without crowding the row.
-    if (screenHeight < 600) return 44.0;
-    if (screenHeight < 700) return 50.0;
-    if (screenHeight < 850) return 56.0;
-    return 62.0;
+    final double base;
+    if (screenHeight < 600) {
+      base = 44.0;
+    } else if (screenHeight < 700) {
+      base = 50.0;
+    } else if (screenHeight < 850) {
+      base = 56.0;
+    } else {
+      base = 62.0;
+    }
+    // Scale up on tablets so the buttons fill the (now width-capped) row
+    // instead of floating with big gaps. 1.0x on phones (unchanged).
+    return base * context.uiScale;
   }
 
   /// Get the badge count for daily challenges (unclaimed rewards).

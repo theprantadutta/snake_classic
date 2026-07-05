@@ -22,6 +22,7 @@ import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
@@ -234,7 +235,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         theme: theme,
                         child: SafeArea(
                           child: Padding(
-                            padding: const EdgeInsets.all(24.0),
+                            // Extra horizontal inset on tablets caps the
+                            // settings column to a centered ~640px width
+                            // instead of stretching rows full-screen.
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 24.0 + context.sideInset(),
+                              vertical: 24.0,
+                            ),
                             child: SingleChildScrollView(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,

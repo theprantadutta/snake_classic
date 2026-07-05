@@ -60,6 +60,21 @@ extension ResponsiveContext on BuildContext {
   /// Max width for centered menu / list bodies. Unbounded on phones (so content
   /// still fills the screen); capped on tablets so rows don't stretch edge-to-edge.
   double get contentMaxWidth => isTablet ? 640.0 : double.infinity;
+
+  /// Horizontal inset that visually caps content to [maxWidth] (defaulting to
+  /// [contentMaxWidth]) by padding both sides equally. Returns `0` on phones or
+  /// whenever the screen is already narrower than the cap.
+  ///
+  /// Prefer this over a centered `ConstrainedBox` when the child is a
+  /// `TabBarView`, `ListView`, or anything with strict height constraints — a
+  /// `Padding` preserves the incoming constraints (just narrower), so it can't
+  /// trigger unbounded-size errors.
+  double sideInset({double? maxWidth}) {
+    final cap = maxWidth ?? contentMaxWidth;
+    if (cap == double.infinity) return 0;
+    final width = MediaQuery.of(this).size.width;
+    return width > cap ? (width - cap) / 2 : 0;
+  }
 }
 
 /// Centers and caps its child's width on tablets; a transparent pass-through on
