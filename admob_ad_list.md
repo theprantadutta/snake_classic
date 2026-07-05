@@ -43,31 +43,13 @@ IOS_REWARDED_AD_UNIT_ID     = ca-app-pub-9242904787767394/3896430862
 
 ---
 
-## 3. App Open ad units  (NEW — please create)
+## 3. App Open ad units  (LIVE — created and wired)
 
 App Open ads show on a genuine return to the foreground (not cold start, not
-during gameplay, not after a purchase). They're typically one of the highest
-earners for casual games. The code is already wired — it just needs two real
-ad units. **Until you paste them, release builds serve Google's TEST App Open
-ads (no revenue, but safe).**
-
-### How to create them (do this once per platform)
-1. Go to https://apps.admob.com → **Apps** → select the **Android** app
-   (App ID `ca-app-pub-9242904787767394~9115144122`).
-2. **Ad units** → **Add ad unit** → choose **App open**.
-3. Name it e.g. `Snake Classic Android — App Open`, **Create**.
-4. Copy the unit id (looks like `ca-app-pub-9242904787767394/XXXXXXXXXX`).
-5. Repeat for the **iOS** app (App ID `ca-app-pub-9242904787767394~3519202517`).
-
-### Where to paste them
-In `lib/services/ads/ad_config.dart`, replace the two placeholder constants
-(they currently alias the test ids):
-```
-static const _appOpenAndroid = 'ca-app-pub-9242904787767394/XXXXXXXXXX'; // your Android App Open unit
-static const _appOpenIos     = 'ca-app-pub-9242904787767394/YYYYYYYYYY'; // your iOS App Open unit
-```
-No manifest change is needed — the App ID already in `AndroidManifest.xml`
-covers all formats.
+during gameplay, not after a purchase). Real units are created in the AdMob
+console and baked into `lib/services/ads/ad_config.dart` (debug builds still
+use Google's test ids). No manifest change is needed — the App ID already in
+`AndroidManifest.xml` covers all formats.
 
 ```
 ANDROID_APP_OPEN_AD_UNIT_ID = ca-app-pub-9242904787767394/2112367445
@@ -79,10 +61,10 @@ IOS_APP_OPEN_AD_UNIT_ID     = ca-app-pub-9242904787767394/9799285770
 ## What each ad unit is used for in the game
 | Format | Where it shows | Notes |
 | --- | --- | --- |
-| **Rewarded** | Revive after death, "2×" daily bonus / challenge claims, free-coins button in store, tournament entry, power-up | Opt-in only; grants a reward on completion |
-| **Interstitial** | Game-over → Play Again / Menu | Frequency-capped (every 2nd game, 3-min min gap); skipped for the first session |
-| **Banner** | Most non-gameplay screens | Anchored **adaptive** (full-width, device-optimal height); reserves space up front to avoid layout shift |
-| **App Open** | Genuine return to foreground | Skips cold start, gameplay, and purchase/consent returns; 4-h ad expiry, 4-min min gap |
+| **Rewarded** | Revive after death, Time-Attack +30s, double game-over coins, "2×" daily bonus / challenge claims, free-coins button in store, free power-up, Battle Pass XP, tournament entry | Opt-in only, uncapped; grants a reward on completion (on dismiss) |
+| **Interstitial** | Game-over → Play Again / Menu | Every 4th game-over, ≥5-min gap since any full-screen ad; the very first game-over ever is exempt |
+| **Banner** | Most screens incl. gameplay (top-anchored) | Anchored **adaptive** (full-width, device-optimal height); reserves space up front to avoid layout shift; retries failed loads |
+| **App Open** | Genuine return to foreground | Skips cold start, gameplay, and purchase/consent returns; only after ≥3 min away; 4-h ad expiry, 15-min min gap |
 
 ## Mediation  (DEFERRED — revisit at ~1k DAU)
 

@@ -113,6 +113,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                     label: 'WATCH TO 2×',
                     textColor: Colors.amber,
                     onPressed: () => ads.showRewarded(
+                      placement: 'challenge_2x',
                       onReward: () {
                         coins.earnCoins(
                           CoinEarningSource.dailyChallenge,

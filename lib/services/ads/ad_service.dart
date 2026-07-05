@@ -6,6 +6,7 @@ import 'package:get_it/get_it.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/ads/ad_config.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,22 +25,34 @@ class AdService {
   static const int _interstitialEveryNGames = 4;
   static const Duration _interstitialMinGap = Duration(minutes: 5);
 
+  // Minimum spacing between ANY two full-screen ads (interstitial / rewarded /
+  // app-open), so an opt-in rewarded watch can't be chased by an interstitial
+  // seconds later — that combination is policy-fine but *feels* like an ad
+  // ambush. Tracked in-memory only; a restart resetting it is acceptable.
+  static const Duration _fullScreenAdMinGap = Duration(minutes: 5);
+
   // App Open ads expire 4h after load (Google's documented limit). We only show
-  // one on a genuine return after the user has been AWAY for [_appOpenMinAway],
-  // and never more than once per [_appOpenMinGap] — so a quick app-switch never
-  // pops an ad; only coming back to the game after a real break does.
+  // one on a genuine return after the user has been AWAY for [_appOpenMinAway]
+  // — so a quick app-switch (checking a message, a share sheet) never pops an
+  // ad — and never more than once per [_appOpenMinGap].
   static const Duration _appOpenExpiry = Duration(hours: 4);
-  static const Duration _appOpenMinGap = Duration(minutes: 30);
-  static const Duration _appOpenMinAway = Duration(minutes: 30);
+  static const Duration _appOpenMinGap = Duration(minutes: 15);
+  static const Duration _appOpenMinAway = Duration(minutes: 3);
 
   // SharedPreferences keys (device-only, never synced).
   static const _kGamesSinceInterstitial = 'ads_games_since_interstitial';
   static const _kLastInterstitialMs = 'ads_last_interstitial_ms';
-  static const _kSessionIsFirst = 'ads_first_session_done';
+  // The very first game-over ever is exempt from the interstitial (don't greet
+  // a brand-new player with an ad). Key string kept from the old
+  // "first session" naming so existing installs don't get a second free pass.
+  static const _kFirstGameOverDone = 'ads_first_session_done';
 
   bool _initialized = false;
   bool _sdkReady = false;
   bool _consentGathered = false;
+  // UMP's verdict on whether ad requests are allowed at all (e.g. an EEA user
+  // who fully declined consent). Fail-open: a failed query never disables ads.
+  bool _canRequestAds = true;
   // Whether UMP says a privacy-options entry point should be offered. Only
   // true when a consent form is actually available + required for this user —
   // so we never surface a "Privacy & ad choices" button that opens nothing
@@ -56,6 +69,8 @@ class AdService {
   bool _appOpenLoading = false;
   int _appOpenLoadedAtMs = 0;
   int _lastAppOpenShownMs = 0;
+  // When ANY full-screen ad was last dismissed — see [_fullScreenAdMinGap].
+  int _lastFullScreenAdMs = 0;
   // When the app last went to background — App Open only shows after the user
   // has been away at least [_appOpenMinAway].
   int _backgroundedAtMs = 0;
@@ -89,8 +104,19 @@ class AdService {
     return GetIt.I<ConnectivityService>().isOnline;
   }
 
+  AnalyticsFacade? get _analytics =>
+      GetIt.I.isRegistered<AnalyticsFacade>() ? GetIt.I<AnalyticsFacade>() : null;
+
   /// The single master switch. Everything checks this.
-  bool get adsEnabled => _sdkReady && _isMobile && !_isPro;
+  bool get adsEnabled => _sdkReady && _isMobile && !_isPro && _canRequestAds;
+
+  // Flipped whenever [adsEnabled] may have changed (SDK became ready, consent
+  // changed). Lets widgets created BEFORE init finished (the cold-start home
+  // screen banner) load their ad the moment ads come online instead of staying
+  // blank for the screen's whole life.
+  final ValueNotifier<bool> _adsEnabledNotifier = ValueNotifier(false);
+  ValueListenable<bool> get adsEnabledListenable => _adsEnabledNotifier;
+  void _notifyAdsEnabled() => _adsEnabledNotifier.value = adsEnabled;
 
   /// Whether a banner placement should reserve its fixed height up front.
   /// True for any non-Pro mobile user — deliberately INDEPENDENT of SDK
@@ -110,14 +136,15 @@ class AdService {
     try {
       _prefs = await SharedPreferences.getInstance();
       await _gatherConsentAndAtt();
+      await _refreshCanRequestAds();
+      // Brand safety for an all-ages arcade game: never serve creatives above
+      // PG (blocks gambling / mature ads). Applies to all builds — debug
+      // already uses Google's test ad UNIT ids, so no test-device config is
+      // needed here.
+      await MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(maxAdContentRating: MaxAdContentRating.pg),
+      );
       await MobileAds.instance.initialize();
-      if (kDebugMode) {
-        // Emulators/sim are test devices automatically; this covers physical
-        // dev phones too so we never serve real impressions in debug.
-        await MobileAds.instance.updateRequestConfiguration(
-          RequestConfiguration(testDeviceIds: const []),
-        );
-      }
       _sdkReady = true;
       AppLogger.success('AdService initialized (ads ${adsEnabled ? 'on' : 'off'})');
       if (adsEnabled) {
@@ -127,6 +154,18 @@ class AdService {
       }
     } catch (e) {
       AppLogger.error('AdService init failed', e);
+    } finally {
+      _notifyAdsEnabled();
+    }
+  }
+
+  /// Ask UMP whether ad requests are allowed under the current consent state.
+  /// Fail-open — a failed query never turns ads off.
+  Future<void> _refreshCanRequestAds() async {
+    try {
+      _canRequestAds = await ConsentInformation.instance.canRequestAds();
+    } catch (_) {
+      _canRequestAds = true;
     }
   }
 
@@ -193,7 +232,17 @@ class AdService {
       AppLogger.warning('Privacy options form failed: $e');
       if (!completer.isCompleted) completer.complete(false);
     }
-    return completer.future;
+    final shown = await completer.future;
+    // The user may have just granted or revoked consent — re-derive whether
+    // ads can be requested and (re)start preloading if they just came on.
+    await _refreshCanRequestAds();
+    _notifyAdsEnabled();
+    if (adsEnabled) {
+      _loadInterstitial();
+      _loadRewarded();
+      _loadAppOpen();
+    }
+    return shown;
   }
 
   bool get consentGathered => _consentGathered;
@@ -209,6 +258,14 @@ class AdService {
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          ad.onPaidEvent = (ad, valueMicros, precision, currencyCode) {
+            _analytics?.trackAdRevenue(
+              format: 'interstitial',
+              valueMicros: valueMicros,
+              currencyCode: currencyCode,
+              precision: precision.name,
+            );
+          };
           _interstitial = ad;
           _interstitialLoading = false;
         },
@@ -228,16 +285,19 @@ class AdService {
     final prefs = _prefs;
     if (prefs == null) return false;
 
-    // First session ever → never interrupt; just mark it done.
-    if (!(prefs.getBool(_kSessionIsFirst) ?? false)) {
-      await prefs.setBool(_kSessionIsFirst, true);
+    // Very first game-over ever → never interrupt; just mark it done.
+    if (!(prefs.getBool(_kFirstGameOverDone) ?? false)) {
+      await prefs.setBool(_kFirstGameOverDone, true);
       return false;
     }
 
     final games = (prefs.getInt(_kGamesSinceInterstitial) ?? 0) + 1;
     final lastMs = prefs.getInt(_kLastInterstitialMs) ?? 0;
-    final gapOk = DateTime.now().millisecondsSinceEpoch - lastMs >=
-        _interstitialMinGap.inMilliseconds;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // The gap counts from the last interstitial AND from any other full-screen
+    // ad (rewarded / app-open) — no back-to-back full-screen ads, ever.
+    final gapOk = now - lastMs >= _interstitialMinGap.inMilliseconds &&
+        now - _lastFullScreenAdMs >= _fullScreenAdMinGap.inMilliseconds;
 
     if (games < _interstitialEveryNGames || !gapOk || _interstitial == null) {
       await prefs.setInt(_kGamesSinceInterstitial, games);
@@ -250,6 +310,7 @@ class AdService {
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         _fullScreenAdShowing = false;
+        _lastFullScreenAdMs = DateTime.now().millisecondsSinceEpoch;
         ad.dispose();
         _interstitial = null;
         if (!shown.isCompleted) shown.complete(true);
@@ -264,6 +325,7 @@ class AdService {
       },
     );
     _fullScreenAdShowing = true;
+    _analytics?.trackAdImpression(format: 'interstitial', placement: 'game_over');
     await ad.show();
     await prefs.setInt(_kGamesSinceInterstitial, 0);
     await prefs.setInt(
@@ -282,6 +344,14 @@ class AdService {
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
+          ad.onPaidEvent = (ad, valueMicros, precision, currencyCode) {
+            _analytics?.trackAdRevenue(
+              format: 'rewarded',
+              valueMicros: valueMicros,
+              currencyCode: currencyCode,
+              precision: precision.name,
+            );
+          };
           _rewarded = ad;
           _rewardedLoading = false;
         },
@@ -319,7 +389,10 @@ class AdService {
   /// granted the reward, and the app silently dropped it. Now the earn
   /// handler grants late-arriving rewards itself, plus a short post-dismiss
   /// grace wait before declaring the watch unrewarded.
-  Future<bool> showRewarded({required VoidCallback onReward}) async {
+  Future<bool> showRewarded({
+    required VoidCallback onReward,
+    String placement = 'unspecified',
+  }) async {
     if (!adsEnabled || _rewarded == null) {
       _loadRewarded();
       return false;
@@ -334,6 +407,7 @@ class AdService {
     void grantOnce() {
       if (granted) return;
       granted = true;
+      _analytics?.trackRewardedCompleted(placement);
       try {
         onReward();
       } catch (e) {
@@ -345,6 +419,7 @@ class AdService {
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         _fullScreenAdShowing = false;
+        _lastFullScreenAdMs = DateTime.now().millisecondsSinceEpoch;
         dismissed = true;
         ad.dispose();
         _loadRewarded();
@@ -357,7 +432,10 @@ class AdService {
         // earn handler grants; otherwise the watch genuinely wasn't
         // completed (user closed early).
         Future<void>.delayed(const Duration(milliseconds: 800), () {
-          if (!done.isCompleted) done.complete(granted);
+          if (!done.isCompleted) {
+            done.complete(granted);
+            if (!granted) _analytics?.trackRewardedAbandoned(placement);
+          }
         });
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
@@ -369,6 +447,7 @@ class AdService {
       },
     );
     _fullScreenAdShowing = true;
+    _analytics?.trackAdImpression(format: 'rewarded', placement: placement);
     await ad.show(
       onUserEarnedReward: (_, _) {
         earned = true;
@@ -415,6 +494,14 @@ class AdService {
       request: const AdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (ad) {
+          ad.onPaidEvent = (ad, valueMicros, precision, currencyCode) {
+            _analytics?.trackAdRevenue(
+              format: 'app_open',
+              valueMicros: valueMicros,
+              currencyCode: currencyCode,
+              precision: precision.name,
+            );
+          };
           _appOpenAd = ad;
           _appOpenLoadedAtMs = DateTime.now().millisecondsSinceEpoch;
           _appOpenLoading = false;
@@ -459,13 +546,18 @@ class AdService {
       return;
     }
     if (now - _lastAppOpenShownMs < _appOpenMinGap.inMilliseconds) return;
+    // Respect the global full-screen spacing too — e.g. the user watched a
+    // rewarded ad, briefly left, and came right back.
+    if (now - _lastFullScreenAdMs < _fullScreenAdMinGap.inMilliseconds) return;
 
     final ad = _appOpenAd!;
     _appOpenAd = null;
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         _fullScreenAdShowing = false;
-        _lastAppOpenShownMs = DateTime.now().millisecondsSinceEpoch;
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        _lastAppOpenShownMs = nowMs;
+        _lastFullScreenAdMs = nowMs;
         ad.dispose();
         _loadAppOpen();
       },
@@ -477,6 +569,7 @@ class AdService {
       },
     );
     _fullScreenAdShowing = true;
+    _analytics?.trackAdImpression(format: 'app_open');
     await ad.show();
   }
 
@@ -503,18 +596,22 @@ class AdService {
   bool canShowCapped(String capKey) => isRewardedReady;
 
   /// Show a rewarded ad for an opt-in placement. [onReward] fires (on ad
-  /// dismiss, via [showRewarded]) only if the user earned it.
+  /// dismiss, via [showRewarded]) only if the user earned it. The [capKey]
+  /// doubles as the analytics placement id.
   Future<bool> showRewardedCapped({
     required String capKey,
     required VoidCallback onReward,
   }) =>
-      showRewarded(onReward: onReward);
+      showRewarded(onReward: onReward, placement: capKey);
 
   /// Convenience wrapper for the free-coins placement.
   Future<bool> showRewardedForCoins({
     required void Function(int coins) onCoins,
   }) =>
-      showRewarded(onReward: () => onCoins(freeCoinsPerAd));
+      showRewarded(
+        onReward: () => onCoins(freeCoinsPerAd),
+        placement: capFreeCoins,
+      );
 
   // Back-compat getter used by RewardedCoinsButton.
   bool get canShowFreeCoinAd => isRewardedReady;

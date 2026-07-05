@@ -2516,14 +2516,12 @@ class _StoreScreenState extends State<StoreScreen>
   // can see their count).
 
   /// Rewarded-ad card granting one free Speed Boost. Self-hides for Pro /
-  /// web / when the SDK isn't ready; disables when no ad is loaded or the
-  /// daily cap is hit.
+  /// web / when the SDK isn't ready; disables when no ad is loaded.
   Widget _buildFreePowerUpAdCard(BuildContext context, GameTheme theme) {
     final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
-    // Capped placement: raw isRewardedReady ignored the documented
-    // 3-per-day free-power-up budget — the raw showRewarded call below it
-    // never recorded the cap either, so it was unlimited.
+    // Opt-in placement, uncapped by design (the daily caps were removed) —
+    // the only gate is whether a rewarded ad is loaded.
     final ready = ads.canShowCapped(AdService.capFreePowerUp);
     return Opacity(
       opacity: ready ? 1 : 0.5,

@@ -352,4 +352,50 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       parameters: {'trigger': trigger},
     );
   }
+
+  // ==================== Ads ====================
+  // `ad_impression` is a Firebase-reserved automatic event name, so the
+  // custom impression event is suffixed to avoid the collision.
+
+  @override
+  Future<void> trackAdImpression({required String format, String? placement}) {
+    return _analytics.logEvent(
+      name: 'ad_impression_custom',
+      parameters: {'format': format, 'placement': ?placement},
+    );
+  }
+
+  @override
+  Future<void> trackRewardedCompleted(String placement) {
+    return _analytics.logEvent(
+      name: 'rewarded_ad_completed',
+      parameters: {'placement': placement},
+    );
+  }
+
+  @override
+  Future<void> trackRewardedAbandoned(String placement) {
+    return _analytics.logEvent(
+      name: 'rewarded_ad_abandoned',
+      parameters: {'placement': placement},
+    );
+  }
+
+  @override
+  Future<void> trackAdRevenue({
+    required String format,
+    required double valueMicros,
+    required String currencyCode,
+    required String precision,
+  }) {
+    return _analytics.logEvent(
+      name: 'ad_revenue',
+      parameters: {
+        'format': format,
+        'value_micros': valueMicros,
+        'currency': currencyCode,
+        'precision': precision,
+      },
+    );
+  }
 }

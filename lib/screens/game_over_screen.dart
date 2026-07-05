@@ -143,6 +143,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
           // async gap where reading context is unsafe.
           final messenger = ScaffoldMessenger.of(context);
           await ads.showRewarded(
+            placement: 'double_coins',
             onReward: () {
               coinsCubit.earnCoins(
                 CoinEarningSource.watchedAd,

@@ -283,4 +283,40 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   Future<void> trackReviewRequested(String trigger) async {
     AppLogger.info('$_tag review_requested: trigger=$trigger');
   }
+
+  // ==================== Ads ====================
+
+  @override
+  Future<void> trackAdImpression({
+    required String format,
+    String? placement,
+  }) async {
+    AppLogger.info(
+      '$_tag ad_impression_custom: format=$format'
+      '${placement != null ? ', placement=$placement' : ''}',
+    );
+  }
+
+  @override
+  Future<void> trackRewardedCompleted(String placement) async {
+    AppLogger.info('$_tag rewarded_ad_completed: placement=$placement');
+  }
+
+  @override
+  Future<void> trackRewardedAbandoned(String placement) async {
+    AppLogger.info('$_tag rewarded_ad_abandoned: placement=$placement');
+  }
+
+  @override
+  Future<void> trackAdRevenue({
+    required String format,
+    required double valueMicros,
+    required String currencyCode,
+    required String precision,
+  }) async {
+    AppLogger.info(
+      '$_tag ad_revenue: format=$format, valueMicros=$valueMicros, '
+      'currency=$currencyCode, precision=$precision',
+    );
+  }
 }

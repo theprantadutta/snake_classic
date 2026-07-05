@@ -1251,8 +1251,10 @@ class _GameScreenState extends State<GameScreen>
                                     GameCubit.reviveCoinCost,
                                 onWatchAd: () {
                                   final gc = context.read<GameCubit>();
-                                  getIt<AdService>()
-                                      .showRewarded(onReward: gc.revive);
+                                  getIt<AdService>().showRewarded(
+                                    onReward: gc.revive,
+                                    placement: 'revive',
+                                  );
                                 },
                                 onUseCoins: () async {
                                   final gc = context.read<GameCubit>();
@@ -1282,6 +1284,7 @@ class _GameScreenState extends State<GameScreen>
                                   final gc = context.read<GameCubit>();
                                   getIt<AdService>().showRewarded(
                                     onReward: gc.grantTimeBonus,
+                                    placement: 'time_bonus',
                                   );
                                 },
                                 onDecline: () => context

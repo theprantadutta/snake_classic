@@ -36,11 +36,8 @@ class AdConfig {
   static const _rewardedAndroid = 'ca-app-pub-9242904787767394/7829982619';
   static const _rewardedIos = 'ca-app-pub-9242904787767394/3896430862';
 
-  // App Open units — CREATE THESE in the AdMob console and paste them here.
-  // See the "App Open ad units" section of admob_ad_list.md for step-by-step
-  // instructions. Until replaced they intentionally point at Google's TEST App
-  // Open ids, so a release build serves test App Open ads (no revenue, but safe
-  // and policy-compliant) rather than requesting a non-existent unit.
+  // App Open units (real — created in the AdMob console, also listed in
+  // admob_ad_list.md).
   static const _appOpenAndroid = 'ca-app-pub-9242904787767394/2112367445';
   static const _appOpenIos = 'ca-app-pub-9242904787767394/9799285770';
 

@@ -310,6 +310,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 getIt<AnalyticsFacade>().trackDailyBonusCollected();
                 // Grant the same amount again on ad completion → 2× total.
                 await ads.showRewarded(
+                  placement: 'daily_bonus_2x',
                   onReward: () {
                     coins.earnCoins(
                       CoinEarningSource.dailyLogin,

@@ -134,4 +134,28 @@ abstract class AnalyticsClient {
   /// whether a dialog actually rendered, so this is the closest signal we
   /// have to "how often do we ask."
   Future<void> trackReviewRequested(String trigger);
+
+  // ==================== Ads ====================
+
+  /// An ad was actually shown: a full-screen ad presented, or a banner filled.
+  /// [format] is one of `banner` / `interstitial` / `rewarded` / `app_open`;
+  /// [placement] identifies the rewarded/interstitial spot when known
+  /// (e.g. `revive`, `game_over`).
+  Future<void> trackAdImpression({required String format, String? placement});
+
+  /// User watched a rewarded ad to completion and the reward was granted.
+  Future<void> trackRewardedCompleted(String placement);
+
+  /// User opened a rewarded ad but dismissed it before earning the reward.
+  Future<void> trackRewardedAbandoned(String placement);
+
+  /// AdMob paid event (per-impression revenue). [valueMicros] is in
+  /// micro-units of [currencyCode]; [precision] is the AdMob precision tier
+  /// (`unknown` / `estimated` / `publisherProvided` / `precise`).
+  Future<void> trackAdRevenue({
+    required String format,
+    required double valueMicros,
+    required String currencyCode,
+    required String precision,
+  });
 }
