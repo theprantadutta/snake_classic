@@ -36,6 +36,7 @@ import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
 // import 'package:snake_classic/utils/performance_monitor.dart'; // temporarily disabled
 
@@ -387,6 +388,29 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
               title: 'Snake Classic',
               debugShowCheckedModeBanner: false,
               routerConfig: appRouter,
+              // Root text scaling. The app's typography uses fixed fontSize
+              // values with no scaling of its own, so we adjust the effective
+              // text scale here in one place:
+              //  - Tablets get a modest base bump so text grows with the
+              //    larger UI (phones use 1.0 → unchanged).
+              //  - The OS accessibility factor is respected but clamped so an
+              //    extreme system font setting can't break the fixed layout.
+              builder: (context, child) {
+                final mediaQuery = MediaQuery.of(context);
+                final baseScale = context.responsive<double>(
+                  phone: 1.0,
+                  tablet: 1.12,
+                  largeTablet: 1.18,
+                );
+                final osScale =
+                    mediaQuery.textScaler.scale(1.0).clamp(0.9, 1.2);
+                return MediaQuery(
+                  data: mediaQuery.copyWith(
+                    textScaler: TextScaler.linear(baseScale * osScale),
+                  ),
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
               theme: ThemeData(
                 brightness: Brightness.dark,
                 scaffoldBackgroundColor:
