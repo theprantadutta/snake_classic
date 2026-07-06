@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -241,9 +243,12 @@ class _WalkthroughOverlayState extends State<WalkthroughOverlay>
     final targetCenter = rect.left + rect.width / 2;
     final tooltipHalf = tooltipMaxWidth / 2;
 
-    // Clamp to screen bounds with padding
-    final minLeft = 16.0;
-    final maxLeft = screenSize.width - tooltipMaxWidth - 16;
+    // Clamp to screen bounds with padding. On very narrow layouts
+    // (split-screen, multi-window, foldables) the tooltip's max width can
+    // exceed the available space, which would make maxLeft < minLeft and cause
+    // clamp() to throw. Floor maxLeft at minLeft so the bounds stay ordered.
+    const minLeft = 16.0;
+    final maxLeft = math.max(minLeft, screenSize.width - tooltipMaxWidth - 16);
 
     return (targetCenter - tooltipHalf).clamp(minLeft, maxLeft);
   }
@@ -253,9 +258,11 @@ class _WalkthroughOverlayState extends State<WalkthroughOverlay>
     final targetCenter = rect.top + rect.height / 2;
     const estimatedTooltipHeight = 150.0;
 
-    // Clamp to screen bounds with padding
+    // Clamp to screen bounds with padding. Floor maxTop at minTop so short
+    // layouts (split-screen) never make maxTop < minTop and throw in clamp().
     const minTop = 100.0; // Leave room for status bar
-    final maxTop = screenSize.height - estimatedTooltipHeight - 50;
+    final maxTop =
+        math.max(minTop, screenSize.height - estimatedTooltipHeight - 50);
 
     return (targetCenter - estimatedTooltipHeight / 2).clamp(minTop, maxTop);
   }
