@@ -484,7 +484,16 @@ class _GameScreenState extends State<GameScreen>
             onPressed: () {
               Navigator.of(dialogContext).pop();
               gameCubit.resetGame();
-              context.pop();
+              // The game screen can be reached either by pushing onto Home
+              // (canPop == true) or via context.go() from game-over "Play
+              // Again" / settings, which makes Game the root of the stack
+              // (canPop == false). Popping the latter throws GoError "There is
+              // nothing to pop", so fall back to navigating Home.
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(AppRoutes.home);
+              }
             },
             child: Text('Exit', style: TextStyle(color: theme.foodColor)),
           ),
