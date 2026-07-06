@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -49,6 +50,12 @@ void main() async {
   // Ensure Flutter is initialized and preserve splash screen
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Orbitron + Rajdhani are bundled as assets (see assets/fonts/ and
+  // pubspec.yaml). Disable runtime fetching so google_fonts NEVER reaches out
+  // to fonts.gstatic.com — the app renders correctly fully offline, and we no
+  // longer crash on "Connection closed before full header was received".
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   AppLogger.lifecycle('Snake Classic starting up...');
 

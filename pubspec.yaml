@@ -145,6 +145,10 @@ flutter:
     - assets/audio/
     - assets/images/
     - assets/legal/
+    # Orbitron + Rajdhani static instances, bundled so google_fonts loads
+    # them from assets instead of fetching from fonts.gstatic.com at runtime.
+    # google_fonts matches these via the AssetManifest (assets: section, NOT
+    # the fonts: section). Runtime fetching is disabled in main.dart.
+    - assets/fonts/
     - .env
     # - assets/images/
-    # - assets/fonts/
