@@ -12,6 +12,13 @@ class Snake {
   // Flag to track if a direction change has been queued this tick
   bool _hasQueuedDirection = false;
 
+  // Second-depth input buffer: a turn queued BEHIND the pending one.
+  // Lets a fast corner (e.g. down-then-right within one tick period)
+  // land both turns on consecutive ticks instead of rejecting the
+  // second input outright — at 150-300ms tick periods that rejection
+  // was the single biggest input-feel complaint.
+  Direction? _pendingDirection;
+
   Snake({required this.body, this.currentDirection = Direction.right})
     : _lastCommittedDirection = Direction.right;
 
@@ -53,8 +60,15 @@ class Snake {
     // Commit the current direction for the next tick's validation
     _lastCommittedDirection = currentDirection;
 
-    // Reset the flag to allow one direction change next tick
-    _hasQueuedDirection = false;
+    // Promote the second-buffered turn (if any) so it applies on the
+    // NEXT tick; otherwise open the queue for fresh input.
+    if (_pendingDirection != null) {
+      currentDirection = _pendingDirection!;
+      _pendingDirection = null;
+      _hasQueuedDirection = true;
+    } else {
+      _hasQueuedDirection = false;
+    }
 
     Position newHead = head.move(currentDirection);
 
@@ -87,25 +101,40 @@ class Snake {
     }
   }
 
-  /// Queues a direction change for the next tick. Returns `true` when the
-  /// input is accepted, `false` when it is rejected — either because a
-  /// direction is already queued this tick or because the requested move
-  /// would reverse the snake into itself. Callers use the return value to
-  /// surface "denied" feedback (haptic + red flash on the gesture indicator).
+  /// Queues a direction change. Two turns can be buffered per tick: the
+  /// first applies on the next move, the second on the move after that.
+  /// Returns `true` when the input is accepted, `false` when rejected —
+  /// either because both buffer slots are full or because the requested
+  /// move would reverse the snake into itself. Callers use the return
+  /// value to surface "denied" feedback (haptic + red flash on the
+  /// gesture indicator).
   bool changeDirection(Direction newDirection) {
-    // Only allow ONE direction change per game tick
-    // This prevents rapid inputs like RIGHT → DOWN → LEFT from causing self-collision
-    if (_hasQueuedDirection) {
-      return false;
+    if (!_hasQueuedDirection) {
+      // First slot. Validate against the LAST COMMITTED direction (not
+      // the pending currentDirection) so we can't reverse through a
+      // sequence of perpendicular moves.
+      if (newDirection == _lastCommittedDirection.opposite) {
+        return false;
+      }
+      currentDirection = newDirection;
+      _hasQueuedDirection = true;
+      return true;
     }
 
-    // Validate against the LAST COMMITTED direction (not the pending currentDirection)
-    // This ensures we can't reverse through a sequence of perpendicular moves
-    if (newDirection == _lastCommittedDirection.opposite) {
+    // Second slot: this turn executes AFTER currentDirection commits,
+    // so validate against currentDirection.
+    if (_pendingDirection != null) {
+      return false; // both slots full
+    }
+    if (newDirection == currentDirection.opposite) {
       return false;
     }
-    currentDirection = newDirection;
-    _hasQueuedDirection = true;
+    if (newDirection == currentDirection) {
+      // Harmless no-op — the snake is already turning that way. Accept
+      // without wasting the slot so a real turn can still be buffered.
+      return true;
+    }
+    _pendingDirection = newDirection;
     return true;
   }
 
@@ -139,6 +168,7 @@ class Snake {
     // Preserve direction tracking state
     copied._lastCommittedDirection = _lastCommittedDirection;
     copied._hasQueuedDirection = _hasQueuedDirection;
+    copied._pendingDirection = _pendingDirection;
     return copied;
   }
 }

@@ -35,6 +35,12 @@ class _SwipeDetectorState extends State<SwipeDetector>
   Offset _cumulativeDelta = Offset.zero;
   bool _hasTriggeredThisGesture = false;
 
+  // Direction most recently triggered within the CURRENT drag. A drag
+  // can now trigger multiple turns (e.g. up-then-right around a corner
+  // without lifting the finger); this prevents the same direction from
+  // re-firing continuously while the finger keeps moving that way.
+  Direction? _lastGestureDirection;
+
   @override
   void initState() {
     super.initState();
@@ -156,18 +162,26 @@ class _SwipeDetectorState extends State<SwipeDetector>
         // Reset tracking for new gesture
         _cumulativeDelta = Offset.zero;
         _hasTriggeredThisGesture = false;
+        _lastGestureDirection = null;
       },
       onPanUpdate: (details) {
-        // Accumulate total movement from pan start
+        // Accumulate movement since the last trigger (or pan start).
         _cumulativeDelta += details.delta;
 
-        // Only trigger once per gesture, using cumulative delta
-        if (!_hasTriggeredThisGesture) {
-          final direction = _getSwipeDirection(_cumulativeDelta);
-          if (direction != null) {
-            _hasTriggeredThisGesture = true;
-            _processSwipe(direction);
-          }
+        final direction = _getSwipeDirection(_cumulativeDelta);
+        if (direction == null) return;
+
+        // Restart accumulation from here in all cases: after a trigger
+        // so a follow-up turn is measured fresh, and while continuing in
+        // the same direction so built-up same-axis distance can't drown
+        // out a subsequent turn late in the drag.
+        _cumulativeDelta = Offset.zero;
+
+        // A drag may trigger multiple turns — one per direction change.
+        if (direction != _lastGestureDirection) {
+          _hasTriggeredThisGesture = true;
+          _lastGestureDirection = direction;
+          _processSwipe(direction);
         }
       },
       onPanEnd: (details) {
@@ -192,6 +206,7 @@ class _SwipeDetectorState extends State<SwipeDetector>
         // Reset for next gesture
         _cumulativeDelta = Offset.zero;
         _hasTriggeredThisGesture = false;
+        _lastGestureDirection = null;
       },
       onTap: () {
         HapticService().selectionClick();
