@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -84,28 +86,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       }
     });
 
-    // Check for daily bonus after a short delay
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        _checkDailyBonus();
-      }
-    });
-
-    // Check for walkthrough after daily bonus popup delay
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
-        _checkWalkthrough();
-      }
-    });
-
-    // First-launch initialization of the notification service. Used to
-    // live in main.dart but the OS permission dialog as a side effect
-    // was firing before the user had ever seen the app — so we moved
-    // it here, where it fires once the user has actually landed on
-    // home. NotificationService.initialize() guards itself against
-    // double-init (the _initialized flag), so re-entering home doesn't
-    // re-prompt.
-    _maybeInitNotifications();
+    // First-launch prompts (walkthrough, daily bonus, notification
+    // soft-ask/primer) used to fire on independent timers and could
+    // stack on top of each other on a cold first launch. Run them
+    // through a sequential queue instead — each step still self-gates
+    // on whether to show at all, the queue only enforces order and
+    // one-prompt-at-a-time.
+    _runOnboardingPromptQueue();
 
     // Home is mounted and the router is on a real route — flush any deep
     // link captured during the cold-start window (terminated-state
@@ -117,54 +104,79 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
-  void _maybeInitNotifications() {
+  /// Runs the first-launch prompts strictly one at a time, in priority
+  /// order: home walkthrough → daily bonus → notification soft-ask/primer.
+  /// Each step awaits the previous prompt's dismissal before it is even
+  /// considered; every step keeps its own has-shown / cadence gating, so
+  /// the queue only decides ORDER, not WHETHER anything shows.
+  Future<void> _runOnboardingPromptQueue() async {
+    // Let the home screen settle (first frame + entrance animations)
+    // before anything pops over it.
+    await Future.delayed(const Duration(milliseconds: 700));
+    if (!mounted) return;
+
+    // 1. Home walkthrough — resolves once completed or skipped (or
+    //    immediately if it was already seen).
+    await _checkWalkthrough();
+    if (!mounted) return;
+
+    // 2. Daily bonus popup — resolves when the dialog is dismissed.
+    await _checkDailyBonus();
+    if (!mounted) return;
+
+    // 3. Notification init + soft-ask → primer chain.
+    await _maybeInitNotifications();
+  }
+
+  /// First-launch initialization of the notification service. Used to
+  /// live in main.dart but the OS permission dialog as a side effect
+  /// was firing before the user had ever seen the app — so it runs
+  /// here, once the user has actually landed on home.
+  /// NotificationService.initialize() guards itself against double-init
+  /// (the _initialized flag), so re-entering home doesn't re-prompt.
+  Future<void> _maybeInitNotifications() async {
     if (NotificationService().initialized) {
       // Already initialized this session (returning to home) — still give
       // the permission primer its periodic chance.
-      _maybeShowNotificationPrimer();
+      await _maybeShowNotificationPrimer();
       return;
     }
-    // Small delay so the home screen finishes its first layout +
-    // animations before the soft-ask dialog pops over it.
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (!mounted) return;
-      // Initialize WITHOUT firing the OS prompt — we show a pre-permission
-      // soft-ask first (Apple's recommended priming pattern) and only trigger
-      // the real OS prompt if the user opts in.
-      NotificationService().initialize(requestPermission: false).then((_) {
-        AppLogger.success('Notification service initialized from home');
-        _maybeShowNotificationSoftAsk();
-      }).catchError((e) {
-        AppLogger.error('Notification service init failed', e);
-      });
-    });
+    // Initialize WITHOUT firing the OS prompt — we show a pre-permission
+    // soft-ask first (Apple's recommended priming pattern) and only trigger
+    // the real OS prompt if the user opts in.
+    try {
+      await NotificationService().initialize(requestPermission: false);
+      AppLogger.success('Notification service initialized from home');
+    } catch (e) {
+      AppLogger.error('Notification service init failed', e);
+      return;
+    }
+    if (!mounted) return;
+    await _maybeShowNotificationSoftAsk();
   }
 
   /// First-run: show the pre-permission soft-ask (self-gates to once ever).
   /// Whatever the user chooses, then hand off to the recurring re-ask primer
   /// (which self-gates on its own 7-day cadence, so no double dialog).
-  void _maybeShowNotificationSoftAsk() {
-    Future.delayed(const Duration(milliseconds: 800), () async {
-      if (!mounted) return;
-      final theme = context.read<ThemeCubit>().state.currentTheme;
-      await NotificationPermissionSoftAsk.maybeShow(context, theme);
-      if (!mounted) return;
-      _maybeShowNotificationPrimer();
-    });
+  /// maybeShow awaits both its dialog and the OS prompt flow, so the primer
+  /// can't stack on top of either.
+  Future<void> _maybeShowNotificationSoftAsk() async {
+    if (!mounted) return;
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    await NotificationPermissionSoftAsk.maybeShow(context, theme);
+    if (!mounted) return;
+    await _maybeShowNotificationPrimer();
   }
 
   /// Recurring "turn notifications on" nudge for users who denied/missed
   /// the OS prompt — they're token-registered on the backend but every
   /// push to them displays nothing. Primer self-gates (Android-only,
   /// notifications off, ≥7 days since last ask), so calling it freely
-  /// from here is safe. Small extra delay keeps it from stacking on top
-  /// of the OS prompt when init just requested permission.
-  void _maybeShowNotificationPrimer() {
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      final theme = context.read<ThemeCubit>().state.currentTheme;
-      NotificationPermissionPrimer.maybeShow(context, theme);
-    });
+  /// from here is safe.
+  Future<void> _maybeShowNotificationPrimer() async {
+    if (!mounted) return;
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    await NotificationPermissionPrimer.maybeShow(context, theme);
   }
 
   /// Shows the first-launch game-mode picker if it hasn't been shown
@@ -218,7 +230,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     await settingsCubit.markGameModePrompted();
   }
 
-  /// Check if home walkthrough should be shown
+  /// Check if home walkthrough should be shown. Resolves once the
+  /// walkthrough is completed or skipped (or immediately if it doesn't
+  /// need to run), so later onboarding prompts can queue behind it.
   Future<void> _checkWalkthrough() async {
     if (_walkthroughChecked) return;
     _walkthroughChecked = true;
@@ -230,10 +244,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     if (!isComplete && mounted) {
       getIt<AnalyticsFacade>().trackWalkthroughStarted();
-      walkthroughNotifier.start(
+      final done = Completer<void>();
+      await walkthroughNotifier.start(
         walkthroughId: WalkthroughService.homeWalkthroughId,
         steps: HomeWalkthrough.getSteps(),
+        onComplete: () {
+          if (!done.isCompleted) done.complete();
+        },
       );
+      if (!mounted) return;
+      // start() no-ops if the walkthrough raced to a completed state,
+      // in which case onComplete never fires — don't hang the queue.
+      if (!ref.read(walkthroughProvider).isActive && !done.isCompleted) {
+        done.complete();
+      }
+      await done.future;
     }
   }
 
