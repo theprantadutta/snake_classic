@@ -153,17 +153,15 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       _foodPulseController.forward(from: 0.0);
     }
 
-    // Pulse driver — shared between urgent power-up indicator, combo chip
-    // heat, and the time-attack critical (<10s) throb. Any of those signals
-    // is enough to keep the controller running.
+    // Pulse driver — shared between urgent power-up indicator and combo
+    // chip heat. (The time-attack chip drives its own ticker — see
+    // _TimeAttackChip — because wall-clock time advances between HUD
+    // rebuilds and this driver only re-evaluates on rebuild.)
     final hasUrgentPowerUp = widget.gameState.activePowerUps.any(
       (p) => !p.isExpired && p.remainingTime.inSeconds <= 3,
     );
     final hasComboHeat = widget.gameState.currentCombo >= 5;
-    final hasCriticalTime = widget.gameState.gameMode.timeLimit != null &&
-        widget.gameState.timeAttackSecondsRemaining <= 10 &&
-        widget.gameState.timeAttackSecondsRemaining > 0;
-    final shouldPulse = hasUrgentPowerUp || hasComboHeat || hasCriticalTime;
+    final shouldPulse = hasUrgentPowerUp || hasComboHeat;
     if (shouldPulse && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
     } else if (!shouldPulse && _pulseController.isAnimating) {
@@ -415,58 +413,11 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   }
 
   Widget _buildTimeAttackChip() {
-    final seconds = gameState.timeAttackSecondsRemaining;
-    final mm = (seconds ~/ 60).toString().padLeft(2, '0');
-    final ss = (seconds % 60).toString().padLeft(2, '0');
-    final isLow = seconds <= 30;
-    final isCritical = seconds <= 10;
-    final accent = isLow ? Colors.redAccent : Colors.amber;
-    final chip = Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: _s(isSmallScreen ? 8 : 10),
-        vertical: _s(isSmallScreen ? 6 : 8),
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: accent.withValues(alpha: isLow ? 0.7 : 0.4),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.timer_outlined,
-            size: _s(isSmallScreen ? 14 : 16),
-            color: accent,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '$mm:$ss',
-            style: TextStyle(
-              color: accent,
-              fontSize: isSmallScreen ? 12 : 13,
-              fontWeight: FontWeight.bold,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
-    );
-    // <10s remaining: drive a 0.95–1.05 throb off _pulseController so the
-    // urgency reads at a glance for players who aren't watching the timer.
-    // The controller is already kept running by the combo-heat / urgent-
-    // power-up shared logic in didUpdateWidget.
-    if (!isCritical) return chip;
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) {
-        final scale = 0.95 + 0.10 * _pulseController.value;
-        return Transform.scale(scale: scale, child: child);
-      },
-      child: chip,
+    return _TimeAttackChip(
+      gameState: gameState,
+      theme: theme,
+      isSmallScreen: isSmallScreen,
+      uiScale: widget.uiScale,
     );
   }
 
@@ -1012,6 +963,129 @@ class _PowerUpRingState extends State<_PowerUpRing>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Self-ticking Time Attack countdown chip. `timeAttackSecondsRemaining`
+/// is wall-clock derived, so it advances between HUD rebuilds — but the
+/// parent HUD only rebuilds on score/level/status changes. Without its own
+/// ticker the clock visibly froze between bites and jumped on the next
+/// eat. Same pattern as _PowerUpRing: a repeating controller rebuilds JUST
+/// this chip, reading the model fresh each frame. The <10s critical throb
+/// is driven off the same ticker instead of the HUD's shared pulse
+/// controller (which had the same staleness problem).
+class _TimeAttackChip extends StatefulWidget {
+  final GameState gameState;
+  final GameTheme theme;
+  final bool isSmallScreen;
+  final double uiScale;
+
+  const _TimeAttackChip({
+    required this.gameState,
+    required this.theme,
+    required this.isSmallScreen,
+    required this.uiScale,
+  });
+
+  @override
+  State<_TimeAttackChip> createState() => _TimeAttackChipState();
+}
+
+class _TimeAttackChipState extends State<_TimeAttackChip>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+    _syncTicker();
+  }
+
+  @override
+  void didUpdateWidget(_TimeAttackChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncTicker();
+  }
+
+  /// Freeze the ticker while paused — the getter is frozen via pausedAt
+  /// anyway, so ticking would just burn frames on a static value.
+  void _syncTicker() {
+    final paused = widget.gameState.pausedAt != null;
+    if (paused && _ticker.isAnimating) {
+      _ticker.stop();
+    } else if (!paused && !_ticker.isAnimating) {
+      _ticker.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  double _s(double value) => value * widget.uiScale;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSmallScreen = widget.isSmallScreen;
+    final theme = widget.theme;
+    return AnimatedBuilder(
+      animation: _ticker,
+      builder: (context, _) {
+        final seconds = widget.gameState.timeAttackSecondsRemaining;
+        final mm = (seconds ~/ 60).toString().padLeft(2, '0');
+        final ss = (seconds % 60).toString().padLeft(2, '0');
+        final isLow = seconds <= 30;
+        final isCritical = seconds <= 10 && seconds > 0;
+        final accent = isLow ? Colors.redAccent : Colors.amber;
+        // 0.95–1.05 throb driven off the ticker's 0..1 sweep.
+        final scale = isCritical
+            ? 0.95 + (math.sin(_ticker.value * math.pi * 2) * 0.10).abs()
+            : 1.0;
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: _s(isSmallScreen ? 8 : 10),
+              vertical: _s(isSmallScreen ? 6 : 8),
+            ),
+            decoration: BoxDecoration(
+              color: theme.backgroundColor.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: accent.withValues(alpha: isLow ? 0.7 : 0.4),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.timer_outlined,
+                  size: _s(isSmallScreen ? 14 : 16),
+                  color: accent,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$mm:$ss',
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: isSmallScreen ? 12 : 13,
+                    fontWeight: FontWeight.bold,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
               ],
