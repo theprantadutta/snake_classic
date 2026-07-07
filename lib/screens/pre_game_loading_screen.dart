@@ -18,11 +18,16 @@ import 'package:snake_classic/widgets/app_background.dart';
 /// Pre-game loading screen shown between the Home Play tap and the Game screen.
 ///
 /// Its job is two-fold:
-///   1. Give the player a beautiful 4.5-second buffer with tips, animations,
-///      and a progress bar so the jump into gameplay feels deliberate.
+///   1. Give the player a short buffer with tips, animations, and a
+///      progress bar so the jump into gameplay feels deliberate.
 ///   2. Opportunistically warm up gameplay dependencies that are cheap and
 ///      idempotent — audio (already preloaded in main; this just touches the
 ///      singleton), and a paint of the AppBackground in the active theme.
+///
+/// The wait is SKIPPABLE: a tap anywhere sprints the progress bar to 100%
+/// and starts the game. The warmup work is done within the first frames,
+/// so the remaining seconds are pure theater — by play #10 a mandatory
+/// 3-second wait on every launch reads as friction, not polish.
 ///
 /// When the timer completes, the screen does a `pushReplacement` to
 /// `AppRoutes.game` so back navigation from the game returns to Home, not
@@ -162,6 +167,18 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
     context.pushReplacement(AppRoutes.game);
   }
 
+  /// Tap-to-skip: sprint the progress bar to 100%. Navigation happens via
+  /// the controller's existing completed-status listener, so the skip and
+  /// natural-completion paths stay identical.
+  void _skip() {
+    if (_navigated || _progressController.isCompleted) return;
+    _progressController.animateTo(
+      1.0,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   void dispose() {
     _progressController.dispose();
@@ -206,7 +223,10 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
           // to protect yet. _navigated guards against double navigation.
           canPop: true,
           child: Scaffold(
-            body: AppBackground(
+            body: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _skip,
+              child: AppBackground(
               theme: theme,
               child: Stack(
                 children: [
@@ -259,6 +279,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                     ),
                   ),
                 ],
+              ),
               ),
             ),
           ),
@@ -843,6 +864,26 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                     },
                   ),
                 ),
+              ),
+              const SizedBox(height: 10),
+              // Skip affordance — breathes with the shared pulse controller.
+              AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, _) {
+                  return Opacity(
+                    opacity: 0.40 + 0.35 * _pulseController.value,
+                    child: Text(
+                      'TAP ANYWHERE TO START',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: theme.accentColor,
+                        letterSpacing: 1.8,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           );
