@@ -30,6 +30,7 @@ import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/tournament_service.dart';
+import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
@@ -201,6 +202,10 @@ class GameCubit extends Cubit<GameCubitState> {
   static const int maxTimeBonusesPerRun = 2;
   int _timeBonusesUsed = 0;
 
+  /// Monotonic run counter — bumped by every startGame(). Delayed
+  /// callbacks capture it to detect "a different run is now playing".
+  int _runId = 0;
+
   void startGame() {
     debugPrint('🎮 [GameCubit] startGame() called');
 
@@ -231,6 +236,7 @@ class GameCubit extends Cubit<GameCubitState> {
     );
 
     // Reset tracking
+    _runId++;
     _gameStartTime = DateTime.now();
     _foodTypesEatenThisGame.clear();
     _hitWallThisGame = false;
@@ -355,10 +361,17 @@ class GameCubit extends Cubit<GameCubitState> {
     // restarting before the timer fires. consume() also clears the armed
     // slot — re-arming for the next game is intentional.
     unawaited(powerUpCubit.consume(armedKey));
+    // Capture the run id so the callback can tell "this run is still
+    // going" apart from "a NEW run started within the 5s window" — the
+    // status==playing check alone let game A's armed power-up inject
+    // itself into game B.
+    final runId = _runId;
     Future.delayed(const Duration(seconds: 5), () {
+      if (isClosed) return;
       // If the game ended (game over / quit) before the activation
       // window, silently drop. Inventory was already consumed — that's
       // a deliberate "you paid for it" cost.
+      if (runId != _runId) return;
       if (state.status != GamePlayStatus.playing) return;
       final gameState = state.gameState;
       if (gameState == null) return;
@@ -1404,7 +1417,8 @@ class GameCubit extends Cubit<GameCubitState> {
         ? 'self'
         : null;
     final replay = _gameRecorder.finishRecording(
-      playerName: 'Player',
+      // Falls back to 'Player' inside the getter for signed-out users.
+      playerName: UnifiedUserService().displayName,
       finalScore: gameState.score,
       gameMode: gameState.gameMode.name,
       gameSettings: {
