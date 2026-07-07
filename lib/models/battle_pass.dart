@@ -460,7 +460,9 @@ class BattlePassSeason {
 
   static const _freeRewardNames = <BattlePassRewardType, List<String>>{
     BattlePassRewardType.xp: ['XP Boost', 'Star Dust', 'Energy Pack'],
-    BattlePassRewardType.coins: ['50 Coins', '75 Coins', '100 Coins'],
+    // Coins intentionally absent — coin reward names are derived from the
+    // actual granted quantity in _getRewardName so the label can never
+    // promise more than _getQuantityForLevel credits.
     BattlePassRewardType.tournamentEntry: ['Bronze Entry', 'Silver Entry'],
     BattlePassRewardType.title: ['Stargazer', 'Voyager'],
     BattlePassRewardType.theme: ['Nebula Theme'],
@@ -470,7 +472,6 @@ class BattlePassSeason {
 
   static const _premiumRewardNames = <BattlePassRewardType, List<String>>{
     BattlePassRewardType.xp: ['Mega XP', 'Cosmic Charge', 'Nova Burst'],
-    BattlePassRewardType.coins: ['200 Coins', '350 Coins', '500 Coins'],
     BattlePassRewardType.skin: ['Galaxy Skin', 'Crystal Serpent'],
     BattlePassRewardType.trail: ['Neon Trail', 'Plasma Wake', 'Cosmic Aura'],
     BattlePassRewardType.theme: ['Cyberpunk Theme', 'Crystal Theme'],
@@ -485,6 +486,9 @@ class BattlePassSeason {
     bool isPremium,
     int quantity,
   ) {
+    // Coin labels must state the real credited amount — the old rotating
+    // name list could read "75 Coins" while the claim granted 50.
+    if (type == BattlePassRewardType.coins) return '$quantity Coins';
     final names = isPremium
         ? _premiumRewardNames[type]
         : _freeRewardNames[type];
@@ -629,6 +633,9 @@ class BattlePassXpSource {
     'achievement_unlocked_rare': 15,
     'achievement_unlocked_epic': 30,
     'achievement_unlocked_legendary': 60,
+    // Diamond is the rarest tier — it was missing from this table, so the
+    // hardest achievements in the game granted 0 battle-pass XP.
+    'achievement_unlocked_diamond': 100,
     'multiplayer_win': 20,
     'multiplayer_participation': 8,
     'tournament_participation': 35,
