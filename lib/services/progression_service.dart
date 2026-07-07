@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/models/player_level.dart';
+import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -113,10 +116,40 @@ class ProgressionService extends ChangeNotifier {
           'Player leveled up: $oldLevel -> ${_progress.level} '
           '(total XP ${_progress.totalXp})',
         );
+        unawaited(_creditLevelUpRewards(oldLevel, _progress.level));
       }
     } catch (e) {
       AppLogger.error('ProgressionService: flush failed', e);
       _bufferedXp += total; // don't drop the XP — retry on the next flush
+    }
+  }
+
+  /// Coin reward for reaching lifetime level [level]. Levels are rare
+  /// (every ~10-20 games at typical XP rates), so the reward is sized
+  /// to feel like an event next to the <=10-coin game-completion grant:
+  /// 50 coins per level, 200 at every 10th.
+  static int coinRewardForLevel(int level) => level % 10 == 0 ? 200 : 50;
+
+  /// Credit the coin reward for every level gained in this flush.
+  /// Before this existed, the lifetime level granted NOTHING — the
+  /// level-up celebration was a popup with no payoff. Goes through
+  /// [CoinsCubit.earnCoins] so the standard transaction log, daily cap
+  /// and animations all apply. Cloud-restore level jumps never reach
+  /// here (see [flushXp]) so reinstalling can't re-mint rewards.
+  Future<void> _creditLevelUpRewards(int fromLevel, int toLevel) async {
+    if (!GetIt.I.isRegistered<CoinsCubit>()) return;
+    final coins = GetIt.I<CoinsCubit>();
+    for (var lvl = fromLevel + 1; lvl <= toLevel; lvl++) {
+      try {
+        await coins.earnCoins(
+          CoinEarningSource.levelUp,
+          customAmount: coinRewardForLevel(lvl),
+          itemName: 'Player Level $lvl',
+          metadata: {'playerLevel': lvl},
+        );
+      } catch (e) {
+        AppLogger.error('Level-up coin reward failed (level $lvl)', e);
+      }
     }
   }
 

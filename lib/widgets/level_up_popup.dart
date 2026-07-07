@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Celebratory dialog shown when the player crosses a level threshold.
-/// Prestige-only — no rewards, just the new level.
+/// Shows the coin reward that ProgressionService credited for the level.
 class LevelUpPopup extends StatelessWidget {
   final GameTheme theme;
   final int level;
@@ -102,7 +103,37 @@ class LevelUpPopup extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            // Coin reward chip — the amount ProgressionService credited
+            // for this level (already in the balance by the time this
+            // dialog shows).
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.amber.withValues(alpha: 0.45),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🪙', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  Text(
+                    '+${ProgressionService.coinRewardForLevel(level)} coins',
+                    style: const TextStyle(
+                      color: Colors.amber,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             GestureDetector(
               onTap: () => dialogContextPop(context),
               child: Container(
