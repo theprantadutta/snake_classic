@@ -29,7 +29,19 @@ class AudioService {
     'game_start',
     'power_up',
     'button_click',
+    // Ships as an asset but was missing from this list — playSound fell
+    // through to a generic OS click on every high-score/achievement moment.
+    'high_score',
   ];
+
+  // Logical sound ids with no dedicated asset, mapped onto a shipped one.
+  // 'coin_collect' is used by every coin-claim surface (game over, daily
+  // challenges, weekly quests) but coin_collect.wav never shipped — the
+  // fallback switch had no case for it either, so those moments were
+  // completely silent.
+  static const Map<String, String> _soundAliases = {
+    'coin_collect': 'power_up',
+  };
 
   bool _soundEnabled = true;
   bool _musicEnabled = true;
@@ -82,7 +94,7 @@ class AudioService {
   void playSound(String soundName) {
     if (!_initialized || !_soundEnabled) return;
 
-    final source = _loadedSounds[soundName];
+    final source = _loadedSounds[_soundAliases[soundName] ?? soundName];
     if (source != null) {
       // SoLoud.play() is non-blocking and low-latency
       _soloud.play(source);
