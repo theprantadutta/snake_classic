@@ -177,11 +177,13 @@ class SnakeSimulation {
     var newCombo = previousState.currentCombo;
     var newMaxCombo = previousState.maxCombo;
     var newComboMultiplier = previousState.comboMultiplier;
+    var newComboIdleMs = previousState.comboIdleMs;
 
     if (willEatFood) {
       final eatenFood =
           willEatPrimaryFood ? currentFood : extraFoods[eatenExtraIndex];
 
+      newComboIdleMs = 0;
       newCombo++;
       newMaxCombo = max(newMaxCombo, newCombo);
       newComboMultiplier = model.GameState.calculateComboMultiplier(newCombo);
@@ -233,6 +235,21 @@ class SnakeSimulation {
           powerUpPosition: currentPowerUp?.position,
         );
       }
+    } else if (newCombo > 0 && previousState.gameMode != GameMode.zen) {
+      // Combo decay: the streak breaks after comboDecayMs of accumulated
+      // GAME-time without a bite (each tick contributes its own duration,
+      // so pause never advances the clock and speed power-ups count the
+      // time the player actually experienced). Zen mode is exempt — its
+      // whole identity is no pressure. Without decay the "combo" was a
+      // monotonic food counter: once 20 foods were eaten the 3x
+      // multiplier was permanent, which is a multiplier, not a streak.
+      newComboIdleMs += previousState.gameSpeed;
+      if (newComboIdleMs >= GameConstants.comboDecayMs) {
+        events.add(ComboBrokenEvent(previousCombo: newCombo));
+        newCombo = 0;
+        newComboMultiplier = 1.0;
+        newComboIdleMs = 0;
+      }
     }
 
     // Drop expired active power-ups. (Inline filter instead of
@@ -267,6 +284,7 @@ class SnakeSimulation {
       currentCombo: newCombo,
       maxCombo: newMaxCombo,
       comboMultiplier: newComboMultiplier,
+      comboIdleMs: newComboIdleMs,
       activePowerUps: activePowerUps,
       lastMoveTime: DateTime.now(),
       visitedCells: visitedSnapshot,

@@ -46,6 +46,17 @@ class FoodEatenEvent extends TickEvent {
   });
 }
 
+/// The combo streak decayed to zero this tick — the snake went
+/// [GameConstants.comboDecayMs] of game-time without eating. Hosts can
+/// surface a subtle "streak lost" cue; the multiplier is already back
+/// to 1.0 in the tick's nextState.
+class ComboBrokenEvent extends TickEvent {
+  /// The streak size that was lost.
+  final int previousCombo;
+
+  const ComboBrokenEvent({required this.previousCombo});
+}
+
 /// The score crossed one or more level thresholds this tick. A single
 /// high-combo bite can span multiple levels, hence the range.
 class LeveledUpEvent extends TickEvent {

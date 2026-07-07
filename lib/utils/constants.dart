@@ -153,6 +153,14 @@ class GameConstants {
   static const double gameBoardBorderWidth = 3.0;
   static const double gestureIndicatorSize = 70.0;
 
+  // === Combo Constants ===
+  // Game-time (ticks x tick duration) the snake can go without eating
+  // before the combo streak breaks back to 0. Zen mode is exempt.
+  // ~6s is roughly 1.5 board crossings early game — generous enough
+  // that deliberate routing to the next food keeps the streak alive,
+  // tight enough that the 3x multiplier stays earned, not permanent.
+  static const int comboDecayMs = 6000;
+
   // === Swipe Detection Constants ===
   static const double swipeMinDelta = 2.0;
   static const double swipeMinVelocity = 300.0;

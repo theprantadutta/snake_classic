@@ -56,10 +56,14 @@ class GameState {
   final DateTime? lastMoveTime;
   final GameMode gameMode;
 
-  // Combo system
+  // Combo system. The combo is a real streak: it BREAKS (resets to 0)
+  // after [GameConstants.comboDecayMs] of accumulated game-time without
+  // eating — see SnakeSimulation.step. Game-time (ticks × tick duration)
+  // rather than wall-clock keeps it pause-safe with no pausedAt shifting.
   final int currentCombo; // Current streak count
   final int maxCombo; // Best streak this game
   final double comboMultiplier; // Score multiplier based on combo
+  final int comboIdleMs; // Game-time ms since the last bite
 
   // Survival mode lives. Defaults to 1 so non-survival modes behave as before.
   final int livesRemaining;
@@ -101,6 +105,7 @@ class GameState {
     this.currentCombo = 0,
     this.maxCombo = 0,
     this.comboMultiplier = 1.0,
+    this.comboIdleMs = 0,
     this.livesRemaining = 1,
     this.initialLives = 1,
     this.gameStartTime,
@@ -299,6 +304,7 @@ class GameState {
     int? currentCombo,
     int? maxCombo,
     double? comboMultiplier,
+    int? comboIdleMs,
     int? livesRemaining,
     int? initialLives,
     DateTime? gameStartTime,
@@ -327,6 +333,7 @@ class GameState {
       currentCombo: currentCombo ?? this.currentCombo,
       maxCombo: maxCombo ?? this.maxCombo,
       comboMultiplier: comboMultiplier ?? this.comboMultiplier,
+      comboIdleMs: comboIdleMs ?? this.comboIdleMs,
       livesRemaining: livesRemaining ?? this.livesRemaining,
       initialLives: initialLives ?? this.initialLives,
       gameStartTime: gameStartTime ?? this.gameStartTime,

@@ -856,6 +856,14 @@ class GameCubit extends Cubit<GameCubitState> {
           // game-end we subtract any leftover time on still-active power-ups.
           _currentGamePowerUpTime += event.powerUp.type.duration.inSeconds;
           _audioService.playSound('power_up');
+        case ComboBrokenEvent():
+          // Streak decayed to zero (comboDecayMs of game-time without a
+          // bite). Subtle cue only — a light buzz; the HUD combo chip
+          // resetting is the visual signal. No sound: a "loss" sting on
+          // top of normal play would read as punishment.
+          if (event.previousCombo >= 5) {
+            unawaited(_hapticService.lightImpact());
+          }
         case CrashEvent():
           break; // Handled above via result.crashed.
       }
