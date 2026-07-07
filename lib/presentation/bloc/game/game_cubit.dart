@@ -63,7 +63,6 @@ class GameCubit extends Cubit<GameCubitState> {
   final DailyChallengeService _dailyChallengeService = DailyChallengeService();
 
   Timer? _gameTimer;
-  Timer? _animationTimer;
   Timer? _powerUpTimer;
   Timer? _timeAttackTimer;
   Duration? _timeAttackRemaining;
@@ -276,7 +275,6 @@ class GameCubit extends Cubit<GameCubitState> {
         food: initialFoods.primary,
         foods: initialFoods.extras,
       ),
-      moveProgress: 0.0,
       clearPreviousGameState: true,
       tournamentScoreSubmission: TournamentScoreSubmission.none,
     );
@@ -298,7 +296,6 @@ class GameCubit extends Cubit<GameCubitState> {
         DateTime.now().add(const Duration(milliseconds: 500));
 
     _startGameLoop();
-    _startSmoothAnimation();
     _startPowerUpTimer();
     // Must be the EFFECTIVE mode — a TimeAttack tournament played while
     // the user's settings say Classic previously never started its
@@ -401,7 +398,6 @@ class GameCubit extends Cubit<GameCubitState> {
     if (state.status != GamePlayStatus.playing) return;
 
     _gameTimer?.cancel();
-    _animationTimer?.cancel();
     _powerUpTimer?.cancel();
     unawaited(_audioService.pauseGameplayMusic());
 
@@ -556,7 +552,6 @@ class GameCubit extends Cubit<GameCubitState> {
     unawaited(_hapticService.lightImpact());
 
     _startGameLoop();
-    _startSmoothAnimation();
     _startPowerUpTimer();
     _scheduleTimeAttackTimer();
 
@@ -658,13 +653,6 @@ class GameCubit extends Cubit<GameCubitState> {
       }
       // For crashed/gameOver/ready - don't schedule, game has ended
     });
-  }
-
-  void _startSmoothAnimation() {
-    // DISABLED: Animation is now handled locally in GameBoard widget
-    // using AnimatedBuilder + local Ticker. This avoids Bloc state updates
-    // entirely for animation, giving better performance.
-    // The widget calculates moveProgress based on time since last game state change.
   }
 
   void _startPowerUpTimer() {
@@ -895,7 +883,6 @@ class GameCubit extends Cubit<GameCubitState> {
     final newCubitState = state.copyWith(
       gameState: newGameState,
       previousGameState: previousState,
-      moveProgress: 0.0,
     );
 
     if (_updateCount <= 5) {
@@ -1010,8 +997,7 @@ class GameCubit extends Cubit<GameCubitState> {
           showCrashModal: false,
         ),
         previousGameState: current,
-        moveProgress: 0.0,
-      ),
+        ),
     );
   }
 
@@ -1059,7 +1045,6 @@ class GameCubit extends Cubit<GameCubitState> {
 
     // Cancel all timers
     _gameTimer?.cancel();
-    _animationTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
     _timeAttackTimer = null;
@@ -1253,15 +1238,13 @@ class GameCubit extends Cubit<GameCubitState> {
           collisionBodyPart: null,
           showCrashModal: false,
         ),
-        moveProgress: 0.0,
-      ),
+        ),
     );
 
     // A brief "ready" beat before the first tick, same as startGame.
     _levelUpSlowdownUntil =
         DateTime.now().add(const Duration(milliseconds: 600));
     _startGameLoop();
-    _startSmoothAnimation();
     _startPowerUpTimer();
     _hapticService.mediumImpact();
   }
@@ -1494,7 +1477,6 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Reset the game to initial state while preserving high score
   void resetGame() {
     _gameTimer?.cancel();
-    _animationTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
     _timeAttackTimer = null;
@@ -1517,15 +1499,13 @@ class GameCubit extends Cubit<GameCubitState> {
         status: GamePlayStatus.ready,
         gameState: gameState,
         clearPreviousGameState: true,
-        moveProgress: 0.0,
-      ),
+        ),
     );
   }
 
   /// Return to menu state
   void backToMenu() {
     _gameTimer?.cancel();
-    _animationTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
     _timeAttackTimer = null;
@@ -1536,8 +1516,7 @@ class GameCubit extends Cubit<GameCubitState> {
       state.copyWith(
         status: GamePlayStatus.ready,
         clearPreviousGameState: true,
-        moveProgress: 0.0,
-      ),
+        ),
     );
   }
 
@@ -2040,7 +2019,6 @@ class GameCubit extends Cubit<GameCubitState> {
   @override
   Future<void> close() {
     _gameTimer?.cancel();
-    _animationTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
     _rejectedInputClearTimer?.cancel();

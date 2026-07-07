@@ -421,7 +421,10 @@ class BattlePassSeason {
       endDate: endDate,
       levels: levels,
       price: 9.99,
-      bannerImage: 'assets/images/battle_pass_cosmic_banner.png',
+      // Points at a real bundled asset — the old battle_pass_cosmic_banner
+      // reference never shipped. (Nothing renders bannerImage today, but a
+      // future consumer shouldn't inherit a broken path.)
+      bannerImage: 'assets/images/snake_classic_logo.png',
       themeColor: const Color(0xFF4B0082),
       metadata: {
         'featured_skins': ['galaxy', 'cosmic', 'crystal'],

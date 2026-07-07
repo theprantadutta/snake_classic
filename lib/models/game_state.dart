@@ -365,13 +365,6 @@ class GameState {
     return copyWith(activePowerUps: [...activePowerUps, activePowerUp]);
   }
 
-  GameState removeExpiredPowerUps() {
-    final unexpiredPowerUps = activePowerUps
-        .where((p) => !p.isExpired)
-        .toList();
-    return copyWith(activePowerUps: unexpiredPowerUps);
-  }
-
   bool get hasInvincibility {
     return activePowerUps.any(
       (p) =>

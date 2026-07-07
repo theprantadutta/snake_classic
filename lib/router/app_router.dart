@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/game_replay.dart';
@@ -88,7 +89,9 @@ final GlobalKey<NavigatorState> rootNavigatorKey =
 GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
   initialLocation: AppRoutes.loading,
   navigatorKey: rootNavigatorKey,
-  debugLogDiagnostics: true,
+  // Debug builds only — this was `true` unconditionally, spamming route
+  // diagnostics in production logs.
+  debugLogDiagnostics: kDebugMode,
   observers: observers ?? [],
   routes: [
     // Core routes

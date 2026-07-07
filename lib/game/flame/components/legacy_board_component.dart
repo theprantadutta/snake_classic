@@ -4,15 +4,15 @@ import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/game/flame/rendering/game_board_painter.dart';
 
-/// Renders the gameplay board by driving the legacy `CustomPainter`s
+/// Renders the gameplay board by driving the shared `CustomPainter`s
 /// ([GameBoardBackgroundPainter] + [OptimizedGameBoardPainter]) inside Flame's
 /// render pass, in the world's pixel-space coordinates.
 ///
-/// Reusing the exact painter code guarantees pixel-for-pixel parity with the
-/// legacy renderer across every theme, skin and crash effect while the rest of
-/// the game (loop, camera, components, and — in later phases — particles and
-/// effects) runs on Flame. The painter logic moves into this layer for good in
-/// the final phase, after which `game_board.dart` is deleted.
+/// Historical note: these painters predate the Flame migration (they powered
+/// the old `game_board.dart` widget, deleted long ago). Reusing them kept
+/// pixel-for-pixel parity across every theme, skin and crash effect while the
+/// loop, camera and components moved to Flame. They are now simply where the
+/// board rendering lives — there is no other renderer.
 ///
 /// Note: the snake trail system and explosion particles are layered separately
 /// (Phase 3b) — this component covers the board, snake, food, power-ups,
