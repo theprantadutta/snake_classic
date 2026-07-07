@@ -9,7 +9,7 @@ part 'store_dao.g.dart';
 const _uuid = Uuid();
 
 @DriftAccessor(
-    tables: [Coins, CoinTransactions, PremiumStatus, UnlockedItems, BattlePasses, PurchaseHistory, DailyBonusState])
+    tables: [Coins, CoinTransactions, PremiumStatus, UnlockedItems, BattlePasses, PurchaseHistory, DailyBonusState, PowerUpInventoryState])
 class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   StoreDao(super.db);
 
@@ -871,6 +871,77 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
   static String _addDaysToIsoDate(String isoDate, int days) {
     final dt = DateTime.parse(isoDate);
     return dt.add(Duration(days: days)).toIso8601String().substring(0, 10);
+  }
+
+  // ==================== Power-Up Inventory ====================
+
+  /// Watch the singleton power_up_inventory_state row. PowerUpCubit
+  /// subscribes to this stream so the pre-game inventory stays in
+  /// lock-step with Drift writes (a purchase on this device, or a
+  /// cold-start sync pull from another device).
+  Stream<PowerUpInventoryStateData?> watchPowerUpInventoryRow() =>
+      (select(powerUpInventoryState)..where((t) => t.id.equals(1)))
+          .watchSingleOrNull();
+
+  /// Read the power_up_inventory_state row. Used by the SyncEngine to
+  /// read the latest snapshot at drain time and by PowerUpCubit's
+  /// hydrate path.
+  Future<PowerUpInventoryStateData?> getPowerUpInventoryRow() =>
+      (select(powerUpInventoryState)..where((t) => t.id.equals(1)))
+          .getSingleOrNull();
+
+  /// Upsert the singleton inventory row and enqueue a sync outbox row
+  /// in the same transaction so the SyncEngine pushes the new snapshot
+  /// to the backend's UserPowerUpInventory mirror.
+  Future<void> savePowerUpInventory(String inventoryJson) async {
+    final now = DateTime.now();
+    await transaction(() async {
+      final existing = await getPowerUpInventoryRow();
+      if (existing == null) {
+        await into(powerUpInventoryState)
+            .insert(PowerUpInventoryStateCompanion.insert(
+          inventoryJson: Value(inventoryJson),
+          updatedAt: Value(now),
+        ));
+      } else {
+        await (update(powerUpInventoryState)..where((t) => t.id.equals(1)))
+            .write(PowerUpInventoryStateCompanion(
+          inventoryJson: Value(inventoryJson),
+          updatedAt: Value(now),
+        ));
+      }
+
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.powerUpInventory,
+        entityKey: 'power_up_inventory:1',
+      );
+    });
+  }
+
+  /// Apply a server snapshot to the local power_up_inventory_state row.
+  /// Used by SyncEngine on cold-start pull so a reinstalling user gets
+  /// their paid inventory back before the home screen renders. Skips
+  /// the outbox enqueue — the value came FROM the server, no need to
+  /// push it back.
+  Future<void> applyPowerUpInventorySnapshot({
+    required String inventoryJson,
+    DateTime? updatedAt,
+  }) async {
+    final ts = updatedAt ?? DateTime.now();
+    final existing = await getPowerUpInventoryRow();
+    if (existing == null) {
+      await into(powerUpInventoryState)
+          .insert(PowerUpInventoryStateCompanion.insert(
+        inventoryJson: Value(inventoryJson),
+        updatedAt: Value(ts),
+      ));
+    } else {
+      await (update(powerUpInventoryState)..where((t) => t.id.equals(1)))
+          .write(PowerUpInventoryStateCompanion(
+        inventoryJson: Value(inventoryJson),
+        updatedAt: Value(ts),
+      ));
+    }
   }
 }
 

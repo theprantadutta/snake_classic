@@ -524,6 +524,14 @@ class ApiService {
   Future<SyncOutcome> syncDailyBonusClaim(Map<String, dynamic> payload) =>
       _postSync('daily-bonus', payload);
 
+  /// Push the pre-game power-up inventory snapshot to the backend's
+  /// last-write-wins mirror at `/sync/power-up-inventory`. Payload
+  /// includes:
+  ///   `inventory` (map of inventory-key → owned count),
+  ///   `updated_at`.
+  Future<SyncOutcome> syncPowerUpInventory(Map<String, dynamic> payload) =>
+      _postSync('power-up-inventory', payload);
+
   // ==================== Weekly Quests ====================
 
   /// Fetch the current week's quests with the user's progress.

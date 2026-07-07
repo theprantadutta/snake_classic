@@ -35,6 +35,7 @@ class SyncDataType {
   static const String weeklyQuestClaim = 'weekly_quest_claim';
   static const String dailyBonusClaim = 'daily_bonus_claim';
   static const String playerProgress = 'player_progress';
+  static const String powerUpInventory = 'power_up_inventory';
 }
 
 // =====================================================
@@ -393,6 +394,27 @@ class DailyBonusState extends Table {
 }
 
 // =====================================================
+// TABLE 8d: Power-up inventory (singleton)
+// =====================================================
+//
+// Drift-first source of truth for the pre-game power-up inventory
+// (consumable counts the user buys with coins). One row per device
+// (id = 1). The SyncEngine pushes this snapshot to the backend's
+// UserPowerUpInventory mirror via /sync/power-up-inventory and pulls
+// it back on cold start so paid inventory survives reinstall.
+class PowerUpInventoryState extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  // JSON map { "speed_boost": 2, "invincibility": 1, ... } of
+  // inventory-key → owned count. Keys match the snake_case identifiers
+  // PowerUpCubit uses (see PowerUpCubit.typeFromInventoryKey).
+  TextColumn get inventoryJson =>
+      text().withDefault(const Constant('{}'))();
+  /// Sync-engine timestamp — see [GameSettings.updatedAt].
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+// =====================================================
 // TABLE 9: Replays
 // =====================================================
 class Replays extends Table {
@@ -674,6 +696,7 @@ class PlayerProgressTable extends Table {
     DailyChallenges,
     WeeklyQuests,
     DailyBonusState,
+    PowerUpInventoryState,
     Replays,
     SyncQueue,
     CacheStore,
@@ -703,7 +726,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -854,6 +877,16 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(gameSettings, gameSettings.notifyAchievement);
         await m.addColumn(gameSettings, gameSettings.notifySocial);
         await m.addColumn(gameSettings, gameSettings.notifySpecialEvent);
+      }
+      if (from < 13) {
+        // v13: power-up inventory singleton. Drift-first replacement for
+        // the legacy SharedPreferences-only store ('power_up_inventory_v1')
+        // so paid inventory survives reinstall. SyncEngine pushes the
+        // snapshot to the backend's UserPowerUpInventory mirror. The
+        // one-time import of the legacy SharedPreferences value runs in
+        // PowerUpCubit.loadInventory, not here — Drift migrations
+        // shouldn't touch platform channels.
+        await m.createTable(powerUpInventoryState);
       }
     },
   );
@@ -1016,6 +1049,9 @@ class AppDatabase extends _$AppDatabase {
       // previous account's level and login streak.
       await delete(playerProgressTable).go();
       await delete(dailyBonusState).go();
+      // Paid power-up inventory is per-user too — clearing it prevents
+      // the next account from inheriting the previous user's stock.
+      await delete(powerUpInventoryState).go();
       await delete(replays).go();
       await delete(syncQueue).go();
       await delete(cacheStore).go();

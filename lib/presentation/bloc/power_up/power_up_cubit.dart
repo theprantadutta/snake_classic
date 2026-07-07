@@ -5,10 +5,13 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/data/daos/store_dao.dart';
+import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 /// Pre-game power-up inventory state. Keys are snake_case identifiers
@@ -50,34 +53,89 @@ class PowerUpState extends Equatable {
 }
 
 /// Offline-first power-up inventory cubit. Persists inventory as a
-/// JSON map in SharedPreferences; coin purchases go through
-/// [CoinsCubit.spendCoins] so the existing coin-economy plumbing
-/// (balance, transactions, animations) keeps working unchanged.
+/// JSON map in the Drift `power_up_inventory_state` singleton (owned
+/// by [StoreDao]) — every write enqueues a sync outbox row so the
+/// SyncEngine pushes the snapshot to the backend's UserPowerUpInventory
+/// mirror and paid inventory survives reinstall. Coin purchases go
+/// through [CoinsCubit.spendCoins] so the existing coin-economy
+/// plumbing (balance, transactions, animations) keeps working
+/// unchanged.
+///
+/// The inventory lived in SharedPreferences in an earlier build
+/// (`power_up_inventory_v1`) — a one-shot migration in [loadInventory]
+/// imports the legacy value into Drift and removes the key.
 ///
 /// Bundle composition is hardcoded in [PowerUpBundle.availableBundles]
 /// — the catalog lives in the app, not on a backend.
 class PowerUpCubit extends Cubit<PowerUpState> {
-  static const String _inventoryPrefsKey = 'power_up_inventory_v1';
+  // Retired SharedPreferences key — inventory is now Drift-first. Kept
+  // as a constant so the one-shot migration in [loadInventory] can find
+  // and clean up the legacy value.
+  static const String _legacyInventoryPrefsKey = 'power_up_inventory_v1';
 
   PowerUpCubit() : super(const PowerUpState());
+
+  StreamSubscription<db.PowerUpInventoryStateData?>? _inventoryWatch;
 
   Future<void> loadInventory() async {
     emit(state.copyWith(loading: true));
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_inventoryPrefsKey);
-      if (raw == null || raw.isEmpty) {
-        emit(state.copyWith(inventory: const {}, loading: false));
-        return;
-      }
-      final decoded = jsonDecode(raw);
-      emit(PowerUpState(
-        inventory: _parseInventory(decoded),
+      final dao = StorageService().storeDao;
+      await _importLegacyPrefsInventory(dao);
+      final row = await dao.getPowerUpInventoryRow();
+      emit(state.copyWith(
+        inventory: _decodeInventoryJson(row?.inventoryJson),
         loading: false,
       ));
+      // Keep the cubit in lock-step with Drift writes regardless of
+      // where they came from — a purchase on this device, or the
+      // SyncEngine's cold-start snapshot apply restoring another
+      // device's inventory.
+      _inventoryWatch ??= dao.watchPowerUpInventoryRow().listen((row) {
+        emit(state.copyWith(
+          inventory: _decodeInventoryJson(row?.inventoryJson),
+        ));
+      });
     } catch (e) {
       AppLogger.error('Failed to load power-up inventory', e);
       emit(state.copyWith(loading: false));
+    }
+  }
+
+  /// One-shot import of the legacy SharedPreferences inventory into
+  /// Drift. Only runs while the Drift row is still missing/empty so a
+  /// cloud restore that already landed is never clobbered by stale
+  /// device-local data. [StoreDao.savePowerUpInventory] enqueues the
+  /// outbox row, so the imported inventory ships to the backend on the
+  /// next drain. The prefs key is removed afterwards so the import
+  /// can't run twice.
+  Future<void> _importLegacyPrefsInventory(StoreDao dao) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_legacyInventoryPrefsKey);
+      if (raw == null) return;
+
+      final row = await dao.getPowerUpInventoryRow();
+      final driftEmpty =
+          row == null || _decodeInventoryJson(row.inventoryJson).isEmpty;
+      if (driftEmpty && raw.isNotEmpty) {
+        Map<String, int> imported;
+        try {
+          imported = _parseInventory(jsonDecode(raw));
+        } catch (_) {
+          imported = const {};
+        }
+        if (imported.isNotEmpty) {
+          await dao.savePowerUpInventory(jsonEncode(imported));
+          AppLogger.info(
+            'Imported legacy power-up inventory into Drift '
+            '(${imported.length} type(s))',
+          );
+        }
+      }
+      await prefs.remove(_legacyInventoryPrefsKey);
+    } catch (e) {
+      AppLogger.error('Failed to import legacy power-up inventory', e);
     }
   }
 
@@ -129,8 +187,8 @@ class PowerUpCubit extends Cubit<PowerUpState> {
   }
 
   /// Grant one free basic power-up (a Speed Boost) — used by the rewarded-ad
-  /// "watch for a free power-up" placement. Inventory is device-only
-  /// (SharedPreferences), so there's no sync row to enqueue.
+  /// "watch for a free power-up" placement. Persists via [StoreDao], which
+  /// enqueues the sync outbox row for the SyncEngine to push.
   Future<void> grantFreePowerUp() => _grantToInventory(const {'speed_boost': 1});
 
   /// Decrement one use of a power-up. Called by the pre-game
@@ -214,12 +272,27 @@ class PowerUpCubit extends Cubit<PowerUpState> {
     await _persistInventory(next);
   }
 
+  /// Write the inventory through Drift. [StoreDao.savePowerUpInventory]
+  /// upserts the singleton row AND enqueues the sync outbox row in the
+  /// same transaction, so every mutation converges to the backend.
   Future<void> _persistInventory(Map<String, int> inventory) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_inventoryPrefsKey, jsonEncode(inventory));
+      await StorageService()
+          .storeDao
+          .savePowerUpInventory(jsonEncode(inventory));
     } catch (e) {
       AppLogger.error('Failed to persist power-up inventory', e);
+    }
+  }
+
+  /// Decode the Drift row's JSON column into the in-memory map. Null /
+  /// malformed JSON collapses to an empty inventory.
+  Map<String, int> _decodeInventoryJson(String? raw) {
+    if (raw == null || raw.isEmpty) return const {};
+    try {
+      return _parseInventory(jsonDecode(raw));
+    } catch (_) {
+      return const {};
     }
   }
 
@@ -232,5 +305,11 @@ class PowerUpCubit extends Cubit<PowerUpState> {
       }
     });
     return out;
+  }
+
+  @override
+  Future<void> close() async {
+    await _inventoryWatch?.cancel();
+    return super.close();
   }
 }

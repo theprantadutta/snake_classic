@@ -853,6 +853,29 @@ class SyncEngine {
             send: _api.syncDailyBonusClaim,
           );
 
+        case SyncDataType.powerUpInventory:
+          // Singleton snapshot: read the current Drift row and send it
+          // to the backend's last-write-wins mirror. Outbox payload is
+          // ignored; the latest row state is authoritative.
+          return _dispatchSnapshot(
+            read: () async {
+              final row = await _storeDao!.getPowerUpInventoryRow();
+              if (row == null) return null;
+              Map<String, dynamic> inventory;
+              try {
+                inventory =
+                    jsonDecode(row.inventoryJson) as Map<String, dynamic>;
+              } catch (_) {
+                inventory = const <String, dynamic>{};
+              }
+              return {
+                'inventory': inventory,
+                'updated_at': _utcIso(row.updatedAt),
+              };
+            },
+            send: _api.syncPowerUpInventory,
+          );
+
         default:
           // Unknown outbox type — likely a new SyncDataType constant
           // wasn't wired into this switch. Treat as permanent failure
@@ -934,6 +957,7 @@ class SyncEngine {
       case SyncDataType.weeklyQuestClaim:
       case SyncDataType.dailyBonusClaim:
       case SyncDataType.playerProgress:
+      case SyncDataType.powerUpInventory:
         return true;
       default:
         return false;
@@ -1581,6 +1605,42 @@ class SyncEngine {
           await _db!.enqueueSyncOutbox(
             dataType: SyncDataType.dailyBonusClaim,
             entityKey: 'daily_bonus_claim:1',
+          );
+        }
+      }
+
+      // ----- power-up inventory (singleton) -----
+      //
+      // Client-owned last-write-wins: adopt the cloud snapshot unless
+      // the local row is strictly newer (e.g. the one-time legacy
+      // SharedPreferences import or an early purchase landed during
+      // boot, before this restore ran). If local wins, re-enqueue so
+      // the next drain ships our value up.
+      final powerUps = snapshot['power_up_inventory'];
+      if (powerUps is Map<String, dynamic>) {
+        final cloudInventory = powerUps['inventory'];
+        final cloudInventoryJson =
+            cloudInventory is Map ? jsonEncode(cloudInventory) : '{}';
+        final cloudUpdatedAt = _parseDate(powerUps['updated_at']);
+
+        final localRow = await _storeDao!.getPowerUpInventoryRow();
+        final localAhead = localRow != null &&
+            cloudUpdatedAt != null &&
+            localRow.updatedAt.toUtc().isAfter(cloudUpdatedAt.toUtc());
+
+        if (!localAhead) {
+          await _storeDao!.applyPowerUpInventorySnapshot(
+            inventoryJson: cloudInventoryJson,
+            updatedAt: cloudUpdatedAt,
+          );
+        } else {
+          AppLogger.network(
+            'SyncEngine: power-up inventory restore — local row newer '
+            'than cloud; keeping local and re-enqueueing for push',
+          );
+          await _db!.enqueueSyncOutbox(
+            dataType: SyncDataType.powerUpInventory,
+            entityKey: 'power_up_inventory:1',
           );
         }
       }
