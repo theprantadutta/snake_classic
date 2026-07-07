@@ -9,6 +9,11 @@ import 'package:snake_classic/utils/direction.dart';
 /// Game play status
 enum GamePlayStatus { initial, ready, playing, paused, crashed, gameOver }
 
+/// Outcome of the post-game tournament score submission. The game-over
+/// ribbon renders from this — it must never claim "submitted" unless the
+/// server actually accepted the score.
+enum TournamentScoreSubmission { none, submitting, submitted, failed }
+
 /// State class for GameCubit
 /// This is a simplified view of the game state for UI consumption
 class GameCubitState extends Equatable {
@@ -46,6 +51,10 @@ class GameCubitState extends Equatable {
   /// transitioning to game-over). Drives [TimeBonusOverlay].
   final bool offeringTimeBonus;
 
+  /// Live status of the tournament score submission for the just-ended
+  /// game. [TournamentScoreSubmission.none] outside tournament games.
+  final TournamentScoreSubmission tournamentScoreSubmission;
+
   const GameCubitState({
     this.status = GamePlayStatus.initial,
     this.gameState,
@@ -59,6 +68,7 @@ class GameCubitState extends Equatable {
     this.coinsEarnedThisGame = 0,
     this.offeringRevive = false,
     this.offeringTimeBonus = false,
+    this.tournamentScoreSubmission = TournamentScoreSubmission.none,
   });
 
   /// Initial state
@@ -78,6 +88,7 @@ class GameCubitState extends Equatable {
     int? coinsEarnedThisGame,
     bool? offeringRevive,
     bool? offeringTimeBonus,
+    TournamentScoreSubmission? tournamentScoreSubmission,
     bool clearTournament = false,
     bool clearPreviousGameState = false,
     bool clearRejectedInput = false,
@@ -108,6 +119,9 @@ class GameCubitState extends Equatable {
       coinsEarnedThisGame: coinsEarnedThisGame ?? this.coinsEarnedThisGame,
       offeringRevive: offeringRevive ?? this.offeringRevive,
       offeringTimeBonus: offeringTimeBonus ?? this.offeringTimeBonus,
+      tournamentScoreSubmission: clearTournament
+          ? TournamentScoreSubmission.none
+          : (tournamentScoreSubmission ?? this.tournamentScoreSubmission),
     );
   }
 
@@ -182,5 +196,6 @@ class GameCubitState extends Equatable {
     coinsEarnedThisGame,
     offeringRevive,
     offeringTimeBonus,
+    tournamentScoreSubmission,
   ];
 }

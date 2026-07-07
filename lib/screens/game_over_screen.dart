@@ -430,15 +430,36 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                         if (isHighScore)
                                           const SizedBox(height: 8),
                                         _OutcomeRibbon(
+                                          // Keyed so the ribbon re-animates
+                                          // when the submission resolves.
+                                          key: ValueKey(gameCubitState
+                                              .tournamentScoreSubmission),
                                           icon: null,
                                           emoji: gameCubitState
                                               .tournamentMode!.emoji,
-                                          label:
+                                          label: switch (gameCubitState
+                                              .tournamentScoreSubmission) {
+                                            TournamentScoreSubmission
+                                                  .submitted =>
                                               'TOURNAMENT SCORE SUBMITTED!',
-                                          colors: const [
-                                            Colors.purple,
-                                            Colors.deepPurple,
-                                          ],
+                                            TournamentScoreSubmission
+                                                  .failed =>
+                                              'SCORE NOT SUBMITTED — CHECK CONNECTION',
+                                            _ =>
+                                              'SUBMITTING TOURNAMENT SCORE…',
+                                          },
+                                          colors: gameCubitState
+                                                      .tournamentScoreSubmission ==
+                                                  TournamentScoreSubmission
+                                                      .failed
+                                              ? const [
+                                                  Colors.redAccent,
+                                                  Colors.red,
+                                                ]
+                                              : const [
+                                                  Colors.purple,
+                                                  Colors.deepPurple,
+                                                ],
                                           compact: compact,
                                           delayMs: 300,
                                           shimmerDelayMs: 800,
@@ -601,6 +622,7 @@ class _OutcomeRibbon extends StatelessWidget {
   final int shimmerDelayMs;
 
   const _OutcomeRibbon({
+    super.key,
     required this.icon,
     this.emoji,
     required this.label,

@@ -29,6 +29,7 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
@@ -275,6 +276,7 @@ class GameCubit extends Cubit<GameCubitState> {
       ),
       moveProgress: 0.0,
       clearPreviousGameState: true,
+      tournamentScoreSubmission: TournamentScoreSubmission.none,
     );
 
     debugPrint(
@@ -296,7 +298,10 @@ class GameCubit extends Cubit<GameCubitState> {
     _startGameLoop();
     _startSmoothAnimation();
     _startPowerUpTimer();
-    _startTimeAttackTimer(settings.gameMode);
+    // Must be the EFFECTIVE mode — a TimeAttack tournament played while
+    // the user's settings say Classic previously never started its
+    // end-of-time timer.
+    _startTimeAttackTimer(effectiveGameMode);
 
     // Pre-game power-up activation: if the user armed a power-up via the
     // home-screen loadout, fire it 5 seconds into the game so they have
@@ -1598,8 +1603,47 @@ class GameCubit extends Cubit<GameCubitState> {
       highScore: highScore,
     ));
 
+    // Tournament runs: submit the final score. Fire-and-forget — the
+    // game-over ribbon renders live from state.tournamentScoreSubmission,
+    // so it never claims "submitted" unless the server actually accepted.
+    if (state.tournamentId != null) {
+      unawaited(_submitTournamentScore(
+        tournamentId: state.tournamentId!,
+        score: gameState.score,
+        durationSeconds: gameDuration,
+        foodsEaten: totalFoodEaten,
+      ));
+    }
+
     // Stop recording
     _gameRecorder.stopRecording();
+  }
+
+  /// Submit a tournament score and reflect the outcome in state.
+  /// TournamentService.submitScore is a live call with a client-side
+  /// idempotency key; it returns false on any failure (offline, 4xx/5xx).
+  Future<void> _submitTournamentScore({
+    required String tournamentId,
+    required int score,
+    required int durationSeconds,
+    required int foodsEaten,
+  }) async {
+    emit(state.copyWith(
+      tournamentScoreSubmission: TournamentScoreSubmission.submitting,
+    ));
+    final ok = await TournamentService().submitScore(tournamentId, score, {
+      'gameDurationSeconds': durationSeconds,
+      'foodsEaten': foodsEaten,
+    });
+    if (isClosed) return;
+    // A new run may have started while the call was in flight — only
+    // stamp the outcome if we're still on the same tournament.
+    if (state.tournamentId != tournamentId) return;
+    emit(state.copyWith(
+      tournamentScoreSubmission: ok
+          ? TournamentScoreSubmission.submitted
+          : TournamentScoreSubmission.failed,
+    ));
   }
 
   /// Runs all post-game API syncs in the background (non-blocking).
