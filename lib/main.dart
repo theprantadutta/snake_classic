@@ -104,6 +104,16 @@ void main() async {
       DeviceOrientation.portraitDown,
     ]);
 
+    // Register the bundled fonts' OFL licenses so they appear in
+    // showLicensePage / AboutDialog. The .txt files shipped as assets
+    // for a while with nothing reading them — this makes them count.
+    LicenseRegistry.addLicense(() async* {
+      for (final f in ['OFL-Orbitron.txt', 'OFL-Rajdhani.txt']) {
+        final text = await rootBundle.loadString('assets/fonts/$f');
+        yield LicenseEntryWithLineBreaks(['google_fonts'], text);
+      }
+    });
+
     // Initialize dependency injection
     AppLogger.info('Configuring dependencies...');
     await configureDependencies();
