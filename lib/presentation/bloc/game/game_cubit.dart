@@ -26,6 +26,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
+import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
@@ -1343,20 +1344,19 @@ class GameCubit extends Cubit<GameCubitState> {
     if (gameState == null) return;
 
     // Filter-aware local evaluation so offline play still reveals
-    // achievements at game-end. Mirrors AchievementAutoEvaluator's
-    // SQL guards exactly: per-game Score / Survival rows only fire when
-    // gameModeFilter and difficultyFilter (if set) match the finished
-    // game. GamesInMode / GamesInDifficulty rows stay server-only because
-    // the client doesn't track per-mode game counts. Special achievements
-    // (combo / snake length / no-wall etc.) are always client-only.
-    //
-    // The post-sync diff in _updateAchievementsFromBackend still catches
-    // any server-only unlocks (cumulative tallies, GamesInMode totals)
-    // so the reveal sequence stays complete online.
+    // achievements at game-end. Per-game Score / Survival rows only fire
+    // when gameModeFilter (if set) matches the finished game. Per-mode
+    // games-count rows evaluate against GameStatistics.gameModeCount —
+    // projected forward by one since the stats update for THIS game runs
+    // later in _postGameSync. Special achievements (combo / snake length
+    // / no-wall etc.) are always client-only.
     final modeName = gameState.gameMode.name;
     const difficultyName = 'normal'; // mirrors the value sent in queueSync
     final projectedTotalGames =
         _statisticsService.statistics.totalGamesPlayed + 1;
+    final projectedModeCounts =
+        Map<String, int>.from(_statisticsService.statistics.gameModeCount);
+    projectedModeCounts[modeName] = (projectedModeCounts[modeName] ?? 0) + 1;
 
     final scoreUnlocks = _achievementService.checkScoreAchievements(
       gameState.score,
@@ -1368,8 +1368,10 @@ class GameCubit extends Cubit<GameCubitState> {
       gameMode: modeName,
       difficulty: difficultyName,
     );
-    final gamesUnlocks =
-        _achievementService.checkGamePlayedAchievements(projectedTotalGames);
+    final gamesUnlocks = _achievementService.checkGamePlayedAchievements(
+      projectedTotalGames,
+      gameModeCount: projectedModeCounts,
+    );
     final specialUnlocks = _achievementService.checkSpecialAchievements(
       level: gameState.level,
       hitWall: _hitWallThisGame,
@@ -1741,6 +1743,7 @@ class GameCubit extends Cubit<GameCubitState> {
         isPerfectGame:
             !_hitWallThisGame && !_hitSelfThisGame && gameDurationSeconds >= 30,
         unlockedAchievements: [],
+        gameMode: gameState.gameMode.name,
       );
 
       // Now that lifetime stats include this game, check the catalog's
@@ -1754,6 +1757,20 @@ class GameCubit extends Cubit<GameCubitState> {
         perfectGames: stats.perfectGames,
         currentWinStreak: stats.currentWinStreak,
         dailyPlayTime: stats.dailyPlayTime,
+      );
+
+      // General-category achievements: lifetime player level, total
+      // playtime, and mode exploration. These had no evaluator at all
+      // before (the backend fetch that once drove them is gone), which
+      // left ~13 catalog rows permanently unreachable.
+      _achievementService.checkGeneralAchievements(
+        playerLevel: ProgressionService().level,
+        totalPlayTimeSeconds: stats.totalGameTime,
+        // Count only real GameMode buckets — the stats map can carry
+        // non-mode keys (multiplayer matches record as 'multiplayer').
+        distinctModesPlayed: GameMode.values
+            .where((m) => (stats.gameModeCount[m.name] ?? 0) > 0)
+            .length,
       );
 
       // Daily reminder scheduling moved server-side — the Hangfire job

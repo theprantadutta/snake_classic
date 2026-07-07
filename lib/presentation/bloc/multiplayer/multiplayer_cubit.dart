@@ -843,6 +843,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       selfHits: selfHits,
       isPerfectGame: !eliminated && gameTimeSeconds >= 30,
       unlockedAchievements: const [],
+      // Not a GameMode enum value on purpose — multiplayer matches must
+      // not count toward the per-mode / mode-exploration achievements.
+      gameMode: 'multiplayer',
     );
   }
 

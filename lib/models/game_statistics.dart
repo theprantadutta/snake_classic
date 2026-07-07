@@ -5,7 +5,7 @@ class GameStatistics {
   /// Keep in sync with Achievement.getDefaultAchievements() in
   /// `lib/models/achievement.dart`. Used as both the default and the
   /// fallback when reading legacy JSON.
-  static const int kTotalAchievements = 110;
+  static const int kTotalAchievements = 90;
 
   // Basic game metrics
   final int totalGamesPlayed;
@@ -65,6 +65,11 @@ class GameStatistics {
   final List<int> recentScores; // last 10 scores
   final Map<String, int> dailyPlayTime; // date -> seconds played
 
+  /// Lifetime games finished per GameMode (enum name -> count, e.g.
+  /// 'classic' -> 42). Feeds the per-mode achievement evaluators
+  /// (classic_initiate, mode_explorer, all_mode_player).
+  final Map<String, int> gameModeCount;
+
   // Achievement progress
   final int achievementsUnlocked;
   final int totalAchievements;
@@ -101,6 +106,7 @@ class GameStatistics {
     this.firstPlayedDate,
     this.recentScores = const [],
     this.dailyPlayTime = const {},
+    this.gameModeCount = const {},
     this.achievementsUnlocked = 0,
     this.totalAchievements = kTotalAchievements,
     this.achievementProgress = 0.0,
@@ -195,6 +201,7 @@ class GameStatistics {
     required int selfHits,
     required bool isPerfectGame,
     required List<String> unlockedAchievements,
+    required String gameMode,
   }) {
     final newTotalGames = totalGamesPlayed + 1;
     final newTotalScore = totalScore + score;
@@ -257,6 +264,9 @@ class GameStatistics {
         achievementsUnlocked + unlockedAchievements.length;
     final newAchievementProgress = newAchievementsUnlocked / totalAchievements;
 
+    final newGameModeCount = Map<String, int>.from(gameModeCount);
+    newGameModeCount[gameMode] = (newGameModeCount[gameMode] ?? 0) + 1;
+
     return GameStatistics(
       totalGamesPlayed: newTotalGames,
       totalScore: newTotalScore,
@@ -292,6 +302,7 @@ class GameStatistics {
       firstPlayedDate: firstPlayedDate ?? today,
       recentScores: newRecentScores,
       dailyPlayTime: newDailyPlayTime,
+      gameModeCount: newGameModeCount,
       achievementsUnlocked: newAchievementsUnlocked,
       totalAchievements: totalAchievements,
       achievementProgress: newAchievementProgress,
@@ -330,6 +341,7 @@ class GameStatistics {
       firstPlayedDate: firstPlayedDate,
       recentScores: recentScores,
       dailyPlayTime: dailyPlayTime,
+      gameModeCount: gameModeCount,
       achievementsUnlocked: achievementsUnlocked,
       totalAchievements: totalAchievements,
       achievementProgress: achievementProgress,
@@ -369,6 +381,7 @@ class GameStatistics {
       firstPlayedDate: firstPlayedDate,
       recentScores: recentScores,
       dailyPlayTime: dailyPlayTime,
+      gameModeCount: gameModeCount,
       achievementsUnlocked: achievementsUnlocked,
       totalAchievements: totalAchievements,
       achievementProgress: achievementProgress,
@@ -413,6 +426,7 @@ class GameStatistics {
       'firstPlayedDate': firstPlayedDate?.toIso8601String(),
       'recentScores': recentScores,
       'dailyPlayTime': dailyPlayTime,
+      'gameModeCount': gameModeCount,
       'achievementsUnlocked': achievementsUnlocked,
       'totalAchievements': totalAchievements,
       'achievementProgress': achievementProgress,
@@ -466,6 +480,7 @@ class GameStatistics {
           : null,
       recentScores: List<int>.from(json['recentScores'] ?? []),
       dailyPlayTime: Map<String, int>.from(json['dailyPlayTime'] ?? {}),
+      gameModeCount: Map<String, int>.from(json['gameModeCount'] ?? {}),
       achievementsUnlocked: json['achievementsUnlocked'] ?? 0,
       totalAchievements: json['totalAchievements'] ?? kTotalAchievements,
       achievementProgress: (json['achievementProgress'] ?? 0.0).toDouble(),

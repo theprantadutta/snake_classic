@@ -406,6 +406,7 @@ class StatisticsService extends ChangeNotifier {
     required int selfHits,
     required bool isPerfectGame,
     required List<String> unlockedAchievements,
+    required String gameMode,
   }) async {
     if (!_initialized) {
       await initialize();
@@ -426,6 +427,7 @@ class StatisticsService extends ChangeNotifier {
       selfHits: selfHits,
       isPerfectGame: isPerfectGame,
       unlockedAchievements: unlockedAchievements,
+      gameMode: gameMode,
     );
 
     // Save locally

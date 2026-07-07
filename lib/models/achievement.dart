@@ -517,14 +517,11 @@ class Achievement {
       const Achievement(id: 'timeattack_master', title: 'TimeAttack Master', description: 'Score 3,000 in TimeAttack', icon: Icons.av_timer, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 3000, points: 150, xpReward: 150, coinReward: 75, gameModeFilter: 'timeAttack'),
 
       // ============================================================
-      // O. Difficulty-Gated (6 NEW)
+      // O. Difficulty-Gated — REMOVED. The game has no difficulty
+      // selector (GameCubit hardcodes difficulty:'normal'), so the six
+      // 'hard'-filtered rows could never unlock. Re-add them if a real
+      // difficulty system ever ships.
       // ============================================================
-      const Achievement(id: 'hard_mode_hero', title: 'Hard Mode Hero', description: 'Score 500 on Hard difficulty', icon: Icons.fitness_center, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 500, points: 75, xpReward: 75, coinReward: 35, difficultyFilter: 'hard'),
-      const Achievement(id: 'hard_mode_master', title: 'Hard Mode Master', description: 'Score 2,000 on Hard difficulty', icon: Icons.military_tech, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 2000, points: 150, xpReward: 150, coinReward: 75, difficultyFilter: 'hard'),
-      const Achievement(id: 'hard_mode_god', title: 'Hard Mode God', description: 'Score 5,000 on Hard difficulty', icon: Icons.whatshot, type: AchievementType.score, rarity: AchievementRarity.diamond, targetValue: 5000, points: 300, xpReward: 300, coinReward: 150, difficultyFilter: 'hard'),
-      const Achievement(id: 'hard_veteran', title: 'Hard Veteran', description: 'Finish 50 games on Hard difficulty', icon: Icons.shield, type: AchievementType.games, rarity: AchievementRarity.epic, targetValue: 50, points: 125, xpReward: 125, coinReward: 60, difficultyFilter: 'hard'),
-      const Achievement(id: 'no_easy_way', title: 'No Easy Way', description: 'Finish 100 games on Hard difficulty', icon: Icons.gpp_good, type: AchievementType.games, rarity: AchievementRarity.legendary, targetValue: 100, points: 200, xpReward: 200, coinReward: 100, difficultyFilter: 'hard'),
-      const Achievement(id: 'hardcore_for_life', title: 'Hardcore for Life', description: 'Finish 500 games on Hard difficulty', icon: Icons.local_fire_department, type: AchievementType.games, rarity: AchievementRarity.diamond, targetValue: 500, points: 400, xpReward: 400, coinReward: 200, difficultyFilter: 'hard'),
 
       // ============================================================
       // P. Combo (5 NEW)
@@ -586,11 +583,11 @@ class Achievement {
       const Achievement(id: 'cosmic_snake', title: 'Cosmic Snake', description: 'Reach in-game level 25 in one game', icon: Icons.satellite_alt, type: AchievementType.special, rarity: AchievementRarity.diamond, targetValue: 25, points: 300, xpReward: 300, coinReward: 150),
 
       // ============================================================
-      // W. Variety / Exploration (3 NEW)
+      // W. Variety / Exploration (2)
+      // difficulty_explorer removed — no difficulty system exists.
       // ============================================================
       const Achievement(id: 'mode_explorer', title: 'Mode Explorer', description: 'Play at least one game in 3 distinct modes', icon: Icons.explore, type: AchievementType.general, rarity: AchievementRarity.common, targetValue: 3, points: 30, xpReward: 30, coinReward: 15),
-      const Achievement(id: 'all_mode_player', title: 'All-Mode Player', description: 'Play at least one game in every mode (6 modes)', icon: Icons.travel_explore, type: AchievementType.general, rarity: AchievementRarity.epic, targetValue: 6, points: 150, xpReward: 150, coinReward: 75),
-      const Achievement(id: 'difficulty_explorer', title: 'Difficulty Explorer', description: 'Play games on all 3 difficulties', icon: Icons.tune, type: AchievementType.general, rarity: AchievementRarity.rare, targetValue: 3, points: 50, xpReward: 50, coinReward: 25),
+      const Achievement(id: 'all_mode_player', title: 'All-Mode Player', description: 'Play at least one game in every mode (8 modes)', icon: Icons.travel_explore, type: AchievementType.general, rarity: AchievementRarity.epic, targetValue: 8, points: 150, xpReward: 150, coinReward: 75),
 
       // ============================================================
       // X. Time-of-Day / Special (3 NEW)

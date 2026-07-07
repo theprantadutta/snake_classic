@@ -309,113 +309,6 @@ class AchievementService extends ChangeNotifier {
     }
   }
 
-  // ignore: unused_element
-  void _updateAchievementsFromBackend(
-    List<Map<String, dynamic>> backendAchievements,
-  ) {
-    // The /achievements/me payload shape is:
-    //   { achievements: [{ id, achievement: { achievement_id, xp_reward,
-    //     coin_reward, ... }, current_progress, is_unlocked, unlocked_at,
-    //     reward_claimed }] }
-    // Earlier this method looked for `achievement_id` at the top level —
-    // which never matched, so the merge silently no-op'd. Fixed below to
-    // read the nested catalog object.
-    String? idOf(Map<String, dynamic> entry) {
-      final nested = entry['achievement'];
-      if (nested is Map) {
-        return (nested['achievement_id'] ?? nested['achievementId'])?.toString();
-      }
-      return (entry['achievement_id'] ?? entry['achievementId'])?.toString();
-    }
-
-    Map<String, dynamic> catalogOf(Map<String, dynamic> entry) {
-      final nested = entry['achievement'];
-      if (nested is Map) return Map<String, dynamic>.from(nested);
-      return entry;
-    }
-
-    var addedToReveal = false;
-    for (int i = 0; i < _achievements.length; i++) {
-      final achievement = _achievements[i];
-
-      final backendData = backendAchievements.firstWhere(
-        (a) => idOf(a) == achievement.id,
-        orElse: () => {},
-      );
-
-      if (backendData.isNotEmpty) {
-        final backendUnlocked =
-            backendData['is_unlocked'] ?? backendData['isUnlocked'] ?? false;
-        final backendProgress =
-            backendData['current_progress'] ??
-            backendData['currentProgress'] ??
-            0;
-        final backendUnlockedAt = backendData['unlocked_at'] != null
-            ? DateTime.tryParse(backendData['unlocked_at'].toString())
-            : backendData['unlockedAt'] != null
-            ? DateTime.tryParse(backendData['unlockedAt'].toString())
-            : null;
-        final backendRewardClaimed =
-            backendData['reward_claimed'] ??
-            backendData['rewardClaimed'] ??
-            false;
-
-        final catalog = catalogOf(backendData);
-        final backendXp = catalog['xp_reward'] ?? catalog['xpReward'];
-        final backendCoins = catalog['coin_reward'] ?? catalog['coinReward'];
-        // GameMode and Difficulty enum names come from the server as PascalCase
-        // (Classic, Hard, etc.). The Dart enum names are camelCase. Lowercase
-        // both ends so the filter comparison in the local check is reliable.
-        final backendModeFilter =
-            (catalog['game_mode_filter'] ?? catalog['gameModeFilter'])
-                ?.toString()
-                .toLowerCase();
-        final backendDifficultyFilter =
-            (catalog['difficulty_filter'] ?? catalog['difficultyFilter'])
-                ?.toString()
-                .toLowerCase();
-
-        // Server is authoritative for Score / Games / Survival achievements
-        // (the local evaluator used to over-unlock these because it didn't
-        // honor mode/difficulty filters — see AchievementAutoEvaluator on
-        // the backend). The earlier "shouldUseLocal" escape clause that
-        // preserved an unconfirmed local unlock has been removed; we now
-        // trust the backend row.
-        final wasUnlockedLocally = achievement.isUnlocked;
-        _achievements[i] = achievement.copyWith(
-          isUnlocked: backendUnlocked,
-          currentProgress: backendProgress,
-          unlockedAt: backendUnlockedAt,
-          rewardClaimed: backendRewardClaimed,
-          // Overlay backend reward values when present so the UI shows
-          // authoritative amounts; fall back to the seeded defaults.
-          xpReward: backendXp is int ? backendXp : null,
-          coinReward: backendCoins is int ? backendCoins : null,
-          // Overlay filters from the server's catalog so the client's
-          // hardcoded defaults can never drift past a server-side change.
-          gameModeFilter: backendModeFilter,
-          difficultyFilter: backendDifficultyFilter,
-        );
-
-        // Newly server-confirmed unlock — reveal it on the next game-over
-        // screen (gated by celebrate-once so re-syncs don't repeat).
-        if (backendUnlocked && !wasUnlockedLocally) {
-          if (!_shownGameOverIds.contains(achievement.id)) {
-            _shownGameOverIds.add(achievement.id);
-            _lastGameUnlocks.add(_achievements[i]);
-            addedToReveal = true;
-          }
-        }
-      }
-    }
-
-    // Wake up listeners (game-over screen, profile, etc.) so the freshly
-    // added reveals land without waiting for the next manual refresh.
-    if (addedToReveal) {
-      notifyListeners();
-    }
-  }
-
   void _updateAchievementsFromData(Map<String, dynamic> data) {
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
@@ -662,31 +555,115 @@ class AchievementService extends ChangeNotifier {
     return newUnlocks;
   }
 
-  /// Total-games-played evaluator. Only handles the "Count + Games" rows
-  /// (no mode/difficulty filter). The filter-gated GamesInMode /
-  /// GamesInDifficulty rows (classic_initiate, hard_veteran, etc.) need
-  /// per-mode/per-difficulty game counts that the client doesn't track —
-  /// those stay server-authoritative and land via the post-sync diff in
-  /// _updateAchievementsFromBackend. Skipping them here avoids the
-  /// pre-Option-C bug where a Zen player would unlock classic_initiate
-  /// because total-games-played hit 10.
-  List<Achievement> checkGamePlayedAchievements(int totalGames) {
+  /// Games-played evaluator. Unfiltered rows unlock from the lifetime
+  /// total; mode-filtered rows (classic_initiate, zen_initiate, …) unlock
+  /// from [gameModeCount] — the per-mode counters GameStatistics now
+  /// tracks. Previously the filtered rows were skipped entirely (the
+  /// client had no per-mode counts and the backend fetch that was meant
+  /// to supply them was removed in the offline refactor), which made all
+  /// seven per-mode games achievements permanently unreachable.
+  List<Achievement> checkGamePlayedAchievements(
+    int totalGames, {
+    Map<String, int> gameModeCount = const {},
+  }) {
     final newUnlocks = <Achievement>[];
+
+    // Filters may arrive lowercased from a server catalog overlay while
+    // GameMode.name is camelCase — compare case-insensitively.
+    final modeCountLower = <String, int>{
+      for (final e in gameModeCount.entries) e.key.toLowerCase(): e.value,
+    };
 
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
 
-      if (achievement.type == AchievementType.games &&
-          !achievement.isUnlocked &&
-          achievement.gameModeFilter == null &&
-          achievement.difficultyFilter == null) {
-        if (totalGames >= achievement.targetValue) {
-          _unlockAchievementLocal(i, achievement);
-          newUnlocks.add(_achievements[i]);
-        } else if (totalGames > achievement.currentProgress) {
-          _achievements[i] =
-              achievement.copyWith(currentProgress: totalGames);
-        }
+      if (achievement.type != AchievementType.games ||
+          achievement.isUnlocked ||
+          achievement.difficultyFilter != null) {
+        continue;
+      }
+
+      final modeFilter = achievement.gameModeFilter;
+      final count = modeFilter == null
+          ? totalGames
+          : (modeCountLower[modeFilter.toLowerCase()] ?? 0);
+
+      if (count >= achievement.targetValue) {
+        _unlockAchievementLocal(i, achievement);
+        newUnlocks.add(_achievements[i]);
+      } else if (count > achievement.currentProgress) {
+        _achievements[i] = achievement.copyWith(currentProgress: count);
+      }
+    }
+
+    if (newUnlocks.isNotEmpty) {
+      _recentUnlocks.addAll(newUnlocks);
+      _trimRecentUnlocks();
+      _saveProgress();
+      notifyListeners();
+    }
+
+    return newUnlocks;
+  }
+
+  /// General-category evaluator — player level, lifetime playtime, and
+  /// mode exploration. These rows previously had NO evaluator at all
+  /// (the backend fetch that once drove them is dead code), so all of
+  /// them were unreachable.
+  ///
+  /// Called from `GameCubit._postGameSync` after the statistics update,
+  /// with [playerLevel] from ProgressionService, [totalPlayTimeSeconds]
+  /// from GameStatistics.totalGameTime, and [distinctModesPlayed] from
+  /// GameStatistics.gameModeCount.
+  List<Achievement> checkGeneralAchievements({
+    required int playerLevel,
+    required int totalPlayTimeSeconds,
+    required int distinctModesPlayed,
+  }) {
+    final newUnlocks = <Achievement>[];
+
+    for (int i = 0; i < _achievements.length; i++) {
+      final achievement = _achievements[i];
+      if (achievement.type != AchievementType.general ||
+          achievement.isUnlocked) {
+        continue;
+      }
+
+      final int value;
+      switch (achievement.id) {
+        // Lifetime player level (targetValue = level)
+        case 'level_5':
+        case 'level_10':
+        case 'level_25':
+        case 'level_50':
+        case 'level_100':
+          value = playerLevel;
+          break;
+
+        // Lifetime playtime (targetValue = seconds)
+        case 'quick_player':
+        case 'engaged_player':
+        case 'hardcore_player':
+        case 'snake_obsessed':
+        case 'touch_grass':
+          value = totalPlayTimeSeconds;
+          break;
+
+        // Mode exploration (targetValue = distinct modes)
+        case 'mode_explorer':
+        case 'all_mode_player':
+          value = distinctModesPlayed;
+          break;
+
+        default:
+          continue;
+      }
+
+      if (value >= achievement.targetValue) {
+        _unlockAchievementLocal(i, achievement);
+        newUnlocks.add(_achievements[i]);
+      } else if (value > achievement.currentProgress) {
+        _achievements[i] = achievement.copyWith(currentProgress: value);
       }
     }
 
