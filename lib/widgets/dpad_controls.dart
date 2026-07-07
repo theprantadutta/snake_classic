@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 
@@ -21,13 +20,14 @@ class DPadControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Button ratio dialled to 0.34 — slightly larger touch targets than
-    // the previous 0.30 (visible +13% diameter) while staying well inside
-    // the geometric ceiling of ~0.46 where diagonal-neighbour circles
-    // would start to touch. The outer size is fixed by the bottom-bar
-    // contract in game_screen.dart, so this is the only knob that can
-    // grow the buttons without affecting layout height.
-    final buttonSize = size * 0.34;
+    // Button ratio dialled to 0.38 — the geometric ceiling for this
+    // layout: with the 0.04 edge spacing, diagonal-neighbour circles
+    // touch at ~0.381, so this is as large as the targets can get
+    // without overlapping hit areas. Combined with the small-screen
+    // dpadSize bump in game_screen.dart this puts buttons at ~46px on
+    // small phones (previously ~39px, well under the 44-48px touch
+    // target guidelines).
+    final buttonSize = size * 0.38;
     final spacing = size * 0.04;
     final hubSize = size * 0.10;
 
@@ -103,10 +103,10 @@ class DPadControls extends StatelessWidget {
       size: buttonSize,
       theme: theme,
       opacity: opacity,
-      onPressed: () {
-        HapticService().lightImpact();
-        onDirection(direction);
-      },
+      // No haptic here — GameCubit.changeDirection owns input haptics
+      // (selectionClick on accept, double-buzz on reject). Firing one
+      // here too double-buzzed every press.
+      onPressed: () => onDirection(direction),
     );
   }
 }

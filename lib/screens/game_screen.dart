@@ -773,7 +773,10 @@ class _GameScreenState extends State<GameScreen>
     required bool dPadEnabled,
   }) {
     final scale = context.uiScale;
-    final dpadSize = (isSmallScreen ? 115.0 : 135.0) * scale;
+    // Small-screen size bumped 115 -> 120 so the 0.38-ratio d-pad
+    // buttons clear ~46px touch targets. Bar height grows uniformly
+    // across all states, so the no-reflow contract holds.
+    final dpadSize = (isSmallScreen ? 120.0 : 135.0) * scale;
     final verticalPadding = (isSmallScreen ? 8.0 : 12.0) * scale;
     // Total reserved height = dpad footprint + the row's own padding so the
     // box is the SAME pixel height in every branch and every status.

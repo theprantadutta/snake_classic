@@ -91,8 +91,9 @@ class _SwipeDetectorState extends State<SwipeDetector>
       _lastSwipeTime = now;
     });
 
-    // Immediate haptic feedback
-    HapticService().lightImpact();
+    // No haptic here — GameCubit.changeDirection owns input haptics
+    // (selectionClick on accept, double-buzz on reject); firing one here
+    // too double-buzzed every swipe.
 
     // Visual feedback with longer display time
     if (widget.showFeedback) {
