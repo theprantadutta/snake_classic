@@ -2,20 +2,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 
+/// The app's single audio service: SoLoud for preloaded low-latency SFX,
+/// one audioplayers instance for the looping background track.
+///
+/// There used to be a second SFX engine (EnhancedAudioService, an
+/// audioplayers pool with NO preloading) and the same game routed sounds
+/// through both depending on call site — the same level_up.wav could play
+/// through SoLoud in one branch and decode-from-bundle in another, and the
+/// dual path caused real double-play bugs (see startGame's history note in
+/// game_cubit). Everything now goes through here.
 class AudioService {
   static AudioService? _instance;
   AudioPlayer? _musicPlayer;
   final StorageService _storageService = StorageService();
-
-  // EnhancedAudioService keeps its own SFX-enabled flag and has no storage
-  // access of its own — this service is the single owner of the persisted
-  // sound/music settings and fans the sound flag out to it. Without the
-  // fan-out, the half of the game's SFX routed through the enhanced
-  // service ignores the user's "Sound Effects: off".
-  final EnhancedAudioService _enhanced = EnhancedAudioService();
 
   // SoLoud for low-latency game sound effects
   final SoLoud _soloud = SoLoud.instance;
@@ -59,7 +60,6 @@ class AudioService {
 
     _soundEnabled = await _storageService.isSoundEnabled();
     _musicEnabled = await _storageService.isMusicEnabled();
-    _enhanced.setSfxEnabled(_soundEnabled);
 
     // Initialize SoLoud engine
     try {
@@ -90,14 +90,16 @@ class AudioService {
     }
   }
 
-  /// Play a sound effect - instant, non-blocking
-  void playSound(String soundName) {
+  /// Play a sound effect - instant, non-blocking. [volume] is 0.0–1.0;
+  /// call sites hand-tune it per event so cues layer without drowning
+  /// each other (there is no master mixer).
+  void playSound(String soundName, {double volume = 1.0}) {
     if (!_initialized || !_soundEnabled) return;
 
     final source = _loadedSounds[_soundAliases[soundName] ?? soundName];
     if (source != null) {
       // SoLoud.play() is non-blocking and low-latency
-      _soloud.play(source);
+      _soloud.play(source, volume: volume);
     } else {
       // Fallback to system sound if not pre-loaded
       _playSystemSound(soundName);
@@ -184,7 +186,6 @@ class AudioService {
 
   Future<void> setSoundEnabled(bool enabled) async {
     _soundEnabled = enabled;
-    _enhanced.setSfxEnabled(enabled);
     await _storageService.setSoundEnabled(enabled);
   }
 

@@ -16,7 +16,6 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
-import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
@@ -83,9 +82,6 @@ Future<void> configureDependencies() async {
 
   getIt.registerLazySingleton<UnifiedUserService>(() => UnifiedUserService());
   getIt.registerLazySingleton<MultiplayerService>(() => MultiplayerService());
-  getIt.registerLazySingleton<EnhancedAudioService>(
-    () => EnhancedAudioService(),
-  );
   getIt.registerLazySingleton<AchievementService>(() => AchievementService());
   getIt.registerLazySingleton<StatisticsService>(() => StatisticsService());
   getIt.registerLazySingleton<ProgressionService>(() => ProgressionService());
@@ -155,7 +151,6 @@ Future<void> configureDependencies() async {
   getIt.registerFactory<GameCubit>(
     () => GameCubit(
       audioService: getIt<AudioService>(),
-      enhancedAudioService: getIt<EnhancedAudioService>(),
       hapticService: getIt<HapticService>(),
       achievementService: getIt<AchievementService>(),
       statisticsService: getIt<StatisticsService>(),

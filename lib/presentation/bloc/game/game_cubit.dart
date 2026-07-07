@@ -23,7 +23,6 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
-import 'package:snake_classic/services/enhanced_audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
@@ -53,7 +52,6 @@ export 'game_settings_cubit.dart';
 /// Cubit for managing the game loop and gameplay state
 class GameCubit extends Cubit<GameCubitState> {
   final AudioService _audioService;
-  final EnhancedAudioService _enhancedAudioService;
   final HapticService _hapticService;
   final AchievementService _achievementService;
   final StatisticsService _statisticsService;
@@ -149,7 +147,6 @@ class GameCubit extends Cubit<GameCubitState> {
 
   GameCubit({
     required AudioService audioService,
-    required EnhancedAudioService enhancedAudioService,
     required HapticService hapticService,
     required AchievementService achievementService,
     required StatisticsService statisticsService,
@@ -159,7 +156,6 @@ class GameCubit extends Cubit<GameCubitState> {
     required BattlePassCubit battlePassCubit,
     required AnalyticsFacade analytics,
   }) : _audioService = audioService,
-       _enhancedAudioService = enhancedAudioService,
        _hapticService = hapticService,
        _achievementService = achievementService,
        _statisticsService = statisticsService,
@@ -173,7 +169,6 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Initialize the game cubit
   Future<void> initialize() async {
     await _audioService.initialize();
-    await _enhancedAudioService.initialize();
     await _achievementService.initialize();
     await _statisticsService.initialize();
 
@@ -325,10 +320,10 @@ class GameCubit extends Cubit<GameCubitState> {
     // the cue on cold start (one service warm, one loading lazily =
     // two audible plays ~half a second apart).
     if (state.isTournamentMode) {
-      _enhancedAudioService.playSfx('game_start', volume: 1.0);
+      _audioService.playSound('game_start', volume: 1.0);
       unawaited(_hapticService.mediumImpact());
     } else {
-      _enhancedAudioService.playSfx('game_start', volume: 0.8);
+      _audioService.playSound('game_start', volume: 0.8);
     }
 
     // Looping background track for the run — gated inside the service on
@@ -387,7 +382,7 @@ class GameCubit extends Cubit<GameCubitState> {
       // double-play story this avoids. The id must be 'power_up' —
       // that's the shipped asset (power_up.wav); there is no
       // power_up_collect.wav, and a bad id fails silently.
-      _enhancedAudioService.playSfx('power_up', volume: 0.8);
+      _audioService.playSound('power_up', volume: 0.8);
     });
   }
 
@@ -557,7 +552,7 @@ class GameCubit extends Cubit<GameCubitState> {
     // Resume cue: reuse the button_click SFX at low volume + light haptic so
     // the player feels the world come back to life rather than silently
     // sliding from frozen to running.
-    _enhancedAudioService.playSfx('button_click', volume: 0.4);
+    _audioService.playSound('button_click', volume: 0.4);
     unawaited(_hapticService.lightImpact());
 
     _startGameLoop();
@@ -808,7 +803,7 @@ class GameCubit extends Cubit<GameCubitState> {
             if (event.newMultiplier >= 3.0) {
               unawaited(_hapticService.heavyImpact());
             }
-            _enhancedAudioService.playSfx('level_up', volume: 0.45);
+            _audioService.playSound('level_up', volume: 0.45);
           }
 
           // Battle pass score milestones - deferred to avoid event loop
@@ -979,7 +974,7 @@ class GameCubit extends Cubit<GameCubitState> {
     // Single service only — the legacy _audioService.playSound('game_over')
     // alongside this double-played the cue. The enhanced call stays because
     // it supports the softer 0.6 volume this per-life crash wants.
-    _enhancedAudioService.playSfx('game_over', volume: 0.6);
+    _audioService.playSound('game_over', volume: 0.6);
     _hapticService.heavyImpact();
 
     final newSnake = Snake.initial();
@@ -1073,7 +1068,7 @@ class GameCubit extends Cubit<GameCubitState> {
     // Play crash sound and haptic feedback immediately. Single service —
     // the legacy playSound('game_over') alongside this double-played the
     // cue. Music freezes with the run; revive() resumes it.
-    _enhancedAudioService.playSfx('game_over', volume: 1.0);
+    _audioService.playSound('game_over', volume: 1.0);
     unawaited(_audioService.pauseGameplayMusic());
     _hapticService.heavyImpact();
 
@@ -1683,7 +1678,7 @@ class GameCubit extends Cubit<GameCubitState> {
         // Single service — the legacy playSound('high_score') isn't in
         // AudioService's preload list, so it degraded to a system click
         // on top of this fanfare.
-        _enhancedAudioService.playSfx('high_score', volume: 1.0);
+        _audioService.playSound('high_score', volume: 1.0);
 
         // Strongest positive signal we have — ask the platform to consider
         // a review prompt. Service self-throttles to once per 60 days and
