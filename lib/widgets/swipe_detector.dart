@@ -4,31 +4,33 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/responsive.dart';
 
+/// Translucent gesture layer over the game board that turns pan gestures
+/// into direction inputs.
+///
+/// Visual feedback is NOT this widget's job — accepted/rejected input cues
+/// are rendered by the game screen (chrome gesture chip, board edge bloom,
+/// rejected-input flash) driven from GameCubit state. An older in-widget
+/// animated feedback circle was permanently disabled at the only call
+/// sites yet still forced a setState on the board-wrapping widget for
+/// every swipe; it has been deleted.
 class SwipeDetector extends StatefulWidget {
   final Widget child;
   final Function(Direction) onSwipe;
   final VoidCallback? onTap; // Callback for tap gesture (e.g., to pause)
-  final bool showFeedback;
 
   const SwipeDetector({
     super.key,
     required this.child,
     required this.onSwipe,
     this.onTap,
-    this.showFeedback = true,
   });
 
   @override
   State<SwipeDetector> createState() => _SwipeDetectorState();
 }
 
-class _SwipeDetectorState extends State<SwipeDetector>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _feedbackController;
-  late Animation<double> _opacityAnimation;
-
+class _SwipeDetectorState extends State<SwipeDetector> {
   Direction? _lastSwipeDirection;
-  bool _isProcessingSwipe = false;
   DateTime? _lastSwipeTime;
 
   // Cumulative tracking for better swipe detection
@@ -36,42 +38,16 @@ class _SwipeDetectorState extends State<SwipeDetector>
   bool _hasTriggeredThisGesture = false;
 
   // Direction most recently triggered within the CURRENT drag. A drag
-  // can now trigger multiple turns (e.g. up-then-right around a corner
+  // can trigger multiple turns (e.g. up-then-right around a corner
   // without lifting the finger); this prevents the same direction from
   // re-firing continuously while the finger keeps moving that way.
   Direction? _lastGestureDirection;
 
-  @override
-  void initState() {
-    super.initState();
-    _feedbackController = AnimationController(
-      duration: const Duration(
-        milliseconds: 200,
-      ), // Slightly slower for better visibility
-      vsync: this,
-    );
-
-    _opacityAnimation =
-        Tween<double>(
-          begin: 0.0,
-          end: 0.5, // More visible feedback
-        ).animate(
-          CurvedAnimation(parent: _feedbackController, curve: Curves.easeOut),
-        );
-  }
-
-  @override
-  void dispose() {
-    _feedbackController.dispose();
-    super.dispose();
-  }
-
   void _processSwipe(Direction direction) {
     final now = DateTime.now();
 
-    // Allow direction changes but prevent spam
-    if (_isProcessingSwipe &&
-        _lastSwipeTime != null &&
+    // Prevent spam
+    if (_lastSwipeTime != null &&
         now.difference(_lastSwipeTime!).inMilliseconds <
             GameConstants.swipeSpamPreventionMs) {
       return;
@@ -85,47 +61,17 @@ class _SwipeDetectorState extends State<SwipeDetector>
       return;
     }
 
-    setState(() {
-      _isProcessingSwipe = true;
-      _lastSwipeDirection = direction;
-      _lastSwipeTime = now;
-    });
+    _lastSwipeDirection = direction;
+    _lastSwipeTime = now;
 
     // No haptic here — GameCubit.changeDirection owns input haptics
     // (selectionClick on accept, double-buzz on reject); firing one here
     // too double-buzzed every swipe.
-
-    // Visual feedback with longer display time
-    if (widget.showFeedback) {
-      // Reset and start animation
-      _feedbackController.reset();
-      _feedbackController.forward().then((_) {
-        if (mounted) {
-          // Stay visible longer before fading
-          Future.delayed(const Duration(milliseconds: 800), () {
-            if (mounted) {
-              _feedbackController.reverse();
-            }
-          });
-        }
-      });
-    }
-
-    // Call the callback immediately
     widget.onSwipe(direction);
-
-    // Reset processing flag quickly to allow direction changes
-    Future.delayed(const Duration(milliseconds: 60), () {
-      if (mounted) {
-        setState(() {
-          _isProcessingSwipe = false;
-        });
-      }
-    });
   }
 
-  /// Determines the swipe direction from cumulative delta with directional ratio check.
-  /// Returns null if the swipe is ambiguous (too diagonal).
+  /// Determines the swipe direction from cumulative delta with directional
+  /// ratio check. Returns null if the swipe is ambiguous (too diagonal).
   Direction? _getSwipeDirection(Offset delta) {
     final absX = delta.dx.abs();
     final absY = delta.dy.abs();
@@ -186,7 +132,8 @@ class _SwipeDetectorState extends State<SwipeDetector>
         }
       },
       onPanEnd: (details) {
-        // Backup: Use velocity for quick flicks that might not accumulate enough distance
+        // Backup: Use velocity for quick flicks that might not accumulate
+        // enough distance
         if (!_hasTriggeredThisGesture) {
           final velocity = details.velocity.pixelsPerSecond;
           final absX = velocity.dx.abs();
@@ -211,92 +158,9 @@ class _SwipeDetectorState extends State<SwipeDetector>
       },
       onTap: () {
         HapticService().selectionClick();
-        widget.onTap?.call(); // Call external tap handler (e.g., toggle pause)
+        widget.onTap?.call(); // Call external tap handler (e.g. pause)
       },
-      child: Stack(
-        children: [
-          widget.child,
-          // Gesture feedback indicator - positioned over game board center
-          if (widget.showFeedback && _lastSwipeDirection != null)
-            Positioned.fill(
-              child: Align(
-                alignment: Alignment.center,
-                child: IgnorePointer(
-                  child: AnimatedBuilder(
-                    animation: _feedbackController,
-                    builder: (context, child) {
-                      return Container(
-                        width: GameConstants.gestureIndicatorSize,
-                        height: GameConstants.gestureIndicatorSize,
-                        decoration: BoxDecoration(
-                          color: _getDirectionColor(
-                            _lastSwipeDirection!,
-                          ).withValues(alpha: _opacityAnimation.value * 0.9),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(
-                              alpha: _opacityAnimation.value * 0.8,
-                            ),
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getDirectionColor(_lastSwipeDirection!)
-                                  .withValues(
-                                    alpha: _opacityAnimation.value * 0.4,
-                                  ),
-                              blurRadius: 15,
-                              spreadRadius: 3,
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: AnimatedScale(
-                            scale: _feedbackController.isAnimating ? 1.3 : 1.0,
-                            duration: const Duration(milliseconds: 150),
-                            child: Icon(
-                              _getDirectionIconData(_lastSwipeDirection!),
-                              size: 32,
-                              color: Colors.white.withValues(
-                                alpha: _opacityAnimation.value,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+      child: widget.child,
     );
-  }
-
-  Color _getDirectionColor(Direction direction) {
-    switch (direction) {
-      case Direction.up:
-        return const Color(0xFF00BCD4); // Cyan
-      case Direction.down:
-        return const Color(0xFF4CAF50); // Green
-      case Direction.left:
-        return const Color(0xFFFF9800); // Orange
-      case Direction.right:
-        return const Color(0xFF9C27B0); // Purple
-    }
-  }
-
-  IconData _getDirectionIconData(Direction direction) {
-    switch (direction) {
-      case Direction.up:
-        return Icons.keyboard_arrow_up_rounded;
-      case Direction.down:
-        return Icons.keyboard_arrow_down_rounded;
-      case Direction.left:
-        return Icons.keyboard_arrow_left_rounded;
-      case Direction.right:
-        return Icons.keyboard_arrow_right_rounded;
-    }
   }
 }

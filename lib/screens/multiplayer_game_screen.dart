@@ -544,7 +544,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                       child: GameJuiceWidget(
                         controller: _juiceController,
                         applyShake: true,
-                        applyScale: false,
                         child: Scaffold(
                           body: Container(
                             decoration: BoxDecoration(
@@ -574,7 +573,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                   // Main game content
                                   SwipeDetector(
                                     onSwipe: _handleSwipe,
-                                    showFeedback: false,
                                     child: Column(
                                       children: [
                                         // Multiplayer HUD

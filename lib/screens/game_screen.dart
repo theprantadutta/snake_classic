@@ -60,11 +60,6 @@ class _GameScreenState extends State<GameScreen>
   // Score popup system - extracted into separate widget to avoid full screen rebuilds
   final GlobalKey<_ScorePopupLayerState> _scorePopupLayerKey = GlobalKey<_ScorePopupLayerState>();
 
-  // Level-up corner popup
-  bool _showLevelUpPopup = false;
-  int _levelUpPopupLevel = 1;
-  late AnimationController _levelUpPopupController;
-
   // Game tutorial
   bool _tutorialActive = false;
   GameTutorialController? _tutorialController;
@@ -93,18 +88,6 @@ class _GameScreenState extends State<GameScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
-    // Initialize level-up corner popup controller
-    _levelUpPopupController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    _levelUpPopupController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        setState(() => _showLevelUpPopup = false);
-        _levelUpPopupController.reset();
-      }
-    });
 
     // Initialize game juice controller
     _juiceController = GameJuiceController();
@@ -348,7 +331,6 @@ class _GameScreenState extends State<GameScreen>
     getIt<AdService>().setGameActive(false);
     _keyboardFocusNode.dispose();
     _gestureIndicatorController.dispose();
-    _levelUpPopupController.dispose();
     _juiceController.dispose();
     _tutorialController?.dispose();
     super.dispose();
@@ -579,12 +561,13 @@ class _GameScreenState extends State<GameScreen>
       }
     }
 
-    // Level up effects (HUD pulse + corner popup - no pause)
+    // Level up effects. ONE consolidated cue: the HUD level badge
+    // burst/scale (see GameHUD._triggerLevelUpEffect) plus a light
+    // shake. The old third layer — a 2-second corner popup at a fixed
+    // top/right offset — competed for attention exactly when the player
+    // needs to read the board, and sat mispositioned on tablets.
     if (current.level > previous.level) {
       _juiceController.levelUp();
-      _showLevelUpCornerPopup(current.level);
-      // Note: HUD also shows a pulse animation on the level badge
-      // Game continues without interruption
     }
 
     // Game over effects
@@ -609,143 +592,6 @@ class _GameScreenState extends State<GameScreen>
       boardWidth: boardWidth,
       boardHeight: boardHeight,
       comboMultiplier: comboMultiplier,
-    );
-  }
-
-  /// Shows the level-up corner popup
-  void _showLevelUpCornerPopup(int newLevel) {
-    setState(() {
-      _showLevelUpPopup = true;
-      _levelUpPopupLevel = newLevel;
-    });
-    _levelUpPopupController.forward();
-  }
-
-  /// Builds the level-up corner popup widget
-  Widget _buildLevelUpCornerPopup(GameTheme theme) {
-    return AnimatedBuilder(
-      animation: _levelUpPopupController,
-      builder: (context, child) {
-        final progress = _levelUpPopupController.value;
-
-        // Animation phases:
-        // 0.0-0.15: Slide in + scale up
-        // 0.15-0.85: Hold
-        // 0.85-1.0: Fade out + slide up
-        double opacity;
-        double slideY;
-        double scale;
-
-        if (progress < 0.15) {
-          // Slide in phase
-          final phase = (progress / 0.15).clamp(0.0, 1.0);
-          final curved = Curves.easeOut.transform(phase);
-          opacity = curved;
-          slideY = 20 * (1 - curved);
-          scale = 0.8 + (0.2 * curved);
-        } else if (progress < 0.85) {
-          // Hold phase
-          opacity = 1.0;
-          slideY = 0;
-          scale = 1.0;
-        } else {
-          // Fade out phase. Clamp the normalized phase: at progress == 1.0,
-          // (1.0 - 0.85) / 0.15 floating-point-rounds to 1.0000000000000002,
-          // which trips Curves.transform's `t <= 1.0` assert (red error flash).
-          final phase = ((progress - 0.85) / 0.15).clamp(0.0, 1.0);
-          final curved = Curves.easeIn.transform(phase);
-          opacity = 1.0 - curved;
-          slideY = -15 * curved;
-          scale = 1.0 - (0.1 * curved);
-        }
-
-        return Positioned(
-          top: 120 + slideY,
-          right: 16,
-          child: Opacity(
-            opacity: opacity,
-            child: Transform.scale(
-              scale: scale,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.withValues(alpha: 0.5),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('⬆️', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 8),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'LEVEL UP!',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black45,
-                                offset: Offset(1, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          'Level $_levelUpPopupLevel',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            shadows: const [
-                              Shadow(
-                                color: Colors.black38,
-                                offset: Offset(1, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('⬆️', style: TextStyle(fontSize: 18)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -1047,11 +893,7 @@ class _GameScreenState extends State<GameScreen>
                 child: KeyboardListener(
                   focusNode: _keyboardFocusNode,
                   onKeyEvent: _handleKeyPress,
-                  child: GameJuiceWidget(
-                    controller: _juiceController,
-                    applyShake: settingsState.screenShakeEnabled,
-                    applyScale: false, // Don't apply scale to the entire screen
-                    child: Scaffold(
+                  child: Scaffold(
                       backgroundColor: theme.backgroundColor,
                       body: SafeArea(
                         child: Column(
@@ -1064,7 +906,13 @@ class _GameScreenState extends State<GameScreen>
                             // board stays full size for them.
                             const SnakeBannerAd(),
                             Expanded(
-                              child: Stack(
+                              // Shake scoped to the play area (HUD + board +
+                              // controls) — wrapping the whole Scaffold
+                              // dragged the banner ad along with the shake.
+                              child: GameJuiceWidget(
+                                controller: _juiceController,
+                                applyShake: settingsState.screenShakeEnabled,
+                                child: Stack(
                           children: [
                             // SwipeDetector only wraps the game content, not overlays.
                             // No onTap handler — pause is reserved for the HUD's
@@ -1074,7 +922,6 @@ class _GameScreenState extends State<GameScreen>
                             // pause the game with no obvious cause.
                             SwipeDetector(
                               onSwipe: _handleSwipe,
-                              showFeedback: false, // Disable animated feedback
                               child: Stack(
                                 children: [
                                   // Background gradient - matching home screen
@@ -1222,8 +1069,6 @@ class _GameScreenState extends State<GameScreen>
                                   _ScorePopupLayer(key: _scorePopupLayerKey),
 
                                   // Level-Up Corner Popup
-                                  if (_showLevelUpPopup)
-                                    _buildLevelUpCornerPopup(theme),
                                 ],
                               ),
                             ),
@@ -1324,12 +1169,12 @@ class _GameScreenState extends State<GameScreen>
                             const _RejectedInputFlash(),
                           ],
                               ),
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ), // Close Scaffold
-                  ), // Close GameJuiceWidget
                 ), // Close KeyboardListener
               ); // Close PopScope
             },

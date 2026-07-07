@@ -1,18 +1,28 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 enum ShakeIntensity { light, medium, heavy, extreme }
 
+/// Holds the parameters of the current shake request. Pure state — the
+/// frame loop lives in [ScreenShakeWidget], which drives a vsync
+/// [Ticker] only while a shake is active. (Previously the controller
+/// self-scheduled via recursive `Future.delayed(16ms)`, which wasn't
+/// vsync-aligned and kept running even when nothing rendered it.)
 class ScreenShakeController extends ChangeNotifier {
   bool _isShaking = false;
   double _intensity = 0.0;
   Duration _duration = Duration.zero;
-  DateTime? _shakeStartTime;
-  Offset _currentOffset = Offset.zero;
+  int _shakeSeq = 0;
 
   bool get isShaking => _isShaking;
-  Offset get offset => _currentOffset;
   double get intensity => _intensity;
+  Duration get duration => _duration;
+
+  /// Monotonic counter bumped per shake() so the widget can restart its
+  /// ticker when a new shake lands mid-shake.
+  int get shakeSeq => _shakeSeq;
 
   void shake({
     ShakeIntensity intensity = ShakeIntensity.medium,
@@ -20,9 +30,8 @@ class ScreenShakeController extends ChangeNotifier {
   }) {
     _intensity = _getIntensityValue(intensity);
     _duration = duration;
-    _shakeStartTime = DateTime.now();
     _isShaking = true;
-    _startShakeAnimation();
+    _shakeSeq++;
     notifyListeners();
   }
 
@@ -39,50 +48,11 @@ class ScreenShakeController extends ChangeNotifier {
     }
   }
 
-  void _startShakeAnimation() {
-    if (!_isShaking || _shakeStartTime == null) return;
-
-    final elapsed = DateTime.now().difference(_shakeStartTime!);
-    if (elapsed > _duration) {
-      _stopShake();
-      return;
-    }
-
-    // Calculate shake progress (0.0 to 1.0)
-    final progress = elapsed.inMilliseconds / _duration.inMilliseconds;
-    final dampening = 1.0 - progress; // Fade out over time
-
-    // Generate random shake offset
-    final random = math.Random();
-    final currentIntensity = _intensity * dampening;
-
-    _currentOffset = Offset(
-      (random.nextDouble() - 0.5) * 2 * currentIntensity,
-      (random.nextDouble() - 0.5) * 2 * currentIntensity,
-    );
-
-    notifyListeners();
-
-    // Schedule next frame
-    Future.delayed(const Duration(milliseconds: 16), _startShakeAnimation);
-  }
-
-  void _stopShake() {
-    _isShaking = false;
-    _currentOffset = Offset.zero;
-    _intensity = 0.0;
-    _shakeStartTime = null;
-    notifyListeners();
-  }
-
   void stopShake() {
-    _stopShake();
-  }
-
-  @override
-  void dispose() {
-    _stopShake();
-    super.dispose();
+    if (!_isShaking) return;
+    _isShaking = false;
+    _intensity = 0.0;
+    notifyListeners();
   }
 }
 
@@ -100,36 +70,84 @@ class ScreenShakeWidget extends StatefulWidget {
   State<ScreenShakeWidget> createState() => _ScreenShakeWidgetState();
 }
 
-class _ScreenShakeWidgetState extends State<ScreenShakeWidget> {
+class _ScreenShakeWidgetState extends State<ScreenShakeWidget>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+  final math.Random _random = math.Random();
+  Offset _offset = Offset.zero;
+  int _runningSeq = -1;
+
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(_onShakeUpdate);
+    _ticker = createTicker(_onTick);
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(ScreenShakeWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(_onShakeUpdate);
+    widget.controller.removeListener(_onControllerChanged);
+    _ticker.dispose();
     super.dispose();
   }
 
-  void _onShakeUpdate() {
-    setState(() {});
+  void _onControllerChanged() {
+    final c = widget.controller;
+    if (c.isShaking) {
+      // (Re)start on every new shake so a fresh request mid-shake gets
+      // its full duration — Ticker elapsed resets on start().
+      if (c.shakeSeq != _runningSeq) {
+        _runningSeq = c.shakeSeq;
+        _ticker.stop();
+        _ticker.start();
+      }
+    } else if (_ticker.isActive) {
+      _ticker.stop();
+      setState(() => _offset = Offset.zero);
+    }
+  }
+
+  void _onTick(Duration elapsed) {
+    final c = widget.controller;
+    if (elapsed >= c.duration) {
+      _ticker.stop();
+      setState(() => _offset = Offset.zero);
+      c.stopShake();
+      return;
+    }
+    final progress = elapsed.inMilliseconds / c.duration.inMilliseconds;
+    final dampening = 1.0 - progress; // fade out over time
+    final currentIntensity = c.intensity * dampening;
+    setState(() {
+      _offset = Offset(
+        (_random.nextDouble() - 0.5) * 2 * currentIntensity,
+        (_random.nextDouble() - 0.5) * 2 * currentIntensity,
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Transform.translate(
-      offset: widget.controller.offset,
-      child: widget.child,
-    );
+    return Transform.translate(offset: _offset, child: widget.child);
   }
 }
 
-// Game Juice Effects Controller
+/// Game juice effects controller — maps game events onto shakes.
+///
+/// The old "scale punch" system was deleted outright: both game screens
+/// mounted GameJuiceWidget with `applyScale: false`, so its 60fps
+/// notifier loop ran on every food eaten while rendering NOTHING.
 class GameJuiceController extends ChangeNotifier {
   final ScreenShakeController shakeController = ScreenShakeController();
-  final Map<String, AnimationController> _animationControllers = {};
 
   // Whether juice effects are enabled (controlled by settings)
   bool _shakeEnabled = true;
@@ -138,25 +156,7 @@ class GameJuiceController extends ChangeNotifier {
     _shakeEnabled = value;
     if (!value) {
       shakeController.stopShake(); // Stop any running shake
-      // Also reset scale punch to stop its animation loop
-      _scalePunchValue = 1.0;
-      _scalePunchStartTime = null;
     }
-  }
-
-  // Scale punch effect for UI elements
-  double _scalePunchValue = 1.0;
-  Duration _scalePunchDuration = Duration.zero;
-  DateTime? _scalePunchStartTime;
-
-  double get scalePunch => _scalePunchValue;
-
-  void addAnimationController(String key, AnimationController controller) {
-    _animationControllers[key] = controller;
-  }
-
-  void removeAnimationController(String key) {
-    _animationControllers.remove(key);
   }
 
   // Screen shake for impacts
@@ -164,46 +164,8 @@ class GameJuiceController extends ChangeNotifier {
     ShakeIntensity intensity = ShakeIntensity.medium,
     Duration duration = const Duration(milliseconds: 300),
   }) {
-    // Skip shake animation if disabled - prevents background animation loop
     if (!_shakeEnabled) return;
     shakeController.shake(intensity: intensity, duration: duration);
-  }
-
-  // Scale punch for UI feedback
-  void triggerScalePunch({
-    double intensity = 0.1,
-    Duration duration = const Duration(milliseconds: 150),
-  }) {
-    // Skip scale punch animation if effects are disabled
-    if (!_shakeEnabled) return;
-    _scalePunchValue = 1.0 + intensity;
-    _scalePunchDuration = duration;
-    _scalePunchStartTime = DateTime.now();
-    _startScalePunchAnimation();
-    notifyListeners();
-  }
-
-  void _startScalePunchAnimation() {
-    if (_scalePunchStartTime == null) return;
-
-    final elapsed = DateTime.now().difference(_scalePunchStartTime!);
-    if (elapsed > _scalePunchDuration) {
-      _scalePunchValue = 1.0;
-      _scalePunchStartTime = null;
-      notifyListeners();
-      return;
-    }
-
-    // Calculate scale using a punch curve (quick scale up, then down)
-    final progress =
-        elapsed.inMilliseconds / _scalePunchDuration.inMilliseconds;
-    final punchCurve = math.sin(progress * math.pi);
-
-    _scalePunchValue = 1.0 + (0.1 * punchCurve);
-    notifyListeners();
-
-    // Schedule next frame
-    Future.delayed(const Duration(milliseconds: 16), _startScalePunchAnimation);
   }
 
   // Specific game event effects
@@ -212,7 +174,6 @@ class GameJuiceController extends ChangeNotifier {
       intensity: ShakeIntensity.light,
       duration: const Duration(milliseconds: 100),
     );
-    triggerScalePunch(intensity: 0.05);
   }
 
   void bonusFoodEaten() {
@@ -220,7 +181,6 @@ class GameJuiceController extends ChangeNotifier {
       intensity: ShakeIntensity.medium,
       duration: const Duration(milliseconds: 200),
     );
-    triggerScalePunch(intensity: 0.08);
   }
 
   void specialFoodEaten() {
@@ -228,7 +188,6 @@ class GameJuiceController extends ChangeNotifier {
       intensity: ShakeIntensity.heavy,
       duration: const Duration(milliseconds: 300),
     );
-    triggerScalePunch(intensity: 0.12);
   }
 
   void powerUpCollected() {
@@ -236,7 +195,6 @@ class GameJuiceController extends ChangeNotifier {
       intensity: ShakeIntensity.medium,
       duration: const Duration(milliseconds: 250),
     );
-    triggerScalePunch(intensity: 0.1);
   }
 
   void gameOver() {
@@ -251,7 +209,6 @@ class GameJuiceController extends ChangeNotifier {
       intensity: ShakeIntensity.light,
       duration: const Duration(milliseconds: 150),
     );
-    triggerScalePunch(intensity: 0.06);
   }
 
   void wallHit() {
@@ -268,100 +225,34 @@ class GameJuiceController extends ChangeNotifier {
     );
   }
 
-  void buttonPress() {
-    triggerScalePunch(
-      intensity: 0.03,
-      duration: const Duration(milliseconds: 100),
-    );
-  }
-
-  void achievementUnlocked() {
-    shakeScreen(
-      intensity: ShakeIntensity.light,
-      duration: const Duration(milliseconds: 200),
-    );
-    triggerScalePunch(intensity: 0.08);
-  }
-
   @override
   void dispose() {
     shakeController.dispose();
-    _animationControllers.clear();
     super.dispose();
   }
 }
 
-// Scale punch widget for UI elements
-class ScalePunchWidget extends StatefulWidget {
-  final Widget child;
-  final GameJuiceController controller;
-
-  const ScalePunchWidget({
-    super.key,
-    required this.child,
-    required this.controller,
-  });
-
-  @override
-  State<ScalePunchWidget> createState() => _ScalePunchWidgetState();
-}
-
-class _ScalePunchWidgetState extends State<ScalePunchWidget> {
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onUpdate);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onUpdate);
-    super.dispose();
-  }
-
-  void _onUpdate() {
-    setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.scale(
-      scale: widget.controller.scalePunch,
-      child: widget.child,
-    );
-  }
-}
-
-// Combined juice widget that applies both shake and scale effects
+/// Shake wrapper for the game board area. Mount it around the BOARD, not
+/// the Scaffold — shaking the whole screen dragged the banner ad along
+/// with it, which looked cheap and is ad-policy-adjacent.
 class GameJuiceWidget extends StatelessWidget {
   final Widget child;
   final GameJuiceController controller;
   final bool applyShake;
-  final bool applyScale;
 
   const GameJuiceWidget({
     super.key,
     required this.child,
     required this.controller,
     this.applyShake = true,
-    this.applyScale = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    Widget result = child;
-
-    if (applyScale) {
-      result = ScalePunchWidget(controller: controller, child: result);
-    }
-
-    if (applyShake) {
-      result = ScreenShakeWidget(
-        controller: controller.shakeController,
-        child: result,
-      );
-    }
-
-    return result;
+    if (!applyShake) return child;
+    return ScreenShakeWidget(
+      controller: controller.shakeController,
+      child: child,
+    );
   }
 }
