@@ -139,10 +139,10 @@ player faces 5+ blocking popups before their first snake move.
   doc comment says 4.5s, code says 3s). No skip affordance. **Fix:** "tap to start" skip;
   keep the full wait for first launch only if desired.
 
-- [ ] **No distinct wall-hit vs self-collision sound** — haptics distinguish them
+- [x] **No distinct wall-hit vs self-collision sound** *(fixed: self-collision plays game_over at 0.85× rate — duller thud, no new asset)* — haptics distinguish them
   (`game_cubit.dart:1012/1016`), audio plays the same `game_over` for both.
 
-- [ ] **Theme contrast issues:** Crystal (powder-blue snake vs rose-pink food on amethyst)
+- [x] **Theme contrast issues:** *(fixed: Crystal food → saturated magenta quartz, Desert snake → golden sand; `primaryColor == snakeColor` smell remains — larger palette refactor)* Crystal (powder-blue snake vs rose-pink food on amethyst)
   and Desert (sandy-brown snake on terracotta bg) have poor figure/ground separation.
   `primaryColor == snakeColor` for **all 10 themes** (`constants.dart:435-458`) — score
   text is snake-colored, rescued only by a drop shadow. No contrast validation exists.
