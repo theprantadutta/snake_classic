@@ -712,20 +712,35 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
               ]
             : null,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('🔥', style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
-          const SizedBox(width: 4),
-          Text(
-            '${multiplier.toStringAsFixed(1)}x',
-            style: TextStyle(
-              color: color,
-              fontSize: isSmallScreen ? 12 : 14,
-              fontWeight: FontWeight.w800,
+      child: IntrinsicWidth(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('🔥',
+                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
+                const SizedBox(width: 4),
+                Text(
+                  '${multiplier.toStringAsFixed(1)}x',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: isSmallScreen ? 12 : 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 3),
+            // Decay warning: drains through the last seconds before the
+            // combo breaks. Always mounted at fixed height so the chip
+            // never changes size (no board reflow) — invisible outside
+            // the danger window.
+            _ComboDecayBar(gameState: gameState),
+          ],
+        ),
       ),
     );
 
@@ -1091,6 +1106,101 @@ class _TimeAttackChipState extends State<_TimeAttackChip>
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+/// Drain bar inside the combo chip that warns the player the streak is
+/// about to break. The combo decays after [GameConstants.comboDecayMs] of
+/// game-time without a bite (see SnakeSimulation) — without a visible
+/// countdown, a broken combo reads as random. The bar appears in the
+/// last [_dangerWindowMs] and empties toward the break.
+///
+/// Self-ticking (same pattern as _TimeAttackChip): comboIdleMs only
+/// advances per game tick, so between HUD rebuilds the bar extrapolates
+/// using wall-time since the state's lastMoveTime — during live play
+/// game-time and wall-time advance 1:1. Extrapolation is skipped while
+/// paused/ended and clamped so a resume transient can't overshoot.
+class _ComboDecayBar extends StatefulWidget {
+  final GameState gameState;
+
+  const _ComboDecayBar({required this.gameState});
+
+  @override
+  State<_ComboDecayBar> createState() => _ComboDecayBarState();
+}
+
+class _ComboDecayBarState extends State<_ComboDecayBar>
+    with SingleTickerProviderStateMixin {
+  static const int _dangerWindowMs = 2500;
+
+  late final AnimationController _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  /// 1.0 = window just entered, 0.0 = combo breaks now. Null when outside
+  /// the danger window (or decay doesn't apply).
+  double? _dangerFraction() {
+    final gs = widget.gameState;
+    if (gs.currentCombo <= 0 || gs.gameMode == GameMode.zen) return null;
+
+    var idleMs = gs.comboIdleMs;
+    if (gs.status == GameStatus.playing &&
+        gs.pausedAt == null &&
+        gs.lastMoveTime != null) {
+      final sinceTick =
+          DateTime.now().difference(gs.lastMoveTime!).inMilliseconds;
+      // Ticks are <= ~600ms apart in play; the clamp bounds the brief
+      // stale-anchor window right after a resume.
+      idleMs += sinceTick.clamp(0, 1000);
+    }
+
+    final remaining = GameConstants.comboDecayMs - idleMs;
+    if (remaining > _dangerWindowMs) return null;
+    return (remaining / _dangerWindowMs).clamp(0.0, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ticker,
+      builder: (context, _) {
+        final fraction = _dangerFraction();
+        return SizedBox(
+          height: 3,
+          child: fraction == null
+              ? const SizedBox.shrink()
+              : DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: fraction,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
         );
       },
     );
