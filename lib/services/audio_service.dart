@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
@@ -92,17 +94,32 @@ class AudioService {
 
   /// Play a sound effect - instant, non-blocking. [volume] is 0.0–1.0;
   /// call sites hand-tune it per event so cues layer without drowning
-  /// each other (there is no master mixer).
-  void playSound(String soundName, {double volume = 1.0}) {
+  /// each other (there is no master mixer). [playbackRate] pitch-shifts
+  /// the shipped asset (e.g. 0.85 gives game_over a duller "self
+  /// collision" variant without a second wav).
+  void playSound(String soundName, {double volume = 1.0, double playbackRate = 1.0}) {
     if (!_initialized || !_soundEnabled) return;
 
     final source = _loadedSounds[_soundAliases[soundName] ?? soundName];
     if (source != null) {
-      // SoLoud.play() is non-blocking and low-latency
-      _soloud.play(source, volume: volume);
+      if (playbackRate == 1.0) {
+        // SoLoud.play() is non-blocking and low-latency
+        _soloud.play(source, volume: volume);
+      } else {
+        _playAtRate(source, volume, playbackRate);
+      }
     } else {
       // Fallback to system sound if not pre-loaded
       _playSystemSound(soundName);
+    }
+  }
+
+  void _playAtRate(AudioSource source, double volume, double rate) {
+    try {
+      final handle = _soloud.play(source, volume: volume);
+      _soloud.setRelativePlaySpeed(handle, rate);
+    } catch (e) {
+      debugPrint('Rate-shifted play failed: $e');
     }
   }
 

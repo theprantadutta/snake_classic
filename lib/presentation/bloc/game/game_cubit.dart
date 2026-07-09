@@ -1050,10 +1050,16 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackTimer = null;
     _timeAttackRemaining = null;
 
-    // Play crash sound and haptic feedback immediately. Single service —
-    // the legacy playSound('game_over') alongside this double-played the
-    // cue. Music freezes with the run; revive() resumes it.
-    _audioService.playSound('game_over', volume: 1.0);
+    // Play crash sound and haptic feedback immediately. Music freezes with
+    // the run; revive() resumes it. Self-collision plays the same asset
+    // pitch-shifted down — a duller "thud" that matches the distinct
+    // haptic patterns the two death causes already have.
+    _audioService.playSound(
+      'game_over',
+      volume: 1.0,
+      playbackRate:
+          reason == model.CrashReason.selfCollision ? 0.85 : 1.0,
+    );
     unawaited(_audioService.pauseGameplayMusic());
     _hapticService.heavyImpact();
 
