@@ -1,24 +1,24 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:snake_classic/models/multiplayer_game.dart';
-import 'package:snake_classic/models/position.dart';
+import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/haptic_service.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
-import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
-import 'package:snake_classic/models/game_state.dart';
-import 'package:snake_classic/utils/constants.dart';
 
+/// The live 1v1 match screen. Server-authoritative: everything on screen
+/// (both snakes, food, scores, deaths, the final result) renders from the
+/// engine snapshots in [MultiplayerState.snapshot] — the only thing this
+/// screen sends is direction inputs via [MultiplayerCubit.changeDirection].
 class MultiplayerGameScreen extends StatefulWidget {
   const MultiplayerGameScreen({super.key});
 
@@ -28,7 +28,6 @@ class MultiplayerGameScreen extends StatefulWidget {
 
 class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     with WidgetsBindingObserver, TickerProviderStateMixin {
-  Timer? _gameTimer;
   late FocusNode _keyboardFocusNode;
 
   // Juice effects controller (like single-player)
@@ -38,24 +37,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   late AnimationController _gestureIndicatorController;
   Direction? _lastSwipeDirection;
 
-  // Local game state for smooth gameplay
-  List<Position> _mySnake = [];
-  Direction _currentDirection = Direction.right;
-  Direction _nextDirection = Direction.right;
-  int _myScore = 0;
-  bool _isAlive = true;
-
-  // Crash state
-  bool _showCrashOverlay = false;
-  CrashReason? _crashReason;
-
-  // Game settings
-  int _boardSize = 20;
-  int _gameSpeed = 200;
-
-  // Track initialization
-  bool _isGameInitialized = false;
-  String? _currentUserId;
+  // One-shot guards for listener-driven effects
+  bool _resultDialogShown = false;
+  int _lastJuiceScore = 0;
+  bool _juiceAliveLastTick = true;
 
   @override
   void initState() {
@@ -77,17 +62,14 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       vsync: this,
     );
 
-    // Initialize after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _keyboardFocusNode.requestFocus();
-      _tryInitializeGame();
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _gameTimer?.cancel();
     _keyboardFocusNode.dispose();
     _juiceController.dispose();
     _gestureIndicatorController.dispose();
@@ -96,174 +78,24 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      // Don't cancel timer in multiplayer - game continues on server
-    }
-  }
-
-  void _tryInitializeGame() {
-    if (_isGameInitialized) return;
-
-    final multiplayerCubit = context.read<MultiplayerCubit>();
-    final game = multiplayerCubit.state.currentGame;
-    if (game == null) return;
-
-    // Wait for game to be in "playing" status
-    if (game.status != MultiplayerGameStatus.playing) return;
-
-    final authState = context.read<AuthCubit>().state;
-    _currentUserId = authState.userId;
-    if (_currentUserId == null) return;
-
-    final myPlayer = game.getPlayer(_currentUserId!);
-    if (myPlayer == null || myPlayer.snake.isEmpty) return;
-
-    // Initialize local state from server data
-    _boardSize = game.gameSettings['boardSize'] ?? 20;
-    _gameSpeed = game.gameSettings['initialSpeed'] ?? 200;
-    _mySnake = List.from(myPlayer.snake);
-    _currentDirection = myPlayer.currentDirection;
-    _nextDirection = myPlayer.currentDirection;
-    _myScore = myPlayer.score;
-    _isAlive = myPlayer.status == PlayerStatus.playing;
-    _isGameInitialized = true;
-
-    debugPrint(
-      '[MultiplayerGameScreen] Game initialized! Snake: ${_mySnake.length} segments',
-    );
-    _startGameLoop();
-    setState(() {});
-  }
-
-  void _startGameLoop() {
-    _gameTimer?.cancel();
-    _gameTimer = Timer.periodic(Duration(milliseconds: _gameSpeed), (_) {
-      if (_isAlive && _isGameInitialized) {
-        _updateGame();
-      }
-    });
-  }
-
-  void _updateGame() {
-    if (_mySnake.isEmpty || !_isAlive) return;
-
-    // Update direction
-    _currentDirection = _nextDirection;
-
-    // Calculate new head position
-    final head = _mySnake.first;
-    final newHead = head.move(_currentDirection);
-
-    // Check wall collision
-    if (newHead.x < 0 ||
-        newHead.x >= _boardSize ||
-        newHead.y < 0 ||
-        newHead.y >= _boardSize) {
-      _handleCrash(CrashReason.wallCollision);
-      return;
-    }
-
-    // Check self collision
-    if (_mySnake.any((pos) => pos == newHead)) {
-      _handleCrash(CrashReason.selfCollision);
-      return;
-    }
-
-    // Check collision with other players
-    final multiplayerCubit = context.read<MultiplayerCubit>();
-    final game = multiplayerCubit.state.currentGame;
-    if (game != null) {
-      for (final player in game.players) {
-        if (player.userId != _currentUserId && player.isAlive) {
-          if (player.snake.any((pos) => pos == newHead)) {
-            _handleCrash(CrashReason.selfCollision); // Player collision
-            return;
-          }
-        }
+    if (state == AppLifecycleState.resumed) {
+      // The match kept ticking on the server while we were backgrounded;
+      // if the transport dropped, this rejoins and pulls a MatchResumed
+      // snapshot. No-op when still connected.
+      final cubit = context.read<MultiplayerCubit>();
+      if (cubit.state.status == MultiplayerStatus.playing) {
+        cubit.attemptReconnect();
       }
     }
-
-    // Move snake
-    _mySnake.insert(0, newHead);
-
-    // Check food collision
-    bool ateFood = false;
-    if (game?.foodPosition == newHead) {
-      ateFood = true;
-      _myScore += 10;
-      multiplayerCubit.onFoodEaten(10);
-      _juiceController.foodEaten(); // Trigger juice effect
-    } else if (game?.bonusFoodPosition == newHead) {
-      ateFood = true;
-      _myScore += 25;
-      multiplayerCubit.onFoodEaten(25);
-      _juiceController.bonusFoodEaten();
-    } else if (game?.specialFoodPosition == newHead) {
-      ateFood = true;
-      _myScore += 50;
-      multiplayerCubit.onFoodEaten(50);
-      _juiceController.specialFoodEaten();
-    }
-
-    if (!ateFood) {
-      _mySnake.removeLast();
-    }
-
-    // Send update to server
-    multiplayerCubit.updateGameState(
-      snake: _mySnake,
-      score: _myScore,
-      status: PlayerStatus.playing,
-    );
-
-    setState(() {});
   }
 
-  void _handleCrash(CrashReason reason) {
-    _isAlive = false;
-    _gameTimer?.cancel();
-    _crashReason = reason;
-    _showCrashOverlay = true;
-
-    final multiplayerCubit = context.read<MultiplayerCubit>();
-    multiplayerCubit.onPlayerCrash();
-    multiplayerCubit.checkGameEnd();
-
-    // Trigger crash juice effects
-    if (reason == CrashReason.wallCollision) {
-      _juiceController.wallHit();
-    } else {
-      _juiceController.selfCollision();
-    }
-
-    // Play crash haptic
-    HapticService().heavyImpact();
-
-    setState(() {});
-
-    // Auto-dismiss crash overlay after delay
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _showCrashOverlay = false;
-        });
-        _showGameOverDialog();
-      }
-    });
-  }
+  String? get _currentUserId => context.read<AuthCubit>().state.userId;
 
   void _handleSwipe(Direction direction) {
-    // Prevent 180-degree turns
-    if ((_currentDirection == Direction.up && direction == Direction.down) ||
-        (_currentDirection == Direction.down && direction == Direction.up) ||
-        (_currentDirection == Direction.left && direction == Direction.right) ||
-        (_currentDirection == Direction.right && direction == Direction.left)) {
-      return;
-    }
-
-    _nextDirection = direction;
-    _lastSwipeDirection = direction;
+    // The cubit guards reversals and dead/ended states — this just sends
+    // and animates the local echo.
     context.read<MultiplayerCubit>().changeDirection(direction);
+    _lastSwipeDirection = direction;
     HapticService().selectionClick();
 
     // Animate gesture indicator
@@ -304,8 +136,44 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     }
   }
 
-  void _showGameOverDialog() {
+  /// Snapshot-diff juice: score-up burst and death shake. The cubit owns
+  /// sounds/haptics; this only drives the screen-shake widget.
+  void _applySnapshotJuice(MatchSnapshot snapshot) {
+    final userId = _currentUserId;
+    if (userId == null) return;
+    final me = snapshot.playerByUserId(userId);
+    if (me == null) return;
+
+    if (me.score > _lastJuiceScore) {
+      _juiceController.foodEaten();
+    }
+    if (_juiceAliveLastTick && !me.alive) {
+      if (me.deathReason == 'wall') {
+        _juiceController.wallHit();
+      } else {
+        _juiceController.selfCollision();
+      }
+    }
+    _lastJuiceScore = me.score;
+    _juiceAliveLastTick = me.alive;
+  }
+
+  void _showResultDialog(MatchEndResult result) {
+    if (_resultDialogShown) return;
+    _resultDialogShown = true;
+
     final theme = context.read<ThemeCubit>().state.currentTheme;
+    final userId = _currentUserId ?? '';
+    final won = result.isWinner(userId);
+    final draw = result.isDraw;
+    final me = result.playerByUserId(userId);
+    final opponent = result.players
+        .where((p) => p.userId != userId)
+        .firstOrNull;
+
+    final titleColor = won
+        ? Colors.amber
+        : (draw ? theme.accentColor : Colors.red.shade400);
 
     showDialog(
       context: context,
@@ -314,18 +182,21 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         backgroundColor: theme.backgroundColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.5)),
+          side: BorderSide(color: titleColor.withValues(alpha: 0.5)),
         ),
         title: Row(
           children: [
-            Icon(Icons.sports_score, color: theme.accentColor, size: 32),
+            Icon(
+              won
+                  ? Icons.emoji_events
+                  : (draw ? Icons.handshake : Icons.sports_score),
+              color: titleColor,
+              size: 32,
+            ),
             const SizedBox(width: 12),
             Text(
-              'Game Over',
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-              ),
+              won ? 'VICTORY!' : (draw ? 'DRAW' : 'DEFEAT'),
+              style: TextStyle(color: titleColor, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -333,8 +204,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'You finished the game!',
-              style: TextStyle(color: theme.accentColor, fontSize: 16),
+              _resultSummary(result, me, won: won, draw: draw),
+              textAlign: TextAlign.center,
+              style: TextStyle(color: theme.accentColor, fontSize: 14),
             ),
             const SizedBox(height: 20),
             Container(
@@ -342,44 +214,64 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    theme.accentColor.withValues(alpha: 0.1),
-                    theme.accentColor.withValues(alpha: 0.05),
+                    titleColor.withValues(alpha: 0.1),
+                    titleColor.withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.3),
-                ),
+                border: Border.all(color: titleColor.withValues(alpha: 0.3)),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
+                  _resultScoreColumn(theme, 'You', me?.score ?? 0),
                   Text(
-                    'Your Score',
+                    'VS',
                     style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$_myScore',
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 42,
+                      color: theme.accentColor.withValues(alpha: 0.5),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Length: ${_mySnake.length}',
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 14,
-                    ),
+                  _resultScoreColumn(
+                    theme,
+                    opponent?.username ?? 'Opponent',
+                    opponent?.score ?? 0,
                   ),
                 ],
               ),
             ),
+            if (won && result.winnerCoinReward > 0) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.monetization_on,
+                      color: Colors.amber,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '+${result.winnerCoinReward} coins',
+                      style: const TextStyle(
+                        color: Colors.amber,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -408,6 +300,70 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
+  Widget _resultScoreColumn(GameTheme theme, String label, int score) {
+    return Column(
+      children: [
+        Text(
+          label.length > 10 ? '${label.substring(0, 10)}…' : label,
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.8),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '$score',
+          style: TextStyle(
+            color: theme.accentColor,
+            fontSize: 34,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// One human line explaining how the match ended, from the winner's or
+  /// loser's perspective.
+  String _resultSummary(
+    MatchEndResult result,
+    MatchEndPlayer? me, {
+    required bool won,
+    required bool draw,
+  }) {
+    switch (result.reason) {
+      case 'timeout':
+        return draw
+            ? 'Time\'s up — dead even!'
+            : 'Time\'s up — ${won ? 'you had' : 'your opponent had'} the higher score.';
+      case 'mutual_crash':
+        return draw
+            ? 'Both snakes crashed — it\'s a tie!'
+            : 'Both snakes crashed — ${won ? 'your' : 'their'} score decided it.';
+      case 'aborted':
+        return 'The match was cancelled.';
+      default: // last_alive
+        if (won) {
+          return 'Your opponent crashed. Last snake standing!';
+        }
+        switch (me?.deathReason) {
+          case 'wall':
+            return 'You crashed into the wall.';
+          case 'self':
+            return 'You crashed into yourself.';
+          case 'opponent':
+            return 'You crashed into your opponent.';
+          case 'head_on':
+            return 'Head-on collision!';
+          case 'forfeit':
+            return 'Disconnected too long — match forfeited.';
+          default:
+            return 'Better luck next time!';
+        }
+    }
+  }
+
   void _navigateToLobby() {
     context.read<MultiplayerCubit>().leaveGame();
     context.pushReplacement(AppRoutes.multiplayerLobby);
@@ -429,7 +385,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           ),
         ),
         content: Text(
-          'Are you sure you want to leave the multiplayer game?',
+          'The match keeps running on the server — leaving forfeits it.',
           style: TextStyle(color: theme.accentColor),
         ),
         actions: [
@@ -459,53 +415,34 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         final theme = themeState.currentTheme;
 
         return BlocListener<MultiplayerCubit, MultiplayerState>(
-          listenWhen: (prev, curr) {
-            // Trigger when game starts playing or when player data arrives
-            if (!_isGameInitialized) {
-              final prevPlaying =
-                  prev.currentGame?.status == MultiplayerGameStatus.playing;
-              final currPlaying =
-                  curr.currentGame?.status == MultiplayerGameStatus.playing;
-
-              // Trigger when status changes to playing
-              if (!prevPlaying && currPlaying) return true;
-
-              // Trigger when snakes appear
-              final hadSnakes =
-                  prev.currentGame?.players.any((p) => p.snake.isNotEmpty) ??
-                  false;
-              final hasSnakes =
-                  curr.currentGame?.players.any((p) => p.snake.isNotEmpty) ??
-                  false;
-              return !hadSnakes && hasSnakes;
-            }
-            return false;
-          },
+          listenWhen: (prev, curr) =>
+              !identical(prev.snapshot, curr.snapshot) ||
+              (prev.matchEnd == null && curr.matchEnd != null),
           listener: (context, state) {
-            _tryInitializeGame();
+            final snapshot = state.snapshot;
+            if (snapshot != null) {
+              _applySnapshotJuice(snapshot);
+            }
+            final matchEnd = state.matchEnd;
+            if (matchEnd != null && !_resultDialogShown) {
+              // Give the death shake a beat to land before the verdict.
+              Future.delayed(const Duration(milliseconds: 900), () {
+                if (mounted && !_resultDialogShown) {
+                  _showResultDialog(matchEnd);
+                }
+              });
+            }
           },
           child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
             builder: (context, multiplayerState) {
               return BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, authState) {
-                  final game = multiplayerState.currentGame;
+                  final snapshot = multiplayerState.snapshot;
+                  final currentUserId = authState.userId ?? '';
 
-                  // Loading state
-                  if (game == null || !multiplayerState.isGameActive) {
-                    return Scaffold(
-                      backgroundColor: theme.backgroundColor,
-                      body: Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.accentColor,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  // Waiting for snake data / game to start
-                  if (!_isGameInitialized) {
+                  // Waiting for the first authoritative snapshot
+                  // (GameStarted lands right after the countdown).
+                  if (snapshot == null) {
                     return Scaffold(
                       backgroundColor: theme.backgroundColor,
                       body: Center(
@@ -578,48 +515,36 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                         // Multiplayer HUD
                                         _buildMultiplayerHUD(
                                           theme,
-                                          game,
-                                          authState,
+                                          snapshot,
+                                          currentUserId,
                                         ),
 
                                         // Game hint row
-                                        _buildGameHintRow(theme),
+                                        _buildGameHintRow(theme, snapshot),
 
-                                        // Game Board using adapter
+                                        // Game Board — renders the
+                                        // authoritative snapshots
                                         Expanded(
                                           child: Padding(
                                             padding: const EdgeInsets.all(12),
                                             child: MultiplayerFlameBoard(
-                                              game: game,
-                                              currentUserId:
-                                                  _currentUserId ?? '',
-                                              localSnake: _mySnake,
-                                              localDirection: _currentDirection,
-                                              localScore: _myScore,
-                                              localIsAlive: _isAlive,
+                                              snapshot: snapshot,
+                                              boardSize:
+                                                  multiplayerState.boardSize,
+                                              currentUserId: currentUserId,
                                             ),
                                           ),
                                         ),
 
                                         // Bottom info bar
-                                        _buildBottomInfoBar(theme, game),
+                                        _buildBottomInfoBar(
+                                          theme,
+                                          snapshot,
+                                          currentUserId,
+                                        ),
                                       ],
                                     ),
                                   ),
-
-                                  // Crash feedback overlay
-                                  if (_showCrashOverlay && _crashReason != null)
-                                    CrashFeedbackOverlay(
-                                      crashReason: _crashReason!,
-                                      theme: theme,
-                                      onSkip: () {
-                                        setState(() {
-                                          _showCrashOverlay = false;
-                                        });
-                                        _showGameOverDialog();
-                                      },
-                                      duration: const Duration(seconds: 2),
-                                    ),
                                 ],
                               ),
                             ),
@@ -637,13 +562,20 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
-  Widget _buildGameHintRow(GameTheme theme) {
+  String _formatGameClock(int elapsedGameMs) {
+    final totalSeconds = elapsedGameMs ~/ 1000;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildGameHintRow(GameTheme theme, MatchSnapshot snapshot) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Game hint
+          // Server game clock (3:00 cap, then higher score wins)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
@@ -658,16 +590,16 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.lightbulb_outline,
+                  Icons.timer_outlined,
                   color: theme.foodColor.withValues(alpha: 0.7),
                   size: 16,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Avoid walls, yourself & others!',
+                  _formatGameClock(snapshot.elapsedGameMs),
                   style: TextStyle(
                     color: theme.foodColor.withValues(alpha: 0.8),
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -750,11 +682,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
   Widget _buildMultiplayerHUD(
     GameTheme theme,
-    MultiplayerGame game,
-    AuthState authState,
+    MatchSnapshot snapshot,
+    String currentUserId,
   ) {
-    final playerCount = game.players.length;
-    final alivePlayers = game.players.where((p) => p.isAlive).length;
+    final me = snapshot.playerByUserId(currentUserId);
+    final opponent = snapshot.players
+        .where((p) => p.userId != currentUserId)
+        .firstOrNull;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -785,14 +719,14 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.purple.withValues(alpha: 0.5)),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.sports_esports, color: Colors.amber, size: 16),
-                const SizedBox(width: 6),
+                Icon(Icons.sports_esports, color: Colors.amber, size: 16),
+                SizedBox(width: 6),
                 Text(
-                  playerCount == 2 ? 'VS' : 'BATTLE',
-                  style: const TextStyle(
+                  'VS',
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -805,61 +739,108 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
           const Spacer(),
 
+          // Opponent name + score
+          if (opponent != null) ...[
+            _hudScoreChip(
+              theme,
+              label: opponent.username,
+              score: opponent.score,
+              color:
+                  multiplayerColors[opponent.playerIndex %
+                      multiplayerColors.length],
+              alive: opponent.alive,
+              connected: opponent.connected,
+            ),
+            const SizedBox(width: 12),
+          ],
+
           // Your score
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.star, color: Colors.amber, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  '$_myScore',
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-            ),
+          _hudScoreChip(
+            theme,
+            label: 'You',
+            score: me?.score ?? 0,
+            color: me != null
+                ? multiplayerColors[me.playerIndex % multiplayerColors.length]
+                : theme.accentColor,
+            alive: me?.alive ?? true,
+            connected: true,
+            emphasized: true,
           ),
-
-          const SizedBox(width: 12),
-
-          // Alive count (for 4+ players)
-          if (playerCount > 2)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '$alivePlayers/$playerCount',
-                style: const TextStyle(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildBottomInfoBar(GameTheme theme, MultiplayerGame game) {
+  Widget _hudScoreChip(
+    GameTheme theme, {
+    required String label,
+    required int score,
+    required Color color,
+    required bool alive,
+    required bool connected,
+    bool emphasized = false,
+  }) {
+    final display = label.length > 8 ? '${label.substring(0, 8)}…' : label;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: emphasized ? 16 : 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: emphasized ? 0.15 : 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: alive ? 0.4 : 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: alive ? color : Colors.grey,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            display,
+            style: TextStyle(
+              color: alive
+                  ? theme.accentColor.withValues(alpha: 0.85)
+                  : Colors.grey,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              decoration: alive ? null : TextDecoration.lineThrough,
+            ),
+          ),
+          if (!connected) ...[
+            const SizedBox(width: 4),
+            const Icon(Icons.wifi_off, color: Colors.orange, size: 12),
+          ],
+          const SizedBox(width: 8),
+          Text(
+            '$score',
+            style: TextStyle(
+              color: alive ? theme.accentColor : Colors.grey,
+              fontWeight: FontWeight.bold,
+              fontSize: emphasized ? 20 : 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomInfoBar(
+    GameTheme theme,
+    MatchSnapshot snapshot,
+    String currentUserId,
+  ) {
     // Sort players by score (descending)
-    final sortedPlayers = List<MultiplayerPlayer>.from(game.players)
+    final sortedPlayers = List<MatchPlayerState>.from(snapshot.players)
       ..sort((a, b) => b.score.compareTo(a.score));
+    final mySnake = snapshot.playerByUserId(currentUserId);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -881,9 +862,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 separatorBuilder: (context, index) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
                   final player = sortedPlayers[index];
-                  final isMe = player.userId == _currentUserId;
+                  final isMe = player.userId == currentUserId;
                   final playerColor =
-                      multiplayerColors[player.rank % multiplayerColors.length];
+                      multiplayerColors[player.playerIndex %
+                          multiplayerColors.length];
 
                   return Container(
                     padding: const EdgeInsets.symmetric(
@@ -896,7 +878,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                           : theme.backgroundColor.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: player.isAlive
+                        color: player.alive
                             ? playerColor.withValues(alpha: 0.5)
                             : Colors.grey.withValues(alpha: 0.3),
                         width: isMe ? 2 : 1,
@@ -912,18 +894,14 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                           decoration: BoxDecoration(
                             color: index == 0
                                 ? Colors.amber
-                                : index == 1
-                                ? Colors.grey.shade400
-                                : index == 2
-                                ? Colors.brown.shade400
-                                : Colors.transparent,
+                                : Colors.grey.shade400,
                             shape: BoxShape.circle,
                           ),
                           child: Center(
                             child: Text(
                               '${index + 1}',
-                              style: TextStyle(
-                                color: index < 3 ? Colors.white : playerColor,
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -936,7 +914,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: player.isAlive ? playerColor : Colors.grey,
+                            color: player.alive ? playerColor : Colors.grey,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -949,24 +927,24 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                             Text(
                               isMe
                                   ? 'You'
-                                  : (player.publicLabel.length > 8
-                                        ? '${player.publicLabel.substring(0, 8)}...'
-                                        : player.publicLabel),
+                                  : (player.username.length > 8
+                                        ? '${player.username.substring(0, 8)}...'
+                                        : player.username),
                               style: TextStyle(
-                                color: player.isAlive
+                                color: player.alive
                                     ? theme.accentColor
                                     : Colors.grey,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 11,
-                                decoration: player.isAlive
+                                decoration: player.alive
                                     ? null
                                     : TextDecoration.lineThrough,
                               ),
                             ),
                             Text(
-                              '${isMe ? _myScore : player.score} pts',
+                              '${player.score} pts',
                               style: TextStyle(
-                                color: player.isAlive
+                                color: player.alive
                                     ? theme.accentColor.withValues(alpha: 0.7)
                                     : Colors.grey,
                                 fontSize: 10,
@@ -1001,7 +979,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${_mySnake.length}',
+                  '${mySnake?.body.length ?? 0}',
                   style: TextStyle(
                     color: theme.accentColor,
                     fontWeight: FontWeight.bold,

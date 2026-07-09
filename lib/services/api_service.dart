@@ -34,8 +34,10 @@ class SyncOutcome {
 /// username) and purchase/premium (IAP receipt verification, premium
 /// content, equipped cosmetics). Everything else — leaderboards,
 /// tournaments, social, scores, achievements, daily challenges, weekly
-/// quests, daily bonus, multiplayer, power-ups, battle pass — has been
-/// removed from the network surface and now lives in Drift.
+/// quests, daily bonus, power-ups, battle pass — has been removed from
+/// the network surface and now lives in Drift. Multiplayer is the one
+/// deliberate exception: a live 1v1 match is inherently online, so its
+/// room create/join REST calls + the SignalR hub URL live here.
 class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -91,6 +93,11 @@ class ApiService {
       _accessToken != null && !isTokenExpiredOrExpiring;
 
   String? get currentUserId => _userId;
+
+  /// Raw JWT for transports that can't use [_authHeaders] — the SignalR
+  /// hub connection passes it via accessTokenFactory (query-string auth
+  /// is configured server-side for the WebSocket upgrade).
+  String? get accessToken => _accessToken;
 
   bool get isTokenExpiredOrExpiring {
     if (_accessToken == null) return true;
@@ -951,6 +958,70 @@ class ApiService {
       );
       return null;
     }
+  }
+
+  // ==================== Multiplayer ====================
+  //
+  // Live 1v1 rooms. Create/join are the REST half of the flow (the hub
+  // requires a MultiplayerPlayers row to exist before JoinRoom); the
+  // match itself runs entirely over SignalR (see MultiplayerService).
+
+  /// Create a multiplayer room. Returns `{game_id, room_code}`.
+  Future<Map<String, dynamic>?> createMultiplayerGame({
+    String mode = 'classic',
+    int maxPlayers = 2,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/multiplayer/create'),
+            headers: _authHeaders,
+            body: jsonEncode({'mode': mode, 'max_players': maxPlayers}),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error POST /multiplayer/create', e);
+      return null;
+    }
+  }
+
+  /// Join a room by code. Returns `{game_id, player_index, players}`.
+  Future<Map<String, dynamic>?> joinMultiplayerGame(String roomCode) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/multiplayer/join'),
+            headers: _authHeaders,
+            body: jsonEncode({'room_code': roomCode}),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error POST /multiplayer/join', e);
+      return null;
+    }
+  }
+
+  /// The room this user is currently in (waiting/countdown/playing),
+  /// or null. Used to rediscover the room code after an app restart
+  /// before attempting a hub Reconnect.
+  Future<Map<String, dynamic>?> getCurrentMultiplayerGame() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/multiplayer/current'), headers: _authHeaders)
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /multiplayer/current', e);
+      return null;
+    }
+  }
+
+  /// SignalR hub endpoint (no /api/v1 prefix — hubs are mapped at root).
+  String getSignalRHubUrl() {
+    final hubUrl = baseUrl.replaceFirst('/api/v1', '');
+    return '$hubUrl/hubs/game';
   }
 
   // ==================== Leaderboards ====================

@@ -2,48 +2,50 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
 import 'package:snake_classic/game/flame/components/game_particles_component.dart';
-import 'package:snake_classic/models/multiplayer_game.dart';
-import 'package:snake_classic/models/position.dart';
+import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/game/flame/rendering/particles.dart'
     show ParticleConfig;
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart'
     show MultiplayerBoardPainter, MultiplayerGridBackgroundPainter;
 
-/// Flame engine root for multiplayer gameplay (2–4 snakes).
+/// Flame engine root for multiplayer gameplay (server-authoritative 1v1).
 ///
-/// `MultiplayerGameScreen` still owns the local tick loop + SignalR sync; this
-/// game receives the latest server [MultiplayerGame] plus the local player's
-/// snake via [syncState] and renders all players. It reuses the multiplayer
-/// painters for parity, drives the food pulse from the game clock, and emits a
-/// Flame-native food burst when the local score rises.
+/// The screen pushes each authoritative [MatchSnapshot] in via
+/// [syncState]; this game keeps the previous tick alongside the current
+/// one and interpolates between them with a dt-driven clock over the
+/// server's `tick_ms` window (same approach as the single-player
+/// `SnakeFlameGame`), so both snakes glide even though positions only
+/// arrive a few times per second. Nothing is simulated here — the board
+/// painter draws the snapshots verbatim. Food-burst particles fire when
+/// the local player's score rises between ticks.
 class MultiplayerFlameGame extends FlameGame {
   MultiplayerFlameGame({
-    required this.game,
+    required this.snapshot,
     required this.currentUserId,
-    required this.localSnake,
-    required this.localDirection,
-    required this.localScore,
-    required this.localIsAlive,
+    required this.boardSize,
     required this.theme,
-  }) {
-    boardSize = game.gameSettings['boardSize'] ?? 20;
-    _lastScore = localScore;
-  }
+  }) : _lastMyScore = snapshot.playerByUserId(currentUserId)?.score ?? 0;
 
-  MultiplayerGame game;
-  String currentUserId;
-  List<Position> localSnake;
-  Direction localDirection;
-  int localScore;
-  bool localIsAlive;
+  MatchSnapshot snapshot;
+
+  /// The tick before [snapshot] — the interpolation origin. Null until
+  /// the second tick arrives (first frame renders statically).
+  MatchSnapshot? previousSnapshot;
+
+  final String currentUserId;
+  final int boardSize;
   GameTheme theme;
 
-  late int boardSize;
-  late int _lastScore;
+  int _lastMyScore;
 
   double _elapsed = 0;
+
+  /// Smooth 0..1 progress between [previousSnapshot] and [snapshot] for
+  /// the current server tick.
+  double moveProgress = 0;
+  double _elapsedSinceTick = 0;
+
   GameParticlesComponent? _particles;
 
   double get worldSize => boardSize * GameConstants.cellSize;
@@ -69,25 +71,23 @@ class MultiplayerFlameGame extends FlameGame {
     await world.addAll([_MultiplayerBoardComponent(), _particles!]);
   }
 
-  void syncState({
-    required MultiplayerGame game,
-    required String currentUserId,
-    required List<Position> localSnake,
-    required Direction localDirection,
-    required int localScore,
-    required bool localIsAlive,
-    required GameTheme theme,
-  }) {
-    this.game = game;
-    this.currentUserId = currentUserId;
-    this.localDirection = localDirection;
-    this.localIsAlive = localIsAlive;
+  /// Push the latest server snapshot + theme into the game. A new tick
+  /// shifts the current snapshot into [previousSnapshot] and restarts
+  /// the inter-tick interpolation clock.
+  void syncState({required MatchSnapshot snapshot, required GameTheme theme}) {
     this.theme = theme;
+    if (identical(snapshot, this.snapshot)) return;
 
-    // Food burst when the local score rises — emit at the cell the head just
-    // moved onto (where the food was).
-    if (localScore > _lastScore && localSnake.isNotEmpty) {
-      final head = localSnake.first;
+    if (snapshot.tick != this.snapshot.tick) {
+      previousSnapshot = this.snapshot;
+      _elapsedSinceTick = 0;
+    }
+
+    // Food burst when the local score rises — emit at the head cell the
+    // snake just moved onto (where the food was).
+    final me = snapshot.playerByUserId(currentUserId);
+    final head = me?.head;
+    if (me != null && head != null && me.score > _lastMyScore) {
       _particles?.emitAt(
         Offset(
           head.x * GameConstants.cellSize + GameConstants.cellSize / 2,
@@ -96,19 +96,25 @@ class MultiplayerFlameGame extends FlameGame {
         ParticleConfig.appleFoodExplosion,
       );
     }
-    _lastScore = localScore;
-    this.localScore = localScore;
-    this.localSnake = localSnake;
+    _lastMyScore = me?.score ?? _lastMyScore;
+
+    this.snapshot = snapshot;
   }
 
   @override
   void update(double dt) {
     super.update(dt);
     _elapsed += dt;
+
+    final tickSeconds = snapshot.tickMs / 1000.0;
+    _elapsedSinceTick += dt;
+    moveProgress = tickSeconds <= 0
+        ? 1.0
+        : (_elapsedSinceTick / tickSeconds).clamp(0.0, 1.0);
   }
 }
 
-/// Renders the multiplayer grid + all snakes + food by driving the reused
+/// Renders the multiplayer grid + both snakes + food by driving the reused
 /// multiplayer painters in the Flame render pass (world pixel-space).
 class _MultiplayerBoardComponent extends Component
     with HasGameReference<MultiplayerFlameGame> {
@@ -120,14 +126,12 @@ class _MultiplayerBoardComponent extends Component
     MultiplayerGridBackgroundPainter(game.theme, game.boardSize)
         .paint(canvas, size);
     MultiplayerBoardPainter(
-      game: game.game,
+      snapshot: game.snapshot,
+      previousSnapshot: game.previousSnapshot,
       currentUserId: game.currentUserId,
-      localSnake: game.localSnake,
-      localDirection: game.localDirection,
-      localIsAlive: game.localIsAlive,
       theme: game.theme,
       pulseAnimation: AlwaysStoppedAnimation<double>(game.pulse),
-      moveProgress: 0,
+      moveProgress: game.moveProgress,
       boardSize: game.boardSize,
     ).paint(canvas, size);
   }

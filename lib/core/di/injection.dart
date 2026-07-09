@@ -138,6 +138,8 @@ Future<void> configureDependencies() async {
       audioService: getIt<AudioService>(),
       hapticService: getIt<HapticService>(),
       analytics: getIt<AnalyticsFacade>(),
+      coinsCubit: getIt<CoinsCubit>(),
+      battlePassCubit: getIt<BattlePassCubit>(),
     ),
   );
 

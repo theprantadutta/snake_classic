@@ -2,32 +2,26 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/game/flame/multiplayer_flame_game.dart';
-import 'package:snake_classic/models/multiplayer_game.dart';
-import 'package:snake_classic/models/position.dart';
+import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/direction.dart';
 
 /// The multiplayer gameplay board, rendered with the Flame engine. Draws the
-/// purple/gold framed container and hosts a [MultiplayerFlameGame] (grid + all
-/// snakes + food + particles) inside it.
+/// purple/gold framed container and hosts a [MultiplayerFlameGame] (grid +
+/// both snakes + food + particles) inside it. Everything on the board comes
+/// from the server's [MatchSnapshot] stream — the widget just relays the
+/// latest snapshot into the running game for interpolation.
 class MultiplayerFlameBoard extends StatefulWidget {
   const MultiplayerFlameBoard({
     super.key,
-    required this.game,
+    required this.snapshot,
+    required this.boardSize,
     required this.currentUserId,
-    required this.localSnake,
-    required this.localDirection,
-    required this.localScore,
-    required this.localIsAlive,
   });
 
-  final MultiplayerGame game;
+  final MatchSnapshot snapshot;
+  final int boardSize;
   final String currentUserId;
-  final List<Position> localSnake;
-  final Direction localDirection;
-  final int localScore;
-  final bool localIsAlive;
 
   @override
   State<MultiplayerFlameBoard> createState() => _MultiplayerFlameBoardState();
@@ -36,8 +30,6 @@ class MultiplayerFlameBoard extends StatefulWidget {
 class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
   late MultiplayerFlameGame _game;
 
-  int get _boardSize => widget.game.gameSettings['boardSize'] ?? 20;
-
   @override
   void initState() {
     super.initState();
@@ -45,12 +37,9 @@ class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
   }
 
   MultiplayerFlameGame _createGame(GameTheme theme) => MultiplayerFlameGame(
-        game: widget.game,
+        snapshot: widget.snapshot,
         currentUserId: widget.currentUserId,
-        localSnake: widget.localSnake,
-        localDirection: widget.localDirection,
-        localScore: widget.localScore,
-        localIsAlive: widget.localIsAlive,
+        boardSize: widget.boardSize,
         theme: theme,
       );
 
@@ -59,18 +48,10 @@ class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
-        if (_boardSize != _game.boardSize) {
+        if (widget.boardSize != _game.boardSize) {
           _game = _createGame(theme);
         }
-        _game.syncState(
-          game: widget.game,
-          currentUserId: widget.currentUserId,
-          localSnake: widget.localSnake,
-          localDirection: widget.localDirection,
-          localScore: widget.localScore,
-          localIsAlive: widget.localIsAlive,
-          theme: theme,
-        );
+        _game.syncState(snapshot: widget.snapshot, theme: theme);
 
         return RepaintBoundary(
           child: Container(
@@ -128,7 +109,7 @@ class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
                   child: AspectRatio(
                     aspectRatio: 1.0,
                     child: GameWidget(
-                      key: ValueKey('mp-$_boardSize'),
+                      key: ValueKey('mp-${widget.boardSize}'),
                       game: _game,
                     ),
                   ),

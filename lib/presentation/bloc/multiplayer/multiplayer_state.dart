@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
+import 'package:snake_classic/utils/direction.dart';
 
 /// Status of the multiplayer cubit
 enum MultiplayerStatus {
@@ -22,6 +24,18 @@ class MultiplayerState extends Equatable {
   final String? errorMessage;
   final bool isLoading;
 
+  // Server-authoritative match state. [snapshot] is the latest engine
+  // tick (also the GameStarted/MatchResumed payload); the client renders
+  // it verbatim — no local simulation. [matchEnd] is the parsed
+  // GameEnded result, set exactly once per match.
+  final MatchSnapshot? snapshot;
+  final MatchEndResult? matchEnd;
+  final int boardSize;
+
+  /// Local input echo: the direction we last sent to the server, shown
+  /// on the swipe indicator until a snapshot confirms (or overrides) it.
+  final Direction? intentDirection;
+
   // Matchmaking state
   final bool isMatchmaking;
   final int matchmakingQueuePosition;
@@ -37,6 +51,10 @@ class MultiplayerState extends Equatable {
     this.availableGames = const [],
     this.errorMessage,
     this.isLoading = false,
+    this.snapshot,
+    this.matchEnd,
+    this.boardSize = 20,
+    this.intentDirection,
     this.isMatchmaking = false,
     this.matchmakingQueuePosition = 0,
     this.matchmakingEstimatedWait = 0,
@@ -58,6 +76,11 @@ class MultiplayerState extends Equatable {
     bool? isLoading,
     bool clearGame = false,
     bool clearError = false,
+    MatchSnapshot? snapshot,
+    MatchEndResult? matchEnd,
+    int? boardSize,
+    Direction? intentDirection,
+    bool clearMatch = false,
     bool? isMatchmaking,
     int? matchmakingQueuePosition,
     int? matchmakingEstimatedWait,
@@ -73,6 +96,12 @@ class MultiplayerState extends Equatable {
       availableGames: availableGames ?? this.availableGames,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isLoading: isLoading ?? this.isLoading,
+      snapshot: (clearMatch || clearGame) ? null : (snapshot ?? this.snapshot),
+      matchEnd: (clearMatch || clearGame) ? null : (matchEnd ?? this.matchEnd),
+      boardSize: boardSize ?? this.boardSize,
+      intentDirection: (clearMatch || clearGame)
+          ? null
+          : (intentDirection ?? this.intentDirection),
       isMatchmaking: clearMatchmaking
           ? false
           : (isMatchmaking ?? this.isMatchmaking),
@@ -142,6 +171,10 @@ class MultiplayerState extends Equatable {
     availableGames,
     errorMessage,
     isLoading,
+    snapshot,
+    matchEnd,
+    boardSize,
+    intentDirection,
     isMatchmaking,
     matchmakingQueuePosition,
     matchmakingEstimatedWait,

@@ -30,7 +30,6 @@ class MultiplayerLobbyScreen extends StatefulWidget {
 class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
   final ConnectivityService _connectivityService = ConnectivityService();
-  int _selectedPlayerCount = 2;
 
   @override
   void initState() {
@@ -615,62 +614,14 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
           const SizedBox(height: 8),
 
+          // 1v1 classic only in this release — the server match engine
+          // enforces exactly two players, so no mode/count selectors.
           Text(
-            'Find opponents automatically',
+            '1v1 Classic — find an opponent automatically',
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.7),
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Player count selector
-          Text(
-            'Players:',
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.accentColor.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [2, 4, 6, 8].map((count) {
-              final isSelected = _selectedPlayerCount == count;
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedPlayerCount = count),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Colors.green.withValues(alpha: 0.3)
-                          : theme.backgroundColor.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? Colors.green
-                            : theme.accentColor.withValues(alpha: 0.3),
-                        width: isSelected ? 2 : 1,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$count',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.green : theme.accentColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
           ),
 
           const SizedBox(height: 20),
@@ -681,7 +632,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 : () {
                     context.read<MultiplayerCubit>().quickMatch(
                       MultiplayerGameMode.classic,
-                      playerCount: _selectedPlayerCount,
+                      playerCount: 2,
                     );
                   },
             text: multiplayerState.isLoading ? 'FINDING...' : 'FIND MATCH',
@@ -1069,8 +1020,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
           const SizedBox(height: 8),
 
+          // Classic 1v1 room — share the code (or ping a friend from the
+          // room header) to fill the second slot. No mode picker: the
+          // server engine only runs classic 1v1 in this release.
           Text(
-            'Start your own game',
+            'Start a 1v1 room and invite a friend',
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.7),
@@ -1079,38 +1033,19 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
           const SizedBox(height: 20),
 
-          Row(
-            children: [
-              Expanded(
-                child: GradientButton(
-                  onPressed: multiplayerState.isLoading
-                      ? null
-                      : () {
-                          _showCreateGameDialog(context, theme, false);
-                        },
-                  text: 'PUBLIC',
-                  primaryColor: Colors.purple,
-                  secondaryColor: Colors.purple.withValues(alpha: 0.8),
-                  icon: Icons.public,
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: GradientButton(
-                  onPressed: multiplayerState.isLoading
-                      ? null
-                      : () {
-                          _showCreateGameDialog(context, theme, true);
-                        },
-                  text: 'PRIVATE',
-                  primaryColor: Colors.purple,
-                  secondaryColor: Colors.purple.withValues(alpha: 0.8),
-                  icon: Icons.lock,
-                ),
-              ),
-            ],
+          GradientButton(
+            onPressed: multiplayerState.isLoading
+                ? null
+                : () {
+                    context.read<MultiplayerCubit>().createGame(
+                      mode: MultiplayerGameMode.classic,
+                      maxPlayers: 2,
+                    );
+                  },
+            text: 'CREATE ROOM',
+            primaryColor: Colors.purple,
+            secondaryColor: Colors.purple.withValues(alpha: 0.8),
+            icon: Icons.add_circle_outline,
           ),
         ],
       ),
@@ -1198,7 +1133,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
           GradientButton(
             onPressed: () {
-              context.read<MultiplayerCubit>().joinGame(game.id);
+              context.read<MultiplayerCubit>().joinGame(
+                game.roomCode ?? game.id,
+              );
             },
             text: 'JOIN',
             primaryColor: theme.accentColor,
@@ -1546,117 +1483,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  void _showCreateGameDialog(
-    BuildContext context,
-    GameTheme theme,
-    bool isPrivate,
-  ) {
-    MultiplayerGameMode selectedMode = MultiplayerGameMode.classic;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: theme.backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            'Create ${isPrivate ? 'Private' : 'Public'} Room',
-            style: TextStyle(
-              color: theme.accentColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Choose game mode:',
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.8),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              ...MultiplayerGameMode.values.map(
-                (mode) => Padding(
-                  // Color + border were previously on an outer DecoratedBox,
-                  // which hides ListTile's own ink ripple. Moved to
-                  // tileColor/shape so ripples render correctly and Flutter
-                  // stops warning about the Material-ancestor mismatch.
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: ListTile(
-                    tileColor: selectedMode == mode
-                        ? theme.accentColor.withValues(alpha: 0.1)
-                        : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: selectedMode == mode
-                          ? BorderSide(
-                              color:
-                                  theme.accentColor.withValues(alpha: 0.3),
-                            )
-                          : BorderSide.none,
-                    ),
-                    leading: Icon(
-                      selectedMode == mode
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: theme.accentColor,
-                    ),
-                    title: Text(
-                      '${mode.modeEmoji} ${mode.modeDisplayName}',
-                      style: TextStyle(color: theme.accentColor),
-                    ),
-                    subtitle: Text(
-                      _getGameModeDescription(mode),
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 12,
-                      ),
-                    ),
-                    onTap: () {
-                      setState(() {
-                        selectedMode = mode;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => context.pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-            GradientButton(
-              onPressed: () {
-                context.pop();
-                context.read<MultiplayerCubit>().createGame(
-                  mode: selectedMode,
-                  isPrivate: isPrivate,
-                );
-              },
-              text: 'CREATE',
-              primaryColor: theme.accentColor,
-              secondaryColor: theme.foodColor,
-              width: 100,
-              height: 40,
-            ),
-          ],
-        ),
-      ),
     );
   }
 

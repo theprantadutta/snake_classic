@@ -1629,7 +1629,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final isVerySmallScreen = screenHeight < 650;
     final isSmallScreen = screenHeight < 750;
     // Note: isMediumScreen not needed in bottom navigation
-    // 7 items split 4+3 across two rows. STATS lives ONLY in the compact
+    // 8 items split 4+4 across two rows. STATS lives ONLY in the compact
     // stats row above the nav (left of the high score).
     final navigationItems = [
       _NavItem(
@@ -1666,10 +1666,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _NavItem(Icons.military_tech, 'AWARDS', Colors.orange, () {
         context.push(AppRoutes.achievements);
       }),
-      // VERSUS intentionally absent: MultiplayerService is an inert stub
-      // (createGame → null, joinGame → false, every action a no-op), so
-      // the lobby is a dead end. Re-add the entry when a real multiplayer
-      // backend ships — the route + screens still exist behind it.
+      _NavItem(Icons.sports_esports, 'VERSUS', Colors.green, () {
+        context.push(AppRoutes.multiplayerLobby);
+      }),
     ];
 
     // Two-row layout, balanced. Ceiling-divide so 7 items become 4+3,

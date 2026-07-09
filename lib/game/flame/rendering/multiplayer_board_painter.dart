@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:snake_classic/models/multiplayer_game.dart';
+import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -58,24 +58,26 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
       oldDelegate.theme != theme || oldDelegate.boardSize != boardSize;
 }
 
-/// Main painter for all game content - snakes, food, effects
+/// Main painter for all game content - snakes, food, effects.
+///
+/// Renders the server-authoritative [MatchSnapshot] directly — both
+/// snakes come from the same tick, no local player special-casing.
+/// Smooth movement comes from lerping every segment between
+/// [previousSnapshot] and [snapshot] by [moveProgress] (0..1 across the
+/// server's tick_ms window, driven by the Flame game clock).
 class MultiplayerBoardPainter extends CustomPainter {
-  final MultiplayerGame game;
+  final MatchSnapshot snapshot;
+  final MatchSnapshot? previousSnapshot;
   final String currentUserId;
-  final List<Position> localSnake;
-  final Direction localDirection;
-  final bool localIsAlive;
   final GameTheme theme;
   final Animation<double> pulseAnimation;
   final double moveProgress;
   final int boardSize;
 
   MultiplayerBoardPainter({
-    required this.game,
+    required this.snapshot,
+    required this.previousSnapshot,
     required this.currentUserId,
-    required this.localSnake,
-    required this.localDirection,
-    required this.localIsAlive,
     required this.theme,
     required this.pulseAnimation,
     required this.moveProgress,
@@ -90,52 +92,70 @@ class MultiplayerBoardPainter extends CustomPainter {
     // Draw food first (below snakes)
     _drawFood(canvas, cellWidth, cellHeight);
 
-    // Draw all snakes - current player uses local state for smooth rendering
-    for (var player in game.players) {
-      final isCurrentPlayer = player.userId == currentUserId;
+    // Draw all snakes from the snapshot, interpolated against the
+    // previous tick for smooth movement.
+    for (final player in snapshot.players) {
+      if (player.body.isEmpty) continue;
 
-      if (isCurrentPlayer) {
-        // Use local snake state for smooth rendering
-        if (localSnake.isNotEmpty) {
-          final color =
-              multiplayerColors[player.rank % multiplayerColors.length];
-          _drawSnake(
-            canvas,
-            localSnake,
-            localDirection,
-            localIsAlive,
-            color,
-            cellWidth,
-            cellHeight,
-            isCurrentPlayer: true,
-            playerName: 'You',
-          );
-        }
-      } else {
-        // Use server state for other players
-        if (player.snake.isNotEmpty) {
-          final color =
-              multiplayerColors[player.rank % multiplayerColors.length];
-          _drawSnake(
-            canvas,
-            player.snake,
-            player.currentDirection,
-            player.isAlive,
-            color,
-            cellWidth,
-            cellHeight,
-            isCurrentPlayer: false,
-            playerName: player.publicLabel,
-          );
-        }
-      }
+      final isCurrentPlayer = player.userId == currentUserId;
+      final color =
+          multiplayerColors[player.playerIndex % multiplayerColors.length];
+      final centers = _interpolatedCenters(
+        player,
+        previousSnapshot?.playerByIndex(player.playerIndex),
+        cellWidth,
+        cellHeight,
+      );
+
+      _drawSnake(
+        canvas,
+        centers,
+        player.direction,
+        player.alive,
+        color,
+        cellWidth,
+        cellHeight,
+        isCurrentPlayer: isCurrentPlayer,
+        playerName: isCurrentPlayer ? 'You' : player.username,
+      );
     }
   }
 
-  void _drawFood(Canvas canvas, double cellWidth, double cellHeight) {
-    if (game.foodPosition == null) return;
+  /// Per-segment cell centers lerped between the previous and current
+  /// tick. Segment i slides from its old cell to its new one (the body
+  /// list shifts one cell forward per tick, so index-wise lerp is the
+  /// slide). A brand-new tail segment (growth) and any teleport-sized
+  /// jump (reconnect resync) snap to the current cell; dead snakes are
+  /// frozen at their final cells.
+  List<Offset> _interpolatedCenters(
+    MatchPlayerState player,
+    MatchPlayerState? previous,
+    double cellWidth,
+    double cellHeight,
+  ) {
+    Offset center(Position p) => Offset(
+      p.x * cellWidth + cellWidth / 2,
+      p.y * cellHeight + cellHeight / 2,
+    );
 
-    final foodPos = game.foodPosition!;
+    final body = player.body;
+    final prevBody = previous?.body;
+    final t = moveProgress.clamp(0.0, 1.0);
+    if (!player.alive || prevBody == null || prevBody.isEmpty || t >= 1.0) {
+      return body.map(center).toList();
+    }
+
+    return List<Offset>.generate(body.length, (i) {
+      final to = body[i];
+      final from = i < prevBody.length ? prevBody[i] : to;
+      final jump = (to.x - from.x).abs() + (to.y - from.y).abs();
+      if (jump == 0 || jump > 2) return center(to);
+      return Offset.lerp(center(from), center(to), t)!;
+    });
+  }
+
+  void _drawFood(Canvas canvas, double cellWidth, double cellHeight) {
+    final foodPos = snapshot.food;
     final centerX = foodPos.x * cellWidth + cellWidth / 2;
     final centerY = foodPos.y * cellHeight + cellHeight / 2;
     final baseRadius = math.min(cellWidth, cellHeight) * 0.35;
@@ -168,7 +188,7 @@ class MultiplayerBoardPainter extends CustomPainter {
 
   void _drawSnake(
     Canvas canvas,
-    List<Position> snake,
+    List<Offset> centers,
     Direction direction,
     bool isAlive,
     Color color,
@@ -177,18 +197,15 @@ class MultiplayerBoardPainter extends CustomPainter {
     required bool isCurrentPlayer,
     required String playerName,
   }) {
-    if (snake.isEmpty) return;
+    if (centers.isEmpty) return;
 
     final isDead = !isAlive;
     final baseColor = isDead ? Colors.grey : color;
 
     // Draw body segments (from tail to head)
-    for (int i = snake.length - 1; i >= 0; i--) {
-      final segment = snake[i];
+    for (int i = centers.length - 1; i >= 0; i--) {
+      final segmentCenter = centers[i];
       final isHead = i == 0;
-
-      final centerX = segment.x * cellWidth + cellWidth / 2;
-      final centerY = segment.y * cellHeight + cellHeight / 2;
 
       // Calculate segment size (head is larger, tail tapers)
       double segmentSize;
@@ -196,7 +213,7 @@ class MultiplayerBoardPainter extends CustomPainter {
         segmentSize = math.min(cellWidth, cellHeight) * 0.45;
       } else {
         // Taper towards tail
-        final taperFactor = 1.0 - (i / snake.length) * 0.3;
+        final taperFactor = 1.0 - (i / centers.length) * 0.3;
         segmentSize = math.min(cellWidth, cellHeight) * 0.38 * taperFactor;
       }
 
@@ -212,10 +229,7 @@ class MultiplayerBoardPainter extends CustomPainter {
               ],
               stops: const [0.0, 0.5, 1.0],
             ).createShader(
-              Rect.fromCircle(
-                center: Offset(centerX, centerY),
-                radius: segmentSize,
-              ),
+              Rect.fromCircle(center: segmentCenter, radius: segmentSize),
             );
 
       // Draw glow for current player's head
@@ -223,17 +237,13 @@ class MultiplayerBoardPainter extends CustomPainter {
         final glowPaint = Paint()
           ..color = baseColor.withValues(alpha: 0.4)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-        canvas.drawCircle(
-          Offset(centerX, centerY),
-          segmentSize * 1.4,
-          glowPaint,
-        );
+        canvas.drawCircle(segmentCenter, segmentSize * 1.4, glowPaint);
       }
 
       // Draw segment with rounded corners
       final rect = RRect.fromRectAndRadius(
         Rect.fromCenter(
-          center: Offset(centerX, centerY),
+          center: segmentCenter,
           width: segmentSize * 2,
           height: segmentSize * 2,
         ),
@@ -245,7 +255,7 @@ class MultiplayerBoardPainter extends CustomPainter {
       if (isHead) {
         _drawEyes(
           canvas,
-          Offset(centerX, centerY),
+          segmentCenter,
           direction,
           segmentSize,
           baseColor,
@@ -262,35 +272,34 @@ class MultiplayerBoardPainter extends CustomPainter {
     }
 
     // Draw player name label above head
-    if (snake.isNotEmpty) {
-      final head = snake.first;
-      final headX = head.x * cellWidth + cellWidth / 2;
-      final headY = head.y * cellHeight - 8;
+    final head = centers.first;
 
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: playerName,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.8),
-                offset: const Offset(1, 1),
-                blurRadius: 2,
-              ),
-            ],
-          ),
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: playerName,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.8),
+              offset: const Offset(1, 1),
+              blurRadius: 2,
+            ),
+          ],
         ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(headX - textPainter.width / 2, headY - textPainter.height),
-      );
-    }
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        head.dx - textPainter.width / 2,
+        head.dy - cellHeight / 2 - 8 - textPainter.height,
+      ),
+    );
   }
 
   void _drawEyes(
@@ -387,10 +396,9 @@ class MultiplayerBoardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant MultiplayerBoardPainter oldDelegate) {
-    return oldDelegate.game != game ||
-        oldDelegate.localSnake != localSnake ||
-        oldDelegate.localDirection != localDirection ||
-        oldDelegate.localIsAlive != localIsAlive ||
+    return oldDelegate.snapshot != snapshot ||
+        oldDelegate.previousSnapshot != previousSnapshot ||
+        oldDelegate.moveProgress != moveProgress ||
         oldDelegate.theme != theme ||
         oldDelegate.currentUserId != currentUserId;
   }
