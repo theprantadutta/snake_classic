@@ -1154,10 +1154,12 @@ class GameCubit extends Cubit<GameCubitState> {
       ),
     );
 
-    // Show visual crash feedback for 2 seconds, then show modal
-    Future.delayed(const Duration(seconds: 2), () {
+    // Let the in-world death sequence play (lunge + flash + tail-to-head
+    // disintegration ends at ~1.5s — see SnakeFlameGame), then slide the
+    // crash banner in over the settled scene.
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (state.status == GamePlayStatus.crashed) {
-        // Now show the crash feedback modal
+        // Now show the crash banner (bottom chrome, no scrim)
         emit(
           state.copyWith(
             gameState: state.gameState?.copyWith(showCrashModal: true),

@@ -304,6 +304,26 @@ class ParticleConfig {
     blendMode: ParticleBlendMode.additive,
     friction: 0.90,
   );
+
+  /// Tiny dissolve burst emitted once per snake segment as the death
+  /// sequence disintegrates the body tail-to-head (see SnakeFlameGame).
+  /// Deliberately small — up to a few dozen fire within ~1s, so each must
+  /// read as dust, not an explosion.
+  static const ParticleConfig segmentPoof = ParticleConfig(
+    type: ParticleType.sparkle,
+    count: 6,
+    lifetime: Duration(milliseconds: 450),
+    minSize: 1.5,
+    maxSize: 4.0,
+    minSpeed: 15.0,
+    maxSpeed: 55.0,
+    colors: [
+      Color(0xFFFFFFFF), // White
+      Color(0xFFBBBBBB), // Ash grey
+    ],
+    blendMode: ParticleBlendMode.additive,
+    friction: 0.90,
+  );
 }
 
 class ParticleData {

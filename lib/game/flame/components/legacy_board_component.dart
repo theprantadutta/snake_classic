@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
+import 'package:snake_classic/models/snake.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/game/flame/rendering/game_board_painter.dart';
 
@@ -51,8 +52,25 @@ class LegacyBoardComponent extends Component
 
     final ms = DateTime.now().millisecondsSinceEpoch;
 
+    // Death disintegration: render a tail-truncated copy of the fatal
+    // snake so segments visibly vanish tail-to-head (the game emits a
+    // dust poof per removed cell). Render-only — the real state keeps the
+    // full body for the revive path. The painter tolerates the current
+    // body being shorter than previousGameState's (it bounds-checks per
+    // index), so only the current snake needs truncating.
+    var renderGs = gs;
+    final keep = game.deathKeepCount;
+    if (keep < gs.snake.length) {
+      renderGs = gs.copyWith(
+        snake: Snake(
+          body: List.of(gs.snake.body.take(keep)),
+          currentDirection: gs.snake.currentDirection,
+        ),
+      );
+    }
+
     OptimizedGameBoardPainter(
-      gameState: gs,
+      gameState: renderGs,
       theme: game.theme,
       // The painter only reads pulseAnimation.value; feed a synthesized pulse
       // in the legacy [0.9, 1.1] range so breathing/glow animate identically.
@@ -64,6 +82,30 @@ class LegacyBoardComponent extends Component
       recentInputDirection: shimmerDir,
       recentInputShimmerAge: shimmerAge,
     ).paint(canvas, size);
+
+    // Death flash: the body blinks white in the beat between the crash
+    // lunge and the disintegration. Drawn over the committed body cells;
+    // the head is spared — it can sit mid-cell after a wall lunge, and
+    // leaving it unflashed keeps "you" readable through the blink.
+    final flash = game.deathFlashAlpha;
+    if (flash > 0) {
+      final cw = game.worldWidth / game.boardWidth;
+      final ch = game.worldHeight / game.boardHeight;
+      final flashPaint = Paint()
+        ..color = Colors.white.withValues(alpha: flash.clamp(0.0, 1.0));
+      for (final seg in renderGs.snake.body.skip(1)) {
+        final rect = Rect.fromLTWH(
+          seg.x * cw + cw * 0.08,
+          seg.y * ch + ch * 0.08,
+          cw * 0.84,
+          ch * 0.84,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(rect, Radius.circular(cw * 0.25)),
+          flashPaint,
+        );
+      }
+    }
   }
 
   /// Triangle wave in [0.9, 1.1] over a 2s period, matching the legacy pulse

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
@@ -63,8 +65,29 @@ class SnakeFlameGame extends FlameGame {
   double _elapsedSinceTick = 0;
 
   // Crash death-lunge clock (one-shot, ~200ms, matches the legacy lunge).
+  // Keeps accumulating past the lunge — it doubles as the clock for the
+  // rest of the in-world death sequence below.
   bool _lunging = false;
   double _lungeElapsed = 0;
+
+  // ---- In-world death sequence -----------------------------------------
+  // Timeline (seconds since crash): 0-0.2 lunge → 0.2-0.55 the body
+  // blinks white three times → 0.55-1.5 segments disintegrate tail-to-
+  // head, each emitting a small dust poof as it vanishes. The board
+  // component reads [deathFlashAlpha] and [deathKeepCount] every frame;
+  // the crash banner (chrome) only appears after this plays out.
+  static const double _deathFlashStart = 0.2;
+  static const double _deathFlashEnd = 0.55;
+  static const double _deathDisintegrateEnd = 1.5;
+  static const int _keepAll = 1 << 30;
+
+  /// White-blink alpha over the snake body during the flash phase.
+  double deathFlashAlpha = 0;
+
+  /// How many leading segments (head first) of the fatal snake are still
+  /// visible. [_keepAll] outside the disintegrate phase.
+  int deathKeepCount = _keepAll;
+  int _deathPoofEmitted = 0;
 
   // Last gameState processed for event detection (mirrors the legacy widget's
   // oldWidget.gameState comparison).
@@ -208,15 +231,19 @@ class SnakeFlameGame extends FlameGame {
       if (!_lunging) {
         _lunging = true;
         _lungeElapsed = 0;
+        _deathPoofEmitted = gs.snake.length;
       }
       _lungeElapsed += dt;
       final lungeT = (_lungeElapsed / 0.2).clamp(0.0, 1.0);
       final target =
           gs.crashReason == model.CrashReason.wallCollision ? 0.5 : 1.0;
       moveProgress = Curves.easeOut.transform(lungeT) * target;
+      _updateDeathSequence(gs);
       return;
     }
     _lunging = false;
+    deathFlashAlpha = 0;
+    deathKeepCount = _keepAll;
 
     if (gs.status != model.GameStatus.playing) {
       moveProgress = 0;
@@ -228,5 +255,48 @@ class SnakeFlameGame extends FlameGame {
     moveProgress = tickSeconds <= 0
         ? 1.0
         : (_elapsedSinceTick / tickSeconds).clamp(0.0, 1.0);
+  }
+
+  /// Advance the flash + disintegration phases of the death sequence.
+  /// Revive rebuilds the snake from the pre-crash state, so everything
+  /// here is render-only — nothing mutates the game state.
+  void _updateDeathSequence(model.GameState gs) {
+    final t = _lungeElapsed;
+
+    if (t >= _deathFlashStart && t < _deathFlashEnd) {
+      final p =
+          (t - _deathFlashStart) / (_deathFlashEnd - _deathFlashStart);
+      // Three cosine blinks across the window.
+      deathFlashAlpha = 0.55 * (0.5 - 0.5 * math.cos(p * math.pi * 6));
+    } else {
+      deathFlashAlpha = 0;
+    }
+
+    final n = gs.snake.length;
+    if (t < _deathFlashEnd || n <= 2) {
+      deathKeepCount = _keepAll;
+      return;
+    }
+
+    final p = ((t - _deathFlashEnd) /
+            (_deathDisintegrateEnd - _deathFlashEnd))
+        .clamp(0.0, 1.0);
+    final eased = Curves.easeIn.transform(p);
+    // Disintegrate down to head + neck; the final pair stays so the crash
+    // pose (head pressed into whatever killed it) remains readable under
+    // the banner and the revive offer.
+    final keep = (n - (n - 2) * eased).round().clamp(2, n);
+
+    // Dust poof for each segment at the moment it vanishes. Higher index
+    // = closer to the tail, so removal walks tail-to-head.
+    if (keep < _deathPoofEmitted) {
+      for (var i = keep; i < _deathPoofEmitted && i < n; i++) {
+        final c = gs.snake.body[i];
+        _particles?.emitAt(
+            _cellCenter(c.x, c.y), ParticleConfig.segmentPoof);
+      }
+      _deathPoofEmitted = keep;
+    }
+    deathKeepCount = keep;
   }
 }
