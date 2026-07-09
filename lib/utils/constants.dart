@@ -264,7 +264,10 @@ class GameConstants {
   // Colors - Desert Theme (Southwestern — terracotta canyon with cactus
   // teal food, intentionally separated from Retro's arcade orange).
   static const Color desertBackground = Color(0xFF3D1F0E); // Warm terracotta canyon
-  static const Color desertSnake = Color(0xFFCD853F); // Peru — sand-rattlesnake brown
+  // Brightened from Peru brown (0xFFCD853F): brown-on-terracotta was the
+  // muddiest snake/background pairing in the catalog — golden sand keeps
+  // the identity and pops at speed.
+  static const Color desertSnake = Color(0xFFEDAA4E); // Golden sand rattlesnake
   static const Color desertFood = Color(0xFF5FCBC9); // Cactus turquoise (prickly pear bloom)
   static const Color desertAccent = Color(0xFFE8B894); // Sun-bleached sandy peach
 
@@ -273,7 +276,9 @@ class GameConstants {
   // purple-on-navy palette).
   static const Color crystalBackground = Color(0xFF1A0033); // Deep amethyst
   static const Color crystalSnake = Color(0xFFB0E0E6); // Powder-blue ice crystal
-  static const Color crystalFood = Color(0xFFFFB6C1); // Rose quartz pink
+  // Saturated from rose-quartz pastel (0xFFFFB6C1): snake and food were
+  // both pale pastels of similar luminance — indistinguishable at speed.
+  static const Color crystalFood = Color(0xFFFF4D9E); // Magenta quartz
   static const Color crystalAccent = Color(0xFFE6E6FA); // Lavender shimmer
 
   // Animation durations
