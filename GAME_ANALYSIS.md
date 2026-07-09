@@ -139,6 +139,7 @@ player faces 5+ blocking popups before their first snake move.
   doc comment says 4.5s, code says 3s). No skip affordance. **Fix:** "tap to start" skip;
   keep the full wait for first launch only if desired.
 
+- [x] **Death is a modal, not an in-world moment.** *(fixed: lunge → white body flash → tail-to-head disintegration with dust poofs on the board; the OOPS modal is now a slim scrim-free bottom banner that slides in after the sequence)*
 - [x] **No distinct wall-hit vs self-collision sound** *(fixed: self-collision plays game_over at 0.85× rate — duller thud, no new asset)* — haptics distinguish them
   (`game_cubit.dart:1012/1016`), audio plays the same `game_over` for both.
 
