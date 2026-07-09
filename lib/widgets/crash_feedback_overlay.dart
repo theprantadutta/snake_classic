@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
 
 class CrashFeedbackOverlay extends StatefulWidget {
   final CrashReason crashReason;
@@ -65,6 +66,10 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
 
   @override
   Widget build(BuildContext context) {
+    // Structural sizes ride uiScale (no-op on phones) so the modal doesn't
+    // float as a tiny fixed-pixel card on tablets. Font sizes stay put —
+    // the root textScaler already grows text per device class.
+    final s = context.uiScale;
     return GestureDetector(
       onTap: widget.onSkip,
       behavior: HitTestBehavior.opaque,
@@ -73,8 +78,8 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
         child: Center(
         child:
             Container(
-              margin: const EdgeInsets.all(40),
-              padding: const EdgeInsets.all(32),
+              margin: EdgeInsets.all(40 * s),
+              padding: EdgeInsets.all(32 * s),
               decoration: BoxDecoration(
                 color: widget.theme.backgroundColor,
                 borderRadius: BorderRadius.circular(20),
@@ -113,7 +118,9 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
                               scale: 1.0 + _pulseController.value * 0.2,
                               child: Text(
                                 widget.crashReason.icon,
-                                style: const TextStyle(fontSize: 80),
+                                // Decorative glyph, not body text — scale it
+                                // with the card, not the textScaler.
+                                style: TextStyle(fontSize: 80 * s),
                               ),
                             );
                           },
@@ -289,7 +296,7 @@ class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay>
 
             // Progress bar
             Container(
-              width: 100,
+              width: 100 * context.uiScale,
               height: 6,
               decoration: BoxDecoration(
                 color: widget.theme.backgroundColor.withValues(alpha: 0.3),
