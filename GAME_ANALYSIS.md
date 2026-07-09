@@ -221,7 +221,7 @@ player faces 5+ blocking popups before their first snake move.
 
 ## P3 — Dead weight to delete
 
-- [x] **Entire multiplayer stack is a dead stub.** *(mitigated: VERSUS home entry hidden so users can't reach the dead lobby; full delete-vs-revive is your call — open question #4)* `MultiplayerService` returns
+- [x] **Entire multiplayer stack is a dead stub.** *(REBUILT server-authoritative, July 2026: in-memory MatchEngine on the backend runs the simulation (clients send only direction inputs), 1v1 classic with matchmaking + friend room codes, winner gets 25 server-declared coins + BP XP, VERSUS restored. Needs a live 2-device test against a deployed backend.)* `MultiplayerService` returns
   null/false/no-op for everything (`multiplayer_service.dart:39-143`); unreachable:
   `multiplayer_game_screen.dart`, `multiplayer_flame_game.dart`,
   `multiplayer_flame_board.dart`, `multiplayer_board_painter.dart`,
