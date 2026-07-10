@@ -930,7 +930,9 @@ class _AvailableNowSection extends StatelessWidget {
           const SizedBox(height: 10),
           if (available.isNotEmpty)
             SizedBox(
-              height: 132,
+              // Scaled so grown emoji/label text on tablets can't overflow the
+              // fixed chip-strip height.
+              height: context.scaled(132),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -991,7 +993,7 @@ class _ClaimChip extends StatelessWidget {
       onTap: isClaiming ? null : onClaim,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 132,
+        width: context.scaled(132),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           gradient: LinearGradient(

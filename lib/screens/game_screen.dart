@@ -1003,10 +1003,26 @@ class _GameScreenState extends State<GameScreen>
                                               ),
                                               child: LayoutBuilder(
                                                 builder: (context, boardConstraints) {
-                                                  // Calculate optimal board size
+                                                  // Calculate optimal board size.
+                                                  // On phones this is min(w,h) as
+                                                  // before (cap is infinity → no-op).
+                                                  // On tablets the board is capped so
+                                                  // it doesn't swell edge-to-edge and
+                                                  // dwarf the uiScale-sized HUD/controls
+                                                  // — it stays a centered square with
+                                                  // breathing room instead.
+                                                  final boardCap =
+                                                      context.responsive<double>(
+                                                    phone: double.infinity,
+                                                    tablet: 560,
+                                                    largeTablet: 680,
+                                                  );
                                                   final availableSize = math.min(
-                                                    boardConstraints.maxWidth,
-                                                    boardConstraints.maxHeight,
+                                                    math.min(
+                                                      boardConstraints.maxWidth,
+                                                      boardConstraints.maxHeight,
+                                                    ),
+                                                    boardCap,
                                                   );
 
                                                   return Center(

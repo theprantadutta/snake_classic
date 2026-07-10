@@ -133,6 +133,13 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
               final screenWidth = constraints.maxWidth;
               final isSmallScreen = screenHeight < 800;
               final isNarrowScreen = screenWidth < 400;
+              // Tablets are the TALLEST devices, so sizing chrome/fonts off the
+              // raw screenHeight makes the hero icon + title explode (and the
+              // root textScaler then grows the text again). Clamp the sizing
+              // basis to a reference phone height on tablets; phones keep their
+              // real height so their layout is unchanged. Pixel chrome (the
+              // icon) additionally grows with uiScale; fonts grow via textScaler.
+              final sizingHeight = context.isTablet ? 760.0 : screenHeight;
 
               if (_showPrivacyPolicy) {
                 return _buildPrivacyPolicyView(
@@ -181,9 +188,10 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                               ),
                               child: Icon(
                                 Icons.videogame_asset_rounded,
-                                size: isSmallScreen
-                                    ? screenHeight * 0.08
-                                    : screenHeight * 0.12,
+                                size: (isSmallScreen
+                                        ? sizingHeight * 0.08
+                                        : sizingHeight * 0.12) *
+                                    context.uiScale,
                                 color: theme.primaryColor,
                               ),
                             )
@@ -191,16 +199,16 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
                         SizedBox(
                           height: isSmallScreen
-                              ? screenHeight * 0.02
-                              : screenHeight * 0.04,
+                              ? sizingHeight * 0.02
+                              : sizingHeight * 0.04,
                         ),
 
                         // Welcome Text Container
                         Container(
                               padding: EdgeInsets.all(
                                 isSmallScreen
-                                    ? screenHeight * 0.02
-                                    : screenHeight * 0.035,
+                                    ? sizingHeight * 0.02
+                                    : sizingHeight * 0.035,
                               ),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
@@ -245,8 +253,8 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                       'Welcome to\nSnake Classic!',
                                       style: TextStyle(
                                         fontSize: isSmallScreen
-                                            ? screenHeight * 0.03
-                                            : screenHeight * 0.04,
+                                            ? sizingHeight * 0.03
+                                            : sizingHeight * 0.04,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                         height: 1.2,
@@ -256,8 +264,8 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                   ),
                                   SizedBox(
                                     height: isSmallScreen
-                                        ? screenHeight * 0.015
-                                        : screenHeight * 0.025,
+                                        ? sizingHeight * 0.015
+                                        : sizingHeight * 0.025,
                                   ),
 
                                   // Feature highlights
@@ -265,8 +273,8 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                     'Choose how you\'d like to play:',
                                     style: TextStyle(
                                       fontSize: isSmallScreen
-                                          ? screenHeight * 0.018
-                                          : screenHeight * 0.022,
+                                          ? sizingHeight * 0.018
+                                          : sizingHeight * 0.022,
                                       color: Colors.white.withValues(
                                         alpha: 0.9,
                                       ),
@@ -287,8 +295,8 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
                         SizedBox(
                           height: isSmallScreen
-                              ? screenHeight * 0.03
-                              : screenHeight * 0.05,
+                              ? sizingHeight * 0.03
+                              : sizingHeight * 0.05,
                         ),
 
                         // Auth buttons

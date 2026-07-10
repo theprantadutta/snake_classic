@@ -126,7 +126,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
-                    height: 360,
+                    // Scaled so the grown text + validation-error lines on
+                    // tablets don't overflow the fixed form height.
+                    height: context.scaled(360),
                     child: TabBarView(
                       controller: _tabs,
                       children: [
