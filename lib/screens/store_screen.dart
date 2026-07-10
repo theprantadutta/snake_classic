@@ -264,7 +264,7 @@ class _StoreScreenState extends State<StoreScreen>
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(context.scaled(8)),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Colors.amber, Colors.orange],
@@ -278,10 +278,10 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.monetization_on,
                 color: Colors.white,
-                size: 20,
+                size: context.scaled(20),
               ),
             ),
             const SizedBox(width: 12),
@@ -511,14 +511,15 @@ class _StoreScreenState extends State<StoreScreen>
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(context.scaled(14)),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.purple.shade400, Colors.indigo.shade400],
               ),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.diamond, color: Colors.white, size: 32),
+            child: Icon(Icons.diamond,
+                color: Colors.white, size: context.scaled(32)),
           ),
           const SizedBox(height: 14),
           Text(
@@ -571,7 +572,7 @@ class _StoreScreenState extends State<StoreScreen>
           ? null
           : () => _purchaseSubscription(productId, '$title plan'),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.scaled(16)),
         decoration: BoxDecoration(
           color: theme.accentColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
@@ -740,12 +741,12 @@ class _StoreScreenState extends State<StoreScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(context.scaled(10)),
                 decoration: BoxDecoration(
                   gradient: iconGradient,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: Colors.white, size: 24),
+                child: Icon(icon, color: Colors.white, size: context.scaled(24)),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -922,7 +923,7 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
                 child: Row(
                   children: [
-                    Icon(f.$1, color: accent, size: 18),
+                    Icon(f.$1, color: accent, size: context.scaled(18)),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -939,7 +940,7 @@ class _StoreScreenState extends State<StoreScreen>
                       color: hl
                           ? Colors.amber
                           : Colors.green.withValues(alpha: 0.8),
-                      size: 18,
+                      size: context.scaled(18),
                     ),
                   ],
                 ),
@@ -1120,7 +1121,7 @@ class _StoreScreenState extends State<StoreScreen>
       onTap: () => _purchaseCoinPack(option, theme),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.scaled(16)),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -1142,17 +1143,17 @@ class _StoreScreenState extends State<StoreScreen>
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(context.scaled(8)),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.amber, Colors.orange],
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.monetization_on,
                 color: Colors.white,
-                size: 20,
+                size: context.scaled(20),
               ),
             ),
             const SizedBox(width: 16),
@@ -1239,12 +1240,12 @@ class _StoreScreenState extends State<StoreScreen>
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(context.scaled(8)),
             decoration: BoxDecoration(
               color: theme.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: theme.accentColor, size: 20),
+            child: Icon(icon, color: theme.accentColor, size: context.scaled(20)),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -1303,7 +1304,7 @@ class _StoreScreenState extends State<StoreScreen>
         child: Row(
           children: [
             Icon(isPro ? Icons.check_circle : Icons.diamond,
-                color: Colors.purple.shade200, size: 22),
+                color: Colors.purple.shade200, size: context.scaled(22)),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -1336,7 +1337,8 @@ class _StoreScreenState extends State<StoreScreen>
             ),
             if (!isPro)
               Icon(Icons.chevron_right,
-                  color: Colors.white.withValues(alpha: 0.7), size: 20),
+                  color: Colors.white.withValues(alpha: 0.7),
+                  size: context.scaled(20)),
           ],
         ),
       ),
@@ -1509,15 +1511,15 @@ class _StoreScreenState extends State<StoreScreen>
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(context.scaled(12)),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.purple.shade400, Colors.indigo.shade400],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child:
-                  const Icon(Icons.card_giftcard, color: Colors.white, size: 24),
+              child: Icon(Icons.card_giftcard,
+                  color: Colors.white, size: context.scaled(24)),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1648,8 +1650,8 @@ class _StoreScreenState extends State<StoreScreen>
             // landscape rectangle, plenty of pixels for the painter
             // without a tall card.
             SizedBox(
-              width: 84,
-              height: 56,
+              width: context.scaled(84),
+              height: context.scaled(56),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: _ThemePreview(theme: target),
@@ -1918,13 +1920,13 @@ class _StoreScreenState extends State<StoreScreen>
             padding: const EdgeInsets.all(16),
             // Max-extent delegate: 2 columns on phones (unchanged), more
             // columns as width grows on tablets, instead of two giant cards.
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 220,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: context.scaled(220),
               // Match the Trails tab aspect ratio so the painted preview
               // band has room to render the snake silhouette + signature.
               childAspectRatio: 0.78,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              crossAxisSpacing: context.scaled(12),
+              mainAxisSpacing: context.scaled(12),
             ),
             itemCount: SnakeSkinType.values.length,
       itemBuilder: (context, index) {
@@ -2151,13 +2153,13 @@ class _StoreScreenState extends State<StoreScreen>
             padding: const EdgeInsets.all(16),
             // Max-extent delegate: 2 columns on phones (unchanged), more
             // columns as width grows on tablets, instead of two giant cards.
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 220,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: context.scaled(220),
               // Slightly more vertical room than the skins tab so the painted
               // trail preview has space to breathe.
               childAspectRatio: 0.78,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              crossAxisSpacing: context.scaled(12),
+              mainAxisSpacing: context.scaled(12),
             ),
             itemCount: TrailEffectType.values.length,
       itemBuilder: (context, index) {
@@ -2564,7 +2566,8 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           child: Row(
             children: [
-              Icon(Icons.play_circle_fill, color: theme.accentColor, size: 28),
+              Icon(Icons.play_circle_fill,
+                  color: theme.accentColor, size: context.scaled(28)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -2592,7 +2595,8 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               ),
               Icon(Icons.bolt,
-                  color: theme.accentColor.withValues(alpha: 0.9), size: 22),
+                  color: theme.accentColor.withValues(alpha: 0.9),
+                  size: context.scaled(22)),
             ],
           ),
         ),
@@ -2661,7 +2665,7 @@ class _StoreScreenState extends State<StoreScreen>
                 child: Row(
                   children: [
                     Icon(Icons.info_outline,
-                        color: theme.accentColor, size: 18),
+                        color: theme.accentColor, size: context.scaled(18)),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -2744,12 +2748,13 @@ class _StoreScreenState extends State<StoreScreen>
             clipBehavior: Clip.none,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(context.scaled(10)),
                 decoration: BoxDecoration(
                   color: theme.accentColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(item.icon, color: theme.accentColor, size: 22),
+                child: Icon(item.icon,
+                    color: theme.accentColor, size: context.scaled(22)),
               ),
               if (owned > 0)
                 Positioned(
@@ -2941,7 +2946,7 @@ class _StoreScreenState extends State<StoreScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(context.scaled(10)),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Colors.purple, Colors.indigo],

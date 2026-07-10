@@ -147,12 +147,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         children: [
           IconButton(
             onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
+            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: context.scaled(24)),
           ),
 
           const SizedBox(width: 8),
 
-          Icon(Icons.analytics, color: theme.accentColor, size: 28),
+          Icon(Icons.analytics, color: theme.accentColor, size: context.scaled(28)),
 
           const SizedBox(width: 12),
 
@@ -172,7 +172,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             icon: Icon(
               Icons.refresh,
               color: theme.accentColor.withValues(alpha: 0.7),
-              size: 24,
+              size: context.scaled(24),
             ),
           ),
         ],
@@ -493,7 +493,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                   // Enhanced Chart with Trend Line
                   SizedBox(
-                    height: 80,
+                    height: context.scaled(80),
                     child: _buildEnhancedTrendChart(recentScores, theme, trend),
                   ),
 
@@ -587,7 +587,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: 12),
 
                   SizedBox(
-                    height: 60,
+                    height: context.scaled(60),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.vertical, // or horizontal if needed
                       child: _buildDailyActivityChart(dailyPlayTime, theme),
@@ -617,8 +617,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         child: Row(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: context.scaled(60),
+              height: context.scaled(60),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.amber.withValues(alpha: 0.2),
@@ -656,7 +656,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     child: Icon(
                       Icons.military_tech,
                       color: Colors.amber,
-                      size: 24,
+                      size: context.scaled(24),
                     ),
                   ),
                 ],
@@ -815,7 +815,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, color: theme.accentColor, size: 24),
+                Icon(icon, color: theme.accentColor, size: context.scaled(24)),
                 const SizedBox(width: 12),
                 Flexible(
                   child: Text(
@@ -857,7 +857,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 28),
+          Icon(icon, color: color, size: context.scaled(28)),
 
           const SizedBox(height: 8),
 
@@ -909,7 +909,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 28),
+          Icon(icon, color: color, size: context.scaled(28)),
 
           const SizedBox(height: 8),
 
@@ -1211,7 +1211,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Icon(
                 Icons.lightbulb_outline,
                 color: theme.primaryColor,
-                size: 18,
+                size: context.scaled(18),
               ),
               const SizedBox(width: 8),
               Text(

@@ -187,7 +187,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
           // Completion bar — gradient matches the dashboard's emerald→cyan.
           Container(
-            height: 8,
+            height: context.scaled(8),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4),
@@ -221,7 +221,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           children: [
             Icon(
               Icons.workspace_premium_outlined,
-              size: 64,
+              size: context.scaled(64),
               color: theme.primaryColor.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
@@ -278,14 +278,15 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               children: [
                 // Achievement Icon
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(context.scaled(12)),
                   decoration: BoxDecoration(
                     color: isUnlocked
                         ? achievement.rarityColor
                         : Colors.grey.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(achievement.icon, color: Colors.white, size: 24),
+                  child: Icon(achievement.icon,
+                      color: Colors.white, size: context.scaled(24)),
                 ),
 
                 const SizedBox(width: 16),
@@ -400,7 +401,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         color: achievement.rewardClaimed
                             ? Colors.green
                             : Colors.amber,
-                        size: 20,
+                        size: context.scaled(20),
                       ),
                       const SizedBox(height: 4),
                     ],
@@ -463,7 +464,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                   children: [
                     Icon(
                       Icons.access_time,
-                      size: 16,
+                      size: context.scaled(16),
                       color: Colors.green.withValues(alpha: 0.8),
                     ),
                     const SizedBox(width: 8),
@@ -520,7 +521,10 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.scaled(8),
+        vertical: context.scaled(10),
+      ),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(10),

@@ -244,10 +244,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                   child: CircleAvatar(
-                    radius: 60,
+                    radius: context.scaled(60),
                     backgroundColor: theme.primaryColor,
                     child: CircleAvatar(
-                      radius: 56,
+                      radius: context.scaled(56),
                       backgroundImage: authState.photoURL != null
                           ? NetworkImage(authState.photoURL!)
                           : null,
@@ -256,7 +256,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: authState.photoURL == null
                           ? Icon(
                               Icons.person_rounded,
-                              size: 60,
+                              size: context.scaled(60),
                               color: theme.primaryColor,
                             )
                           : null,
@@ -317,7 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ? Icons.person
                             : Icons.verified_user,
                         color: Colors.white,
-                        size: 16,
+                        size: context.scaled(16),
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -428,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Icon(
                             Icons.bar_chart_rounded,
                             color: theme.accentColor,
-                            size: 24,
+                            size: context.scaled(24),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -599,10 +599,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Colors.amber.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.emoji_events_rounded,
                               color: Colors.amber,
-                              size: 24,
+                              size: context.scaled(24),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -701,10 +701,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.blue.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const FaIcon(
+                        child: FaIcon(
                           FontAwesomeIcons.google,
                           color: Colors.blue,
-                          size: 24,
+                          size: context.scaled(24),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -767,10 +767,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildEnhancedButton(
                     context,
                     'Sign in with Google',
-                    const FaIcon(
+                    FaIcon(
                       FontAwesomeIcons.google,
                       color: Colors.white,
-                      size: 24,
+                      size: context.scaled(24),
                     ),
                     Colors.blue,
                     Colors.blue.shade700,
@@ -785,10 +785,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildEnhancedButton(
                       context,
                       'Sign in with Apple',
-                      const FaIcon(
+                      FaIcon(
                         FontAwesomeIcons.apple,
                         color: Colors.white,
-                        size: 24,
+                        size: context.scaled(24),
                       ),
                       Colors.black,
                       Colors.grey.shade900,
@@ -843,10 +843,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Colors.purple.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.movie_rounded,
                             color: Colors.purple,
-                            size: 24,
+                            size: context.scaled(24),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -925,7 +925,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icon(
                             Icons.video_library_rounded,
                             color: Colors.purple.withValues(alpha: 0.8),
-                            size: 20,
+                            size: context.scaled(20),
                           ),
                           const SizedBox(width: 12),
                           Text(
@@ -976,10 +976,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildEnhancedButton(
                     context,
                     'Sign Out',
-                    const Icon(
+                    Icon(
                       Icons.logout_rounded,
                       color: Colors.white,
-                      size: 24,
+                      size: context.scaled(24),
                     ),
                     Colors.red,
                     Colors.red.shade700,
@@ -992,10 +992,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildEnhancedButton(
                     context,
                     'Delete Account',
-                    const Icon(
+                    Icon(
                       Icons.delete_forever_rounded,
                       color: Colors.white,
-                      size: 24,
+                      size: context.scaled(24),
                     ),
                     Colors.red.shade800,
                     Colors.red.shade900,
@@ -1023,7 +1023,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
         child: Column(
           children: [
-            Icon(icon, color: themeState.currentTheme.primaryColor, size: 20),
+            Icon(icon, color: themeState.currentTheme.primaryColor, size: context.scaled(20)),
             const SizedBox(height: 4),
             Text(
               value,
@@ -1050,7 +1050,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: themeState.currentTheme.primaryColor, size: 24),
+          Icon(icon, color: themeState.currentTheme.primaryColor, size: context.scaled(24)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -1084,7 +1084,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ) {
     return Container(
       width: double.infinity,
-      height: 56,
+      height: context.scaled(56),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primaryColor, secondaryColor],
@@ -1134,7 +1134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     VoidCallback onPressed,
   ) {
     return Container(
-      height: 80,
+      height: context.scaled(80),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color.withValues(alpha: 0.8), color.withValues(alpha: 0.6)],
@@ -1158,7 +1158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white, size: 28),
+              Icon(icon, color: Colors.white, size: context.scaled(28)),
               const SizedBox(height: 6),
               Text(
                 label,
@@ -1228,7 +1228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: rarityColor.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(achievement.icon, color: Colors.white, size: 24),
+            child: Icon(achievement.icon, color: Colors.white, size: context.scaled(24)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1320,7 +1320,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildUpgradeBenefit(IconData icon, String title, String subtitle) {
     return Column(
       children: [
-        Icon(icon, color: Colors.blue, size: 24),
+        Icon(icon, color: Colors.blue, size: context.scaled(24)),
         const SizedBox(height: 8),
         Text(
           title,
