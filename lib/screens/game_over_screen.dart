@@ -19,6 +19,7 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
@@ -396,10 +397,13 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                 child: SingleChildScrollView(
                                   physics:
                                       const BouncingScrollPhysics(),
+                                  // Cap the content to a centered column on
+                                  // tablets so the score/rewards/achievement
+                                  // cards don't stretch edge-to-edge.
                                   padding: EdgeInsets.fromLTRB(
-                                    16,
+                                    16 + context.sideInset(),
                                     compact ? 8 : 16,
-                                    16,
+                                    16 + context.sideInset(),
                                     8,
                                   ),
                                   child: Column(
@@ -1579,7 +1583,12 @@ class _BottomActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 10, 16, compact ? 10 : 14),
+      padding: EdgeInsets.fromLTRB(
+        16 + context.sideInset(),
+        10,
+        16 + context.sideInset(),
+        compact ? 10 : 14,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,

@@ -1014,8 +1014,8 @@ class _GameScreenState extends State<GameScreen>
                                                   final boardCap =
                                                       context.responsive<double>(
                                                     phone: double.infinity,
-                                                    tablet: 560,
-                                                    largeTablet: 680,
+                                                    tablet: 640,
+                                                    largeTablet: 820,
                                                   );
                                                   final availableSize = math.min(
                                                     math.min(
