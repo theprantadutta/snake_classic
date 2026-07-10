@@ -443,7 +443,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildHeader(GameTheme theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(
+        20 + context.sideInset(),
+        20,
+        20 + context.sideInset(),
+        20,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -482,7 +487,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   Widget _buildGameHeader(GameTheme theme, MultiplayerGame game) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(
+        20 + context.sideInset(),
+        20,
+        20 + context.sideInset(),
+        20,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -660,7 +670,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
         Expanded(
           child: Center(
-            child: Container(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: Container(
               margin: const EdgeInsets.all(32),
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
@@ -765,6 +777,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 ],
               ),
             ),
+            ),
           ),
         ),
       ],
@@ -782,7 +795,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
         Expanded(
           child: Center(
-            child: Container(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: Container(
               margin: const EdgeInsets.all(32),
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
@@ -879,6 +894,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           ),
         ),

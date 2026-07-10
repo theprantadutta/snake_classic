@@ -134,7 +134,8 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(
+          horizontal: 12 + context.sideInset(), vertical: 8),
       child: Row(
         children: [
           IconButton(
@@ -170,7 +171,8 @@ class _SummaryStrip extends StatelessWidget {
     final completed = service.completedCount;
     final total = service.quests.length;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: EdgeInsets.symmetric(
+          horizontal: 16 + context.sideInset(), vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: theme.accentColor.withValues(alpha: 0.08),

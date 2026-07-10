@@ -10,6 +10,17 @@ import 'package:flutter/widgets.dart';
 ///   * `>= 840` → large tablet (10"+ / iPad Pro)
 enum DeviceSize { phone, tablet, largeTablet }
 
+/// Shared content-width caps so every screen centers its body to the SAME
+/// column width on tablets (no more 600/640/760 drift between sibling screens).
+///   * [menuMaxWidth]  — default for menus, lists, settings, detail screens.
+///   * [wideMaxWidth]  — for denser grid content (e.g. the store) that benefits
+///     from a bit more room.
+class ContentWidth {
+  ContentWidth._();
+  static const double menuMaxWidth = 640.0;
+  static const double wideMaxWidth = 760.0;
+}
+
 /// Responsive helpers hung off [BuildContext]. This mirrors how the codebase
 /// already reads `MediaQuery` inline, so no new dependency or InheritedWidget
 /// is introduced.
@@ -59,7 +70,8 @@ extension ResponsiveContext on BuildContext {
 
   /// Max width for centered menu / list bodies. Unbounded on phones (so content
   /// still fills the screen); capped on tablets so rows don't stretch edge-to-edge.
-  double get contentMaxWidth => isTablet ? 640.0 : double.infinity;
+  double get contentMaxWidth =>
+      isTablet ? ContentWidth.menuMaxWidth : double.infinity;
 
   /// Horizontal inset that visually caps content to [maxWidth] (defaulting to
   /// [contentMaxWidth]) by padding both sides equally. Returns `0` on phones or

@@ -128,7 +128,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     final completionPct = (completionPercentage * 100).round();
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.primaryColor.withValues(alpha: 0.18),

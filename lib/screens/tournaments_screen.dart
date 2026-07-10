@@ -88,7 +88,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
 
   Widget _buildHeader(GameTheme theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -122,7 +125,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
 
   Widget _buildTabBar(GameTheme theme) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(horizontal: 16 + context.sideInset()),
       child: TabBar(
         controller: _tabController,
         indicatorColor: theme.accentColor,
@@ -161,7 +164,12 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      padding: EdgeInsets.fromLTRB(
+        16 + context.sideInset(),
+        6,
+        16 + context.sideInset(),
+        0,
+      ),
       child: Align(
         alignment: Alignment.centerLeft,
         child: InkWell(

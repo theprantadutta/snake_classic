@@ -160,6 +160,9 @@ class _StoreScreenState extends State<StoreScreen>
                         _buildCoinsHeader(theme, coinsState),
                         TabBar(
                           controller: _tabController,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.sideInset(maxWidth: 760),
+                          ),
                           indicatorColor: theme.accentColor,
                           labelColor: theme.accentColor,
                           unselectedLabelColor:
@@ -230,7 +233,10 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildCoinsHeader(GameTheme theme, CoinsState coinsState) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(maxWidth: 760),
+        vertical: 16,
+      ),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

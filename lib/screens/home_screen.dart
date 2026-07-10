@@ -397,8 +397,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 final maxContentWidth =
                                     context.responsive<double>(
                                   phone: double.infinity,
-                                  tablet: 600,
-                                  largeTablet: 640,
+                                  tablet: ContentWidth.menuMaxWidth,
+                                  largeTablet: ContentWidth.menuMaxWidth,
                                 );
                                 final screenWidth =
                                     constraints.maxWidth > maxContentWidth

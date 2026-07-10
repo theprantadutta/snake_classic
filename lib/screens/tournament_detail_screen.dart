@@ -249,7 +249,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   Widget _buildHeader(GameTheme theme) {
     final tournament = _tournament!;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16 + context.sideInset(),
+        16,
+        16 + context.sideInset(),
+        16,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -296,7 +301,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   Widget _buildTournamentInfo(GameTheme theme) {
     final tournament = _tournament!;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 8,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.5),
@@ -496,7 +504,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
   Widget _buildTabBar(GameTheme theme) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 8,
+      ),
       child: TabBar(
         controller: _tabController,
         indicatorColor: theme.accentColor,
@@ -1056,7 +1067,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     // default 160px and the "JOIN TOURNAMENT" label got clipped.
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+      padding: EdgeInsets.fromLTRB(
+        16 + context.sideInset(),
+        14,
+        16 + context.sideInset(),
+        18,
+      ),
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.6),
         border: Border(

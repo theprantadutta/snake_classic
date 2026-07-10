@@ -155,7 +155,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   Widget _buildHeader(GameTheme theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -181,7 +184,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   Widget _buildTabBar(GameTheme theme) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(horizontal: 16 + context.sideInset()),
       child: TabBar(
         controller: _tabController,
         indicatorColor: theme.accentColor,
@@ -207,7 +210,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         ? 'Ranked by your best single-game score this week (resets Sunday)'
         : 'Ranked by your highest single-game score ever';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: EdgeInsets.fromLTRB(
+        16 + context.sideInset(),
+        8,
+        16 + context.sideInset(),
+        0,
+      ),
       child: Row(
         children: [
           Icon(icon, color: theme.accentColor.withValues(alpha: 0.75), size: 14),
@@ -248,7 +256,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
     final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      padding: EdgeInsets.fromLTRB(
+        16 + context.sideInset(),
+        6,
+        16 + context.sideInset(),
+        0,
+      ),
       child: Align(
         alignment: Alignment.centerLeft,
         child: InkWell(
@@ -301,7 +314,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   Widget _buildUserRankCard(AuthState authState, GameTheme theme, Map<String, dynamic> userRank) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 16,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.primaryColor.withValues(alpha: 0.2),

@@ -140,7 +140,12 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
 
   Widget _buildHeader(GameTheme theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16 + context.sideInset(),
+        16,
+        16 + context.sideInset(),
+        16,
+      ),
       child: Column(
         children: [
           Row(
@@ -277,7 +282,10 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
       // No fixed height: the podium sizes to its tallest column so the grown
       // text on tablets (root textScaler) can't overflow/clip. The bases still
       // stagger via crossAxisAlignment.end.
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: 16 + context.sideInset(),
+        vertical: 8,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
