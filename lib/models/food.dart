@@ -17,6 +17,33 @@ enum FoodType {
         return 50;
     }
   }
+
+  /// Generated sprite for this food tier — the same art the board draws,
+  /// reused in chrome (HUD chip, pause guide) via [PickupIcon] so pickups
+  /// look identical everywhere.
+  String get spriteAsset {
+    switch (this) {
+      case FoodType.normal:
+        return 'assets/images/food/food_apple.png';
+      case FoodType.bonus:
+        return 'assets/images/food/food_golden.png';
+      case FoodType.special:
+        return 'assets/images/food/food_star.png';
+    }
+  }
+
+  /// Legacy emoji, kept as the [PickupIcon] fallback when the sprite asset
+  /// can't load.
+  String get emoji {
+    switch (this) {
+      case FoodType.normal:
+        return '🍎';
+      case FoodType.bonus:
+        return '✨';
+      case FoodType.special:
+        return '⭐';
+    }
+  }
 }
 
 class Food {

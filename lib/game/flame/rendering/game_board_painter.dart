@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -9,6 +10,47 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+
+/// Decoded sprite images for board pickups and effects (generated art from
+/// assets/images/). All nullable — the painter falls back to the original
+/// procedural shapes for anything missing, so rendering never depends on
+/// asset loading having finished (or existing at all, e.g. in tests).
+class BoardSprites {
+  const BoardSprites({
+    this.foodApple,
+    this.foodGolden,
+    this.foodStar,
+    this.powerUpSpeed,
+    this.powerUpShield,
+    this.powerUpCoin,
+    this.powerUpSlow,
+    this.foodShadow,
+    this.impactStar,
+  });
+
+  final ui.Image? foodApple;
+  final ui.Image? foodGolden;
+  final ui.Image? foodStar;
+  final ui.Image? powerUpSpeed;
+  final ui.Image? powerUpShield;
+  final ui.Image? powerUpCoin;
+  final ui.Image? powerUpSlow;
+  final ui.Image? foodShadow;
+  final ui.Image? impactStar;
+
+  ui.Image? foodImage(FoodType type) => switch (type) {
+        FoodType.normal => foodApple,
+        FoodType.bonus => foodGolden,
+        FoodType.special => foodStar,
+      };
+
+  ui.Image? powerUpImage(PowerUpType type) => switch (type) {
+        PowerUpType.speedBoost => powerUpSpeed,
+        PowerUpType.invincibility => powerUpShield,
+        PowerUpType.scoreMultiplier => powerUpCoin,
+        PowerUpType.slowMotion => powerUpSlow,
+      };
+}
 
 class OptimizedGameBoardPainter extends CustomPainter {
   final GameState gameState;
@@ -26,6 +68,20 @@ class OptimizedGameBoardPainter extends CustomPainter {
   // it's effectively free (one drawLine per frame while active).
   final Direction? recentInputDirection;
   final double recentInputShimmerAge; // 0.0 = fresh, 1.0 = stale
+
+  /// Optional sprite art for food/power-ups/effects. Null (or any null
+  /// member) falls back to the procedural shapes.
+  final BoardSprites? sprites;
+
+  /// Seconds since the crash started (null when not crashed). Times the
+  /// impact-star flash at the crash cell.
+  final double? crashElapsedSeconds;
+
+  // Shared paint for sprite draws; filterQuality gives clean minification
+  // from the 512px source art down to cell size.
+  final Paint _spritePaint = Paint()
+    ..isAntiAlias = true
+    ..filterQuality = FilterQuality.medium;
 
   // Performance: Paint objects are now passed from _GameBoardState where they
   // persist across frames, instead of being recreated 60 times/sec.
@@ -46,6 +102,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     this.animationTimeMs = 0,
     this.recentInputDirection,
     this.recentInputShimmerAge = 1.0,
+    this.sprites,
+    this.crashElapsedSeconds,
     // Cached paints from _GameBoardState
     Paint? cachedSnakeHeadPaint,
     Paint? cachedSnakeBodyPaint,
@@ -517,14 +575,130 @@ class OptimizedGameBoardPainter extends CustomPainter {
     _drawSkinSignature(canvas, breathingRect, isHead: true,
         segmentIndex: 0, totalLength: 1);
 
+    // Nokia-style mouth: a wedge notch that opens toward food/power-ups as
+    // the head approaches them and chomps shut on the bite.
+    final mouthOpen = _mouthOpenAmount();
+    if (mouthOpen > 0.02) {
+      _drawMouth(canvas, breathingRect, direction, mouthOpen);
+    }
+
     // Draw enhanced snake eyes with breathing
     _drawSnakeEyes(canvas, breathingRect, direction);
 
-    // Add directional indicator (small triangle)
-    _drawDirectionIndicator(canvas, breathingRect, direction);
+    // Add directional indicator (small triangle) — hidden while the mouth
+    // is open, it occupies the same leading edge.
+    if (mouthOpen <= 0.3) {
+      _drawDirectionIndicator(canvas, breathingRect, direction);
+    }
 
     // Add breathing highlight effect
     _drawBreathingHighlight(canvas, breathingRect, breathingScale);
+  }
+
+  /// How far the mouth is open, 0..1.
+  ///
+  /// Timeline of a bite (one cell per tick):
+  /// - food two cells ahead → mouth cracks open and widens while moving;
+  /// - food one cell ahead → wide open (the head visibly lunges at it);
+  /// - the tick right after the bite → snaps shut over the first ~35% of the
+  ///   move (the "chomp"), with the particle burst covering the swallow.
+  double _mouthOpenAmount() {
+    if (gameState.status != GameStatus.playing) return 0.0;
+
+    // Chomp: the score bump / power-up pickup landed on this tick's state.
+    final prev = previousGameState;
+    if (prev != null &&
+        (gameState.score > prev.score ||
+            (prev.powerUp != null && gameState.powerUp == null))) {
+      return (1.0 - (moveProgress / 0.35)).clamp(0.0, 1.0);
+    }
+
+    final head = gameState.snake.head;
+    final (dx, dy) = switch (gameState.snake.currentDirection) {
+      Direction.up => (0, -1),
+      Direction.down => (0, 1),
+      Direction.left => (-1, 0),
+      Direction.right => (1, 0),
+    };
+
+    for (var dist = 1; dist <= 2; dist++) {
+      final cell = Position(head.x + dx * dist, head.y + dy * dist);
+      if (_isEdibleAt(cell)) {
+        // One cell out: wide open with a hungry little quiver.
+        if (dist == 1) {
+          return 0.85 + 0.15 * math.sin(animationTimeMs / 50.0);
+        }
+        // Two cells out: opening as we travel toward it.
+        return 0.3 + 0.35 * moveProgress;
+      }
+    }
+    return 0.0;
+  }
+
+  bool _isEdibleAt(Position cell) {
+    if (gameState.food?.position == cell) return true;
+    if (gameState.powerUp?.position == cell) return true;
+    for (final f in gameState.foods) {
+      if (f.position == cell) return true;
+    }
+    return false;
+  }
+
+  /// Cut the mouth wedge out of the head: a background-colored notch from
+  /// just behind the head's center to the leading edge, with a darker lip
+  /// line so it reads as an open jaw and not a rendering hole.
+  void _drawMouth(Canvas canvas, Rect rect, Direction direction, double open) {
+    final center = rect.center;
+    final halfSpread = rect.height * 0.40 * open.clamp(0.0, 1.0);
+    final overshoot = rect.width * 0.10;
+
+    Offset tip;
+    Offset lipA;
+    Offset lipB;
+    switch (direction) {
+      case Direction.right:
+        tip = Offset(center.dx - rect.width * 0.08, center.dy);
+        lipA = Offset(rect.right + overshoot, center.dy - halfSpread);
+        lipB = Offset(rect.right + overshoot, center.dy + halfSpread);
+        break;
+      case Direction.left:
+        tip = Offset(center.dx + rect.width * 0.08, center.dy);
+        lipA = Offset(rect.left - overshoot, center.dy - halfSpread);
+        lipB = Offset(rect.left - overshoot, center.dy + halfSpread);
+        break;
+      case Direction.up:
+        tip = Offset(center.dx, center.dy + rect.height * 0.08);
+        lipA = Offset(center.dx - halfSpread, rect.top - overshoot);
+        lipB = Offset(center.dx + halfSpread, rect.top - overshoot);
+        break;
+      case Direction.down:
+        tip = Offset(center.dx, center.dy - rect.height * 0.08);
+        lipA = Offset(center.dx - halfSpread, rect.bottom + overshoot);
+        lipB = Offset(center.dx + halfSpread, rect.bottom + overshoot);
+        break;
+    }
+
+    final wedge = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(lipA.dx, lipA.dy)
+      ..lineTo(lipB.dx, lipB.dy)
+      ..close();
+
+    final mouthPaint = Paint()
+      ..color = theme.backgroundColor
+      ..isAntiAlias = true;
+    canvas.drawPath(wedge, mouthPaint);
+
+    // Lip definition: stroke only the two jaw edges (not the outer closing
+    // edge, which sits outside the head).
+    final lipPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = rect.width * 0.05
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true;
+    canvas.drawLine(tip, lipA, lipPaint);
+    canvas.drawLine(tip, lipB, lipPaint);
   }
 
   List<Color> _getHeadGradientColors() {
@@ -1005,6 +1179,26 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Draw expiration warning ring if power-up is about to expire
     if (powerUp.isExpiringSoon) {
       _drawExpirationWarning(canvas, rect, powerUp.warningIntensity);
+    }
+
+    // Sprite path: token-style generated art (dark badge + bright icon +
+    // rim glow) that stays readable on every theme — the procedural shapes
+    // used raw material colors that disappeared on same-hue backgrounds
+    // (blue shield on space/ocean, purple spiral on cyberpunk/crystal).
+    // Keeps the existing pulse phase and the expiration ring above.
+    final sprite = sprites?.powerUpImage(powerUp.type);
+    if (sprite != null) {
+      // Same full-cell sizing rationale as the food sprites: the token art
+      // has its own transparent margin, so it draws slightly oversize to
+      // land the visible badge near cell size.
+      final pulseScale = 0.92 + 0.1 * powerUp.pulsePhase;
+      final spriteRect = Rect.fromCenter(
+        center: rect.center,
+        width: cellSize * 1.25,
+        height: cellSize * 1.25,
+      );
+      _drawGroundedSprite(canvas, sprite, spriteRect, scale: pulseScale);
+      return;
     }
 
     switch (powerUp.type) {
@@ -1499,6 +1693,41 @@ class OptimizedGameBoardPainter extends CustomPainter {
       height: foodSize,
     );
 
+    // Sprite path: generated art with a soft contact shadow. The sprites
+    // carry their own dark outline + rim glow so they read on every theme
+    // (the procedural shapes below inherited theme.foodColor, which on some
+    // themes matched the snake or vanished into the background).
+    final sprite = sprites?.foodImage(food.type);
+    if (sprite != null) {
+      // The art has its own transparent margin (subject ≈80% of canvas plus
+      // glow falloff), so the draw rect must be AT LEAST the full cell —
+      // using the padded `rect` above would shrink the subject twice and
+      // leave the food dwarfed by the near-full-cell snake segments. Tier
+      // scale mirrors the procedural sizing (special biggest); overshoot
+      // past the cell is transparent margin, not visible overlap.
+      final tierScale = switch (food.type) {
+        FoodType.normal => 1.10,
+        FoodType.bonus => 1.22,
+        FoodType.special => 1.34,
+      };
+      // Gentle per-tier pulse so higher-value food visibly "wants" attention.
+      final pulse = switch (food.type) {
+        FoodType.normal =>
+          1.0 + 0.02 * math.sin(animationTimeMs / 320.0),
+        FoodType.bonus =>
+          1.0 + 0.05 * math.sin(animationTimeMs / 220.0),
+        FoodType.special =>
+          1.0 + 0.08 * math.sin(animationTimeMs / 160.0),
+      };
+      final spriteRect = Rect.fromCenter(
+        center: Offset(centerX, centerY),
+        width: cellSize * tierScale,
+        height: cellSize * tierScale,
+      );
+      _drawGroundedSprite(canvas, sprite, spriteRect, scale: pulse);
+      return;
+    }
+
     switch (food.type) {
       case FoodType.normal:
         _drawNormalFood(canvas, rect);
@@ -1510,6 +1739,48 @@ class OptimizedGameBoardPainter extends CustomPainter {
         _drawSpecialFood(canvas, rect);
         break;
     }
+  }
+
+  /// Draw a pickup sprite with the shared contact-shadow blob underneath so
+  /// it sits "on" the board instead of floating.
+  void _drawGroundedSprite(
+    Canvas canvas,
+    ui.Image image,
+    Rect rect, {
+    double scale = 1.0,
+  }) {
+    final shadow = sprites?.foodShadow;
+    if (shadow != null) {
+      // The shadow art lives in the lower-middle of its canvas; drawing it
+      // into a slightly widened cell rect lands it under the sprite's base.
+      final shadowRect = Rect.fromCenter(
+        center: rect.center.translate(0, rect.height * 0.06),
+        width: rect.width * 1.15,
+        height: rect.height * 1.15,
+      );
+      final shadowPaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.5)
+        ..filterQuality = FilterQuality.medium;
+      canvas.drawImageRect(
+        shadow,
+        Rect.fromLTWH(
+            0, 0, shadow.width.toDouble(), shadow.height.toDouble()),
+        shadowRect,
+        shadowPaint,
+      );
+    }
+
+    final dst = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * scale,
+      height: rect.height * scale,
+    );
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      dst,
+      _spritePaint,
+    );
   }
 
   double _getFoodPadding(double cellSize, FoodType type) {
@@ -1809,6 +2080,36 @@ class OptimizedGameBoardPainter extends CustomPainter {
   ) {
     final crashPosition = gameState.crashPosition!;
     final crashReason = gameState.crashReason!;
+
+    // Comic-style impact star flashed at the crash cell for the first
+    // ~half second: scales up fast, spins slightly, fades out. Drawn under
+    // the shockwave ring so the ring stays the outline of the effect.
+    final star = sprites?.impactStar;
+    final crashT = crashElapsedSeconds;
+    if (star != null && crashT != null && crashT < 0.5) {
+      final p = (crashT / 0.5).clamp(0.0, 1.0);
+      final eased = Curves.easeOutCubic.transform(p);
+      final cellSize = math.min(cellWidth, cellHeight);
+      final size = cellSize * (1.2 + 1.6 * eased);
+      final center = Offset(
+        crashPosition.x * cellWidth + cellWidth / 2,
+        crashPosition.y * cellHeight + cellHeight / 2,
+      );
+      final paint = Paint()
+        ..color = Colors.white.withValues(alpha: 1.0 - eased)
+        ..filterQuality = FilterQuality.medium
+        ..isAntiAlias = true;
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(eased * 0.5);
+      canvas.drawImageRect(
+        star,
+        Rect.fromLTWH(0, 0, star.width.toDouble(), star.height.toDouble()),
+        Rect.fromCenter(center: Offset.zero, width: size, height: size),
+        paint,
+      );
+      canvas.restore();
+    }
 
     // Expanding "shockwave" ring at the crash cell — pulses outward each
     // cycle so the player's eye snaps to the cell that killed them. The
@@ -2329,36 +2630,43 @@ class GameBoardBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Base grid pattern matching home screen
+    // Grid aligned to the actual play cells. The old 35px pattern didn't
+    // match the 20px cell size, so the board's texture ran at a different
+    // (and misaligned) scale from everything the player interacts with —
+    // a big part of why the board read as a separate, "zoomed-in" surface.
+    // Drawing the real cell grid (faintly, on every theme) both anchors the
+    // texture to gameplay and telegraphs exact food/snake positions.
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = theme.accentColor.withValues(alpha: 0.08);
+      ..color = theme.accentColor.withValues(alpha: 0.06);
 
-    const gridSize = 35.0;
+    const gridSize = GameConstants.cellSize;
 
-    for (double x = 0; x < size.width; x += gridSize) {
+    for (double x = 0; x <= size.width; x += gridSize) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
 
-    for (double y = 0; y < size.height; y += gridSize) {
+    for (double y = 0; y <= size.height; y += gridSize) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
-    // Decorative shapes matching home screen
+    // Decorative shapes matching home screen — sized relative to the board
+    // (fixed radii used to blow up when the fixed-resolution world was
+    // scaled to the screen).
     final shapePaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = theme.foodColor.withValues(alpha: 0.025);
+      ..color = theme.foodColor.withValues(alpha: 0.02);
 
     canvas.drawCircle(
       Offset(size.width * 0.15, size.height * 0.25),
-      60,
+      size.shortestSide * 0.11,
       shapePaint,
     );
 
     canvas.drawCircle(
       Offset(size.width * 0.85, size.height * 0.75),
-      80,
+      size.shortestSide * 0.15,
       shapePaint,
     );
 

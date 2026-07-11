@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flame/components.dart';
+import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
+import 'package:snake_classic/game/flame/rendering/game_board_painter.dart'
+    show BoardSprites;
 import 'package:snake_classic/game/flame/components/game_particles_component.dart';
 import 'package:snake_classic/game/flame/components/legacy_board_component.dart';
 import 'package:snake_classic/game/flame/components/snake_trail_component.dart';
@@ -70,6 +73,10 @@ class SnakeFlameGame extends FlameGame {
   bool _lunging = false;
   double _lungeElapsed = 0;
 
+  /// Seconds since the crash started, or null when not crashed. The board
+  /// painter uses this to time the impact-star flash at the crash cell.
+  double? get crashElapsedOrNull => _lunging ? _lungeElapsed : null;
+
   // ---- In-world death sequence -----------------------------------------
   // Timeline (seconds since crash): 0-0.2 lunge → 0.2-0.55 the body
   // blinks white three times → 0.55-1.5 segments disintegrate tail-to-
@@ -95,6 +102,11 @@ class SnakeFlameGame extends FlameGame {
 
   GameParticlesComponent? _particles;
 
+  /// Generated pickup/effect art, decoded once per game instance. Null until
+  /// loaded (and stays null if loading fails) — the board painter falls back
+  /// to procedural shapes, so a missing/corrupt asset can never break a run.
+  BoardSprites? boardSprites;
+
   @override
   Future<void> onLoad() async {
     camera = CameraComponent.withFixedResolution(
@@ -106,12 +118,45 @@ class SnakeFlameGame extends FlameGame {
       ..anchor = Anchor.topLeft
       ..position = Vector2.zero();
 
+    await _loadBoardSprites();
+
     _particles = GameParticlesComponent();
     await world.addAll([
       LegacyBoardComponent(),
       SnakeTrailComponent(),
       _particles!,
     ]);
+  }
+
+  Future<void> _loadBoardSprites() async {
+    try {
+      final images = Flame.images;
+      final loaded = await Future.wait([
+        images.load('food/food_apple.png'),
+        images.load('food/food_golden.png'),
+        images.load('food/food_star.png'),
+        images.load('powerups/powerup_speed.png'),
+        images.load('powerups/powerup_shield.png'),
+        images.load('powerups/powerup_coin.png'),
+        images.load('powerups/powerup_slow.png'),
+        images.load('effects/food_shadow.png'),
+        images.load('effects/impact_star.png'),
+      ]);
+      boardSprites = BoardSprites(
+        foodApple: loaded[0],
+        foodGolden: loaded[1],
+        foodStar: loaded[2],
+        powerUpSpeed: loaded[3],
+        powerUpShield: loaded[4],
+        powerUpCoin: loaded[5],
+        powerUpSlow: loaded[6],
+        foodShadow: loaded[7],
+        impactStar: loaded[8],
+      );
+    } catch (e) {
+      debugPrint('SnakeFlameGame: sprite load failed, using procedural '
+          'rendering: $e');
+    }
   }
 
   /// Push the latest cubit state, theme and cosmetics into the game. A new
@@ -238,23 +283,60 @@ class SnakeFlameGame extends FlameGame {
       final target =
           gs.crashReason == model.CrashReason.wallCollision ? 0.5 : 1.0;
       moveProgress = Curves.easeOut.transform(lungeT) * target;
+      _updateCrashShake();
       _updateDeathSequence(gs);
       return;
     }
     _lunging = false;
     deathFlashAlpha = 0;
     deathKeepCount = _keepAll;
+    _clearCrashShake();
 
     if (gs.status != model.GameStatus.playing) {
       moveProgress = 0;
       return;
     }
 
-    final tickSeconds = gs.gameSpeed / 1000.0;
+    // Interpolate over the tick duration snapshotted at emit time — NOT the
+    // live gameSpeed getter. The getter jumps the instant a speed power-up is
+    // collected/expires, which used to move this denominator under an
+    // in-flight interpolation and visibly slide the snake back toward its
+    // previous cell (slowMotion) or snap it forward (speedBoost/level-up).
+    final tickSeconds = (cubitState.tickDurationMs ?? gs.gameSpeed) / 1000.0;
     _elapsedSinceTick += dt;
     moveProgress = tickSeconds <= 0
         ? 1.0
         : (_elapsedSinceTick / tickSeconds).clamp(0.0, 1.0);
+  }
+
+  // ---- Crash camera shake ------------------------------------------------
+  // A short decaying jolt of the whole board on impact, synced to the
+  // death-lunge clock. Deterministic (sin/cos of elapsed time) so revive
+  // replays cleanly and no Random is needed. World-space amplitude: ~6px of
+  // the 20px cell at the moment of impact, gone by 0.45s.
+  static const double _shakeDuration = 0.45;
+  bool _shaking = false;
+
+  void _updateCrashShake() {
+    final t = _lungeElapsed;
+    if (t >= _shakeDuration) {
+      _clearCrashShake();
+      return;
+    }
+    _shaking = true;
+    final falloff = 1.0 - (t / _shakeDuration);
+    final amp = 6.0 * falloff * falloff;
+    camera.viewfinder.position = Vector2(
+      math.sin(t * 85.0) * amp,
+      math.cos(t * 63.0) * amp * 0.8,
+    );
+  }
+
+  void _clearCrashShake() {
+    if (_shaking) {
+      camera.viewfinder.position = Vector2.zero();
+      _shaking = false;
+    }
   }
 
   /// Advance the flash + disintegration phases of the death sequence.

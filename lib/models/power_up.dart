@@ -48,6 +48,22 @@ enum PowerUpType {
     }
   }
 
+  /// Generated token sprite for this power-up — the same art the board
+  /// draws, reused in chrome (HUD ring, pause guide) via [PickupIcon] so
+  /// pickups look identical everywhere.
+  String get spriteAsset {
+    switch (this) {
+      case PowerUpType.speedBoost:
+        return 'assets/images/powerups/powerup_speed.png';
+      case PowerUpType.invincibility:
+        return 'assets/images/powerups/powerup_shield.png';
+      case PowerUpType.scoreMultiplier:
+        return 'assets/images/powerups/powerup_coin.png';
+      case PowerUpType.slowMotion:
+        return 'assets/images/powerups/powerup_slow.png';
+    }
+  }
+
   Color get color {
     switch (this) {
       case PowerUpType.speedBoost:

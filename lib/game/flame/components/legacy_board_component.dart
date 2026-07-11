@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/models/snake.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/game/flame/rendering/game_board_painter.dart';
 
@@ -23,6 +24,8 @@ class LegacyBoardComponent extends Component
   LegacyBoardComponent() : super(priority: 0);
 
   final Paint _bgPaint = Paint();
+  final Paint _ambientPaint = Paint();
+  GameTheme? _ambientTheme;
 
   @override
   void render(Canvas canvas) {
@@ -35,6 +38,25 @@ class LegacyBoardComponent extends Component
     // the theme background flourishes.
     _bgPaint.color = game.theme.backgroundColor;
     canvas.drawRect(Offset.zero & size, _bgPaint);
+
+    // Ambient light wash: the same top-right accent radial the screen
+    // background uses, so the playfield reads as a continuation of the
+    // scene instead of a separate flat-lit surface. Shader cached per theme.
+    if (_ambientTheme != game.theme) {
+      _ambientTheme = game.theme;
+      _ambientPaint.shader = RadialGradient(
+        center: Alignment.topRight,
+        radius: 1.5,
+        colors: [
+          game.theme.accentColor.withValues(alpha: 0.10),
+          game.theme.accentColor.withValues(alpha: 0.03),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.4, 0.8],
+      ).createShader(Offset.zero & size);
+    }
+    canvas.drawRect(Offset.zero & size, _ambientPaint);
+
     GameBoardBackgroundPainter(game.theme).paint(canvas, size);
 
     // Head intent shimmer — fade over a ~140ms window from the accept stamp
@@ -81,6 +103,8 @@ class LegacyBoardComponent extends Component
       animationTimeMs: ms,
       recentInputDirection: shimmerDir,
       recentInputShimmerAge: shimmerAge,
+      sprites: game.boardSprites,
+      crashElapsedSeconds: game.crashElapsedOrNull,
     ).paint(canvas, size);
 
     // Death flash: the body blinks white in the beat between the crash

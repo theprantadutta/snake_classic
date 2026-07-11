@@ -54,6 +54,16 @@ class GameCubitState extends Equatable {
   /// game. [TournamentScoreSubmission.none] outside tournament games.
   final TournamentScoreSubmission tournamentScoreSubmission;
 
+  /// The exact duration (ms) of the tick interval that started when this
+  /// state was emitted — i.e. the window over which the renderer should
+  /// interpolate previousGameState → gameState. Snapshotted by the cubit at
+  /// emit time so it can never change under an in-flight interpolation
+  /// (gameState.gameSpeed is a live getter that jumps the moment a speed
+  /// power-up is collected or expires, which used to make the rendered snake
+  /// slide back toward its previous cell). Also carries the level-up tick
+  /// stretch so the renderer and the timer agree.
+  final int? tickDurationMs;
+
   const GameCubitState({
     this.status = GamePlayStatus.initial,
     this.gameState,
@@ -67,6 +77,7 @@ class GameCubitState extends Equatable {
     this.offeringRevive = false,
     this.offeringTimeBonus = false,
     this.tournamentScoreSubmission = TournamentScoreSubmission.none,
+    this.tickDurationMs,
   });
 
   /// Initial state
@@ -86,6 +97,7 @@ class GameCubitState extends Equatable {
     bool? offeringRevive,
     bool? offeringTimeBonus,
     TournamentScoreSubmission? tournamentScoreSubmission,
+    int? tickDurationMs,
     bool clearTournament = false,
     bool clearPreviousGameState = false,
     bool clearRejectedInput = false,
@@ -118,6 +130,7 @@ class GameCubitState extends Equatable {
       tournamentScoreSubmission: clearTournament
           ? TournamentScoreSubmission.none
           : (tournamentScoreSubmission ?? this.tournamentScoreSubmission),
+      tickDurationMs: tickDurationMs ?? this.tickDurationMs,
     );
   }
 
@@ -192,5 +205,6 @@ class GameCubitState extends Equatable {
     offeringRevive,
     offeringTimeBonus,
     tournamentScoreSubmission,
+    tickDurationMs,
   ];
 }

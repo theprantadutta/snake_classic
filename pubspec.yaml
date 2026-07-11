@@ -144,6 +144,12 @@ flutter:
   assets:
     - assets/audio/
     - assets/images/
+    # Generated pickup/effect sprites (see generate-assets.md). Flutter
+    # directory entries are non-recursive, so subfolders are listed
+    # explicitly.
+    - assets/images/food/
+    - assets/images/powerups/
+    - assets/images/effects/
     - assets/legal/
     # Orbitron + Rajdhani static instances, bundled so google_fonts loads
     # them from assets instead of fetching from fonts.gstatic.com at runtime.

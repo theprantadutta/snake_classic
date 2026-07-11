@@ -144,6 +144,13 @@ class GameCubit extends Cubit<GameCubitState> {
   // surfaced via GameCubitState.coinsEarnedThisGame for the game-over screen.
   int _currentGameCoinsEarned = 0;
 
+  // Level-up coin grants buffered during play. Awarding coins does a Drift
+  // write + outbox enqueue + CoinsCubit emit + SharedPreferences daily-cap
+  // write — too heavy to ride a gameplay tick (it landed exactly on the
+  // level-up bite and contributed to the post-eat lag). Buffered here and
+  // flushed at game end / reset / close instead.
+  final List<int> _pendingLevelUpCoinLevels = [];
+
   GameCubit({
     required AudioService audioService,
     required HapticService hapticService,
@@ -246,6 +253,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _updateCount = 0;
     _bpMilestonesThisGame.clear();
     _currentGameCoinsEarned = 0;
+    _pendingLevelUpCoinLevels.clear();
     _revivedThisGame = false;
     _timeBonusesUsed = 0;
     // Snapshot Pro status once at game start — sticky for the session.
@@ -612,14 +620,17 @@ class GameCubit extends Cubit<GameCubitState> {
     _scheduleNextGameTick();
   }
 
-  /// Schedules the next game tick using the current game speed.
-  /// This pattern allows speed changes to take effect immediately
-  /// without causing a pause when the timer is restarted.
-  void _scheduleNextGameTick() {
-    var speed = state.gameState?.gameSpeed ?? 150;
-    // Level-up beat: stretch the next ~300ms by 1.5x so the level
-    // transition is felt, not just seen. Window is cleared automatically
-    // when DateTime.now() passes the deadline.
+  /// Tick duration computed by _updateGame for the tick it just emitted, so
+  /// the armed timer and the state's [tickDurationMs] snapshot are the exact
+  /// same number. Consumed (and cleared) by _scheduleNextGameTick; null when
+  /// scheduling happens outside a tick (loop start / resume).
+  int? _pendingTickDurationMs;
+
+  /// Duration of the upcoming tick: current speed, stretched 1.5x while the
+  /// level-up beat window is open. The window is cleared automatically when
+  /// DateTime.now() passes the deadline.
+  int _computeNextTickDurationMs(int baseSpeed) {
+    var speed = baseSpeed;
     final slowdown = _levelUpSlowdownUntil;
     if (slowdown != null) {
       if (DateTime.now().isBefore(slowdown)) {
@@ -628,6 +639,16 @@ class GameCubit extends Cubit<GameCubitState> {
         _levelUpSlowdownUntil = null;
       }
     }
+    return speed;
+  }
+
+  /// Schedules the next game tick using the current game speed.
+  /// This pattern allows speed changes to take effect immediately
+  /// without causing a pause when the timer is restarted.
+  void _scheduleNextGameTick() {
+    final speed = _pendingTickDurationMs ??
+        _computeNextTickDurationMs(state.gameState?.gameSpeed ?? 150);
+    _pendingTickDurationMs = null;
     final level = state.gameState?.level ?? 1;
     if (_updateCount <= 5 || _updateCount % 100 == 0) {
       debugPrint(
@@ -810,13 +831,11 @@ class GameCubit extends Cubit<GameCubitState> {
               DateTime.now().add(const Duration(milliseconds: 300));
           _analytics.trackLevelUp(event.toLevel);
 
-          // Award coins for every level gained this tick.
+          // Buffer the coin award for every level gained this tick; the
+          // actual grant (Drift write + emits) is flushed at game end so
+          // no storage work runs during the tick.
           for (var lvl = event.fromLevel + 1; lvl <= event.toLevel; lvl++) {
-            final levelForCoins = lvl;
-            Future.microtask(() => _earnAndTrack(
-                  CoinEarningSource.levelUp,
-                  metadata: {'level': levelForCoins},
-                ));
+            _pendingLevelUpCoinLevels.add(lvl);
           }
         case PowerUpCollectedEvent():
           collectedPowerUp = true;
@@ -880,9 +899,16 @@ class GameCubit extends Cubit<GameCubitState> {
           .removeWhere((type, _) => !activeTypes.contains(type));
     }
 
+    // Snapshot the upcoming tick's duration once: the emitted state carries it
+    // for the renderer's interpolation window, and _scheduleNextGameTick (which
+    // runs right after this method returns) arms the timer with the same value.
+    final nextTickMs = _computeNextTickDurationMs(newGameState.gameSpeed);
+    _pendingTickDurationMs = nextTickMs;
+
     final newCubitState = state.copyWith(
       gameState: newGameState,
       previousGameState: previousState,
+      tickDurationMs: nextTickMs,
     );
 
     if (_updateCount <= 5) {
@@ -1491,6 +1517,8 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackRemaining = null;
     unawaited(_audioService.stopGameplayMusic());
     _gameRecorder.stopRecording();
+    // Don't lose level-up coins if the run is abandoned before game over.
+    unawaited(_flushPendingLevelUpCoins());
 
     final highScore =
         state.gameState?.highScore ?? _settingsCubit.state.highScore;
@@ -1519,6 +1547,8 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackTimer = null;
     _timeAttackRemaining = null;
     _gameRecorder.stopRecording();
+    // Don't lose level-up coins if the run is abandoned before game over.
+    unawaited(_flushPendingLevelUpCoins());
 
     emit(
       state.copyWith(
@@ -1865,6 +1895,10 @@ class GameCubit extends Cubit<GameCubitState> {
     required int gameDurationSeconds,
   }) async {
     try {
+      // Grant the level-up coins buffered during play first, so the
+      // per-game total emitted below includes them.
+      await _flushPendingLevelUpCoins();
+
       // Base coins + bonus based on score (1 base + 1 per 200 points, max 10)
       final coinsEarned = (1 + (score ~/ 200)).clamp(1, 10);
 
@@ -1912,6 +1946,20 @@ class GameCubit extends Cubit<GameCubitState> {
       );
     } catch (e) {
       AppLogger.error('Error awarding game completion coins', e);
+    }
+  }
+
+  /// Grant every buffered level-up coin award. Safe to call more than once —
+  /// the buffer is drained up front.
+  Future<void> _flushPendingLevelUpCoins() async {
+    if (_pendingLevelUpCoinLevels.isEmpty) return;
+    final levels = List<int>.from(_pendingLevelUpCoinLevels);
+    _pendingLevelUpCoinLevels.clear();
+    for (final level in levels) {
+      await _earnAndTrack(
+        CoinEarningSource.levelUp,
+        metadata: {'level': level},
+      );
     }
   }
 

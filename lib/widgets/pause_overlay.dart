@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/models/food.dart';
+import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/pickup_icon.dart';
 
 class PauseOverlay extends StatefulWidget {
   final GameTheme theme;
@@ -405,9 +408,12 @@ class _PauseOverlayState extends State<PauseOverlay> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildFoodItem('🍎', '10 pts'),
-                _buildFoodItem('✨', '25 pts'),
-                _buildFoodItem('⭐', '50 pts'),
+                _buildFoodItem(
+                    PickupIcon.food(FoodType.normal, size: 22), '10 pts'),
+                _buildFoodItem(
+                    PickupIcon.food(FoodType.bonus, size: 22), '25 pts'),
+                _buildFoodItem(
+                    PickupIcon.food(FoodType.special, size: 22), '50 pts'),
               ],
             ),
 
@@ -429,10 +435,22 @@ class _PauseOverlayState extends State<PauseOverlay> {
             // POWER-UPS
             _buildGuideSubheader('POWER-UPS'),
             const SizedBox(height: 4),
-            _buildGuideRow('⚡', 'Speed Boost', '7s'),
-            _buildGuideRow('🛡', 'Invincibility', '6s'),
-            _buildGuideRow('✨', 'Score 2×', '10s'),
-            _buildGuideRow('🐢', 'Slow Motion', '8s'),
+            _buildGuideRowIcon(
+                PickupIcon.powerUp(PowerUpType.speedBoost, size: 15),
+                'Speed Boost',
+                '7s'),
+            _buildGuideRowIcon(
+                PickupIcon.powerUp(PowerUpType.invincibility, size: 15),
+                'Invincibility',
+                '6s'),
+            _buildGuideRowIcon(
+                PickupIcon.powerUp(PowerUpType.scoreMultiplier, size: 15),
+                'Score 2×',
+                '10s'),
+            _buildGuideRowIcon(
+                PickupIcon.powerUp(PowerUpType.slowMotion, size: 15),
+                'Slow Motion',
+                '8s'),
             const SizedBox(height: 2),
             _buildGuideHint(
               'The ring around the icon drains as it expires. Timer freezes on pause.',
@@ -479,11 +497,21 @@ class _PauseOverlayState extends State<PauseOverlay> {
   }
 
   Widget _buildGuideRow(String emoji, String label, String value) {
+    return _buildGuideRowIcon(
+      Text(emoji, style: const TextStyle(fontSize: 12)),
+      label,
+      value,
+    );
+  }
+
+  /// Guide row with a widget icon — used for the pickup rows so they show
+  /// the same sprite art as the board.
+  Widget _buildGuideRowIcon(Widget icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1.5),
       child: Row(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 12)),
+          SizedBox(width: 16, child: Center(child: icon)),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -520,11 +548,11 @@ class _PauseOverlayState extends State<PauseOverlay> {
     );
   }
 
-  Widget _buildFoodItem(String emoji, String points) {
+  Widget _buildFoodItem(Widget icon, String points) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 20)),
+        icon,
         const SizedBox(height: 2),
         Text(
           points,

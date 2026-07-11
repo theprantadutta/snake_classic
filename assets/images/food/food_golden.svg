@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><radialGradient id="h" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFF3B0" stop-opacity="0.5"></stop>
+    <stop offset="55%" stop-color="#FFF3B0" stop-opacity="0.2"></stop>
+    <stop offset="100%" stop-color="#FFF3B0" stop-opacity="0"></stop>
+  </radialGradient><radialGradient id="g" cx="42%" cy="34%" r="72%"><stop offset="0%" stop-color="#FFE770"></stop><stop offset="55%" stop-color="#FFD700"></stop><stop offset="100%" stop-color="#FF9800"></stop></radialGradient></defs>
+  <circle cx="256" cy="256" r="248" fill="url(#h)"></circle>
+  <circle cx="256" cy="262" r="150" fill="url(#g)" stroke="#1A1A2E" stroke-width="26"></circle>
+  <ellipse cx="212" cy="212" rx="42" ry="60" fill="#FFF7CC" opacity="0.7" transform="rotate(-25 212 212)"></ellipse>
+  
+    <path d="M130 124 L137.28 142.72 L156 150 L137.28 157.28 L130 176 L122.72 157.28 L104 150 L122.72 142.72Z" fill="#fff"></path>
+    <path d="M402 160 L407.6 174.4 L422 180 L407.6 185.6 L402 200 L396.4 185.6 L382 180 L396.4 174.4Z" fill="#fff"></path>
+    <path d="M356 344 L360.48 355.52 L372 360 L360.48 364.48 L356 376 L351.52 364.48 L340 360 L351.52 355.52Z" fill="#fff"></path>
+</svg>

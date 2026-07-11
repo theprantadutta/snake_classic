@@ -45,80 +45,48 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
     );
   }
 
-  /// Boundary frame for the playfield — glowing border plus the multi-layer
-  /// ambient/depth shadows. Ported verbatim from the legacy `GameBoard`
-  /// decoration (tournament mode swaps in the purple/gold glow) so the Flame
-  /// board frames the playfield identically to the Flutter one.
+  /// Boundary frame for the playfield. Deliberately light-handed: the board
+  /// interior now continues the screen background's ambient gradient and
+  /// grid, so the frame only needs to mark the wall line — a thin accent
+  /// hairline and one soft glow — instead of the old heavy 3-4px border +
+  /// four stacked shadows that made the playfield look like a separate,
+  /// zoomed-in panel floating over the scene. Tournament mode keeps its
+  /// purple/gold identity, similarly slimmed.
   BoxDecoration _boardFrameDecoration(GameTheme theme) {
     return BoxDecoration(
-      gradient: RadialGradient(
-        center: Alignment.topRight,
-        radius: 1.5,
-        colors: [
-          theme.accentColor.withValues(alpha: 0.12),
-          theme.backgroundColor.withValues(alpha: 0.98),
-          theme.backgroundColor,
-          Colors.black.withValues(alpha: 0.08),
-        ],
-        stops: const [0.0, 0.4, 0.8, 1.0],
-      ),
       border: Border.all(
         color: widget.isTournamentMode
-            ? Colors.purple.withValues(alpha: 0.7)
-            : theme.accentColor.withValues(alpha: 0.5),
-        width: widget.isTournamentMode ? 4.0 : 3.0,
+            ? Colors.purple.withValues(alpha: 0.55)
+            : theme.accentColor.withValues(alpha: 0.35),
+        width: widget.isTournamentMode ? 2.0 : 1.5,
       ),
       borderRadius: BorderRadius.circular(0),
       boxShadow: widget.isTournamentMode
           ? [
               BoxShadow(
-                color: Colors.purple.withValues(alpha: 0.35),
-                blurRadius: 20,
+                color: Colors.purple.withValues(alpha: 0.22),
+                blurRadius: 18,
                 offset: const Offset(0, 0),
               ),
               BoxShadow(
-                color: Colors.amber.withValues(alpha: 0.25),
+                color: Colors.amber.withValues(alpha: 0.12),
                 blurRadius: 28,
                 spreadRadius: 2,
-                offset: const Offset(0, 0),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 24,
-                spreadRadius: 1,
-                offset: const Offset(0, 12),
-              ),
-              BoxShadow(
-                color: Colors.purple.withValues(alpha: 0.2),
-                blurRadius: 48,
-                spreadRadius: -4,
                 offset: const Offset(0, 0),
               ),
             ]
           : [
               BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.25),
-                blurRadius: 16,
-                spreadRadius: -1,
+                color: theme.accentColor.withValues(alpha: 0.16),
+                blurRadius: 18,
+                spreadRadius: -2,
                 offset: const Offset(0, 0),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 24,
-                spreadRadius: 1,
-                offset: const Offset(0, 12),
-              ),
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.1),
-                blurRadius: 8,
-                spreadRadius: -4,
-                offset: const Offset(0, -4),
-              ),
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.15),
-                blurRadius: 48,
-                spreadRadius: -8,
-                offset: const Offset(0, 0),
+                color: Colors.black.withValues(alpha: 0.22),
+                blurRadius: 14,
+                spreadRadius: 0,
+                offset: const Offset(0, 6),
               ),
             ],
     );
@@ -170,7 +138,10 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                 // Container so both renderers frame the board identically.
                 return RepaintBoundary(
                   child: Container(
-                    margin: const EdgeInsets.all(8.0),
+                    // No extra margin: the game screen already pads the board
+                    // slot; the old 8px on top of that shrank the playfield
+                    // and deepened the floating-panel look.
+                    margin: EdgeInsets.zero,
                     decoration: _boardFrameDecoration(themeState.currentTheme),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(0),

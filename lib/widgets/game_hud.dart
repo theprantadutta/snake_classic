@@ -6,6 +6,7 @@ import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/pickup_icon.dart';
 
 class GameHUD extends StatefulWidget {
   final GameState gameState;
@@ -601,11 +602,6 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   }
 
   Widget _buildFoodChip(Food food) {
-    final emoji = switch (food.type) {
-      FoodType.normal => '🍎',
-      FoodType.bonus => '⭐',
-      FoodType.special => '💎',
-    };
     final color = switch (food.type) {
       FoodType.normal => Colors.red,
       FoodType.bonus => Colors.amber,
@@ -644,14 +640,12 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // `height: 1.0` clamps the text-box to its glyph height so
-            // emoji-font-metric variance doesn't sneak extra pixels in.
-            Text(
-              emoji,
-              style: TextStyle(
-                fontSize: isSmallScreen ? 12 : 14,
-                height: 1.0,
-              ),
+            // The board's sprite art, so the chip previews exactly what's
+            // sitting on the playfield (fixed square, no font-metric
+            // height variance).
+            PickupIcon.food(
+              food.type,
+              size: isSmallScreen ? 14 : 16,
             ),
             const SizedBox(width: 4),
             Text(
@@ -929,7 +923,6 @@ class _PowerUpRingState extends State<_PowerUpRing>
       builder: (context, _) {
         final powerUp = widget.powerUp;
         final size = widget.size;
-        final isSmallScreen = widget.isSmallScreen;
         final progress = 1.0 - powerUp.progress;
         final isUrgent = powerUp.remainingTime.inSeconds <= 3;
 
@@ -961,25 +954,20 @@ class _PowerUpRingState extends State<_PowerUpRing>
                     ),
                   ),
                 ),
-                Container(
-                  width: size * 0.62,
-                  height: size * 0.62,
-                  decoration: BoxDecoration(
-                    color: isUrgent
-                        ? Colors.red.withValues(alpha: 0.9)
-                        : powerUp.type.color.withValues(alpha: 0.85),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      powerUp.type.icon,
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 10 : 12,
-                        fontWeight: FontWeight.bold,
-                      ),
+                // The board's token sprite (already a round badge), so the
+                // ring previews exactly what was collected. Urgency is
+                // carried by the red ring + throb; when urgent a red disc
+                // behind the token keeps the old "flashing red" read.
+                if (isUrgent)
+                  Container(
+                    width: size * 0.66,
+                    height: size * 0.66,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.85),
+                      shape: BoxShape.circle,
                     ),
                   ),
-                ),
+                PickupIcon.powerUp(powerUp.type, size: size * 0.72),
               ],
             ),
           ),
