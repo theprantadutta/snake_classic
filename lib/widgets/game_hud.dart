@@ -642,10 +642,11 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           children: [
             // The board's sprite art, so the chip previews exactly what's
             // sitting on the playfield (fixed square, no font-metric
-            // height variance).
+            // height variance). _s() keeps tablet parity: the emoji this
+            // replaced grew via the root textScaler, images don't.
             PickupIcon.food(
               food.type,
-              size: isSmallScreen ? 14 : 16,
+              size: _s(isSmallScreen ? 14 : 16),
             ),
             const SizedBox(width: 4),
             Text(

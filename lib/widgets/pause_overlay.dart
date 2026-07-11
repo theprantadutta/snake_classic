@@ -11,6 +11,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/pickup_icon.dart';
 
@@ -408,12 +409,20 @@ class _PauseOverlayState extends State<PauseOverlay> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                // context.scaled keeps tablet parity: the emojis these
+                // replaced grew via the root textScaler, images don't.
                 _buildFoodItem(
-                    PickupIcon.food(FoodType.normal, size: 22), '10 pts'),
+                    PickupIcon.food(FoodType.normal,
+                        size: context.scaled(22)),
+                    '10 pts'),
                 _buildFoodItem(
-                    PickupIcon.food(FoodType.bonus, size: 22), '25 pts'),
+                    PickupIcon.food(FoodType.bonus,
+                        size: context.scaled(22)),
+                    '25 pts'),
                 _buildFoodItem(
-                    PickupIcon.food(FoodType.special, size: 22), '50 pts'),
+                    PickupIcon.food(FoodType.special,
+                        size: context.scaled(22)),
+                    '50 pts'),
               ],
             ),
 
@@ -436,19 +445,23 @@ class _PauseOverlayState extends State<PauseOverlay> {
             _buildGuideSubheader('POWER-UPS'),
             const SizedBox(height: 4),
             _buildGuideRowIcon(
-                PickupIcon.powerUp(PowerUpType.speedBoost, size: 15),
+                PickupIcon.powerUp(PowerUpType.speedBoost,
+                    size: context.scaled(15)),
                 'Speed Boost',
                 '7s'),
             _buildGuideRowIcon(
-                PickupIcon.powerUp(PowerUpType.invincibility, size: 15),
+                PickupIcon.powerUp(PowerUpType.invincibility,
+                    size: context.scaled(15)),
                 'Invincibility',
                 '6s'),
             _buildGuideRowIcon(
-                PickupIcon.powerUp(PowerUpType.scoreMultiplier, size: 15),
+                PickupIcon.powerUp(PowerUpType.scoreMultiplier,
+                    size: context.scaled(15)),
                 'Score 2×',
                 '10s'),
             _buildGuideRowIcon(
-                PickupIcon.powerUp(PowerUpType.slowMotion, size: 15),
+                PickupIcon.powerUp(PowerUpType.slowMotion,
+                    size: context.scaled(15)),
                 'Slow Motion',
                 '8s'),
             const SizedBox(height: 2),
@@ -511,7 +524,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
       padding: const EdgeInsets.symmetric(vertical: 1.5),
       child: Row(
         children: [
-          SizedBox(width: 16, child: Center(child: icon)),
+          // Slot scales with the icon it holds (icons are context.scaled
+          // at the call sites for tablet parity).
+          SizedBox(width: context.scaled(16), child: Center(child: icon)),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
