@@ -79,6 +79,11 @@ class GameCubit extends Cubit<GameCubitState> {
   Timer? _timeAttackTimer;
   Duration? _timeAttackRemaining;
 
+  // Delays the post-crash revive offer until the death animation has played
+  // (the offer used to cover the crash the instant it happened). Guarded by
+  // run id + status inside the callback; cancelled on reset/close.
+  Timer? _reviveOfferTimer;
+
   final GameRecorder _gameRecorder = GameRecorder();
 
   /// Pure game mechanics (movement, collision, spawning, combo/level). The
@@ -1068,6 +1073,12 @@ class GameCubit extends Cubit<GameCubitState> {
       // button instead of watch-ad/coins). Without this, a Pro user short on
       // coins would get no revive offer at all.
       if (adsPossible || canAfford || _isPro) {
+        // Commit the crash frame FIRST — without the revive offer — so the
+        // player actually sees what killed them: the death lunge, white
+        // blink, shockwave + X/self-collision marker, and the tail-to-head
+        // disintegration (the in-world sequence runs ~1.5s). The offer used
+        // to appear in the same frame as the crash, covering all of it —
+        // players had no idea what happened before being asked to revive.
         emit(
           state.copyWith(
             status: GamePlayStatus.crashed,
@@ -1080,9 +1091,28 @@ class GameCubit extends Cubit<GameCubitState> {
               showCrashModal: false,
             ),
             previousGameState: preMoveState,
-            offeringRevive: true,
           ),
         );
+
+        // Raise the offer once the death has played out. Players who chose
+        // the "skip" crash-feedback setting have said they want speed —
+        // they get a short impact beat instead of the full sequence.
+        final skipFeedback = _settingsCubit.state.crashFeedbackDuration
+                .inSeconds ==
+            GameConstants.crashFeedbackSkip;
+        final reviveDelay = skipFeedback
+            ? const Duration(milliseconds: 600)
+            : const Duration(milliseconds: 1800);
+        final runId = _runId;
+        _reviveOfferTimer?.cancel();
+        _reviveOfferTimer = Timer(reviveDelay, () {
+          // Only offer if this exact crash is still on screen: same run,
+          // still crashed, nothing else resolved it meanwhile.
+          if (runId != _runId) return;
+          if (state.status != GamePlayStatus.crashed) return;
+          if (state.offeringRevive) return;
+          emit(state.copyWith(offeringRevive: true));
+        });
         return;
       }
     }
@@ -1422,6 +1452,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackTimer?.cancel();
     _timeAttackTimer = null;
     _timeAttackRemaining = null;
+    _reviveOfferTimer?.cancel();
     unawaited(_audioService.stopGameplayMusic());
     _gameRecorder.stopRecording();
     // Don't lose level-up coins if the run is abandoned before game over.
@@ -1453,6 +1484,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackTimer?.cancel();
     _timeAttackTimer = null;
     _timeAttackRemaining = null;
+    _reviveOfferTimer?.cancel();
     _gameRecorder.stopRecording();
     // Don't lose level-up coins if the run is abandoned before game over.
     unawaited(_flushPendingLevelUpCoins());
@@ -1707,6 +1739,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _gameTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
+    _reviveOfferTimer?.cancel();
     _rejectedInputClearTimer?.cancel();
     _acceptedInputClearTimer?.cancel();
     return super.close();
