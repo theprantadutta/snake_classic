@@ -56,6 +56,14 @@ Owns the run lifecycle, NOT the mechanics and NOT the rendering:
   renderer. Never interpolate against the live `gameState.gameSpeed` getter —
   it jumps when speed power-ups collect/expire and the snake visibly slides
   backward/forward (that was a real bug).
+- **Mid-tick emits must not restart interpolation**: some emits swap the
+  `gameState` object without a tick having happened (the periodic power-up
+  spawn timer, armed power-up activation). The renderer restarts its
+  interpolation clock only when `previousGameState` identity changes —
+  which tick emits always do and mid-tick emits never do. Keying the reset
+  on `gameState` identity made the snake visibly snap back and re-run its
+  move every time a power-up appeared (that was also a real bug). If you
+  add a new mid-tick emit, do NOT touch `previousGameState`.
 - **`GameCubitState.tickEvents`**: the emitted per-tick events — the single
   source of truth for "what happened". Consumers key off
   `identical(gameState)` changes and read these. Do not add state-diffing

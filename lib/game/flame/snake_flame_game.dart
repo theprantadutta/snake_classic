@@ -177,7 +177,17 @@ class SnakeFlameGame extends FlameGame {
     if (!identical(incoming, _lastProcessed)) {
       _emitEventParticles(newState.tickEvents, _lastProcessed, incoming);
       _lastProcessed = incoming;
-      _interpolatedReset(incoming);
+      // Restart the inter-tick interpolation clock ONLY when a new tick
+      // actually committed. Tick emits stamp a fresh previousGameState;
+      // mid-tick emits — the periodic power-up spawn, armed power-up
+      // activation — swap the gameState object WITHOUT moving the snake,
+      // and resetting the clock for those snapped the rendered snake back
+      // toward previousGameState and re-ran the cell animation (a visible
+      // rollback every time a power-up appeared on the board).
+      if (!identical(newState.previousGameState, _interpolationBasis)) {
+        _interpolationBasis = newState.previousGameState;
+        _elapsedSinceTick = 0;
+      }
     }
     cubitState = newState;
 
@@ -195,13 +205,10 @@ class SnakeFlameGame extends FlameGame {
     }
   }
 
-  model.GameState? _interpolatedFrom;
-  void _interpolatedReset(model.GameState? incoming) {
-    if (!identical(incoming, _interpolatedFrom)) {
-      _interpolatedFrom = incoming;
-      _elapsedSinceTick = 0;
-    }
-  }
+  /// The previousGameState of the last tick whose interpolation we started.
+  /// Tick emits (and only tick emits) replace previousGameState, so identity
+  /// change here == "a new tick committed".
+  model.GameState? _interpolationBasis;
 
   /// Emit particle bursts for this tick. Food / power-up bursts come straight
   /// from the simulation's [TickEvent]s carried on the cubit state — the
