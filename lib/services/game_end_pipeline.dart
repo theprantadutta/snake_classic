@@ -31,22 +31,15 @@ import 'package:snake_classic/utils/logger.dart';
 /// accounting and state emission.
 class GameEndPipeline {
   GameEndPipeline({
-    required StatisticsService statisticsService,
-    required AchievementService achievementService,
-    required CoinsCubit coinsCubit,
-    required BattlePassCubit battlePassCubit,
-    required DailyChallengeService dailyChallengeService,
-    required WeeklyQuestService weeklyQuestService,
-    required ProgressionService progressionService,
-    required AppDataCache appDataCache,
-  })  : _statisticsService = statisticsService,
-        _achievementService = achievementService,
-        _coinsCubit = coinsCubit,
-        _battlePassCubit = battlePassCubit,
-        _dailyChallengeService = dailyChallengeService,
-        _weeklyQuestService = weeklyQuestService,
-        _progressionService = progressionService,
-        _appDataCache = appDataCache;
+    required this._statisticsService,
+    required this._achievementService,
+    required this._coinsCubit,
+    required this._battlePassCubit,
+    required this._dailyChallengeService,
+    required this._weeklyQuestService,
+    required this._progressionService,
+    required this._appDataCache,
+  });
 
   final StatisticsService _statisticsService;
   final AchievementService _achievementService;

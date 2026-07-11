@@ -48,14 +48,11 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   bool _reloadingFromDrift = false;
 
   BattlePassCubit({
-    required StorageService storageService,
-    PremiumCubit? premiumCubit,
-    required AnalyticsFacade analytics,
+    required this._storageService,
+    this._premiumCubit,
+    required this._analytics,
     required ProgressionService progressionService,
-  }) : _storageService = storageService,
-       _premiumCubit = premiumCubit,
-       _analytics = analytics,
-       _progression = progressionService,
+  }) : _progression = progressionService,
        super(BattlePassState.initial());
 
   @override

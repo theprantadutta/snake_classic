@@ -39,15 +39,11 @@ class PremiumCubit extends Cubit<PremiumState> {
   bool _reloadingFromDrift = false;
 
   PremiumCubit({
-    required PurchaseService purchaseService,
-    required StorageService storageService,
-    CoinsCubit? coinsCubit,
-    required AnalyticsFacade analytics,
-  }) : _purchaseService = purchaseService,
-       _storageService = storageService,
-       _coinsCubit = coinsCubit,
-       _analytics = analytics,
-       super(PremiumState.initial());
+    required this._purchaseService,
+    required this._storageService,
+    this._coinsCubit,
+    required this._analytics,
+  }) : super(PremiumState.initial());
 
   /// Initialize premium status
   Future<void> initialize() async {

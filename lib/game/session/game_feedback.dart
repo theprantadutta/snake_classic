@@ -15,10 +15,9 @@ import 'package:snake_classic/services/haptic_service.dart';
 /// particles).
 class GameFeedback {
   GameFeedback({
-    required AudioService audioService,
-    required HapticService hapticService,
-  })  : _audioService = audioService,
-        _hapticService = hapticService;
+    required this._audioService,
+    required this._hapticService,
+  });
 
   final AudioService _audioService;
   final HapticService _hapticService;

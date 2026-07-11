@@ -62,19 +62,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   bool _myAliveLastTick = true;
 
   MultiplayerCubit({
-    required MultiplayerService multiplayerService,
-    required UnifiedUserService userService,
-    required AudioService audioService,
-    required HapticService hapticService,
-    required AnalyticsFacade analytics,
-    required GameEndPipeline endPipeline,
-  }) : _multiplayerService = multiplayerService,
-       _userService = userService,
-       _audioService = audioService,
-       _hapticService = hapticService,
-       _analytics = analytics,
-       _endPipeline = endPipeline,
-       super(MultiplayerState.initial()) {
+    required this._multiplayerService,
+    required this._userService,
+    required this._audioService,
+    required this._hapticService,
+    required this._analytics,
+    required this._endPipeline,
+  }) : super(MultiplayerState.initial()) {
     // Start listening to matchmaking stream
     _startMatchmakingListener();
     // Start listening to error stream

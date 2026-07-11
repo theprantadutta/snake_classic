@@ -59,11 +59,9 @@ class ReviewService {
 
   ReviewService({
     InAppReview? inAppReview,
-    required StatisticsService statisticsService,
-    required AnalyticsFacade analytics,
-  })  : _inAppReview = inAppReview ?? InAppReview.instance,
-        _statisticsService = statisticsService,
-        _analytics = analytics;
+    required this._statisticsService,
+    required this._analytics,
+  }) : _inAppReview = inAppReview ?? InAppReview.instance;
 
   /// Ask the platform to consider showing a review prompt, if [trigger] is
   /// strong enough and the user has crossed the local eligibility gates.
