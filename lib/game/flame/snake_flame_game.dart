@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
+import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/game/flame/rendering/game_board_painter.dart'
     show BoardSprites;
 import 'package:snake_classic/game/flame/components/game_particles_component.dart';
@@ -174,7 +175,7 @@ class SnakeFlameGame extends FlameGame {
 
     final incoming = newState.gameState;
     if (!identical(incoming, _lastProcessed)) {
-      _detectEvents(_lastProcessed, incoming);
+      _emitEventParticles(newState.tickEvents, _lastProcessed, incoming);
       _lastProcessed = incoming;
       _interpolatedReset(incoming);
     }
@@ -202,43 +203,40 @@ class SnakeFlameGame extends FlameGame {
     }
   }
 
-  /// Emit particle bursts for food consumed / power-up collected / crash,
-  /// comparing the previously-processed state against the new one. Ported from
-  /// the legacy GameBoard `_checkForGameEvents`.
-  void _detectEvents(model.GameState? previous, model.GameState? current) {
+  /// Emit particle bursts for this tick. Food / power-up bursts come straight
+  /// from the simulation's [TickEvent]s carried on the cubit state — the
+  /// events know exactly which food was eaten and where, so there is no
+  /// state-diffing (and no way to disagree with the cubit or the screen
+  /// about what happened). Crash bursts keep a status diff because the crash
+  /// emit happens outside the tick path and carries no events.
+  void _emitEventParticles(
+    List<TickEvent> events,
+    model.GameState? previous,
+    model.GameState? current,
+  ) {
     final particles = _particles;
-    if (particles == null || previous == null || current == null) return;
+    if (particles == null || current == null) return;
 
-    // Food consumed: locate which food the head moved onto last frame so the
-    // burst lands on the exact eaten cell (multi-food safe).
-    if (current.score > previous.score) {
-      final eatenCell = current.snake.head;
-      Food? eaten;
-      if (previous.food != null && previous.food!.position == eatenCell) {
-        eaten = previous.food;
-      } else {
-        for (final f in previous.foods) {
-          if (f.position == eatenCell) {
-            eaten = f;
-            break;
-          }
-        }
+    for (final event in events) {
+      switch (event) {
+        case FoodEatenEvent():
+          particles.emitAt(
+            _cellCenter(event.food.position.x, event.food.position.y),
+            _foodConfig(event.food.type),
+          );
+        case PowerUpCollectedEvent():
+          particles.emitAt(
+            _cellCenter(event.powerUp.position.x, event.powerUp.position.y),
+            _powerUpConfig(event.powerUp.type),
+          );
+        default:
+          break;
       }
-      if (eaten != null) {
-        particles.emitAt(_cellCenter(eaten.position.x, eaten.position.y),
-            _foodConfig(eaten.type));
-      }
-    }
-
-    // Power-up collected.
-    if (previous.powerUp != null && current.powerUp == null) {
-      final p = previous.powerUp!;
-      particles.emitAt(_cellCenter(p.position.x, p.position.y),
-          _powerUpConfig(p.type));
     }
 
     // Crash.
-    if (current.status == model.GameStatus.crashed &&
+    if (previous != null &&
+        current.status == model.GameStatus.crashed &&
         previous.status != model.GameStatus.crashed &&
         current.crashPosition != null) {
       final c = current.crashPosition!;

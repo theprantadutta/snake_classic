@@ -2,17 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
-import 'package:snake_classic/models/snake_coins.dart';
-import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
-import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/game_end_pipeline.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
-import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/direction.dart';
 
@@ -34,8 +30,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   final AudioService _audioService;
   final HapticService _hapticService;
   final AnalyticsFacade _analytics;
-  final CoinsCubit _coinsCubit;
-  final BattlePassCubit _battlePassCubit;
+
+  /// Shared end-of-game rewards/stats pipeline (same instance the
+  /// single-player GameCubit uses) — keeps reward rules in one place.
+  final GameEndPipeline _endPipeline;
 
   // Stream subscriptions
   StreamSubscription? _gameSubscription;
@@ -62,7 +60,6 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   bool _matchRewardsCredited = false;
   int _lastMyScore = 0;
   bool _myAliveLastTick = true;
-  final StatisticsService _statisticsService = StatisticsService();
 
   MultiplayerCubit({
     required MultiplayerService multiplayerService,
@@ -70,15 +67,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     required AudioService audioService,
     required HapticService hapticService,
     required AnalyticsFacade analytics,
-    required CoinsCubit coinsCubit,
-    required BattlePassCubit battlePassCubit,
+    required GameEndPipeline endPipeline,
   }) : _multiplayerService = multiplayerService,
        _userService = userService,
        _audioService = audioService,
        _hapticService = hapticService,
        _analytics = analytics,
-       _coinsCubit = coinsCubit,
-       _battlePassCubit = battlePassCubit,
+       _endPipeline = endPipeline,
        super(MultiplayerState.initial()) {
     // Start listening to matchmaking stream
     _startMatchmakingListener();
@@ -820,55 +815,26 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         ? state.snapshot!.elapsedGameMs ~/ 1000
         : _matchTimer.elapsed.inSeconds;
 
-    final wallHits = me.deathReason == 'wall' ? 1 : 0;
-    // self / opponent / head_on all bucket into selfHits — statistics
-    // has no "other snake" column and multiplayer walls are always on.
-    final selfHits = (!me.alive && wallHits == 0) ? 1 : 0;
-
-    _statisticsService.recordGameResult(
+    unawaited(_endPipeline.recordMultiplayerMatch(
       score: me.score,
-      gameTime: gameTimeSeconds,
-      level: 1,
-      foodConsumed: me.foodsEaten,
-      foodTypes: {'apple': me.foodsEaten},
-      foodPoints: me.score,
-      powerUpsCollected: 0,
-      powerUpTypes: const <String, int>{},
-      powerUpTime: 0,
-      wallHits: wallHits,
-      selfHits: selfHits,
-      isPerfectGame: me.alive && gameTimeSeconds >= 30,
-      unlockedAchievements: const [],
-      // Not a GameMode enum value on purpose — multiplayer matches must
-      // not count toward the per-mode / mode-exploration achievements.
-      gameMode: 'multiplayer',
-    );
+      foodsEaten: me.foodsEaten,
+      gameTimeSeconds: gameTimeSeconds,
+      alive: me.alive,
+      deathReason: me.deathReason,
+    ));
   }
 
-  /// Credit end-of-match rewards through the standard economy paths:
-  /// the winner earns the server-announced coin amount via CoinsCubit
-  /// (caps/animations/sync apply) and both sides earn battle-pass XP
-  /// via the usual buffer→flush flow. Guarded to run once per match.
+  /// Credit end-of-match rewards through the shared pipeline (standard
+  /// economy paths: caps/animations/sync apply). Guarded to run once per
+  /// match even if the hub replays the end event.
   void _creditMatchRewards(MatchEndResult result, bool won) {
     if (_matchRewardsCredited) return;
     _matchRewardsCredited = true;
 
-    if (won && result.winnerCoinReward > 0) {
-      unawaited(
-        _coinsCubit.earnCoins(
-          CoinEarningSource.multiplayer,
-          customAmount: result.winnerCoinReward,
-          itemName: 'Multiplayer Victory',
-        ),
-      );
-    }
-
-    final xpKey = won ? 'multiplayer_win' : 'multiplayer_participation';
-    final xp = BattlePassXpSource.getXpForAction(xpKey);
-    if (xp > 0) {
-      _battlePassCubit.bufferXP(xp, source: xpKey);
-    }
-    unawaited(_battlePassCubit.flushXP());
+    _endPipeline.creditMultiplayerRewards(
+      won: won,
+      winnerCoinReward: result.winnerCoinReward,
+    );
   }
 
   void _stopListening() {

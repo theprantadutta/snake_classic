@@ -18,11 +18,15 @@ import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/services/daily_challenge_service.dart';
+import 'package:snake_classic/services/game_end_pipeline.dart';
 import 'package:snake_classic/services/progression_service.dart';
+import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/review_service.dart';
+import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
 
 // Core
@@ -138,8 +142,7 @@ Future<void> configureDependencies() async {
       audioService: getIt<AudioService>(),
       hapticService: getIt<HapticService>(),
       analytics: getIt<AnalyticsFacade>(),
-      coinsCubit: getIt<CoinsCubit>(),
-      battlePassCubit: getIt<BattlePassCubit>(),
+      endPipeline: getIt<GameEndPipeline>(),
     ),
   );
 
@@ -149,6 +152,24 @@ Future<void> configureDependencies() async {
 
   // Register CoinsCubit as singleton so it can be shared across game sessions
   getIt.registerLazySingleton<CoinsCubit>(() => CoinsCubit());
+
+  // The one end-of-game rewards/stats/achievements pipeline, shared by the
+  // single-player GameCubit and the MultiplayerCubit so economy rules live
+  // in exactly one place. DailyChallenge/WeeklyQuest/Progression services
+  // are self-singleton classes — constructing them here returns the same
+  // instances the rest of the app uses.
+  getIt.registerLazySingleton<GameEndPipeline>(
+    () => GameEndPipeline(
+      statisticsService: getIt<StatisticsService>(),
+      achievementService: getIt<AchievementService>(),
+      coinsCubit: getIt<CoinsCubit>(),
+      battlePassCubit: getIt<BattlePassCubit>(),
+      dailyChallengeService: DailyChallengeService(),
+      weeklyQuestService: WeeklyQuestService(),
+      progressionService: ProgressionService(),
+      appDataCache: getIt<AppDataCache>(),
+    ),
+  );
 
   getIt.registerFactory<GameCubit>(
     () => GameCubit(
@@ -161,6 +182,17 @@ Future<void> configureDependencies() async {
       coinsCubit: getIt<CoinsCubit>(),
       battlePassCubit: getIt<BattlePassCubit>(),
       analytics: getIt<AnalyticsFacade>(),
+      endPipeline: getIt<GameEndPipeline>(),
+      premiumCubit: getIt<PremiumCubit>(),
+      powerUpCubit: getIt<PowerUpCubit>(),
+      reviewService: getIt<ReviewService>(),
+      // Self-singleton service (same instance app-wide).
+      tournamentService: TournamentService(),
+      userService: getIt<UnifiedUserService>(),
+      // Ads may be unregistered on some platforms/builds — the cubit
+      // null-guards every use.
+      adService:
+          getIt.isRegistered<AdService>() ? getIt<AdService>() : null,
     ),
   );
 

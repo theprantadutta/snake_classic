@@ -212,6 +212,42 @@ enum PremiumPowerUpType {
     }
   }
 
+  /// The basic gameplay effect this premium type actually grants, or null
+  /// for types with no basic analog (their effects are implemented via
+  /// dedicated checks — e.g. ghostMode's pass-through is
+  /// GameState.hasGhostMode, scoreShield/teleport/etc. have their own
+  /// handling). GameState's effect getters consult THIS for premium
+  /// actives — never the display-compat `type` field, which used to leak a
+  /// speed boost for every non-mega premium type via a default-case
+  /// mapping.
+  PowerUpType? get basicEffect {
+    switch (this) {
+      case PremiumPowerUpType.megaSpeedBoost:
+        return PowerUpType.speedBoost;
+      case PremiumPowerUpType.megaInvincibility:
+        return PowerUpType.invincibility;
+      case PremiumPowerUpType.megaScoreMultiplier:
+        return PowerUpType.scoreMultiplier;
+      case PremiumPowerUpType.megaSlowMotion:
+      // "Slow down everything except your snake" — engine-wise the tick
+      // clock is the only thing to slow, so timeWarp behaves as slow
+      // motion (it previously behaved as a SPEED BOOST via the buggy
+      // default mapping).
+      case PremiumPowerUpType.timeWarp:
+        return PowerUpType.slowMotion;
+      case PremiumPowerUpType.teleport:
+      case PremiumPowerUpType.sizeReducer:
+      case PremiumPowerUpType.scoreShield:
+      case PremiumPowerUpType.comboMultiplier:
+      case PremiumPowerUpType.magneticFood:
+      case PremiumPowerUpType.ghostMode:
+      case PremiumPowerUpType.doubleTrouble:
+      case PremiumPowerUpType.luckyCharm:
+      case PremiumPowerUpType.powerSurge:
+        return null;
+    }
+  }
+
   bool get isInstantEffect {
     return this == PremiumPowerUpType.teleport;
   }
@@ -264,18 +300,23 @@ class PremiumPowerUp extends PowerUp {
        );
 
   static PowerUpType _mapToBasicType(PremiumPowerUpType premiumType) {
-    // Map premium types to basic types for backward compatibility
+    // DISPLAY/COMPAT ONLY: the inherited `type` field drives icons/colors in
+    // legacy UI paths. Gameplay effects for premium actives come exclusively
+    // from PremiumPowerUpType.basicEffect (GameState's effect getters check
+    // it) — so this mapping can no longer leak a speed boost.
+    return premiumType.basicEffect ?? _displayFallback(premiumType);
+  }
+
+  static PowerUpType _displayFallback(PremiumPowerUpType premiumType) {
     switch (premiumType) {
-      case PremiumPowerUpType.megaSpeedBoost:
-        return PowerUpType.speedBoost;
-      case PremiumPowerUpType.megaInvincibility:
-        return PowerUpType.invincibility;
-      case PremiumPowerUpType.megaScoreMultiplier:
+      case PremiumPowerUpType.ghostMode:
+        return PowerUpType.invincibility; // shield iconography fits phasing
+      case PremiumPowerUpType.comboMultiplier:
+      case PremiumPowerUpType.luckyCharm:
+      case PremiumPowerUpType.scoreShield:
         return PowerUpType.scoreMultiplier;
-      case PremiumPowerUpType.megaSlowMotion:
-        return PowerUpType.slowMotion;
       default:
-        return PowerUpType.speedBoost; // Default fallback
+        return PowerUpType.speedBoost;
     }
   }
 
@@ -394,23 +435,9 @@ class PremiumActivePowerUp extends ActivePowerUp {
     required this.premiumType,
     super.activatedAt,
     super.duration,
+    super.pausedAt,
     this.additionalData = const {},
-  }) : super(type: _mapToBasicType(premiumType));
-
-  static PowerUpType _mapToBasicType(PremiumPowerUpType premiumType) {
-    switch (premiumType) {
-      case PremiumPowerUpType.megaSpeedBoost:
-        return PowerUpType.speedBoost;
-      case PremiumPowerUpType.megaInvincibility:
-        return PowerUpType.invincibility;
-      case PremiumPowerUpType.megaScoreMultiplier:
-        return PowerUpType.scoreMultiplier;
-      case PremiumPowerUpType.megaSlowMotion:
-        return PowerUpType.slowMotion;
-      default:
-        return PowerUpType.speedBoost;
-    }
-  }
+  }) : super(type: PremiumPowerUp._mapToBasicType(premiumType));
 
   // Specific getters for different premium power-up effects
   int get comboMultiplier => additionalData['combo_multiplier'] ?? 1;

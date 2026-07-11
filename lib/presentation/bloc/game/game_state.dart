@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart' as model;
 import 'package:snake_classic/models/power_up.dart';
@@ -64,6 +65,13 @@ class GameCubitState extends Equatable {
   /// stretch so the renderer and the timer agree.
   final int? tickDurationMs;
 
+  /// The simulation events that produced [gameState] — THE single source of
+  /// truth for "what happened this tick". Consumers (screen juice, Flame
+  /// particles) key off `identical(gameState)` changes and read these
+  /// instead of re-deriving events by diffing states (which used to exist
+  /// in three parallel implementations). Empty on non-tick emits.
+  final List<TickEvent> tickEvents;
+
   const GameCubitState({
     this.status = GamePlayStatus.initial,
     this.gameState,
@@ -78,6 +86,7 @@ class GameCubitState extends Equatable {
     this.offeringTimeBonus = false,
     this.tournamentScoreSubmission = TournamentScoreSubmission.none,
     this.tickDurationMs,
+    this.tickEvents = const [],
   });
 
   /// Initial state
@@ -98,6 +107,7 @@ class GameCubitState extends Equatable {
     bool? offeringTimeBonus,
     TournamentScoreSubmission? tournamentScoreSubmission,
     int? tickDurationMs,
+    List<TickEvent>? tickEvents,
     bool clearTournament = false,
     bool clearPreviousGameState = false,
     bool clearRejectedInput = false,
@@ -131,6 +141,10 @@ class GameCubitState extends Equatable {
           ? TournamentScoreSubmission.none
           : (tournamentScoreSubmission ?? this.tournamentScoreSubmission),
       tickDurationMs: tickDurationMs ?? this.tickDurationMs,
+      // Events are transient: they describe exactly one tick, so a copy
+      // that doesn't explicitly carry new ones drops the old list instead
+      // of replaying it alongside an unrelated emit.
+      tickEvents: tickEvents ?? const [],
     );
   }
 
@@ -206,5 +220,6 @@ class GameCubitState extends Equatable {
     offeringTimeBonus,
     tournamentScoreSubmission,
     tickDurationMs,
+    tickEvents,
   ];
 }

@@ -50,14 +50,18 @@ class SnakeSimulation {
     final snake = previousState.snake.copy();
     final isMultiFood = previousState.gameMode.hasMultipleFood;
 
-    // Expired primary food → regenerate.
+    // Expired primary food → regenerate, avoiding the extras and the
+    // on-board power-up (same non-overlap contract as the eaten-food path;
+    // this path used to avoid only the snake, so a regenerated food could
+    // land on top of another pickup).
     var currentFood = previousState.food;
     if (currentFood?.isExpired == true) {
-      currentFood = Food.generateRandom(
+      currentFood = generateNonOverlappingFood(
         previousState.boardWidth,
         previousState.boardHeight,
         snake,
-        isPremium: isPro,
+        existing: previousState.foods,
+        powerUpPosition: previousState.powerUp?.position,
       );
     }
 

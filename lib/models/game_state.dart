@@ -153,10 +153,10 @@ class GameState {
     int speed = (baseSpeed - speedDecrease).clamp(50, 300);
 
     final hasSpeedBoost = activePowerUps.any(
-      (p) => p.type == PowerUpType.speedBoost && !p.isExpired,
+      (p) => _grantsEffect(p, PowerUpType.speedBoost),
     );
     final hasSlowMotion = activePowerUps.any(
-      (p) => p.type == PowerUpType.slowMotion && !p.isExpired,
+      (p) => _grantsEffect(p, PowerUpType.slowMotion),
     );
 
     if (hasSpeedBoost) {
@@ -203,24 +203,14 @@ class GameState {
   bool get shouldLevelUp => score >= targetScore;
 
   // Additional power-up effect getters (hasInvincibility is defined later in file)
-  bool get hasSpeedBoost => activePowerUps.any(
-    (p) =>
-        (p.type == PowerUpType.speedBoost || _isPremiumSpeedBoost(p)) &&
-        !p.isExpired,
-  );
+  bool get hasSpeedBoost =>
+      activePowerUps.any((p) => _grantsEffect(p, PowerUpType.speedBoost));
 
-  bool get hasSlowMotion => activePowerUps.any(
-    (p) =>
-        (p.type == PowerUpType.slowMotion || _isPremiumSlowMotion(p)) &&
-        !p.isExpired,
-  );
+  bool get hasSlowMotion =>
+      activePowerUps.any((p) => _grantsEffect(p, PowerUpType.slowMotion));
 
-  bool get hasScoreMultiplier => activePowerUps.any(
-    (p) =>
-        (p.type == PowerUpType.scoreMultiplier ||
-            _isPremiumScoreMultiplier(p)) &&
-        !p.isExpired,
-  );
+  bool get hasScoreMultiplier => activePowerUps
+      .any((p) => _grantsEffect(p, PowerUpType.scoreMultiplier));
 
   // Premium-specific power-up effects
   bool get hasGhostMode => activePowerUps.any(
@@ -265,22 +255,19 @@ class GameState {
         !p.isExpired,
   );
 
-  // Helper methods for checking premium variants of basic power-ups
-  bool _isPremiumInvincibility(ActivePowerUp p) =>
-      p is PremiumActivePowerUp &&
-      p.premiumType == PremiumPowerUpType.megaInvincibility;
-
-  bool _isPremiumSpeedBoost(ActivePowerUp p) =>
-      p is PremiumActivePowerUp &&
-      p.premiumType == PremiumPowerUpType.megaSpeedBoost;
-
-  bool _isPremiumSlowMotion(ActivePowerUp p) =>
-      p is PremiumActivePowerUp &&
-      p.premiumType == PremiumPowerUpType.megaSlowMotion;
-
-  bool _isPremiumScoreMultiplier(ActivePowerUp p) =>
-      p is PremiumActivePowerUp &&
-      p.premiumType == PremiumPowerUpType.megaScoreMultiplier;
+  /// Whether an active power-up grants the given basic effect right now.
+  ///
+  /// Premium actives are judged by their [PremiumPowerUpType.basicEffect] —
+  /// NEVER by the inherited `type` field, which is a display-compat mapping
+  /// that used to default every non-mega premium type to speedBoost and
+  /// silently halve the tick (e.g. an active ghost mode doubled the snake's
+  /// speed). Premium types with no basic analog grant nothing here; their
+  /// effects have dedicated checks (e.g. [hasGhostMode], [hasScoreShield]).
+  bool _grantsEffect(ActivePowerUp p, PowerUpType effect) {
+    if (p.isExpired) return false;
+    if (p is PremiumActivePowerUp) return p.premiumType.basicEffect == effect;
+    return p.type == effect;
+  }
 
   GameState copyWith({
     Snake? snake,
@@ -311,10 +298,14 @@ class GameState {
     DateTime? pausedAt,
     Set<Position>? visitedCells,
     bool clearPausedAt = false,
+    bool clearFood = false,
   }) {
     return GameState(
       snake: snake ?? this.snake,
-      food: food ?? this.food,
+      // `food ?? this.food` can't express "set to null" — the explicit flag
+      // does (same pattern as clearPowerUp / clearPausedAt). Without it,
+      // clearFood() was silently a no-op.
+      food: clearFood ? null : (food ?? this.food),
       foods: foods ?? this.foods,
       powerUp: clearPowerUp ? null : (powerUp ?? this.powerUp),
       activePowerUps: activePowerUps ?? this.activePowerUps,
@@ -354,7 +345,7 @@ class GameState {
   }
 
   GameState clearFood() {
-    return copyWith(food: null);
+    return copyWith(clearFood: true);
   }
 
   GameState clearPowerUp() {
@@ -367,15 +358,13 @@ class GameState {
 
   bool get hasInvincibility {
     return activePowerUps.any(
-      (p) =>
-          (p.type == PowerUpType.invincibility || _isPremiumInvincibility(p)) &&
-          !p.isExpired,
+      (p) => _grantsEffect(p, PowerUpType.invincibility),
     );
   }
 
   int get scoreMultiplier {
     final hasMultiplier = activePowerUps.any(
-      (p) => p.type == PowerUpType.scoreMultiplier && !p.isExpired,
+      (p) => _grantsEffect(p, PowerUpType.scoreMultiplier),
     );
     return hasMultiplier ? 2 : 1;
   }

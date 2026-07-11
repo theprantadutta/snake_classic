@@ -1,9 +1,11 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
@@ -25,8 +27,14 @@ import 'package:snake_classic/widgets/pause_overlay.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
-import 'package:snake_classic/widgets/dpad_controls.dart';
-import 'package:snake_classic/widgets/score_popup.dart';
+import 'package:snake_classic/widgets/debug_perf_overlay.dart';
+import 'package:snake_classic/widgets/dialogs/control_choice_dialog.dart';
+import 'package:snake_classic/widgets/dialogs/exit_game_dialog.dart';
+import 'package:snake_classic/widgets/game_background_painter.dart';
+import 'package:snake_classic/widgets/game_bottom_bar.dart';
+import 'package:snake_classic/widgets/rejected_input_flash.dart';
+import 'package:snake_classic/widgets/score_popup_layer.dart';
+import 'package:snake_classic/widgets/snake_compass_indicator.dart';
 import 'package:snake_classic/widgets/walkthrough/game_tutorial.dart';
 import 'package:snake_classic/models/food.dart';
 
@@ -58,7 +66,7 @@ class _GameScreenState extends State<GameScreen>
 
 
   // Score popup system - extracted into separate widget to avoid full screen rebuilds
-  final GlobalKey<_ScorePopupLayerState> _scorePopupLayerKey = GlobalKey<_ScorePopupLayerState>();
+  final GlobalKey<ScorePopupLayerState> _scorePopupLayerKey = GlobalKey<ScorePopupLayerState>();
 
   // Game tutorial
   bool _tutorialActive = false;
@@ -119,7 +127,7 @@ class _GameScreenState extends State<GameScreen>
     if (!mounted) return;
 
     if (!walkthroughService.isComplete(WalkthroughService.controlChoiceId)) {
-      await _showControlChoiceDialog();
+      await showControlChoiceDialog(context);
       if (!mounted) return;
       await walkthroughService.markComplete(WalkthroughService.controlChoiceId);
       if (!mounted) return;
@@ -145,154 +153,6 @@ class _GameScreenState extends State<GameScreen>
     if (!walkthroughService.isComplete(WalkthroughService.gameTutorialId)) {
       _startTutorial();
     }
-  }
-
-  /// First-launch modal asking the player to pick gestures or the D-Pad.
-  /// Now called before [GameCubit.startGame], so the snake isn't already
-  /// moving behind the dialog — no pause/resume dance needed. Whatever
-  /// they choose is persisted via [GameSettingsCubit.updateDPadEnabled]
-  /// and surfaced with a "change this anytime in Settings → Controls"
-  /// footer.
-  Future<void> _showControlChoiceDialog() async {
-    final settingsCubit = context.read<GameSettingsCubit>();
-    final theme = context.read<ThemeCubit>().state.currentTheme;
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => PopScope(
-        canPop: false,
-        child: AlertDialog(
-          backgroundColor: theme.backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(
-              color: theme.accentColor.withValues(alpha: 0.4),
-              width: 1.5,
-            ),
-          ),
-          title: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'How do you want to play?',
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Pick one — you can change it anytime in Settings → Controls.',
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildControlChoiceCard(
-                dialogContext: dialogContext,
-                theme: theme,
-                icon: Icons.swipe_rounded,
-                title: 'Swipe Gestures',
-                subtitle: 'Swipe anywhere on the board to turn.',
-                onTap: () async {
-                  await settingsCubit.updateDPadEnabled(false);
-                  if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                },
-              ),
-              const SizedBox(height: 12),
-              _buildControlChoiceCard(
-                dialogContext: dialogContext,
-                theme: theme,
-                icon: Icons.gamepad_rounded,
-                title: 'D-Pad Controls',
-                subtitle: 'On-screen directional buttons.',
-                onTap: () async {
-                  await settingsCubit.updateDPadEnabled(true);
-                  if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildControlChoiceCard({
-    required BuildContext dialogContext,
-    required GameTheme theme,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Future<void> Function() onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: theme.accentColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: theme.accentColor, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: theme.accentColor.withValues(alpha: 0.6),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Start the game tutorial
@@ -347,7 +207,7 @@ class _GameScreenState extends State<GameScreen>
     // (not on animation frame updates which only change moveProgress)
     // This reduces overhead from ~60 calls/sec to ~3-5 calls/sec
     if (!identical(_previousGameState, gameState)) {
-      _checkForGameEvents(_previousGameState, gameState);
+      _checkForGameEvents(_previousGameState, gameState, state.tickEvents);
       _previousGameState = gameState;
     }
 
@@ -398,23 +258,6 @@ class _GameScreenState extends State<GameScreen>
     });
   }
 
-  // Convert game speed (ms per tick) to human-readable label
-  String _getSpeedLabel(int gameSpeed) {
-    if (gameSpeed >= 280) return 'Normal';
-    if (gameSpeed >= 230) return 'Fast';
-    if (gameSpeed >= 180) return 'Faster';
-    if (gameSpeed >= 130) return 'Blazing';
-    if (gameSpeed >= 80) return 'Insane';
-    return 'MAX';
-  }
-
-  // Get icon for current speed level
-  IconData _getSpeedIcon(int gameSpeed) {
-    if (gameSpeed >= 230) return Icons.speed;
-    if (gameSpeed >= 130) return Icons.local_fire_department;
-    return Icons.bolt;
-  }
-
   void _showExitConfirmation(BuildContext context) {
     if (_exitDialogOpen) return;
     final gameCubit = context.read<GameCubit>();
@@ -429,59 +272,31 @@ class _GameScreenState extends State<GameScreen>
     }
 
     _exitDialogOpen = true;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-        ),
-        title: Text(
-          'Exit Game?',
-          style: TextStyle(
-            color: theme.accentColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to exit? Your current progress will be lost.',
-          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              if (didPauseHere && gameCubit.state.isPaused) {
-                gameCubit.resumeGame();
-              }
-            },
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              gameCubit.resetGame();
-              // The game screen can be reached either by pushing onto Home
-              // (canPop == true) or via context.go() from game-over "Play
-              // Again" / settings, which makes Game the root of the stack
-              // (canPop == false). Popping the latter throws GoError "There is
-              // nothing to pop", so fall back to navigating Home.
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go(AppRoutes.home);
-              }
-            },
-            child: Text('Exit', style: TextStyle(color: theme.foodColor)),
-          ),
-        ],
-      ),
-    ).whenComplete(() => _exitDialogOpen = false);
+    showExitGameDialog(context, theme).then((confirmedExit) {
+      if (confirmedExit == true) {
+        gameCubit.resetGame();
+        // The dialog resolves across an async gap; the screen is always
+        // still mounted here in practice (it sits beneath the dialog
+        // route), so this guard only satisfies the lint without changing
+        // behavior.
+        if (!context.mounted) return;
+        // The game screen can be reached either by pushing onto Home
+        // (canPop == true) or via context.go() from game-over "Play
+        // Again" / settings, which makes Game the root of the stack
+        // (canPop == false). Popping the latter throws GoError "There is
+        // nothing to pop", so fall back to navigating Home.
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go(AppRoutes.home);
+        }
+      } else if (confirmedExit == false) {
+        // Cancel only resumes a game we actually paused on entry.
+        if (didPauseHere && gameCubit.state.isPaused) {
+          gameCubit.resumeGame();
+        }
+      }
+    }).whenComplete(() => _exitDialogOpen = false);
   }
 
   void _handleKeyPress(KeyEvent event) {
@@ -516,40 +331,53 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-  void _checkForGameEvents(GameState? previous, GameState current) {
-    if (previous == null) return;
-
-    // Food consumption effects with score popup
-    if (current.score > previous.score && previous.food != null) {
-      final food = previous.food!;
-      final pointsEarned = current.score - previous.score;
-
-      // Spawn score popup at food position with combo multiplier
-      _spawnScorePopup(
-        food,
-        pointsEarned,
-        current.boardWidth,
-        current.boardHeight,
-        comboMultiplier: current.comboMultiplier,
-      );
-
-      switch (food.type) {
-        case FoodType.normal:
-          _juiceController.foodEaten();
-          break;
-        case FoodType.bonus:
-          _juiceController.bonusFoodEaten();
-          break;
-        case FoodType.special:
-          _juiceController.specialFoodEaten();
+  /// Screen juice for one state change. Tick-borne effects (eat, power-up,
+  /// level) come from the simulation's [TickEvent]s carried on the cubit
+  /// state — the same single source Flame's particles use, so this method no
+  /// longer re-derives events by diffing states. Crash / game-over remain
+  /// status transitions (they arrive on non-tick emits with no events).
+  void _checkForGameEvents(
+    GameState? previous,
+    GameState current,
+    List<TickEvent> events,
+  ) {
+    for (final event in events) {
+      switch (event) {
+        case FoodEatenEvent():
+          // Popup at the exact eaten cell — event-carried, so it lands
+          // correctly even in MultiFood mode when an "extra" food was
+          // eaten (the old score-diff derivation always used the primary
+          // food's position).
+          _spawnScorePopup(
+            event.food,
+            event.awardedPoints,
+            current.boardWidth,
+            current.boardHeight,
+            comboMultiplier: event.newMultiplier,
+          );
+          switch (event.food.type) {
+            case FoodType.normal:
+              _juiceController.foodEaten();
+              break;
+            case FoodType.bonus:
+              _juiceController.bonusFoodEaten();
+              break;
+            case FoodType.special:
+              _juiceController.specialFoodEaten();
+              break;
+          }
+        case PowerUpCollectedEvent():
+          _juiceController.powerUpCollected();
+        case LeveledUpEvent():
+          // ONE consolidated cue: the HUD level badge burst/scale (see
+          // GameHUD._triggerLevelUpEffect) plus a light shake.
+          _juiceController.levelUp();
+        default:
           break;
       }
     }
 
-    // Power-up collection effects
-    if (previous.powerUp != null && current.powerUp == null) {
-      _juiceController.powerUpCollected();
-    }
+    if (previous == null) return;
 
     // Crash effects
     if (current.status == GameStatus.crashed &&
@@ -559,15 +387,6 @@ class _GameScreenState extends State<GameScreen>
       } else if (current.crashReason == CrashReason.selfCollision) {
         _juiceController.selfCollision();
       }
-    }
-
-    // Level up effects. ONE consolidated cue: the HUD level badge
-    // burst/scale (see GameHUD._triggerLevelUpEffect) plus a light
-    // shake. The old third layer — a 2-second corner popup at a fixed
-    // top/right offset — competed for attention exactly when the player
-    // needs to read the board, and sat mispositioned on tablets.
-    if (current.level > previous.level) {
-      _juiceController.levelUp();
     }
 
     // Game over effects
@@ -592,242 +411,6 @@ class _GameScreenState extends State<GameScreen>
       boardWidth: boardWidth,
       boardHeight: boardHeight,
       comboMultiplier: comboMultiplier,
-    );
-  }
-
-  /// Builds the D-Pad control bar with stats on either side
-  /// Layout: [Length] [D-Pad] [Speed]
-  /// The bottom bar reserves a fixed footprint regardless of whether the
-  /// D-Pad is enabled or the current game status. Previous build had two
-  /// completely separate widgets here (a tall D-Pad bar vs a short compact-
-  /// stats footer) and switched between them based on
-  /// `dPadEnabled && status == playing`, which caused:
-  ///   - The board to shift up/down whenever the D-Pad setting toggled.
-  ///   - The D-Pad to vanish entirely the moment the snake crashed,
-  ///     because status went from playing → crashed.
-  ///
-  /// Now we always render the same Row skeleton (left stat / center / right
-  /// stat) at a fixed height. The center swaps:
-  ///   - dPadEnabled = true  → DPadControls, interactive while playing,
-  ///     dimmed + non-interactive otherwise.
-  ///   - dPadEnabled = false → a single Level stat card centered in the
-  ///     same footprint.
-  Widget _buildBottomBar(
-    GameState gameState,
-    GameTheme theme,
-    bool isSmallScreen, {
-    required bool dPadEnabled,
-  }) {
-    final scale = context.uiScale;
-    // Small-screen size bumped 115 -> 120 so the 0.38-ratio d-pad
-    // buttons clear ~46px touch targets. Bar height grows uniformly
-    // across all states, so the no-reflow contract holds.
-    final dpadSize = (isSmallScreen ? 120.0 : 135.0) * scale;
-    final verticalPadding = (isSmallScreen ? 8.0 : 12.0) * scale;
-    // Total reserved height = dpad footprint + the row's own padding so the
-    // box is the SAME pixel height in every branch and every status.
-    final barHeight = dpadSize + verticalPadding * 2;
-    final isInteractive = gameState.status == GameStatus.playing;
-
-    return SizedBox(
-      height: barHeight,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 12 * scale,
-          vertical: verticalPadding,
-        ),
-        child: dPadEnabled
-            // D-Pad on: center reserves the dpadSize square, side stats
-            // shrink to fit the remaining columns. Compact cards aligned
-            // to the outer edges so the d-pad has breathing room.
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: _buildControlBarStat(
-                      'Length',
-                      '${gameState.snake.length}',
-                      Icons.straighten,
-                      theme,
-                      isSmallScreen,
-                      alignment: Alignment.centerLeft,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: SizedBox(
-                      width: dpadSize,
-                      height: dpadSize,
-                      child: Opacity(
-                        opacity: isInteractive ? 1.0 : 0.45,
-                        child: IgnorePointer(
-                          ignoring: !isInteractive,
-                          child: DPadControls(
-                            onDirection: _handleSwipe,
-                            theme: theme,
-                            opacity: 0.8,
-                            size: dpadSize,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildControlBarStat(
-                      'Speed',
-                      _getSpeedLabel(gameState.gameSpeed),
-                      _getSpeedIcon(gameState.gameSpeed),
-                      theme,
-                      isSmallScreen,
-                      alignment: Alignment.centerRight,
-                    ),
-                  ),
-                ],
-              )
-            // D-Pad off: no center widget eats the middle, so the three
-            // stats spread across the full row in even thirds. Each card
-            // is normal-size — wider, not taller — and vertically
-            // centered in the same-height bar.
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: _buildWideStat(
-                      'Length',
-                      '${gameState.snake.length}',
-                      Icons.straighten,
-                      theme,
-                      isSmallScreen,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildWideStat(
-                      'Level',
-                      '${gameState.level}',
-                      Icons.trending_up,
-                      theme,
-                      isSmallScreen,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildWideStat(
-                      'Speed',
-                      _getSpeedLabel(gameState.gameSpeed),
-                      _getSpeedIcon(gameState.gameSpeed),
-                      theme,
-                      isSmallScreen,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
-  /// Stat card used when the D-Pad is disabled — fills its 1/3 of the
-  /// bottom bar's width but only takes the height it needs. Normal text
-  /// sizes; the extra space we won is horizontal, not vertical.
-  Widget _buildWideStat(
-    String label,
-    String value,
-    IconData icon,
-    GameTheme theme,
-    bool isSmallScreen,
-  ) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 10 : 12,
-        vertical: isSmallScreen ? 8 : 10,
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.6),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.25),
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: theme.accentColor.withValues(alpha: 0.7),
-            size: isSmallScreen ? 16 : 20,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontWeight: FontWeight.bold,
-              fontSize: isSmallScreen ? 14 : 16,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.5),
-              fontSize: isSmallScreen ? 9 : 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds a stat display for the control bar
-  Widget _buildControlBarStat(
-    String label,
-    String value,
-    IconData icon,
-    GameTheme theme,
-    bool isSmallScreen, {
-    required Alignment alignment,
-  }) {
-    return Align(
-      alignment: alignment,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 10 : 14,
-          vertical: isSmallScreen ? 8 : 10,
-        ),
-        decoration: BoxDecoration(
-          color: theme.backgroundColor.withValues(alpha: 0.6),
-          border: Border.all(color: theme.accentColor.withValues(alpha: 0.25)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: theme.accentColor.withValues(alpha: 0.7),
-              size: isSmallScreen ? 16 : 20,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-                fontSize: isSmallScreen ? 14 : 16,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.5),
-                fontSize: isSmallScreen ? 9 : 10,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -955,7 +538,7 @@ class _GameScreenState extends State<GameScreen>
                                   // Background pattern overlay - matching home screen
                                   Positioned.fill(
                                     child: CustomPaint(
-                                      painter: _GameBackgroundPainter(theme),
+                                      painter: GameBackgroundPainter(theme),
                                     ),
                                   ),
 
@@ -1108,13 +691,15 @@ class _GameScreenState extends State<GameScreen>
                                                   prev.status != curr.status;
                                             },
                                             builder: (context, barState) {
-                                              return _buildBottomBar(
-                                                barState.gameState ??
-                                                    gameState,
-                                                theme,
-                                                isSmallScreen,
+                                              return GameBottomBar(
+                                                gameState:
+                                                    barState.gameState ??
+                                                        gameState,
+                                                theme: theme,
+                                                isSmallScreen: isSmallScreen,
                                                 dPadEnabled: settingsState
                                                     .dPadEnabled,
+                                                onDirection: _handleSwipe,
                                               );
                                             },
                                           ),
@@ -1145,7 +730,7 @@ class _GameScreenState extends State<GameScreen>
 
                                    // Score Popups Layer - isolated StatefulWidget
                                   // to avoid full game screen rebuilds on popup add/remove
-                                  _ScorePopupLayer(key: _scorePopupLayerKey),
+                                  ScorePopupLayer(key: _scorePopupLayerKey),
 
                                   // Level-Up Corner Popup
                                 ],
@@ -1245,7 +830,11 @@ class _GameScreenState extends State<GameScreen>
                             // board painter (game_board.dart) so it scopes
                             // to the play area and rides the existing 60fps
                             // repaint cycle — no extra full-screen paints.
-                            const _RejectedInputFlash(),
+                            const RejectedInputFlash(),
+
+                            // Debug builds only: live tick/frame/event
+                            // panel (top-left). Compiled out of release.
+                            if (kDebugMode) const DebugPerfOverlay(),
                           ],
                               ),
                               ),
@@ -1288,7 +877,7 @@ class _GameScreenState extends State<GameScreen>
     // directionGetter reads the field live: the game screen no longer
     // rebuilds on swipes, so a by-value Direction would freeze at the last
     // structural rebuild — the swipe animation itself triggers the repaint.
-    return _SnakeCompassIndicator(
+    return SnakeCompassIndicator(
       theme: theme,
       directionGetter: () => _lastSwipeDirection,
       swipeAnimation: _gestureIndicatorController,
@@ -1308,481 +897,5 @@ class _GameScreenState extends State<GameScreen>
       case Direction.right:
         return const Color(0xFF9C27B0); // Purple
     }
-  }
-}
-
-/// The gesture chrome: a circular puck holding a miniature snake that swims
-/// in place, turns to face the last accepted swipe, and dashes with a comet
-/// trail in that direction's color when the swipe lands. Four cardinal ticks
-/// on the puck edge light up for the active heading.
-///
-/// Self-animating (its own low-cost repeating controller drives the swim
-/// cycle) and isolated — it never triggers game-screen rebuilds.
-class _SnakeCompassIndicator extends StatefulWidget {
-  const _SnakeCompassIndicator({
-    required this.theme,
-    required this.directionGetter,
-    required this.swipeAnimation,
-    required this.activeColorFor,
-    required this.size,
-  });
-
-  final GameTheme theme;
-
-  /// Read live on every animation frame (the parent doesn't rebuild on
-  /// swipes, so a plain value would go stale).
-  final Direction? Function() directionGetter;
-  final Animation<double> swipeAnimation;
-  final Color Function(Direction) activeColorFor;
-  final double size;
-
-  @override
-  State<_SnakeCompassIndicator> createState() => _SnakeCompassIndicatorState();
-}
-
-class _SnakeCompassIndicatorState extends State<_SnakeCompassIndicator>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _swimController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1800),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _swimController.dispose();
-    super.dispose();
-  }
-
-  double _headingTurns(Direction? d) => switch (d) {
-        null || Direction.up => 0.0,
-        Direction.right => 0.25,
-        Direction.down => 0.5,
-        Direction.left => 0.75,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final size = widget.size;
-    return Semantics(
-      label: 'Swipe direction indicator',
-      child: AnimatedBuilder(
-        animation:
-            Listenable.merge([_swimController, widget.swipeAnimation]),
-        builder: (context, _) {
-          final direction = widget.directionGetter();
-          final swipeT = widget.swipeAnimation.value;
-          final isActive = direction != null && swipeT > 0.01;
-          final activeColor = direction != null
-              ? widget.activeColorFor(direction)
-              : widget.theme.accentColor;
-
-          return SizedBox(
-            width: size,
-            height: size,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Puck + cardinal ticks (static — do not rotate with the
-                // snake, they are the compass rose).
-                CustomPaint(
-                  painter: _CompassPuckPainter(
-                    theme: widget.theme,
-                    direction: direction,
-                    activeColor: activeColor,
-                    glow: isActive ? swipeT : 0.0,
-                  ),
-                ),
-                // The snake, drawn heading "up" and rotated to the real
-                // heading. 200ms turn matches the old arrow's feel.
-                AnimatedRotation(
-                  turns: _headingTurns(direction),
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  child: CustomPaint(
-                    painter: _MiniSnakePainter(
-                      snakeColor: widget.theme.snakeColor,
-                      trailColor: activeColor,
-                      swimPhase: _swimController.value,
-                      dash: isActive ? swipeT : 0.0,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _CompassPuckPainter extends CustomPainter {
-  _CompassPuckPainter({
-    required this.theme,
-    required this.direction,
-    required this.activeColor,
-    required this.glow,
-  });
-
-  final GameTheme theme;
-  final Direction? direction;
-  final Color activeColor;
-  final double glow; // 0..1 swipe pulse
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final radius = size.shortestSide / 2;
-
-    // Puck body.
-    canvas.drawCircle(
-      center,
-      radius - 1,
-      Paint()..color = theme.backgroundColor.withValues(alpha: 0.9),
-    );
-
-    // Outer glow while a swipe pulse is live.
-    if (glow > 0.02) {
-      canvas.drawCircle(
-        center,
-        radius - 1,
-        Paint()
-          ..color = activeColor.withValues(alpha: 0.35 * glow)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3,
-      );
-    }
-
-    // Border.
-    canvas.drawCircle(
-      center,
-      radius - 1,
-      Paint()
-        ..color = activeColor.withValues(alpha: 0.3 + 0.5 * glow)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
-
-    // Cardinal ticks; the active heading's tick is lit.
-    final tickDirections = <Direction, double>{
-      Direction.up: -math.pi / 2,
-      Direction.right: 0,
-      Direction.down: math.pi / 2,
-      Direction.left: math.pi,
-    };
-    for (final entry in tickDirections.entries) {
-      final isActiveTick = entry.key == direction;
-      final tickPaint = Paint()
-        ..color = isActiveTick
-            ? activeColor.withValues(alpha: 0.5 + 0.5 * glow)
-            : theme.accentColor.withValues(alpha: 0.25)
-        ..strokeWidth = isActiveTick ? 2.5 : 1.5
-        ..strokeCap = StrokeCap.round;
-      final dir = Offset(math.cos(entry.value), math.sin(entry.value));
-      canvas.drawLine(
-        center + dir * (radius - (isActiveTick ? 6.5 : 5.0)),
-        center + dir * (radius - 2.5),
-        tickPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _CompassPuckPainter old) =>
-      old.theme != theme ||
-      old.direction != direction ||
-      old.activeColor != activeColor ||
-      old.glow != glow;
-}
-
-class _MiniSnakePainter extends CustomPainter {
-  _MiniSnakePainter({
-    required this.snakeColor,
-    required this.trailColor,
-    required this.swimPhase, // 0..1 repeating swim cycle
-    required this.dash, // 0..1 swipe pulse (forward+reverse)
-  });
-
-  final Color snakeColor;
-  final Color trailColor;
-  final double swimPhase;
-  final double dash;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final s = size.shortestSide;
-    final center = size.center(Offset.zero);
-    final bodyLength = s * 0.5;
-    // Dash: the snake lunges toward the heading during the swipe pulse.
-    final lunge = Offset(0, -s * 0.09 * dash);
-
-    // Sample the spine head→tail. Head at the top (the widget rotates this
-    // painter to the real heading). Tail sways more than the neck.
-    const samples = 9;
-    final spine = List<Offset>.generate(samples, (i) {
-      final t = i / (samples - 1); // 0 head → 1 tail
-      final y = center.dy - bodyLength / 2 + t * bodyLength;
-      final sway = s *
-          0.075 *
-          (0.35 + 0.65 * t) *
-          math.sin(t * math.pi * 2.2 - swimPhase * 2 * math.pi);
-      return Offset(center.dx + sway, y) + lunge;
-    });
-
-    // Comet trail behind the head while a swipe pulse is live.
-    if (dash > 0.02) {
-      final head = spine.first;
-      final tailEnd = Offset(head.dx, head.dy + s * 0.42);
-      final trailPaint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            trailColor.withValues(alpha: 0.75 * dash),
-            trailColor.withValues(alpha: 0.0),
-          ],
-        ).createShader(Rect.fromPoints(head, tailEnd))
-        ..strokeWidth = s * 0.14
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(head, tailEnd, trailPaint);
-    }
-
-    // Body: single tapering stroke would need per-segment widths, so draw
-    // tail→head with shrinking width for a natural taper.
-    for (var i = spine.length - 1; i > 0; i--) {
-      final t = i / (spine.length - 1);
-      final segPaint = Paint()
-        ..color = snakeColor.withValues(alpha: 0.55 + 0.45 * (1 - t))
-        ..strokeWidth = s * (0.15 - 0.06 * t)
-        ..strokeCap = StrokeCap.round
-        ..isAntiAlias = true;
-      canvas.drawLine(spine[i], spine[i - 1], segPaint);
-    }
-
-    // Head: a slightly larger dot with two eyes.
-    final head = spine.first;
-    canvas.drawCircle(
-      head,
-      s * 0.095,
-      Paint()
-        ..color = snakeColor
-        ..isAntiAlias = true,
-    );
-    final eyePaint = Paint()..color = Colors.black.withValues(alpha: 0.75);
-    canvas.drawCircle(head.translate(-s * 0.035, -s * 0.03), s * 0.022,
-        eyePaint);
-    canvas.drawCircle(
-        head.translate(s * 0.035, -s * 0.03), s * 0.022, eyePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _MiniSnakePainter old) =>
-      old.snakeColor != snakeColor ||
-      old.trailColor != trailColor ||
-      old.swimPhase != swimPhase ||
-      old.dash != dash;
-}
-
-// Custom painter for game background pattern - matching home screen
-class _GameBackgroundPainter extends CustomPainter {
-  final GameTheme theme;
-
-  _GameBackgroundPainter(this.theme);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = theme.accentColor.withValues(alpha: 0.05);
-
-    // Draw subtle grid pattern
-    const gridSize = 30.0;
-
-    for (double x = 0; x < size.width; x += gridSize) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    for (double y = 0; y < size.height; y += gridSize) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-
-    // Draw decorative shapes
-    final shapePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = theme.foodColor.withValues(alpha: 0.02);
-
-    canvas.drawCircle(
-      Offset(size.width * 0.15, size.height * 0.25),
-      50,
-      shapePaint,
-    );
-
-    canvas.drawCircle(
-      Offset(size.width * 0.85, size.height * 0.75),
-      70,
-      shapePaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
-  }
-}
-
-/// Brief red ring flashed at screen center when the cubit denies a direction
-/// change. Subscribes only to `lastRejectedInputAt` so it doesn't drag the
-/// game screen into per-tick rebuilds.
-class _RejectedInputFlash extends StatelessWidget {
-  const _RejectedInputFlash();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocSelector<GameCubit, GameCubitState, DateTime?>(
-      selector: (state) => state.lastRejectedInputAt,
-      builder: (context, stamp) {
-        if (stamp == null) return const SizedBox.shrink();
-        final age = DateTime.now().difference(stamp).inMilliseconds;
-        if (age > 250) return const SizedBox.shrink();
-        // Fade out over the 250ms window. The starting opacity is high so
-        // the flash registers even on a fast glance.
-        final t = (age.clamp(0, 250)) / 250.0;
-        final opacity = (1.0 - t).clamp(0.0, 1.0);
-        return IgnorePointer(
-          child: Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 60),
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.red.withValues(alpha: opacity * 0.25),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: opacity * 0.85),
-                  width: 3,
-                ),
-              ),
-              child: Icon(
-                Icons.do_disturb_alt_rounded,
-                color: Colors.white.withValues(alpha: opacity * 0.85),
-                size: 36,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// Isolated widget for score popups - its own setState only rebuilds
-/// the popup layer, not the entire game screen.
-class _ScorePopupLayer extends StatefulWidget {
-  const _ScorePopupLayer({super.key});
-
-  @override
-  State<_ScorePopupLayer> createState() => _ScorePopupLayerState();
-}
-
-class _ScorePopupLayerState extends State<_ScorePopupLayer> {
-  final ScorePopupManager _scorePopupManager = ScorePopupManager();
-  Size? _boardSize;
-  Offset? _boardOffset;
-
-  @override
-  void initState() {
-    super.initState();
-    // Pre-resolve board metrics after the first frame renders, so the
-    // expensive element tree walk happens before any food is eaten.
-    // Previously this was lazy (on first food), causing a visible pause.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _resolveBoardMetrics();
-    });
-  }
-
-  void addPopup({
-    required Food food,
-    required int points,
-    required int boardWidth,
-    required int boardHeight,
-    double comboMultiplier = 1.0,
-  }) {
-    // Ensure metrics are resolved (fast no-op if already cached)
-    if (_boardSize == null || _boardOffset == null) {
-      _resolveBoardMetrics();
-    }
-    if (_boardSize == null || _boardOffset == null) return;
-
-    final cellWidth = _boardSize!.width / boardWidth;
-    final cellHeight = _boardSize!.height / boardHeight;
-
-    final screenX = _boardOffset!.dx + (food.position.x + 0.5) * cellWidth;
-    final screenY = _boardOffset!.dy + (food.position.y + 0.5) * cellHeight;
-
-    final color = switch (food.type) {
-      FoodType.normal => Colors.red,
-      FoodType.bonus => Colors.amber,
-      FoodType.special => Colors.purple,
-    };
-
-    final displayMultiplier =
-        comboMultiplier >= 1.5 ? comboMultiplier.round() : 1;
-
-    setState(() {
-      _scorePopupManager.addPopup(
-        points: points,
-        position: Offset(screenX, screenY),
-        color: color,
-        multiplier: displayMultiplier,
-      );
-    });
-  }
-
-  void _resolveBoardMetrics() {
-    if (_boardSize != null && _boardOffset != null) return;
-
-    // Find the FlameGameBoard render object via the element tree.
-    void visitor(Element element) {
-      if (_boardSize != null && _boardOffset != null) return;
-      if (element.widget is FlameGameBoard) {
-        final box = element.findRenderObject() as RenderBox?;
-        if (box != null && box.hasSize) {
-          _boardSize = box.size;
-          _boardOffset = box.localToGlobal(Offset.zero);
-        }
-        return;
-      }
-      element.visitChildren(visitor);
-    }
-
-    context.visitAncestorElements((element) {
-      if (element.widget is Stack) {
-        element.visitChildren(visitor);
-        return _boardSize == null;
-      }
-      return true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: _scorePopupManager.activePopups.map((popupData) {
-        return ScorePopup(
-          key: ValueKey(popupData.id),
-          points: popupData.points,
-          multiplier: popupData.multiplier,
-          position: popupData.position,
-          color: popupData.color,
-          onComplete: () {
-            setState(() {
-              _scorePopupManager.removePopup(popupData.id);
-            });
-          },
-        );
-      }).toList(),
-    );
   }
 }
