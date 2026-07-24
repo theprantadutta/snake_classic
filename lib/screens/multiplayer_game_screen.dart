@@ -10,6 +10,8 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
@@ -443,29 +445,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   // Waiting for the first authoritative snapshot
                   // (GameStarted lands right after the countdown).
                   if (snapshot == null) {
-                    return Scaffold(
-                      backgroundColor: theme.backgroundColor,
-                      body: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.accentColor,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Starting game...',
-                              style: TextStyle(
-                                color: theme.accentColor,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
+                    return _buildMatchIntro(theme);
                   }
 
                   return PopScope(
@@ -512,15 +492,14 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                     onSwipe: _handleSwipe,
                                     child: Column(
                                       children: [
-                                        // Multiplayer HUD
-                                        _buildMultiplayerHUD(
+                                        // Face-to-face versus header:
+                                        // duel panel, live scores, momentum
+                                        // bar and match clock.
+                                        _buildVersusHeader(
                                           theme,
                                           snapshot,
                                           currentUserId,
                                         ),
-
-                                        // Game hint row
-                                        _buildGameHintRow(theme, snapshot),
 
                                         // Game Board — renders the
                                         // authoritative snapshots
@@ -536,8 +515,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                           ),
                                         ),
 
-                                        // Bottom info bar
-                                        _buildBottomInfoBar(
+                                        // Bottom control strip
+                                        _buildControlStrip(
                                           theme,
                                           snapshot,
                                           currentUserId,
@@ -569,99 +548,541 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
-  Widget _buildGameHintRow(GameTheme theme, MatchSnapshot snapshot) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Server game clock (3:00 cap, then higher score wins)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.backgroundColor.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.foodColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.timer_outlined,
-                  color: theme.foodColor.withValues(alpha: 0.7),
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _formatGameClock(snapshot.elapsedGameMs),
-                  style: TextStyle(
-                    color: theme.foodColor.withValues(alpha: 0.8),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+  /// Pre-match splash shown while we wait for the first authoritative
+  /// snapshot (right after matchmaking, before the countdown lands).
+  Widget _buildMatchIntro(GameTheme theme) {
+    return Scaffold(
+      backgroundColor: theme.backgroundColor,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [
+              theme.accentColor.withValues(alpha: 0.18),
+              theme.backgroundColor,
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: context.scaled(96),
+                height: context.scaled(96),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.accentColor,
+                      theme.accentColor.withValues(alpha: 0.5),
+                    ],
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.accentColor.withValues(alpha: 0.5),
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    'VS',
+                    style: TextStyle(
+                      color: theme.backgroundColor,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ),
+              ).gameBreathe(intensity: 1.08),
+              const SizedBox(height: 28),
+              Text(
+                'GET READY',
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Dropping you into the arena…',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.6),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: context.scaled(150),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    minHeight: 4,
+                    backgroundColor: theme.accentColor.withValues(alpha: 0.15),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.accentColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The centerpiece of the match screen: a face-to-face duel panel with
+  /// both players' avatars, live scores, a leading-momentum bar, and the
+  /// shared match clock.
+  Widget _buildVersusHeader(
+    GameTheme theme,
+    MatchSnapshot snapshot,
+    String currentUserId,
+  ) {
+    final me = snapshot.playerByUserId(currentUserId);
+    final opponent = snapshot.players
+        .where((p) => p.userId != currentUserId)
+        .firstOrNull;
+
+    final myColor = me != null
+        ? multiplayerColors[me.playerIndex % multiplayerColors.length]
+        : theme.accentColor;
+    final oppColor = opponent != null
+        ? multiplayerColors[opponent.playerIndex % multiplayerColors.length]
+        : Colors.redAccent;
+
+    final myScore = me?.score ?? 0;
+    final oppScore = opponent?.score ?? 0;
+
+    return Container(
+      margin: EdgeInsets.fromLTRB(12, context.scaled(8), 12, 4),
+      padding: EdgeInsets.all(context.scaled(12)),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            myColor.withValues(alpha: 0.16),
+            theme.backgroundColor.withValues(alpha: 0.55),
+            oppColor.withValues(alpha: 0.16),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Top control row: back button + live match clock.
+          Row(
+            children: [
+              _circleIconButton(
+                theme,
+                Icons.arrow_back_ios_new,
+                _showExitDialog,
+              ),
+              const Spacer(),
+              _liveTimerChip(theme, snapshot),
+            ],
+          ),
+          SizedBox(height: context.scaled(12)),
+          // Duel row: you vs opponent, flanking the VS medallion.
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: _duelPlayerCell(
+                  theme,
+                  me,
+                  myColor,
+                  isMe: true,
+                  alignEnd: false,
+                  leading: myScore > oppScore,
+                ),
+              ),
+              _vsMedallion(theme),
+              Expanded(
+                child: _duelPlayerCell(
+                  theme,
+                  opponent,
+                  oppColor,
+                  isMe: false,
+                  alignEnd: true,
+                  leading: oppScore > myScore,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: context.scaled(12)),
+          _momentumBar(myColor, oppColor, myScore, oppScore),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleIconButton(
+    GameTheme theme,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return Material(
+      color: theme.backgroundColor.withValues(alpha: 0.6),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.all(context.scaled(8)),
+          child: Icon(icon, color: theme.accentColor, size: context.scaled(18)),
+        ),
+      ),
+    );
+  }
+
+  Widget _liveTimerChip(GameTheme theme, MatchSnapshot snapshot) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.scaled(12),
+        vertical: context.scaled(7),
+      ),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.foodColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Live indicator dot.
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: theme.foodColor,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.foodColor.withValues(alpha: 0.7),
+                  blurRadius: 6,
+                  spreadRadius: 1,
                 ),
               ],
             ),
           ),
-
-          // Gesture indicator
-          AnimatedBuilder(
-            animation: _gestureIndicatorController,
-            builder: (context, child) {
-              final isActive =
-                  _lastSwipeDirection != null &&
-                  _gestureIndicatorController.isAnimating;
-
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.backgroundColor.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(
-                      alpha: isActive ? 0.7 : 0.3,
-                    ),
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedRotation(
-                      turns: _getDirectionRotation(_lastSwipeDirection),
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOutCubic,
-                      child: Icon(
-                        Icons.arrow_upward_rounded,
-                        color: theme.accentColor.withValues(
-                          alpha: isActive ? 1.0 : 0.6,
-                        ),
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Swipe',
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(
-                          alpha: isActive ? 0.9 : 0.6,
-                        ),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+          const SizedBox(width: 8),
+          Icon(
+            Icons.timer_outlined,
+            color: theme.foodColor.withValues(alpha: 0.8),
+            size: 15,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _formatGameClock(snapshot.elapsedGameMs),
+            style: TextStyle(
+              color: theme.foodColor.withValues(alpha: 0.9),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _vsMedallion(GameTheme theme) {
+    final size = context.scaled(46);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.accentColor.withValues(alpha: 0.95),
+            theme.accentColor.withValues(alpha: 0.5),
+          ],
+        ),
+        border: Border.all(
+          color: theme.backgroundColor.withValues(alpha: 0.6),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.accentColor.withValues(alpha: 0.4),
+            blurRadius: 12,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          'VS',
+          style: TextStyle(
+            color: theme.backgroundColor,
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _duelPlayerCell(
+    GameTheme theme,
+    MatchPlayerState? player,
+    Color color, {
+    required bool isMe,
+    required bool alignEnd,
+    required bool leading,
+  }) {
+    final rawName = player == null ? 'Waiting…' : (isMe ? 'You' : player.username);
+    final name = rawName.length > 9 ? '${rawName.substring(0, 9)}…' : rawName;
+    final score = player?.score ?? 0;
+    final alive = player?.alive ?? true;
+    final connected = player?.connected ?? true;
+    final initial = (player != null && player.username.isNotEmpty)
+        ? player.username[0].toUpperCase()
+        : '?';
+
+    final avatar = _playerAvatar(
+      theme,
+      color,
+      initial,
+      alive: alive,
+      connected: connected,
+    );
+
+    final info = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (leading && !alignEnd) ...[
+              const Icon(Icons.emoji_events, color: Colors.amber, size: 13),
+              const SizedBox(width: 4),
+            ],
+            Flexible(
+              child: Text(
+                name,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: alive
+                      ? theme.accentColor.withValues(alpha: 0.9)
+                      : Colors.grey,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  decoration: alive ? null : TextDecoration.lineThrough,
+                ),
+              ),
+            ),
+            if (leading && alignEnd) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.emoji_events, color: Colors.amber, size: 13),
+            ],
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '$score',
+          style: TextStyle(
+            color: alive ? theme.accentColor : Colors.grey,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            height: 1.0,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        if (!alive)
+          Text(
+            'OUT',
+            style: TextStyle(
+              color: Colors.red.shade400,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
+            ),
+          )
+        else if (!connected)
+          Text(
+            'reconnecting…',
+            style: TextStyle(
+              color: Colors.orange,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+      ],
+    );
+
+    final children = alignEnd
+        ? [
+            Expanded(child: info),
+            SizedBox(width: context.scaled(10)),
+            avatar,
+          ]
+        : [
+            avatar,
+            SizedBox(width: context.scaled(10)),
+            Expanded(child: info),
+          ];
+
+    return Row(mainAxisSize: MainAxisSize.max, children: children);
+  }
+
+  Widget _playerAvatar(
+    GameTheme theme,
+    Color color,
+    String initial, {
+    required bool alive,
+    required bool connected,
+  }) {
+    final size = context.scaled(46);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withValues(alpha: alive ? 0.9 : 0.25),
+                color.withValues(alpha: alive ? 0.45 : 0.12),
+              ],
+            ),
+            border: Border.all(
+              color: color.withValues(alpha: alive ? 0.85 : 0.3),
+              width: 2,
+            ),
+            boxShadow: alive
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.45),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: alive
+                ? Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                : const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white70,
+                    size: 24,
+                  ),
+          ),
+        ),
+        if (!connected)
+          Positioned(
+            right: -2,
+            top: -2,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: theme.backgroundColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.orange, width: 1),
+              ),
+              child: const Icon(Icons.wifi_off, color: Colors.orange, size: 11),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// A tug-of-war bar: the split point tracks each player's share of the
+  /// combined score, so you can read who's ahead at a glance.
+  Widget _momentumBar(
+    Color myColor,
+    Color oppColor,
+    int myScore,
+    int oppScore,
+  ) {
+    final total = myScore + oppScore;
+    final myFrac = total == 0 ? 0.5 : (myScore / total).clamp(0.06, 0.94);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        height: context.scaled(8),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final splitX = width * myFrac;
+            return Stack(
+              children: [
+                // Opponent side fills the full track underneath.
+                Container(width: width, color: oppColor.withValues(alpha: 0.6)),
+                // Your lead grows from the left.
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOut,
+                  width: splitX,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [myColor, myColor.withValues(alpha: 0.75)],
+                    ),
+                  ),
+                ),
+                // Bead marking the split point.
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOut,
+                  left: splitX - context.scaled(4),
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: context.scaled(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -680,316 +1101,235 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     }
   }
 
-  Widget _buildMultiplayerHUD(
+  /// Slim bottom strip: your snake length on the left, a live swipe-echo
+  /// indicator on the right. For rare >2-player matches a compact scoreboard
+  /// fills the middle (the header only frames you vs your primary rival).
+  Widget _buildControlStrip(
     GameTheme theme,
     MatchSnapshot snapshot,
     String currentUserId,
   ) {
-    final me = snapshot.playerByUserId(currentUserId);
-    final opponent = snapshot.players
-        .where((p) => p.userId != currentUserId)
-        .firstOrNull;
+    final mySnake = snapshot.playerByUserId(currentUserId);
+    final manyPlayers = snapshot.players.length > 2;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          // Back button
-          IconButton(
-            onPressed: _showExitDialog,
-            icon: Icon(
-              Icons.arrow_back_ios_new,
-              color: theme.accentColor,
-              size: 22,
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Mode indicator with theme-based styling
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.purple.withValues(alpha: 0.3),
-                  Colors.amber.withValues(alpha: 0.2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.purple.withValues(alpha: 0.5)),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.sports_esports, color: Colors.amber, size: 16),
-                SizedBox(width: 6),
-                Text(
-                  'VS',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // Opponent name + score
-          if (opponent != null) ...[
-            _hudScoreChip(
-              theme,
-              label: opponent.username,
-              score: opponent.score,
-              color:
-                  multiplayerColors[opponent.playerIndex %
-                      multiplayerColors.length],
-              alive: opponent.alive,
-              connected: opponent.connected,
-            ),
-            const SizedBox(width: 12),
-          ],
-
-          // Your score
-          _hudScoreChip(
-            theme,
-            label: 'You',
-            score: me?.score ?? 0,
-            color: me != null
-                ? multiplayerColors[me.playerIndex % multiplayerColors.length]
-                : theme.accentColor,
-            alive: me?.alive ?? true,
-            connected: true,
-            emphasized: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _hudScoreChip(
-    GameTheme theme, {
-    required String label,
-    required int score,
-    required Color color,
-    required bool alive,
-    required bool connected,
-    bool emphasized = false,
-  }) {
-    final display = label.length > 8 ? '${label.substring(0, 8)}…' : label;
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: emphasized ? 16 : 12,
-        vertical: 8,
+        horizontal: 16,
+        vertical: context.scaled(10),
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: emphasized ? 0.15 : 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: alive ? 0.4 : 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: alive ? color : Colors.grey,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            display,
-            style: TextStyle(
-              color: alive
-                  ? theme.accentColor.withValues(alpha: 0.85)
-                  : Colors.grey,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              decoration: alive ? null : TextDecoration.lineThrough,
-            ),
-          ),
-          if (!connected) ...[
-            const SizedBox(width: 4),
-            const Icon(Icons.wifi_off, color: Colors.orange, size: 12),
-          ],
-          const SizedBox(width: 8),
-          Text(
-            '$score',
-            style: TextStyle(
-              color: alive ? theme.accentColor : Colors.grey,
-              fontWeight: FontWeight.bold,
-              fontSize: emphasized ? 20 : 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomInfoBar(
-    GameTheme theme,
-    MatchSnapshot snapshot,
-    String currentUserId,
-  ) {
-    // Sort players by score (descending)
-    final sortedPlayers = List<MatchPlayerState>.from(snapshot.players)
-      ..sort((a, b) => b.score.compareTo(a.score));
-    final mySnake = snapshot.playerByUserId(currentUserId);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.8),
+        color: theme.backgroundColor.withValues(alpha: 0.85),
         border: Border(
-          top: BorderSide(color: theme.accentColor.withValues(alpha: 0.2)),
+          top: BorderSide(color: theme.accentColor.withValues(alpha: 0.15)),
         ),
       ),
       child: Row(
         children: [
-          // Leaderboard
-          Expanded(
-            child: SizedBox(
-              height: 50,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: sortedPlayers.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final player = sortedPlayers[index];
-                  final isMe = player.userId == currentUserId;
-                  final playerColor =
-                      multiplayerColors[player.playerIndex %
-                          multiplayerColors.length];
+          _statPill(
+            theme,
+            Icons.straighten,
+            'LENGTH',
+            '${mySnake?.body.length ?? 0}',
+          ),
+          if (manyPlayers) ...[
+            const SizedBox(width: 12),
+            Expanded(child: _miniLeaderboard(theme, snapshot, currentUserId)),
+            const SizedBox(width: 12),
+          ] else
+            const Spacer(),
+          _swipeIndicator(theme),
+        ],
+      ),
+    );
+  }
 
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isMe
-                          ? playerColor.withValues(alpha: 0.2)
-                          : theme.backgroundColor.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: player.alive
-                            ? playerColor.withValues(alpha: 0.5)
-                            : Colors.grey.withValues(alpha: 0.3),
-                        width: isMe ? 2 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Rank indicator
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: index == 0
-                                ? Colors.amber
-                                : Colors.grey.shade400,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${index + 1}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Player color dot
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: player.alive ? playerColor : Colors.grey,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        // Name and score
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isMe
-                                  ? 'You'
-                                  : (player.username.length > 8
-                                        ? '${player.username.substring(0, 8)}...'
-                                        : player.username),
-                              style: TextStyle(
-                                color: player.alive
-                                    ? theme.accentColor
-                                    : Colors.grey,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                                decoration: player.alive
-                                    ? null
-                                    : TextDecoration.lineThrough,
-                              ),
-                            ),
-                            Text(
-                              '${player.score} pts',
-                              style: TextStyle(
-                                color: player.alive
-                                    ? theme.accentColor.withValues(alpha: 0.7)
-                                    : Colors.grey,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
+  Widget _statPill(
+    GameTheme theme,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.accentColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: theme.accentColor.withValues(alpha: 0.7), size: 16),
+          const SizedBox(width: 8),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.55),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
               ),
+              Text(
+                value,
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _swipeIndicator(GameTheme theme) {
+    return AnimatedBuilder(
+      animation: _gestureIndicatorController,
+      builder: (context, child) {
+        final isActive =
+            _lastSwipeDirection != null &&
+            _gestureIndicatorController.isAnimating;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.backgroundColor.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.accentColor.withValues(alpha: isActive ? 0.7 : 0.25),
+              width: 1.5,
             ),
           ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedRotation(
+                turns: _getDirectionRotation(_lastSwipeDirection),
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                child: Icon(
+                  Icons.arrow_upward_rounded,
+                  color: theme.accentColor.withValues(
+                    alpha: isActive ? 1.0 : 0.6,
+                  ),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Swipe',
+                style: TextStyle(
+                  color: theme.accentColor.withValues(
+                    alpha: isActive ? 0.9 : 0.6,
+                  ),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-          const SizedBox(width: 12),
+  Widget _miniLeaderboard(
+    GameTheme theme,
+    MatchSnapshot snapshot,
+    String currentUserId,
+  ) {
+    final sortedPlayers = List<MatchPlayerState>.from(snapshot.players)
+      ..sort((a, b) => b.score.compareTo(a.score));
 
-          // Snake length indicator
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: sortedPlayers.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final player = sortedPlayers[index];
+          final isMe = player.userId == currentUserId;
+          final playerColor =
+              multiplayerColors[player.playerIndex % multiplayerColors.length];
+
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.1),
+              color: isMe
+                  ? playerColor.withValues(alpha: 0.2)
+                  : theme.backgroundColor.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: player.alive
+                    ? playerColor.withValues(alpha: 0.5)
+                    : Colors.grey.withValues(alpha: 0.3),
+                width: isMe ? 2 : 1,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.straighten,
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  size: 16,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${mySnake?.body.length ?? 0}',
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: index == 0 ? Colors.amber : Colors.grey.shade500,
+                    shape: BoxShape.circle,
                   ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isMe
+                          ? 'You'
+                          : (player.username.length > 8
+                                ? '${player.username.substring(0, 8)}…'
+                                : player.username),
+                      style: TextStyle(
+                        color: player.alive ? theme.accentColor : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                        decoration:
+                            player.alive ? null : TextDecoration.lineThrough,
+                      ),
+                    ),
+                    Text(
+                      '${player.score} pts',
+                      style: TextStyle(
+                        color: player.alive
+                            ? theme.accentColor.withValues(alpha: 0.7)
+                            : Colors.grey,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
