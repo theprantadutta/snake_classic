@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
@@ -169,6 +170,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     _resultDialogShown = true;
 
     final theme = context.read<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
     final userId = _currentUserId ?? '';
     final won = result.isWinner(userId);
     final draw = result.isDraw;
@@ -201,7 +203,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             ),
             const SizedBox(width: 12),
             Text(
-              won ? 'VICTORY!' : (draw ? 'DRAW' : 'DEFEAT'),
+              won ? l10n.mpVictory : (draw ? l10n.mpDraw : l10n.mpDefeat),
               style: TextStyle(color: titleColor, fontWeight: FontWeight.bold),
             ),
           ],
@@ -210,7 +212,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _resultSummary(result, me, won: won, draw: draw),
+              _resultSummary(l10n, result, me, won: won, draw: draw),
               textAlign: TextAlign.center,
               style: TextStyle(color: theme.accentColor, fontSize: 14),
             ),
@@ -230,9 +232,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _resultScoreColumn(theme, 'You', me?.score ?? 0),
+                  _resultScoreColumn(theme, l10n.mpYou, me?.score ?? 0),
                   Text(
-                    'VS',
+                    l10n.mpVs,
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.5),
                       fontWeight: FontWeight.bold,
@@ -240,7 +242,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   ),
                   _resultScoreColumn(
                     theme,
-                    opponent?.username ?? 'Opponent',
+                    opponent?.username ?? l10n.mpOpponent,
                     opponent?.score ?? 0,
                   ),
                 ],
@@ -268,7 +270,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '+${result.winnerCoinReward} coins',
+                      l10n.mpCoinReward(result.winnerCoinReward),
                       style: const TextStyle(
                         color: Colors.amber,
                         fontWeight: FontWeight.bold,
@@ -293,7 +295,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Back to Lobby',
+                l10n.mpBackToLobby,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontWeight: FontWeight.bold,
@@ -322,7 +324,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Play Again',
+                  l10n.mpPlayAgain,
                   style: TextStyle(
                     color: titleColor,
                     fontWeight: FontWeight.bold,
@@ -360,8 +362,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   /// One human line explaining how the match ended, from the winner's or
-  /// loser's perspective.
+  /// loser's perspective. Full sentences per branch (never assembled from
+  /// fragments) so every language can use natural word order.
   String _resultSummary(
+    AppLocalizations l10n,
     MatchEndResult result,
     MatchEndPlayer? me, {
     required bool won,
@@ -370,31 +374,31 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     switch (result.reason) {
       case 'timeout':
         return draw
-            ? 'Time\'s up — dead even!'
-            : 'Time\'s up — ${won ? 'you had' : 'your opponent had'} the higher score.';
+            ? l10n.mpTimeUpDraw
+            : (won ? l10n.mpTimeUpYouWon : l10n.mpTimeUpYouLost);
       case 'mutual_crash':
         return draw
-            ? 'Both snakes crashed — it\'s a tie!'
-            : 'Both snakes crashed — ${won ? 'your' : 'their'} score decided it.';
+            ? l10n.mpMutualCrashDraw
+            : (won ? l10n.mpMutualCrashYouWon : l10n.mpMutualCrashYouLost);
       case 'aborted':
-        return 'The match was cancelled.';
+        return l10n.mpMatchCancelled;
       default: // last_alive
         if (won) {
-          return 'Your opponent crashed. Last snake standing!';
+          return l10n.mpLastSnakeStanding;
         }
         switch (me?.deathReason) {
           case 'wall':
-            return 'You crashed into the wall.';
+            return l10n.mpDeathWall;
           case 'self':
-            return 'You crashed into yourself.';
+            return l10n.mpDeathSelf;
           case 'opponent':
-            return 'You crashed into your opponent.';
+            return l10n.mpDeathOpponent;
           case 'head_on':
-            return 'Head-on collision!';
+            return l10n.mpDeathHeadOn;
           case 'forfeit':
-            return 'Disconnected too long — match forfeited.';
+            return l10n.mpDeathForfeit;
           default:
-            return 'Better luck next time!';
+            return l10n.mpBetterLuck;
         }
     }
   }
@@ -409,6 +413,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
   void _showExitDialog() {
     final theme = context.read<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     showDialog(
       context: context,
@@ -416,21 +421,21 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         backgroundColor: theme.backgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Leave Game?',
+          l10n.mpLeaveGameTitle,
           style: TextStyle(
             color: theme.accentColor,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
-          'The match keeps running on the server — leaving forfeits it.',
+          l10n.mpLeaveGameBody,
           style: TextStyle(color: theme.accentColor),
         ),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
             child: Text(
-              'Cancel',
+              l10n.commonCancel,
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
             ),
           ),
@@ -439,7 +444,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               dialogContext.pop();
               _navigateToLobby();
             },
-            child: const Text('Leave', style: TextStyle(color: Colors.red)),
+            child: Text(
+              l10n.mpLeave,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -620,6 +628,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   /// Dim the frozen board and say what's happening while the cubit
   /// retries the connection. The match keeps running server-side.
   Widget _buildReconnectingOverlay(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       color: Colors.black.withValues(alpha: 0.6),
       child: Center(
@@ -636,7 +645,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              'RECONNECTING…',
+              l10n.mpReconnecting,
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 18,
@@ -646,7 +655,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'The match is still running on the server.',
+              l10n.mpReconnectingBody,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.7),
                 fontSize: 13,
@@ -708,7 +717,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 ),
                 child: Center(
                   child: Text(
-                    'VS',
+                    AppLocalizations.of(context)!.mpVs,
                     style: TextStyle(
                       color: theme.backgroundColor,
                       fontSize: 30,
@@ -720,7 +729,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               ).gameBreathe(intensity: 1.08),
               const SizedBox(height: 28),
               Text(
-                'GET READY',
+                AppLocalizations.of(context)!.mpGetReady,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 22,
@@ -730,7 +739,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Dropping you into the arena…',
+                AppLocalizations.of(context)!.mpDroppingIntoArena,
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.6),
                   fontSize: 14,
@@ -951,7 +960,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       ),
       child: Center(
         child: Text(
-          'VS',
+          AppLocalizations.of(context)!.mpVs,
           style: TextStyle(
             color: theme.backgroundColor,
             fontSize: 15,
@@ -971,7 +980,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     required bool alignEnd,
     required bool leading,
   }) {
-    final rawName = player == null ? 'Waiting…' : (isMe ? 'You' : player.username);
+    final l10n = AppLocalizations.of(context)!;
+    final rawName =
+        player == null ? l10n.mpWaitingPlayer : (isMe ? l10n.mpYou : player.username);
     final name = rawName.length > 9 ? '${rawName.substring(0, 9)}…' : rawName;
     final score = player?.score ?? 0;
     final alive = player?.alive ?? true;
@@ -1033,7 +1044,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         ),
         if (!alive)
           Text(
-            'OUT',
+            l10n.mpOut,
             style: TextStyle(
               color: Colors.red.shade400,
               fontSize: 10,
@@ -1043,7 +1054,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           )
         else if (!connected)
           Text(
-            'reconnecting…',
+            l10n.mpReconnectingInline,
             style: TextStyle(
               color: Colors.orange,
               fontSize: 10,
@@ -1257,7 +1268,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     child: _statPill(
                       theme,
                       Icons.straighten,
-                      'LENGTH',
+                      AppLocalizations.of(context)!.mpLength,
                       '${mySnake?.body.length ?? 0}',
                     ),
                   ),
@@ -1288,7 +1299,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 _statPill(
                   theme,
                   Icons.straighten,
-                  'LENGTH',
+                  AppLocalizations.of(context)!.mpLength,
                   '${mySnake?.body.length ?? 0}',
                 ),
                 if (manyPlayers) ...[
@@ -1387,7 +1398,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               ),
               const SizedBox(width: 6),
               Text(
-                'Swipe',
+                AppLocalizations.of(context)!.mpSwipe,
                 style: TextStyle(
                   color: theme.accentColor.withValues(
                     alpha: isActive ? 0.9 : 0.6,

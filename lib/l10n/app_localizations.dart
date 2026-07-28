@@ -135,6 +135,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Follow your device language'**
   String get languageSystemDefaultSubtitle;
+
+  /// Generic cancel action in dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
+
+  /// Match result dialog title when the player won. Uppercase, celebratory.
+  ///
+  /// In en, this message translates to:
+  /// **'VICTORY!'**
+  String get mpVictory;
+
+  /// No description provided for @mpDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'DRAW'**
+  String get mpDraw;
+
+  /// No description provided for @mpDefeat.
+  ///
+  /// In en, this message translates to:
+  /// **'DEFEAT'**
+  String get mpDefeat;
+
+  /// Label for the local player's own score/snake.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get mpYou;
+
+  /// The 'versus' medallion between the two players. Short — 2-3 characters.
+  ///
+  /// In en, this message translates to:
+  /// **'VS'**
+  String get mpVs;
+
+  /// No description provided for @mpOpponent.
+  ///
+  /// In en, this message translates to:
+  /// **'Opponent'**
+  String get mpOpponent;
+
+  /// No description provided for @mpBackToLobby.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Lobby'**
+  String get mpBackToLobby;
+
+  /// No description provided for @mpPlayAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Play Again'**
+  String get mpPlayAgain;
+
+  /// No description provided for @mpTimeUpDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Time\'s up — dead even!'**
+  String get mpTimeUpDraw;
+
+  /// No description provided for @mpTimeUpYouWon.
+  ///
+  /// In en, this message translates to:
+  /// **'Time\'s up — you had the higher score.'**
+  String get mpTimeUpYouWon;
+
+  /// No description provided for @mpTimeUpYouLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Time\'s up — your opponent had the higher score.'**
+  String get mpTimeUpYouLost;
+
+  /// No description provided for @mpMutualCrashDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Both snakes crashed — it\'s a tie!'**
+  String get mpMutualCrashDraw;
+
+  /// No description provided for @mpMutualCrashYouWon.
+  ///
+  /// In en, this message translates to:
+  /// **'Both snakes crashed — your score decided it.'**
+  String get mpMutualCrashYouWon;
+
+  /// No description provided for @mpMutualCrashYouLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Both snakes crashed — their score decided it.'**
+  String get mpMutualCrashYouLost;
+
+  /// No description provided for @mpMatchCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The match was cancelled.'**
+  String get mpMatchCancelled;
+
+  /// No description provided for @mpLastSnakeStanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Your opponent crashed. Last snake standing!'**
+  String get mpLastSnakeStanding;
+
+  /// No description provided for @mpDeathWall.
+  ///
+  /// In en, this message translates to:
+  /// **'You crashed into the wall.'**
+  String get mpDeathWall;
+
+  /// No description provided for @mpDeathSelf.
+  ///
+  /// In en, this message translates to:
+  /// **'You crashed into yourself.'**
+  String get mpDeathSelf;
+
+  /// No description provided for @mpDeathOpponent.
+  ///
+  /// In en, this message translates to:
+  /// **'You crashed into your opponent.'**
+  String get mpDeathOpponent;
+
+  /// No description provided for @mpDeathHeadOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Head-on collision!'**
+  String get mpDeathHeadOn;
+
+  /// No description provided for @mpDeathForfeit.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected too long — match forfeited.'**
+  String get mpDeathForfeit;
+
+  /// No description provided for @mpBetterLuck.
+  ///
+  /// In en, this message translates to:
+  /// **'Better luck next time!'**
+  String get mpBetterLuck;
+
+  /// Coin reward chip on the victory dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{+{count} coin} other{+{count} coins}}'**
+  String mpCoinReward(int count);
+
+  /// No description provided for @mpLeaveGameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Game?'**
+  String get mpLeaveGameTitle;
+
+  /// No description provided for @mpLeaveGameBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The match keeps running on the server — leaving forfeits it.'**
+  String get mpLeaveGameBody;
+
+  /// No description provided for @mpLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get mpLeave;
+
+  /// No description provided for @mpReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'RECONNECTING…'**
+  String get mpReconnecting;
+
+  /// No description provided for @mpReconnectingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The match is still running on the server.'**
+  String get mpReconnectingBody;
+
+  /// No description provided for @mpGetReady.
+  ///
+  /// In en, this message translates to:
+  /// **'GET READY'**
+  String get mpGetReady;
+
+  /// No description provided for @mpDroppingIntoArena.
+  ///
+  /// In en, this message translates to:
+  /// **'Dropping you into the arena…'**
+  String get mpDroppingIntoArena;
+
+  /// Placeholder name in the versus header before the opponent is known. Keep short — the slot fits ~9 characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting…'**
+  String get mpWaitingPlayer;
+
+  /// Tag on a player whose snake is dead. Very short.
+  ///
+  /// In en, this message translates to:
+  /// **'OUT'**
+  String get mpOut;
+
+  /// Stat pill label for the snake's body length. Uppercase, short.
+  ///
+  /// In en, this message translates to:
+  /// **'LENGTH'**
+  String get mpLength;
+
+  /// Label on the swipe input indicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe'**
+  String get mpSwipe;
+
+  /// Small inline status under an opponent who lost connection. Lowercase.
+  ///
+  /// In en, this message translates to:
+  /// **'reconnecting…'**
+  String get mpReconnectingInline;
 }
 
 class _AppLocalizationsDelegate

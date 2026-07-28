@@ -15,5 +15,76 @@
   "languageSystemDefaultSubtitle": "Follow your device language",
   "@languageSystemDefaultSubtitle": {
     "description": "Subtitle under the system-default language option."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic cancel action in dialogs."
+  },
+  "mpVictory": "VICTORY!",
+  "@mpVictory": {
+    "description": "Match result dialog title when the player won. Uppercase, celebratory."
+  },
+  "mpDraw": "DRAW",
+  "mpDefeat": "DEFEAT",
+  "mpYou": "You",
+  "@mpYou": {
+    "description": "Label for the local player's own score/snake."
+  },
+  "mpVs": "VS",
+  "@mpVs": {
+    "description": "The 'versus' medallion between the two players. Short — 2-3 characters."
+  },
+  "mpOpponent": "Opponent",
+  "mpBackToLobby": "Back to Lobby",
+  "mpPlayAgain": "Play Again",
+  "mpTimeUpDraw": "Time's up — dead even!",
+  "mpTimeUpYouWon": "Time's up — you had the higher score.",
+  "mpTimeUpYouLost": "Time's up — your opponent had the higher score.",
+  "mpMutualCrashDraw": "Both snakes crashed — it's a tie!",
+  "mpMutualCrashYouWon": "Both snakes crashed — your score decided it.",
+  "mpMutualCrashYouLost": "Both snakes crashed — their score decided it.",
+  "mpMatchCancelled": "The match was cancelled.",
+  "mpLastSnakeStanding": "Your opponent crashed. Last snake standing!",
+  "mpDeathWall": "You crashed into the wall.",
+  "mpDeathSelf": "You crashed into yourself.",
+  "mpDeathOpponent": "You crashed into your opponent.",
+  "mpDeathHeadOn": "Head-on collision!",
+  "mpDeathForfeit": "Disconnected too long — match forfeited.",
+  "mpBetterLuck": "Better luck next time!",
+  "mpCoinReward": "{count, plural, one{+{count} coin} other{+{count} coins}}",
+  "@mpCoinReward": {
+    "description": "Coin reward chip on the victory dialog.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mpLeaveGameTitle": "Leave Game?",
+  "mpLeaveGameBody": "The match keeps running on the server — leaving forfeits it.",
+  "mpLeave": "Leave",
+  "mpReconnecting": "RECONNECTING…",
+  "mpReconnectingBody": "The match is still running on the server.",
+  "mpGetReady": "GET READY",
+  "mpDroppingIntoArena": "Dropping you into the arena…",
+  "mpWaitingPlayer": "Waiting…",
+  "@mpWaitingPlayer": {
+    "description": "Placeholder name in the versus header before the opponent is known. Keep short — the slot fits ~9 characters."
+  },
+  "mpOut": "OUT",
+  "@mpOut": {
+    "description": "Tag on a player whose snake is dead. Very short."
+  },
+  "mpLength": "LENGTH",
+  "@mpLength": {
+    "description": "Stat pill label for the snake's body length. Uppercase, short."
+  },
+  "mpSwipe": "Swipe",
+  "@mpSwipe": {
+    "description": "Label on the swipe input indicator."
+  },
+  "mpReconnectingInline": "reconnecting…",
+  "@mpReconnectingInline": {
+    "description": "Small inline status under an opponent who lost connection. Lowercase."
   }
 }
