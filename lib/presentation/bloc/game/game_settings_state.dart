@@ -22,6 +22,10 @@ class GameSettingsState extends Equatable {
   final bool screenShakeEnabled;
   final bool hapticsEnabled;
 
+  /// BCP-47 tag of the user's app-language override ('en', 'hi', 'pt', …).
+  /// Null = follow the device locale.
+  final String? localeCode;
+
   const GameSettingsState({
     this.status = GameSettingsStatus.initial,
     this.dPadEnabled = false,
@@ -34,6 +38,7 @@ class GameSettingsState extends Equatable {
     this.highScore = 0,
     this.screenShakeEnabled = false, // Disabled by default
     this.hapticsEnabled = true,
+    this.localeCode,
   });
 
   /// Initial state
@@ -52,6 +57,8 @@ class GameSettingsState extends Equatable {
     int? highScore,
     bool? screenShakeEnabled,
     bool? hapticsEnabled,
+    String? localeCode,
+    bool clearLocaleCode = false,
   }) {
     return GameSettingsState(
       status: status ?? this.status,
@@ -67,6 +74,8 @@ class GameSettingsState extends Equatable {
       highScore: highScore ?? this.highScore,
       screenShakeEnabled: screenShakeEnabled ?? this.screenShakeEnabled,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
+      localeCode:
+          clearLocaleCode ? null : (localeCode ?? this.localeCode),
     );
   }
 
@@ -86,5 +95,6 @@ class GameSettingsState extends Equatable {
     highScore,
     screenShakeEnabled,
     hapticsEnabled,
+    localeCode,
   ];
 }

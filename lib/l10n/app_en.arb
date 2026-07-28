@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appTitle": "Snake Classic",
+  "@appTitle": {
+    "description": "App title shown in the OS task switcher. Brand name — keep as-is in every language."
+  },
+  "settingsSectionLanguage": "LANGUAGE",
+  "@settingsSectionLanguage": {
+    "description": "Settings section header for the app language picker. Uppercase like the other section headers."
+  },
+  "languageSystemDefault": "System default",
+  "@languageSystemDefault": {
+    "description": "Language picker option that follows the device language."
+  },
+  "languageSystemDefaultSubtitle": "Follow your device language",
+  "@languageSystemDefaultSubtitle": {
+    "description": "Subtitle under the system-default language option."
+  }
+}

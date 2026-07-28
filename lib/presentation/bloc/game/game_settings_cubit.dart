@@ -81,6 +81,7 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       final gameMode = await _storageService.getGameMode();
       final gameModePrompted = await _storageService.hasGameModeBeenPrompted();
       final difficulty = await _storageService.getDifficulty();
+      final localeCode = await _storageService.getLocaleCode();
 
       // HapticService gates every vibration call on this flag; it has no
       // storage access of its own, so this cubit owns the fan-out.
@@ -102,6 +103,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           gameMode: gameMode,
           gameModeFirstLaunchPrompted: gameModePrompted,
           difficulty: difficulty,
+          localeCode: localeCode,
+          clearLocaleCode: localeCode == null,
         ),
       );
 
@@ -122,6 +125,14 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
         if (row.hapticsEnabled != state.hapticsEnabled) {
           HapticService().setEnabled(row.hapticsEnabled);
           emit(state.copyWith(hapticsEnabled: row.hapticsEnabled));
+        }
+        // Locale can change underneath us via the first-sign-in snapshot
+        // pull too — MaterialApp rebuilds off this state.
+        if (row.localeCode != state.localeCode) {
+          emit(state.copyWith(
+            localeCode: row.localeCode,
+            clearLocaleCode: row.localeCode == null,
+          ));
         }
       });
 
@@ -220,6 +231,19 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
     }
 
     return BoardSize.classic;
+  }
+
+  /// Update the app-language override. Null = follow the device locale.
+  /// MaterialApp rebuilds off state.localeCode, so the change is live
+  /// immediately.
+  Future<void> setLocaleCode(String? localeCode) async {
+    if (state.localeCode == localeCode) return;
+
+    emit(state.copyWith(
+      localeCode: localeCode,
+      clearLocaleCode: localeCode == null,
+    ));
+    await _storageService.saveLocaleCode(localeCode);
   }
 
   /// Update D-Pad enabled setting

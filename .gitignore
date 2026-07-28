@@ -84,3 +84,4 @@ android/build/
 # and ignored so it stays out of the way; it regenerates automatically if
 # a macOS build is ever needed.
 macos/Flutter/GeneratedPluginRegistrant.swift
+l10n_untranslated.txt

@@ -190,6 +190,19 @@ class StorageService {
     return sizes[stored.clamp(0, sizes.length - 1)];
   }
 
+  // ==================== App Language ====================
+
+  /// BCP-47 tag of the user's language override, or null to follow the
+  /// device locale.
+  Future<String?> getLocaleCode() async {
+    final settings = await _settingsDao?.getSettings();
+    return settings?.localeCode;
+  }
+
+  Future<void> saveLocaleCode(String? localeCode) async {
+    await _settingsDao?.updateLocaleCode(localeCode);
+  }
+
   // ==================== Crash Feedback ====================
 
   Future<Duration> getCrashFeedbackDuration() async {

@@ -1,0 +1,7 @@
+{
+  "@@locale": "ru",
+  "appTitle": "Snake Classic",
+  "settingsSectionLanguage": "ЯЗЫК",
+  "languageSystemDefault": "Как в системе",
+  "languageSystemDefaultSubtitle": "Использовать язык устройства"
+}

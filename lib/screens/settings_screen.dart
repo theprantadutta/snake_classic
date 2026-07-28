@@ -5,6 +5,8 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/supported_locales.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
@@ -436,6 +438,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                                   const SizedBox(height: 32),
 
+                                  // App language picker. Section title comes
+                                  // from the ARB (the picker itself is the
+                                  // first localized surface in the app).
+                                  _buildSection(
+                                    AppLocalizations.of(context)!
+                                        .settingsSectionLanguage,
+                                    [_buildLanguagePicker(theme)],
+                                    theme,
+                                  ),
+
+                                  const SizedBox(height: 32),
+
                                   // 5. User Profile Section
                                   _buildSection('NOTIFICATIONS', [
                                     _buildAudioSwitch(
@@ -595,6 +609,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     ),
+    );
+  }
+
+  /// App-language picker: system default + one row per supported locale.
+  /// Selection applies instantly (MaterialApp rebuilds off the settings
+  /// cubit) — no restart needed.
+  Widget _buildLanguagePicker(GameTheme theme) {
+    return BlocBuilder<GameSettingsCubit, GameSettingsState>(
+      buildWhen: (prev, curr) => prev.localeCode != curr.localeCode,
+      builder: (context, settingsState) {
+        final l10n = AppLocalizations.of(context)!;
+        final current = settingsState.localeCode;
+
+        Widget option({
+          required String? code,
+          required String label,
+          String? subtitle,
+        }) {
+          final selected = current == code;
+          return InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () {
+              context.read<GameSettingsCubit>().setLocaleCode(code);
+              _analytics.trackSettingChanged(
+                settingName: 'app_language',
+                value: code ?? 'system',
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    selected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    size: 20,
+                    color: selected
+                        ? theme.accentColor
+                        : theme.accentColor.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                            color: theme.accentColor,
+                            fontSize: 15,
+                            fontWeight:
+                                selected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                        if (subtitle != null)
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: theme.accentColor.withValues(alpha: 0.6),
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            option(
+              code: null,
+              label: l10n.languageSystemDefault,
+              subtitle: l10n.languageSystemDefaultSubtitle,
+            ),
+            for (final locale in SupportedLocales.locales)
+              option(
+                code: locale.languageCode,
+                label: SupportedLocales.endonyms[locale.languageCode] ??
+                    locale.languageCode,
+              ),
+          ],
+        );
+      },
     );
   }
 

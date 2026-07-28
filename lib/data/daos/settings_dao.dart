@@ -116,6 +116,10 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   Future<void> applyLegacyPrefsImport(GameSettingsCompanion patch) =>
       _writeSettings(patch);
 
+  /// Update the app language override. Null = follow the device locale.
+  Future<void> updateLocaleCode(String? localeCode) =>
+      _writeSettings(GameSettingsCompanion(localeCode: Value(localeCode)));
+
   /// Update selected skin
   Future<void> updateSelectedSkin(String? skinId) =>
       _writeSettings(GameSettingsCompanion(selectedSkinId: Value(skinId)));

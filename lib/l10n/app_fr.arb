@@ -1,0 +1,7 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Snake Classic",
+  "settingsSectionLanguage": "LANGUE",
+  "languageSystemDefault": "Par défaut du système",
+  "languageSystemDefaultSubtitle": "Suivre la langue de l'appareil"
+}

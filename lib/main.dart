@@ -13,6 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/supported_locales.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/data/database/legacy_prefs_import.dart';
@@ -401,10 +403,33 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
         ],
         child: BlocBuilder<ThemeCubit, ThemeState>(
           builder: (context, themeState) {
-            return MaterialApp.router(
+            return BlocBuilder<GameSettingsCubit, GameSettingsState>(
+              buildWhen: (prev, curr) => prev.localeCode != curr.localeCode,
+              builder: (context, settingsState) {
+                return _buildApp(context, themeState, settingsState);
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildApp(
+    BuildContext context,
+    ThemeState themeState,
+    GameSettingsState settingsState,
+  ) {
+    return MaterialApp.router(
               title: 'Snake Classic',
               debugShowCheckedModeBanner: false,
               routerConfig: appRouter,
+              // i18n: generated from lib/l10n/*.arb (see l10n.yaml). A null
+              // locale follows the device language; unsupported device
+              // languages resolve to English via the default resolution.
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: SupportedLocales.locales,
+              locale: SupportedLocales.fromCode(settingsState.localeCode),
               // Root text scaling. The app's typography uses fixed fontSize
               // values with no scaling of its own, so we adjust the effective
               // text scale here in one place:
@@ -444,10 +469,6 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
               // not globally — once the user lands on home, restore is
               // already done and the home tree shouldn't carry the
               // subscription.
-            );
-          },
-        ),
-      ),
     );
   }
 }

@@ -77,6 +77,9 @@ class GameSettings extends Table {
       boolean().withDefault(const Constant(true))();
   TextColumn get selectedSkinId => text().nullable()();
   TextColumn get selectedTrailId => text().nullable()();
+  // BCP-47 language tag chosen in settings ('en', 'hi', 'pt', …).
+  // NULL = follow the device locale (the default for everyone).
+  TextColumn get localeCode => text().nullable()();
   DateTimeColumn get lastUpdated =>
       dateTime().withDefault(currentDateAndTime)();
   // Tracked by the sync engine; bumped on every mutation that should
@@ -729,7 +732,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -898,6 +901,14 @@ class AppDatabase extends _$AppDatabase {
         // to 1 = Difficulty.normal, which is the historical 300ms base, so
         // the upgrade is a no-op for anyone already playing.
         await m.addColumn(gameSettings, gameSettings.difficultyIndex);
+      }
+      if (from < 15) {
+        // v15: app language override. NULL = follow the device locale, so
+        // the upgrade is a no-op for everyone until they pick a language
+        // in settings. Lands on the synced settings row (like theme) so
+        // the choice travels with the account — and so the backend can
+        // localize push notifications later.
+        await m.addColumn(gameSettings, gameSettings.localeCode);
       }
     },
   );
