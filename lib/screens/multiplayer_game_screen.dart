@@ -299,6 +299,35 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               ),
             ),
           ),
+          // Quick-match sessions get a one-tap re-queue; friend rooms
+          // don't (the room is finished — they re-invite from the lobby).
+          if (context.read<MultiplayerCubit>().lastMatchWasQuickMatch)
+            TextButton(
+              onPressed: () {
+                dialogContext.pop();
+                _exiting = true;
+                final cubit = context.read<MultiplayerCubit>();
+                context.pushReplacement(AppRoutes.multiplayerLobby);
+                cubit.queueAgain();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: titleColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Play Again',
+                  style: TextStyle(
+                    color: titleColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -256,10 +256,6 @@ class MultiplayerService {
     }
   }
 
-  /// Public room browsing is not part of the 1v1 release — quick match
-  /// and friend room codes are the two entry points.
-  Future<List<MultiplayerGame>> getAvailableGames() async => const [];
-
   // =============================================
   // MATCHMAKING
   // =============================================

@@ -20,7 +20,6 @@ enum MultiplayerStatus {
 class MultiplayerState extends Equatable {
   final MultiplayerStatus status;
   final MultiplayerGame? currentGame;
-  final List<MultiplayerGame> availableGames;
   final String? errorMessage;
   final bool isLoading;
 
@@ -48,7 +47,6 @@ class MultiplayerState extends Equatable {
   const MultiplayerState({
     this.status = MultiplayerStatus.initial,
     this.currentGame,
-    this.availableGames = const [],
     this.errorMessage,
     this.isLoading = false,
     this.snapshot,
@@ -71,7 +69,6 @@ class MultiplayerState extends Equatable {
   MultiplayerState copyWith({
     MultiplayerStatus? status,
     MultiplayerGame? currentGame,
-    List<MultiplayerGame>? availableGames,
     String? errorMessage,
     bool? isLoading,
     bool clearGame = false,
@@ -94,7 +91,6 @@ class MultiplayerState extends Equatable {
     return MultiplayerState(
       status: status ?? this.status,
       currentGame: clearGame ? null : (currentGame ?? this.currentGame),
-      availableGames: availableGames ?? this.availableGames,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isLoading: isLoading ?? this.isLoading,
       snapshot: (clearMatch || clearGame) ? null : (snapshot ?? this.snapshot),
@@ -169,7 +165,6 @@ class MultiplayerState extends Equatable {
   List<Object?> get props => [
     status,
     currentGame,
-    availableGames,
     errorMessage,
     isLoading,
     snapshot,

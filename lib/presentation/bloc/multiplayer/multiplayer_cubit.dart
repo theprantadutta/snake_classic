@@ -53,6 +53,15 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   // Reconnect settle timeout (see _startReconnectTimeout)
   Timer? _reconnectTimeoutTimer;
 
+  /// Armed when matchmaking finds a match; the matchmade lobby then
+  /// auto-starts (see _maybeAutoStart). Friend rooms stay manual.
+  bool _autoStartArmed = false;
+
+  /// Whether the current/last session came from quick match — drives the
+  /// "Play Again" re-queue action on the result screen.
+  bool _quickMatchSession = false;
+  bool get lastMatchWasQuickMatch => _quickMatchSession;
+
   // Per-match bookkeeping. Everything here is reset by the first
   // snapshot of a match and consumed exactly once by GameEnded — the
   // guards make stats + rewards idempotent even if the hub replays the
@@ -95,6 +104,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         if (status.matchFound && status.gameId != null) {
           // Match found! Stop timer and transition to lobby
           _stopMatchmakingTimer();
+          _autoStartArmed = true;
           _audioService.playSound('high_score');
           _hapticService.mediumImpact();
 
@@ -226,6 +236,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     emit(state.copyWith(isLoading: true, clearError: true));
 
     try {
+      _quickMatchSession = false;
       _audioService.playSound('button_click');
       _hapticService.lightImpact();
 
@@ -273,6 +284,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     emit(state.copyWith(isLoading: true, clearError: true));
 
     try {
+      _quickMatchSession = false;
       _audioService.playSound('button_click');
       _hapticService.lightImpact();
 
@@ -381,19 +393,6 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     emit(state.copyWith(intentDirection: direction));
   }
 
-  /// Load available games (public room browsing is disabled in the 1v1
-  /// release — this keeps the lobby section wired but empty).
-  Future<void> loadAvailableGames() async {
-    try {
-      final games = await _multiplayerService.getAvailableGames();
-      emit(
-        state.copyWith(status: MultiplayerStatus.idle, availableGames: games),
-      );
-    } catch (e) {
-      emit(state.copyWith(errorMessage: 'Error loading available games: $e'));
-    }
-  }
-
   /// Quick match using matchmaking system
   Future<bool> quickMatch(
     MultiplayerGameMode mode, {
@@ -404,6 +403,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     );
 
     try {
+      _quickMatchSession = true;
       _audioService.playSound('button_click');
       _hapticService.lightImpact();
 
@@ -504,6 +504,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     } catch (e) {
       emit(state.copyWith(errorMessage: 'Error canceling matchmaking: $e'));
     }
+  }
+
+  /// From the result screen: dump the finished room and immediately
+  /// re-queue for another quick match.
+  Future<void> queueAgain() async {
+    await leaveGame();
+    await quickMatch(MultiplayerGameMode.classic);
   }
 
   /// Clear matchmaking timeout state (to dismiss the timeout message)
@@ -739,6 +746,26 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         isLoading: shouldClearLoading ? false : null,
       ),
     );
+
+    _maybeAutoStart(game);
+  }
+
+  /// Matchmade lobbies auto-start: the matchmaker creates both player
+  /// rows already ready, so making two strangers find the READY/START
+  /// buttons was pure friction. Host side only — the other player gets
+  /// GameStarting from the server like always. Friend rooms (create/
+  /// join by code) never arm this.
+  void _maybeAutoStart(MultiplayerGame game) {
+    if (!_autoStartArmed) return;
+    if (game.status != MultiplayerGameStatus.waiting) {
+      _autoStartArmed = false;
+      return;
+    }
+    if (game.players.length < 2) return;
+    if (!game.players.every((p) => p.status == PlayerStatus.ready)) return;
+    _autoStartArmed = false;
+    if (!isHost) return;
+    unawaited(startGame());
   }
 
   /// Fold an authoritative snapshot into the state. The first snapshot

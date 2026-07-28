@@ -36,13 +36,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     super.initState();
     _connectivityService.addListener(_onConnectivityChanged);
 
-    // Load available games on init
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_connectivityService.isOnline) {
-        context.read<MultiplayerCubit>().loadAvailableGames();
-      }
+    // The JOIN ROOM button enables on non-empty input — without this
+    // listener typing never triggered a rebuild and the button stayed
+    // disabled until an unrelated bloc update.
+    _roomCodeController.addListener(_onRoomCodeChanged);
 
-      // If gameId is provided, join that game
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // If a room code was deep-linked (friend match ping), join it.
       if (widget.gameId != null) {
         if (_connectivityService.isOnline) {
           context.read<MultiplayerCubit>().joinGame(widget.gameId!);
@@ -53,9 +53,14 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     });
   }
 
+  void _onRoomCodeChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _connectivityService.removeListener(_onConnectivityChanged);
+    _roomCodeController.removeListener(_onRoomCodeChanged);
     _roomCodeController.dispose();
     super.dispose();
   }
@@ -315,11 +320,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
                 // Create Game Section
                 _buildCreateGameSection(context, multiplayerState, theme),
-
-                if (multiplayerState.availableGames.isNotEmpty) ...[
-                  const SizedBox(height: 32),
-                  _buildAvailableGamesSection(context, multiplayerState, theme),
-                ],
               ],
             ),
           ),
@@ -1066,102 +1066,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         ],
       ),
     ).gameZoomIn(delay: 300.ms);
-  }
-
-  Widget _buildAvailableGamesSection(
-    BuildContext context,
-    MultiplayerState multiplayerState,
-    GameTheme theme,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'AVAILABLE GAMES',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: theme.accentColor,
-            letterSpacing: 1,
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        ...multiplayerState.availableGames.map(
-          (game) => _buildGameCard(context, theme, game),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGameCard(
-    BuildContext context,
-    GameTheme theme,
-    MultiplayerGame game,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(game.modeEmoji, style: const TextStyle(fontSize: 24)),
-            ),
-          ),
-
-          const SizedBox(width: 16),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  game.modeDisplayName,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: theme.accentColor,
-                  ),
-                ),
-                Text(
-                  '${game.players.length}/${game.maxPlayers} players',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          GradientButton(
-            onPressed: () {
-              context.read<MultiplayerCubit>().joinGame(
-                game.roomCode ?? game.id,
-              );
-            },
-            text: 'JOIN',
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.foodColor,
-            width: 80,
-            height: 40,
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildGameModeCard(GameTheme theme, MultiplayerGame game) {
