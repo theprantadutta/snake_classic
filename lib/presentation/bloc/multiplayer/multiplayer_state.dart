@@ -35,6 +35,10 @@ class MultiplayerState extends Equatable {
   /// on the swipe indicator until a snapshot confirms (or overrides) it.
   final Direction? intentDirection;
 
+  /// Countdown length announced by the server's GameStarting payload —
+  /// drives the lobby countdown overlay so client and server can't drift.
+  final int countdownSeconds;
+
   // Matchmaking state
   final bool isMatchmaking;
   final int matchmakingQueuePosition;
@@ -53,6 +57,7 @@ class MultiplayerState extends Equatable {
     this.matchEnd,
     this.boardSize = 20,
     this.intentDirection,
+    this.countdownSeconds = 3,
     this.isMatchmaking = false,
     this.matchmakingQueuePosition = 0,
     this.matchmakingEstimatedWait = 0,
@@ -78,6 +83,7 @@ class MultiplayerState extends Equatable {
     int? boardSize,
     Direction? intentDirection,
     bool clearIntentDirection = false,
+    int? countdownSeconds,
     bool clearMatch = false,
     bool? isMatchmaking,
     int? matchmakingQueuePosition,
@@ -99,6 +105,7 @@ class MultiplayerState extends Equatable {
       intentDirection: (clearMatch || clearGame || clearIntentDirection)
           ? null
           : (intentDirection ?? this.intentDirection),
+      countdownSeconds: countdownSeconds ?? this.countdownSeconds,
       isMatchmaking: clearMatchmaking
           ? false
           : (isMatchmaking ?? this.isMatchmaking),
@@ -171,6 +178,7 @@ class MultiplayerState extends Equatable {
     matchEnd,
     boardSize,
     intentDirection,
+    countdownSeconds,
     isMatchmaking,
     matchmakingQueuePosition,
     matchmakingEstimatedWait,

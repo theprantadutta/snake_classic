@@ -304,15 +304,24 @@ class MultiplayerBoardPainter extends CustomPainter {
         ),
       ),
       textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '…',
     );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        head.dx - textPainter.width / 2,
-        head.dy - cellHeight / 2 - 8 - textPainter.height,
-      ),
-    );
+    // Cap the label at ~5 cells so long usernames ellipsize instead of
+    // spilling across the board.
+    textPainter.layout(maxWidth: cellWidth * 5);
+
+    // Clamp inside the board so edge/corner snakes keep readable labels
+    // (a head on row 0 would otherwise paint above the board).
+    final boardWidth = cellWidth * boardSize;
+    final labelX = (head.dx - textPainter.width / 2)
+        .clamp(2.0, boardWidth - textPainter.width - 2.0);
+    var labelY = head.dy - cellHeight / 2 - 8 - textPainter.height;
+    if (labelY < 2.0) {
+      // No room above — drop the label below the head instead.
+      labelY = head.dy + cellHeight / 2 + 8;
+    }
+    textPainter.paint(canvas, Offset(labelX, labelY));
   }
 
   void _drawEyes(

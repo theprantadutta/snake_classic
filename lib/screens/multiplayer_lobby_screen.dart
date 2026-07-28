@@ -380,15 +380,18 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ],
         ),
         // Countdown overlay
-        if (isStarting) _buildCountdownOverlay(theme),
+        if (isStarting)
+          _buildCountdownOverlay(theme, multiplayerState.countdownSeconds),
       ],
     );
   }
 
-  Widget _buildCountdownOverlay(GameTheme theme) {
+  Widget _buildCountdownOverlay(GameTheme theme, int countdownSeconds) {
+    // Seconds come from the GameStarting payload so a server-side tuning
+    // change can't drift from this animation.
     return TweenAnimationBuilder<int>(
-      tween: IntTween(begin: 3, end: 0),
-      duration: const Duration(seconds: 3),
+      tween: IntTween(begin: countdownSeconds, end: 0),
+      duration: Duration(seconds: countdownSeconds),
       builder: (context, value, child) {
         return Container(
           color: Colors.black.withValues(alpha: 0.85),
@@ -1387,10 +1390,14 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
             Expanded(
               child: GradientButton(
-                onPressed: multiplayerState.isLoading || isReady
+                // Toggle: tapping while ready un-readies (SetReady carries
+                // the bool; the button used to lock once pressed).
+                onPressed: multiplayerState.isLoading
                     ? null
                     : () {
-                        context.read<MultiplayerCubit>().markPlayerReady();
+                        context.read<MultiplayerCubit>().markPlayerReady(
+                          isReady: !isReady,
+                        );
                       },
                 text: isReady ? 'READY!' : 'READY',
                 primaryColor: isReady ? Colors.green : theme.accentColor,

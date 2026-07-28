@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -12,6 +13,7 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/widgets/dpad_controls.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
@@ -1227,6 +1229,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     final mySnake = snapshot.playerByUserId(currentUserId);
     final manyPlayers = snapshot.players.length > 2;
 
+    // Same dpad_enabled setting as single-player — D-pad users get their
+    // D-pad in VS matches too. watch: the pause-less match screen still
+    // reflects a toggle made before entering.
+    final dPadEnabled = context.watch<GameSettingsCubit>().state.dPadEnabled;
+    final dpadSize = 120.0 * context.uiScale;
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: 16,
@@ -1238,23 +1246,62 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           top: BorderSide(color: theme.accentColor.withValues(alpha: 0.15)),
         ),
       ),
-      child: Row(
-        children: [
-          _statPill(
-            theme,
-            Icons.straighten,
-            'LENGTH',
-            '${mySnake?.body.length ?? 0}',
-          ),
-          if (manyPlayers) ...[
-            const SizedBox(width: 12),
-            Expanded(child: _miniLeaderboard(theme, snapshot, currentUserId)),
-            const SizedBox(width: 12),
-          ] else
-            const Spacer(),
-          _swipeIndicator(theme),
-        ],
-      ),
+      child: dPadEnabled
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _statPill(
+                      theme,
+                      Icons.straighten,
+                      'LENGTH',
+                      '${mySnake?.body.length ?? 0}',
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: SizedBox(
+                    width: dpadSize,
+                    height: dpadSize,
+                    child: DPadControls(
+                      onDirection: _handleSwipe,
+                      theme: theme,
+                      opacity: 0.8,
+                      size: dpadSize,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: _swipeIndicator(theme),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                _statPill(
+                  theme,
+                  Icons.straighten,
+                  'LENGTH',
+                  '${mySnake?.body.length ?? 0}',
+                ),
+                if (manyPlayers) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _miniLeaderboard(theme, snapshot, currentUserId),
+                  ),
+                  const SizedBox(width: 12),
+                ] else
+                  const Spacer(),
+                _swipeIndicator(theme),
+              ],
+            ),
     );
   }
 

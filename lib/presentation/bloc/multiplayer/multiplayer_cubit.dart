@@ -344,24 +344,29 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     }
   }
 
-  /// Mark current player as ready
-  Future<bool> markPlayerReady() async {
+  /// Set the current player's ready flag. Toggling back to not-ready is
+  /// allowed while the room is still waiting (SetReady carries the bool).
+  Future<bool> markPlayerReady({bool isReady = true}) async {
     try {
       _audioService.playSound('button_click');
       _hapticService.lightImpact();
 
-      final success = await _multiplayerService.markPlayerReady();
+      final success = await _multiplayerService.markPlayerReady(
+        isReady: isReady,
+      );
       if (success) {
-        _audioService.playSound('high_score');
-        _hapticService.mediumImpact();
+        if (isReady) {
+          _audioService.playSound('high_score');
+          _hapticService.mediumImpact();
+        }
       } else {
         _audioService.playSound('game_over');
-        emit(state.copyWith(errorMessage: 'Failed to mark player as ready'));
+        emit(state.copyWith(errorMessage: 'Failed to update ready status'));
       }
       return success;
     } catch (e) {
       _audioService.playSound('game_over');
-      emit(state.copyWith(errorMessage: 'Error marking player ready: $e'));
+      emit(state.copyWith(errorMessage: 'Error updating ready status: $e'));
       return false;
     }
   }
@@ -911,6 +916,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     }
 
     switch (action.actionType) {
+      // Server announces the countdown length in GameStarting; feed it
+      // to the lobby overlay so a server-side tuning change can't drift.
+      case 'game_starting':
+        final seconds =
+            (action.data['countdown_seconds'] as num?)?.toInt() ?? 3;
+        emit(state.copyWith(countdownSeconds: seconds));
+        break;
+
       // The transport gave up (auto-reconnect exhausted or hard drop).
       // Only mid-match does this need active recovery — the lobby
       // reconnects lazily on the next user action.
