@@ -655,14 +655,23 @@ class CoinsCubit extends Cubit<CoinsState> {
       final baseAmount = customAmount ?? source.getBaseAmount();
       if (baseAmount <= 0) return true;
 
-      final multipliedAmount = (baseAmount * state.earningMultiplier).round();
+      // Multiplayer rewards are server-declared exact amounts: the result
+      // dialog shows the number straight off the GameEnded payload, so
+      // applying the earning multiplier (or the daily cap below) makes the
+      // ledger silently disagree with what the player was just shown.
+      final isServerDeclared = source == CoinEarningSource.multiplayer;
 
-      // Cap-exempt sources: purchases (paid IAP, never grindable) and the
+      final multipliedAmount = isServerDeclared
+          ? baseAmount
+          : (baseAmount * state.earningMultiplier).round();
+
+      // Cap-exempt sources: purchases (paid IAP, never grindable), the
       // daily login bonus (a once-per-day engagement claim, not a grind
-      // vector). If gameplay maxed out the cap earlier in the day, the
-      // user should still get their daily bonus on first launch.
+      // vector), and server-declared multiplayer rewards (the server
+      // decides the number; matches are rate-limited by matchmaking).
       final bypassesCap = source == CoinEarningSource.purchase ||
-          source == CoinEarningSource.dailyLogin;
+          source == CoinEarningSource.dailyLogin ||
+          isServerDeclared;
       if (!bypassesCap && _wouldExceedDailyCap(multipliedAmount)) {
         final cappedAmount = state.remainingDailyEarnings;
         if (cappedAmount <= 0) {
