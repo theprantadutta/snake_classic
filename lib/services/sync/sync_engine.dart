@@ -981,6 +981,7 @@ class SyncEngine {
         'd_pad_enabled': r.dPadEnabled,
         'd_pad_position_index': r.dPadPositionIndex,
         'board_size_index': r.boardSizeIndex,
+        'difficulty_index': r.difficultyIndex,
         'high_score': r.highScore,
         'crash_feedback_duration_seconds': r.crashFeedbackDurationSeconds,
         'trail_system_enabled': r.trailSystemEnabled,
@@ -1160,6 +1161,9 @@ class SyncEngine {
             dPadPositionIndex:
                 Value(settings['d_pad_position_index'] as int? ?? 1),
             boardSizeIndex: Value(settings['board_size_index'] as int? ?? 1),
+            // Absent for accounts last synced by a pre-difficulty client —
+            // fall back to normal rather than 0, which is easy.
+            difficultyIndex: Value(settings['difficulty_index'] as int? ?? 1),
             highScore: Value(mergedHighScore),
             crashFeedbackDurationSeconds: Value(
                 settings['crash_feedback_duration_seconds'] as int? ?? 3),

@@ -537,6 +537,78 @@ enum GameTheme {
   }
 }
 
+/// Starting-speed preset, chosen by the player and independent of [GameMode].
+///
+/// Only the STARTING tick is affected — the per-level ramp stays owned by
+/// [GameMode.speedIncreaseRate], so Speed Challenge still accelerates harder
+/// than Classic at every difficulty. Easy is a gentler on-ramp rather than a
+/// permanently slower game: at the default ramp it converges on Normal's
+/// starting pace by around level 9.
+///
+/// [normal] deliberately keeps the historical 300ms base so existing players
+/// feel no change and old high scores stay comparable.
+enum Difficulty {
+  easy,
+  normal,
+  hard;
+
+  /// Tick duration in milliseconds at level 1, before any power-up modifiers.
+  int get baseSpeed {
+    switch (this) {
+      case Difficulty.easy:
+        return 380;
+      case Difficulty.normal:
+        return 300;
+      case Difficulty.hard:
+        return 220;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case Difficulty.easy:
+        return 'Easy';
+      case Difficulty.normal:
+        return 'Normal';
+      case Difficulty.hard:
+        return 'Hard';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case Difficulty.easy:
+        return 'A slower snake to start. Scores stay off the leaderboards.';
+      case Difficulty.normal:
+        return 'The original Snake Classic pace.';
+      case Difficulty.hard:
+        return 'Starts fast and only gets faster.';
+    }
+  }
+
+  String get icon {
+    switch (this) {
+      case Difficulty.easy:
+        return '🌱';
+      case Difficulty.normal:
+        return '🐍';
+      case Difficulty.hard:
+        return '🔥';
+    }
+  }
+
+  /// Whether runs at this difficulty may be submitted to the global and
+  /// friends leaderboards. Easy is practice: it still earns coins, XP,
+  /// achievements and a local high score, but a 380ms start would otherwise
+  /// sit above every score the boards were built from.
+  bool get postsToLeaderboard => this != Difficulty.easy;
+
+  static Difficulty fromIndex(int index) =>
+      index >= 0 && index < Difficulty.values.length
+      ? Difficulty.values[index]
+      : Difficulty.normal;
+}
+
 enum GameMode {
   classic,
   zen,

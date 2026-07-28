@@ -80,6 +80,7 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       final hapticsEnabled = await _storageService.isHapticsEnabled();
       final gameMode = await _storageService.getGameMode();
       final gameModePrompted = await _storageService.hasGameModeBeenPrompted();
+      final difficulty = await _storageService.getDifficulty();
 
       // HapticService gates every vibration call on this flag; it has no
       // storage access of its own, so this cubit owns the fan-out.
@@ -100,6 +101,7 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           hapticsEnabled: hapticsEnabled,
           gameMode: gameMode,
           gameModeFirstLaunchPrompted: gameModePrompted,
+          difficulty: difficulty,
         ),
       );
 
@@ -258,6 +260,16 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
 
   /// Alias for setBoardSize
   Future<void> updateBoardSize(BoardSize size) => setBoardSize(size);
+
+  /// Update the starting-speed preset. Takes effect on the next game start —
+  /// GameState reads it once at construction, so an in-flight run keeps the
+  /// pace it began with rather than changing speed mid-snake.
+  Future<void> setDifficulty(Difficulty difficulty) async {
+    if (state.difficulty == difficulty) return;
+
+    emit(state.copyWith(difficulty: difficulty));
+    await _storageService.saveDifficulty(difficulty);
+  }
 
   /// Update single-player game mode
   Future<void> setGameMode(GameMode mode) async {

@@ -59,6 +59,11 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   Future<void> updateBoardSize(int boardSizeIndex) =>
       _writeSettings(GameSettingsCompanion(boardSizeIndex: Value(boardSizeIndex)));
 
+  /// Update difficulty (starting-speed preset)
+  Future<void> updateDifficulty(int difficultyIndex) =>
+      _writeSettings(
+          GameSettingsCompanion(difficultyIndex: Value(difficultyIndex)));
+
   /// Update high score
   Future<void> updateHighScore(int score) =>
       _writeSettings(GameSettingsCompanion(highScore: Value(score)));

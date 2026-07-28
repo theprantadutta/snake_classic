@@ -55,6 +55,7 @@ class GameState {
   final int boardHeight;
   final DateTime? lastMoveTime;
   final GameMode gameMode;
+  final Difficulty difficulty;
 
   // Combo system. The combo is a real streak: it BREAKS (resets to 0)
   // after [GameConstants.comboDecayMs] of accumulated game-time without
@@ -102,6 +103,7 @@ class GameState {
     this.boardHeight = 20,
     this.lastMoveTime,
     this.gameMode = GameMode.classic,
+    this.difficulty = Difficulty.normal,
     this.currentCombo = 0,
     this.maxCombo = 0,
     this.comboMultiplier = 1.0,
@@ -147,10 +149,15 @@ class GameState {
   /// 60fps render path, so the cost is negligible.
   int get gameSpeed {
     // Speed increases with level (lower milliseconds = faster).
-    // Start at 300ms, decrease by game mode-specific amount per level.
-    final baseSpeed = 300;
+    // Base tick comes from the player's difficulty preset (Normal is the
+    // historical 300ms); the per-level ramp stays mode-owned.
+    final baseSpeed = difficulty.baseSpeed;
     final speedDecrease = (level - 1) * gameMode.speedIncreaseRate;
-    int speed = (baseSpeed - speedDecrease).clamp(50, 300);
+    // Upper bound is baseSpeed, NOT a literal 300 — the snake must never
+    // start slower than its own base, and a hard-coded 300 would have
+    // clamped Easy's 380ms start straight back down to Normal, making the
+    // whole preset a no-op.
+    int speed = (baseSpeed - speedDecrease).clamp(50, baseSpeed);
 
     final hasSpeedBoost = activePowerUps.any(
       (p) => _grantsEffect(p, PowerUpType.speedBoost),
@@ -288,6 +295,7 @@ class GameState {
     int? boardHeight,
     DateTime? lastMoveTime,
     GameMode? gameMode,
+    Difficulty? difficulty,
     int? currentCombo,
     int? maxCombo,
     double? comboMultiplier,
@@ -321,6 +329,7 @@ class GameState {
       boardHeight: boardHeight ?? this.boardHeight,
       lastMoveTime: lastMoveTime ?? this.lastMoveTime,
       gameMode: gameMode ?? this.gameMode,
+      difficulty: difficulty ?? this.difficulty,
       currentCombo: currentCombo ?? this.currentCombo,
       maxCombo: maxCombo ?? this.maxCombo,
       comboMultiplier: comboMultiplier ?? this.comboMultiplier,

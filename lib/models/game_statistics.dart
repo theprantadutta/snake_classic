@@ -202,10 +202,18 @@ class GameStatistics {
     required bool isPerfectGame,
     required List<String> unlockedAchievements,
     required String gameMode,
+    // Easy-difficulty runs count toward every statistic EXCEPT the high
+    // score. StatisticsService._persistToDrift mirrors this model's
+    // highScore up into GameSettings.highScore (the value that syncs and
+    // renders the leaderboards), so without this flag an Easy run would
+    // reach the boards through the statistics path even though
+    // GameCubit._gameOver refuses to write it directly.
+    bool countsForHighScore = true,
   }) {
     final newTotalGames = totalGamesPlayed + 1;
     final newTotalScore = totalScore + score;
-    final newHighScore = score > highScore ? score : highScore;
+    final newHighScore =
+        countsForHighScore && score > highScore ? score : highScore;
     final newTotalGameTime = totalGameTime + gameTime;
     final newAverageGameTime = (newTotalGameTime / newTotalGames).round();
 

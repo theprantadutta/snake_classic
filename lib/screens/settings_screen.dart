@@ -48,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   BoardSize _selectedBoardSize =
       GameConstants.availableBoardSizes[1]; // Default to Classic
   GameMode _selectedGameMode = GameMode.classic;
+  Difficulty _selectedDifficulty = Difficulty.normal;
   Duration _selectedCrashFeedbackDuration =
       GameConstants.defaultCrashFeedbackDuration;
 
@@ -96,6 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _hapticsEnabled != s.hapticsEnabled ||
         _selectedBoardSize != s.boardSize ||
         _selectedGameMode != s.gameMode ||
+        _selectedDifficulty != s.difficulty ||
         _selectedCrashFeedbackDuration != s.crashFeedbackDuration;
     if (!changed) return;
     setState(() {
@@ -105,6 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _hapticsEnabled = s.hapticsEnabled;
       _selectedBoardSize = s.boardSize;
       _selectedGameMode = s.gameMode;
+      _selectedDifficulty = s.difficulty;
       _selectedCrashFeedbackDuration = s.crashFeedbackDuration;
     });
   }
@@ -166,6 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final hapticsEnabled = await _storageService.isHapticsEnabled();
     final dPadPosition = await _storageService.getDPadPosition();
     final gameMode = await _storageService.getGameMode();
+    final difficulty = await _storageService.getDifficulty();
     setState(() {
       _soundEnabled = _audioService.isSoundEnabled;
       _musicEnabled = _audioService.isMusicEnabled;
@@ -176,6 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _selectedBoardSize = boardSize;
       _selectedCrashFeedbackDuration = crashFeedbackDuration;
       _selectedGameMode = gameMode;
+      _selectedDifficulty = difficulty;
     });
   }
 
@@ -290,6 +295,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   // 2. Gameplay Section (mode + board size + crash feedback + effects)
                                   _buildSection('GAMEPLAY', [
                                     _buildGameModeSelector(gameState, theme),
+                                    const SizedBox(height: 24),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 24),
+                                    _buildDifficultySelector(gameState, theme),
                                     const SizedBox(height: 24),
                                     const Divider(height: 1),
                                     const SizedBox(height: 24),
@@ -1013,6 +1022,132 @@ class _SettingsScreenState extends State<SettingsScreen> {
               fontStyle: FontStyle.italic,
             ),
             textAlign: TextAlign.center,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDifficultySelector(GameCubitState gameState, GameTheme theme) {
+    final isCurrentlyPlaying = gameState.isPlaying;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Difficulty',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.8),
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Sets how fast the snake starts. Each mode still speeds up as '
+          'you level.',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: Difficulty.values.map((difficulty) {
+            final isSelected = _selectedDifficulty == difficulty;
+
+            return GestureDetector(
+              onTap: isCurrentlyPlaying
+                  ? null
+                  : () async {
+                      setState(() {
+                        _selectedDifficulty = difficulty;
+                      });
+                      await context
+                          .read<GameSettingsCubit>()
+                          .setDifficulty(difficulty);
+                      _analytics.trackSettingChanged(
+                          settingName: 'difficulty', value: difficulty.label);
+                    },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.accentColor.withValues(alpha: 0.2)
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: isSelected
+                        ? theme.accentColor
+                        : theme.accentColor.withValues(alpha: 0.3),
+                    width: isSelected ? 2 : 1,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${difficulty.icon} ${difficulty.label}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isCurrentlyPlaying
+                        ? theme.accentColor.withValues(alpha: 0.5)
+                        : (isSelected
+                            ? theme.accentColor
+                            : Colors.white.withValues(alpha: 0.8)),
+                    fontSize: 12,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          _selectedDifficulty.description,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 12,
+          ),
+        ),
+        // Being explicit up front is kinder than letting an Easy player
+        // grind a personal best and only then discover it never counted.
+        if (!_selectedDifficulty.postsToLeaderboard) ...[
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 14,
+                color: theme.accentColor.withValues(alpha: 0.8),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Coins, XP and achievements still count on Easy — only '
+                  'high scores and leaderboards are paused.',
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.8),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (isCurrentlyPlaying) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Finish your current game to change difficulty.',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 11,
+            ),
           ),
         ],
       ],

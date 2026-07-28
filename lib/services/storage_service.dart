@@ -165,6 +165,17 @@ class StorageService {
     await _settingsDao?.updateBoardSize(boardSize.width);
   }
 
+  // ==================== Difficulty ====================
+
+  Future<Difficulty> getDifficulty() async {
+    final settings = await _settingsDao?.getSettings();
+    return Difficulty.fromIndex(settings?.difficultyIndex ?? 1);
+  }
+
+  Future<void> saveDifficulty(Difficulty difficulty) async {
+    await _settingsDao?.updateDifficulty(difficulty.index);
+  }
+
   /// Resolve a stored board-size value to a [BoardSize]. Values >= 15 are a
   /// board WIDTH (the stable format written by [saveBoardSize]); smaller values
   /// are a legacy list index. Unknown values fall back to Classic.

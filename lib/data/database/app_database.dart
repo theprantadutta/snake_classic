@@ -50,6 +50,9 @@ class GameSettings extends Table {
   IntColumn get dPadPositionIndex =>
       integer().withDefault(const Constant(1))(); // 0=left, 1=center, 2=right
   IntColumn get boardSizeIndex => integer().withDefault(const Constant(1))();
+  // Difficulty.values index. Defaults to 1 (normal) so existing players keep
+  // the historical 300ms starting tick and notice no change on upgrade.
+  IntColumn get difficultyIndex => integer().withDefault(const Constant(1))();
   IntColumn get highScore => integer().withDefault(const Constant(0))();
   IntColumn get crashFeedbackDurationSeconds =>
       integer().withDefault(const Constant(3))();
@@ -726,7 +729,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -887,6 +890,14 @@ class AppDatabase extends _$AppDatabase {
         // PowerUpCubit.loadInventory, not here — Drift migrations
         // shouldn't touch platform channels.
         await m.createTable(powerUpInventoryState);
+      }
+      if (from < 14) {
+        // v14: player-selected starting-speed preset. Lands on the synced
+        // settings row (not SharedPreferences) so it travels with the
+        // account like every other gameplay setting. Existing rows default
+        // to 1 = Difficulty.normal, which is the historical 300ms base, so
+        // the upgrade is a no-op for anyone already playing.
+        await m.addColumn(gameSettings, gameSettings.difficultyIndex);
       }
     },
   );

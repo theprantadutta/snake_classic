@@ -14,6 +14,7 @@ class GameSettingsState extends Equatable {
   final bool dPadEnabled;
   final DPadPosition dPadPosition;
   final BoardSize boardSize;
+  final Difficulty difficulty;
   final GameMode gameMode;
   final bool gameModeFirstLaunchPrompted;
   final Duration crashFeedbackDuration;
@@ -26,6 +27,7 @@ class GameSettingsState extends Equatable {
     this.dPadEnabled = false,
     this.dPadPosition = DPadPosition.bottomCenter,
     this.boardSize = BoardSize.classic,
+    this.difficulty = Difficulty.normal,
     this.gameMode = GameMode.classic,
     this.gameModeFirstLaunchPrompted = false,
     this.crashFeedbackDuration = GameConstants.defaultCrashFeedbackDuration,
@@ -43,6 +45,7 @@ class GameSettingsState extends Equatable {
     bool? dPadEnabled,
     DPadPosition? dPadPosition,
     BoardSize? boardSize,
+    Difficulty? difficulty,
     GameMode? gameMode,
     bool? gameModeFirstLaunchPrompted,
     Duration? crashFeedbackDuration,
@@ -55,6 +58,7 @@ class GameSettingsState extends Equatable {
       dPadEnabled: dPadEnabled ?? this.dPadEnabled,
       dPadPosition: dPadPosition ?? this.dPadPosition,
       boardSize: boardSize ?? this.boardSize,
+      difficulty: difficulty ?? this.difficulty,
       gameMode: gameMode ?? this.gameMode,
       gameModeFirstLaunchPrompted:
           gameModeFirstLaunchPrompted ?? this.gameModeFirstLaunchPrompted,
@@ -75,6 +79,7 @@ class GameSettingsState extends Equatable {
     dPadEnabled,
     dPadPosition,
     boardSize,
+    difficulty,
     gameMode,
     gameModeFirstLaunchPrompted,
     crashFeedbackDuration,

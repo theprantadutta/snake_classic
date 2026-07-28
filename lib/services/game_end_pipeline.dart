@@ -296,6 +296,7 @@ class GameEndPipeline {
         isPerfectGame: summary.isPerfectGame,
         unlockedAchievements: [],
         gameMode: summary.gameMode,
+        countsForHighScore: summary.countsForHighScore,
       );
 
       // Now that lifetime stats include this game, check the catalog's

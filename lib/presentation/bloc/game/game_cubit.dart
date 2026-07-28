@@ -199,6 +199,7 @@ class GameCubit extends Cubit<GameCubitState> {
       wallHits: _wallHitsThisGame,
       selfHits: _selfHitsThisGame,
       consecutiveGamesWithoutWallHits: _consecutiveGamesWithoutWallHits,
+      countsForHighScore: gameState.difficulty.postsToLeaderboard,
     );
   }
 
@@ -234,6 +235,7 @@ class GameCubit extends Cubit<GameCubitState> {
       boardWidth: _settingsCubit.state.boardSize.width,
       boardHeight: _settingsCubit.state.boardSize.height,
       gameMode: _settingsCubit.state.gameMode,
+      difficulty: _settingsCubit.state.difficulty,
     );
 
     emit(state.copyWith(status: GamePlayStatus.ready, gameState: gameState));
@@ -266,6 +268,11 @@ class GameCubit extends Cubit<GameCubitState> {
     // tick time, so PowerUpMadness tournaments played identically to Classic.
     final effectiveGameMode =
         state.tournamentMode?.toGameMode() ?? settings.gameMode;
+    // Tournaments are ranked play against everyone else's runs, so they
+    // always use the standard pace regardless of the player's preset — the
+    // same reason Easy runs don't reach the leaderboards.
+    final effectiveDifficulty =
+        state.tournamentMode != null ? Difficulty.normal : settings.difficulty;
     debugPrint(
       '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, gameMode=${effectiveGameMode.name}, highScore=${settings.highScore}',
     );
@@ -277,6 +284,7 @@ class GameCubit extends Cubit<GameCubitState> {
       boardWidth: settings.boardSize.width,
       boardHeight: settings.boardSize.height,
       gameMode: effectiveGameMode,
+      difficulty: effectiveDifficulty,
       status: model.GameStatus.playing,
       currentCombo: 0,
       maxCombo: 0,
@@ -1498,9 +1506,18 @@ class GameCubit extends Cubit<GameCubitState> {
     final gameState = state.gameState;
     if (gameState == null) return;
 
-    // Determine high score FIRST (sync operation)
+    // Determine high score FIRST (sync operation).
+    //
+    // Easy is practice: the run still earns coins, XP, achievements and
+    // statistics, but it cannot set the high score. The high score IS the
+    // leaderboard entry — it syncs to the backend and the global/friends
+    // boards are rendered from it — so allowing a 380ms-start run to write
+    // it would put Easy scores on boards built entirely from 300ms runs.
+    // There is no separate "submit to leaderboard" call to gate instead.
+    final countsForHighScore = gameState.difficulty.postsToLeaderboard;
     int highScore = gameState.highScore;
-    bool isNewHighScore = gameState.score > highScore;
+    bool isNewHighScore =
+        countsForHighScore && gameState.score > highScore;
     if (isNewHighScore) {
       highScore = gameState.score;
     }

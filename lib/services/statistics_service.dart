@@ -407,6 +407,7 @@ class StatisticsService extends ChangeNotifier {
     required bool isPerfectGame,
     required List<String> unlockedAchievements,
     required String gameMode,
+    bool countsForHighScore = true,
   }) async {
     if (!_initialized) {
       await initialize();
@@ -428,6 +429,7 @@ class StatisticsService extends ChangeNotifier {
       isPerfectGame: isPerfectGame,
       unlockedAchievements: unlockedAchievements,
       gameMode: gameMode,
+      countsForHighScore: countsForHighScore,
     );
 
     // Save locally

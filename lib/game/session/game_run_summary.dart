@@ -26,6 +26,7 @@ class GameRunSummary {
     required this.wallHits,
     required this.selfHits,
     required this.consecutiveGamesWithoutWallHits,
+    this.countsForHighScore = true,
   });
 
   final int score;
@@ -65,6 +66,12 @@ class GameRunSummary {
 
   /// Lifetime streak including this run (achievement input).
   final int consecutiveGamesWithoutWallHits;
+
+  /// False for Easy-difficulty runs. Everything else about the run still
+  /// counts — coins, XP, achievements, games-played, food totals — but the
+  /// score must not raise GameSettings.highScore, which is the value that
+  /// syncs to the backend and renders the global / friends leaderboards.
+  final bool countsForHighScore;
 
   int get foodEaten => foodTypes.values.fold(0, (sum, c) => sum + c);
 
