@@ -139,14 +139,24 @@ class _SwipeDetectorState extends State<SwipeDetector> {
           final absX = velocity.dx.abs();
           final absY = velocity.dy.abs();
 
-          // Check velocity with directional ratio
-          const velocityRatio = 1.3;
-
-          if (absX > GameConstants.swipeMinVelocity &&
-              absX > absY * velocityRatio) {
-            _processSwipe(velocity.dx > 0 ? Direction.right : Direction.left);
-          } else if (absY > GameConstants.swipeMinVelocity &&
-              absY > absX * velocityRatio) {
+          // Deliberately NO directional-ratio gate here, unlike the
+          // mid-drag check. The drag is over: the player has committed to
+          // a flick and nothing further can disambiguate it, so resolving
+          // to the dominant axis beats dropping the input on the floor.
+          // The old 1.3 ratio rejected every flick between 37.6 and 52.4
+          // degrees - roughly 16% of all angles - and did it silently: no
+          // turn, no haptic, no reject flash, because it never reached
+          // GameCubit.changeDirection. That read as "the snake doesn't
+          // respond to controls".
+          //
+          // The mid-drag ratio check stays as-is; there an ambiguous
+          // delta keeps accumulating and resolves itself a frame later,
+          // so guessing early would cause genuine misfires.
+          if (absX >= absY) {
+            if (absX > GameConstants.swipeMinVelocity) {
+              _processSwipe(velocity.dx > 0 ? Direction.right : Direction.left);
+            }
+          } else if (absY > GameConstants.swipeMinVelocity) {
             _processSwipe(velocity.dy > 0 ? Direction.down : Direction.up);
           }
         }
