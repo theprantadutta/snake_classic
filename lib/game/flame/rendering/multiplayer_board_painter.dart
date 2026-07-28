@@ -23,7 +23,18 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
   final GameTheme theme;
   final int boardSize;
 
-  MultiplayerGridBackgroundPainter(this.theme, this.boardSize);
+  /// Grid stroke width in WORLD units — see [lineWidth] on
+  /// GameBoardBackgroundPainter for why this can't be a constant. Same
+  /// fixed-resolution camera, same problem: the world is `boardSize *
+  /// cellSize` units and the camera fits it to the viewport, so a hard-coded
+  /// width renders thicker the larger the screen.
+  final double lineWidth;
+
+  MultiplayerGridBackgroundPainter(
+    this.theme,
+    this.boardSize, {
+    this.lineWidth = 0.5,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -32,7 +43,7 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
 
     final paint = Paint()
       ..color = theme.accentColor.withValues(alpha: 0.08)
-      ..strokeWidth = 0.5;
+      ..strokeWidth = lineWidth;
 
     // Draw vertical lines
     for (int x = 0; x <= boardSize; x++) {
@@ -55,7 +66,9 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant MultiplayerGridBackgroundPainter oldDelegate) =>
-      oldDelegate.theme != theme || oldDelegate.boardSize != boardSize;
+      oldDelegate.theme != theme ||
+      oldDelegate.boardSize != boardSize ||
+      oldDelegate.lineWidth != lineWidth;
 }
 
 /// Main painter for all game content - snakes, food, effects.

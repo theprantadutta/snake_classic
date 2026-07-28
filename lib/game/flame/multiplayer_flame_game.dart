@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
@@ -123,8 +125,18 @@ class _MultiplayerBoardComponent extends Component
   @override
   void render(Canvas canvas) {
     final size = Size(game.worldSize, game.worldSize);
-    MultiplayerGridBackgroundPainter(game.theme, game.boardSize)
-        .paint(canvas, size);
+    // Same world-to-screen hairline correction as the single-player board
+    // (see LegacyBoardComponent.render) — without it the grid thickens on
+    // bigger screens, since the stroke is measured in world units.
+    final scale = game.size.x <= 0 || game.size.y <= 0
+        ? 1.0
+        : math.min(game.size.x / size.width, game.size.y / size.height);
+    final hairline = scale <= 0 ? 0.5 : (1.0 / scale).clamp(0.5, 1.5);
+    MultiplayerGridBackgroundPainter(
+      game.theme,
+      game.boardSize,
+      lineWidth: hairline,
+    ).paint(canvas, size);
     MultiplayerBoardPainter(
       snapshot: game.snapshot,
       previousSnapshot: game.previousSnapshot,

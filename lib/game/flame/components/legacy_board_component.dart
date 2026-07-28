@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
@@ -57,7 +59,25 @@ class LegacyBoardComponent extends Component
     }
     canvas.drawRect(Offset.zero & size, _ambientPaint);
 
-    GameBoardBackgroundPainter(game.theme).paint(canvas, size);
+    // World-to-screen scale for the fixed-resolution camera: the world is
+    // `board * cellSize` units and gets fitted into the viewport, so anything
+    // that should measure a fixed number of SCREEN pixels (hairlines) has to
+    // be divided by this. Uses the fit (min) axis to match how
+    // CameraComponent.withFixedResolution letterboxes. Guarded against a
+    // zero/degenerate viewport during the first frames.
+    final scale = game.size.x <= 0 || game.size.y <= 0
+        ? 1.0
+        : math.min(game.size.x / size.width, game.size.y / size.height);
+    // Clamped to a proportional band (2.5%-7.5% of a 20-unit cell). Purely
+    // screen-constant would swing the other way: on a 50x50 board the cells
+    // are ~7dp, so a full 1dp line is ~14% of a cell and the grid reads as
+    // blobby rather than as texture. The clamp keeps the line a hairline on
+    // dense boards while still cutting the tablet/small-board case, which is
+    // where a fixed world-space width got visibly heavy.
+    final hairline = scale <= 0 ? 1.0 : (1.0 / scale).clamp(0.5, 1.5);
+
+    GameBoardBackgroundPainter(game.theme, lineWidth: hairline)
+        .paint(canvas, size);
 
     // Head intent shimmer — fade over a ~140ms window from the accept stamp
     // (identical to the legacy widget's computation).

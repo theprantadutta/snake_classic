@@ -88,7 +88,6 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final Paint _snakeHeadPaint;
   final Paint _snakeBodyPaint;
   final Paint _foodPaint;
-  final Paint _gridPaint;
   final Paint _crashPaint;
   final Paint _collisionPaint;
 
@@ -108,16 +107,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
     Paint? cachedSnakeHeadPaint,
     Paint? cachedSnakeBodyPaint,
     Paint? cachedFoodPaint,
-    Paint? cachedGridPaint,
     Paint? cachedCrashPaint,
     Paint? cachedCollisionPaint,
   })  : _snakeHeadPaint = cachedSnakeHeadPaint ?? (Paint()..isAntiAlias = true),
         _snakeBodyPaint = cachedSnakeBodyPaint ?? (Paint()..isAntiAlias = true),
         _foodPaint = cachedFoodPaint ?? (Paint()..isAntiAlias = true),
-        _gridPaint = cachedGridPaint ?? (Paint()
-          ..color = theme.accentColor.withValues(alpha: 0.08)
-          ..strokeWidth = 0.5
-          ..isAntiAlias = false),
         _crashPaint = cachedCrashPaint ?? (Paint()
           ..isAntiAlias = true
           ..style = PaintingStyle.fill),
@@ -132,8 +126,15 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final cellWidth = size.width / gameState.boardWidth;
     final cellHeight = size.height / gameState.boardHeight;
 
-    // Draw in optimal order (back to front)
-    _drawGrid(canvas, size, cellWidth, cellHeight);
+    // Draw in optimal order (back to front).
+    //
+    // No grid here: GameBoardBackgroundPainter already draws a cell-aligned
+    // grid underneath us on EVERY theme. This painter used to draw a second
+    // one on neon/cyberpunk only, exactly on top of it, with a different
+    // stroke width (0.5 vs 1.0) and anti-aliasing disabled where the other
+    // has it on — so those two themes got a doubled, uneven, visibly heavier
+    // line than every other theme, plus a redundant full-board path per
+    // frame.
 
     // Draw wall warning if snake is near edges (visual safety indicator)
     if (gameState.status == GameStatus.playing) {
@@ -294,34 +295,6 @@ class OptimizedGameBoardPainter extends CustomPainter {
         RRect.fromRectAndRadius(rect, Radius.circular(cellWidth * 0.15)),
         paint,
       );
-    }
-  }
-
-  void _drawGrid(
-    Canvas canvas,
-    Size size,
-    double cellWidth,
-    double cellHeight,
-  ) {
-    if (theme == GameTheme.neon || theme == GameTheme.cyberpunk) {
-      // Draw grid for neon and cyberpunk themes and optimize drawing
-      final path = Path();
-
-      // Draw vertical lines in one path
-      for (int i = 0; i <= gameState.boardWidth; i++) {
-        final x = i * cellWidth;
-        path.moveTo(x, 0);
-        path.lineTo(x, size.height);
-      }
-
-      // Draw horizontal lines in same path
-      for (int i = 0; i <= gameState.boardHeight; i++) {
-        final y = i * cellHeight;
-        path.moveTo(0, y);
-        path.lineTo(size.width, y);
-      }
-
-      canvas.drawPath(path, _gridPaint);
     }
   }
 
@@ -2626,7 +2599,23 @@ class OptimizedGameBoardPainter extends CustomPainter {
 class GameBoardBackgroundPainter extends CustomPainter {
   final GameTheme theme;
 
-  GameBoardBackgroundPainter(this.theme);
+  /// Grid stroke width, in WORLD units.
+  ///
+  /// This painter draws into the fixed-resolution Flame world, where one cell
+  /// is always [GameConstants.cellSize] units regardless of the board — so the
+  /// grid is cell-aligned for free, but a hard-coded stroke width is not
+  /// device- or board-independent. The camera scales the whole world
+  /// (`boardWidth * cellSize` units wide) down to the viewport, and that scale
+  /// swings with the board size: on a ~360dp phone board a fixed 1.0 rendered
+  /// at ~1.2dp on a 15x15 board but only ~0.36dp on a 50x50 — a 3.3x spread —
+  /// and on a tablet the small boards climbed past 2dp, which reads as
+  /// heavy-handed grid lines rather than the intended hairline.
+  ///
+  /// The caller passes the reciprocal of the world-to-screen scale so the line
+  /// lands at a consistent on-screen hairline everywhere.
+  final double lineWidth;
+
+  GameBoardBackgroundPainter(this.theme, {this.lineWidth = 1.0});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2636,10 +2625,19 @@ class GameBoardBackgroundPainter extends CustomPainter {
     // a big part of why the board read as a separate, "zoomed-in" surface.
     // Drawing the real cell grid (faintly, on every theme) both anchors the
     // texture to gameplay and telegraphs exact food/snake positions.
+    // Neon and cyberpunk keep a more present grid — it's part of their look,
+    // and they previously got one by accident: OptimizedGameBoardPainter drew
+    // a second grid over this one for exactly those two themes, landing at a
+    // combined ~0.14 alpha. That double-draw is gone (uneven line, redundant
+    // path every frame), so the intended emphasis is expressed here instead,
+    // as a single clean stroke.
+    final isGridForwardTheme =
+        theme == GameTheme.neon || theme == GameTheme.cyberpunk;
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = theme.accentColor.withValues(alpha: 0.06);
+      ..strokeWidth = lineWidth
+      ..color = theme.accentColor
+          .withValues(alpha: isGridForwardTheme ? 0.12 : 0.06);
 
     const gridSize = GameConstants.cellSize;
 
