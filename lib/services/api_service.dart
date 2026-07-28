@@ -1018,6 +1018,21 @@ class ApiService {
     }
   }
 
+  /// Lifetime multiplayer record `{wins, losses, draws, rating}` —
+  /// server-authoritative (written only by the match engine). Display
+  /// only; not part of the sync surface.
+  Future<Map<String, dynamic>?> getMultiplayerRecord() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/multiplayer/record'), headers: _authHeaders)
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /multiplayer/record', e);
+      return null;
+    }
+  }
+
   /// SignalR hub endpoint (no /api/v1 prefix — hubs are mapped at root).
   String getSignalRHubUrl() {
     final hubUrl = baseUrl.replaceFirst('/api/v1', '');

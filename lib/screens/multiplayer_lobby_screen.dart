@@ -10,6 +10,7 @@ import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.da
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -31,6 +32,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
   final ConnectivityService _connectivityService = ConnectivityService();
 
+  /// Lifetime W/L record from GET /multiplayer/record — display only,
+  /// loaded non-blocking; the lobby renders fine without it.
+  Map<String, dynamic>? _record;
+
   @override
   void initState() {
     super.initState();
@@ -50,7 +55,18 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           _showOfflineMessage();
         }
       }
+
+      if (_connectivityService.isOnline) {
+        _loadRecord();
+      }
     });
+  }
+
+  Future<void> _loadRecord() async {
+    final record = await ApiService().getMultiplayerRecord();
+    if (mounted && record != null) {
+      setState(() => _record = record);
+    }
   }
 
   void _onRoomCodeChanged() {
@@ -308,6 +324,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             ),
             child: Column(
               children: [
+                // Lifetime VS record (renders only once loaded)
+                if (_record != null) ...[
+                  _buildRecordStrip(theme),
+                  const SizedBox(height: 20),
+                ],
+
                 // Quick Match Section
                 _buildQuickMatchSection(context, multiplayerState, theme),
 
@@ -903,6 +925,63 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         ),
       ],
     );
+  }
+
+  /// Compact lifetime record chip row: "W · L · D" plus rating.
+  Widget _buildRecordStrip(GameTheme theme) {
+    final wins = (_record?['wins'] as num?)?.toInt() ?? 0;
+    final losses = (_record?['losses'] as num?)?.toInt() ?? 0;
+    final draws = (_record?['draws'] as num?)?.toInt() ?? 0;
+    final rating = (_record?['rating'] as num?)?.toInt() ?? 1000;
+
+    Widget chip(IconData icon, Color color, String text) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        chip(
+          Icons.emoji_events,
+          Colors.green,
+          '$wins W',
+        ),
+        const SizedBox(width: 10),
+        chip(
+          Icons.close,
+          Colors.red.shade400,
+          '$losses L',
+        ),
+        if (draws > 0) ...[
+          const SizedBox(width: 10),
+          chip(Icons.handshake, Colors.orange, '$draws D'),
+        ],
+        const SizedBox(width: 10),
+        chip(Icons.military_tech, theme.accentColor, '$rating'),
+      ],
+    ).gameZoomIn(delay: 100.ms);
   }
 
   Widget _buildJoinGameSection(
