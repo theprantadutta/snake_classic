@@ -188,6 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Keep our local UI mirrors in lock-step with GameSettingsCubit so
     // changes that originate elsewhere (e.g. the game-screen first-launch
     // modal flipping D-Pad on) reflect here even if the screen is already
@@ -220,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       extendBodyBehindAppBar: true,
                       appBar: AppBar(
                         title: Text(
-                          'SETTINGS',
+                          l10n.settingsTitle,
                           style: TextStyle(
                             color: theme.accentColor,
                             fontWeight: FontWeight.bold,
@@ -254,9 +255,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // 1. Controls Section (most frequently adjusted during gameplay)
-                                  _buildSection('CONTROLS', [
+                                  _buildSection(l10n.settingsSectionControls, [
                                     _buildAudioSwitch(
-                                      'D-Pad Controls',
+                                      l10n.settingsDPadControls,
                                       _dPadEnabled,
                                       (value) async {
                                         setState(() {
@@ -271,7 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Show on-screen directional buttons during gameplay',
+                                      l10n.settingsDPadSubtitle,
                                       style: TextStyle(
                                         color: theme.accentColor.withValues(
                                           alpha: 0.6,
@@ -295,7 +296,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   const SizedBox(height: 32),
 
                                   // 2. Gameplay Section (mode + board size + crash feedback + effects)
-                                  _buildSection('GAMEPLAY', [
+                                  _buildSection(l10n.settingsSectionGameplay, [
                                     _buildGameModeSelector(gameState, theme),
                                     const SizedBox(height: 24),
                                     const Divider(height: 1),
@@ -316,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const Divider(height: 1),
                                     const SizedBox(height: 24),
                                     _buildAudioSwitch(
-                                      'Screen Shake',
+                                      l10n.settingsScreenShake,
                                       _screenShakeEnabled,
                                       (value) async {
                                         setState(() {
@@ -331,7 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Shake the screen on collisions and game events',
+                                      l10n.settingsScreenShakeSubtitle,
                                       style: TextStyle(
                                         color: theme.accentColor.withValues(
                                           alpha: 0.6,
@@ -344,7 +345,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const Divider(height: 1),
                                     const SizedBox(height: 24),
                                     _buildAudioSwitch(
-                                      'Vibration',
+                                      l10n.settingsVibration,
                                       _hapticsEnabled,
                                       (value) async {
                                         setState(() {
@@ -359,7 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Vibrate on game events and button presses',
+                                      l10n.settingsVibrationSubtitle,
                                       style: TextStyle(
                                         color: theme.accentColor.withValues(
                                           alpha: 0.6,
@@ -373,9 +374,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   const SizedBox(height: 32),
 
                                   // 3. Audio Section
-                                  _buildSection('AUDIO', [
+                                  _buildSection(l10n.settingsSectionAudio, [
                                     _buildAudioSwitch(
-                                      'Sound Effects',
+                                      l10n.settingsSoundEffects,
                                       _soundEnabled,
                                       (value) async {
                                         setState(() {
@@ -390,7 +391,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     _buildAudioSwitch(
-                                      'Background Music',
+                                      l10n.settingsBackgroundMusic,
                                       _musicEnabled,
                                       (value) async {
                                         setState(() {
@@ -408,13 +409,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   const SizedBox(height: 32),
 
                                   // 4. Visual Section (theme + trail effects)
-                                  _buildSection('VISUAL', [
+                                  _buildSection(l10n.settingsSectionVisual, [
                                     _buildThemeSelector(themeState, theme),
                                     const SizedBox(height: 24),
                                     const Divider(height: 1),
                                     const SizedBox(height: 24),
                                     _buildAudioSwitch(
-                                      'Snake Trail Effects',
+                                      l10n.settingsSnakeTrail,
                                       themeState.isTrailSystemEnabled,
                                       (value) async {
                                         await context
@@ -425,7 +426,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Enable particle trails behind the snake',
+                                      l10n.settingsSnakeTrailSubtitle,
                                       style: TextStyle(
                                         color: theme.accentColor.withValues(
                                           alpha: 0.6,
@@ -451,9 +452,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   const SizedBox(height: 32),
 
                                   // 5. User Profile Section
-                                  _buildSection('NOTIFICATIONS', [
+                                  _buildSection(
+                                      l10n.settingsSectionNotifications, [
                                     _buildAudioSwitch(
-                                      'Daily Reminder',
+                                      l10n.settingsNotifDailyReminder,
                                       _notifDailyReminder,
                                       (v) => _toggleNotification(
                                         NotificationType.dailyReminder,
@@ -464,7 +466,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     _buildAudioSwitch(
-                                      'Tournament Alerts',
+                                      l10n.settingsNotifTournament,
                                       _notifTournament,
                                       (v) => _toggleNotification(
                                         NotificationType.tournament,
@@ -475,7 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     _buildAudioSwitch(
-                                      'Achievement Unlocks',
+                                      l10n.settingsNotifAchievement,
                                       _notifAchievement,
                                       (v) => _toggleNotification(
                                         NotificationType.achievement,
@@ -486,7 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     _buildAudioSwitch(
-                                      'Social Updates',
+                                      l10n.settingsNotifSocial,
                                       _notifSocial,
                                       (v) => _toggleNotification(
                                         NotificationType.social,
@@ -497,7 +499,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     _buildAudioSwitch(
-                                      'Special Events',
+                                      l10n.settingsNotifSpecialEvents,
                                       _notifSpecialEvent,
                                       (v) => _toggleNotification(
                                         NotificationType.specialEvent,
@@ -524,14 +526,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 32),
                                   ],
 
-                                  _buildSection('USER PROFILE', [
+                                  _buildSection(
+                                      l10n.settingsSectionUserProfile, [
                                     _buildUserProfileSettings(authState, theme),
                                   ], theme),
 
                                   const SizedBox(height: 32),
 
                                   // 6. Help & Tutorial Section
-                                  _buildSection('HELP & TUTORIAL', [
+                                  _buildSection(l10n.settingsSectionHelp, [
                                     _buildReplayTutorialButton(theme),
                                     const SizedBox(height: 16),
                                     _buildCreditsButton(theme),
@@ -542,7 +545,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   const SizedBox(height: 32),
 
                                   // 6b. Legal Section
-                                  _buildSection('LEGAL', [
+                                  _buildSection(l10n.settingsSectionLegal, [
                                     _buildPrivacyPolicyButton(theme),
                                     const SizedBox(height: 12),
                                     _buildTermsButton(theme),
@@ -552,7 +555,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                                   // 7. Premium Section (if available)
                                   if (premiumState.isInitialized)
-                                    _buildSection('PREMIUM FEATURES', [
+                                    _buildSection(
+                                        l10n.settingsSectionPremium, [
                                       _buildPremiumStatusCard(
                                         premiumState,
                                         theme,
@@ -588,7 +592,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   // Back Button — full width
                                   GradientButton(
                                     onPressed: () => context.pop(),
-                                    text: 'BACK TO GAME',
+                                    text: l10n.settingsBackToGame,
                                     primaryColor: theme.accentColor,
                                     secondaryColor: theme.foodColor,
                                     icon: Icons.arrow_back,
@@ -729,6 +733,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildThemeSelector(ThemeState themeState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Row(
@@ -738,7 +743,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Current Theme',
+                    l10n.settingsCurrentTheme,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 14,
@@ -800,7 +805,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Routes to the Themes tab of the unified store (tab index 2:
           // Pro / Coins / Themes / Skins / Trails / Power-Ups).
           onPressed: () => context.push('${AppRoutes.store}?tab=2'),
-          text: 'BROWSE THEMES',
+          text: l10n.settingsBrowseThemes,
           primaryColor: theme.accentColor,
           secondaryColor: theme.primaryColor,
           icon: Icons.palette,
@@ -850,7 +855,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'D-Pad Position',
+              AppLocalizations.of(context)!.settingsDPadPosition,
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 16,
@@ -925,6 +930,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildControlInfo(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -934,7 +940,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 !defaultTargetPlatform.toString().contains('ios'))) ...[
           // Desktop/Web controls
           Text(
-            'Desktop/Web Controls',
+            l10n.settingsDesktopControls,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 16,
@@ -943,14 +949,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildControlItem('Arrow Keys', 'Change direction', theme),
-          _buildControlItem('WASD Keys', 'Change direction', theme),
-          _buildControlItem('Spacebar', 'Pause/Resume game', theme),
-          _buildControlItem('Mouse Click', 'Pause/Resume game', theme),
+          _buildControlItem(
+              l10n.settingsArrowKeys, l10n.settingsChangeDirection, theme),
+          _buildControlItem(
+              l10n.settingsWasdKeys, l10n.settingsChangeDirection, theme),
+          _buildControlItem(
+              l10n.settingsSpacebar, l10n.settingsPauseResume, theme),
+          _buildControlItem(
+              l10n.settingsMouseClick, l10n.settingsPauseResume, theme),
           if (!kIsWeb) ...[
             const SizedBox(height: 16),
             Text(
-              'Touch Controls (if available)',
+              l10n.settingsTouchControlsIfAvailable,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.7),
                 fontSize: 14,
@@ -958,13 +968,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            _buildControlItem('Swipe Gestures', 'Change direction', theme),
-            _buildControlItem('Tap Screen', 'Pause/Resume game', theme),
+            _buildControlItem(l10n.settingsSwipeGestures,
+                l10n.settingsChangeDirection, theme),
+            _buildControlItem(
+                l10n.settingsTapScreen, l10n.settingsPauseResume, theme),
           ],
         ] else ...[
           // Mobile controls
           Text(
-            'Touch Controls',
+            l10n.settingsTouchControls,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 16,
@@ -973,11 +985,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildControlItem('Swipe Up ↑', 'Move snake up', theme),
-          _buildControlItem('Swipe Down ↓', 'Move snake down', theme),
-          _buildControlItem('Swipe Left ←', 'Move snake left', theme),
-          _buildControlItem('Swipe Right →', 'Move snake right', theme),
-          _buildControlItem('Tap Screen', 'Pause/Resume game', theme),
+          _buildControlItem(
+              l10n.settingsSwipeUp, l10n.settingsMoveSnakeUp, theme),
+          _buildControlItem(
+              l10n.settingsSwipeDown, l10n.settingsMoveSnakeDown, theme),
+          _buildControlItem(
+              l10n.settingsSwipeLeft, l10n.settingsMoveSnakeLeft, theme),
+          _buildControlItem(
+              l10n.settingsSwipeRight, l10n.settingsMoveSnakeRight, theme),
+          _buildControlItem(
+              l10n.settingsTapScreen, l10n.settingsPauseResume, theme),
         ],
       ],
     );
@@ -1022,6 +1039,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildGameModeSelector(GameCubitState gameState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Row(
@@ -1031,7 +1049,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Game Mode',
+                    l10n.settingsGameMode,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 14,
@@ -1117,7 +1135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (gameState.isPlaying) ...[
           const SizedBox(height: 12),
           Text(
-            'Complete current game to change game mode',
+            l10n.settingsGameModeLocked,
             style: TextStyle(
               color: Colors.orange.withValues(alpha: 0.8),
               fontSize: 11,
@@ -1131,13 +1149,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDifficultySelector(GameCubitState gameState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final isCurrentlyPlaying = gameState.isPlaying;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Difficulty',
+          l10n.settingsDifficulty,
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.8),
             fontSize: 14,
@@ -1145,8 +1164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Sets how fast the snake starts. Each mode still speeds up as '
-          'you level.',
+          l10n.settingsDifficultySubtitle,
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.6),
             fontSize: 12,
@@ -1231,8 +1249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Coins, XP and achievements still count on Easy — only '
-                  'high scores and leaderboards are paused.',
+                  l10n.settingsEasyNote,
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.8),
                     fontSize: 11,
@@ -1245,7 +1262,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (isCurrentlyPlaying) ...[
           const SizedBox(height: 8),
           Text(
-            'Finish your current game to change difficulty.',
+            l10n.settingsDifficultyLocked,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.5),
               fontSize: 11,
@@ -1257,6 +1274,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildBoardSizeSelector(GameCubitState gameState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Row(
@@ -1266,7 +1284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Current Size',
+                    l10n.settingsCurrentSize,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 14,
@@ -1387,7 +1405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (gameState.isPlaying) ...[
           const SizedBox(height: 12),
           Text(
-            'Complete current game to change board size',
+            l10n.settingsBoardSizeLocked,
             style: TextStyle(
               color: Colors.orange.withValues(alpha: 0.8),
               fontSize: 11,
@@ -1404,6 +1422,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     GameCubitState gameState,
     GameTheme theme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Row(
@@ -1413,7 +1432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Current Duration',
+                    l10n.settingsCurrentDuration,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 14,
@@ -1454,7 +1473,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         Text(
-          'How long to show crash explanation',
+          l10n.settingsCrashFeedbackSubtitle,
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
@@ -1523,6 +1542,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildUserProfileSettings(AuthState authState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     // Resolve the username explicitly so the row labels it as "Username"
     // and shows the same value the change-username dialog pre-fills.
     // Falls back to displayName / 'Not set' so the row never goes blank.
@@ -1532,7 +1552,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? username
         : (authState.user?.displayName.isNotEmpty == true
               ? authState.user!.displayName
-              : 'Not set');
+              : l10n.settingsNotSet);
 
     return Column(
       children: [
@@ -1544,7 +1564,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Username',
+                    l10n.settingsUsername,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
@@ -1580,8 +1600,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     authState.isGuestUser
-                        ? 'Guest Account'
-                        : 'Authenticated Account',
+                        ? l10n.settingsGuestAccount
+                        : l10n.settingsAuthenticatedAccount,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 11,
@@ -1622,7 +1642,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // For guest users, allow username change
           GradientButton(
             onPressed: () => _showUsernameDialog(authState, theme),
-            text: 'CHANGE USERNAME',
+            text: l10n.settingsChangeUsername,
             primaryColor: Colors.orange,
             secondaryColor: Colors.deepOrange,
             icon: Icons.edit,
@@ -1631,7 +1651,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Sign in to keep your progress and play with friends',
+            l10n.settingsGuestSignInHint,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.7),
               fontSize: 12,
@@ -1643,7 +1663,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // For authenticated users
           GradientButton(
             onPressed: () => _showUsernameDialog(authState, theme),
-            text: 'CHANGE USERNAME',
+            text: l10n.settingsChangeUsername,
             primaryColor: theme.accentColor,
             secondaryColor: theme.primaryColor,
             icon: Icons.edit,
@@ -1652,7 +1672,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Your username is visible to friends and on leaderboards',
+            l10n.settingsUsernameVisibleHint,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.7),
               fontSize: 12,
@@ -1940,6 +1960,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (ads == null || !ads.adsEnabled || !ads.privacyOptionsRequired) {
       return const SizedBox.shrink();
     }
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1950,14 +1971,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final shown = await ads.showPrivacyOptions();
             if (!shown) {
               messenger.showSnackBar(
-                const SnackBar(
-                  content:
-                      Text("Ad privacy options aren't available right now."),
+                SnackBar(
+                  content: Text(l10n.settingsAdPrivacyUnavailable),
                 ),
               );
             }
           },
-          text: 'PRIVACY & AD CHOICES',
+          text: l10n.settingsAdPrivacy,
           primaryColor: theme.accentColor,
           secondaryColor: theme.foodColor,
           icon: Icons.privacy_tip,
@@ -1966,7 +1986,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Manage personalized ad consent',
+          l10n.settingsAdPrivacySubtitle,
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.6),
             fontSize: 12,
@@ -1977,12 +1997,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildCreditsButton(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         GradientButton(
           onPressed: () => showCreditsDialog(context, theme),
-          text: 'ABOUT & CREDITS',
+          text: l10n.settingsAboutCredits,
           primaryColor: theme.accentColor,
           secondaryColor: theme.foodColor,
           icon: Icons.info_outline,
@@ -1991,7 +2012,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'App version, credits, and links',
+          l10n.settingsAboutCreditsSubtitle,
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.6),
             fontSize: 12,
@@ -2016,14 +2037,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildPrivacyPolicyButton(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return GradientButton(
       onPressed: () => _openLegalDoc(
-        'Privacy Policy',
+        l10n.settingsPrivacyPolicyTitle,
         'assets/legal/PRIVACY.md',
         Icons.privacy_tip_outlined,
         'https://legal.pranta.dev/privacy?projectName=snake_classic',
       ),
-      text: 'PRIVACY POLICY',
+      text: l10n.settingsPrivacyPolicyButton,
       primaryColor: theme.accentColor,
       secondaryColor: theme.foodColor,
       icon: Icons.privacy_tip_outlined,
@@ -2033,14 +2055,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildTermsButton(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return GradientButton(
       onPressed: () => _openLegalDoc(
-        'Terms of Use',
+        l10n.settingsTermsTitle,
         'assets/legal/TERMS.md',
         Icons.description_outlined,
         'https://legal.pranta.dev/terms?projectName=snake_classic',
       ),
-      text: 'TERMS OF USE',
+      text: l10n.settingsTermsButton,
       primaryColor: theme.accentColor,
       secondaryColor: theme.foodColor,
       icon: Icons.description_outlined,
@@ -2054,13 +2077,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// a deliberate tap). The in-app sheet still fires automatically at positive
   /// moments via ReviewService.maybeRequestReview.
   Widget _buildRateUsButton(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 16),
         GradientButton(
           onPressed: () => getIt<ReviewService>().openStoreListing(),
-          text: 'RATE SNAKE CLASSIC',
+          text: l10n.settingsRateApp,
           primaryColor: theme.accentColor,
           secondaryColor: theme.foodColor,
           icon: Icons.star_rounded,
@@ -2070,8 +2094,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 8),
         Text(
           defaultTargetPlatform == TargetPlatform.iOS
-              ? 'Enjoying the game? Leave a review on the App Store'
-              : 'Enjoying the game? Leave us a review!',
+              ? l10n.settingsRateAppSubtitleIos
+              : l10n.settingsRateAppSubtitle,
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.6),
             fontSize: 12,
@@ -2082,12 +2106,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildReplayTutorialButton(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         GradientButton(
           onPressed: () => _showReplayTutorialDialog(theme),
-          text: 'REPLAY TUTORIAL',
+          text: l10n.settingsReplayTutorial,
           primaryColor: theme.accentColor,
           secondaryColor: theme.foodColor,
           icon: Icons.school,
@@ -2096,7 +2121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Watch the home tour or game tutorial again',
+          l10n.settingsReplayTutorialSubtitle,
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.6),
             fontSize: 12,
@@ -2107,6 +2132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showReplayTutorialDialog(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -2120,7 +2146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(Icons.school, color: theme.accentColor),
             const SizedBox(width: 12),
             Text(
-              'Replay Tutorial',
+              l10n.settingsReplayDialogTitle,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.bold,
@@ -2129,7 +2155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
         content: Text(
-          'Which tutorial would you like to replay?',
+          l10n.settingsReplayDialogBody,
           style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
         ),
         actions: [
@@ -2138,7 +2164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.of(dialogContext).pop();
             },
             child: Text(
-              'Cancel',
+              l10n.commonCancel,
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
             ),
           ),
@@ -2153,7 +2179,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
             child: Text(
-              'Home Tour',
+              l10n.settingsHomeTour,
               style: TextStyle(color: theme.foodColor),
             ),
           ),
@@ -2168,7 +2194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
             child: Text(
-              'Game Tutorial',
+              l10n.settingsGameTutorial,
               style: TextStyle(color: theme.accentColor),
             ),
           ),
@@ -2178,6 +2204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showUsernameDialog(AuthState authState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     // Pre-fill with the current username so the user can see what it is
     // before editing. Previously the field opened empty, which made it
     // unclear what the existing value was and forced users to retype
@@ -2204,7 +2231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               title: Text(
-                'Change Username',
+                l10n.settingsChangeUsernameTitle,
                 style: TextStyle(
                   color: theme.primaryColor,
                   fontWeight: FontWeight.bold,
@@ -2237,7 +2264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'Current: ',
+                              '${l10n.settingsCurrentLabel} ',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 12,
@@ -2260,7 +2287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 12),
                     ],
                     Text(
-                      'Choose a unique username that represents you in the game.',
+                      l10n.settingsUsernameDialogBody,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,
@@ -2271,11 +2298,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     TextField(
                       controller: usernameController,
                       decoration: InputDecoration(
-                        labelText: 'Username',
+                        labelText: l10n.settingsUsername,
                         labelStyle: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.7),
                         ),
-                        hintText: 'Enter new username',
+                        hintText: l10n.settingsEnterNewUsername,
                         hintStyle: TextStyle(
                           color: Colors.white.withValues(alpha: 0.5),
                         ),
@@ -2307,7 +2334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 8),
 
                     Text(
-                      '• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only',
+                      l10n.settingsUsernameRules,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
@@ -2322,7 +2349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? null
                       : () => Navigator.of(dialogContext).pop(),
                   child: Text(
-                    'Cancel',
+                    l10n.commonCancel,
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.7),
                     ),
@@ -2355,7 +2382,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               setState(() {
                                 errorMessage =
                                     validation.error ??
-                                    'Failed to update username';
+                                    l10n.settingsUsernameUpdateFailed;
                               });
                             }
                           } else {
@@ -2368,7 +2395,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               setState(() {
                                 errorMessage =
                                     validation.error ??
-                                    'Failed to update username';
+                                    l10n.settingsUsernameUpdateFailed;
                               });
                             }
                           }
@@ -2378,7 +2405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             scaffoldMessenger.showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'Username updated to "$newUsername"',
+                                  l10n.settingsUsernameUpdated(newUsername),
                                 ),
                                 backgroundColor: Colors.green,
                               ),
@@ -2406,7 +2433,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                         )
-                      : Text('Update', style: TextStyle(color: Colors.white)),
+                      : Text(l10n.settingsUpdate,
+                          style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -2471,6 +2499,7 @@ class _BoardSizePainter extends CustomPainter {
 // Premium UI Components
 extension _SettingsPremium on _SettingsScreenState {
   Widget _buildPremiumStatusCard(PremiumState premiumState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
@@ -2506,8 +2535,8 @@ extension _SettingsPremium on _SettingsScreenState {
               children: [
                 Text(
                   premiumState.hasPremium
-                      ? 'Snake Classic Pro'
-                      : 'Premium Status',
+                      ? l10n.settingsProTitle
+                      : l10n.settingsPremiumStatus,
                   style: TextStyle(
                     color: premiumState.hasPremium
                         ? Colors.black
@@ -2518,8 +2547,8 @@ extension _SettingsPremium on _SettingsScreenState {
                 ),
                 Text(
                   premiumState.hasPremium
-                      ? 'Active subscription'
-                      : 'Unlock premium features',
+                      ? l10n.settingsActiveSubscription
+                      : l10n.settingsUnlockPremium,
                   style: TextStyle(
                     color: premiumState.hasPremium
                         ? Colors.black.withValues(alpha: 0.8)
@@ -2530,7 +2559,9 @@ extension _SettingsPremium on _SettingsScreenState {
                 if (premiumState.hasPremium &&
                     premiumState.subscriptionExpiry != null)
                   Text(
-                    'Renews ${premiumState.subscriptionExpiry!.day}/${premiumState.subscriptionExpiry!.month}',
+                    l10n.settingsRenews(
+                      '${premiumState.subscriptionExpiry!.day}/${premiumState.subscriptionExpiry!.month}',
+                    ),
                     style: TextStyle(
                       color: Colors.black.withValues(alpha: 0.6),
                       fontSize: 12,
@@ -2546,9 +2577,9 @@ extension _SettingsPremium on _SettingsScreenState {
                 color: Colors.black.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                'PRO',
-                style: TextStyle(
+              child: Text(
+                l10n.settingsProBadge,
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -2572,7 +2603,7 @@ extension _SettingsPremium on _SettingsScreenState {
         width: double.infinity,
         child: GradientButton(
           onPressed: () => context.push(AppRoutes.premiumBenefits),
-          text: 'Upgrade to Pro',
+          text: AppLocalizations.of(context)!.settingsUpgradeToPro,
           primaryColor: const Color(0xFFFFD700),
           secondaryColor: const Color(0xFFFFA500),
           icon: Icons.star,
@@ -2603,7 +2634,7 @@ extension _SettingsPremium on _SettingsScreenState {
             Icon(Icons.restore, color: theme.accentColor),
             const SizedBox(width: 8),
             Text(
-              'Restore Purchases',
+              AppLocalizations.of(context)!.settingsRestorePurchases,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.w500,
@@ -2637,7 +2668,7 @@ extension _SettingsPremium on _SettingsScreenState {
             Icon(Icons.history, color: theme.accentColor),
             const SizedBox(width: 8),
             Text(
-              'Purchase History',
+              AppLocalizations.of(context)!.settingsPurchaseHistory,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.w500,
@@ -2668,7 +2699,7 @@ extension _SettingsPremium on _SettingsScreenState {
             Icon(Icons.palette, color: theme.accentColor),
             const SizedBox(width: 8),
             Text(
-              'Snake Cosmetics',
+              AppLocalizations.of(context)!.settingsSnakeCosmetics,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.w500,
@@ -2698,6 +2729,7 @@ extension _SettingsPremium on _SettingsScreenState {
   }
 
   Widget _buildBattlePassButton(PremiumState premiumState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -2725,9 +2757,9 @@ extension _SettingsPremium on _SettingsScreenState {
             children: [
               const Icon(Icons.military_tech, color: Colors.purple),
               const SizedBox(width: 8),
-              const Text(
-                'Battle Pass',
-                style: TextStyle(
+              Text(
+                l10n.settingsBattlePass,
+                style: const TextStyle(
                   color: Colors.purple,
                   fontWeight: FontWeight.w500,
                 ),
@@ -2740,7 +2772,7 @@ extension _SettingsPremium on _SettingsScreenState {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Tier ${premiumState.battlePassTier}',
+                  l10n.settingsTier(premiumState.battlePassTier),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -2762,10 +2794,11 @@ extension _SettingsPremium on _SettingsScreenState {
   // upsell.
 
   void _restorePurchases() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Restoring purchases...'),
+          content: Text(l10n.settingsRestoring),
           backgroundColor: Colors.blue,
         ),
       );
@@ -2775,8 +2808,8 @@ extension _SettingsPremium on _SettingsScreenState {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Purchases restored successfully!'),
+          SnackBar(
+            content: Text(l10n.settingsRestored),
             backgroundColor: Colors.green,
           ),
         );
@@ -2784,8 +2817,8 @@ extension _SettingsPremium on _SettingsScreenState {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to restore purchases. Please try again.'),
+          SnackBar(
+            content: Text(l10n.settingsRestoreFailed),
             backgroundColor: Colors.red,
           ),
         );
@@ -2794,6 +2827,7 @@ extension _SettingsPremium on _SettingsScreenState {
   }
 
   void _showPurchaseHistory() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final premiumCubit = context.read<PremiumCubit>();
       final history = await premiumCubit.getPurchaseHistory();
@@ -2803,15 +2837,15 @@ extension _SettingsPremium on _SettingsScreenState {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Purchase History'),
+          title: Text(l10n.settingsPurchaseHistory),
           content: SizedBox(
             width: double.maxFinite,
             height: 300,
             child: history.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
-                      'No purchases found',
-                      style: TextStyle(color: Colors.grey),
+                      l10n.settingsNoPurchases,
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   )
                 : ListView.builder(
@@ -2821,11 +2855,13 @@ extension _SettingsPremium on _SettingsScreenState {
                       // Purchase is already a Map<String, dynamic>
                       try {
                         final productId =
-                            purchase['productId']?.toString() ?? 'Unknown';
+                            purchase['productId']?.toString() ??
+                            l10n.settingsUnknown;
                         final transactionDate =
                             purchase['transactionDate']?.toString() ?? '';
                         final status =
-                            purchase['status']?.toString() ?? 'Unknown';
+                            purchase['status']?.toString() ??
+                            l10n.settingsUnknown;
 
                         return Card(
                           child: ListTile(
@@ -2838,16 +2874,17 @@ extension _SettingsPremium on _SettingsScreenState {
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Status: $status'),
-                                Text('Date: ${_formatDate(transactionDate)}'),
+                                Text(l10n.settingsStatusLine(status)),
+                                Text(l10n.settingsDateLine(
+                                    _formatDate(transactionDate))),
                               ],
                             ),
                           ),
                         );
                       } catch (e) {
                         return ListTile(
-                          title: Text('Purchase #${index + 1}'),
-                          subtitle: const Text('Data parsing error'),
+                          title: Text(l10n.settingsPurchaseNumber(index + 1)),
+                          subtitle: Text(l10n.settingsDataParseError),
                         );
                       }
                     },
@@ -2856,7 +2893,7 @@ extension _SettingsPremium on _SettingsScreenState {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
+              child: Text(l10n.settingsClose),
             ),
           ],
         ),
@@ -2864,8 +2901,8 @@ extension _SettingsPremium on _SettingsScreenState {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to load purchase history'),
+          SnackBar(
+            content: Text(l10n.settingsHistoryLoadFailed),
             backgroundColor: Colors.red,
           ),
         );
@@ -2899,7 +2936,7 @@ extension _SettingsPremium on _SettingsScreenState {
       final date = DateTime.parse(timestamp);
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
-      return 'Unknown date';
+      return AppLocalizations.of(context)!.settingsUnknownDate;
     }
   }
 

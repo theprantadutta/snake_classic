@@ -86,5 +86,226 @@
   "mpReconnectingInline": "reconnecting…",
   "@mpReconnectingInline": {
     "description": "Small inline status under an opponent who lost connection. Lowercase."
-  }
+  },
+  "homePlay": "PLAY",
+  "@homePlay": {
+    "description": "The big main-menu play button. Uppercase, punchy."
+  },
+  "homeHighScore": "HIGH SCORE",
+  "homeArmedPowerUp": "Armed: {name}",
+  "@homeArmedPowerUp": {
+    "description": "Loadout chip when a power-up is pre-loaded for the next game.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeLoadoutCount": "Loadout ({count})",
+  "@homeLoadoutCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "puSpeedBoost": "Speed Boost",
+  "puInvincibility": "Invincibility",
+  "puScoreMultiplier": "Score Multiplier",
+  "puSlowMotion": "Slow Motion",
+  "homeTilePro": "PRO",
+  "homeTileStore": "STORE",
+  "homeTileFree": "FREE",
+  "homeTileDaily": "DAILY",
+  "homeTileBattle": "BATTLE",
+  "homeTileEvents": "EVENTS",
+  "homeTileBoard": "BOARD",
+  "homeTileFriends": "FRIENDS",
+  "homeTileCosmetics": "COSMETICS",
+  "homeTileAwards": "AWARDS",
+  "homeTileVersus": "VERSUS",
+  "@homeTileVersus": {
+    "description": "Home grid tile labels — very short, they sit under icons in a fixed-size tile."
+  },
+  "homeNoAdReady": "No ad ready just yet — try again in a few seconds.",
+  "homeFreeSpeedBoostTitle": "Free Speed Boost",
+  "homeFreeSpeedBoostBody": "Watch a short ad to add a free Speed Boost power-up to your loadout. It activates 5 seconds into your next game.",
+  "homeNotNow": "Not now",
+  "homeWatchAd": "Watch ad",
+  "homeFreeSpeedBoostAdded": "Free Speed Boost added to your loadout!",
+  "homeAdNotFinished": "Ad not finished — watch the full ad to earn your reward.",
+  "homePickGameMode": "Pick a Game Mode",
+  "homePickGameModeSubtitle": "You can change this anytime in Settings",
+  "homeStartPlaying": "START PLAYING",
+  "homeLoadoutTitle": "Power-Up Loadout",
+  "homeLoadoutSubtitle": "Pre-load one power-up — it activates 5 seconds into your next game.",
+  "homeWatchAdFreeSpeedBoost": "Watch ad — free Speed Boost",
+  "homeNoPowerUps": "You have no power-ups.\nVisit the store to buy some!",
+  "homeOwnedCount": "Owned: {count}",
+  "@homeOwnedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeArmed": "ARMED",
+  "homeDone": "DONE",
+  "settingsTitle": "SETTINGS",
+  "settingsBackToGame": "BACK TO GAME",
+  "settingsSectionControls": "CONTROLS",
+  "settingsSectionGameplay": "GAMEPLAY",
+  "settingsSectionAudio": "AUDIO",
+  "settingsSectionVisual": "VISUAL",
+  "settingsSectionNotifications": "NOTIFICATIONS",
+  "settingsSectionUserProfile": "USER PROFILE",
+  "settingsSectionHelp": "HELP & TUTORIAL",
+  "settingsSectionLegal": "LEGAL",
+  "settingsSectionPremium": "PREMIUM FEATURES",
+  "settingsDPadControls": "D-Pad Controls",
+  "settingsDPadSubtitle": "Show on-screen directional buttons during gameplay",
+  "settingsDPadPosition": "D-Pad Position",
+  "settingsDesktopControls": "Desktop/Web Controls",
+  "settingsArrowKeys": "Arrow Keys",
+  "settingsWasdKeys": "WASD Keys",
+  "settingsSpacebar": "Spacebar",
+  "settingsMouseClick": "Mouse Click",
+  "settingsChangeDirection": "Change direction",
+  "settingsPauseResume": "Pause/Resume game",
+  "settingsTouchControlsIfAvailable": "Touch Controls (if available)",
+  "settingsTouchControls": "Touch Controls",
+  "settingsSwipeGestures": "Swipe Gestures",
+  "settingsTapScreen": "Tap Screen",
+  "settingsSwipeUp": "Swipe Up ↑",
+  "settingsSwipeDown": "Swipe Down ↓",
+  "settingsSwipeLeft": "Swipe Left ←",
+  "settingsSwipeRight": "Swipe Right →",
+  "settingsMoveSnakeUp": "Move snake up",
+  "settingsMoveSnakeDown": "Move snake down",
+  "settingsMoveSnakeLeft": "Move snake left",
+  "settingsMoveSnakeRight": "Move snake right",
+  "settingsGameMode": "Game Mode",
+  "settingsGameModeLocked": "Complete current game to change game mode",
+  "settingsDifficulty": "Difficulty",
+  "settingsDifficultySubtitle": "Sets how fast the snake starts. Each mode still speeds up as you level.",
+  "settingsEasyNote": "Coins, XP and achievements still count on Easy — only high scores and leaderboards are paused.",
+  "settingsDifficultyLocked": "Finish your current game to change difficulty.",
+  "settingsCurrentSize": "Current Size",
+  "settingsBoardSizeLocked": "Complete current game to change board size",
+  "settingsCurrentDuration": "Current Duration",
+  "settingsCrashFeedbackSubtitle": "How long to show crash explanation",
+  "settingsScreenShake": "Screen Shake",
+  "settingsScreenShakeSubtitle": "Shake the screen on collisions and game events",
+  "settingsVibration": "Vibration",
+  "settingsVibrationSubtitle": "Vibrate on game events and button presses",
+  "settingsSoundEffects": "Sound Effects",
+  "settingsBackgroundMusic": "Background Music",
+  "settingsCurrentTheme": "Current Theme",
+  "settingsBrowseThemes": "BROWSE THEMES",
+  "settingsSnakeTrail": "Snake Trail Effects",
+  "settingsSnakeTrailSubtitle": "Enable particle trails behind the snake",
+  "settingsNotifDailyReminder": "Daily Reminder",
+  "settingsNotifTournament": "Tournament Alerts",
+  "settingsNotifAchievement": "Achievement Unlocks",
+  "settingsNotifSocial": "Social Updates",
+  "settingsNotifSpecialEvents": "Special Events",
+  "settingsNotSet": "Not set",
+  "settingsUsername": "Username",
+  "settingsGuestAccount": "Guest Account",
+  "settingsAuthenticatedAccount": "Authenticated Account",
+  "settingsChangeUsername": "CHANGE USERNAME",
+  "settingsGuestSignInHint": "Sign in to keep your progress and play with friends",
+  "settingsUsernameVisibleHint": "Your username is visible to friends and on leaderboards",
+  "settingsReplayTutorial": "REPLAY TUTORIAL",
+  "settingsReplayTutorialSubtitle": "Watch the home tour or game tutorial again",
+  "settingsAboutCredits": "ABOUT & CREDITS",
+  "settingsAboutCreditsSubtitle": "App version, credits, and links",
+  "settingsRateApp": "RATE SNAKE CLASSIC",
+  "settingsRateAppSubtitleIos": "Enjoying the game? Leave a review on the App Store",
+  "settingsRateAppSubtitle": "Enjoying the game? Leave us a review!",
+  "settingsAdPrivacy": "PRIVACY & AD CHOICES",
+  "settingsAdPrivacySubtitle": "Manage personalized ad consent",
+  "settingsAdPrivacyUnavailable": "Ad privacy options aren't available right now.",
+  "settingsReplayDialogTitle": "Replay Tutorial",
+  "settingsReplayDialogBody": "Which tutorial would you like to replay?",
+  "settingsHomeTour": "Home Tour",
+  "settingsGameTutorial": "Game Tutorial",
+  "settingsPrivacyPolicyTitle": "Privacy Policy",
+  "settingsPrivacyPolicyButton": "PRIVACY POLICY",
+  "settingsTermsTitle": "Terms of Use",
+  "settingsTermsButton": "TERMS OF USE",
+  "settingsChangeUsernameTitle": "Change Username",
+  "settingsCurrentLabel": "Current:",
+  "settingsUsernameDialogBody": "Choose a unique username that represents you in the game.",
+  "settingsEnterNewUsername": "Enter new username",
+  "settingsUsernameRules": "• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only",
+  "settingsUsernameUpdateFailed": "Failed to update username",
+  "settingsUsernameUpdated": "Username updated to \"{name}\"",
+  "@settingsUsernameUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsUpdate": "Update",
+  "settingsProTitle": "Snake Classic Pro",
+  "settingsPremiumStatus": "Premium Status",
+  "settingsActiveSubscription": "Active subscription",
+  "settingsUnlockPremium": "Unlock premium features",
+  "settingsRenews": "Renews {date}",
+  "@settingsRenews": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsProBadge": "PRO",
+  "settingsUpgradeToPro": "Upgrade to Pro",
+  "settingsRestorePurchases": "Restore Purchases",
+  "settingsPurchaseHistory": "Purchase History",
+  "settingsSnakeCosmetics": "Snake Cosmetics",
+  "settingsBattlePass": "Battle Pass",
+  "settingsTier": "Tier {tier}",
+  "@settingsTier": {
+    "placeholders": {
+      "tier": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsRestoring": "Restoring purchases...",
+  "settingsRestored": "Purchases restored successfully!",
+  "settingsRestoreFailed": "Failed to restore purchases. Please try again.",
+  "settingsNoPurchases": "No purchases found",
+  "settingsUnknown": "Unknown",
+  "settingsStatusLine": "Status: {status}",
+  "@settingsStatusLine": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDateLine": "Date: {date}",
+  "@settingsDateLine": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPurchaseNumber": "Purchase #{number}",
+  "@settingsPurchaseNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsDataParseError": "Data parsing error",
+  "settingsClose": "Close",
+  "settingsHistoryLoadFailed": "Failed to load purchase history",
+  "settingsUnknownDate": "Unknown date"
 }

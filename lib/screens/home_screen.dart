@@ -14,6 +14,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/notification_service.dart';
@@ -798,7 +799,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 colors: [theme.primaryColor, theme.accentColor],
               ).createShader(bounds),
               child: Text(
-                'Snake Classic',
+                AppLocalizations.of(context)!.appTitle,
                 style: TextStyle(
                   fontSize: titleSize,
                   fontWeight: FontWeight.w900,
@@ -1081,7 +1082,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               : -10.0,
                         ),
                         child: Text(
-                          'PLAY',
+                          AppLocalizations.of(context)!.homePlay,
                           style: TextStyle(
                             fontSize: isSmallButton
                                 ? 14
@@ -1123,8 +1124,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         // power-ups yet.
         if (powerUpState.totalOwned == 0) return const SizedBox.shrink();
 
+        final l10n = AppLocalizations.of(context)!;
         final armed = powerUpState.armed;
-        final armedLabel = armed == null ? null : _loadoutLabelFor(armed);
+        final armedLabel = armed == null ? null : _loadoutLabelFor(context, armed);
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: GestureDetector(
@@ -1157,8 +1159,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   const SizedBox(width: 6),
                   Text(
                     armed != null
-                        ? 'Armed: $armedLabel'
-                        : 'Loadout (${powerUpState.totalOwned})',
+                        ? l10n.homeArmedPowerUp(armedLabel!)
+                        : l10n.homeLoadoutCount(powerUpState.totalOwned),
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 12,
@@ -1180,16 +1182,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  String _loadoutLabelFor(String inventoryKey) {
+  String _loadoutLabelFor(BuildContext context, String inventoryKey) {
+    final l10n = AppLocalizations.of(context)!;
     switch (inventoryKey) {
       case 'speed_boost':
-        return 'Speed Boost';
+        return l10n.puSpeedBoost;
       case 'invincibility':
-        return 'Invincibility';
+        return l10n.puInvincibility;
       case 'score_multiplier':
-        return 'Score Multiplier';
+        return l10n.puScoreMultiplier;
       case 'slow_motion':
-        return 'Slow Motion';
+        return l10n.puSlowMotion;
       default:
         return inventoryKey;
     }
@@ -1290,7 +1293,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'HIGH SCORE',
+                          AppLocalizations.of(context)!.homeHighScore,
                           style: TextStyle(
                             fontSize: isSmallScreen ? 10 : 12,
                             fontWeight: FontWeight.w600,
@@ -1381,6 +1384,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final adsOn =
         getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
     final gapWidth = isSmallScreen ? 10.0 : 14.0;
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
@@ -1388,7 +1392,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             context: context,
             theme: theme,
             icon: Icons.diamond,
-            label: 'PRO',
+            label: l10n.homeTilePro,
             gradient: [Colors.purple.shade400, Colors.indigo.shade400],
             isSmallScreen: isSmallScreen,
             onTap: () => context.push(AppRoutes.premiumBenefits),
@@ -1400,7 +1404,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             context: context,
             theme: theme,
             icon: Icons.store,
-            label: 'STORE',
+            label: l10n.homeTileStore,
             gradient: [Colors.orange.shade400, Colors.amber.shade400],
             isSmallScreen: isSmallScreen,
             onTap: () => context.push(AppRoutes.store),
@@ -1416,7 +1420,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               context: context,
               theme: theme,
               icon: Icons.bolt,
-              label: 'FREE',
+              label: l10n.homeTileFree,
               gradient: [Colors.green.shade400, Colors.teal.shade400],
               isSmallScreen: isSmallScreen,
               onTap: () => _watchForFreePowerUp(context),
@@ -1436,14 +1440,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final messenger = ScaffoldMessenger.of(context);
     final powerUps = context.read<PowerUpCubit>();
     final theme = context.read<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     // No ad loaded → explain why, don't just do nothing.
     if (!ads.canShowCapped(AdService.capFreePowerUp)) {
       messenger.showSnackBar(
-        const SnackBar(
+        SnackBar(
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
-          content: Text('No ad ready just yet — try again in a few seconds.'),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          content: Text(l10n.homeNoAdReady),
         ),
       );
       return;
@@ -1463,21 +1468,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             Icon(Icons.bolt, color: theme.foodColor),
             const SizedBox(width: 8),
             Text(
-              'Free Speed Boost',
+              l10n.homeFreeSpeedBoostTitle,
               style: TextStyle(color: theme.primaryColor),
             ),
           ],
         ),
         content: Text(
-          'Watch a short ad to add a free Speed Boost power-up to your loadout. '
-          'It activates 5 seconds into your next game.',
+          l10n.homeFreeSpeedBoostBody,
           style: TextStyle(color: theme.accentColor.withValues(alpha: 0.85)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
-              'Not now',
+              l10n.homeNotNow,
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
             ),
           ),
@@ -1485,7 +1489,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: theme.accentColor),
             icon: const Icon(Icons.play_arrow, size: 18),
-            label: const Text('Watch ad'),
+            label: Text(l10n.homeWatchAd),
           ),
         ],
       ),
@@ -1503,15 +1507,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (granted) {
       showRewardToast(
         messenger,
-        'Free Speed Boost added to your loadout!',
+        l10n.homeFreeSpeedBoostAdded,
         icon: Icons.bolt,
       );
     } else {
       messenger.showSnackBar(
-        const SnackBar(
+        SnackBar(
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
-          content: Text('Ad not finished — watch the full ad to earn your reward.'),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          content: Text(l10n.homeAdNotFinished),
         ),
       );
     }
@@ -1631,10 +1635,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // Note: isMediumScreen not needed in bottom navigation
     // 8 items split 4+4 across two rows. STATS lives ONLY in the compact
     // stats row above the nav (left of the high score).
+    final l10n = AppLocalizations.of(context)!;
     final navigationItems = [
       _NavItem(
         Icons.calendar_today,
-        'DAILY',
+        l10n.homeTileDaily,
         Colors.cyan,
         () {
           context.push(AppRoutes.dailyChallenges);
@@ -1642,31 +1647,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         badge: _getDailyChallengesBadge(),
         widgetKey: HomeWalkthrough.dailyChallengesKey,
       ),
-      _NavItem(Icons.timeline, 'BATTLE', Colors.deepPurple, () {
+      _NavItem(Icons.timeline, l10n.homeTileBattle, Colors.deepPurple, () {
         context.push(AppRoutes.battlePass);
       }),
-      _NavItem(Icons.emoji_events, 'EVENTS', Colors.deepOrange, () {
+      _NavItem(Icons.emoji_events, l10n.homeTileEvents, Colors.deepOrange, () {
         context.push(AppRoutes.tournaments);
       }),
-      _NavItem(Icons.leaderboard, 'BOARD', Colors.lightBlue, () {
+      _NavItem(Icons.leaderboard, l10n.homeTileBoard, Colors.lightBlue, () {
         context.push(AppRoutes.leaderboard);
       }),
-      _NavItem(Icons.people, 'FRIENDS', Colors.pinkAccent, () {
+      _NavItem(Icons.people, l10n.homeTileFriends, Colors.pinkAccent, () {
         context.push(AppRoutes.friends);
       }),
       _NavItem(
         Icons.palette,
-        'COSMETICS',
+        l10n.homeTileCosmetics,
         Colors.indigo,
         () {
           context.push(AppRoutes.cosmetics);
         },
         widgetKey: HomeWalkthrough.cosmeticsKey,
       ),
-      _NavItem(Icons.military_tech, 'AWARDS', Colors.orange, () {
+      _NavItem(Icons.military_tech, l10n.homeTileAwards, Colors.orange, () {
         context.push(AppRoutes.achievements);
       }),
-      _NavItem(Icons.sports_esports, 'VERSUS', Colors.green, () {
+      _NavItem(Icons.sports_esports, l10n.homeTileVersus, Colors.green, () {
         context.push(AppRoutes.multiplayerLobby);
       }),
     ];
@@ -2022,6 +2027,7 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = context.read<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       top: false,
       child: Container(
@@ -2048,7 +2054,7 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
               ),
             ),
             Text(
-              'Pick a Game Mode',
+              l10n.homePickGameMode,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: theme.accentColor,
@@ -2059,7 +2065,7 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
             ),
             const SizedBox(height: 4),
             Text(
-              'You can change this anytime in Settings',
+              l10n.homePickGameModeSubtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
@@ -2138,9 +2144,9 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
                   ),
                 ),
                 onPressed: () => Navigator.of(context).pop(_selected),
-                child: const Text(
-                  'START PLAYING',
-                  style: TextStyle(
+                child: Text(
+                  l10n.homeStartPlaying,
+                  style: const TextStyle(
                       fontWeight: FontWeight.bold, letterSpacing: 1.5),
                 ),
               ),
@@ -2158,7 +2164,7 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
 /// intact — the sheet is a passive viewer/editor, not a wizard.
 class _LoadoutBottomSheet extends StatelessWidget {
   final GameTheme theme;
-  final String Function(String key) labelFor;
+  final String Function(BuildContext context, String key) labelFor;
   final IconData Function(String key) iconFor;
 
   const _LoadoutBottomSheet({
@@ -2171,6 +2177,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<PowerUpCubit, PowerUpState>(
       builder: (context, state) {
+        final l10n = AppLocalizations.of(context)!;
         final entries = state.inventory.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
         return SafeArea(
@@ -2204,7 +2211,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
                     Icon(Icons.flash_on, color: theme.accentColor, size: 22),
                     const SizedBox(width: 8),
                     Text(
-                      'Power-Up Loadout',
+                      l10n.homeLoadoutTitle,
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 18,
@@ -2215,7 +2222,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Pre-load one power-up — it activates 5 seconds into your next game.',
+                  l10n.homeLoadoutSubtitle,
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.7),
                     fontSize: 12,
@@ -2226,7 +2233,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
                 RewardedActionButton(
                   theme: theme,
                   icon: Icons.bolt,
-                  label: 'Watch ad — free Speed Boost',
+                  label: l10n.homeWatchAdFreeSpeedBoost,
                   capKey: AdService.capFreePowerUp,
                   onWatch: () async {
                     final powerUps = context.read<PowerUpCubit>();
@@ -2239,7 +2246,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
                         powerUps.grantFreePowerUp();
                         showRewardToast(
                           messenger,
-                          '🎉 Free Speed Boost added to your loadout!',
+                          '🎉 ${l10n.homeFreeSpeedBoostAdded}',
                           icon: Icons.flash_on,
                         );
                       },
@@ -2251,7 +2258,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 32),
                     child: Center(
                       child: Text(
-                        'You have no power-ups.\nVisit the store to buy some!',
+                        l10n.homeNoPowerUps,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.6),
@@ -2311,7 +2318,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      labelFor(key),
+                                      labelFor(context, key),
                                       style: TextStyle(
                                         color: theme.accentColor,
                                         fontSize: 14,
@@ -2319,7 +2326,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      'Owned: $count',
+                                      l10n.homeOwnedCount(count),
                                       style: TextStyle(
                                         color: theme.accentColor
                                             .withValues(alpha: 0.65),
@@ -2338,7 +2345,7 @@ class _LoadoutBottomSheet extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
-                                    'ARMED',
+                                    l10n.homeArmed,
                                     style: TextStyle(
                                       color: theme.backgroundColor,
                                       fontSize: 10,
@@ -2372,9 +2379,9 @@ class _LoadoutBottomSheet extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'DONE',
-                      style: TextStyle(
+                    child: Text(
+                      l10n.homeDone,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
                       ),
