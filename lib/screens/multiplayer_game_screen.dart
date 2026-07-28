@@ -41,6 +41,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
   // One-shot guards for listener-driven effects
   bool _resultDialogShown = false;
+  bool _exiting = false;
   int _lastJuiceScore = 0;
   bool _juiceAliveLastTick = true;
 
@@ -85,7 +86,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       // if the transport dropped, this rejoins and pulls a MatchResumed
       // snapshot. No-op when still connected.
       final cubit = context.read<MultiplayerCubit>();
-      if (cubit.state.status == MultiplayerStatus.playing) {
+      if (cubit.state.status == MultiplayerStatus.playing ||
+          cubit.state.status == MultiplayerStatus.reconnecting) {
         cubit.attemptReconnect();
       }
     }
@@ -367,6 +369,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   void _navigateToLobby() {
+    // leaveGame emits idle — flag first so the stranded-exit listener
+    // doesn't navigate a second time.
+    _exiting = true;
     context.read<MultiplayerCubit>().leaveGame();
     context.pushReplacement(AppRoutes.multiplayerLobby);
   }
@@ -419,7 +424,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         return BlocListener<MultiplayerCubit, MultiplayerState>(
           listenWhen: (prev, curr) =>
               !identical(prev.snapshot, curr.snapshot) ||
-              (prev.matchEnd == null && curr.matchEnd != null),
+              (prev.matchEnd == null && curr.matchEnd != null) ||
+              prev.status != curr.status,
           listener: (context, state) {
             final snapshot = state.snapshot;
             if (snapshot != null) {
@@ -434,6 +440,25 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 }
               });
             }
+
+            // Stranded exit: the cubit gave up on the match (reconnect
+            // refused/timed out) with no GameEnded result. Leave the
+            // dead board instead of freezing on it.
+            final stranded = !_exiting &&
+                !_resultDialogShown &&
+                state.matchEnd == null &&
+                (state.status == MultiplayerStatus.idle ||
+                    state.status == MultiplayerStatus.error);
+            if (stranded) {
+              _exiting = true;
+              final message = state.errorMessage;
+              if (message != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(message)),
+                );
+              }
+              context.pushReplacement(AppRoutes.multiplayerLobby);
+            }
           },
           child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
             builder: (context, multiplayerState) {
@@ -443,9 +468,19 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   final currentUserId = authState.userId ?? '';
 
                   // Waiting for the first authoritative snapshot
-                  // (GameStarted lands right after the countdown).
+                  // (GameStarted lands right after the countdown). The
+                  // PopScope matters here too: backing out of "GET READY"
+                  // without it left the room joined server-side.
                   if (snapshot == null) {
-                    return _buildMatchIntro(theme);
+                    return PopScope(
+                      canPop: false,
+                      onPopInvokedWithResult: (didPop, result) {
+                        if (!didPop) {
+                          _showExitDialog();
+                        }
+                      },
+                      child: _buildMatchIntro(theme),
+                    );
                   }
 
                   return PopScope(
@@ -524,6 +559,16 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                       ],
                                     ),
                                   ),
+
+                                  // Connection-loss overlay: the board
+                                  // freezes on the last snapshot while
+                                  // the cubit retries; say so instead of
+                                  // looking hung.
+                                  if (multiplayerState.status ==
+                                      MultiplayerStatus.reconnecting)
+                                    Positioned.fill(
+                                      child: _buildReconnectingOverlay(theme),
+                                    ),
                                 ],
                               ),
                             ),
@@ -538,6 +583,47 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           ),
         );
       },
+    );
+  }
+
+  /// Dim the frozen board and say what's happening while the cubit
+  /// retries the connection. The match keeps running server-side.
+  Widget _buildReconnectingOverlay(GameTheme theme) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.6),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 42,
+              height: 42,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation(theme.accentColor),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'RECONNECTING…',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'The match is still running on the server.',
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.7),
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

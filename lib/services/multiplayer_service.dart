@@ -71,8 +71,18 @@ class MultiplayerService {
   Timer? _heartbeatTimer;
   static const int _heartbeatIntervalSeconds = 10;
 
-  // Reconnection state
+  // Reconnection state. The timestamp keeps the in-flight guard honest:
+  // if a reconnect attempt never gets an answer (dead socket, dropped
+  // reply), the flag used to latch true forever and permanently block
+  // every future attempt.
   bool _isReconnecting = false;
+  DateTime? _reconnectStartedAt;
+  static const Duration _reconnectAttemptStaleAfter = Duration(seconds: 12);
+
+  /// True while we are tearing the connection down on purpose
+  /// (leaveGame/dispose) — suppresses the onclose 'connection_lost'
+  /// event, which is only meant for unexpected drops.
+  bool _intentionalDisconnect = false;
 
   // Stream controllers for game events
   final _gameStreamController = StreamController<MultiplayerGame?>.broadcast();
@@ -309,7 +319,16 @@ class MultiplayerService {
   /// with the current snapshot when the engine match is still live) or
   /// ReconnectFailed.
   Future<bool> attemptReconnect() async {
-    if (_isReconnecting) return true;
+    // In-flight guard with staleness escape: a recent attempt is still
+    // settling (ReconnectSuccess/MatchResumed/ReconnectFailed), but one
+    // that never got an answer must not block recovery forever.
+    if (_isReconnecting) {
+      final startedAt = _reconnectStartedAt;
+      final stale = startedAt == null ||
+          DateTime.now().difference(startedAt) > _reconnectAttemptStaleAfter;
+      if (!stale) return true;
+      _isReconnecting = false;
+    }
     try {
       if (_currentRoomCode == null) {
         final current = await _apiService.getCurrentMultiplayerGame();
@@ -320,6 +339,7 @@ class MultiplayerService {
       }
 
       _isReconnecting = true;
+      _reconnectStartedAt = DateTime.now();
       await _connectSignalR();
       if (!_isConnected) {
         _isReconnecting = false;
@@ -410,6 +430,10 @@ class MultiplayerService {
 
       _hubConnection!.onclose(({error}) {
         _isConnected = false;
+        // A dead socket can't answer an in-flight Reconnect invoke —
+        // release the guard so the next attempt isn't blocked.
+        _isReconnecting = false;
+        if (_intentionalDisconnect) return;
         _gameActionsController.add(
           MultiplayerGameAction(
             actionType: 'connection_lost',
@@ -432,6 +456,7 @@ class MultiplayerService {
   }
 
   Future<void> _disconnectSignalR() async {
+    _intentionalDisconnect = true;
     try {
       _stopHeartbeat();
       await _hubConnection?.stop();
@@ -440,6 +465,7 @@ class MultiplayerService {
     } finally {
       _hubConnection = null;
       _isConnected = false;
+      _intentionalDisconnect = false;
     }
   }
 

@@ -80,6 +80,7 @@ class MultiplayerState extends Equatable {
     MatchEndResult? matchEnd,
     int? boardSize,
     Direction? intentDirection,
+    bool clearIntentDirection = false,
     bool clearMatch = false,
     bool? isMatchmaking,
     int? matchmakingQueuePosition,
@@ -99,7 +100,7 @@ class MultiplayerState extends Equatable {
       snapshot: (clearMatch || clearGame) ? null : (snapshot ?? this.snapshot),
       matchEnd: (clearMatch || clearGame) ? null : (matchEnd ?? this.matchEnd),
       boardSize: boardSize ?? this.boardSize,
-      intentDirection: (clearMatch || clearGame)
+      intentDirection: (clearMatch || clearGame || clearIntentDirection)
           ? null
           : (intentDirection ?? this.intentDirection),
       isMatchmaking: clearMatchmaking

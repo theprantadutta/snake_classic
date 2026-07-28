@@ -50,6 +50,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   // Start game timeout
   Timer? _startGameTimeoutTimer;
 
+  // Reconnect settle timeout (see _startReconnectTimeout)
+  Timer? _reconnectTimeoutTimer;
+
   // Per-match bookkeeping. Everything here is reset by the first
   // snapshot of a match and consumed exactly once by GameEnded — the
   // guards make stats + rewards idempotent even if the hub replays the
@@ -364,6 +367,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     final me = snapshot.playerByUserId(currentUserId);
     if (me == null || !me.alive) return;
 
+    // Same-direction dedupe: repeated identical swipes and keyboard
+    // auto-repeat would each cost a hub message for a no-op.
+    if (direction == state.intentDirection) return;
+
     // Skip obvious reversals against the last committed/intended
     // direction — the server would drop them anyway.
     final reference = state.intentDirection ?? me.direction;
@@ -504,7 +511,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     emit(state.copyWith(matchmakingTimedOut: false, clearMatchmaking: true));
   }
 
-  /// Attempt to reconnect to a game after disconnect
+  /// Attempt to reconnect to a game after disconnect. Stays in
+  /// [MultiplayerStatus.reconnecting] until the server settles it: a
+  /// MatchResumed/Tick snapshot or a lobby game update flips us back,
+  /// ReconnectFailed (or the local timeout below) gives up.
   Future<bool> attemptReconnect() async {
     emit(
       state.copyWith(status: MultiplayerStatus.reconnecting, isLoading: true),
@@ -514,38 +524,52 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       final success = await _multiplayerService.attemptReconnect();
 
       if (success) {
-        _audioService.playSound('high_score');
-        _hapticService.mediumImpact();
-
         await _startListening();
-
-        // The MatchResumed snapshot (or ReconnectFailed) that follows
-        // settles the real status; playing is the optimistic default.
-        emit(
-          state.copyWith(status: MultiplayerStatus.playing, isLoading: false),
-        );
+        _startReconnectTimeout();
         return true;
       } else {
         _audioService.playSound('game_over');
-        emit(
-          state.copyWith(
-            status: MultiplayerStatus.idle,
-            isLoading: false,
-            errorMessage: 'Could not reconnect to game',
-          ),
-        );
+        _giveUpOnMatch('Could not reconnect to the match.');
         return false;
       }
     } catch (e) {
-      emit(
-        state.copyWith(
-          status: MultiplayerStatus.idle,
-          isLoading: false,
-          errorMessage: 'Reconnection failed: $e',
-        ),
-      );
+      _giveUpOnMatch('Could not reconnect to the match.');
       return false;
     }
+  }
+
+  /// If nothing settles a pending reconnect (no snapshot, no game
+  /// update, no ReconnectFailed), stop waiting instead of leaving the
+  /// player on a frozen board forever.
+  void _startReconnectTimeout() {
+    _reconnectTimeoutTimer?.cancel();
+    _reconnectTimeoutTimer = Timer(const Duration(seconds: 12), () {
+      if (state.status == MultiplayerStatus.reconnecting) {
+        _giveUpOnMatch('Connection lost — the match could not be resumed.');
+      }
+    });
+  }
+
+  void _cancelReconnectTimeout() {
+    _reconnectTimeoutTimer?.cancel();
+    _reconnectTimeoutTimer = null;
+  }
+
+  /// Terminal exit from a match we can no longer reach: clear the match
+  /// state and surface a message. The game screen reacts to the status
+  /// change by returning to the lobby.
+  void _giveUpOnMatch(String message) {
+    _cancelReconnectTimeout();
+    _matchActive = false;
+    if (_matchTimer.isRunning) _matchTimer.stop();
+    emit(
+      state.copyWith(
+        status: MultiplayerStatus.idle,
+        isLoading: false,
+        clearGame: true,
+        errorMessage: message,
+      ),
+    );
   }
 
   /// Utility methods for UI
@@ -685,6 +709,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   /// Fold a lobby-level game update into the cubit state.
   void _applyGameUpdate(MultiplayerGame game) {
+    // Any game update means the connection is alive again (e.g. the
+    // ReconnectSuccess state replay) — a pending reconnect has settled.
+    _cancelReconnectTimeout();
     MultiplayerStatus newStatus = state.status;
     bool shouldClearLoading = false;
 
@@ -749,12 +776,19 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _myAliveLastTick = me.alive;
     }
 
+    // A snapshot settles any pending reconnect and expires the local
+    // input echo: each tick commits at most one input, so the committed
+    // direction is the fresh reversal reference. Without this, an input
+    // the server dropped left a stale intent that blocked its opposite
+    // forever.
+    _cancelReconnectTimeout();
     emit(
       state.copyWith(
         status: MultiplayerStatus.playing,
         snapshot: snapshot,
         boardSize: _multiplayerService.boardSize,
         isLoading: false,
+        clearIntentDirection: true,
       ),
     );
   }
@@ -764,6 +798,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// result to the screen.
   void _handleMatchEnd(MatchEndResult result) {
     _startGameTimeoutTimer?.cancel();
+    _cancelReconnectTimeout();
     if (_matchTimer.isRunning) _matchTimer.stop();
 
     final currentUserId = _userService.currentUser?.uid;
@@ -847,7 +882,34 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     if (kDebugMode) {
       print('Received action: ${action.actionType} from ${action.playerId}');
     }
-    // Actions are already reflected in the game state
+
+    switch (action.actionType) {
+      // The transport gave up (auto-reconnect exhausted or hard drop).
+      // Only mid-match does this need active recovery — the lobby
+      // reconnects lazily on the next user action.
+      case 'connection_lost':
+        if (state.status == MultiplayerStatus.playing ||
+            state.status == MultiplayerStatus.reconnecting) {
+          unawaited(attemptReconnect());
+        }
+        break;
+
+      // The server refused the reconnect (match ended, window expired,
+      // or the room is gone). Without this, the player stayed on a
+      // frozen board forever.
+      case 'reconnect_failed':
+        if (state.status == MultiplayerStatus.playing ||
+            state.status == MultiplayerStatus.reconnecting) {
+          _giveUpOnMatch('The match ended while you were away.');
+        }
+        break;
+
+      // Opponent presence changes render from the per-player `connected`
+      // flag in each snapshot; reconnect_success is followed by the
+      // game-state replay which _applyGameUpdate folds in.
+      default:
+        break;
+    }
   }
 
   @override
@@ -856,6 +918,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _stopMatchmakingListener();
     _stopMatchmakingTimer();
     _startGameTimeoutTimer?.cancel();
+    _reconnectTimeoutTimer?.cancel();
     _errorSubscription?.cancel();
     _snapshotSubscription?.cancel();
     _matchEndSubscription?.cancel();
