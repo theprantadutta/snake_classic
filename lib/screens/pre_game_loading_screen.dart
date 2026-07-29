@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -46,34 +48,49 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
   // How often the tip rotates.
   static const Duration _tipRotation = Duration(milliseconds: 1400);
 
-  /// Stage milestones — each step drives the progress bar and the
-  /// status label. Pairs are (fractional progress, status label).
-  /// The progress controller advances linearly across the full duration;
-  /// the label is picked by finding the largest stage we've crossed.
-  static const List<_Stage> _stages = [
-    _Stage(0.00, 'Initializing arena...'),
-    _Stage(0.18, 'Calibrating controls...'),
-    _Stage(0.36, 'Spawning the snake...'),
-    _Stage(0.54, 'Placing the food...'),
-    _Stage(0.72, 'Charging power-ups...'),
-    _Stage(0.88, 'Almost there...'),
-    _Stage(1.00, 'Go!'),
+  /// Stage milestones — each threshold drives the progress bar and the
+  /// status label. The progress controller advances linearly across the
+  /// full duration; the label is picked by finding the largest stage we've
+  /// crossed. Labels are resolved at render time via [_stageLabels] so they
+  /// follow the ambient locale.
+  static const List<double> _stageThresholds = [
+    0.00,
+    0.18,
+    0.36,
+    0.54,
+    0.72,
+    0.88,
+    1.00,
   ];
 
-  static const List<String> _tips = [
-    'Hold a direction longer to build combo multipliers.',
-    'Bonus food yields more points but vanishes quickly.',
-    'Power-ups spawn at random — grab them while you can.',
-    'Plan two moves ahead, not just one.',
-    'Long snakes turn slower. Save tight curves for the start.',
-    'Score Multiplier stacks with combos for monster scores.',
-    'Special food is rare — when it appears, prioritize it.',
-    'Time Attack speeds up fast. Pace your turns.',
-    'In Zen Mode, the walls wrap. Use it to escape tight spots.',
-    'Perfect Game: never re-enter a cell your body has touched.',
-    'The D-Pad gives precise turns; swipe is faster.',
-    'Pause anytime from the HUD — your timer holds with you.',
-  ];
+  /// Localized status labels, index-aligned with [_stageThresholds].
+  List<String> _stageLabels(AppLocalizations l10n) => [
+        l10n.pgArena,
+        l10n.pgControls,
+        l10n.pgSnake,
+        l10n.pgFood,
+        l10n.pgPowerUps,
+        l10n.pgAlmost,
+        l10n.pgGo,
+      ];
+
+  static const int _tipCount = 12;
+
+  /// Localized pro tips, resolved at render time.
+  List<String> _tips(AppLocalizations l10n) => [
+        l10n.pgTip1,
+        l10n.pgTip2,
+        l10n.pgTip3,
+        l10n.pgTip4,
+        l10n.pgTip5,
+        l10n.pgTip6,
+        l10n.pgTip7,
+        l10n.pgTip8,
+        l10n.pgTip9,
+        l10n.pgTip10,
+        l10n.pgTip11,
+        l10n.pgTip12,
+      ];
 
   late final AnimationController _progressController;
   late final AnimationController _logoController;
@@ -119,7 +136,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
     )..repeat();
 
     _seedParticles();
-    _tipIndex = _random.nextInt(_tips.length);
+    _tipIndex = _random.nextInt(_tipCount);
 
     // Cycle tips while the progress bar fills.
     _scheduleTipRotation();
@@ -155,7 +172,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
     Future.delayed(_tipRotation, () {
       if (!mounted || _navigated) return;
       setState(() {
-        _tipIndex = (_tipIndex + 1) % _tips.length;
+        _tipIndex = (_tipIndex + 1) % _tipCount;
       });
       _scheduleTipRotation();
     });
@@ -189,11 +206,12 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
     super.dispose();
   }
 
-  String _statusFor(double progress) {
+  String _statusFor(AppLocalizations l10n, double progress) {
     // Largest stage whose threshold has been crossed.
-    var label = _stages.first.label;
-    for (final stage in _stages) {
-      if (progress >= stage.threshold) label = stage.label;
+    final labels = _stageLabels(l10n);
+    var label = labels.first;
+    for (var i = 0; i < _stageThresholds.length; i++) {
+      if (progress >= _stageThresholds[i]) label = labels[i];
     }
     return label;
   }
@@ -319,7 +337,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
           ),
           const SizedBox(width: 10),
           Text(
-            'PREPARING ARENA',
+            AppLocalizations.of(context)!.pgPreparing,
             style: TextStyle(
               fontSize: isSmallScreen ? 11 : 13,
               fontWeight: FontWeight.w800,
@@ -339,7 +357,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
               ),
             ),
             child: Text(
-              theme.name.toUpperCase(),
+              theme.localizedName(AppLocalizations.of(context)!).toUpperCase(),
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 10,
@@ -415,6 +433,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
     // If the cubit's mode differs from settings, it's a tournament override.
     // Surface that so the player knows the rules are not their picked mode.
     final isOverride = activeMode != settingsMode;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       width: double.infinity,
@@ -469,7 +488,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                 Row(
                   children: [
                     Text(
-                      isOverride ? 'TOURNAMENT MODE' : 'GAME MODE',
+                      isOverride ? l10n.pgTournamentMode : l10n.pgGameMode,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -489,7 +508,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  activeMode.name,
+                  activeMode.localizedName(l10n),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -499,7 +518,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  activeMode.description,
+                  activeMode.localizedDescription(l10n),
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.3,
@@ -536,7 +555,9 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
           ),
           const SizedBox(width: 8),
           Text(
-            dPadEnabled ? 'D-Pad Controls' : 'Swipe Controls',
+            dPadEnabled
+                ? AppLocalizations.of(context)!.pgDPadControls
+                : AppLocalizations.of(context)!.pgSwipeControls,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -553,6 +574,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
   /// surfacing the player's lifetime level, personal best, and games played.
   /// All three come from already-hydrated singletons/cubits (no async read).
   Widget _buildStatsStrip(GameTheme theme, int highScore) {
+    final l10n = AppLocalizations.of(context)!;
     final level = ProgressionService().level;
     final games = StatisticsService().statistics.totalGamesPlayed;
 
@@ -581,7 +603,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
               theme,
               Icons.military_tech_rounded,
               '$level',
-              'LEVEL',
+              l10n.pgLevel,
             ),
           ),
           _statDivider(theme),
@@ -590,7 +612,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
               theme,
               Icons.emoji_events_rounded,
               _compactNumber(highScore),
-              'BEST',
+              l10n.pgBest,
             ),
           ),
           _statDivider(theme),
@@ -599,7 +621,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
               theme,
               Icons.sports_esports_rounded,
               _compactNumber(games),
-              'GAMES',
+              l10n.pgGames,
             ),
           ),
         ],
@@ -662,6 +684,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
   }
 
   Widget _buildTipCard(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 420),
       switchInCurve: Curves.easeOutCubic,
@@ -715,7 +738,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'PRO TIP',
+                  l10n.pgProTip,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
@@ -727,7 +750,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
             ),
             const SizedBox(height: 10),
             Text(
-              _tips[_tipIndex],
+              _tips(l10n)[_tipIndex],
               style: TextStyle(
                 fontSize: 13.5,
                 height: 1.35,
@@ -742,13 +765,14 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
   }
 
   Widget _buildProgressFooter(GameTheme theme, bool isSmallScreen) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.fromLTRB(28, 8, 28, isSmallScreen ? 18 : 28),
       child: AnimatedBuilder(
         animation: _progressController,
         builder: (context, _) {
           final progress = _progressController.value;
-          final label = _statusFor(progress);
+          final label = _statusFor(l10n, progress);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -873,7 +897,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                   return Opacity(
                     opacity: 0.40 + 0.35 * _pulseController.value,
                     child: Text(
-                      'TAP ANYWHERE TO START',
+                      l10n.pgTapToStart,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 11,
@@ -891,12 +915,6 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
       ),
     );
   }
-}
-
-class _Stage {
-  final double threshold;
-  final String label;
-  const _Stage(this.threshold, this.label);
 }
 
 class _LoadingParticle {

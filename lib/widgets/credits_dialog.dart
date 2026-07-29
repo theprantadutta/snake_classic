@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -7,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 /// screen (it used to live in the home top bar before the bar was slimmed
 /// down to identity + wallet + tools).
 Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
+  // Capture before the await — the context is used after it.
+  final l10n = AppLocalizations.of(context)!;
   final currentYear = DateTime.now().year;
   final packageInfo = await PackageInfo.fromPlatform();
   if (!context.mounted) return;
@@ -99,7 +102,10 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'v${packageInfo.version} · build ${packageInfo.buildNumber}',
+                            l10n.crVersionLine(
+                              packageInfo.buildNumber,
+                              packageInfo.version,
+                            ),
                             style: TextStyle(
                               color: theme.accentColor.withValues(alpha: 0.65),
                               fontSize: 11,
@@ -131,7 +137,7 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                 const SizedBox(height: 14),
 
                 Text(
-                  'The classic snake game, reimagined.',
+                  l10n.crTagline,
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.75),
                     fontSize: 13,
@@ -147,11 +153,14 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    _buildAboutChip('Modes', Icons.sports_esports, theme),
-                    _buildAboutChip('Achievements', Icons.emoji_events, theme),
-                    _buildAboutChip('Daily', Icons.today, theme),
-                    _buildAboutChip('Leaderboards', Icons.leaderboard, theme),
-                    _buildAboutChip('Cosmetics', Icons.palette, theme),
+                    _buildAboutChip(
+                        l10n.crChipModes, Icons.sports_esports, theme),
+                    _buildAboutChip(
+                        l10n.crChipAchievements, Icons.emoji_events, theme),
+                    _buildAboutChip(l10n.crChipDaily, Icons.today, theme),
+                    _buildAboutChip(
+                        l10n.crChipLeaderboards, Icons.leaderboard, theme),
+                    _buildAboutChip(l10n.crChipCosmetics, Icons.palette, theme),
                   ],
                 ),
 
@@ -188,7 +197,7 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Crafted by',
+                              l10n.crCraftedBy,
                               style: TextStyle(
                                 color: theme.accentColor.withValues(alpha: 0.55),
                                 fontSize: 10,
@@ -257,7 +266,7 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                 const SizedBox(height: 10),
 
                 Text(
-                  '© $currentYear Pranta Dutta · All rights reserved',
+                  l10n.crCopyright(currentYear),
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.45),
                     fontSize: 10,

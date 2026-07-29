@@ -249,7 +249,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       final done = Completer<void>();
       await walkthroughNotifier.start(
         walkthroughId: WalkthroughService.homeWalkthroughId,
-        steps: HomeWalkthrough.getSteps(),
+        steps: HomeWalkthrough.getSteps(AppLocalizations.of(context)!),
         onComplete: () {
           if (!done.isCompleted) done.complete();
         },

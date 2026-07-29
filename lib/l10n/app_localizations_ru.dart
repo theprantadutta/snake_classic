@@ -2911,4 +2911,642 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get faGuestFailed =>
       'Не удалось продолжить как гость. Попробуйте ещё раз.';
+
+  @override
+  String get ldInitializing => 'Запуск Snake Classic...';
+
+  @override
+  String get ldTip1 =>
+      'Думайте на два хода вперёд — хвост идёт туда, где только что была голова.';
+
+  @override
+  String get ldTip2 =>
+      'Бонусная еда даёт больше очков, но быстро исчезает. Хватайте скорее!';
+
+  @override
+  String get ldTip3 =>
+      'Разбились? Посмотрите короткую рекламу или потратьте монеты, чтобы возродиться и сохранить счёт.';
+
+  @override
+  String get ldTip4 => 'Ешьте без пауз, чтобы копить множитель комбо.';
+
+  @override
+  String get ldTip5 =>
+      'Зажаты в углу? Идите вдоль стен, чтобы выиграть мгновение.';
+
+  @override
+  String get ldTip6 =>
+      'Ежедневные задания и недельные квесты быстро приносят монеты.';
+
+  @override
+  String get ldTip7 =>
+      'Snake Classic Pro открывает большие поля и убирает всю рекламу.';
+
+  @override
+  String get ldTip8 =>
+      'Режим «На время» ценит скорость — а за рекламу дают +30 секунд.';
+
+  @override
+  String get ldTip9 =>
+      'Усиления складываются: зарядите щит перед узким проходом.';
+
+  @override
+  String get ldTip10 =>
+      'Меняйте темы, скины и следы в магазине в любой момент.';
+
+  @override
+  String get ldStepCore => 'Запуск основных систем...';
+
+  @override
+  String get ldStepCoreSub => 'Настройка соединения с сервером';
+
+  @override
+  String get ldStepProfile => 'Создание профиля игрока...';
+
+  @override
+  String get ldStepProfileSub => 'Генерация уникального имени';
+
+  @override
+  String get ldStepPrefs => 'Загрузка ваших настроек...';
+
+  @override
+  String get ldStepPrefsSub => 'Синхронизация тем и настроек';
+
+  @override
+  String get ldStepCloud => 'Синхронизация с облаком...';
+
+  @override
+  String get ldStepCloudSub => 'Проверка актуальности данных';
+
+  @override
+  String get ldStepGameData => 'Загрузка игровых данных...';
+
+  @override
+  String get ldStepGameDataSub => 'Получение игровых данных';
+
+  @override
+  String get ldStepAudio => 'Настройка аудиосистемы...';
+
+  @override
+  String get ldStepAudioSub => 'Загрузка звуковых эффектов';
+
+  @override
+  String get ldStepSetup => 'Проверка состояния настройки...';
+
+  @override
+  String get ldStepSetupSub => 'Почти готово!';
+
+  @override
+  String get ldWelcome => 'Добро пожаловать!';
+
+  @override
+  String get ldWelcomeSub => 'Выберите, как продолжить';
+
+  @override
+  String get ldReady => 'Готово к игре!';
+
+  @override
+  String get ldReadySub => 'С возвращением в Snake Classic';
+
+  @override
+  String ldInitFailed(Object error) {
+    return 'Сбой запуска: $error';
+  }
+
+  @override
+  String get ldRetrying => 'Повторный запуск...';
+
+  @override
+  String get ldTagline => 'ПРЕМИУМ-ЗМЕЙКА';
+
+  @override
+  String get ldLoadingUpper => 'ЗАГРУЗКА';
+
+  @override
+  String get ldDidYouKnow => 'А ВЫ ЗНАЛИ?';
+
+  @override
+  String get ldGameFeatures => 'ОСОБЕННОСТИ ИГРЫ';
+
+  @override
+  String get ldFeatFps => '60FPS';
+
+  @override
+  String get ldFeatFpsSub => 'Плавный геймплей';
+
+  @override
+  String get ldFeatEffects => 'ЭФФЕКТЫ';
+
+  @override
+  String get ldFeatEffectsSub => 'Визуальные частицы';
+
+  @override
+  String get ldFeatLevels => 'УРОВНИ';
+
+  @override
+  String get ldFeatLevelsSub => 'Растущий азарт';
+
+  @override
+  String get ldFeatAudio => 'ЗВУК';
+
+  @override
+  String get ldFeatAudioSub => 'Погружающий звук';
+
+  @override
+  String get ldFeatScores => 'ОЧКИ';
+
+  @override
+  String get ldFeatScoresSub => 'Мировые рейтинги';
+
+  @override
+  String get ldFeatThemes => 'ТЕМЫ';
+
+  @override
+  String get ldFeatThemesSub => 'Много стилей';
+
+  @override
+  String get ldDevelopedBy => 'РАЗРАБОТКА И ПОДДЕРЖКА';
+
+  @override
+  String get ldDevTagline => 'Создаём премиальные мобильные впечатления';
+
+  @override
+  String get ldInitFailedUpper => 'СБОЙ ЗАПУСКА';
+
+  @override
+  String get ldRetryUpper => 'ПОВТОРИТЬ';
+
+  @override
+  String get pgArena => 'Подготовка арены...';
+
+  @override
+  String get pgControls => 'Калибровка управления...';
+
+  @override
+  String get pgSnake => 'Появление змейки...';
+
+  @override
+  String get pgFood => 'Размещение еды...';
+
+  @override
+  String get pgPowerUps => 'Зарядка усилений...';
+
+  @override
+  String get pgAlmost => 'Почти готово...';
+
+  @override
+  String get pgGo => 'Вперёд!';
+
+  @override
+  String get pgTip1 =>
+      'Держите направление дольше, чтобы копить множители комбо.';
+
+  @override
+  String get pgTip2 => 'Бонусная еда даёт больше очков, но быстро исчезает.';
+
+  @override
+  String get pgTip3 => 'Усиления появляются случайно — берите, пока можно.';
+
+  @override
+  String get pgTip4 => 'Думайте на два хода вперёд, а не на один.';
+
+  @override
+  String get pgTip5 =>
+      'Длинные змейки поворачивают медленнее. Приберегите крутые виражи для старта.';
+
+  @override
+  String get pgTip6 =>
+      'Множитель очков складывается с комбо — получаются гигантские счета.';
+
+  @override
+  String get pgTip7 =>
+      'Особая еда редка — если появилась, берите первым делом.';
+
+  @override
+  String get pgTip8 => '«На время» быстро ускоряется. Рассчитывайте повороты.';
+
+  @override
+  String get pgTip9 =>
+      'В Дзене стены проходимы. Используйте это, чтобы выбираться из ловушек.';
+
+  @override
+  String get pgTip10 =>
+      'Идеальная игра: не заходите повторно на клетку, где было тело.';
+
+  @override
+  String get pgTip11 => 'D-Pad даёт точные повороты; свайп быстрее.';
+
+  @override
+  String get pgTip12 => 'Пауза в любой момент из HUD — таймер подождёт.';
+
+  @override
+  String get pgPreparing => 'ПОДГОТОВКА АРЕНЫ';
+
+  @override
+  String get pgTournamentMode => 'ТУРНИРНЫЙ РЕЖИМ';
+
+  @override
+  String get pgGameMode => 'РЕЖИМ ИГРЫ';
+
+  @override
+  String get pgDPadControls => 'Управление D-Pad';
+
+  @override
+  String get pgSwipeControls => 'Управление свайпами';
+
+  @override
+  String get pgLevel => 'УРОВЕНЬ';
+
+  @override
+  String get pgBest => 'РЕКОРД';
+
+  @override
+  String get pgGames => 'ИГРЫ';
+
+  @override
+  String get pgProTip => 'СОВЕТ ПРО';
+
+  @override
+  String get pgTapToStart => 'КОСНИТЕСЬ ЭКРАНА, ЧТОБЫ НАЧАТЬ';
+
+  @override
+  String get wtWelcomeTitle => 'Добро пожаловать в игру!';
+
+  @override
+  String get wtWelcomeMsg =>
+      'Давайте научимся играть в Snake Classic. Этот быстрый урок покажет основы.';
+
+  @override
+  String get wtHudTitle => 'Игровая информация';
+
+  @override
+  String get wtHudMsg =>
+      'Верхняя панель показывает счёт, уровень и рекорд. Следите за прогрессом во время игры!';
+
+  @override
+  String get wtControlsTitle => 'Свайп для движения';
+
+  @override
+  String get wtControlsMsg =>
+      'Свайпайте в любую сторону, чтобы менять направление змейки. Она повернёт за вашим свайпом.';
+
+  @override
+  String get wtPracticeRightTitle => 'Попробуйте! Свайп ВПРАВО';
+
+  @override
+  String get wtPracticeRightMsg =>
+      'Свайпните ВПРАВО по экрану, чтобы продолжить.';
+
+  @override
+  String get wtPracticeUpTitle => 'Отлично! Теперь свайп ВВЕРХ';
+
+  @override
+  String get wtPracticeUpMsg => 'Свайпните ВВЕРХ по экрану, чтобы продолжить.';
+
+  @override
+  String get wtFoodTitle => 'Ешьте и растите';
+
+  @override
+  String get wtFoodMsg =>
+      'Ведите змейку к еде на поле. Каждый кусочек делает её длиннее!';
+
+  @override
+  String get wtComboTitle => 'Собирайте комбо';
+
+  @override
+  String get wtComboMsg =>
+      'Ешьте, не умирая, чтобы собрать комбо. 5 укусов — 1,5×, 10 — 2×, 20 — 3×. Огненный чип у счёта разгорается и пульсирует по мере роста.';
+
+  @override
+  String get wtPowerUpsTitle => 'Усиления';
+
+  @override
+  String get wtPowerUpsMsg =>
+      'Иногда появляются блестящие значки — съешьте, чтобы активировать. Кольцо вокруг значка тает по мере действия, а на паузе таймер замирает.';
+
+  @override
+  String get wtWallsTitle => 'Избегайте стен!';
+
+  @override
+  String get wtWallsMsg =>
+      'Не врезайтесь в края поля - столкновение со стеной означает конец игры!';
+
+  @override
+  String get wtSelfTitle => 'Не врезайтесь в себя!';
+
+  @override
+  String get wtSelfMsg =>
+      'Когда змейка вырастет, берегитесь столкновения с собственным телом!';
+
+  @override
+  String get wtPauseTitle => 'Пауза в любой момент';
+
+  @override
+  String get wtPauseMsg =>
+      'Нажмите значок паузы, чтобы заморозить игру. Оттуда можно продолжить, начать заново, открыть гид по игре, повторить этот урок или переключить D-Pad.';
+
+  @override
+  String get wtReadyTitle => 'Вы готовы!';
+
+  @override
+  String get wtReadyMsg =>
+      'Удачи! Открывайте гид по игре в меню паузы, чтобы читать про комбо, усиления, режимы и подсказки о столкновениях. Заглядывайте в профиль — там открываются достижения.';
+
+  @override
+  String get wtStartPlaying => 'Начать игру!';
+
+  @override
+  String get wtSkipTutorial => 'Пропустить обучение';
+
+  @override
+  String get wtSwipeRightUpper => 'СВАЙП ВПРАВО';
+
+  @override
+  String get wtSwipeLeftUpper => 'СВАЙП ВЛЕВО';
+
+  @override
+  String get wtSwipeUpUpper => 'СВАЙП ВВЕРХ';
+
+  @override
+  String get wtSwipeDownUpper => 'СВАЙП ВНИЗ';
+
+  @override
+  String get wtSwipeAnywhereScreen => 'Свайпайте в любом месте экрана!';
+
+  @override
+  String get wtSwipeAnywhere => 'Свайпайте где угодно!';
+
+  @override
+  String get wtGotIt => 'Понятно!';
+
+  @override
+  String get wtNext => 'Дальше';
+
+  @override
+  String get wtSkip => 'Пропустить';
+
+  @override
+  String get wtWaiting => 'Ожидание...';
+
+  @override
+  String get hwPlayTitle => 'Добро пожаловать в Snake Classic!';
+
+  @override
+  String get hwPlayMsg =>
+      'Нажмите ИГРАТЬ, чтобы начать. Управляйте змейкой свайпами и ешьте, чтобы расти!';
+
+  @override
+  String get hwCoinsTitle => 'Ваши монеты';
+
+  @override
+  String get hwCoinsMsg =>
+      'Зарабатывайте монеты в играх, заданиях и за ежедневные бонусы. Тратьте их в магазине!';
+
+  @override
+  String get hwDailyTitle => 'Ежедневные задания';
+
+  @override
+  String get hwDailyMsg =>
+      'Выполняйте ежедневные задания ради бонусных монет и наград. Каждый день новые!';
+
+  @override
+  String get hwStoreTitle => 'Магазин';
+
+  @override
+  String get hwStoreMsg =>
+      'Покупайте темы, скины, следы и усиления за монеты. Оформите Pro ради премиум-полей и эксклюзивной косметики.';
+
+  @override
+  String get hwCosmeticsTitle => 'Скины и следы';
+
+  @override
+  String get hwCosmeticsMsg =>
+      'Настройте змейку здесь. Скины меняют её облик; следы оставляют свечение позади. Получайте за монеты или открывайте с Pro.';
+
+  @override
+  String get hwProfileTitle => 'Ваш профиль';
+
+  @override
+  String get hwProfileMsg =>
+      'Здесь статистика, достижения и рекорды. Достижения открываются на рубежах — некоторым нужен конкретный режим (Классика, Сложный и т.д.). Войдите, чтобы синхронизироваться между устройствами.';
+
+  @override
+  String get hwSettingsTitle => 'Настройки';
+
+  @override
+  String get hwSettingsMsg =>
+      'Настройте игру под себя - темы, управление, звук и многое другое!';
+
+  @override
+  String get hudScoreUpper => 'СЧЁТ';
+
+  @override
+  String hudScoreSemantics(Object value) {
+    return 'Счёт $value';
+  }
+
+  @override
+  String hudLevelBadge(Object level) {
+    return 'УР$level';
+  }
+
+  @override
+  String get hudTournamentBadge => 'ТУРНИР';
+
+  @override
+  String hudComboMultiplier(Object multiplier) {
+    return '${multiplier}x';
+  }
+
+  @override
+  String get poPaused => 'ПАУЗА';
+
+  @override
+  String get poPremium => 'Премиум';
+
+  @override
+  String get poStore => 'Магазин';
+
+  @override
+  String get poResume => 'ПРОДОЛЖИТЬ';
+
+  @override
+  String get poRestart => 'ЗАНОВО';
+
+  @override
+  String get poHome => 'ДОМОЙ';
+
+  @override
+  String get poDPadOn => 'D-PAD: ВКЛ';
+
+  @override
+  String get poDPadOff => 'D-PAD: ВЫКЛ';
+
+  @override
+  String get poSound => 'ЗВУК';
+
+  @override
+  String get poMusic => 'МУЗЫКА';
+
+  @override
+  String get poHowToPlay => 'КАК ИГРАТЬ';
+
+  @override
+  String get poGameGuide => 'ГИД ПО ИГРЕ';
+
+  @override
+  String get poFoodUpper => 'ЕДА';
+
+  @override
+  String get poPts10 => '10 очк.';
+
+  @override
+  String get poPts25 => '25 очк.';
+
+  @override
+  String get poPts50 => '50 очк.';
+
+  @override
+  String get poComboUpper => 'КОМБО';
+
+  @override
+  String get poBites5 => '5 укусов';
+
+  @override
+  String get poBites10 => '10 укусов';
+
+  @override
+  String get poBites20 => '20 укусов';
+
+  @override
+  String get poComboHint =>
+      'Огненный чип у счёта разгорается и пульсирует на каждом рубеже.';
+
+  @override
+  String get poPowerUpsUpper => 'УСИЛЕНИЯ';
+
+  @override
+  String get poDur7s => '7 с';
+
+  @override
+  String get poDur6s => '6 с';
+
+  @override
+  String get poDur10s => '10 с';
+
+  @override
+  String get poDur8s => '8 с';
+
+  @override
+  String get poScore2x => 'Очки 2×';
+
+  @override
+  String get poPowerUpHint =>
+      'Кольцо вокруг значка тает до истечения. На паузе таймер замирает.';
+
+  @override
+  String get poCrashUpper => 'СТОЛКНОВЕНИЕ';
+
+  @override
+  String get poCrashHint =>
+      'Красная волна бьёт в клетку, где вы погибли. При столкновении с собой задетый сегмент подсвечивается жёлтым.';
+
+  @override
+  String get poModesUpper => 'РЕЖИМЫ';
+
+  @override
+  String get poModeWallsOn => 'стены есть';
+
+  @override
+  String get poModeWallsOff => 'стен нет';
+
+  @override
+  String get poModeFastTick => 'быстрый темп';
+
+  @override
+  String get poModeThreeFoods => '3 еды сразу';
+
+  @override
+  String get poModeThreeLives => '3 жизни, ускоряется';
+
+  @override
+  String get poModeThreeMin => '3 минуты всего';
+
+  @override
+  String get poModeFrequentPowerUps => 'частые усиления';
+
+  @override
+  String get poModeDontCross => 'не пересекайте след';
+
+  @override
+  String get dcTitle => 'Ежедневные задания';
+
+  @override
+  String get dcNoChallenges => 'Нет доступных заданий';
+
+  @override
+  String get dcAllComplete => 'Всё выполнено!';
+
+  @override
+  String dcBonusCoins(Object count) {
+    return '+$count бонус';
+  }
+
+  @override
+  String crVersionLine(Object build, Object version) {
+    return 'v$version · сборка $build';
+  }
+
+  @override
+  String get crTagline => 'Классическая змейка в новом прочтении.';
+
+  @override
+  String get crChipModes => 'Режимы';
+
+  @override
+  String get crChipAchievements => 'Достижения';
+
+  @override
+  String get crChipDaily => 'Ежедневно';
+
+  @override
+  String get crChipLeaderboards => 'Рейтинги';
+
+  @override
+  String get crChipCosmetics => 'Косметика';
+
+  @override
+  String get crCraftedBy => 'Автор';
+
+  @override
+  String crCopyright(Object year) {
+    return '© $year Pranta Dutta · Все права защищены';
+  }
+
+  @override
+  String get gbSpeedNormal => 'Обычная';
+
+  @override
+  String get gbSpeedFast => 'Быстрая';
+
+  @override
+  String get gbSpeedFaster => 'Быстрее';
+
+  @override
+  String get gbSpeedBlazing => 'Жгучая';
+
+  @override
+  String get gbSpeedInsane => 'Безумная';
+
+  @override
+  String get gbSpeedMax => 'МАКС';
+
+  @override
+  String get gbLength => 'Длина';
+
+  @override
+  String get gbSpeed => 'Скорость';
+
+  @override
+  String get gbLevel => 'Уровень';
 }

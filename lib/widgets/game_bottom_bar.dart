@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
@@ -39,13 +40,13 @@ class GameBottomBar extends StatelessWidget {
   final void Function(Direction) onDirection;
 
   // Convert game speed (ms per tick) to human-readable label
-  String _getSpeedLabel(int gameSpeed) {
-    if (gameSpeed >= 280) return 'Normal';
-    if (gameSpeed >= 230) return 'Fast';
-    if (gameSpeed >= 180) return 'Faster';
-    if (gameSpeed >= 130) return 'Blazing';
-    if (gameSpeed >= 80) return 'Insane';
-    return 'MAX';
+  String _getSpeedLabel(AppLocalizations l10n, int gameSpeed) {
+    if (gameSpeed >= 280) return l10n.gbSpeedNormal;
+    if (gameSpeed >= 230) return l10n.gbSpeedFast;
+    if (gameSpeed >= 180) return l10n.gbSpeedFaster;
+    if (gameSpeed >= 130) return l10n.gbSpeedBlazing;
+    if (gameSpeed >= 80) return l10n.gbSpeedInsane;
+    return l10n.gbSpeedMax;
   }
 
   // Get icon for current speed level
@@ -57,6 +58,7 @@ class GameBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final scale = context.uiScale;
     // Small-screen size bumped 115 -> 120 so the 0.38-ratio d-pad
     // buttons clear ~46px touch targets. Bar height grows uniformly
@@ -85,7 +87,7 @@ class GameBottomBar extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildControlBarStat(
-                      'Length',
+                      l10n.gbLength,
                       '${gameState.snake.length}',
                       Icons.straighten,
                       theme,
@@ -114,8 +116,8 @@ class GameBottomBar extends StatelessWidget {
                   ),
                   Expanded(
                     child: _buildControlBarStat(
-                      'Speed',
-                      _getSpeedLabel(gameState.gameSpeed),
+                      l10n.gbSpeed,
+                      _getSpeedLabel(l10n, gameState.gameSpeed),
                       _getSpeedIcon(gameState.gameSpeed),
                       theme,
                       isSmallScreen,
@@ -133,7 +135,7 @@ class GameBottomBar extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildWideStat(
-                      'Length',
+                      l10n.gbLength,
                       '${gameState.snake.length}',
                       Icons.straighten,
                       theme,
@@ -143,7 +145,7 @@ class GameBottomBar extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildWideStat(
-                      'Level',
+                      l10n.gbLevel,
                       '${gameState.level}',
                       Icons.trending_up,
                       theme,
@@ -153,8 +155,8 @@ class GameBottomBar extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildWideStat(
-                      'Speed',
-                      _getSpeedLabel(gameState.gameSpeed),
+                      l10n.gbSpeed,
+                      _getSpeedLabel(l10n, gameState.gameSpeed),
                       _getSpeedIcon(gameState.gameSpeed),
                       theme,
                       isSmallScreen,

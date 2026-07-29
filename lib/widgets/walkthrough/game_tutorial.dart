@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
 
 /// Controller for the interactive game tutorial
 class GameTutorialController extends ChangeNotifier {
+  /// Localized step list. Supplied/refreshed by [GameTutorialOverlay]'s
+  /// build (which has access to the ambient [AppLocalizations]) via
+  /// [updateSteps]. Structural fields (ids, order, isInteractive, keys)
+  /// are identical across locales, so swapping the list mid-tutorial is
+  /// safe — only the display text changes.
+  List<WalkthroughStep> _steps = const [];
+
   int _currentStep = 0;
   bool _awaitingInput = false;
   Direction? _expectedDirection;
@@ -29,12 +37,18 @@ class GameTutorialController extends ChangeNotifier {
   }
 
   /// Get all tutorial steps
-  List<WalkthroughStep> get steps => _tutorialSteps;
+  List<WalkthroughStep> get steps => _steps;
+
+  /// Provide/refresh the localized steps. Called from the overlay's build;
+  /// intentionally does NOT notify listeners (it runs during build).
+  void updateSteps(List<WalkthroughStep> steps) {
+    _steps = steps;
+  }
 
   /// Get the current step data
   WalkthroughStep? get currentStepData {
-    if (_currentStep >= _tutorialSteps.length) return null;
-    return _tutorialSteps[_currentStep];
+    if (_currentStep >= _steps.length) return null;
+    return _steps[_currentStep];
   }
 
   /// Start the tutorial
@@ -65,7 +79,7 @@ class GameTutorialController extends ChangeNotifier {
 
   /// Advance to the next step
   void advance() {
-    if (_currentStep < _tutorialSteps.length - 1) {
+    if (_currentStep < _steps.length - 1) {
       _currentStep++;
       _checkForInteractiveStep();
       notifyListeners();
@@ -142,13 +156,13 @@ class GameTutorialKeys {
   static final gameBoardKey = GlobalKey();
 }
 
-/// Tutorial steps for the game screen
-final List<WalkthroughStep> _tutorialSteps = [
+/// Tutorial steps for the game screen (localized)
+List<WalkthroughStep> _buildTutorialSteps(AppLocalizations l10n) => [
   // Step 1: Welcome
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_welcome',
-    title: 'Welcome to the Game!',
-    message: "Let's learn how to play Snake Classic. This quick tutorial will show you the basics.",
+    title: l10n.wtWelcomeTitle,
+    message: l10n.wtWelcomeMsg,
     position: TooltipPosition.center,
     icon: Icons.school,
     canSkip: true,
@@ -157,27 +171,27 @@ final List<WalkthroughStep> _tutorialSteps = [
   // Step 2: HUD overview
   WalkthroughStep(
     id: 'tutorial_hud',
-    title: 'Game Info',
-    message: 'The top bar shows your score, level, and high score. Watch your progress as you play!',
+    title: l10n.wtHudTitle,
+    message: l10n.wtHudMsg,
     targetKey: GameTutorialKeys.hudKey,
     position: TooltipPosition.below,
     icon: Icons.dashboard,
   ),
 
   // Step 3: Controls intro
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_controls',
-    title: 'Swipe to Move',
-    message: 'Swipe in any direction to change where your snake is heading. The snake will turn to follow your swipe.',
+    title: l10n.wtControlsTitle,
+    message: l10n.wtControlsMsg,
     position: TooltipPosition.center,
     icon: Icons.swipe,
   ),
 
   // Step 4: Practice - Swipe Right (Interactive)
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_practice_right',
-    title: 'Try it! Swipe RIGHT',
-    message: 'Swipe RIGHT on the screen to continue.',
+    title: l10n.wtPracticeRightTitle,
+    message: l10n.wtPracticeRightMsg,
     position: TooltipPosition.center,
     icon: Icons.arrow_forward,
     isInteractive: true,
@@ -185,10 +199,10 @@ final List<WalkthroughStep> _tutorialSteps = [
   ),
 
   // Step 5: Practice - Swipe Up (Interactive)
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_practice_up',
-    title: 'Great! Now swipe UP',
-    message: 'Swipe UP on the screen to continue.',
+    title: l10n.wtPracticeUpTitle,
+    message: l10n.wtPracticeUpMsg,
     position: TooltipPosition.center,
     icon: Icons.arrow_upward,
     isInteractive: true,
@@ -198,46 +212,46 @@ final List<WalkthroughStep> _tutorialSteps = [
   // Step 6: Food explanation. Food TYPES + point values are intentionally
   // not taught here — the pause menu's Game Guide carries that reference
   // (and the food chip on the HUD shows the current type's value live).
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_food',
-    title: 'Eat to Grow',
-    message: 'Guide your snake to eat the food that appears on the board. Each food item makes your snake longer!',
+    title: l10n.wtFoodTitle,
+    message: l10n.wtFoodMsg,
     position: TooltipPosition.center,
     icon: Icons.restaurant,
   ),
 
   // Step 7: Combo system.
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_combo',
-    title: 'Build a Combo',
-    message: 'Eat food without dying to build a combo. At 5 bites you get 1.5×, at 10 you get 2×, at 20 you get 3×. The fire chip near your score heats up and pulses as you climb.',
+    title: l10n.wtComboTitle,
+    message: l10n.wtComboMsg,
     position: TooltipPosition.center,
     icon: Icons.local_fire_department,
   ),
 
   // Step 8: Power-ups.
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_powerups',
-    title: 'Power-ups',
-    message: "Sparkly icons spawn occasionally — eat one to activate it. The ring around its icon drains as the effect runs out, and the timer freezes if you pause the game.",
+    title: l10n.wtPowerUpsTitle,
+    message: l10n.wtPowerUpsMsg,
     position: TooltipPosition.center,
     icon: Icons.bolt,
   ),
 
   // Step 9: Avoid walls
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_walls',
-    title: 'Avoid the Walls!',
-    message: "Don't hit the edges of the board - it's game over if you crash into a wall!",
+    title: l10n.wtWallsTitle,
+    message: l10n.wtWallsMsg,
     position: TooltipPosition.center,
     icon: Icons.warning_amber,
   ),
 
   // Step 10: Don't hit yourself
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_self',
-    title: "Don't Hit Yourself!",
-    message: 'As your snake grows longer, be careful not to crash into your own body!',
+    title: l10n.wtSelfTitle,
+    message: l10n.wtSelfMsg,
     position: TooltipPosition.center,
     icon: Icons.do_not_disturb_on,
   ),
@@ -245,8 +259,8 @@ final List<WalkthroughStep> _tutorialSteps = [
   // Step 11: Pause menu. Spotlights the pause icon in the HUD's top-right.
   WalkthroughStep(
     id: 'tutorial_pause',
-    title: 'Pause Anytime',
-    message: 'Tap the pause icon to freeze the run. From there you can resume, restart, open the Game Guide, replay this tutorial, or toggle the D-Pad.',
+    title: l10n.wtPauseTitle,
+    message: l10n.wtPauseMsg,
     targetKey: GameTutorialKeys.pauseButtonKey,
     position: TooltipPosition.below,
     icon: Icons.pause_circle_outline,
@@ -255,13 +269,13 @@ final List<WalkthroughStep> _tutorialSteps = [
   ),
 
   // Step 12: Complete
-  const WalkthroughStep(
+  WalkthroughStep(
     id: 'tutorial_complete',
-    title: "You're Ready!",
-    message: "Good luck! Open the pause menu's Game Guide anytime to read up on combos, power-ups, modes, and crash feedback. Check your Profile to see achievements unlock as you hit goals.",
+    title: l10n.wtReadyTitle,
+    message: l10n.wtReadyMsg,
     position: TooltipPosition.center,
     icon: Icons.celebration,
-    actionLabel: 'Start Playing!',
+    actionLabel: l10n.wtStartPlaying,
   ),
 ];
 
@@ -283,6 +297,11 @@ class GameTutorialOverlay extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
+        // Supply/refresh the localized steps before reading step data so
+        // the controller always renders in the ambient locale.
+        controller.updateSteps(
+          _buildTutorialSteps(AppLocalizations.of(context)!),
+        );
         final step = controller.currentStepData;
         if (step == null || controller.isComplete) {
           return const SizedBox.shrink();
@@ -358,6 +377,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
 
   /// Build a minimal floating overlay for interactive swipe steps
   Widget _buildInteractiveOverlay(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Material(
       type: MaterialType.transparency,
       child: GestureDetector(
@@ -389,13 +409,13 @@ class WalkthroughOverlayWidget extends StatelessWidget {
                 // Floating instruction card at top
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _buildInteractiveCard(),
+                  child: _buildInteractiveCard(l10n),
                 ),
                 const Spacer(),
                 // Bottom hint
                 Padding(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: _buildSwipeHint(),
+                  child: _buildSwipeHint(l10n),
                 ),
               ],
             ),
@@ -405,7 +425,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildInteractiveCard() {
+  Widget _buildInteractiveCard(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -448,13 +468,13 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           // Direction arrow
-          if (expectedDirection != null) _buildLargeDirectionArrow(),
+          if (expectedDirection != null) _buildLargeDirectionArrow(l10n),
           const SizedBox(height: 12),
           // Skip button
           TextButton(
             onPressed: onSkip,
             child: Text(
-              'Skip Tutorial',
+              l10n.wtSkipTutorial,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.6),
                 fontSize: 14,
@@ -466,26 +486,26 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildLargeDirectionArrow() {
+  Widget _buildLargeDirectionArrow(AppLocalizations l10n) {
     IconData icon;
     String text;
 
     switch (expectedDirection) {
       case Direction.right:
         icon = Icons.arrow_forward_rounded;
-        text = 'SWIPE RIGHT';
+        text = l10n.wtSwipeRightUpper;
         break;
       case Direction.left:
         icon = Icons.arrow_back_rounded;
-        text = 'SWIPE LEFT';
+        text = l10n.wtSwipeLeftUpper;
         break;
       case Direction.up:
         icon = Icons.arrow_upward_rounded;
-        text = 'SWIPE UP';
+        text = l10n.wtSwipeUpUpper;
         break;
       case Direction.down:
         icon = Icons.arrow_downward_rounded;
-        text = 'SWIPE DOWN';
+        text = l10n.wtSwipeDownUpper;
         break;
       default:
         return const SizedBox.shrink();
@@ -518,7 +538,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSwipeHint() {
+  Widget _buildSwipeHint(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
@@ -538,7 +558,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'Swipe anywhere on screen!',
+            l10n.wtSwipeAnywhereScreen,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.8),
               fontSize: 14,
@@ -551,6 +571,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
   }
 
   Widget _buildTooltip(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       constraints: const BoxConstraints(maxWidth: 340),
       decoration: BoxDecoration(
@@ -597,7 +618,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
 
           // Direction hint for interactive steps
           if (isAwaitingInput && expectedDirection != null)
-            _buildDirectionHint(),
+            _buildDirectionHint(l10n),
 
           // Progress dots
           _buildProgressDots(),
@@ -605,7 +626,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Buttons
-          _buildButtons(),
+          _buildButtons(l10n),
 
           const SizedBox(height: 16),
         ],
@@ -655,26 +676,26 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDirectionHint() {
+  Widget _buildDirectionHint(AppLocalizations l10n) {
     final IconData directionIcon;
     final String directionText;
 
     switch (expectedDirection) {
       case Direction.up:
         directionIcon = Icons.arrow_upward;
-        directionText = 'SWIPE UP';
+        directionText = l10n.wtSwipeUpUpper;
         break;
       case Direction.down:
         directionIcon = Icons.arrow_downward;
-        directionText = 'SWIPE DOWN';
+        directionText = l10n.wtSwipeDownUpper;
         break;
       case Direction.left:
         directionIcon = Icons.arrow_back;
-        directionText = 'SWIPE LEFT';
+        directionText = l10n.wtSwipeLeftUpper;
         break;
       case Direction.right:
         directionIcon = Icons.arrow_forward;
-        directionText = 'SWIPE RIGHT';
+        directionText = l10n.wtSwipeRightUpper;
         break;
       default:
         return const SizedBox.shrink();
@@ -733,7 +754,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildButtons() {
+  Widget _buildButtons(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -742,7 +763,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           TextButton(
             onPressed: onSkip,
             child: Text(
-              'Skip Tutorial',
+              l10n.wtSkipTutorial,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.6),
                 fontSize: 14,
@@ -773,7 +794,9 @@ class WalkthroughOverlayWidget extends StatelessWidget {
                 ),
                 child: Text(
                   step.actionLabel ??
-                      (currentStepIndex == totalSteps - 1 ? 'Got it!' : 'Next'),
+                      (currentStepIndex == totalSteps - 1
+                          ? l10n.wtGotIt
+                          : l10n.wtNext),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -785,7 +808,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           else
             // Show hint text for interactive steps
             Text(
-              'Swipe anywhere!',
+              l10n.wtSwipeAnywhere,
               style: TextStyle(
                 color: theme.foodColor.withValues(alpha: 0.8),
                 fontSize: 12,

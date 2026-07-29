@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -21,6 +22,7 @@ class DailyChallengesWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     // Watch the provider for reactive state updates
     final state = ref.watch(dailyChallengesProvider);
     final challenges = state.challenges;
@@ -71,7 +73,7 @@ class DailyChallengesWidget extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Daily Challenges',
+                        l10n.dcTitle,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -119,7 +121,7 @@ class DailyChallengesWidget extends ConsumerWidget {
 
                 // Challenge list or empty state (no spinner — data shows instantly from cache)
                 if (challenges.isEmpty)
-                  _buildEmptyState()
+                  _buildEmptyState(l10n)
                 else
                   ...challenges
                       .take(3)
@@ -127,7 +129,7 @@ class DailyChallengesWidget extends ConsumerWidget {
 
                 // Bonus indicator
                 if (state.allCompleted && state.bonusCoins > 0)
-                  _buildBonusIndicator(state),
+                  _buildBonusIndicator(state, l10n),
               ],
             ),
           ),
@@ -169,12 +171,12 @@ class DailyChallengesWidget extends ConsumerWidget {
         );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
         child: Text(
-          'No challenges available',
+          l10n.dcNoChallenges,
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.6),
             fontSize: 14,
@@ -306,7 +308,7 @@ class DailyChallengesWidget extends ConsumerWidget {
         );
   }
 
-  Widget _buildBonusIndicator(DailyChallengesState state) {
+  Widget _buildBonusIndicator(DailyChallengesState state, AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
@@ -325,7 +327,7 @@ class DailyChallengesWidget extends ConsumerWidget {
           Icon(Icons.celebration, color: Colors.amber, size: 20),
           const SizedBox(width: 8),
           Text(
-            'All Complete!',
+            l10n.dcAllComplete,
             style: TextStyle(
               color: Colors.amber,
               fontWeight: FontWeight.bold,
@@ -340,7 +342,7 @@ class DailyChallengesWidget extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              '+${state.bonusCoins} Bonus',
+              l10n.dcBonusCoins(state.bonusCoins),
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,

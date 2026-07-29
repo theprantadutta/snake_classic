@@ -2886,4 +2886,632 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get faGuestFailed => 'تعذرت المتابعة كضيف. حاول مرة أخرى.';
+
+  @override
+  String get ldInitializing => 'جارٍ تشغيل Snake Classic...';
+
+  @override
+  String get ldTip1 =>
+      'خطط لحركتين مقدمًا — ذيلك يتبع المكان الذي مرّ به الرأس للتو.';
+
+  @override
+  String get ldTip2 =>
+      'الطعام الإضافي يمنح نقاطًا أكثر لكنه يختفي سريعًا. التقطه بسرعة!';
+
+  @override
+  String get ldTip3 =>
+      'اصطدمت؟ شاهد إعلانًا قصيرًا أو أنفق عملات لتعود وتحافظ على نتيجتك.';
+
+  @override
+  String get ldTip4 => 'سلسل الطعام دون توقف لبناء مضاعف السلسلة.';
+
+  @override
+  String get ldTip5 => 'عالق في مكان ضيق؟ التصق بالجدران لتكسب لحظة.';
+
+  @override
+  String get ldTip6 =>
+      'التحديات اليومية والمهام الأسبوعية تكدّس العملات بسرعة.';
+
+  @override
+  String get ldTip7 => 'Snake Classic Pro يفتح لوحات أكبر ويزيل كل الإعلانات.';
+
+  @override
+  String get ldTip8 =>
+      'وضع ضد الوقت يكافئ السرعة — ويمكنك مشاهدة إعلان مقابل +30 ثانية.';
+
+  @override
+  String get ldTip9 => 'التعزيزات تتراكم: جهّز درعًا قبل المرور من فجوة ضيقة.';
+
+  @override
+  String get ldTip10 =>
+      'بدّل السمات والمظاهر والآثار في المتجر متى شئت لمظهر جديد.';
+
+  @override
+  String get ldStepCore => 'تشغيل الأنظمة الأساسية...';
+
+  @override
+  String get ldStepCoreSub => 'إعداد الاتصال بالخادم';
+
+  @override
+  String get ldStepProfile => 'إنشاء ملفك الشخصي...';
+
+  @override
+  String get ldStepProfileSub => 'توليد اسم مستخدم فريد';
+
+  @override
+  String get ldStepPrefs => 'تحميل تفضيلاتك...';
+
+  @override
+  String get ldStepPrefsSub => 'مزامنة السمات والإعدادات';
+
+  @override
+  String get ldStepCloud => 'المزامنة مع السحابة...';
+
+  @override
+  String get ldStepCloudSub => 'التأكد من تحديث البيانات';
+
+  @override
+  String get ldStepGameData => 'تحميل بيانات اللعبة...';
+
+  @override
+  String get ldStepGameDataSub => 'جلب بيانات اللعبة';
+
+  @override
+  String get ldStepAudio => 'إعداد نظام الصوت...';
+
+  @override
+  String get ldStepAudioSub => 'تحميل المؤثرات الصوتية';
+
+  @override
+  String get ldStepSetup => 'التحقق من حالة الإعداد...';
+
+  @override
+  String get ldStepSetupSub => 'شارفنا على الانتهاء!';
+
+  @override
+  String get ldWelcome => 'مرحبًا!';
+
+  @override
+  String get ldWelcomeSub => 'اختر كيفية المتابعة';
+
+  @override
+  String get ldReady => 'جاهز للعب!';
+
+  @override
+  String get ldReadySub => 'مرحبًا بعودتك إلى Snake Classic';
+
+  @override
+  String ldInitFailed(Object error) {
+    return 'فشل التشغيل: $error';
+  }
+
+  @override
+  String get ldRetrying => 'إعادة محاولة التشغيل...';
+
+  @override
+  String get ldTagline => 'تجربة ثعبان مميزة';
+
+  @override
+  String get ldLoadingUpper => 'جارٍ التحميل';
+
+  @override
+  String get ldDidYouKnow => 'هل كنت تعلم؟';
+
+  @override
+  String get ldGameFeatures => 'مزايا اللعبة';
+
+  @override
+  String get ldFeatFps => '60FPS';
+
+  @override
+  String get ldFeatFpsSub => 'لعب سلس';
+
+  @override
+  String get ldFeatEffects => 'مؤثرات';
+
+  @override
+  String get ldFeatEffectsSub => 'جسيمات بصرية';
+
+  @override
+  String get ldFeatLevels => 'مستويات';
+
+  @override
+  String get ldFeatLevelsSub => 'متعة متصاعدة';
+
+  @override
+  String get ldFeatAudio => 'صوت';
+
+  @override
+  String get ldFeatAudioSub => 'صوت غامر';
+
+  @override
+  String get ldFeatScores => 'نتائج';
+
+  @override
+  String get ldFeatScoresSub => 'تصنيفات عالمية';
+
+  @override
+  String get ldFeatThemes => 'سمات';
+
+  @override
+  String get ldFeatThemesSub => 'أنماط متعددة';
+
+  @override
+  String get ldDevelopedBy => 'تطوير وصيانة';
+
+  @override
+  String get ldDevTagline => 'نصنع تجارب جوال مميزة';
+
+  @override
+  String get ldInitFailedUpper => 'فشل التشغيل';
+
+  @override
+  String get ldRetryUpper => 'إعادة المحاولة';
+
+  @override
+  String get pgArena => 'تجهيز الساحة...';
+
+  @override
+  String get pgControls => 'معايرة التحكم...';
+
+  @override
+  String get pgSnake => 'استدعاء الثعبان...';
+
+  @override
+  String get pgFood => 'وضع الطعام...';
+
+  @override
+  String get pgPowerUps => 'شحن التعزيزات...';
+
+  @override
+  String get pgAlmost => 'أوشكنا...';
+
+  @override
+  String get pgGo => 'انطلق!';
+
+  @override
+  String get pgTip1 => 'أبقِ اتجاهًا لفترة أطول لبناء مضاعفات السلسلة.';
+
+  @override
+  String get pgTip2 => 'الطعام الإضافي يمنح نقاطًا أكثر لكنه يختفي بسرعة.';
+
+  @override
+  String get pgTip3 => 'تظهر التعزيزات عشوائيًا — التقطها ما دمت تستطيع.';
+
+  @override
+  String get pgTip4 => 'خطط لحركتين مقدمًا لا لواحدة.';
+
+  @override
+  String get pgTip5 =>
+      'الثعابين الطويلة تنعطف أبطأ. وفّر المنعطفات الحادة للبداية.';
+
+  @override
+  String get pgTip6 => 'مضاعف النقاط يتراكم مع السلاسل لنتائج هائلة.';
+
+  @override
+  String get pgTip7 => 'الطعام الخاص نادر — إن ظهر فاجعله أولويتك.';
+
+  @override
+  String get pgTip8 => 'وضع ضد الوقت يتسارع بسرعة. وازن انعطافاتك.';
+
+  @override
+  String get pgTip9 =>
+      'في وضع الاسترخاء تعبر الجدران. استخدم ذلك للهروب من المآزق.';
+
+  @override
+  String get pgTip10 => 'اللعبة المثالية: لا تدخل مجددًا خلية لمسها جسدك.';
+
+  @override
+  String get pgTip11 => 'أزرار الاتجاهات تمنح انعطافات دقيقة؛ السحب أسرع.';
+
+  @override
+  String get pgTip12 => 'أوقف اللعب من الواجهة متى شئت — المؤقت ينتظرك.';
+
+  @override
+  String get pgPreparing => 'تجهيز الساحة';
+
+  @override
+  String get pgTournamentMode => 'وضع البطولة';
+
+  @override
+  String get pgGameMode => 'نمط اللعب';
+
+  @override
+  String get pgDPadControls => 'أزرار الاتجاهات';
+
+  @override
+  String get pgSwipeControls => 'تحكم بالسحب';
+
+  @override
+  String get pgLevel => 'المستوى';
+
+  @override
+  String get pgBest => 'الأفضل';
+
+  @override
+  String get pgGames => 'الجولات';
+
+  @override
+  String get pgProTip => 'نصيحة محترف';
+
+  @override
+  String get pgTapToStart => 'انقر في أي مكان للبدء';
+
+  @override
+  String get wtWelcomeTitle => 'مرحبًا بك في اللعبة!';
+
+  @override
+  String get wtWelcomeMsg =>
+      'لنتعلم لعب Snake Classic. سيعرض هذا الدرس السريع الأساسيات.';
+
+  @override
+  String get wtHudTitle => 'معلومات اللعبة';
+
+  @override
+  String get wtHudMsg =>
+      'الشريط العلوي يعرض نتيجتك ومستواك وأعلى نتيجة. راقب تقدمك أثناء اللعب!';
+
+  @override
+  String get wtControlsTitle => 'اسحب للتحرك';
+
+  @override
+  String get wtControlsMsg =>
+      'اسحب في أي اتجاه لتغيير وجهة الثعبان. سينعطف الثعبان تبعًا لسحبك.';
+
+  @override
+  String get wtPracticeRightTitle => 'جرّب! اسحب لليمين';
+
+  @override
+  String get wtPracticeRightMsg => 'اسحب لليمين على الشاشة للمتابعة.';
+
+  @override
+  String get wtPracticeUpTitle => 'رائع! الآن اسحب لأعلى';
+
+  @override
+  String get wtPracticeUpMsg => 'اسحب لأعلى على الشاشة للمتابعة.';
+
+  @override
+  String get wtFoodTitle => 'كُل لتكبر';
+
+  @override
+  String get wtFoodMsg =>
+      'قد الثعبان ليأكل الطعام الظاهر على اللوحة. كل قطعة تزيد طوله!';
+
+  @override
+  String get wtComboTitle => 'ابنِ سلسلة';
+
+  @override
+  String get wtComboMsg =>
+      'كُل دون أن تموت لبناء سلسلة. عند 5 قضمات تحصل على 1.5×، وعند 10 على 2×، وعند 20 على 3×. شريحة النار قرب نتيجتك تسخن وتنبض كلما ارتفعت.';
+
+  @override
+  String get wtPowerUpsTitle => 'التعزيزات';
+
+  @override
+  String get wtPowerUpsMsg =>
+      'تظهر أيقونات لامعة أحيانًا — كُل واحدة لتفعيلها. تنفد الحلقة حول الأيقونة مع انتهاء التأثير، ويتجمد المؤقت عند الإيقاف.';
+
+  @override
+  String get wtWallsTitle => 'تجنب الجدران!';
+
+  @override
+  String get wtWallsMsg =>
+      'لا تلمس حواف اللوحة - الاصطدام بالجدار يعني نهاية اللعبة!';
+
+  @override
+  String get wtSelfTitle => 'لا تصطدم بنفسك!';
+
+  @override
+  String get wtSelfMsg => 'كلما طال ثعبانك، احذر الاصطدام بجسدك!';
+
+  @override
+  String get wtPauseTitle => 'أوقف متى شئت';
+
+  @override
+  String get wtPauseMsg =>
+      'انقر أيقونة الإيقاف لتجميد الجولة. من هناك يمكنك المتابعة أو البدء من جديد أو فتح دليل اللعبة أو إعادة هذا الدرس أو تبديل أزرار الاتجاهات.';
+
+  @override
+  String get wtReadyTitle => 'أنت جاهز!';
+
+  @override
+  String get wtReadyMsg =>
+      'حظًا موفقًا! افتح دليل اللعبة من قائمة الإيقاف متى شئت لقراءة السلاسل والتعزيزات والأنماط وتنبيهات الاصطدام. تفقد ملفك لترى الإنجازات تُفتح مع تحقيق الأهداف.';
+
+  @override
+  String get wtStartPlaying => 'ابدأ اللعب!';
+
+  @override
+  String get wtSkipTutorial => 'تخطي الدرس';
+
+  @override
+  String get wtSwipeRightUpper => 'اسحب لليمين';
+
+  @override
+  String get wtSwipeLeftUpper => 'اسحب لليسار';
+
+  @override
+  String get wtSwipeUpUpper => 'اسحب لأعلى';
+
+  @override
+  String get wtSwipeDownUpper => 'اسحب لأسفل';
+
+  @override
+  String get wtSwipeAnywhereScreen => 'اسحب في أي مكان على الشاشة!';
+
+  @override
+  String get wtSwipeAnywhere => 'اسحب في أي مكان!';
+
+  @override
+  String get wtGotIt => 'فهمت!';
+
+  @override
+  String get wtNext => 'التالي';
+
+  @override
+  String get wtSkip => 'تخطي';
+
+  @override
+  String get wtWaiting => 'بانتظارك...';
+
+  @override
+  String get hwPlayTitle => 'مرحبًا بك في Snake Classic!';
+
+  @override
+  String get hwPlayMsg =>
+      'انقر زر العب لبدء جولة. اسحب لقيادة الثعبان وكُل الطعام لتكبر!';
+
+  @override
+  String get hwCoinsTitle => 'عملاتك';
+
+  @override
+  String get hwCoinsMsg =>
+      'اكسب العملات باللعب وإكمال التحديات والمكافآت اليومية. أنفقها في المتجر!';
+
+  @override
+  String get hwDailyTitle => 'التحديات اليومية';
+
+  @override
+  String get hwDailyMsg =>
+      'أكمل التحديات اليومية لعملات ومكافآت إضافية. تحديات جديدة كل يوم!';
+
+  @override
+  String get hwStoreTitle => 'المتجر';
+
+  @override
+  String get hwStoreMsg =>
+      'اشترِ السمات والمظاهر والآثار والتعزيزات بعملاتك. افتح برو للوحات المميزة والمظاهر الحصرية.';
+
+  @override
+  String get hwCosmeticsTitle => 'المظاهر والآثار';
+
+  @override
+  String get hwCosmeticsMsg =>
+      'خصص ثعبانك هنا. المظاهر تغيّر شكل الثعبان؛ والآثار تترك وهجًا خلفه. اكسبها بالعملات أو افتحها مع برو.';
+
+  @override
+  String get hwProfileTitle => 'ملفك الشخصي';
+
+  @override
+  String get hwProfileMsg =>
+      'هنا الإحصائيات والإنجازات وأعلى النتائج. تُفتح الإنجازات مع بلوغ المحطات — بعضها يتطلب نمطًا محددًا (كلاسيكي، صعب، إلخ). سجّل الدخول للمزامنة بين الأجهزة.';
+
+  @override
+  String get hwSettingsTitle => 'الإعدادات';
+
+  @override
+  String get hwSettingsMsg =>
+      'خصص تجربتك - غيّر السمات والتحكم والصوت والمزيد!';
+
+  @override
+  String get hudScoreUpper => 'النتيجة';
+
+  @override
+  String hudScoreSemantics(Object value) {
+    return 'النتيجة $value';
+  }
+
+  @override
+  String hudLevelBadge(Object level) {
+    return 'مس$level';
+  }
+
+  @override
+  String get hudTournamentBadge => 'بطولة';
+
+  @override
+  String hudComboMultiplier(Object multiplier) {
+    return '${multiplier}x';
+  }
+
+  @override
+  String get poPaused => 'متوقف';
+
+  @override
+  String get poPremium => 'بريميوم';
+
+  @override
+  String get poStore => 'المتجر';
+
+  @override
+  String get poResume => 'متابعة';
+
+  @override
+  String get poRestart => 'من جديد';
+
+  @override
+  String get poHome => 'الرئيسية';
+
+  @override
+  String get poDPadOn => 'الأزرار: تعمل';
+
+  @override
+  String get poDPadOff => 'الأزرار: متوقفة';
+
+  @override
+  String get poSound => 'الصوت';
+
+  @override
+  String get poMusic => 'الموسيقى';
+
+  @override
+  String get poHowToPlay => 'طريقة اللعب';
+
+  @override
+  String get poGameGuide => 'دليل اللعبة';
+
+  @override
+  String get poFoodUpper => 'الطعام';
+
+  @override
+  String get poPts10 => '10 نقاط';
+
+  @override
+  String get poPts25 => '25 نقطة';
+
+  @override
+  String get poPts50 => '50 نقطة';
+
+  @override
+  String get poComboUpper => 'السلسلة';
+
+  @override
+  String get poBites5 => '5 قضمات';
+
+  @override
+  String get poBites10 => '10 قضمات';
+
+  @override
+  String get poBites20 => '20 قضمة';
+
+  @override
+  String get poComboHint => 'شريحة النار قرب النتيجة تسخن وتنبض عند كل عتبة.';
+
+  @override
+  String get poPowerUpsUpper => 'التعزيزات';
+
+  @override
+  String get poDur7s => '7 ث';
+
+  @override
+  String get poDur6s => '6 ث';
+
+  @override
+  String get poDur10s => '10 ث';
+
+  @override
+  String get poDur8s => '8 ث';
+
+  @override
+  String get poScore2x => 'النقاط 2×';
+
+  @override
+  String get poPowerUpHint =>
+      'حلقة الأيقونة تنفد حتى الانتهاء. المؤقت يتجمد عند الإيقاف.';
+
+  @override
+  String get poCrashUpper => 'الاصطدام';
+
+  @override
+  String get poCrashHint =>
+      'موجة حمراء تنفجر في الخلية التي متّ فيها. الاصطدام بالنفس يُبرز أيضًا الجزء المصاب بالأصفر.';
+
+  @override
+  String get poModesUpper => 'الأنماط';
+
+  @override
+  String get poModeWallsOn => 'بجدران';
+
+  @override
+  String get poModeWallsOff => 'بلا جدران';
+
+  @override
+  String get poModeFastTick => 'إيقاع سريع';
+
+  @override
+  String get poModeThreeFoods => '3 أطعمة معًا';
+
+  @override
+  String get poModeThreeLives => '3 أرواح وتتسارع';
+
+  @override
+  String get poModeThreeMin => '3 دقائق إجمالًا';
+
+  @override
+  String get poModeFrequentPowerUps => 'تعزيزات متكررة';
+
+  @override
+  String get poModeDontCross => 'لا تقطع أثرك';
+
+  @override
+  String get dcTitle => 'التحديات اليومية';
+
+  @override
+  String get dcNoChallenges => 'لا تحديات متاحة';
+
+  @override
+  String get dcAllComplete => 'اكتمل كل شيء!';
+
+  @override
+  String dcBonusCoins(Object count) {
+    return '+$count مكافأة';
+  }
+
+  @override
+  String crVersionLine(Object build, Object version) {
+    return 'الإصدار $version · البنية $build';
+  }
+
+  @override
+  String get crTagline => 'لعبة الثعبان الكلاسيكية بحلة جديدة.';
+
+  @override
+  String get crChipModes => 'الأنماط';
+
+  @override
+  String get crChipAchievements => 'الإنجازات';
+
+  @override
+  String get crChipDaily => 'يومي';
+
+  @override
+  String get crChipLeaderboards => 'التصنيفات';
+
+  @override
+  String get crChipCosmetics => 'المظاهر';
+
+  @override
+  String get crCraftedBy => 'من صنع';
+
+  @override
+  String crCopyright(Object year) {
+    return '© $year Pranta Dutta · جميع الحقوق محفوظة';
+  }
+
+  @override
+  String get gbSpeedNormal => 'عادية';
+
+  @override
+  String get gbSpeedFast => 'سريعة';
+
+  @override
+  String get gbSpeedFaster => 'أسرع';
+
+  @override
+  String get gbSpeedBlazing => 'ملتهبة';
+
+  @override
+  String get gbSpeedInsane => 'جنونية';
+
+  @override
+  String get gbSpeedMax => 'القصوى';
+
+  @override
+  String get gbLength => 'الطول';
+
+  @override
+  String get gbSpeed => 'السرعة';
+
+  @override
+  String get gbLevel => 'المستوى';
 }

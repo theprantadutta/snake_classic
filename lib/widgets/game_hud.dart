@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/power_up.dart';
@@ -286,6 +287,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   }
 
   Widget _buildScoreSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: _s(isSmallScreen ? 16 : 24),
@@ -312,7 +314,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'SCORE',
+                l10n.hudScoreUpper,
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.6),
                   fontSize: isSmallScreen ? 9 : 10,
@@ -327,7 +329,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 onEnd: () => _displayedScore = gameState.score,
                 builder: (context, value, child) {
                   return Semantics(
-                    label: 'Score $value',
+                    label: l10n.hudScoreSemantics(value),
                     child: Text(
                       '$value',
                       // Use the theme's primary color so the score blends with
@@ -537,7 +539,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                         const SizedBox(width: 2),
                       ],
                       Text(
-                        'LV${gameState.level}',
+                        AppLocalizations.of(context)!
+                            .hudLevelBadge(gameState.level),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: isSmallScreen ? 10 : 11,
@@ -719,7 +722,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                     style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
                 const SizedBox(width: 4),
                 Text(
-                  '${multiplier.toStringAsFixed(1)}x',
+                  AppLocalizations.of(context)!
+                      .hudComboMultiplier(multiplier.toStringAsFixed(1)),
                   style: TextStyle(
                     color: color,
                     fontSize: isSmallScreen ? 12 : 14,
@@ -858,7 +862,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              'TOURNAMENT',
+              AppLocalizations.of(context)!.hudTournamentBadge,
               style: TextStyle(
                 color: Colors.purple.withValues(alpha: 0.8),
                 fontSize: isSmallScreen ? 8 : 9,

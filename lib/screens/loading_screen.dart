@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:go_router/go_router.dart';
@@ -39,8 +40,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   late AnimationController _particleController;
   late AnimationController _pulseController;
 
-  String _currentTask = 'Initializing Snake Classic...';
-  String _subTask = '';
+  _InitStep _step = _InitStep.initializing;
   double _progress = 0.0;
   bool _hasError = false;
   String _errorMessage = '';
@@ -53,18 +53,21 @@ class _LoadingScreenState extends State<LoadingScreen>
   // Rotating "Did you know?" tips shown in the center while loading.
   Timer? _tipTimer;
   int _tipIndex = 0;
-  static const List<String> _tips = [
-    'Plan two moves ahead — your tail follows wherever the head just went.',
-    'Bonus food is worth more points, but it disappears fast. Grab it quick!',
-    'Crashed? Watch a quick ad or spend coins to revive and keep your score.',
-    'Chain food without pausing to build a combo multiplier.',
-    'Stuck in a tight spot? Hug the walls to buy yourself a moment.',
-    'Daily challenges and weekly quests stack up coins fast.',
-    'Snake Classic Pro unlocks bigger boards and removes all ads.',
-    'Time Attack rewards speed — and you can watch an ad for +30 seconds.',
-    'Power-ups stack: arm a shield before squeezing through a gap.',
-    'Switch themes, skins, and trails anytime in the store for a fresh look.',
-  ];
+  static const int _tipCount = 10;
+
+  // Resolved at render time so the tips follow the ambient locale.
+  List<String> _tips(AppLocalizations l10n) => [
+        l10n.ldTip1,
+        l10n.ldTip2,
+        l10n.ldTip3,
+        l10n.ldTip4,
+        l10n.ldTip5,
+        l10n.ldTip6,
+        l10n.ldTip7,
+        l10n.ldTip8,
+        l10n.ldTip9,
+        l10n.ldTip10,
+      ];
 
   @override
   void initState() {
@@ -103,10 +106,10 @@ class _LoadingScreenState extends State<LoadingScreen>
 
     // Seed a random starting tip so it's not always the same on every launch,
     // then rotate through them with a gentle fade while loading.
-    _tipIndex = _random.nextInt(_tips.length);
+    _tipIndex = _random.nextInt(_tipCount);
     _tipTimer = Timer.periodic(const Duration(milliseconds: 3500), (_) {
       if (!mounted) return;
-      setState(() => _tipIndex = (_tipIndex + 1) % _tips.length);
+      setState(() => _tipIndex = (_tipIndex + 1) % _tipCount);
     });
 
     // Start the initialization process
@@ -143,38 +146,22 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<void> _initializeApp() async {
     try {
       // Step 1: Initialize Core Services
-      await _updateProgress(
-        0.1,
-        'Initializing core systems...',
-        'Setting up Server connection',
-      );
+      await _updateProgress(0.1, _InitStep.core);
       await _initializeCoreServices();
 
       // Step 2: Initialize User System
-      await _updateProgress(
-        0.25,
-        'Creating your player profile...',
-        'Generating unique username',
-      );
+      await _updateProgress(0.25, _InitStep.profile);
       await _initializeUserSystem();
 
       // Step 3: Preferences checkpoint. Theme/trail/settings now hydrate
       // from Drift inside their cubits (ThemeCubit/GameSettingsCubit are
       // initialized via MultiBlocProvider in main.dart) — nothing to load
       // here anymore.
-      await _updateProgress(
-        0.4,
-        'Loading your preferences...',
-        'Syncing themes and settings',
-      );
+      await _updateProgress(0.4, _InitStep.prefs);
 
       // Step 4a: Bootstrap DataSyncService — fast local op, needed before
       // preload because preload paths call into the sync service.
-      await _updateProgress(
-        0.50,
-        'Syncing with cloud...',
-        'Ensuring data is up to date',
-      );
+      await _updateProgress(0.50, _InitStep.cloud);
       await _initializeDataSyncService();
 
       // Step 4b + 5: Drain the outgoing sync queue AND fetch fresh data
@@ -182,26 +169,18 @@ class _LoadingScreenState extends State<LoadingScreen>
       // preload, adding its full duration to the loading screen even
       // though the two operations don't depend on each other (drain is
       // POST-to-server, preload is GET-from-server).
-      await _updateProgress(
-        0.60,
-        'Loading game data...',
-        'Fetching Game Data',
-      );
+      await _updateProgress(0.60, _InitStep.gameData);
       await Future.wait([
         _preloadAllDataConcurrently(),
         _drainSyncQueue(),
       ]);
 
       // Step 6: Initialize Audio System
-      await _updateProgress(
-        0.90,
-        'Configuring audio system...',
-        'Loading sound effects',
-      );
+      await _updateProgress(0.90, _InitStep.audio);
       await _initializeAudio();
 
       // Step 8: Check for first-time user
-      await _updateProgress(0.98, 'Checking setup status...', 'Almost ready!');
+      await _updateProgress(0.98, _InitStep.setup);
 
       if (mounted) {
         final authCubit = context.read<AuthCubit>();
@@ -233,7 +212,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         final isFirstTime = authCubit.state.isFirstTimeUser;
 
         if (isFirstTime) {
-          await _updateProgress(1.0, 'Welcome!', 'Choose how to continue');
+          await _updateProgress(1.0, _InitStep.welcome);
           await Future.delayed(
             const Duration(milliseconds: 50),
           ); // Reduced from 100ms
@@ -257,11 +236,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       }
 
       // Step 9: Complete (for returning users)
-      await _updateProgress(
-        1.0,
-        'Ready to play!',
-        'Welcome back to Snake Classic',
-      );
+      await _updateProgress(1.0, _InitStep.ready);
       await Future.delayed(
         const Duration(milliseconds: 50),
       ); // Reduced from 100ms
@@ -271,7 +246,9 @@ class _LoadingScreenState extends State<LoadingScreen>
         context.go(AppRoutes.home);
       }
     } catch (error) {
-      _handleError('Initialization failed: $error');
+      // Store the raw error; the localized "Initialization failed: {error}"
+      // string is resolved at render time in _buildErrorView.
+      _handleError('$error');
     }
   }
 
@@ -441,17 +418,12 @@ class _LoadingScreenState extends State<LoadingScreen>
     }
   }
 
-  Future<void> _updateProgress(
-    double progress,
-    String message,
-    String subMessage,
-  ) async {
+  Future<void> _updateProgress(double progress, _InitStep step) async {
     if (!mounted) return;
 
     setState(() {
       _progress = progress;
-      _currentTask = message;
-      _subTask = subMessage;
+      _step = step;
     });
 
     _progressController.reset();
@@ -477,12 +449,40 @@ class _LoadingScreenState extends State<LoadingScreen>
       _errorMessage = '';
       _showRetryButton = false;
       _progress = 0.0;
-      _currentTask = 'Retrying initialization...';
-      _subTask = '';
+      _step = _InitStep.retrying;
     });
 
     await _initializeApp();
   }
+
+  /// Localized title for the current init step, resolved at render time.
+  String _stepTitle(AppLocalizations l10n) => switch (_step) {
+        _InitStep.initializing => l10n.ldInitializing,
+        _InitStep.core => l10n.ldStepCore,
+        _InitStep.profile => l10n.ldStepProfile,
+        _InitStep.prefs => l10n.ldStepPrefs,
+        _InitStep.cloud => l10n.ldStepCloud,
+        _InitStep.gameData => l10n.ldStepGameData,
+        _InitStep.audio => l10n.ldStepAudio,
+        _InitStep.setup => l10n.ldStepSetup,
+        _InitStep.welcome => l10n.ldWelcome,
+        _InitStep.ready => l10n.ldReady,
+        _InitStep.retrying => l10n.ldRetrying,
+      };
+
+  /// Localized subtitle for the current init step ('' when there is none).
+  String _stepSubtitle(AppLocalizations l10n) => switch (_step) {
+        _InitStep.initializing || _InitStep.retrying => '',
+        _InitStep.core => l10n.ldStepCoreSub,
+        _InitStep.profile => l10n.ldStepProfileSub,
+        _InitStep.prefs => l10n.ldStepPrefsSub,
+        _InitStep.cloud => l10n.ldStepCloudSub,
+        _InitStep.gameData => l10n.ldStepGameDataSub,
+        _InitStep.audio => l10n.ldStepAudioSub,
+        _InitStep.setup => l10n.ldStepSetupSub,
+        _InitStep.welcome => l10n.ldWelcomeSub,
+        _InitStep.ready => l10n.ldReadySub,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -650,7 +650,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         SizedBox(height: isSmallScreen ? 16 : 24),
 
         Text(
-          'PREMIUM SNAKE EXPERIENCE',
+          AppLocalizations.of(context)!.ldTagline,
           style: TextStyle(
             fontSize: isSmallScreen ? 10 : 12,
             fontWeight: FontWeight.w600,
@@ -666,6 +666,8 @@ class _LoadingScreenState extends State<LoadingScreen>
     GameTheme theme, [
     bool isSmallScreen = false,
   ]) {
+    final l10n = AppLocalizations.of(context)!;
+    final subTask = _stepSubtitle(l10n);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -747,7 +749,7 @@ class _LoadingScreenState extends State<LoadingScreen>
 
                         Expanded(
                           child: Text(
-                            _currentTask,
+                            _stepTitle(l10n),
                             style: TextStyle(
                               fontSize: isSmallScreen ? 14 : 16,
                               fontWeight: FontWeight.w700,
@@ -768,9 +770,9 @@ class _LoadingScreenState extends State<LoadingScreen>
                     height: isSmallScreen
                         ? 16
                         : 20, // Responsive fixed height for subtask area
-                    child: _subTask.isNotEmpty
+                    child: subTask.isNotEmpty
                         ? Text(
-                            _subTask,
+                            subTask,
                             style: TextStyle(
                               fontSize: isSmallScreen ? 11 : 13,
                               color: theme.accentColor.withValues(alpha: 0.8),
@@ -874,7 +876,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'LOADING',
+                AppLocalizations.of(context)!.ldLoadingUpper,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -912,6 +914,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   Widget _buildTipCard(GameTheme theme, [bool isSmallScreen = false]) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 32),
       padding: EdgeInsets.symmetric(
@@ -958,7 +961,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   .fade(begin: 1.0, end: 0.5, duration: 900.ms),
               const SizedBox(width: 8),
               Text(
-                'DID YOU KNOW?',
+                l10n.ldDidYouKnow,
                 style: TextStyle(
                   fontSize: isSmallScreen ? 10 : 11,
                   fontWeight: FontWeight.w700,
@@ -991,7 +994,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   ),
                 ),
                 child: Text(
-                  _tips[_tipIndex],
+                  _tips(l10n)[_tipIndex],
                   key: ValueKey<int>(_tipIndex),
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -1010,13 +1013,14 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   Widget _buildFeaturesPreview(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
           // Features header
           Text(
-            'GAME FEATURES',
+            l10n.ldGameFeatures,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -1034,22 +1038,22 @@ class _LoadingScreenState extends State<LoadingScreen>
               _buildFeatureItem(
                 theme,
                 Icons.speed_rounded,
-                '60FPS',
-                'Smooth Gameplay',
+                l10n.ldFeatFps,
+                l10n.ldFeatFpsSub,
                 0,
               ),
               _buildFeatureItem(
                 theme,
                 Icons.auto_awesome_rounded,
-                'EFFECTS',
-                'Visual Particles',
+                l10n.ldFeatEffects,
+                l10n.ldFeatEffectsSub,
                 1,
               ),
               _buildFeatureItem(
                 theme,
                 Icons.emoji_events_rounded,
-                'LEVELS',
-                'Progressive Fun',
+                l10n.ldFeatLevels,
+                l10n.ldFeatLevelsSub,
                 2,
               ),
             ],
@@ -1063,22 +1067,22 @@ class _LoadingScreenState extends State<LoadingScreen>
               _buildFeatureItem(
                 theme,
                 Icons.volume_up_rounded,
-                'AUDIO',
-                'Immersive Sound',
+                l10n.ldFeatAudio,
+                l10n.ldFeatAudioSub,
                 3,
               ),
               _buildFeatureItem(
                 theme,
                 Icons.leaderboard_rounded,
-                'SCORES',
-                'Global Rankings',
+                l10n.ldFeatScores,
+                l10n.ldFeatScoresSub,
                 4,
               ),
               _buildFeatureItem(
                 theme,
                 Icons.palette_rounded,
-                'THEMES',
-                'Multiple Styles',
+                l10n.ldFeatThemes,
+                l10n.ldFeatThemesSub,
                 5,
               ),
             ],
@@ -1170,7 +1174,7 @@ class _LoadingScreenState extends State<LoadingScreen>
           Column(
             children: [
               Text(
-                'DEVELOPED & MAINTAINED BY',
+                AppLocalizations.of(context)!.ldDevelopedBy,
                 style: TextStyle(
                   fontSize: isSmallScreen ? 8 : 10,
                   fontWeight: FontWeight.w600,
@@ -1226,7 +1230,7 @@ class _LoadingScreenState extends State<LoadingScreen>
 
               // Tagline
               Text(
-                'Crafting premium mobile experiences',
+                AppLocalizations.of(context)!.ldDevTagline,
                 style: TextStyle(
                   fontSize: isSmallScreen ? 9 : 11,
                   color: theme.accentColor.withValues(alpha: 0.7),
@@ -1242,6 +1246,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   Widget _buildErrorView(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -1262,7 +1267,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         const SizedBox(height: 32),
 
         Text(
-          'INITIALIZATION FAILED',
+          l10n.ldInitFailedUpper,
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -1282,7 +1287,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
           ),
           child: Text(
-            _errorMessage,
+            l10n.ldInitFailed(_errorMessage),
             style: TextStyle(
               fontSize: 14,
               color: Colors.white.withValues(alpha: 0.9),
@@ -1312,9 +1317,9 @@ class _LoadingScreenState extends State<LoadingScreen>
                   children: [
                     const Icon(Icons.refresh),
                     const SizedBox(width: 8),
-                    const Text(
-                      'RETRY',
-                      style: TextStyle(
+                    Text(
+                      l10n.ldRetryUpper,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1327,6 +1332,22 @@ class _LoadingScreenState extends State<LoadingScreen>
       ],
     );
   }
+}
+
+/// Initialization phases shown on the loading screen. Stored as a code so the
+/// visible strings resolve against the ambient locale at render time.
+enum _InitStep {
+  initializing,
+  core,
+  profile,
+  prefs,
+  cloud,
+  gameData,
+  audio,
+  setup,
+  welcome,
+  ready,
+  retrying,
 }
 
 // Helper classes for loading screen effects

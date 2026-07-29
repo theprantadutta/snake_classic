@@ -2893,4 +2893,637 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get faGuestFailed =>
       'अतिथि के रूप में जारी नहीं रखा जा सका। कृपया फिर कोशिश करें।';
+
+  @override
+  String get ldInitializing => 'Snake Classic शुरू हो रहा है...';
+
+  @override
+  String get ldTip1 =>
+      'दो चालें आगे सोचें — पूँछ वहीं जाती है जहाँ सिर अभी गया था।';
+
+  @override
+  String get ldTip2 =>
+      'बोनस भोजन ज़्यादा अंक देता है, पर जल्दी गायब हो जाता है। फटाफट लें!';
+
+  @override
+  String get ldTip3 =>
+      'टकरा गए? छोटा विज्ञापन देखें या सिक्के खर्च कर पुनर्जीवित हों और स्कोर बचाएँ।';
+
+  @override
+  String get ldTip4 => 'बिना रुके भोजन की श्रृंखला बनाकर कॉम्बो गुणक बढ़ाएँ।';
+
+  @override
+  String get ldTip5 => 'तंग जगह फँसे हैं? दीवारों के सहारे चलकर समय पाएँ।';
+
+  @override
+  String get ldTip6 =>
+      'दैनिक चुनौतियाँ और साप्ताहिक क्वेस्ट तेज़ी से सिक्के जोड़ते हैं।';
+
+  @override
+  String get ldTip7 =>
+      'Snake Classic Pro बड़े बोर्ड खोलता है और सारे विज्ञापन हटाता है।';
+
+  @override
+  String get ldTip8 =>
+      'टाइम अटैक गति का इनाम देता है — विज्ञापन देखकर +30 सेकंड भी पाएँ।';
+
+  @override
+  String get ldTip9 =>
+      'पावर-अप जुड़ते हैं: तंग रास्ते से पहले शील्ड तैयार रखें।';
+
+  @override
+  String get ldTip10 =>
+      'नए लुक के लिए स्टोर में कभी भी थीम, स्किन और ट्रेल बदलें।';
+
+  @override
+  String get ldStepCore => 'मुख्य सिस्टम शुरू हो रहे हैं...';
+
+  @override
+  String get ldStepCoreSub => 'सर्वर कनेक्शन सेट हो रहा है';
+
+  @override
+  String get ldStepProfile => 'आपकी खिलाड़ी प्रोफ़ाइल बन रही है...';
+
+  @override
+  String get ldStepProfileSub => 'अनोखा उपयोगकर्ता नाम बन रहा है';
+
+  @override
+  String get ldStepPrefs => 'आपकी प्राथमिकताएँ लोड हो रही हैं...';
+
+  @override
+  String get ldStepPrefsSub => 'थीम और सेटिंग्स सिंक हो रही हैं';
+
+  @override
+  String get ldStepCloud => 'क्लाउड से सिंक हो रहा है...';
+
+  @override
+  String get ldStepCloudSub => 'डेटा अद्यतन किया जा रहा है';
+
+  @override
+  String get ldStepGameData => 'गेम डेटा लोड हो रहा है...';
+
+  @override
+  String get ldStepGameDataSub => 'गेम डेटा लाया जा रहा है';
+
+  @override
+  String get ldStepAudio => 'ऑडियो सिस्टम सेट हो रहा है...';
+
+  @override
+  String get ldStepAudioSub => 'ध्वनि प्रभाव लोड हो रहे हैं';
+
+  @override
+  String get ldStepSetup => 'सेटअप स्थिति जाँची जा रही है...';
+
+  @override
+  String get ldStepSetupSub => 'बस तैयार!';
+
+  @override
+  String get ldWelcome => 'स्वागत है!';
+
+  @override
+  String get ldWelcomeSub => 'आगे बढ़ने का तरीका चुनें';
+
+  @override
+  String get ldReady => 'खेलने के लिए तैयार!';
+
+  @override
+  String get ldReadySub => 'Snake Classic में वापसी पर स्वागत है';
+
+  @override
+  String ldInitFailed(Object error) {
+    return 'आरंभ विफल: $error';
+  }
+
+  @override
+  String get ldRetrying => 'फिर से आरंभ हो रहा है...';
+
+  @override
+  String get ldTagline => 'प्रीमियम स्नेक अनुभव';
+
+  @override
+  String get ldLoadingUpper => 'लोड हो रहा है';
+
+  @override
+  String get ldDidYouKnow => 'क्या आप जानते हैं?';
+
+  @override
+  String get ldGameFeatures => 'गेम विशेषताएँ';
+
+  @override
+  String get ldFeatFps => '60FPS';
+
+  @override
+  String get ldFeatFpsSub => 'स्मूद गेमप्ले';
+
+  @override
+  String get ldFeatEffects => 'प्रभाव';
+
+  @override
+  String get ldFeatEffectsSub => 'विज़ुअल कण';
+
+  @override
+  String get ldFeatLevels => 'स्तर';
+
+  @override
+  String get ldFeatLevelsSub => 'बढ़ता मज़ा';
+
+  @override
+  String get ldFeatAudio => 'ऑडियो';
+
+  @override
+  String get ldFeatAudioSub => 'डूब जाने वाली ध्वनि';
+
+  @override
+  String get ldFeatScores => 'स्कोर';
+
+  @override
+  String get ldFeatScoresSub => 'वैश्विक रैंकिंग';
+
+  @override
+  String get ldFeatThemes => 'थीम';
+
+  @override
+  String get ldFeatThemesSub => 'कई शैलियाँ';
+
+  @override
+  String get ldDevelopedBy => 'विकास और रखरखाव';
+
+  @override
+  String get ldDevTagline => 'प्रीमियम मोबाइल अनुभव गढ़ते हुए';
+
+  @override
+  String get ldInitFailedUpper => 'आरंभ विफल';
+
+  @override
+  String get ldRetryUpper => 'फिर कोशिश करें';
+
+  @override
+  String get pgArena => 'मैदान तैयार हो रहा है...';
+
+  @override
+  String get pgControls => 'नियंत्रण सेट हो रहे हैं...';
+
+  @override
+  String get pgSnake => 'साँप आ रहा है...';
+
+  @override
+  String get pgFood => 'भोजन रखा जा रहा है...';
+
+  @override
+  String get pgPowerUps => 'पावर-अप चार्ज हो रहे हैं...';
+
+  @override
+  String get pgAlmost => 'बस थोड़ा और...';
+
+  @override
+  String get pgGo => 'चलो!';
+
+  @override
+  String get pgTip1 => 'कॉम्बो गुणक बनाने के लिए दिशा को देर तक बनाए रखें।';
+
+  @override
+  String get pgTip2 => 'बोनस भोजन ज़्यादा अंक देता है पर जल्दी गायब होता है।';
+
+  @override
+  String get pgTip3 => 'पावर-अप कहीं भी आ सकते हैं — मौका मिलते ही लें।';
+
+  @override
+  String get pgTip4 => 'सिर्फ़ एक नहीं, दो चालें आगे सोचें।';
+
+  @override
+  String get pgTip5 =>
+      'लंबे साँप धीरे मुड़ते हैं। तीखे मोड़ शुरुआत के लिए बचाएँ।';
+
+  @override
+  String get pgTip6 => 'स्कोर गुणक कॉम्बो के साथ मिलकर विशाल स्कोर देता है।';
+
+  @override
+  String get pgTip7 => 'विशेष भोजन दुर्लभ है — दिखे तो पहले उसे लें।';
+
+  @override
+  String get pgTip8 =>
+      'टाइम अटैक तेज़ी से रफ़्तार पकड़ता है। मोड़ों की गति साधें।';
+
+  @override
+  String get pgTip9 =>
+      'ज़ेन मोड में दीवारें आर-पार हैं। तंग जगह से बचने में इस्तेमाल करें।';
+
+  @override
+  String get pgTip10 => 'परफ़ेक्ट गेम: शरीर से छुई कोठरी में दोबारा न जाएँ।';
+
+  @override
+  String get pgTip11 => 'डी-पैड सटीक मोड़ देता है; स्वाइप तेज़ है।';
+
+  @override
+  String get pgTip12 => 'HUD से कभी भी रोकें — टाइमर आपके साथ रुकता है।';
+
+  @override
+  String get pgPreparing => 'मैदान तैयार हो रहा है';
+
+  @override
+  String get pgTournamentMode => 'टूर्नामेंट मोड';
+
+  @override
+  String get pgGameMode => 'गेम मोड';
+
+  @override
+  String get pgDPadControls => 'डी-पैड नियंत्रण';
+
+  @override
+  String get pgSwipeControls => 'स्वाइप नियंत्रण';
+
+  @override
+  String get pgLevel => 'स्तर';
+
+  @override
+  String get pgBest => 'सर्वश्रेष्ठ';
+
+  @override
+  String get pgGames => 'गेम';
+
+  @override
+  String get pgProTip => 'प्रो टिप';
+
+  @override
+  String get pgTapToStart => 'शुरू करने के लिए कहीं भी टैप करें';
+
+  @override
+  String get wtWelcomeTitle => 'गेम में स्वागत है!';
+
+  @override
+  String get wtWelcomeMsg =>
+      'आइए Snake Classic खेलना सीखें। यह छोटा ट्यूटोरियल आपको मूल बातें दिखाएगा।';
+
+  @override
+  String get wtHudTitle => 'गेम जानकारी';
+
+  @override
+  String get wtHudMsg =>
+      'ऊपर की पट्टी में आपका स्कोर, स्तर और उच्चतम स्कोर दिखता है। खेलते हुए अपनी प्रगति देखें!';
+
+  @override
+  String get wtControlsTitle => 'चलाने के लिए स्वाइप करें';
+
+  @override
+  String get wtControlsMsg =>
+      'साँप की दिशा बदलने के लिए किसी भी दिशा में स्वाइप करें। साँप आपके स्वाइप के अनुसार मुड़ेगा।';
+
+  @override
+  String get wtPracticeRightTitle => 'आज़माएँ! दाएँ स्वाइप करें';
+
+  @override
+  String get wtPracticeRightMsg =>
+      'आगे बढ़ने के लिए स्क्रीन पर दाएँ स्वाइप करें।';
+
+  @override
+  String get wtPracticeUpTitle => 'बढ़िया! अब ऊपर स्वाइप करें';
+
+  @override
+  String get wtPracticeUpMsg => 'आगे बढ़ने के लिए स्क्रीन पर ऊपर स्वाइप करें।';
+
+  @override
+  String get wtFoodTitle => 'खाकर बढ़ें';
+
+  @override
+  String get wtFoodMsg =>
+      'बोर्ड पर आने वाला भोजन खाने के लिए साँप को ले जाएँ। हर भोजन साँप को लंबा करता है!';
+
+  @override
+  String get wtComboTitle => 'कॉम्बो बनाएँ';
+
+  @override
+  String get wtComboMsg =>
+      'बिना मरे भोजन खाकर कॉम्बो बनाएँ। 5 बाइट पर 1.5×, 10 पर 2×, 20 पर 3× मिलता है। स्कोर के पास की आग की चिप चढ़ते हुए गर्म होकर धड़कती है।';
+
+  @override
+  String get wtPowerUpsTitle => 'पावर-अप';
+
+  @override
+  String get wtPowerUpsMsg =>
+      'चमकीले आइकन कभी-कभी आते हैं — सक्रिय करने के लिए खाएँ। आइकन के चारों ओर की रिंग प्रभाव खत्म होते-होते घटती है, और रोकने पर टाइमर रुक जाता है।';
+
+  @override
+  String get wtWallsTitle => 'दीवारों से बचें!';
+
+  @override
+  String get wtWallsMsg =>
+      'बोर्ड के किनारों से न टकराएँ - दीवार से टकराए तो गेम समाप्त!';
+
+  @override
+  String get wtSelfTitle => 'खुद से न टकराएँ!';
+
+  @override
+  String get wtSelfMsg => 'साँप लंबा होने पर अपने ही शरीर से टकराने से बचें!';
+
+  @override
+  String get wtPauseTitle => 'कभी भी रोकें';
+
+  @override
+  String get wtPauseMsg =>
+      'रन रोकने के लिए पॉज़ आइकन दबाएँ। वहाँ से जारी रखें, पुनः शुरू करें, गेम गाइड खोलें, यह ट्यूटोरियल दोहराएँ या डी-पैड बदलें।';
+
+  @override
+  String get wtReadyTitle => 'आप तैयार हैं!';
+
+  @override
+  String get wtReadyMsg =>
+      'शुभकामनाएँ! कॉम्बो, पावर-अप, मोड और क्रैश फ़ीडबैक पढ़ने के लिए पॉज़ मेनू की गेम गाइड कभी भी खोलें। लक्ष्य पूरे करने पर उपलब्धियाँ अनलॉक होते देखने के लिए प्रोफ़ाइल देखें।';
+
+  @override
+  String get wtStartPlaying => 'खेलना शुरू करें!';
+
+  @override
+  String get wtSkipTutorial => 'ट्यूटोरियल छोड़ें';
+
+  @override
+  String get wtSwipeRightUpper => 'दाएँ स्वाइप';
+
+  @override
+  String get wtSwipeLeftUpper => 'बाएँ स्वाइप';
+
+  @override
+  String get wtSwipeUpUpper => 'ऊपर स्वाइप';
+
+  @override
+  String get wtSwipeDownUpper => 'नीचे स्वाइप';
+
+  @override
+  String get wtSwipeAnywhereScreen => 'स्क्रीन पर कहीं भी स्वाइप करें!';
+
+  @override
+  String get wtSwipeAnywhere => 'कहीं भी स्वाइप करें!';
+
+  @override
+  String get wtGotIt => 'समझ गया!';
+
+  @override
+  String get wtNext => 'आगे';
+
+  @override
+  String get wtSkip => 'छोड़ें';
+
+  @override
+  String get wtWaiting => 'प्रतीक्षा...';
+
+  @override
+  String get hwPlayTitle => 'Snake Classic में स्वागत है!';
+
+  @override
+  String get hwPlayMsg =>
+      'गेम शुरू करने के लिए खेलें बटन दबाएँ। साँप को स्वाइप से चलाएँ और बढ़ने के लिए भोजन खाएँ!';
+
+  @override
+  String get hwCoinsTitle => 'आपके सिक्के';
+
+  @override
+  String get hwCoinsMsg =>
+      'गेम खेलकर, चुनौतियाँ पूरी करके और दैनिक बोनस से सिक्के कमाएँ। इन्हें स्टोर में खर्च करें!';
+
+  @override
+  String get hwDailyTitle => 'दैनिक चुनौतियाँ';
+
+  @override
+  String get hwDailyMsg =>
+      'बोनस सिक्कों और इनामों के लिए दैनिक चुनौतियाँ पूरी करें। हर दिन नई चुनौतियाँ!';
+
+  @override
+  String get hwStoreTitle => 'स्टोर';
+
+  @override
+  String get hwStoreMsg =>
+      'सिक्कों से थीम, स्किन, ट्रेल और पावर-अप खरीदें। प्रीमियम बोर्ड और खास कॉस्मेटिक्स के लिए प्रो लें।';
+
+  @override
+  String get hwCosmeticsTitle => 'स्किन और ट्रेल';
+
+  @override
+  String get hwCosmeticsMsg =>
+      'यहाँ अपने साँप को सजाएँ। स्किन साँप का रूप बदलती हैं; ट्रेल पीछे चमक छोड़ती हैं। सिक्कों से पाएँ या प्रो से अनलॉक करें।';
+
+  @override
+  String get hwProfileTitle => 'आपकी प्रोफ़ाइल';
+
+  @override
+  String get hwProfileMsg =>
+      'आँकड़े, उपलब्धियाँ और उच्चतम स्कोर यहाँ हैं। पड़ाव पार करने पर उपलब्धियाँ अनलॉक होती हैं — कुछ को खास मोड चाहिए (क्लासिक, कठिन आदि)। सभी डिवाइस पर सिंक के लिए साइन इन करें।';
+
+  @override
+  String get hwSettingsTitle => 'सेटिंग्स';
+
+  @override
+  String get hwSettingsMsg =>
+      'अपना अनुभव सजाएँ - थीम, नियंत्रण, ऑडियो और बहुत कुछ बदलें!';
+
+  @override
+  String get hudScoreUpper => 'स्कोर';
+
+  @override
+  String hudScoreSemantics(Object value) {
+    return 'स्कोर $value';
+  }
+
+  @override
+  String hudLevelBadge(Object level) {
+    return 'स्तर$level';
+  }
+
+  @override
+  String get hudTournamentBadge => 'टूर्नामेंट';
+
+  @override
+  String hudComboMultiplier(Object multiplier) {
+    return '${multiplier}x';
+  }
+
+  @override
+  String get poPaused => 'रुका हुआ';
+
+  @override
+  String get poPremium => 'प्रीमियम';
+
+  @override
+  String get poStore => 'स्टोर';
+
+  @override
+  String get poResume => 'जारी रखें';
+
+  @override
+  String get poRestart => 'फिर शुरू करें';
+
+  @override
+  String get poHome => 'होम';
+
+  @override
+  String get poDPadOn => 'डी-पैड: चालू';
+
+  @override
+  String get poDPadOff => 'डी-पैड: बंद';
+
+  @override
+  String get poSound => 'ध्वनि';
+
+  @override
+  String get poMusic => 'संगीत';
+
+  @override
+  String get poHowToPlay => 'कैसे खेलें';
+
+  @override
+  String get poGameGuide => 'गेम गाइड';
+
+  @override
+  String get poFoodUpper => 'भोजन';
+
+  @override
+  String get poPts10 => '10 अंक';
+
+  @override
+  String get poPts25 => '25 अंक';
+
+  @override
+  String get poPts50 => '50 अंक';
+
+  @override
+  String get poComboUpper => 'कॉम्बो';
+
+  @override
+  String get poBites5 => '5 बाइट';
+
+  @override
+  String get poBites10 => '10 बाइट';
+
+  @override
+  String get poBites20 => '20 बाइट';
+
+  @override
+  String get poComboHint =>
+      'स्कोर के पास की आग की चिप हर स्तर पार करने पर गर्म होकर धड़कती है।';
+
+  @override
+  String get poPowerUpsUpper => 'पावर-अप';
+
+  @override
+  String get poDur7s => '7 से.';
+
+  @override
+  String get poDur6s => '6 से.';
+
+  @override
+  String get poDur10s => '10 से.';
+
+  @override
+  String get poDur8s => '8 से.';
+
+  @override
+  String get poScore2x => 'स्कोर 2×';
+
+  @override
+  String get poPowerUpHint =>
+      'आइकन की रिंग समाप्ति तक घटती है। रोकने पर टाइमर रुकता है।';
+
+  @override
+  String get poCrashUpper => 'टक्कर';
+
+  @override
+  String get poCrashHint =>
+      'जिस कोठरी पर आप मरे वहाँ लाल झटका दिखता है। खुद से टकराने पर टकराया हिस्सा पीले रंग में दिखता है।';
+
+  @override
+  String get poModesUpper => 'मोड';
+
+  @override
+  String get poModeWallsOn => 'दीवारें चालू';
+
+  @override
+  String get poModeWallsOff => 'दीवारें बंद';
+
+  @override
+  String get poModeFastTick => 'तेज़ चाल';
+
+  @override
+  String get poModeThreeFoods => 'एक साथ 3 भोजन';
+
+  @override
+  String get poModeThreeLives => '3 जीवन, बढ़ती गति';
+
+  @override
+  String get poModeThreeMin => 'कुल 3 मिनट';
+
+  @override
+  String get poModeFrequentPowerUps => 'बार-बार पावर-अप';
+
+  @override
+  String get poModeDontCross => 'अपनी राह न काटें';
+
+  @override
+  String get dcTitle => 'दैनिक चुनौतियाँ';
+
+  @override
+  String get dcNoChallenges => 'कोई चुनौती उपलब्ध नहीं';
+
+  @override
+  String get dcAllComplete => 'सभी पूर्ण!';
+
+  @override
+  String dcBonusCoins(Object count) {
+    return '+$count बोनस';
+  }
+
+  @override
+  String crVersionLine(Object build, Object version) {
+    return 'v$version · बिल्ड $build';
+  }
+
+  @override
+  String get crTagline => 'क्लासिक साँप गेम, नए अंदाज़ में।';
+
+  @override
+  String get crChipModes => 'मोड';
+
+  @override
+  String get crChipAchievements => 'उपलब्धियाँ';
+
+  @override
+  String get crChipDaily => 'दैनिक';
+
+  @override
+  String get crChipLeaderboards => 'लीडरबोर्ड';
+
+  @override
+  String get crChipCosmetics => 'कॉस्मेटिक्स';
+
+  @override
+  String get crCraftedBy => 'निर्माता';
+
+  @override
+  String crCopyright(Object year) {
+    return '© $year Pranta Dutta · सर्वाधिकार सुरक्षित';
+  }
+
+  @override
+  String get gbSpeedNormal => 'सामान्य';
+
+  @override
+  String get gbSpeedFast => 'तेज़';
+
+  @override
+  String get gbSpeedFaster => 'और तेज़';
+
+  @override
+  String get gbSpeedBlazing => 'धधकती';
+
+  @override
+  String get gbSpeedInsane => 'पागल';
+
+  @override
+  String get gbSpeedMax => 'अधिकतम';
+
+  @override
+  String get gbLength => 'लंबाई';
+
+  @override
+  String get gbSpeed => 'गति';
+
+  @override
+  String get gbLevel => 'स्तर';
 }

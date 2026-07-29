@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
@@ -54,6 +56,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Blur the board behind the overlay so the pause visibly disengages the
     // world. Drop the opaque tint to 0.55 — at 0.8 the board was fully hidden
     // and the blur had nothing to do.
@@ -104,7 +107,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
               // Pause Text
               Text(
-                'PAUSED',
+                l10n.poPaused,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 18,
@@ -122,7 +125,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                   _buildStoreButton(
                     context: context,
                     icon: Icons.star,
-                    label: 'Premium',
+                    label: l10n.poPremium,
                     colors: [Colors.purple, Colors.blue],
                     onTap: () => context.push(AppRoutes.premiumBenefits),
                   ),
@@ -130,7 +133,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                   _buildStoreButton(
                     context: context,
                     icon: Icons.store,
-                    label: 'Store',
+                    label: l10n.poStore,
                     colors: [Colors.orange, Colors.amber],
                     onTap: () => context.push(AppRoutes.store),
                   ),
@@ -151,7 +154,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 children: [
                   GradientButton(
                     onPressed: onResume,
-                    text: 'RESUME',
+                    text: l10n.poResume,
                     primaryColor: theme.accentColor,
                     secondaryColor: theme.foodColor,
                     icon: Icons.play_arrow,
@@ -163,7 +166,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                   GradientButton(
                     onPressed: onRestart,
-                    text: 'RESTART',
+                    text: l10n.poRestart,
                     primaryColor: theme.accentColor.withValues(alpha: 0.8),
                     secondaryColor: theme.accentColor.withValues(alpha: 0.6),
                     icon: Icons.refresh,
@@ -176,7 +179,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                   GradientButton(
                     onPressed: onHome,
-                    text: 'HOME',
+                    text: l10n.poHome,
                     primaryColor: theme.snakeColor.withValues(alpha: 0.8),
                     secondaryColor: theme.snakeColor.withValues(alpha: 0.6),
                     icon: Icons.home,
@@ -200,7 +203,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         onPressed: () => context
                             .read<GameSettingsCubit>()
                             .updateDPadEnabled(!on),
-                        text: on ? 'D-PAD: ON' : 'D-PAD: OFF',
+                        text: on ? l10n.poDPadOn : l10n.poDPadOff,
                         primaryColor: on
                             ? theme.accentColor.withValues(alpha: 0.8)
                             : theme.accentColor.withValues(alpha: 0.5),
@@ -227,7 +230,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildAudioToggle(
-                        label: 'SOUND',
+                        label: l10n.poSound,
                         value: _soundOn,
                         onIcon: Icons.volume_up,
                         offIcon: Icons.volume_off,
@@ -238,7 +241,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                       ),
                       const SizedBox(width: 10),
                       _buildAudioToggle(
-                        label: 'MUSIC',
+                        label: l10n.poMusic,
                         value: _musicOn,
                         onIcon: Icons.music_note,
                         offIcon: Icons.music_off,
@@ -254,7 +257,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                     const SizedBox(height: 10),
                     GradientButton(
                       onPressed: onShowTutorial!,
-                      text: 'HOW TO PLAY',
+                      text: l10n.poHowToPlay,
                       primaryColor:
                           theme.accentColor.withValues(alpha: 0.7),
                       secondaryColor:
@@ -357,6 +360,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
   }
 
   Widget _buildGameGuideSection() {
+    final l10n = AppLocalizations.of(context)!;
     // Color + border were on an outer DecoratedBox, which hid ExpansionTile's
     // (internally a ListTile) ink ripple and triggered Flutter's
     // Material-ancestor warning. Moved onto ExpansionTile's own
@@ -390,7 +394,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
               ),
               const SizedBox(width: 8),
               Text(
-                'GAME GUIDE',
+                l10n.poGameGuide,
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.9),
                   fontSize: 12,
@@ -404,7 +408,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
           collapsedIconColor: theme.accentColor.withValues(alpha: 0.6),
           children: [
             // FOOD
-            _buildGuideSubheader('FOOD'),
+            _buildGuideSubheader(l10n.poFoodUpper),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -414,83 +418,85 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 _buildFoodItem(
                     PickupIcon.food(FoodType.normal,
                         size: context.scaled(22)),
-                    '10 pts'),
+                    l10n.poPts10),
                 _buildFoodItem(
                     PickupIcon.food(FoodType.bonus,
                         size: context.scaled(22)),
-                    '25 pts'),
+                    l10n.poPts25),
                 _buildFoodItem(
                     PickupIcon.food(FoodType.special,
                         size: context.scaled(22)),
-                    '50 pts'),
+                    l10n.poPts50),
               ],
             ),
 
             const SizedBox(height: 12),
 
             // COMBO
-            _buildGuideSubheader('COMBO'),
+            _buildGuideSubheader(l10n.poComboUpper),
             const SizedBox(height: 4),
-            _buildGuideRow('🔥', '5 bites', '1.5×'),
-            _buildGuideRow('🔥', '10 bites', '2×'),
-            _buildGuideRow('🔥', '20 bites', '3×'),
+            _buildGuideRow('🔥', l10n.poBites5, '1.5×'),
+            _buildGuideRow('🔥', l10n.poBites10, '2×'),
+            _buildGuideRow('🔥', l10n.poBites20, '3×'),
             const SizedBox(height: 2),
-            _buildGuideHint(
-              'The fire chip near your score heats up and pulses on each tier crossing.',
-            ),
+            _buildGuideHint(l10n.poComboHint),
 
             const SizedBox(height: 12),
 
             // POWER-UPS
-            _buildGuideSubheader('POWER-UPS'),
+            _buildGuideSubheader(l10n.poPowerUpsUpper),
             const SizedBox(height: 4),
             _buildGuideRowIcon(
                 PickupIcon.powerUp(PowerUpType.speedBoost,
                     size: context.scaled(15)),
                 'Speed Boost',
-                '7s'),
+                l10n.poDur7s),
             _buildGuideRowIcon(
                 PickupIcon.powerUp(PowerUpType.invincibility,
                     size: context.scaled(15)),
                 'Invincibility',
-                '6s'),
+                l10n.poDur6s),
             _buildGuideRowIcon(
                 PickupIcon.powerUp(PowerUpType.scoreMultiplier,
                     size: context.scaled(15)),
-                'Score 2×',
-                '10s'),
+                l10n.poScore2x,
+                l10n.poDur10s),
             _buildGuideRowIcon(
                 PickupIcon.powerUp(PowerUpType.slowMotion,
                     size: context.scaled(15)),
                 'Slow Motion',
-                '8s'),
+                l10n.poDur8s),
             const SizedBox(height: 2),
-            _buildGuideHint(
-              'The ring around the icon drains as it expires. Timer freezes on pause.',
-            ),
+            _buildGuideHint(l10n.poPowerUpHint),
 
             const SizedBox(height: 12),
 
             // CRASH FEEDBACK
-            _buildGuideSubheader('CRASH'),
+            _buildGuideSubheader(l10n.poCrashUpper),
             const SizedBox(height: 4),
-            _buildGuideHint(
-              'A red shockwave fires at the cell you died on. Self-collision also highlights the body segment you hit in yellow.',
-            ),
+            _buildGuideHint(l10n.poCrashHint),
 
             const SizedBox(height: 12),
 
             // MODES
-            _buildGuideSubheader('MODES'),
+            _buildGuideSubheader(l10n.poModesUpper),
             const SizedBox(height: 4),
-            _buildGuideRow('🐍', 'Classic', 'walls on'),
-            _buildGuideRow('🌿', 'Zen', 'walls off'),
-            _buildGuideRow('⚡', 'Speed', 'fast tick'),
-            _buildGuideRow('🍎', 'Multi-Food', '3 foods at once'),
-            _buildGuideRow('❤️', 'Survival', '3 lives, ramps up'),
-            _buildGuideRow('⏱', 'TimeAttack', '3 min total'),
-            _buildGuideRow('🎆', 'PowerUp Madness', 'frequent power-ups'),
-            _buildGuideRow('💎', 'Perfect Game', "don't cross your trail"),
+            _buildGuideRow(
+                '🐍', GameMode.classic.localizedName(l10n), l10n.poModeWallsOn),
+            _buildGuideRow(
+                '🌿', GameMode.zen.localizedName(l10n), l10n.poModeWallsOff),
+            _buildGuideRow('⚡', GameMode.speedChallenge.localizedName(l10n),
+                l10n.poModeFastTick),
+            _buildGuideRow('🍎', GameMode.multiFood.localizedName(l10n),
+                l10n.poModeThreeFoods),
+            _buildGuideRow('❤️', GameMode.survival.localizedName(l10n),
+                l10n.poModeThreeLives),
+            _buildGuideRow('⏱', GameMode.timeAttack.localizedName(l10n),
+                l10n.poModeThreeMin),
+            _buildGuideRow('🎆', GameMode.powerUpMadness.localizedName(l10n),
+                l10n.poModeFrequentPowerUps),
+            _buildGuideRow('💎', GameMode.perfectGame.localizedName(l10n),
+                l10n.poModeDontCross),
           ],
         ),
       ),

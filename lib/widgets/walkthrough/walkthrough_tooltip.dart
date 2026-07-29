@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
 
@@ -42,6 +43,7 @@ class WalkthroughTooltip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -96,7 +98,7 @@ class WalkthroughTooltip extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Action buttons
-          _buildButtons(),
+          _buildButtons(l10n),
 
           const SizedBox(height: 16),
         ],
@@ -178,7 +180,7 @@ class WalkthroughTooltip extends StatelessWidget {
     );
   }
 
-  Widget _buildButtons() {
+  Widget _buildButtons(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -194,7 +196,7 @@ class WalkthroughTooltip extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'Skip',
+                l10n.wtSkip,
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.6),
                   fontSize: 14,
@@ -206,13 +208,13 @@ class WalkthroughTooltip extends StatelessWidget {
           const Spacer(),
 
           // Next/Done/Wait button
-          _buildPrimaryButton(),
+          _buildPrimaryButton(l10n),
         ],
       ),
     );
   }
 
-  Widget _buildPrimaryButton() {
+  Widget _buildPrimaryButton(AppLocalizations l10n) {
     // If awaiting input, show a "waiting" state
     if (isAwaitingInput) {
       return Container(
@@ -237,7 +239,7 @@ class WalkthroughTooltip extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              'Waiting...',
+              l10n.wtWaiting,
               style: TextStyle(
                 color: theme.foodColor,
                 fontSize: 14,
@@ -250,7 +252,8 @@ class WalkthroughTooltip extends StatelessWidget {
     }
 
     // Normal next/done button
-    final buttonText = step.actionLabel ?? (isLastStep ? 'Got it!' : 'Next');
+    final buttonText =
+        step.actionLabel ?? (isLastStep ? l10n.wtGotIt : l10n.wtNext);
 
     return GestureDetector(
       onTap: onNext,

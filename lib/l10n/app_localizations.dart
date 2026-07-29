@@ -5115,6 +5115,1182 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to continue as guest. Please try again.'**
   String get faGuestFailed;
+
+  /// No description provided for @ldInitializing.
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing Snake Classic...'**
+  String get ldInitializing;
+
+  /// No description provided for @ldTip1.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan two moves ahead — your tail follows wherever the head just went.'**
+  String get ldTip1;
+
+  /// No description provided for @ldTip2.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus food is worth more points, but it disappears fast. Grab it quick!'**
+  String get ldTip2;
+
+  /// No description provided for @ldTip3.
+  ///
+  /// In en, this message translates to:
+  /// **'Crashed? Watch a quick ad or spend coins to revive and keep your score.'**
+  String get ldTip3;
+
+  /// No description provided for @ldTip4.
+  ///
+  /// In en, this message translates to:
+  /// **'Chain food without pausing to build a combo multiplier.'**
+  String get ldTip4;
+
+  /// No description provided for @ldTip5.
+  ///
+  /// In en, this message translates to:
+  /// **'Stuck in a tight spot? Hug the walls to buy yourself a moment.'**
+  String get ldTip5;
+
+  /// No description provided for @ldTip6.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily challenges and weekly quests stack up coins fast.'**
+  String get ldTip6;
+
+  /// No description provided for @ldTip7.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Classic Pro unlocks bigger boards and removes all ads.'**
+  String get ldTip7;
+
+  /// No description provided for @ldTip8.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Attack rewards speed — and you can watch an ad for +30 seconds.'**
+  String get ldTip8;
+
+  /// No description provided for @ldTip9.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups stack: arm a shield before squeezing through a gap.'**
+  String get ldTip9;
+
+  /// No description provided for @ldTip10.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch themes, skins, and trails anytime in the store for a fresh look.'**
+  String get ldTip10;
+
+  /// No description provided for @ldStepCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing core systems...'**
+  String get ldStepCore;
+
+  /// No description provided for @ldStepCoreSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting up Server connection'**
+  String get ldStepCoreSub;
+
+  /// No description provided for @ldStepProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your player profile...'**
+  String get ldStepProfile;
+
+  /// No description provided for @ldStepProfileSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating unique username'**
+  String get ldStepProfileSub;
+
+  /// No description provided for @ldStepPrefs.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your preferences...'**
+  String get ldStepPrefs;
+
+  /// No description provided for @ldStepPrefsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing themes and settings'**
+  String get ldStepPrefsSub;
+
+  /// No description provided for @ldStepCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing with cloud...'**
+  String get ldStepCloud;
+
+  /// No description provided for @ldStepCloudSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ensuring data is up to date'**
+  String get ldStepCloudSub;
+
+  /// No description provided for @ldStepGameData.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading game data...'**
+  String get ldStepGameData;
+
+  /// No description provided for @ldStepGameDataSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching Game Data'**
+  String get ldStepGameDataSub;
+
+  /// No description provided for @ldStepAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuring audio system...'**
+  String get ldStepAudio;
+
+  /// No description provided for @ldStepAudioSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading sound effects'**
+  String get ldStepAudioSub;
+
+  /// No description provided for @ldStepSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking setup status...'**
+  String get ldStepSetup;
+
+  /// No description provided for @ldStepSetupSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost ready!'**
+  String get ldStepSetupSub;
+
+  /// No description provided for @ldWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome!'**
+  String get ldWelcome;
+
+  /// No description provided for @ldWelcomeSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how to continue'**
+  String get ldWelcomeSub;
+
+  /// No description provided for @ldReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to play!'**
+  String get ldReady;
+
+  /// No description provided for @ldReadySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back to Snake Classic'**
+  String get ldReadySub;
+
+  /// No description provided for @ldInitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Initialization failed: {error}'**
+  String ldInitFailed(Object error);
+
+  /// No description provided for @ldRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying initialization...'**
+  String get ldRetrying;
+
+  /// No description provided for @ldTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'PREMIUM SNAKE EXPERIENCE'**
+  String get ldTagline;
+
+  /// No description provided for @ldLoadingUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'LOADING'**
+  String get ldLoadingUpper;
+
+  /// No description provided for @ldDidYouKnow.
+  ///
+  /// In en, this message translates to:
+  /// **'DID YOU KNOW?'**
+  String get ldDidYouKnow;
+
+  /// No description provided for @ldGameFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'GAME FEATURES'**
+  String get ldGameFeatures;
+
+  /// No description provided for @ldFeatFps.
+  ///
+  /// In en, this message translates to:
+  /// **'60FPS'**
+  String get ldFeatFps;
+
+  /// No description provided for @ldFeatFpsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth Gameplay'**
+  String get ldFeatFpsSub;
+
+  /// No description provided for @ldFeatEffects.
+  ///
+  /// In en, this message translates to:
+  /// **'EFFECTS'**
+  String get ldFeatEffects;
+
+  /// No description provided for @ldFeatEffectsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Visual Particles'**
+  String get ldFeatEffectsSub;
+
+  /// No description provided for @ldFeatLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'LEVELS'**
+  String get ldFeatLevels;
+
+  /// No description provided for @ldFeatLevelsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Progressive Fun'**
+  String get ldFeatLevelsSub;
+
+  /// No description provided for @ldFeatAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'AUDIO'**
+  String get ldFeatAudio;
+
+  /// No description provided for @ldFeatAudioSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Immersive Sound'**
+  String get ldFeatAudioSub;
+
+  /// No description provided for @ldFeatScores.
+  ///
+  /// In en, this message translates to:
+  /// **'SCORES'**
+  String get ldFeatScores;
+
+  /// No description provided for @ldFeatScoresSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Global Rankings'**
+  String get ldFeatScoresSub;
+
+  /// No description provided for @ldFeatThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'THEMES'**
+  String get ldFeatThemes;
+
+  /// No description provided for @ldFeatThemesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple Styles'**
+  String get ldFeatThemesSub;
+
+  /// No description provided for @ldDevelopedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'DEVELOPED & MAINTAINED BY'**
+  String get ldDevelopedBy;
+
+  /// No description provided for @ldDevTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Crafting premium mobile experiences'**
+  String get ldDevTagline;
+
+  /// No description provided for @ldInitFailedUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'INITIALIZATION FAILED'**
+  String get ldInitFailedUpper;
+
+  /// No description provided for @ldRetryUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'RETRY'**
+  String get ldRetryUpper;
+
+  /// No description provided for @pgArena.
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing arena...'**
+  String get pgArena;
+
+  /// No description provided for @pgControls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibrating controls...'**
+  String get pgControls;
+
+  /// No description provided for @pgSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Spawning the snake...'**
+  String get pgSnake;
+
+  /// No description provided for @pgFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Placing the food...'**
+  String get pgFood;
+
+  /// No description provided for @pgPowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'Charging power-ups...'**
+  String get pgPowerUps;
+
+  /// No description provided for @pgAlmost.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost there...'**
+  String get pgAlmost;
+
+  /// No description provided for @pgGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Go!'**
+  String get pgGo;
+
+  /// No description provided for @pgTip1.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold a direction longer to build combo multipliers.'**
+  String get pgTip1;
+
+  /// No description provided for @pgTip2.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus food yields more points but vanishes quickly.'**
+  String get pgTip2;
+
+  /// No description provided for @pgTip3.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups spawn at random — grab them while you can.'**
+  String get pgTip3;
+
+  /// No description provided for @pgTip4.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan two moves ahead, not just one.'**
+  String get pgTip4;
+
+  /// No description provided for @pgTip5.
+  ///
+  /// In en, this message translates to:
+  /// **'Long snakes turn slower. Save tight curves for the start.'**
+  String get pgTip5;
+
+  /// No description provided for @pgTip6.
+  ///
+  /// In en, this message translates to:
+  /// **'Score Multiplier stacks with combos for monster scores.'**
+  String get pgTip6;
+
+  /// No description provided for @pgTip7.
+  ///
+  /// In en, this message translates to:
+  /// **'Special food is rare — when it appears, prioritize it.'**
+  String get pgTip7;
+
+  /// No description provided for @pgTip8.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Attack speeds up fast. Pace your turns.'**
+  String get pgTip8;
+
+  /// No description provided for @pgTip9.
+  ///
+  /// In en, this message translates to:
+  /// **'In Zen Mode, the walls wrap. Use it to escape tight spots.'**
+  String get pgTip9;
+
+  /// No description provided for @pgTip10.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect Game: never re-enter a cell your body has touched.'**
+  String get pgTip10;
+
+  /// No description provided for @pgTip11.
+  ///
+  /// In en, this message translates to:
+  /// **'The D-Pad gives precise turns; swipe is faster.'**
+  String get pgTip11;
+
+  /// No description provided for @pgTip12.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause anytime from the HUD — your timer holds with you.'**
+  String get pgTip12;
+
+  /// No description provided for @pgPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'PREPARING ARENA'**
+  String get pgPreparing;
+
+  /// No description provided for @pgTournamentMode.
+  ///
+  /// In en, this message translates to:
+  /// **'TOURNAMENT MODE'**
+  String get pgTournamentMode;
+
+  /// No description provided for @pgGameMode.
+  ///
+  /// In en, this message translates to:
+  /// **'GAME MODE'**
+  String get pgGameMode;
+
+  /// No description provided for @pgDPadControls.
+  ///
+  /// In en, this message translates to:
+  /// **'D-Pad Controls'**
+  String get pgDPadControls;
+
+  /// No description provided for @pgSwipeControls.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe Controls'**
+  String get pgSwipeControls;
+
+  /// No description provided for @pgLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'LEVEL'**
+  String get pgLevel;
+
+  /// No description provided for @pgBest.
+  ///
+  /// In en, this message translates to:
+  /// **'BEST'**
+  String get pgBest;
+
+  /// No description provided for @pgGames.
+  ///
+  /// In en, this message translates to:
+  /// **'GAMES'**
+  String get pgGames;
+
+  /// No description provided for @pgProTip.
+  ///
+  /// In en, this message translates to:
+  /// **'PRO TIP'**
+  String get pgProTip;
+
+  /// No description provided for @pgTapToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'TAP ANYWHERE TO START'**
+  String get pgTapToStart;
+
+  /// No description provided for @wtWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to the Game!'**
+  String get wtWelcomeTitle;
+
+  /// No description provided for @wtWelcomeMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s learn how to play Snake Classic. This quick tutorial will show you the basics.'**
+  String get wtWelcomeMsg;
+
+  /// No description provided for @wtHudTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Game Info'**
+  String get wtHudTitle;
+
+  /// No description provided for @wtHudMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'The top bar shows your score, level, and high score. Watch your progress as you play!'**
+  String get wtHudMsg;
+
+  /// No description provided for @wtControlsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe to Move'**
+  String get wtControlsTitle;
+
+  /// No description provided for @wtControlsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe in any direction to change where your snake is heading. The snake will turn to follow your swipe.'**
+  String get wtControlsMsg;
+
+  /// No description provided for @wtPracticeRightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try it! Swipe RIGHT'**
+  String get wtPracticeRightTitle;
+
+  /// No description provided for @wtPracticeRightMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe RIGHT on the screen to continue.'**
+  String get wtPracticeRightMsg;
+
+  /// No description provided for @wtPracticeUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Great! Now swipe UP'**
+  String get wtPracticeUpTitle;
+
+  /// No description provided for @wtPracticeUpMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe UP on the screen to continue.'**
+  String get wtPracticeUpMsg;
+
+  /// No description provided for @wtFoodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat to Grow'**
+  String get wtFoodTitle;
+
+  /// No description provided for @wtFoodMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide your snake to eat the food that appears on the board. Each food item makes your snake longer!'**
+  String get wtFoodMsg;
+
+  /// No description provided for @wtComboTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a Combo'**
+  String get wtComboTitle;
+
+  /// No description provided for @wtComboMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat food without dying to build a combo. At 5 bites you get 1.5×, at 10 you get 2×, at 20 you get 3×. The fire chip near your score heats up and pulses as you climb.'**
+  String get wtComboMsg;
+
+  /// No description provided for @wtPowerUpsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups'**
+  String get wtPowerUpsTitle;
+
+  /// No description provided for @wtPowerUpsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Sparkly icons spawn occasionally — eat one to activate it. The ring around its icon drains as the effect runs out, and the timer freezes if you pause the game.'**
+  String get wtPowerUpsMsg;
+
+  /// No description provided for @wtWallsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid the Walls!'**
+  String get wtWallsTitle;
+
+  /// No description provided for @wtWallsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t hit the edges of the board - it\'s game over if you crash into a wall!'**
+  String get wtWallsMsg;
+
+  /// No description provided for @wtSelfTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t Hit Yourself!'**
+  String get wtSelfTitle;
+
+  /// No description provided for @wtSelfMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'As your snake grows longer, be careful not to crash into your own body!'**
+  String get wtSelfMsg;
+
+  /// No description provided for @wtPauseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause Anytime'**
+  String get wtPauseTitle;
+
+  /// No description provided for @wtPauseMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the pause icon to freeze the run. From there you can resume, restart, open the Game Guide, replay this tutorial, or toggle the D-Pad.'**
+  String get wtPauseMsg;
+
+  /// No description provided for @wtReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re Ready!'**
+  String get wtReadyTitle;
+
+  /// No description provided for @wtReadyMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Good luck! Open the pause menu\'s Game Guide anytime to read up on combos, power-ups, modes, and crash feedback. Check your Profile to see achievements unlock as you hit goals.'**
+  String get wtReadyMsg;
+
+  /// No description provided for @wtStartPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Playing!'**
+  String get wtStartPlaying;
+
+  /// No description provided for @wtSkipTutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip Tutorial'**
+  String get wtSkipTutorial;
+
+  /// No description provided for @wtSwipeRightUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SWIPE RIGHT'**
+  String get wtSwipeRightUpper;
+
+  /// No description provided for @wtSwipeLeftUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SWIPE LEFT'**
+  String get wtSwipeLeftUpper;
+
+  /// No description provided for @wtSwipeUpUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SWIPE UP'**
+  String get wtSwipeUpUpper;
+
+  /// No description provided for @wtSwipeDownUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SWIPE DOWN'**
+  String get wtSwipeDownUpper;
+
+  /// No description provided for @wtSwipeAnywhereScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe anywhere on screen!'**
+  String get wtSwipeAnywhereScreen;
+
+  /// No description provided for @wtSwipeAnywhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe anywhere!'**
+  String get wtSwipeAnywhere;
+
+  /// No description provided for @wtGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it!'**
+  String get wtGotIt;
+
+  /// No description provided for @wtNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get wtNext;
+
+  /// No description provided for @wtSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get wtSkip;
+
+  /// No description provided for @wtWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting...'**
+  String get wtWaiting;
+
+  /// No description provided for @hwPlayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Snake Classic!'**
+  String get hwPlayTitle;
+
+  /// No description provided for @hwPlayMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the PLAY button to start a game. Swipe to control your snake and eat food to grow!'**
+  String get hwPlayMsg;
+
+  /// No description provided for @hwCoinsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Coins'**
+  String get hwCoinsTitle;
+
+  /// No description provided for @hwCoinsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn coins by playing games, completing challenges, and daily bonuses. Use them in the store!'**
+  String get hwCoinsMsg;
+
+  /// No description provided for @hwDailyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Challenges'**
+  String get hwDailyTitle;
+
+  /// No description provided for @hwDailyMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete daily challenges for bonus coins and rewards. New challenges every day!'**
+  String get hwDailyMsg;
+
+  /// No description provided for @hwStoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The Store'**
+  String get hwStoreTitle;
+
+  /// No description provided for @hwStoreMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy themes, snake skins, trails, and power-ups with your coins. Unlock Pro for premium boards and exclusive cosmetics.'**
+  String get hwStoreMsg;
+
+  /// No description provided for @hwCosmeticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skins & Trails'**
+  String get hwCosmeticsTitle;
+
+  /// No description provided for @hwCosmeticsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize your snake here. Skins change how the snake itself looks; trails leave a glow behind it. Earn with coins or unlock with Pro.'**
+  String get hwCosmeticsMsg;
+
+  /// No description provided for @hwProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Profile'**
+  String get hwProfileTitle;
+
+  /// No description provided for @hwProfileMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats, achievements, and high scores live here. Achievements unlock as you hit milestones — some require a specific mode (Classic, Hard, etc.). Sign in to sync across devices.'**
+  String get hwProfileMsg;
+
+  /// No description provided for @hwSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get hwSettingsTitle;
+
+  /// No description provided for @hwSettingsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize your game experience - change themes, controls, audio, and more!'**
+  String get hwSettingsMsg;
+
+  /// No description provided for @hudScoreUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SCORE'**
+  String get hudScoreUpper;
+
+  /// No description provided for @hudScoreSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Score {value}'**
+  String hudScoreSemantics(Object value);
+
+  /// No description provided for @hudLevelBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'LV{level}'**
+  String hudLevelBadge(Object level);
+
+  /// No description provided for @hudTournamentBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'TOURNAMENT'**
+  String get hudTournamentBadge;
+
+  /// No description provided for @hudComboMultiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'{multiplier}x'**
+  String hudComboMultiplier(Object multiplier);
+
+  /// No description provided for @poPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'PAUSED'**
+  String get poPaused;
+
+  /// No description provided for @poPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get poPremium;
+
+  /// No description provided for @poStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Store'**
+  String get poStore;
+
+  /// No description provided for @poResume.
+  ///
+  /// In en, this message translates to:
+  /// **'RESUME'**
+  String get poResume;
+
+  /// No description provided for @poRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'RESTART'**
+  String get poRestart;
+
+  /// No description provided for @poHome.
+  ///
+  /// In en, this message translates to:
+  /// **'HOME'**
+  String get poHome;
+
+  /// No description provided for @poDPadOn.
+  ///
+  /// In en, this message translates to:
+  /// **'D-PAD: ON'**
+  String get poDPadOn;
+
+  /// No description provided for @poDPadOff.
+  ///
+  /// In en, this message translates to:
+  /// **'D-PAD: OFF'**
+  String get poDPadOff;
+
+  /// No description provided for @poSound.
+  ///
+  /// In en, this message translates to:
+  /// **'SOUND'**
+  String get poSound;
+
+  /// No description provided for @poMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'MUSIC'**
+  String get poMusic;
+
+  /// No description provided for @poHowToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'HOW TO PLAY'**
+  String get poHowToPlay;
+
+  /// No description provided for @poGameGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'GAME GUIDE'**
+  String get poGameGuide;
+
+  /// No description provided for @poFoodUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'FOOD'**
+  String get poFoodUpper;
+
+  /// No description provided for @poPts10.
+  ///
+  /// In en, this message translates to:
+  /// **'10 pts'**
+  String get poPts10;
+
+  /// No description provided for @poPts25.
+  ///
+  /// In en, this message translates to:
+  /// **'25 pts'**
+  String get poPts25;
+
+  /// No description provided for @poPts50.
+  ///
+  /// In en, this message translates to:
+  /// **'50 pts'**
+  String get poPts50;
+
+  /// No description provided for @poComboUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'COMBO'**
+  String get poComboUpper;
+
+  /// No description provided for @poBites5.
+  ///
+  /// In en, this message translates to:
+  /// **'5 bites'**
+  String get poBites5;
+
+  /// No description provided for @poBites10.
+  ///
+  /// In en, this message translates to:
+  /// **'10 bites'**
+  String get poBites10;
+
+  /// No description provided for @poBites20.
+  ///
+  /// In en, this message translates to:
+  /// **'20 bites'**
+  String get poBites20;
+
+  /// No description provided for @poComboHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The fire chip near your score heats up and pulses on each tier crossing.'**
+  String get poComboHint;
+
+  /// No description provided for @poPowerUpsUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'POWER-UPS'**
+  String get poPowerUpsUpper;
+
+  /// No description provided for @poDur7s.
+  ///
+  /// In en, this message translates to:
+  /// **'7s'**
+  String get poDur7s;
+
+  /// No description provided for @poDur6s.
+  ///
+  /// In en, this message translates to:
+  /// **'6s'**
+  String get poDur6s;
+
+  /// No description provided for @poDur10s.
+  ///
+  /// In en, this message translates to:
+  /// **'10s'**
+  String get poDur10s;
+
+  /// No description provided for @poDur8s.
+  ///
+  /// In en, this message translates to:
+  /// **'8s'**
+  String get poDur8s;
+
+  /// No description provided for @poScore2x.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 2×'**
+  String get poScore2x;
+
+  /// No description provided for @poPowerUpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The ring around the icon drains as it expires. Timer freezes on pause.'**
+  String get poPowerUpHint;
+
+  /// No description provided for @poCrashUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'CRASH'**
+  String get poCrashUpper;
+
+  /// No description provided for @poCrashHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A red shockwave fires at the cell you died on. Self-collision also highlights the body segment you hit in yellow.'**
+  String get poCrashHint;
+
+  /// No description provided for @poModesUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'MODES'**
+  String get poModesUpper;
+
+  /// No description provided for @poModeWallsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'walls on'**
+  String get poModeWallsOn;
+
+  /// No description provided for @poModeWallsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'walls off'**
+  String get poModeWallsOff;
+
+  /// No description provided for @poModeFastTick.
+  ///
+  /// In en, this message translates to:
+  /// **'fast tick'**
+  String get poModeFastTick;
+
+  /// No description provided for @poModeThreeFoods.
+  ///
+  /// In en, this message translates to:
+  /// **'3 foods at once'**
+  String get poModeThreeFoods;
+
+  /// No description provided for @poModeThreeLives.
+  ///
+  /// In en, this message translates to:
+  /// **'3 lives, ramps up'**
+  String get poModeThreeLives;
+
+  /// No description provided for @poModeThreeMin.
+  ///
+  /// In en, this message translates to:
+  /// **'3 min total'**
+  String get poModeThreeMin;
+
+  /// No description provided for @poModeFrequentPowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'frequent power-ups'**
+  String get poModeFrequentPowerUps;
+
+  /// No description provided for @poModeDontCross.
+  ///
+  /// In en, this message translates to:
+  /// **'don\'t cross your trail'**
+  String get poModeDontCross;
+
+  /// No description provided for @dcTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Challenges'**
+  String get dcTitle;
+
+  /// No description provided for @dcNoChallenges.
+  ///
+  /// In en, this message translates to:
+  /// **'No challenges available'**
+  String get dcNoChallenges;
+
+  /// No description provided for @dcAllComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'All Complete!'**
+  String get dcAllComplete;
+
+  /// No description provided for @dcBonusCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} Bonus'**
+  String dcBonusCoins(Object count);
+
+  /// No description provided for @crVersionLine.
+  ///
+  /// In en, this message translates to:
+  /// **'v{version} · build {build}'**
+  String crVersionLine(Object build, Object version);
+
+  /// No description provided for @crTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'The classic snake game, reimagined.'**
+  String get crTagline;
+
+  /// No description provided for @crChipModes.
+  ///
+  /// In en, this message translates to:
+  /// **'Modes'**
+  String get crChipModes;
+
+  /// No description provided for @crChipAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get crChipAchievements;
+
+  /// No description provided for @crChipDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get crChipDaily;
+
+  /// No description provided for @crChipLeaderboards.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboards'**
+  String get crChipLeaderboards;
+
+  /// No description provided for @crChipCosmetics.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmetics'**
+  String get crChipCosmetics;
+
+  /// No description provided for @crCraftedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Crafted by'**
+  String get crCraftedBy;
+
+  /// No description provided for @crCopyright.
+  ///
+  /// In en, this message translates to:
+  /// **'© {year} Pranta Dutta · All rights reserved'**
+  String crCopyright(Object year);
+
+  /// No description provided for @gbSpeedNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get gbSpeedNormal;
+
+  /// No description provided for @gbSpeedFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get gbSpeedFast;
+
+  /// No description provided for @gbSpeedFaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Faster'**
+  String get gbSpeedFaster;
+
+  /// No description provided for @gbSpeedBlazing.
+  ///
+  /// In en, this message translates to:
+  /// **'Blazing'**
+  String get gbSpeedBlazing;
+
+  /// No description provided for @gbSpeedInsane.
+  ///
+  /// In en, this message translates to:
+  /// **'Insane'**
+  String get gbSpeedInsane;
+
+  /// No description provided for @gbSpeedMax.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get gbSpeedMax;
+
+  /// No description provided for @gbLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Length'**
+  String get gbLength;
+
+  /// No description provided for @gbSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get gbSpeed;
+
+  /// No description provided for @gbLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get gbLevel;
 }
 
 class _AppLocalizationsDelegate

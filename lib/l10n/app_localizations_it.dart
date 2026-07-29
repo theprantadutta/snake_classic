@@ -2915,4 +2915,645 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get faGuestFailed => 'Impossibile continuare come ospite. Riprova.';
+
+  @override
+  String get ldInitializing => 'Avvio di Snake Classic...';
+
+  @override
+  String get ldTip1 =>
+      'Pensa due mosse avanti — la coda segue dove è appena passata la testa.';
+
+  @override
+  String get ldTip2 =>
+      'Il cibo bonus vale più punti, ma sparisce in fretta. Prendilo al volo!';
+
+  @override
+  String get ldTip3 =>
+      'Ti sei schiantato? Guarda un breve annuncio o spendi monete per rivivere e tenere il punteggio.';
+
+  @override
+  String get ldTip4 =>
+      'Concatena il cibo senza pause per costruire un moltiplicatore combo.';
+
+  @override
+  String get ldTip5 =>
+      'Bloccato in uno spazio stretto? Costeggia i muri per guadagnare un attimo.';
+
+  @override
+  String get ldTip6 =>
+      'Le sfide giornaliere e le missioni settimanali accumulano monete in fretta.';
+
+  @override
+  String get ldTip7 =>
+      'Snake Classic Pro sblocca tavole più grandi e rimuove tutti gli annunci.';
+
+  @override
+  String get ldTip8 =>
+      'La modalità A tempo premia la velocità — e un annuncio vale +30 secondi.';
+
+  @override
+  String get ldTip9 =>
+      'I power-up si sommano: arma uno scudo prima di un passaggio stretto.';
+
+  @override
+  String get ldTip10 =>
+      'Cambia temi, skin e scie quando vuoi nel negozio per un look nuovo.';
+
+  @override
+  String get ldStepCore => 'Avvio dei sistemi principali...';
+
+  @override
+  String get ldStepCoreSub => 'Configurazione della connessione al server';
+
+  @override
+  String get ldStepProfile => 'Creazione del tuo profilo giocatore...';
+
+  @override
+  String get ldStepProfileSub => 'Generazione di un nome utente unico';
+
+  @override
+  String get ldStepPrefs => 'Caricamento delle tue preferenze...';
+
+  @override
+  String get ldStepPrefsSub => 'Sincronizzazione di temi e impostazioni';
+
+  @override
+  String get ldStepCloud => 'Sincronizzazione con il cloud...';
+
+  @override
+  String get ldStepCloudSub => 'Verifica dell\'aggiornamento dei dati';
+
+  @override
+  String get ldStepGameData => 'Caricamento dei dati di gioco...';
+
+  @override
+  String get ldStepGameDataSub => 'Recupero dei dati di gioco';
+
+  @override
+  String get ldStepAudio => 'Configurazione del sistema audio...';
+
+  @override
+  String get ldStepAudioSub => 'Caricamento degli effetti sonori';
+
+  @override
+  String get ldStepSetup => 'Verifica dello stato di configurazione...';
+
+  @override
+  String get ldStepSetupSub => 'Quasi pronto!';
+
+  @override
+  String get ldWelcome => 'Benvenuto!';
+
+  @override
+  String get ldWelcomeSub => 'Scegli come continuare';
+
+  @override
+  String get ldReady => 'Pronto a giocare!';
+
+  @override
+  String get ldReadySub => 'Bentornato in Snake Classic';
+
+  @override
+  String ldInitFailed(Object error) {
+    return 'Avvio non riuscito: $error';
+  }
+
+  @override
+  String get ldRetrying => 'Nuovo tentativo di avvio...';
+
+  @override
+  String get ldTagline => 'ESPERIENZA SNAKE PREMIUM';
+
+  @override
+  String get ldLoadingUpper => 'CARICAMENTO';
+
+  @override
+  String get ldDidYouKnow => 'LO SAPEVI?';
+
+  @override
+  String get ldGameFeatures => 'CARATTERISTICHE';
+
+  @override
+  String get ldFeatFps => '60FPS';
+
+  @override
+  String get ldFeatFpsSub => 'Gioco fluido';
+
+  @override
+  String get ldFeatEffects => 'EFFETTI';
+
+  @override
+  String get ldFeatEffectsSub => 'Particelle visive';
+
+  @override
+  String get ldFeatLevels => 'LIVELLI';
+
+  @override
+  String get ldFeatLevelsSub => 'Divertimento crescente';
+
+  @override
+  String get ldFeatAudio => 'AUDIO';
+
+  @override
+  String get ldFeatAudioSub => 'Suono immersivo';
+
+  @override
+  String get ldFeatScores => 'PUNTEGGI';
+
+  @override
+  String get ldFeatScoresSub => 'Classifiche globali';
+
+  @override
+  String get ldFeatThemes => 'TEMI';
+
+  @override
+  String get ldFeatThemesSub => 'Stili multipli';
+
+  @override
+  String get ldDevelopedBy => 'SVILUPPATO E MANTENUTO DA';
+
+  @override
+  String get ldDevTagline => 'Creiamo esperienze mobile premium';
+
+  @override
+  String get ldInitFailedUpper => 'AVVIO NON RIUSCITO';
+
+  @override
+  String get ldRetryUpper => 'RIPROVA';
+
+  @override
+  String get pgArena => 'Preparazione dell\'arena...';
+
+  @override
+  String get pgControls => 'Calibrazione dei controlli...';
+
+  @override
+  String get pgSnake => 'Evocazione del serpente...';
+
+  @override
+  String get pgFood => 'Posizionamento del cibo...';
+
+  @override
+  String get pgPowerUps => 'Ricarica dei power-up...';
+
+  @override
+  String get pgAlmost => 'Ci siamo quasi...';
+
+  @override
+  String get pgGo => 'Via!';
+
+  @override
+  String get pgTip1 =>
+      'Mantieni una direzione più a lungo per costruire moltiplicatori combo.';
+
+  @override
+  String get pgTip2 => 'Il cibo bonus rende più punti ma svanisce in fretta.';
+
+  @override
+  String get pgTip3 => 'I power-up compaiono a caso — prendili finché puoi.';
+
+  @override
+  String get pgTip4 => 'Pensa due mosse avanti, non solo una.';
+
+  @override
+  String get pgTip5 =>
+      'I serpenti lunghi girano più lentamente. Riserva le curve strette all\'inizio.';
+
+  @override
+  String get pgTip6 =>
+      'Il Moltiplicatore Punti si somma alle combo per punteggi mostruosi.';
+
+  @override
+  String get pgTip7 =>
+      'Il cibo speciale è raro — quando appare, dagli priorità.';
+
+  @override
+  String get pgTip8 => 'A tempo accelera in fretta. Dosa le tue curve.';
+
+  @override
+  String get pgTip9 =>
+      'In Modalità Zen i muri si attraversano. Usalo per uscire dai guai.';
+
+  @override
+  String get pgTip10 =>
+      'Partita Perfetta: non rientrare mai in una cella toccata dal tuo corpo.';
+
+  @override
+  String get pgTip11 =>
+      'Il D-Pad dà curve precise; lo scorrimento è più veloce.';
+
+  @override
+  String get pgTip12 =>
+      'Metti in pausa dall\'HUD quando vuoi — il timer ti aspetta.';
+
+  @override
+  String get pgPreparing => 'PREPARAZIONE ARENA';
+
+  @override
+  String get pgTournamentMode => 'MODALITÀ TORNEO';
+
+  @override
+  String get pgGameMode => 'MODALITÀ DI GIOCO';
+
+  @override
+  String get pgDPadControls => 'Controlli D-Pad';
+
+  @override
+  String get pgSwipeControls => 'Controlli a scorrimento';
+
+  @override
+  String get pgLevel => 'LIVELLO';
+
+  @override
+  String get pgBest => 'RECORD';
+
+  @override
+  String get pgGames => 'PARTITE';
+
+  @override
+  String get pgProTip => 'CONSIGLIO PRO';
+
+  @override
+  String get pgTapToStart => 'TOCCA OVUNQUE PER INIZIARE';
+
+  @override
+  String get wtWelcomeTitle => 'Benvenuto nel gioco!';
+
+  @override
+  String get wtWelcomeMsg =>
+      'Impariamo a giocare a Snake Classic. Questo breve tutorial ti mostrerà le basi.';
+
+  @override
+  String get wtHudTitle => 'Info di gioco';
+
+  @override
+  String get wtHudMsg =>
+      'La barra in alto mostra punteggio, livello e record. Segui i tuoi progressi mentre giochi!';
+
+  @override
+  String get wtControlsTitle => 'Scorri per muoverti';
+
+  @override
+  String get wtControlsMsg =>
+      'Scorri in qualsiasi direzione per cambiare la rotta del serpente. Girerà seguendo il tuo gesto.';
+
+  @override
+  String get wtPracticeRightTitle => 'Provaci! Scorri a DESTRA';
+
+  @override
+  String get wtPracticeRightMsg =>
+      'Scorri a DESTRA sullo schermo per continuare.';
+
+  @override
+  String get wtPracticeUpTitle => 'Ottimo! Ora scorri in SU';
+
+  @override
+  String get wtPracticeUpMsg => 'Scorri in SU sullo schermo per continuare.';
+
+  @override
+  String get wtFoodTitle => 'Mangia per crescere';
+
+  @override
+  String get wtFoodMsg =>
+      'Guida il serpente a mangiare il cibo sulla tavola. Ogni cibo lo allunga!';
+
+  @override
+  String get wtComboTitle => 'Costruisci una combo';
+
+  @override
+  String get wtComboMsg =>
+      'Mangia senza morire per costruire una combo. A 5 morsi ottieni 1,5×, a 10 ottieni 2×, a 20 ottieni 3×. Il chip di fuoco vicino al punteggio si scalda e pulsa mentre sali.';
+
+  @override
+  String get wtPowerUpsTitle => 'Power-up';
+
+  @override
+  String get wtPowerUpsMsg =>
+      'Ogni tanto compaiono icone scintillanti — mangiane una per attivarla. L\'anello attorno all\'icona si svuota mentre l\'effetto finisce, e il timer si congela in pausa.';
+
+  @override
+  String get wtWallsTitle => 'Evita i muri!';
+
+  @override
+  String get wtWallsMsg =>
+      'Non toccare i bordi della tavola - schiantarsi contro un muro significa game over!';
+
+  @override
+  String get wtSelfTitle => 'Non colpirti da solo!';
+
+  @override
+  String get wtSelfMsg =>
+      'Quando il serpente si allunga, attento a non urtare il tuo stesso corpo!';
+
+  @override
+  String get wtPauseTitle => 'Pausa quando vuoi';
+
+  @override
+  String get wtPauseMsg =>
+      'Tocca l\'icona pausa per congelare la partita. Da lì puoi riprendere, ricominciare, aprire la Guida, ripetere questo tutorial o attivare il D-Pad.';
+
+  @override
+  String get wtReadyTitle => 'Sei pronto!';
+
+  @override
+  String get wtReadyMsg =>
+      'Buona fortuna! Apri la Guida dal menu pausa quando vuoi per leggere di combo, power-up, modalità e segnali di schianto. Guarda il tuo Profilo per vedere gli obiettivi sbloccarsi.';
+
+  @override
+  String get wtStartPlaying => 'Inizia a giocare!';
+
+  @override
+  String get wtSkipTutorial => 'Salta il tutorial';
+
+  @override
+  String get wtSwipeRightUpper => 'SCORRI A DESTRA';
+
+  @override
+  String get wtSwipeLeftUpper => 'SCORRI A SINISTRA';
+
+  @override
+  String get wtSwipeUpUpper => 'SCORRI IN SU';
+
+  @override
+  String get wtSwipeDownUpper => 'SCORRI IN GIÙ';
+
+  @override
+  String get wtSwipeAnywhereScreen => 'Scorri ovunque sullo schermo!';
+
+  @override
+  String get wtSwipeAnywhere => 'Scorri ovunque!';
+
+  @override
+  String get wtGotIt => 'Capito!';
+
+  @override
+  String get wtNext => 'Avanti';
+
+  @override
+  String get wtSkip => 'Salta';
+
+  @override
+  String get wtWaiting => 'In attesa...';
+
+  @override
+  String get hwPlayTitle => 'Benvenuto in Snake Classic!';
+
+  @override
+  String get hwPlayMsg =>
+      'Tocca il pulsante GIOCA per iniziare. Scorri per guidare il serpente e mangia per crescere!';
+
+  @override
+  String get hwCoinsTitle => 'Le tue monete';
+
+  @override
+  String get hwCoinsMsg =>
+      'Guadagna monete giocando, completando sfide e con i bonus giornalieri. Usale nel negozio!';
+
+  @override
+  String get hwDailyTitle => 'Sfide giornaliere';
+
+  @override
+  String get hwDailyMsg =>
+      'Completa le sfide giornaliere per monete e ricompense bonus. Sfide nuove ogni giorno!';
+
+  @override
+  String get hwStoreTitle => 'Il negozio';
+
+  @override
+  String get hwStoreMsg =>
+      'Compra temi, skin, scie e power-up con le tue monete. Sblocca Pro per tavole premium e cosmetici esclusivi.';
+
+  @override
+  String get hwCosmeticsTitle => 'Skin e scie';
+
+  @override
+  String get hwCosmeticsMsg =>
+      'Personalizza qui il tuo serpente. Le skin cambiano il suo aspetto; le scie lasciano un bagliore dietro di lui. Guadagnale con le monete o sbloccale con Pro.';
+
+  @override
+  String get hwProfileTitle => 'Il tuo profilo';
+
+  @override
+  String get hwProfileMsg =>
+      'Statistiche, obiettivi e record vivono qui. Gli obiettivi si sbloccano ai traguardi — alcuni richiedono una modalità precisa (Classico, Difficile, ecc.). Accedi per sincronizzare i dispositivi.';
+
+  @override
+  String get hwSettingsTitle => 'Impostazioni';
+
+  @override
+  String get hwSettingsMsg =>
+      'Personalizza la tua esperienza - cambia temi, controlli, audio e altro!';
+
+  @override
+  String get hudScoreUpper => 'PUNTI';
+
+  @override
+  String hudScoreSemantics(Object value) {
+    return 'Punteggio $value';
+  }
+
+  @override
+  String hudLevelBadge(Object level) {
+    return 'LV$level';
+  }
+
+  @override
+  String get hudTournamentBadge => 'TORNEO';
+
+  @override
+  String hudComboMultiplier(Object multiplier) {
+    return '${multiplier}x';
+  }
+
+  @override
+  String get poPaused => 'IN PAUSA';
+
+  @override
+  String get poPremium => 'Premium';
+
+  @override
+  String get poStore => 'Negozio';
+
+  @override
+  String get poResume => 'RIPRENDI';
+
+  @override
+  String get poRestart => 'RICOMINCIA';
+
+  @override
+  String get poHome => 'MENU';
+
+  @override
+  String get poDPadOn => 'D-PAD: SÌ';
+
+  @override
+  String get poDPadOff => 'D-PAD: NO';
+
+  @override
+  String get poSound => 'SUONO';
+
+  @override
+  String get poMusic => 'MUSICA';
+
+  @override
+  String get poHowToPlay => 'COME GIOCARE';
+
+  @override
+  String get poGameGuide => 'GUIDA AL GIOCO';
+
+  @override
+  String get poFoodUpper => 'CIBO';
+
+  @override
+  String get poPts10 => '10 pt';
+
+  @override
+  String get poPts25 => '25 pt';
+
+  @override
+  String get poPts50 => '50 pt';
+
+  @override
+  String get poComboUpper => 'COMBO';
+
+  @override
+  String get poBites5 => '5 morsi';
+
+  @override
+  String get poBites10 => '10 morsi';
+
+  @override
+  String get poBites20 => '20 morsi';
+
+  @override
+  String get poComboHint =>
+      'Il chip di fuoco vicino al punteggio si scalda e pulsa a ogni soglia superata.';
+
+  @override
+  String get poPowerUpsUpper => 'POWER-UP';
+
+  @override
+  String get poDur7s => '7 s';
+
+  @override
+  String get poDur6s => '6 s';
+
+  @override
+  String get poDur10s => '10 s';
+
+  @override
+  String get poDur8s => '8 s';
+
+  @override
+  String get poScore2x => 'Punti 2×';
+
+  @override
+  String get poPowerUpHint =>
+      'L\'anello dell\'icona si svuota fino alla scadenza. Il timer si congela in pausa.';
+
+  @override
+  String get poCrashUpper => 'SCHIANTO';
+
+  @override
+  String get poCrashHint =>
+      'Un\'onda rossa esplode sulla cella dove sei morto. La collisione con te stesso evidenzia in giallo anche il segmento colpito.';
+
+  @override
+  String get poModesUpper => 'MODALITÀ';
+
+  @override
+  String get poModeWallsOn => 'muri attivi';
+
+  @override
+  String get poModeWallsOff => 'senza muri';
+
+  @override
+  String get poModeFastTick => 'ritmo veloce';
+
+  @override
+  String get poModeThreeFoods => '3 cibi insieme';
+
+  @override
+  String get poModeThreeLives => '3 vite, accelera';
+
+  @override
+  String get poModeThreeMin => '3 min in totale';
+
+  @override
+  String get poModeFrequentPowerUps => 'power-up frequenti';
+
+  @override
+  String get poModeDontCross => 'non incrociare la scia';
+
+  @override
+  String get dcTitle => 'Sfide giornaliere';
+
+  @override
+  String get dcNoChallenges => 'Nessuna sfida disponibile';
+
+  @override
+  String get dcAllComplete => 'Tutto completato!';
+
+  @override
+  String dcBonusCoins(Object count) {
+    return '+$count bonus';
+  }
+
+  @override
+  String crVersionLine(Object build, Object version) {
+    return 'v$version · build $build';
+  }
+
+  @override
+  String get crTagline => 'Il classico gioco del serpente, reinventato.';
+
+  @override
+  String get crChipModes => 'Modalità';
+
+  @override
+  String get crChipAchievements => 'Obiettivi';
+
+  @override
+  String get crChipDaily => 'Giornaliero';
+
+  @override
+  String get crChipLeaderboards => 'Classifiche';
+
+  @override
+  String get crChipCosmetics => 'Cosmetici';
+
+  @override
+  String get crCraftedBy => 'Creato da';
+
+  @override
+  String crCopyright(Object year) {
+    return '© $year Pranta Dutta · Tutti i diritti riservati';
+  }
+
+  @override
+  String get gbSpeedNormal => 'Normale';
+
+  @override
+  String get gbSpeedFast => 'Veloce';
+
+  @override
+  String get gbSpeedFaster => 'Più veloce';
+
+  @override
+  String get gbSpeedBlazing => 'Rovente';
+
+  @override
+  String get gbSpeedInsane => 'Folle';
+
+  @override
+  String get gbSpeedMax => 'MAX';
+
+  @override
+  String get gbLength => 'Lunghezza';
+
+  @override
+  String get gbSpeed => 'Velocità';
+
+  @override
+  String get gbLevel => 'Livello';
 }
