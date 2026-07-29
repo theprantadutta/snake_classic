@@ -5,6 +5,7 @@ import 'package:snake_classic/utils/game_animations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
@@ -69,7 +70,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Loading Statistics...',
+                            AppLocalizations.of(context)!.stLoading,
                             style: TextStyle(
                               color: theme.accentColor.withValues(alpha: 0.8),
                               fontSize: 16,
@@ -157,7 +158,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 12),
 
           Text(
-            'Statistics',
+            AppLocalizations.of(context)!.pfStatistics,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -181,8 +182,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildPerformanceOverview(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return _buildStatSection(
-      title: 'Performance Overview',
+      title: l10n.stPerformanceOverview,
       icon: Icons.trending_up,
       theme: theme,
       child: Column(
@@ -192,7 +194,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'High Score',
+                    l10n.pfHighScore,
                     '${_displayStats['highScore'] ?? 0}',
                     Icons.emoji_events,
                     Colors.amber,
@@ -202,7 +204,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Total Games',
+                    l10n.stTotalGames,
                     '${_displayStats['totalGames'] ?? 0}',
                     Icons.games,
                     theme.accentColor,
@@ -220,7 +222,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    'Average Score',
+                    l10n.pfAverageScore,
                     '${_displayStats['averageScore'] ?? 0}',
                     Icons.trending_up,
                     Colors.green,
@@ -230,7 +232,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Win Streak',
+                    l10n.stWinStreak,
                     '${_displayStats['winStreak'] ?? 0}',
                     Icons.local_fire_department,
                     Colors.orange,
@@ -246,8 +248,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildGameActivity(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return _buildStatSection(
-      title: 'Game Activity',
+      title: l10n.stGameActivity,
       icon: Icons.schedule,
       theme: theme,
       child: Column(
@@ -256,7 +259,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Play Time',
+                  l10n.pfPlayTime,
                   '${_displayStats['totalPlayTime'] ?? '0s'}',
                   Icons.access_time,
                   Colors.blue,
@@ -266,7 +269,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Longest Game',
+                  l10n.stLongestGame,
                   '${_displayStats['longestSurvival'] ?? '0s'}',
                   Icons.timer,
                   Colors.purple,
@@ -282,7 +285,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Highest Level',
+                  l10n.stHighestLevel,
                   '${_displayStats['highestLevel'] ?? 1}',
                   Icons.military_tech,
                   Colors.indigo,
@@ -292,7 +295,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Perfect Games',
+                  l10n.stPerfectGames,
                   '${_displayStats['perfectGames'] ?? 0}',
                   Icons.star,
                   Colors.pink,
@@ -307,13 +310,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildConsumptionStats(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final foodBreakdown =
         _displayStats['foodBreakdown'] as Map<String, int>? ?? {};
     final powerUpBreakdown =
         _displayStats['powerUpBreakdown'] as Map<String, int>? ?? {};
 
     return _buildStatSection(
-      title: 'Food & Power-ups',
+      title: l10n.stFoodPowerUps,
       icon: Icons.restaurant,
       theme: theme,
       child: Column(
@@ -322,7 +326,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Food Consumed',
+                  l10n.pfFoodConsumed,
                   '${_displayStats['totalFood'] ?? 0}',
                   Icons.apple,
                   Colors.red,
@@ -332,7 +336,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Power-ups Used',
+                  l10n.stPowerUpsUsed,
                   '${_displayStats['totalPowerUps'] ?? 0}',
                   Icons.flash_on,
                   Colors.yellow,
@@ -350,8 +354,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 if (foodBreakdown.isNotEmpty)
                   Expanded(
                     child: _buildBreakdownCard(
-                      'Favorite Food',
-                      '${_displayStats['favoriteFood'] ?? 'None'}',
+                      l10n.stFavoriteFood,
+                      '${_displayStats['favoriteFood'] ?? l10n.stNone}',
                       foodBreakdown,
                       theme,
                     ),
@@ -363,8 +367,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 if (powerUpBreakdown.isNotEmpty)
                   Expanded(
                     child: _buildBreakdownCard(
-                      'Favorite Power-up',
-                      '${_displayStats['favoritePowerUp'] ?? 'None'}',
+                      l10n.stFavoritePowerUp,
+                      '${_displayStats['favoritePowerUp'] ?? l10n.stNone}',
                       powerUpBreakdown,
                       theme,
                     ),
@@ -378,12 +382,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildPerformanceTrends(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final recentScores =
         (_performanceTrends['recentScores'] as List<int>?) ?? [];
     final trend = _performanceTrends['trend'] as String? ?? 'stable';
 
     return _buildStatSection(
-      title: 'Performance Trends',
+      title: l10n.stPerformanceTrends,
       icon: Icons.show_chart,
       theme: theme,
       child: Column(
@@ -393,7 +398,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               Expanded(
                 child: _buildTrendCard(
-                  'Overall Trend',
+                  l10n.stOverallTrend,
                   trend,
                   _getTrendIcon(trend),
                   _getTrendColor(trend),
@@ -403,7 +408,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Recent Average',
+                  l10n.stRecentAverage,
                   '${_performanceTrends['averageRecentScore'] ?? 0}',
                   Icons.analytics,
                   Colors.cyan,
@@ -420,7 +425,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Best Recent',
+                  l10n.stBestRecent,
                   '${_performanceTrends['bestRecentScore'] ?? 0}',
                   Icons.star_outline,
                   Colors.amber,
@@ -430,8 +435,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Consistency',
-                  _calculateConsistencyRating(recentScores),
+                  l10n.stConsistency,
+                  _calculateConsistencyRating(recentScores, l10n),
                   Icons.equalizer,
                   Colors.purple,
                   theme,
@@ -460,7 +465,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Progress (Last ${recentScores.length} Games)',
+                        l10n.stProgressLastGames(recentScores.length),
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.8),
                           fontSize: 14,
@@ -503,10 +508,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem('Scores', theme.accentColor, theme),
+                      _buildLegendItem(l10n.stScores, theme.accentColor, theme),
                       const SizedBox(width: 16),
                       _buildLegendItem(
-                        'Trend Line',
+                        l10n.stTrendLine,
                         _getTrendColor(trend),
                         theme,
                       ),
@@ -527,11 +532,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildPlayPatterns(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final dailyPlayTime =
         (_playPatterns['dailyPlayTime'] as Map<String, int>?) ?? {};
 
     return _buildStatSection(
-      title: 'Play Patterns (Last 7 Days)',
+      title: l10n.stPlayPatterns,
       icon: Icons.calendar_today,
       theme: theme,
       child: Column(
@@ -540,7 +546,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Weekly Time',
+                  l10n.stWeeklyTime,
                   _formatPlayTime(_playPatterns['totalWeeklyTime'] ?? 0),
                   Icons.schedule,
                   Colors.green,
@@ -550,8 +556,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Most Active Day',
-                  '${_playPatterns['mostActiveDay'] ?? 'None'}',
+                  l10n.stMostActiveDay,
+                  '${_playPatterns['mostActiveDay'] ?? l10n.stNone}',
                   Icons.star,
                   Colors.orange,
                   theme,
@@ -576,7 +582,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Daily Activity',
+                    l10n.stDailyActivity,
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.8),
                       fontSize: 14,
@@ -603,8 +609,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildAchievementProgress(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return _buildStatSection(
-      title: 'Achievement Progress',
+      title: l10n.stAchievementProgress,
       icon: Icons.emoji_events,
       theme: theme,
       child: Container(
@@ -670,7 +677,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Achievement Progress',
+                    l10n.stAchievementProgress,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -681,7 +688,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: 4),
 
                   Text(
-                    '${_displayStats['achievementProgress'] ?? '0%'} Complete',
+                    l10n.stPercentComplete(
+                      _displayStats['achievementProgress'] ?? '0%',
+                    ),
                     style: TextStyle(
                       fontSize: 14,
                       color: theme.accentColor.withValues(alpha: 0.8),
@@ -693,7 +702,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   GestureDetector(
                     onTap: () => context.push(AppRoutes.achievements),
                     child: Text(
-                      'View All Achievements →',
+                      l10n.stViewAllAchievements,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.amber,
@@ -711,6 +720,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildActionButtons(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         LayoutBuilder(
@@ -722,7 +732,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     width: double.infinity,
                     child: GradientButton(
                       onPressed: () => context.push(AppRoutes.achievements),
-                      text: 'VIEW ACHIEVEMENTS',
+                      text: l10n.stViewAchievements,
                       primaryColor: Colors.amber,
                       secondaryColor: Colors.orange,
                       icon: Icons.emoji_events,
@@ -735,7 +745,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     width: double.infinity,
                     child: GradientButton(
                       onPressed: () => context.push(AppRoutes.replays),
-                      text: 'REPLAYS',
+                      text: l10n.stReplaysUpper,
                       primaryColor: theme.accentColor,
                       secondaryColor: theme.foodColor,
                       icon: Icons.video_library,
@@ -749,7 +759,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 Expanded(
                   child: GradientButton(
                     onPressed: () => context.push(AppRoutes.achievements),
-                    text: 'VIEW ACHIEVEMENTS',
+                    text: l10n.stViewAchievements,
                     primaryColor: Colors.amber,
                     secondaryColor: Colors.orange,
                     icon: Icons.emoji_events,
@@ -761,7 +771,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 Expanded(
                   child: GradientButton(
                     onPressed: () => context.push(AppRoutes.replays),
-                    text: 'REPLAYS',
+                    text: l10n.stReplaysUpper,
                     primaryColor: theme.accentColor,
                     secondaryColor: theme.foodColor,
                     icon: Icons.video_library,
@@ -778,7 +788,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           width: double.infinity,
           child: GradientButton(
             onPressed: _showResetDialog,
-            text: 'RESET STATISTICS',
+            text: l10n.stResetStatistics,
             primaryColor: Colors.red.shade400,
             secondaryColor: Colors.red.shade600,
             icon: Icons.refresh,
@@ -1086,6 +1096,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   void _showResetDialog() {
     final theme = context.read<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     showDialog(
       context: context,
@@ -1096,18 +1107,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
         ),
         title: Text(
-          'Reset Statistics?',
+          l10n.stResetTitle,
           style: TextStyle(color: theme.accentColor),
         ),
         content: Text(
-          'This will permanently delete all your game statistics. This action cannot be undone.',
+          l10n.stResetBody,
           style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Cancel',
+              l10n.commonCancel,
               style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
             ),
           ),
@@ -1117,15 +1128,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               await _statisticsService.resetStatistics();
               await _refreshStatistics();
             },
-            child: const Text('Reset', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.stReset, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
-  String _calculateConsistencyRating(List<int> scores) {
-    if (scores.length < 3) return 'N/A';
+  String _calculateConsistencyRating(List<int> scores, AppLocalizations l10n) {
+    if (scores.length < 3) return l10n.stNA;
 
     final average = scores.reduce((a, b) => a + b) / scores.length;
     final variance =
@@ -1136,10 +1147,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final standardDeviation = sqrt(variance);
     final coefficient = average > 0 ? standardDeviation / average : 0;
 
-    if (coefficient < 0.3) return 'Excellent';
-    if (coefficient < 0.5) return 'Good';
-    if (coefficient < 0.7) return 'Fair';
-    return 'Poor';
+    if (coefficient < 0.3) return l10n.stExcellent;
+    if (coefficient < 0.5) return l10n.stGood;
+    if (coefficient < 0.7) return l10n.stFair;
+    return l10n.stPoor;
   }
 
   Widget _buildEnhancedTrendChart(
@@ -1147,7 +1158,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     GameTheme theme,
     String trend,
   ) {
-    if (scores.isEmpty) return const Center(child: Text('No data'));
+    if (scores.isEmpty) {
+      return Center(child: Text(AppLocalizations.of(context)!.stNoData));
+    }
 
     final maxScore = scores.reduce((a, b) => a > b ? a : b);
     final minScore = scores.reduce((a, b) => a < b ? a : b);
@@ -1194,7 +1207,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     String trend,
     GameTheme theme,
   ) {
-    final insights = _generateInsights(scores, trend);
+    final l10n = AppLocalizations.of(context)!;
+    final insights = _generateInsights(scores, trend, l10n);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1215,7 +1229,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Performance Insights',
+                l10n.stInsights,
                 style: TextStyle(
                   color: theme.primaryColor,
                   fontSize: 14,
@@ -1258,10 +1272,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  List<String> _generateInsights(List<int> scores, String trend) {
+  List<String> _generateInsights(
+    List<int> scores,
+    String trend,
+    AppLocalizations l10n,
+  ) {
     final insights = <String>[];
 
-    if (scores.isEmpty) return ['Play more games to get performance insights!'];
+    if (scores.isEmpty) return [l10n.stInsightPlayMore];
 
     final average = scores.reduce((a, b) => a + b) / scores.length;
     final recent = scores.length >= 3
@@ -1270,35 +1288,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final recentAvg = recent.reduce((a, b) => a + b) / recent.length;
 
     if (trend == 'improving') {
-      insights.add('Great job! Your performance is on an upward trend.');
+      insights.add(l10n.stInsightImproving);
       if (recentAvg > average * 1.2) {
-        insights.add('Your recent games are significantly above your average.');
+        insights.add(l10n.stInsightAboveAverage);
       }
     } else if (trend == 'declining') {
-      insights.add(
-        'Your performance has declined recently. Consider practicing more.',
-      );
-      insights.add(
-        'Try focusing on avoiding collisions and planning your moves ahead.',
-      );
+      insights.add(l10n.stInsightDeclined);
+      insights.add(l10n.stInsightPractice);
     } else {
-      insights.add(
-        'Your performance is stable. Challenge yourself to improve!',
-      );
+      insights.add(l10n.stInsightStable);
     }
 
     final maxScore = scores.reduce((a, b) => a > b ? a : b);
     final minScore = scores.reduce((a, b) => a < b ? a : b);
     if (maxScore > minScore * 3) {
-      insights.add('You have potential for high scores - work on consistency.');
+      insights.add(l10n.stInsightPotential);
     }
 
     if (scores.length >= 5) {
       final lastFive = scores.sublist(scores.length - 5);
       if (lastFive.every((score) => score > average * 0.8)) {
-        insights.add(
-          'You\'re maintaining solid performance across recent games.',
-        );
+        insights.add(l10n.stInsightSolid);
       }
     }
 

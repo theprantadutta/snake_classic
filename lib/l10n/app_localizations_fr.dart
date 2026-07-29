@@ -1458,4 +1458,326 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mpModePowerUpMadnessName => 'Folie Power-Ups';
+
+  @override
+  String get commonClose => 'Fermer';
+
+  @override
+  String get commonViewAll => 'Tout voir';
+
+  @override
+  String get commonRetry => 'Réessayer';
+
+  @override
+  String get pfTitle => 'Profil';
+
+  @override
+  String get pfSigningOut => 'Déconnexion...';
+
+  @override
+  String get pfGuestPlayer => 'Joueur invité';
+
+  @override
+  String get pfVerifiedAccount => 'Compte vérifié';
+
+  @override
+  String get pfStatistics => 'Statistiques';
+
+  @override
+  String get pfReplays => 'Replays';
+
+  @override
+  String get pfAchievements => 'Succès';
+
+  @override
+  String get pfLoadingStats => 'Chargement des stats...';
+
+  @override
+  String get pfHighScore => 'Meilleur score';
+
+  @override
+  String get pfGamesPlayed => 'Parties jouées';
+
+  @override
+  String get pfPlayTime => 'Temps de jeu';
+
+  @override
+  String get pfAverageScore => 'Score moyen';
+
+  @override
+  String get pfFoodConsumed => 'Nourriture consommée';
+
+  @override
+  String get pfPowerUps => 'Power-ups';
+
+  @override
+  String get pfUpgradeTitle => 'Passer à un compte Google';
+
+  @override
+  String get pfUpgradeSubtitle =>
+      'Sauvegardez votre progression et synchronisez entre appareils';
+
+  @override
+  String get pfBenefitSync => 'Synchroniser la progression';
+
+  @override
+  String get pfBenefitSyncSub => 'entre appareils';
+
+  @override
+  String get pfBenefitLeaderboards => 'Classements mondiaux';
+
+  @override
+  String get pfBenefitLeaderboardsSub => 'affrontez le monde entier';
+
+  @override
+  String get pfBenefitSocial => 'Amis et social';
+
+  @override
+  String get pfBenefitSocialSub => 'connectez-vous aux autres';
+
+  @override
+  String get pfSignInGoogle => 'Se connecter avec Google';
+
+  @override
+  String get pfSignInApple => 'Se connecter avec Apple';
+
+  @override
+  String get pfNoReplays =>
+      'Aucun replay pour l\'instant. Jouez quelques parties !';
+
+  @override
+  String pfReplaysSaved(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count replays enregistrés',
+      one: '$count replay enregistré',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pfAccountManagement => 'Gestion du compte';
+
+  @override
+  String get pfSignOut => 'Se déconnecter';
+
+  @override
+  String get pfDeleteAccount => 'Supprimer le compte';
+
+  @override
+  String get pfAppleUpgradeSuccess =>
+      'Compte migré vers Apple avec succès ! 🎉';
+
+  @override
+  String get pfAppleIdInUse =>
+      'Cet identifiant Apple a déjà un compte. Déconnectez-vous puis connectez-vous avec Apple.';
+
+  @override
+  String get pfUpgradeFailed =>
+      'Échec de la migration du compte. Veuillez réessayer.';
+
+  @override
+  String get pfUpgradeError =>
+      'Une erreur est survenue pendant la migration du compte.';
+
+  @override
+  String get pfGoogleUpgradeSuccess =>
+      'Compte migré vers Google avec succès ! 🎉';
+
+  @override
+  String get pfDeleteAccountTitle => 'Supprimer le compte ?';
+
+  @override
+  String pfDeleteAccountBody(Object storeName) {
+    return 'Ceci supprime définitivement votre compte et tout ce qui y est rattaché :\n\n• Meilleurs scores et statistiques\n• Pièces et articles achetés\n• Thèmes, skins, traînées et power-ups\n• Progression du passe de combat et des défis\n• Entrées de classement et amis\n\nCette action est irréversible. Les abonnements actifs doivent être annulés séparément dans les réglages de $storeName.';
+  }
+
+  @override
+  String get pfAppStore => 'l\'App Store';
+
+  @override
+  String get pfDeviceAppStore => 'la boutique d\'applications de l\'appareil';
+
+  @override
+  String get pfAccountDeleted => 'Votre compte a été définitivement supprimé.';
+
+  @override
+  String get pfDeleteFailed =>
+      'Impossible de supprimer votre compte. Vérifiez votre connexion et réessayez.';
+
+  @override
+  String get pfDeleteForever => 'Supprimer définitivement';
+
+  @override
+  String get pfSignOutBody =>
+      'Voulez-vous vraiment vous déconnecter ?\n\nVotre progression sera conservée si vous êtes connecté avec Google.';
+
+  @override
+  String get pfSignedOut => 'Déconnexion réussie 👋';
+
+  @override
+  String get stLoading => 'Chargement des statistiques...';
+
+  @override
+  String get stPerformanceOverview => 'Aperçu des performances';
+
+  @override
+  String get stTotalGames => 'Parties totales';
+
+  @override
+  String get stWinStreak => 'Série de victoires';
+
+  @override
+  String get stGameActivity => 'Activité de jeu';
+
+  @override
+  String get stLongestGame => 'Partie la plus longue';
+
+  @override
+  String get stHighestLevel => 'Niveau le plus haut';
+
+  @override
+  String get stPerfectGames => 'Parties parfaites';
+
+  @override
+  String get stFoodPowerUps => 'Nourriture et power-ups';
+
+  @override
+  String get stPowerUpsUsed => 'Power-ups utilisés';
+
+  @override
+  String get stFavoriteFood => 'Nourriture favorite';
+
+  @override
+  String get stFavoritePowerUp => 'Power-up favori';
+
+  @override
+  String get stPerformanceTrends => 'Tendances de performance';
+
+  @override
+  String get stOverallTrend => 'Tendance générale';
+
+  @override
+  String get stRecentAverage => 'Moyenne récente';
+
+  @override
+  String get stBestRecent => 'Meilleur récent';
+
+  @override
+  String get stConsistency => 'Régularité';
+
+  @override
+  String get stScores => 'Scores';
+
+  @override
+  String get stTrendLine => 'Ligne de tendance';
+
+  @override
+  String get stPlayPatterns => 'Habitudes de jeu (7 derniers jours)';
+
+  @override
+  String get stWeeklyTime => 'Temps hebdomadaire';
+
+  @override
+  String get stMostActiveDay => 'Jour le plus actif';
+
+  @override
+  String get stDailyActivity => 'Activité quotidienne';
+
+  @override
+  String get stAchievementProgress => 'Progression des succès';
+
+  @override
+  String get stViewAllAchievements => 'Voir tous les succès →';
+
+  @override
+  String get stViewAchievements => 'VOIR LES SUCCÈS';
+
+  @override
+  String get stReplaysUpper => 'REPLAYS';
+
+  @override
+  String get stResetStatistics => 'RÉINITIALISER LES STATS';
+
+  @override
+  String get stResetTitle => 'Réinitialiser les statistiques ?';
+
+  @override
+  String get stResetBody =>
+      'Ceci supprimera définitivement toutes vos statistiques de jeu. Cette action est irréversible.';
+
+  @override
+  String get stReset => 'Réinitialiser';
+
+  @override
+  String get stNA => 'N/A';
+
+  @override
+  String get stExcellent => 'Excellent';
+
+  @override
+  String get stGood => 'Bon';
+
+  @override
+  String get stFair => 'Correct';
+
+  @override
+  String get stPoor => 'Faible';
+
+  @override
+  String get stNoData => 'Aucune donnée';
+
+  @override
+  String get stNone => 'Aucun';
+
+  @override
+  String stProgressLastGames(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dernières parties',
+      one: 'dernière partie',
+    );
+    return 'Progression ($_temp0)';
+  }
+
+  @override
+  String stPercentComplete(Object percent) {
+    return '$percent terminé';
+  }
+
+  @override
+  String get stInsights => 'Analyses de performance';
+
+  @override
+  String get stInsightPlayMore =>
+      'Jouez plus de parties pour obtenir des analyses de performance !';
+
+  @override
+  String get stInsightImproving => 'Bravo ! Vos performances sont en hausse.';
+
+  @override
+  String get stInsightAboveAverage =>
+      'Vos parties récentes sont bien au-dessus de votre moyenne.';
+
+  @override
+  String get stInsightDeclined =>
+      'Vos performances ont baissé récemment. Pensez à vous entraîner davantage.';
+
+  @override
+  String get stInsightPractice =>
+      'Concentrez-vous sur l\'évitement des collisions et l\'anticipation de vos mouvements.';
+
+  @override
+  String get stInsightStable =>
+      'Vos performances sont stables. Mettez-vous au défi de progresser !';
+
+  @override
+  String get stInsightPotential =>
+      'Vous avez un potentiel de gros scores - travaillez la régularité.';
+
+  @override
+  String get stInsightSolid =>
+      'Vous maintenez de solides performances sur vos parties récentes.';
 }

@@ -1457,4 +1457,324 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get mpModePowerUpMadnessName => 'Locura de Potenciadores';
+
+  @override
+  String get commonClose => 'Cerrar';
+
+  @override
+  String get commonViewAll => 'Ver todo';
+
+  @override
+  String get commonRetry => 'Reintentar';
+
+  @override
+  String get pfTitle => 'Perfil';
+
+  @override
+  String get pfSigningOut => 'Cerrando sesión...';
+
+  @override
+  String get pfGuestPlayer => 'Jugador invitado';
+
+  @override
+  String get pfVerifiedAccount => 'Cuenta verificada';
+
+  @override
+  String get pfStatistics => 'Estadísticas';
+
+  @override
+  String get pfReplays => 'Repeticiones';
+
+  @override
+  String get pfAchievements => 'Logros';
+
+  @override
+  String get pfLoadingStats => 'Cargando estadísticas...';
+
+  @override
+  String get pfHighScore => 'Récord';
+
+  @override
+  String get pfGamesPlayed => 'Partidas jugadas';
+
+  @override
+  String get pfPlayTime => 'Tiempo de juego';
+
+  @override
+  String get pfAverageScore => 'Puntuación media';
+
+  @override
+  String get pfFoodConsumed => 'Comida consumida';
+
+  @override
+  String get pfPowerUps => 'Potenciadores';
+
+  @override
+  String get pfUpgradeTitle => 'Pasar a cuenta de Google';
+
+  @override
+  String get pfUpgradeSubtitle =>
+      'Guarda tu progreso y sincroniza entre dispositivos';
+
+  @override
+  String get pfBenefitSync => 'Sincronizar progreso';
+
+  @override
+  String get pfBenefitSyncSub => 'entre dispositivos';
+
+  @override
+  String get pfBenefitLeaderboards => 'Clasificaciones globales';
+
+  @override
+  String get pfBenefitLeaderboardsSub => 'compite con todo el mundo';
+
+  @override
+  String get pfBenefitSocial => 'Amigos y social';
+
+  @override
+  String get pfBenefitSocialSub => 'conecta con otros';
+
+  @override
+  String get pfSignInGoogle => 'Iniciar sesión con Google';
+
+  @override
+  String get pfSignInApple => 'Iniciar sesión con Apple';
+
+  @override
+  String get pfNoReplays => 'Aún no hay repeticiones. ¡Juega algunas partidas!';
+
+  @override
+  String pfReplaysSaved(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repeticiones guardadas',
+      one: '$count repetición guardada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pfAccountManagement => 'Gestión de la cuenta';
+
+  @override
+  String get pfSignOut => 'Cerrar sesión';
+
+  @override
+  String get pfDeleteAccount => 'Eliminar cuenta';
+
+  @override
+  String get pfAppleUpgradeSuccess =>
+      '¡Cuenta actualizada a Apple con éxito! 🎉';
+
+  @override
+  String get pfAppleIdInUse =>
+      'Ese ID de Apple ya tiene una cuenta. Cierra sesión y entra con Apple.';
+
+  @override
+  String get pfUpgradeFailed =>
+      'No se pudo actualizar la cuenta. Inténtalo de nuevo.';
+
+  @override
+  String get pfUpgradeError => 'Ocurrió un error al actualizar la cuenta.';
+
+  @override
+  String get pfGoogleUpgradeSuccess =>
+      '¡Cuenta actualizada a Google con éxito! 🎉';
+
+  @override
+  String get pfDeleteAccountTitle => '¿Eliminar cuenta?';
+
+  @override
+  String pfDeleteAccountBody(Object storeName) {
+    return 'Esto elimina permanentemente tu cuenta y todo lo asociado:\n\n• Récords y estadísticas\n• Monedas y artículos comprados\n• Temas, aspectos, estelas y potenciadores\n• Progreso del pase de batalla y desafíos\n• Entradas de clasificación y amigos\n\nEsto no se puede deshacer. Las suscripciones activas deben cancelarse por separado en los ajustes de $storeName.';
+  }
+
+  @override
+  String get pfAppStore => 'App Store';
+
+  @override
+  String get pfDeviceAppStore => 'la tienda de apps del dispositivo';
+
+  @override
+  String get pfAccountDeleted => 'Tu cuenta ha sido eliminada permanentemente.';
+
+  @override
+  String get pfDeleteFailed =>
+      'No se pudo eliminar tu cuenta. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get pfDeleteForever => 'Eliminar para siempre';
+
+  @override
+  String get pfSignOutBody =>
+      '¿Seguro que quieres cerrar sesión?\n\nTu progreso quedará guardado si has iniciado sesión con Google.';
+
+  @override
+  String get pfSignedOut => 'Sesión cerrada correctamente 👋';
+
+  @override
+  String get stLoading => 'Cargando estadísticas...';
+
+  @override
+  String get stPerformanceOverview => 'Resumen de rendimiento';
+
+  @override
+  String get stTotalGames => 'Partidas totales';
+
+  @override
+  String get stWinStreak => 'Racha de victorias';
+
+  @override
+  String get stGameActivity => 'Actividad de juego';
+
+  @override
+  String get stLongestGame => 'Partida más larga';
+
+  @override
+  String get stHighestLevel => 'Nivel más alto';
+
+  @override
+  String get stPerfectGames => 'Partidas perfectas';
+
+  @override
+  String get stFoodPowerUps => 'Comida y potenciadores';
+
+  @override
+  String get stPowerUpsUsed => 'Potenciadores usados';
+
+  @override
+  String get stFavoriteFood => 'Comida favorita';
+
+  @override
+  String get stFavoritePowerUp => 'Potenciador favorito';
+
+  @override
+  String get stPerformanceTrends => 'Tendencias de rendimiento';
+
+  @override
+  String get stOverallTrend => 'Tendencia general';
+
+  @override
+  String get stRecentAverage => 'Media reciente';
+
+  @override
+  String get stBestRecent => 'Mejor reciente';
+
+  @override
+  String get stConsistency => 'Consistencia';
+
+  @override
+  String get stScores => 'Puntuaciones';
+
+  @override
+  String get stTrendLine => 'Línea de tendencia';
+
+  @override
+  String get stPlayPatterns => 'Patrones de juego (últimos 7 días)';
+
+  @override
+  String get stWeeklyTime => 'Tiempo semanal';
+
+  @override
+  String get stMostActiveDay => 'Día más activo';
+
+  @override
+  String get stDailyActivity => 'Actividad diaria';
+
+  @override
+  String get stAchievementProgress => 'Progreso de logros';
+
+  @override
+  String get stViewAllAchievements => 'Ver todos los logros →';
+
+  @override
+  String get stViewAchievements => 'VER LOGROS';
+
+  @override
+  String get stReplaysUpper => 'REPETICIONES';
+
+  @override
+  String get stResetStatistics => 'RESTABLECER ESTADÍSTICAS';
+
+  @override
+  String get stResetTitle => '¿Restablecer estadísticas?';
+
+  @override
+  String get stResetBody =>
+      'Esto eliminará permanentemente todas tus estadísticas de juego. Esta acción no se puede deshacer.';
+
+  @override
+  String get stReset => 'Restablecer';
+
+  @override
+  String get stNA => 'N/D';
+
+  @override
+  String get stExcellent => 'Excelente';
+
+  @override
+  String get stGood => 'Bueno';
+
+  @override
+  String get stFair => 'Aceptable';
+
+  @override
+  String get stPoor => 'Flojo';
+
+  @override
+  String get stNoData => 'Sin datos';
+
+  @override
+  String get stNone => 'Ninguno';
+
+  @override
+  String stProgressLastGames(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count partidas',
+      one: '$count partida',
+    );
+    return 'Progreso (últimas $_temp0)';
+  }
+
+  @override
+  String stPercentComplete(Object percent) {
+    return '$percent completado';
+  }
+
+  @override
+  String get stInsights => 'Análisis de rendimiento';
+
+  @override
+  String get stInsightPlayMore =>
+      '¡Juega más partidas para recibir análisis de rendimiento!';
+
+  @override
+  String get stInsightImproving =>
+      '¡Buen trabajo! Tu rendimiento va en ascenso.';
+
+  @override
+  String get stInsightAboveAverage =>
+      'Tus partidas recientes están muy por encima de tu media.';
+
+  @override
+  String get stInsightDeclined =>
+      'Tu rendimiento ha bajado últimamente. Considera practicar más.';
+
+  @override
+  String get stInsightPractice =>
+      'Céntrate en evitar choques y planificar tus movimientos.';
+
+  @override
+  String get stInsightStable => 'Tu rendimiento es estable. ¡Rétate a mejorar!';
+
+  @override
+  String get stInsightPotential =>
+      'Tienes potencial para récords - trabaja la consistencia.';
+
+  @override
+  String get stInsightSolid =>
+      'Mantienes un rendimiento sólido en las partidas recientes.';
 }

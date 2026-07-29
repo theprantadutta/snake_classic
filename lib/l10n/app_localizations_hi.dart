@@ -1440,4 +1440,323 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get mpModePowerUpMadnessName => 'पावर-अप धमाल';
+
+  @override
+  String get commonClose => 'बंद करें';
+
+  @override
+  String get commonViewAll => 'सभी देखें';
+
+  @override
+  String get commonRetry => 'फिर कोशिश करें';
+
+  @override
+  String get pfTitle => 'प्रोफ़ाइल';
+
+  @override
+  String get pfSigningOut => 'साइन आउट हो रहा है...';
+
+  @override
+  String get pfGuestPlayer => 'अतिथि खिलाड़ी';
+
+  @override
+  String get pfVerifiedAccount => 'सत्यापित खाता';
+
+  @override
+  String get pfStatistics => 'आँकड़े';
+
+  @override
+  String get pfReplays => 'रिप्ले';
+
+  @override
+  String get pfAchievements => 'उपलब्धियाँ';
+
+  @override
+  String get pfLoadingStats => 'आँकड़े लोड हो रहे हैं...';
+
+  @override
+  String get pfHighScore => 'उच्चतम स्कोर';
+
+  @override
+  String get pfGamesPlayed => 'खेले गए गेम';
+
+  @override
+  String get pfPlayTime => 'खेलने का समय';
+
+  @override
+  String get pfAverageScore => 'औसत स्कोर';
+
+  @override
+  String get pfFoodConsumed => 'खाया गया भोजन';
+
+  @override
+  String get pfPowerUps => 'पावर-अप';
+
+  @override
+  String get pfUpgradeTitle => 'Google खाते में अपग्रेड करें';
+
+  @override
+  String get pfUpgradeSubtitle =>
+      'अपनी प्रगति सहेजें और सभी डिवाइस पर सिंक करें';
+
+  @override
+  String get pfBenefitSync => 'प्रगति सिंक';
+
+  @override
+  String get pfBenefitSyncSub => 'सभी डिवाइस पर';
+
+  @override
+  String get pfBenefitLeaderboards => 'वैश्विक लीडरबोर्ड';
+
+  @override
+  String get pfBenefitLeaderboardsSub => 'दुनिया भर से मुक़ाबला';
+
+  @override
+  String get pfBenefitSocial => 'दोस्त और सोशल';
+
+  @override
+  String get pfBenefitSocialSub => 'दूसरों से जुड़ें';
+
+  @override
+  String get pfSignInGoogle => 'Google से साइन इन करें';
+
+  @override
+  String get pfSignInApple => 'Apple से साइन इन करें';
+
+  @override
+  String get pfNoReplays => 'अभी कोई रिप्ले नहीं। कुछ गेम खेलें!';
+
+  @override
+  String pfReplaysSaved(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count रिप्ले सहेजे गए',
+      one: '$count रिप्ले सहेजा गया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pfAccountManagement => 'खाता प्रबंधन';
+
+  @override
+  String get pfSignOut => 'साइन आउट';
+
+  @override
+  String get pfDeleteAccount => 'खाता हटाएँ';
+
+  @override
+  String get pfAppleUpgradeSuccess => 'Apple खाते में सफलतापूर्वक अपग्रेड! 🎉';
+
+  @override
+  String get pfAppleIdInUse =>
+      'उस Apple ID का पहले से खाता है। साइन आउट करके Apple से साइन इन करें।';
+
+  @override
+  String get pfUpgradeFailed =>
+      'खाता अपग्रेड नहीं हो सका। कृपया फिर कोशिश करें।';
+
+  @override
+  String get pfUpgradeError => 'खाता अपग्रेड के दौरान त्रुटि हुई।';
+
+  @override
+  String get pfGoogleUpgradeSuccess =>
+      'Google खाते में सफलतापूर्वक अपग्रेड! 🎉';
+
+  @override
+  String get pfDeleteAccountTitle => 'खाता हटाएँ?';
+
+  @override
+  String pfDeleteAccountBody(Object storeName) {
+    return 'यह आपका खाता और उससे जुड़ी हर चीज़ स्थायी रूप से हटा देता है:\n\n• उच्चतम स्कोर और आँकड़े\n• सिक्के और खरीदी गई वस्तुएँ\n• थीम, स्किन, ट्रेल और पावर-अप\n• बैटल पास और चुनौती प्रगति\n• लीडरबोर्ड प्रविष्टियाँ और दोस्त\n\nइसे पूर्ववत नहीं किया जा सकता। सक्रिय सदस्यताएँ $storeName सेटिंग्स में अलग से रद्द करनी होंगी।';
+  }
+
+  @override
+  String get pfAppStore => 'App Store';
+
+  @override
+  String get pfDeviceAppStore => 'डिवाइस के ऐप स्टोर';
+
+  @override
+  String get pfAccountDeleted => 'आपका खाता स्थायी रूप से हटा दिया गया है।';
+
+  @override
+  String get pfDeleteFailed =>
+      'खाता नहीं हटाया जा सका। कनेक्शन जाँचकर फिर कोशिश करें।';
+
+  @override
+  String get pfDeleteForever => 'हमेशा के लिए हटाएँ';
+
+  @override
+  String get pfSignOutBody =>
+      'क्या आप वाकई साइन आउट करना चाहते हैं?\n\nGoogle से साइन इन होने पर आपकी प्रगति सहेजी रहेगी।';
+
+  @override
+  String get pfSignedOut => 'सफलतापूर्वक साइन आउट 👋';
+
+  @override
+  String get stLoading => 'आँकड़े लोड हो रहे हैं...';
+
+  @override
+  String get stPerformanceOverview => 'प्रदर्शन अवलोकन';
+
+  @override
+  String get stTotalGames => 'कुल गेम';
+
+  @override
+  String get stWinStreak => 'जीत की लड़ी';
+
+  @override
+  String get stGameActivity => 'गेम गतिविधि';
+
+  @override
+  String get stLongestGame => 'सबसे लंबा गेम';
+
+  @override
+  String get stHighestLevel => 'उच्चतम स्तर';
+
+  @override
+  String get stPerfectGames => 'परफ़ेक्ट गेम';
+
+  @override
+  String get stFoodPowerUps => 'भोजन और पावर-अप';
+
+  @override
+  String get stPowerUpsUsed => 'इस्तेमाल हुए पावर-अप';
+
+  @override
+  String get stFavoriteFood => 'पसंदीदा भोजन';
+
+  @override
+  String get stFavoritePowerUp => 'पसंदीदा पावर-अप';
+
+  @override
+  String get stPerformanceTrends => 'प्रदर्शन रुझान';
+
+  @override
+  String get stOverallTrend => 'समग्र रुझान';
+
+  @override
+  String get stRecentAverage => 'हाल का औसत';
+
+  @override
+  String get stBestRecent => 'हाल का सर्वश्रेष्ठ';
+
+  @override
+  String get stConsistency => 'स्थिरता';
+
+  @override
+  String get stScores => 'स्कोर';
+
+  @override
+  String get stTrendLine => 'रुझान रेखा';
+
+  @override
+  String get stPlayPatterns => 'खेल पैटर्न (पिछले 7 दिन)';
+
+  @override
+  String get stWeeklyTime => 'साप्ताहिक समय';
+
+  @override
+  String get stMostActiveDay => 'सबसे सक्रिय दिन';
+
+  @override
+  String get stDailyActivity => 'दैनिक गतिविधि';
+
+  @override
+  String get stAchievementProgress => 'उपलब्धि प्रगति';
+
+  @override
+  String get stViewAllAchievements => 'सभी उपलब्धियाँ देखें →';
+
+  @override
+  String get stViewAchievements => 'उपलब्धियाँ देखें';
+
+  @override
+  String get stReplaysUpper => 'रिप्ले';
+
+  @override
+  String get stResetStatistics => 'आँकड़े रीसेट करें';
+
+  @override
+  String get stResetTitle => 'आँकड़े रीसेट करें?';
+
+  @override
+  String get stResetBody =>
+      'यह आपके सभी गेम आँकड़े स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।';
+
+  @override
+  String get stReset => 'रीसेट';
+
+  @override
+  String get stNA => 'लागू नहीं';
+
+  @override
+  String get stExcellent => 'उत्कृष्ट';
+
+  @override
+  String get stGood => 'अच्छा';
+
+  @override
+  String get stFair => 'ठीक-ठाक';
+
+  @override
+  String get stPoor => 'कमज़ोर';
+
+  @override
+  String get stNoData => 'कोई डेटा नहीं';
+
+  @override
+  String get stNone => 'कोई नहीं';
+
+  @override
+  String stProgressLastGames(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count गेम',
+      one: '$count गेम',
+    );
+    return 'प्रगति (पिछले $_temp0)';
+  }
+
+  @override
+  String stPercentComplete(Object percent) {
+    return '$percent पूर्ण';
+  }
+
+  @override
+  String get stInsights => 'प्रदर्शन अंतर्दृष्टि';
+
+  @override
+  String get stInsightPlayMore =>
+      'प्रदर्शन अंतर्दृष्टि पाने के लिए और गेम खेलें!';
+
+  @override
+  String get stInsightImproving => 'शाबाश! आपका प्रदर्शन ऊपर की ओर जा रहा है।';
+
+  @override
+  String get stInsightAboveAverage =>
+      'आपके हाल के गेम आपके औसत से काफ़ी ऊपर हैं।';
+
+  @override
+  String get stInsightDeclined =>
+      'हाल में आपका प्रदर्शन गिरा है। और अभ्यास करें।';
+
+  @override
+  String get stInsightPractice =>
+      'टक्करों से बचने और चालें पहले से सोचने पर ध्यान दें।';
+
+  @override
+  String get stInsightStable =>
+      'आपका प्रदर्शन स्थिर है। खुद को बेहतर बनाने की चुनौती दें!';
+
+  @override
+  String get stInsightPotential =>
+      'आपमें ऊँचे स्कोर की क्षमता है - स्थिरता पर काम करें।';
+
+  @override
+  String get stInsightSolid =>
+      'आप हाल के गेम में लगातार अच्छा प्रदर्शन बनाए हुए हैं।';
 }

@@ -2643,6 +2643,576 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Power-up Madness'**
   String get mpModePowerUpMadnessName;
+
+  /// No description provided for @commonClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get commonClose;
+
+  /// No description provided for @commonViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get commonViewAll;
+
+  /// No description provided for @commonRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get commonRetry;
+
+  /// No description provided for @pfTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get pfTitle;
+
+  /// No description provided for @pfSigningOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out...'**
+  String get pfSigningOut;
+
+  /// No description provided for @pfGuestPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest Player'**
+  String get pfGuestPlayer;
+
+  /// No description provided for @pfVerifiedAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Account'**
+  String get pfVerifiedAccount;
+
+  /// No description provided for @pfStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get pfStatistics;
+
+  /// No description provided for @pfReplays.
+  ///
+  /// In en, this message translates to:
+  /// **'Replays'**
+  String get pfReplays;
+
+  /// No description provided for @pfAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get pfAchievements;
+
+  /// No description provided for @pfLoadingStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading stats...'**
+  String get pfLoadingStats;
+
+  /// No description provided for @pfHighScore.
+  ///
+  /// In en, this message translates to:
+  /// **'High Score'**
+  String get pfHighScore;
+
+  /// No description provided for @pfGamesPlayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Games Played'**
+  String get pfGamesPlayed;
+
+  /// No description provided for @pfPlayTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Play Time'**
+  String get pfPlayTime;
+
+  /// No description provided for @pfAverageScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Average Score'**
+  String get pfAverageScore;
+
+  /// No description provided for @pfFoodConsumed.
+  ///
+  /// In en, this message translates to:
+  /// **'Food Consumed'**
+  String get pfFoodConsumed;
+
+  /// No description provided for @pfPowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups'**
+  String get pfPowerUps;
+
+  /// No description provided for @pfUpgradeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Google Account'**
+  String get pfUpgradeTitle;
+
+  /// No description provided for @pfUpgradeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your progress and sync across devices'**
+  String get pfUpgradeSubtitle;
+
+  /// No description provided for @pfBenefitSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Progress'**
+  String get pfBenefitSync;
+
+  /// No description provided for @pfBenefitSyncSub.
+  ///
+  /// In en, this message translates to:
+  /// **'across devices'**
+  String get pfBenefitSyncSub;
+
+  /// No description provided for @pfBenefitLeaderboards.
+  ///
+  /// In en, this message translates to:
+  /// **'Global Leaderboards'**
+  String get pfBenefitLeaderboards;
+
+  /// No description provided for @pfBenefitLeaderboardsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'compete worldwide'**
+  String get pfBenefitLeaderboardsSub;
+
+  /// No description provided for @pfBenefitSocial.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends & Social'**
+  String get pfBenefitSocial;
+
+  /// No description provided for @pfBenefitSocialSub.
+  ///
+  /// In en, this message translates to:
+  /// **'connect with others'**
+  String get pfBenefitSocialSub;
+
+  /// No description provided for @pfSignInGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get pfSignInGoogle;
+
+  /// No description provided for @pfSignInApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple'**
+  String get pfSignInApple;
+
+  /// No description provided for @pfNoReplays.
+  ///
+  /// In en, this message translates to:
+  /// **'No replays yet. Play some games!'**
+  String get pfNoReplays;
+
+  /// No description provided for @pfReplaysSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} replay saved} other{{count} replays saved}}'**
+  String pfReplaysSaved(num count);
+
+  /// No description provided for @pfAccountManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Management'**
+  String get pfAccountManagement;
+
+  /// No description provided for @pfSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get pfSignOut;
+
+  /// No description provided for @pfDeleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get pfDeleteAccount;
+
+  /// No description provided for @pfAppleUpgradeSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully upgraded to Apple account! 🎉'**
+  String get pfAppleUpgradeSuccess;
+
+  /// No description provided for @pfAppleIdInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'That Apple ID already has an account. Sign out, then sign in with Apple instead.'**
+  String get pfAppleIdInUse;
+
+  /// No description provided for @pfUpgradeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upgrade account. Please try again.'**
+  String get pfUpgradeFailed;
+
+  /// No description provided for @pfUpgradeError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred during account upgrade.'**
+  String get pfUpgradeError;
+
+  /// No description provided for @pfGoogleUpgradeSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully upgraded to Google account! 🎉'**
+  String get pfGoogleUpgradeSuccess;
+
+  /// No description provided for @pfDeleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account?'**
+  String get pfDeleteAccountTitle;
+
+  /// No description provided for @pfDeleteAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your account and everything attached to it:\n\n• High scores and statistics\n• Coins and purchased items\n• Themes, skins, trails and power-ups\n• Battle pass and challenge progress\n• Leaderboard entries and friends\n\nThis cannot be undone. Active subscriptions must be cancelled separately in your {storeName} settings.'**
+  String pfDeleteAccountBody(Object storeName);
+
+  /// No description provided for @pfAppStore.
+  ///
+  /// In en, this message translates to:
+  /// **'App Store'**
+  String get pfAppStore;
+
+  /// No description provided for @pfDeviceAppStore.
+  ///
+  /// In en, this message translates to:
+  /// **'device\'s app store'**
+  String get pfDeviceAppStore;
+
+  /// No description provided for @pfAccountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been permanently deleted.'**
+  String get pfAccountDeleted;
+
+  /// No description provided for @pfDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete your account. Check your connection and try again.'**
+  String get pfDeleteFailed;
+
+  /// No description provided for @pfDeleteForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Forever'**
+  String get pfDeleteForever;
+
+  /// No description provided for @pfSignOutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to sign out?\n\nYour progress will be saved if you\'re signed in with Google.'**
+  String get pfSignOutBody;
+
+  /// No description provided for @pfSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out successfully 👋'**
+  String get pfSignedOut;
+
+  /// No description provided for @stLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Statistics...'**
+  String get stLoading;
+
+  /// No description provided for @stPerformanceOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Overview'**
+  String get stPerformanceOverview;
+
+  /// No description provided for @stTotalGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Games'**
+  String get stTotalGames;
+
+  /// No description provided for @stWinStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Win Streak'**
+  String get stWinStreak;
+
+  /// No description provided for @stGameActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Game Activity'**
+  String get stGameActivity;
+
+  /// No description provided for @stLongestGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest Game'**
+  String get stLongestGame;
+
+  /// No description provided for @stHighestLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest Level'**
+  String get stHighestLevel;
+
+  /// No description provided for @stPerfectGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect Games'**
+  String get stPerfectGames;
+
+  /// No description provided for @stFoodPowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'Food & Power-ups'**
+  String get stFoodPowerUps;
+
+  /// No description provided for @stPowerUpsUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups Used'**
+  String get stPowerUpsUsed;
+
+  /// No description provided for @stFavoriteFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite Food'**
+  String get stFavoriteFood;
+
+  /// No description provided for @stFavoritePowerUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite Power-up'**
+  String get stFavoritePowerUp;
+
+  /// No description provided for @stPerformanceTrends.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Trends'**
+  String get stPerformanceTrends;
+
+  /// No description provided for @stOverallTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall Trend'**
+  String get stOverallTrend;
+
+  /// No description provided for @stRecentAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Average'**
+  String get stRecentAverage;
+
+  /// No description provided for @stBestRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Recent'**
+  String get stBestRecent;
+
+  /// No description provided for @stConsistency.
+  ///
+  /// In en, this message translates to:
+  /// **'Consistency'**
+  String get stConsistency;
+
+  /// No description provided for @stScores.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores'**
+  String get stScores;
+
+  /// No description provided for @stTrendLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Trend Line'**
+  String get stTrendLine;
+
+  /// No description provided for @stPlayPatterns.
+  ///
+  /// In en, this message translates to:
+  /// **'Play Patterns (Last 7 Days)'**
+  String get stPlayPatterns;
+
+  /// No description provided for @stWeeklyTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Time'**
+  String get stWeeklyTime;
+
+  /// No description provided for @stMostActiveDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Most Active Day'**
+  String get stMostActiveDay;
+
+  /// No description provided for @stDailyActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Activity'**
+  String get stDailyActivity;
+
+  /// No description provided for @stAchievementProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievement Progress'**
+  String get stAchievementProgress;
+
+  /// No description provided for @stViewAllAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'View All Achievements →'**
+  String get stViewAllAchievements;
+
+  /// No description provided for @stViewAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'VIEW ACHIEVEMENTS'**
+  String get stViewAchievements;
+
+  /// No description provided for @stReplaysUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'REPLAYS'**
+  String get stReplaysUpper;
+
+  /// No description provided for @stResetStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'RESET STATISTICS'**
+  String get stResetStatistics;
+
+  /// No description provided for @stResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Statistics?'**
+  String get stResetTitle;
+
+  /// No description provided for @stResetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete all your game statistics. This action cannot be undone.'**
+  String get stResetBody;
+
+  /// No description provided for @stReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get stReset;
+
+  /// No description provided for @stNA.
+  ///
+  /// In en, this message translates to:
+  /// **'N/A'**
+  String get stNA;
+
+  /// No description provided for @stExcellent.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent'**
+  String get stExcellent;
+
+  /// No description provided for @stGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get stGood;
+
+  /// No description provided for @stFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get stFair;
+
+  /// No description provided for @stPoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get stPoor;
+
+  /// No description provided for @stNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get stNoData;
+
+  /// No description provided for @stNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get stNone;
+
+  /// No description provided for @stProgressLastGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress (Last {count, plural, one{{count} Game} other{{count} Games}})'**
+  String stProgressLastGames(num count);
+
+  /// No description provided for @stPercentComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} Complete'**
+  String stPercentComplete(Object percent);
+
+  /// No description provided for @stInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Insights'**
+  String get stInsights;
+
+  /// No description provided for @stInsightPlayMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Play more games to get performance insights!'**
+  String get stInsightPlayMore;
+
+  /// No description provided for @stInsightImproving.
+  ///
+  /// In en, this message translates to:
+  /// **'Great job! Your performance is on an upward trend.'**
+  String get stInsightImproving;
+
+  /// No description provided for @stInsightAboveAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recent games are significantly above your average.'**
+  String get stInsightAboveAverage;
+
+  /// No description provided for @stInsightDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Your performance has declined recently. Consider practicing more.'**
+  String get stInsightDeclined;
+
+  /// No description provided for @stInsightPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Try focusing on avoiding collisions and planning your moves ahead.'**
+  String get stInsightPractice;
+
+  /// No description provided for @stInsightStable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your performance is stable. Challenge yourself to improve!'**
+  String get stInsightStable;
+
+  /// No description provided for @stInsightPotential.
+  ///
+  /// In en, this message translates to:
+  /// **'You have potential for high scores - work on consistency.'**
+  String get stInsightPotential;
+
+  /// No description provided for @stInsightSolid.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re maintaining solid performance across recent games.'**
+  String get stInsightSolid;
 }
 
 class _AppLocalizationsDelegate

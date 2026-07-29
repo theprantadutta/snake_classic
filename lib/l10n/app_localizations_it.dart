@@ -1454,4 +1454,327 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get mpModePowerUpMadnessName => 'Follia Power-Up';
+
+  @override
+  String get commonClose => 'Chiudi';
+
+  @override
+  String get commonViewAll => 'Vedi tutto';
+
+  @override
+  String get commonRetry => 'Riprova';
+
+  @override
+  String get pfTitle => 'Profilo';
+
+  @override
+  String get pfSigningOut => 'Disconnessione...';
+
+  @override
+  String get pfGuestPlayer => 'Giocatore ospite';
+
+  @override
+  String get pfVerifiedAccount => 'Account verificato';
+
+  @override
+  String get pfStatistics => 'Statistiche';
+
+  @override
+  String get pfReplays => 'Replay';
+
+  @override
+  String get pfAchievements => 'Obiettivi';
+
+  @override
+  String get pfLoadingStats => 'Caricamento statistiche...';
+
+  @override
+  String get pfHighScore => 'Record';
+
+  @override
+  String get pfGamesPlayed => 'Partite giocate';
+
+  @override
+  String get pfPlayTime => 'Tempo di gioco';
+
+  @override
+  String get pfAverageScore => 'Punteggio medio';
+
+  @override
+  String get pfFoodConsumed => 'Cibo consumato';
+
+  @override
+  String get pfPowerUps => 'Power-up';
+
+  @override
+  String get pfUpgradeTitle => 'Passa a un account Google';
+
+  @override
+  String get pfUpgradeSubtitle =>
+      'Salva i tuoi progressi e sincronizza tra dispositivi';
+
+  @override
+  String get pfBenefitSync => 'Sincronizza i progressi';
+
+  @override
+  String get pfBenefitSyncSub => 'tra dispositivi';
+
+  @override
+  String get pfBenefitLeaderboards => 'Classifiche globali';
+
+  @override
+  String get pfBenefitLeaderboardsSub => 'competi con tutto il mondo';
+
+  @override
+  String get pfBenefitSocial => 'Amici e social';
+
+  @override
+  String get pfBenefitSocialSub => 'connettiti con gli altri';
+
+  @override
+  String get pfSignInGoogle => 'Accedi con Google';
+
+  @override
+  String get pfSignInApple => 'Accedi con Apple';
+
+  @override
+  String get pfNoReplays => 'Ancora nessun replay. Gioca qualche partita!';
+
+  @override
+  String pfReplaysSaved(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count replay salvati',
+      one: '$count replay salvato',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pfAccountManagement => 'Gestione account';
+
+  @override
+  String get pfSignOut => 'Esci';
+
+  @override
+  String get pfDeleteAccount => 'Elimina account';
+
+  @override
+  String get pfAppleUpgradeSuccess =>
+      'Account aggiornato ad Apple con successo! 🎉';
+
+  @override
+  String get pfAppleIdInUse =>
+      'Questo ID Apple ha già un account. Esci e accedi con Apple.';
+
+  @override
+  String get pfUpgradeFailed =>
+      'Aggiornamento dell\'account non riuscito. Riprova.';
+
+  @override
+  String get pfUpgradeError =>
+      'Si è verificato un errore durante l\'aggiornamento dell\'account.';
+
+  @override
+  String get pfGoogleUpgradeSuccess =>
+      'Account aggiornato a Google con successo! 🎉';
+
+  @override
+  String get pfDeleteAccountTitle => 'Eliminare l\'account?';
+
+  @override
+  String pfDeleteAccountBody(Object storeName) {
+    return 'Questo elimina definitivamente il tuo account e tutto ciò che vi è collegato:\n\n• Record e statistiche\n• Monete e articoli acquistati\n• Temi, skin, scie e power-up\n• Progressi del pass battaglia e delle sfide\n• Voci in classifica e amici\n\nNon può essere annullato. Gli abbonamenti attivi vanno disdetti separatamente nelle impostazioni di $storeName.';
+  }
+
+  @override
+  String get pfAppStore => 'App Store';
+
+  @override
+  String get pfDeviceAppStore => 'store di app del dispositivo';
+
+  @override
+  String get pfAccountDeleted =>
+      'Il tuo account è stato eliminato definitivamente.';
+
+  @override
+  String get pfDeleteFailed =>
+      'Impossibile eliminare l\'account. Controlla la connessione e riprova.';
+
+  @override
+  String get pfDeleteForever => 'Elimina per sempre';
+
+  @override
+  String get pfSignOutBody =>
+      'Vuoi davvero uscire?\n\nI tuoi progressi resteranno salvati se hai effettuato l\'accesso con Google.';
+
+  @override
+  String get pfSignedOut => 'Disconnessione riuscita 👋';
+
+  @override
+  String get stLoading => 'Caricamento statistiche...';
+
+  @override
+  String get stPerformanceOverview => 'Panoramica prestazioni';
+
+  @override
+  String get stTotalGames => 'Partite totali';
+
+  @override
+  String get stWinStreak => 'Serie di vittorie';
+
+  @override
+  String get stGameActivity => 'Attività di gioco';
+
+  @override
+  String get stLongestGame => 'Partita più lunga';
+
+  @override
+  String get stHighestLevel => 'Livello più alto';
+
+  @override
+  String get stPerfectGames => 'Partite perfette';
+
+  @override
+  String get stFoodPowerUps => 'Cibo e power-up';
+
+  @override
+  String get stPowerUpsUsed => 'Power-up usati';
+
+  @override
+  String get stFavoriteFood => 'Cibo preferito';
+
+  @override
+  String get stFavoritePowerUp => 'Power-up preferito';
+
+  @override
+  String get stPerformanceTrends => 'Tendenze delle prestazioni';
+
+  @override
+  String get stOverallTrend => 'Tendenza generale';
+
+  @override
+  String get stRecentAverage => 'Media recente';
+
+  @override
+  String get stBestRecent => 'Migliore recente';
+
+  @override
+  String get stConsistency => 'Costanza';
+
+  @override
+  String get stScores => 'Punteggi';
+
+  @override
+  String get stTrendLine => 'Linea di tendenza';
+
+  @override
+  String get stPlayPatterns => 'Abitudini di gioco (ultimi 7 giorni)';
+
+  @override
+  String get stWeeklyTime => 'Tempo settimanale';
+
+  @override
+  String get stMostActiveDay => 'Giorno più attivo';
+
+  @override
+  String get stDailyActivity => 'Attività giornaliera';
+
+  @override
+  String get stAchievementProgress => 'Progresso obiettivi';
+
+  @override
+  String get stViewAllAchievements => 'Vedi tutti gli obiettivi →';
+
+  @override
+  String get stViewAchievements => 'VEDI OBIETTIVI';
+
+  @override
+  String get stReplaysUpper => 'REPLAY';
+
+  @override
+  String get stResetStatistics => 'AZZERA STATISTICHE';
+
+  @override
+  String get stResetTitle => 'Azzerare le statistiche?';
+
+  @override
+  String get stResetBody =>
+      'Questo eliminerà definitivamente tutte le tue statistiche di gioco. L\'azione non può essere annullata.';
+
+  @override
+  String get stReset => 'Azzera';
+
+  @override
+  String get stNA => 'N/D';
+
+  @override
+  String get stExcellent => 'Eccellente';
+
+  @override
+  String get stGood => 'Buono';
+
+  @override
+  String get stFair => 'Discreto';
+
+  @override
+  String get stPoor => 'Scarso';
+
+  @override
+  String get stNoData => 'Nessun dato';
+
+  @override
+  String get stNone => 'Nessuno';
+
+  @override
+  String stProgressLastGames(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count partite',
+      one: '$count partita',
+    );
+    return 'Progresso (ultime $_temp0)';
+  }
+
+  @override
+  String stPercentComplete(Object percent) {
+    return '$percent completato';
+  }
+
+  @override
+  String get stInsights => 'Analisi delle prestazioni';
+
+  @override
+  String get stInsightPlayMore =>
+      'Gioca più partite per ricevere analisi delle prestazioni!';
+
+  @override
+  String get stInsightImproving =>
+      'Ottimo lavoro! Le tue prestazioni sono in crescita.';
+
+  @override
+  String get stInsightAboveAverage =>
+      'Le tue partite recenti sono ben oltre la tua media.';
+
+  @override
+  String get stInsightDeclined =>
+      'Le tue prestazioni sono calate di recente. Prova ad allenarti di più.';
+
+  @override
+  String get stInsightPractice =>
+      'Concentrati sull\'evitare le collisioni e pianificare le mosse.';
+
+  @override
+  String get stInsightStable =>
+      'Le tue prestazioni sono stabili. Sfida te stesso a migliorare!';
+
+  @override
+  String get stInsightPotential =>
+      'Hai potenziale per grandi punteggi - lavora sulla costanza.';
+
+  @override
+  String get stInsightSolid =>
+      'Mantieni prestazioni solide nelle partite recenti.';
 }

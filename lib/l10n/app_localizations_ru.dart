@@ -1443,4 +1443,326 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mpModePowerUpMadnessName => 'Безумие усилений';
+
+  @override
+  String get commonClose => 'Закрыть';
+
+  @override
+  String get commonViewAll => 'Показать все';
+
+  @override
+  String get commonRetry => 'Повторить';
+
+  @override
+  String get pfTitle => 'Профиль';
+
+  @override
+  String get pfSigningOut => 'Выход...';
+
+  @override
+  String get pfGuestPlayer => 'Гость';
+
+  @override
+  String get pfVerifiedAccount => 'Подтверждённый аккаунт';
+
+  @override
+  String get pfStatistics => 'Статистика';
+
+  @override
+  String get pfReplays => 'Повторы';
+
+  @override
+  String get pfAchievements => 'Достижения';
+
+  @override
+  String get pfLoadingStats => 'Загрузка статистики...';
+
+  @override
+  String get pfHighScore => 'Рекорд';
+
+  @override
+  String get pfGamesPlayed => 'Сыграно игр';
+
+  @override
+  String get pfPlayTime => 'Время игры';
+
+  @override
+  String get pfAverageScore => 'Средний счёт';
+
+  @override
+  String get pfFoodConsumed => 'Съедено еды';
+
+  @override
+  String get pfPowerUps => 'Усиления';
+
+  @override
+  String get pfUpgradeTitle => 'Перейти на аккаунт Google';
+
+  @override
+  String get pfUpgradeSubtitle =>
+      'Сохраните прогресс и синхронизируйте между устройствами';
+
+  @override
+  String get pfBenefitSync => 'Синхронизация прогресса';
+
+  @override
+  String get pfBenefitSyncSub => 'между устройствами';
+
+  @override
+  String get pfBenefitLeaderboards => 'Мировые рейтинги';
+
+  @override
+  String get pfBenefitLeaderboardsSub => 'соревнуйтесь со всем миром';
+
+  @override
+  String get pfBenefitSocial => 'Друзья и общение';
+
+  @override
+  String get pfBenefitSocialSub => 'общайтесь с другими';
+
+  @override
+  String get pfSignInGoogle => 'Войти через Google';
+
+  @override
+  String get pfSignInApple => 'Войти через Apple';
+
+  @override
+  String get pfNoReplays => 'Пока нет повторов. Сыграйте пару игр!';
+
+  @override
+  String pfReplaysSaved(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count повтора сохранено',
+      many: '$count повторов сохранено',
+      few: '$count повтора сохранено',
+      one: '$count повтор сохранён',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pfAccountManagement => 'Управление аккаунтом';
+
+  @override
+  String get pfSignOut => 'Выйти';
+
+  @override
+  String get pfDeleteAccount => 'Удалить аккаунт';
+
+  @override
+  String get pfAppleUpgradeSuccess => 'Аккаунт успешно привязан к Apple! 🎉';
+
+  @override
+  String get pfAppleIdInUse =>
+      'У этого Apple ID уже есть аккаунт. Выйдите и войдите через Apple.';
+
+  @override
+  String get pfUpgradeFailed =>
+      'Не удалось обновить аккаунт. Попробуйте ещё раз.';
+
+  @override
+  String get pfUpgradeError => 'Произошла ошибка при обновлении аккаунта.';
+
+  @override
+  String get pfGoogleUpgradeSuccess => 'Аккаунт успешно привязан к Google! 🎉';
+
+  @override
+  String get pfDeleteAccountTitle => 'Удалить аккаунт?';
+
+  @override
+  String pfDeleteAccountBody(Object storeName) {
+    return 'Это навсегда удалит ваш аккаунт и всё, что с ним связано:\n\n• Рекорды и статистику\n• Монеты и покупки\n• Темы, скины, следы и усиления\n• Прогресс боевого пропуска и заданий\n• Записи в рейтингах и друзей\n\nЭто нельзя отменить. Активные подписки нужно отменить отдельно в настройках $storeName.';
+  }
+
+  @override
+  String get pfAppStore => 'App Store';
+
+  @override
+  String get pfDeviceAppStore => 'магазина приложений устройства';
+
+  @override
+  String get pfAccountDeleted => 'Ваш аккаунт навсегда удалён.';
+
+  @override
+  String get pfDeleteFailed =>
+      'Не удалось удалить аккаунт. Проверьте соединение и попробуйте ещё раз.';
+
+  @override
+  String get pfDeleteForever => 'Удалить навсегда';
+
+  @override
+  String get pfSignOutBody =>
+      'Точно выйти?\n\nВаш прогресс сохранится, если вы вошли через Google.';
+
+  @override
+  String get pfSignedOut => 'Вы успешно вышли 👋';
+
+  @override
+  String get stLoading => 'Загрузка статистики...';
+
+  @override
+  String get stPerformanceOverview => 'Обзор результатов';
+
+  @override
+  String get stTotalGames => 'Всего игр';
+
+  @override
+  String get stWinStreak => 'Серия побед';
+
+  @override
+  String get stGameActivity => 'Игровая активность';
+
+  @override
+  String get stLongestGame => 'Самая долгая игра';
+
+  @override
+  String get stHighestLevel => 'Максимальный уровень';
+
+  @override
+  String get stPerfectGames => 'Идеальные игры';
+
+  @override
+  String get stFoodPowerUps => 'Еда и усиления';
+
+  @override
+  String get stPowerUpsUsed => 'Использовано усилений';
+
+  @override
+  String get stFavoriteFood => 'Любимая еда';
+
+  @override
+  String get stFavoritePowerUp => 'Любимое усиление';
+
+  @override
+  String get stPerformanceTrends => 'Динамика результатов';
+
+  @override
+  String get stOverallTrend => 'Общий тренд';
+
+  @override
+  String get stRecentAverage => 'Средний за последнее время';
+
+  @override
+  String get stBestRecent => 'Лучший за последнее время';
+
+  @override
+  String get stConsistency => 'Стабильность';
+
+  @override
+  String get stScores => 'Очки';
+
+  @override
+  String get stTrendLine => 'Линия тренда';
+
+  @override
+  String get stPlayPatterns => 'Игровые привычки (последние 7 дней)';
+
+  @override
+  String get stWeeklyTime => 'Время за неделю';
+
+  @override
+  String get stMostActiveDay => 'Самый активный день';
+
+  @override
+  String get stDailyActivity => 'Активность по дням';
+
+  @override
+  String get stAchievementProgress => 'Прогресс достижений';
+
+  @override
+  String get stViewAllAchievements => 'Все достижения →';
+
+  @override
+  String get stViewAchievements => 'ДОСТИЖЕНИЯ';
+
+  @override
+  String get stReplaysUpper => 'ПОВТОРЫ';
+
+  @override
+  String get stResetStatistics => 'СБРОСИТЬ СТАТИСТИКУ';
+
+  @override
+  String get stResetTitle => 'Сбросить статистику?';
+
+  @override
+  String get stResetBody =>
+      'Это навсегда удалит всю вашу игровую статистику. Действие нельзя отменить.';
+
+  @override
+  String get stReset => 'Сбросить';
+
+  @override
+  String get stNA => 'Н/Д';
+
+  @override
+  String get stExcellent => 'Отлично';
+
+  @override
+  String get stGood => 'Хорошо';
+
+  @override
+  String get stFair => 'Средне';
+
+  @override
+  String get stPoor => 'Слабо';
+
+  @override
+  String get stNoData => 'Нет данных';
+
+  @override
+  String get stNone => 'Нет';
+
+  @override
+  String stProgressLastGames(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count игры',
+      many: '$count игр',
+      few: '$count игры',
+      one: '$count игра',
+    );
+    return 'Прогресс (последние $_temp0)';
+  }
+
+  @override
+  String stPercentComplete(Object percent) {
+    return '$percent завершено';
+  }
+
+  @override
+  String get stInsights => 'Анализ результатов';
+
+  @override
+  String get stInsightPlayMore =>
+      'Сыграйте больше игр, чтобы получить анализ результатов!';
+
+  @override
+  String get stInsightImproving => 'Отлично! Ваши результаты растут.';
+
+  @override
+  String get stInsightAboveAverage =>
+      'Ваши последние игры заметно выше вашего среднего.';
+
+  @override
+  String get stInsightDeclined =>
+      'Результаты в последнее время снизились. Стоит потренироваться.';
+
+  @override
+  String get stInsightPractice =>
+      'Сосредоточьтесь на избегании столкновений и планировании ходов.';
+
+  @override
+  String get stInsightStable =>
+      'Ваши результаты стабильны. Бросьте себе вызов!';
+
+  @override
+  String get stInsightPotential =>
+      'У вас есть потенциал для рекордов - поработайте над стабильностью.';
+
+  @override
+  String get stInsightSolid =>
+      'Вы стабильно показываете хорошие результаты в последних играх.';
 }

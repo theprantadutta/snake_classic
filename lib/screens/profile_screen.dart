@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -89,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             extendBodyBehindAppBar: true,
             appBar: AppBar(
               title: Text(
-                'Profile',
+                AppLocalizations.of(context)!.pfTitle,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 24,
@@ -150,7 +151,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ThemeState themeState,
   ) {
     if (authState.isLoading) {
-      return _buildFullScreenLoader(themeState, message: 'Signing out...');
+      return _buildFullScreenLoader(
+        themeState,
+        message: AppLocalizations.of(context)!.pfSigningOut,
+      );
     }
     if (authState.isSignedIn) {
       return _buildProfileContent(context, authState, themeState);
@@ -190,6 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ThemeState themeState,
   ) {
     final theme = themeState.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       child: Column(
@@ -322,8 +327,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(width: 6),
                       Text(
                         authState.isAnonymous
-                            ? 'Guest Player'
-                            : 'Verified Account',
+                            ? l10n.pfGuestPlayer
+                            : l10n.pfVerifiedAccount,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -353,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: _buildQuickActionButton(
                     context,
-                    'Statistics',
+                    l10n.pfStatistics,
                     Icons.analytics_rounded,
                     theme.accentColor,
                     () => _navigateToStatistics(context),
@@ -363,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: _buildQuickActionButton(
                     context,
-                    'Replays',
+                    l10n.pfReplays,
                     Icons.video_library_rounded,
                     Colors.blue,
                     () => _navigateToReplays(context),
@@ -373,7 +378,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                   child: _buildQuickActionButton(
                     context,
-                    'Achievements',
+                    l10n.pfAchievements,
                     Icons.emoji_events_rounded,
                     Colors.amber,
                     () => _navigateToAchievements(context),
@@ -432,9 +437,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Statistics',
-                          style: TextStyle(
+                        Text(
+                          l10n.pfStatistics,
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -463,9 +468,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ],
                           ),
-                          child: const Text(
-                            'View All',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.commonViewAll,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -480,14 +485,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (_isLoading)
                   Padding(
                     padding: const EdgeInsets.all(20.0),
-                    child: ThemedLoading(theme: theme, label: 'Loading stats...'),
+                    child: ThemedLoading(theme: theme, label: l10n.pfLoadingStats),
                   )
                 else ...[
                   Row(
                     children: [
                       Expanded(
                         child: _buildStatItem(
-                          'High Score',
+                          l10n.pfHighScore,
                           _displayStats['highScore']?.toString() ?? '0',
                           Icons.emoji_events,
                           themeState,
@@ -496,7 +501,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       Expanded(
                         child: _buildStatItem(
-                          'Games Played',
+                          l10n.pfGamesPlayed,
                           _displayStats['totalGames']?.toString() ?? '0',
                           Icons.games,
                           themeState,
@@ -510,7 +515,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Expanded(
                         child: _buildStatItem(
-                          'Play Time',
+                          l10n.pfPlayTime,
                           '${_displayStats['totalPlayTime'] ?? '0s'}',
                           Icons.access_time,
                           themeState,
@@ -519,7 +524,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       Expanded(
                         child: _buildStatItem(
-                          'Average Score',
+                          l10n.pfAverageScore,
                           _displayStats['averageScore']?.toString() ?? '0',
                           Icons.trending_up,
                           themeState,
@@ -533,7 +538,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Expanded(
                         child: _buildStatItem(
-                          'Food Consumed',
+                          l10n.pfFoodConsumed,
                           _displayStats['totalFood']?.toString() ?? '0',
                           Icons.fastfood,
                           themeState,
@@ -542,7 +547,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       Expanded(
                         child: _buildStatItem(
-                          'Power-ups',
+                          l10n.pfPowerUps,
                           _displayStats['totalPowerUps']?.toString() ?? '0',
                           Icons.flash_on,
                           themeState,
@@ -606,9 +611,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Text(
-                            'Achievements',
-                            style: TextStyle(
+                          Text(
+                            l10n.pfAchievements,
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -636,9 +641,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ],
                           ),
-                          child: const Text(
-                            'View All',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.commonViewAll,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -708,22 +713,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Upgrade to Google Account',
-                              style: TextStyle(
+                              l10n.pfUpgradeTitle,
+                              style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
-                              'Save your progress and sync across devices',
-                              style: TextStyle(
+                              l10n.pfUpgradeSubtitle,
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.white70,
                               ),
@@ -741,22 +746,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Expanded(
                         child: _buildUpgradeBenefit(
                           Icons.cloud_sync,
-                          'Sync Progress',
-                          'across devices',
+                          l10n.pfBenefitSync,
+                          l10n.pfBenefitSyncSub,
                         ),
                       ),
                       Expanded(
                         child: _buildUpgradeBenefit(
                           Icons.leaderboard,
-                          'Global Leaderboards',
-                          'compete worldwide',
+                          l10n.pfBenefitLeaderboards,
+                          l10n.pfBenefitLeaderboardsSub,
                         ),
                       ),
                       Expanded(
                         child: _buildUpgradeBenefit(
                           Icons.people,
-                          'Friends & Social',
-                          'connect with others',
+                          l10n.pfBenefitSocial,
+                          l10n.pfBenefitSocialSub,
                         ),
                       ),
                     ],
@@ -766,7 +771,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Upgrade button
                   _buildEnhancedButton(
                     context,
-                    'Sign in with Google',
+                    l10n.pfSignInGoogle,
                     FaIcon(
                       FontAwesomeIcons.google,
                       color: Colors.white,
@@ -784,7 +789,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 12),
                     _buildEnhancedButton(
                       context,
-                      'Sign in with Apple',
+                      l10n.pfSignInApple,
                       FaIcon(
                         FontAwesomeIcons.apple,
                         color: Colors.white,
@@ -850,9 +855,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Replays',
-                          style: TextStyle(
+                        Text(
+                          l10n.pfReplays,
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -880,9 +885,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
-                        child: const Text(
-                          'View All',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.commonViewAll,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -901,7 +906,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Text(
-                            'No replays yet. Play some games!',
+                            l10n.pfNoReplays,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 14,
@@ -929,7 +934,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            '${replayKeys.length} replays saved',
+                            l10n.pfReplaysSaved(replayKeys.length),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 16,
@@ -963,9 +968,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    'Account Management',
-                    style: TextStyle(
+                  Text(
+                    l10n.pfAccountManagement,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -975,7 +980,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   _buildEnhancedButton(
                     context,
-                    'Sign Out',
+                    l10n.pfSignOut,
                     Icon(
                       Icons.logout_rounded,
                       color: Colors.white,
@@ -991,7 +996,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // be initiable in-app for any app with account creation.
                   _buildEnhancedButton(
                     context,
-                    'Delete Account',
+                    l10n.pfDeleteAccount,
                     Icon(
                       Icons.delete_forever_rounded,
                       color: Colors.white,
@@ -1347,6 +1352,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     BuildContext context,
     GameTheme theme,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final authCubit = context.read<AuthCubit>();
       // Link (not plain sign-in) so the guest's UID — and with it the
@@ -1356,7 +1362,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (success && context.mounted) {
         _showStyledSnackBar(
           context,
-          'Successfully upgraded to Apple account! 🎉',
+          l10n.pfAppleUpgradeSuccess,
           Colors.green,
           theme,
         );
@@ -1365,9 +1371,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'credential-already-in-use';
         _showStyledSnackBar(
           context,
-          isInUse
-              ? 'That Apple ID already has an account. Sign out, then sign in with Apple instead.'
-              : 'Failed to upgrade account. Please try again.',
+          isInUse ? l10n.pfAppleIdInUse : l10n.pfUpgradeFailed,
           Colors.red,
           theme,
         );
@@ -1376,7 +1380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (context.mounted) {
         _showStyledSnackBar(
           context,
-          'An error occurred during account upgrade.',
+          l10n.pfUpgradeError,
           Colors.red,
           theme,
         );
@@ -1388,6 +1392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     BuildContext context,
     GameTheme theme,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final authCubit = context.read<AuthCubit>();
       final success = await authCubit.signInWithGoogle();
@@ -1395,14 +1400,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (success && context.mounted) {
         _showStyledSnackBar(
           context,
-          'Successfully upgraded to Google account! 🎉',
+          l10n.pfGoogleUpgradeSuccess,
           Colors.green,
           theme,
         );
       } else if (context.mounted) {
         _showStyledSnackBar(
           context,
-          'Failed to upgrade account. Please try again.',
+          l10n.pfUpgradeFailed,
           Colors.red,
           theme,
         );
@@ -1411,7 +1416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (context.mounted) {
         _showStyledSnackBar(
           context,
-          'An error occurred during account upgrade.',
+          l10n.pfUpgradeError,
           Colors.red,
           theme,
         );
@@ -1420,6 +1425,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showDeleteAccountDialog(BuildContext context, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1428,28 +1434,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
         ),
-        title: const Text(
-          'Delete Account?',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.pfDeleteAccountTitle,
+          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'This permanently deletes your account and everything attached '
-          'to it:\n\n'
-          '• High scores and statistics\n'
-          '• Coins and purchased items\n'
-          '• Themes, skins, trails and power-ups\n'
-          '• Battle pass and challenge progress\n'
-          '• Leaderboard entries and friends\n\n'
-          'This cannot be undone. Active subscriptions must be cancelled '
-          'separately in your '
-          "${defaultTargetPlatform == TargetPlatform.iOS ? 'App Store' : "device's app store"} settings.",
+          l10n.pfDeleteAccountBody(
+            defaultTargetPlatform == TargetPlatform.iOS
+                ? l10n.pfAppStore
+                : l10n.pfDeviceAppStore,
+          ),
           style: const TextStyle(color: Colors.white, fontSize: 15),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
-              'Cancel',
+              l10n.commonCancel,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.bold,
@@ -1470,9 +1471,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (context.mounted) {
                 _showStyledSnackBar(
                   context,
-                  deleted
-                      ? 'Your account has been permanently deleted.'
-                      : 'Could not delete your account. Check your connection and try again.',
+                  deleted ? l10n.pfAccountDeleted : l10n.pfDeleteFailed,
                   deleted ? Colors.blue : Colors.red,
                   theme,
                 );
@@ -1481,9 +1480,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // BlocListener watching for AuthStatus.unauthenticated, same
               // as sign-out.
             },
-            child: const Text(
-              'Delete Forever',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            child: Text(
+              l10n.pfDeleteForever,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -1492,6 +1491,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showSignOutDialog(BuildContext context, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1501,21 +1501,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
         ),
         title: Text(
-          'Sign Out',
+          l10n.pfSignOut,
           style: TextStyle(
             color: theme.primaryColor,
             fontWeight: FontWeight.bold,
           ),
         ),
-        content: const Text(
-          'Are you sure you want to sign out?\n\nYour progress will be saved if you\'re signed in with Google.',
-          style: TextStyle(color: Colors.white, fontSize: 16),
+        content: Text(
+          l10n.pfSignOutBody,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
-              'Cancel',
+              l10n.commonCancel,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.bold,
@@ -1536,15 +1536,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (context.mounted) {
                 _showStyledSnackBar(
                   context,
-                  'Signed out successfully 👋',
+                  l10n.pfSignedOut,
                   Colors.blue,
                   theme,
                 );
               }
             },
-            child: const Text(
-              'Sign Out',
-              style: TextStyle(
+            child: Text(
+              l10n.pfSignOut,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
