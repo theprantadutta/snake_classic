@@ -2306,4 +2306,592 @@ class AppLocalizationsEn extends AppLocalizations {
   String tnBuyEntry(Object price, Object tier) {
     return 'Buy $tier Entry - $price';
   }
+
+  @override
+  String get acAll => 'All';
+
+  @override
+  String get acUnlocked => 'Unlocked';
+
+  @override
+  String get acLocked => 'Locked';
+
+  @override
+  String get acTotalUpper => 'TOTAL';
+
+  @override
+  String get acUnlockedUpper => 'UNLOCKED';
+
+  @override
+  String get acClaimedUpper => 'CLAIMED';
+
+  @override
+  String get acPendingUpper => 'PENDING';
+
+  @override
+  String acPercentComplete(Object percent) {
+    return '$percent% complete';
+  }
+
+  @override
+  String acPercentOfUnlocked(Object percent) {
+    return '$percent% of unlocked';
+  }
+
+  @override
+  String get acEmpty => 'No achievements here';
+
+  @override
+  String acXpReward(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String acUnlockedDate(Object date) {
+    return 'Unlocked $date';
+  }
+
+  @override
+  String get rpTitle => 'Game Replays';
+
+  @override
+  String get rpRecent => 'Recent';
+
+  @override
+  String get rpBest => 'Best';
+
+  @override
+  String get rpCrashes => 'Crashes';
+
+  @override
+  String get rpLoading => 'Loading replays...';
+
+  @override
+  String get rpNoRecent => 'No recent replays';
+
+  @override
+  String get rpNoBest => 'No high-score replays';
+
+  @override
+  String get rpNoCrashes => 'No crash replays';
+
+  @override
+  String get rpEmptySub => 'Play some games to generate replays!';
+
+  @override
+  String get rpScore => 'Score';
+
+  @override
+  String get rpDuration => 'Duration';
+
+  @override
+  String get rpFood => 'Food';
+
+  @override
+  String get rpFrames => 'Frames';
+
+  @override
+  String get rpMaxLength => 'Max Length';
+
+  @override
+  String get rpWatch => 'Watch';
+
+  @override
+  String get rpYesterday => 'Yesterday';
+
+  @override
+  String get rpDeleteTitle => 'Delete Replay';
+
+  @override
+  String rpDeleteBody(Object date) {
+    return 'Delete replay from $date?';
+  }
+
+  @override
+  String get rpDelete => 'Delete';
+
+  @override
+  String get rpDeleted => 'Replay deleted';
+
+  @override
+  String get rpDeleteFailed => 'Failed to delete replay';
+
+  @override
+  String get lbTitle => 'Leaderboards';
+
+  @override
+  String get lbGlobal => 'Global';
+
+  @override
+  String get lbWeekly => 'Weekly';
+
+  @override
+  String get lbWeeklySub =>
+      'Ranked by your best single-game score this week (resets Sunday)';
+
+  @override
+  String get lbGlobalSub => 'Ranked by your highest single-game score ever';
+
+  @override
+  String lbScoreLine(Object score) {
+    return 'Score: $score';
+  }
+
+  @override
+  String get lbLoadingGlobal => 'Loading global leaderboard...';
+
+  @override
+  String get lbLoadingWeekly => 'Loading weekly leaderboard...';
+
+  @override
+  String get lbNoScores => 'No scores yet';
+
+  @override
+  String get lbBeFirst => 'Be the first to set a high score!';
+
+  @override
+  String get lbNoWeekly => 'No weekly scores yet';
+
+  @override
+  String get lbPlayThisWeek => 'Play this week to appear here!';
+
+  @override
+  String get lbAnonymous => 'Anonymous';
+
+  @override
+  String get lbGuestBadge => 'GUEST';
+
+  @override
+  String get lbPts => 'pts';
+
+  @override
+  String lbGamesPlayed(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games played',
+      one: '$count game played',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String bpClaimedToast(Object name) {
+    return '$name claimed!';
+  }
+
+  @override
+  String get bpTitle => 'Battle Pass';
+
+  @override
+  String get bpTitleUpper => 'BATTLE PASS';
+
+  @override
+  String get bpLoading => 'Loading battle pass...';
+
+  @override
+  String get bpWatchAdXp => 'Watch ad — +50 Battle Pass XP';
+
+  @override
+  String get bpXpEarned => '+50 Battle Pass XP earned!';
+
+  @override
+  String get bpSeasonEnded => 'Season ended';
+
+  @override
+  String bpHoursLeft(Object hours) {
+    return '${hours}h left';
+  }
+
+  @override
+  String bpDaysLeft(Object days) {
+    return '${days}d left';
+  }
+
+  @override
+  String get bpTierUpper => 'TIER';
+
+  @override
+  String bpTierMax(Object max) {
+    return ' / $max';
+  }
+
+  @override
+  String get bpSeasonComplete => 'Season complete';
+
+  @override
+  String get bpSeasonCompleteUpper => 'SEASON COMPLETE';
+
+  @override
+  String bpXpProgress(Object next, Object tier, Object xp) {
+    return '$xp / $next XP to Tier $tier';
+  }
+
+  @override
+  String get bpPremiumBadge => 'PREMIUM';
+
+  @override
+  String get bpUnlockedEverything =>
+      'You\'ve unlocked every tier in this season.';
+
+  @override
+  String get bpComingNext => 'COMING NEXT';
+
+  @override
+  String bpTierN(Object tier) {
+    return 'Tier $tier';
+  }
+
+  @override
+  String bpTiersAway(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tiers away',
+      one: '$count tier away',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bpUnlockWithPro => 'UNLOCK WITH PRO';
+
+  @override
+  String get bpAvailableNow => 'AVAILABLE NOW';
+
+  @override
+  String bpTierAbbrev(Object tier) {
+    return 'T$tier';
+  }
+
+  @override
+  String get bpClaim => 'CLAIM';
+
+  @override
+  String get bpPremiumWaiting => 'Premium rewards waiting';
+
+  @override
+  String get bpSubscribeToClaim => 'Subscribe to Pro to claim them.';
+
+  @override
+  String get bpHideTiers => 'Hide tiers';
+
+  @override
+  String bpViewAllTiers(Object count) {
+    return 'View all $count tiers';
+  }
+
+  @override
+  String get bpCollapse => 'COLLAPSE';
+
+  @override
+  String get bpExpand => 'EXPAND';
+
+  @override
+  String get bpNow => 'NOW';
+
+  @override
+  String bpTierUpperN(Object tier) {
+    return 'TIER $tier';
+  }
+
+  @override
+  String get bpUnlocked => 'Unlocked';
+
+  @override
+  String bpReachTier(Object tier) {
+    return 'Reach Tier $tier to unlock';
+  }
+
+  @override
+  String get bpBetweenSeasons => 'Between Seasons';
+
+  @override
+  String get bpNoSeasonBody =>
+      'No Battle Pass is running right now — the next season will start automatically. Check back soon.';
+
+  @override
+  String get bpCheckNewSeason => 'Check for new season';
+
+  @override
+  String get pbActive => 'Premium Active!';
+
+  @override
+  String get pbActiveSub => 'You have access to all premium features';
+
+  @override
+  String get pbHeaderSub => 'Unlock everything the game has to offer';
+
+  @override
+  String get pbMonthlyPlan => 'Monthly Plan';
+
+  @override
+  String get pbYearlyPlan => 'Yearly Plan';
+
+  @override
+  String get pbSave33 => 'Save 33%';
+
+  @override
+  String get pbMostPopular => 'MOST POPULAR';
+
+  @override
+  String get pbFeatExtraLife => 'Always-Free Extra Life';
+
+  @override
+  String get pbFeatExtraLifeDesc =>
+      'Crash and keep going — Pro members revive instantly for free, no ad and no coins, once every game';
+
+  @override
+  String get pbFeatNoAds => 'Remove All Ads';
+
+  @override
+  String get pbFeatNoAdsDesc =>
+      'No banners, no interstitials — play completely ad-free, forever';
+
+  @override
+  String get pbFeatThemes => 'All Premium Themes';
+
+  @override
+  String get pbFeatThemesDesc =>
+      'Crystal, Cyberpunk, Space, Ocean, Desert, Forest';
+
+  @override
+  String get pbFeatSkins => 'All Premium Snake Skins';
+
+  @override
+  String get pbFeatSkinsDesc =>
+      'Golden, Galaxy, Dragon, Electric, Fire, Ice & 5 more';
+
+  @override
+  String get pbFeatTrails => 'All Premium Trail Effects';
+
+  @override
+  String get pbFeatTrailsDesc =>
+      'Particle, Glow, Rainbow, Fire, Cosmic, Crystal & 5 more';
+
+  @override
+  String get pbFeatBoards => 'Large Game Boards';
+
+  @override
+  String get pbFeatBoardsDesc => 'Play on 35x35, 40x40 & 50x50 boards';
+
+  @override
+  String get pbFeatCoins => '2x Coin Rewards';
+
+  @override
+  String get pbFeatCoinsDesc => 'Double Snake Coins from every game';
+
+  @override
+  String get pbFeatLucky => 'Lucky Forager — More Special Foods';
+
+  @override
+  String get pbFeatLuckyDesc =>
+      '+50% chance to spawn the rare 50-point special food in every game';
+
+  @override
+  String get pbFeatPowerUps => 'More In-Game Power-ups';
+
+  @override
+  String get pbFeatPowerUpsDesc =>
+      '+30% spawn rate for on-board power-ups during gameplay';
+
+  @override
+  String get pbFeatBundle => 'Premium Power-up Bundle';
+
+  @override
+  String get pbFeatBundleDesc =>
+      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield & Mega Invincibility every billing cycle';
+
+  @override
+  String get pbFeatTournament => 'Tournament Entries';
+
+  @override
+  String get pbFeatTournamentDesc =>
+      '1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle';
+
+  @override
+  String get pbIncludes => 'Premium Includes:';
+
+  @override
+  String get pbProPerk => 'PRO PERK';
+
+  @override
+  String pbSubscribeCta(Object period, Object price) {
+    return 'Subscribe — $price$period';
+  }
+
+  @override
+  String get pbReassurance => 'No commitment • Cancel anytime • Secure payment';
+
+  @override
+  String get pbNotAvailable => 'Premium subscription not available';
+
+  @override
+  String get eaTitleLink => 'Save Your Progress';
+
+  @override
+  String get eaTitleSignIn => 'Email Sign-In';
+
+  @override
+  String get eaExplainer =>
+      'Add an email and password to your account so you can buy items, restore on reinstall, and sign in from any device.';
+
+  @override
+  String get eaLinkExisting => 'Link Existing';
+
+  @override
+  String get eaSignIn => 'Sign In';
+
+  @override
+  String get eaCreateAccount => 'Create Account';
+
+  @override
+  String get eaForgotPassword => 'Forgot password?';
+
+  @override
+  String get eaLinkToExisting => 'Link to Existing Account';
+
+  @override
+  String get eaMinChars => 'At least 8 characters';
+
+  @override
+  String eaMinCharsN(Object count) {
+    return 'At least $count characters';
+  }
+
+  @override
+  String get eaCreateAndLink => 'Create & Link Account';
+
+  @override
+  String get eaEmail => 'Email';
+
+  @override
+  String get eaEmailRequired => 'Email is required';
+
+  @override
+  String get eaEmailInvalid => 'Enter a valid email';
+
+  @override
+  String get eaPassword => 'Password';
+
+  @override
+  String get eaPasswordRequired => 'Password is required';
+
+  @override
+  String get eaForgotFirst =>
+      'Enter your email above first, then tap Forgot password.';
+
+  @override
+  String eaResetSent(Object email) {
+    return 'Password reset email sent to $email.';
+  }
+
+  @override
+  String get eaErrInvalidEmail => 'That email address is not valid.';
+
+  @override
+  String get eaErrDisabled => 'This account has been disabled.';
+
+  @override
+  String get eaErrNoAccount => 'No account found with that email.';
+
+  @override
+  String get eaErrWrongCreds => 'Wrong email or password.';
+
+  @override
+  String get eaErrEmailInUse =>
+      'An account with that email already exists. Try signing in instead.';
+
+  @override
+  String get eaErrWeakPassword =>
+      'Password is too weak. Use at least 8 characters.';
+
+  @override
+  String get eaErrNotEnabled =>
+      'Email/password sign-in is not enabled. Contact support.';
+
+  @override
+  String get eaErrTooMany =>
+      'Too many attempts. Please wait a few minutes and try again.';
+
+  @override
+  String get eaErrNetwork => 'Network error. Check your connection.';
+
+  @override
+  String get eaErrAlreadyLinked =>
+      'This account is already linked to email/password.';
+
+  @override
+  String get eaErrRecentLogin =>
+      'For security, please sign in again before linking.';
+
+  @override
+  String get eaErrGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get faWelcome => 'Welcome to\nSnake Classic!';
+
+  @override
+  String get faChooseHow => 'Choose how you\'d like to play:';
+
+  @override
+  String get faSigningIn => 'Signing you in...';
+
+  @override
+  String get faSignInEmail => 'Sign in with Email';
+
+  @override
+  String get faContinueGuest => 'Continue as Guest';
+
+  @override
+  String get faGuestNote =>
+      'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.';
+
+  @override
+  String get faPrivacyTerms => 'Privacy & Terms';
+
+  @override
+  String get faReviewNote =>
+      'Please review our Privacy Policy and Terms of Use before continuing';
+
+  @override
+  String get faAgreeCheckbox =>
+      'I have read and agree to the Privacy Policy and Terms of Use';
+
+  @override
+  String get faContinueToSignIn => 'Continue to Sign In';
+
+  @override
+  String get faHeadsUp => 'Heads up';
+
+  @override
+  String get faGuestBullet1 =>
+      'Guest data is automatically deleted from our servers after 90 days of inactivity.';
+
+  @override
+  String get faGuestBullet2 =>
+      'To save your progress permanently and play across devices, sign in with Apple, Google or Email instead.';
+
+  @override
+  String get faGuestBullet3 =>
+      'Guest accounts cannot purchase products or subscriptions. Sign in if you want to upgrade to Pro or buy cosmetics.';
+
+  @override
+  String get faChangedMind => 'I changed my mind';
+
+  @override
+  String get faProceedAnyway => 'Proceed anyway';
+
+  @override
+  String get faAppleFailed => 'Failed to sign in with Apple. Please try again.';
+
+  @override
+  String get faGoogleFailed =>
+      'Failed to sign in with Google. Please try again.';
+
+  @override
+  String get faUnexpected => 'An unexpected error occurred. Please try again.';
+
+  @override
+  String get faGuestFailed => 'Failed to continue as guest. Please try again.';
 }

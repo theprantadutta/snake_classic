@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -101,15 +102,16 @@ class _ReplaysScreenState extends State<ReplaysScreen>
   Widget build(BuildContext context) {
     final themeState = context.watch<ThemeCubit>().state;
     final theme = themeState.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       bottomNavigationBar: const SnakeBannerAd(),
       appBar: AppBar(
         title: Row(
           children: [
-            const Text(
-              'Game Replays',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+            Text(
+              l10n.rpTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
             ),
             if (!_isLoading && _replays.isNotEmpty) ...[
               const SizedBox(width: 10),
@@ -148,27 +150,27 @@ class _ReplaysScreenState extends State<ReplaysScreen>
           indicatorColor: theme.accentColor,
           labelColor: theme.accentColor,
           unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-          tabs: const [
-            Tab(text: 'Recent'),
-            Tab(text: 'Best'),
-            Tab(text: 'Crashes'),
+          tabs: [
+            Tab(text: l10n.rpRecent),
+            Tab(text: l10n.rpBest),
+            Tab(text: l10n.rpCrashes),
           ],
         ),
       ),
       body: AppBackground(
         theme: theme,
         child: _isLoading
-            ? ThemedLoading(theme: theme, label: 'Loading replays...')
+            ? ThemedLoading(theme: theme, label: l10n.rpLoading)
             : TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildReplayList(_recentReplays, 'No recent replays', theme),
+                  _buildReplayList(_recentReplays, l10n.rpNoRecent, theme),
                   _buildReplayList(
                     _highScoreReplays,
-                    'No high-score replays',
+                    l10n.rpNoBest,
                     theme,
                   ),
-                  _buildReplayList(_crashReplays, 'No crash replays', theme),
+                  _buildReplayList(_crashReplays, l10n.rpNoCrashes, theme),
                 ],
               ),
       ),
@@ -200,7 +202,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Play some games to generate replays!',
+              AppLocalizations.of(context)!.rpEmptySub,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.5),
@@ -222,6 +224,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
   }
 
   Widget _buildReplayCard(GameReplay replay, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final summary = replay.getSummary();
 
     return Card(
@@ -258,7 +261,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                         ),
                       ),
                       Text(
-                        _formatDate(replay.createdAt),
+                        _formatDate(l10n, replay.createdAt),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.6),
@@ -298,7 +301,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                 children: [
                   Expanded(
                     child: _buildStatChip(
-                      'Score',
+                      l10n.rpScore,
                       replay.finalScore.toString(),
                       Icons.stars,
                       Colors.amber,
@@ -307,7 +310,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildStatChip(
-                      'Duration',
+                      l10n.rpDuration,
                       summary['duration'],
                       Icons.timer,
                       Colors.blue,
@@ -316,7 +319,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildStatChip(
-                      'Food',
+                      l10n.rpFood,
                       summary['foodConsumed'].toString(),
                       Icons.fastfood,
                       Colors.orange,
@@ -331,7 +334,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                 children: [
                   Expanded(
                     child: _buildStatChip(
-                      'Frames',
+                      l10n.rpFrames,
                       replay.totalFrames.toString(),
                       Icons.movie,
                       Colors.purple,
@@ -340,7 +343,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildStatChip(
-                      'Max Length',
+                      l10n.rpMaxLength,
                       summary['maxLength'].toString(),
                       Icons.straighten,
                       Colors.green,
@@ -349,7 +352,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildStatChip(
-                      'Power-ups',
+                      l10n.pfPowerUps,
                       summary['powerUpsCollected'].toString(),
                       Icons.flash_on,
                       Colors.yellow,
@@ -367,7 +370,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                     child: ElevatedButton.icon(
                       onPressed: () => context.push(AppRoutes.replayViewerPath(replay.id), extra: replay),
                       icon: const Icon(Icons.play_arrow, size: 16),
-                      label: const Text('Watch'),
+                      label: Text(l10n.rpWatch),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.accentColor.withValues(
                           alpha: 0.8,
@@ -433,39 +436,40 @@ class _ReplaysScreenState extends State<ReplaysScreen>
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(AppLocalizations l10n, DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
 
     if (diff.inDays == 0) {
       if (diff.inHours == 0) {
-        return '${diff.inMinutes}m ago';
+        return l10n.frMinutesAgo(diff.inMinutes);
       }
-      return '${diff.inHours}h ago';
+      return l10n.frHoursAgo(diff.inHours);
     } else if (diff.inDays == 1) {
-      return 'Yesterday';
+      return l10n.rpYesterday;
     } else if (diff.inDays < 7) {
-      return '${diff.inDays}d ago';
+      return l10n.frDaysAgo(diff.inDays);
     } else {
       return '${date.month}/${date.day}/${date.year}';
     }
   }
 
   Future<void> _deleteReplay(GameReplay replay) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Replay'),
-        content: Text('Delete replay from ${_formatDate(replay.createdAt)}?'),
+        title: Text(l10n.rpDeleteTitle),
+        content: Text(l10n.rpDeleteBody(_formatDate(l10n, replay.createdAt))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.rpDelete),
           ),
         ],
       ),
@@ -478,12 +482,12 @@ class _ReplaysScreenState extends State<ReplaysScreen>
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Replay deleted')));
+          ).showSnackBar(SnackBar(content: Text(l10n.rpDeleted)));
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to delete replay')),
+            SnackBar(content: Text(l10n.rpDeleteFailed)),
           );
         }
       }

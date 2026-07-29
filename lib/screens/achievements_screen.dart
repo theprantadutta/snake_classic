@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/achievement_service.dart';
@@ -53,12 +54,13 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   }
 
   Widget _buildContent(BuildContext context, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       bottomNavigationBar: const SnakeBannerAd(),
       appBar: AppBar(
-        title: const Text(
-          'Achievements',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        title: Text(
+          l10n.pfAchievements,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -71,10 +73,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           indicatorColor: theme.accentColor,
           labelColor: theme.accentColor,
           unselectedLabelColor: theme.accentColor.withValues(alpha: 0.6),
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Unlocked'),
-            Tab(text: 'Locked'),
+          tabs: [
+            Tab(text: l10n.acAll),
+            Tab(text: l10n.acUnlocked),
+            Tab(text: l10n.acLocked),
           ],
         ),
       ),
@@ -112,6 +114,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   }
 
   Widget _buildProgressSummary(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     // Stat counts use the same logic as the dashboard's AchievementsGrid:
     // - Total: every row in the catalog
     // - Unlocked: isUnlocked = true
@@ -149,7 +152,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             children: [
               Expanded(
                 child: _StatTile(
-                  label: 'TOTAL',
+                  label: l10n.acTotalUpper,
                   value: '$total',
                   accent: Colors.white70,
                 ),
@@ -157,26 +160,27 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: _StatTile(
-                  label: 'UNLOCKED',
+                  label: l10n.acUnlockedUpper,
                   value: '$unlocked',
                   accent: Colors.amber,
-                  hint: '$completionPct% complete',
+                  hint: l10n.acPercentComplete(completionPct),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _StatTile(
-                  label: 'CLAIMED',
+                  label: l10n.acClaimedUpper,
                   value: '$claimed',
                   accent: Colors.green,
-                  hint:
-                      unlocked > 0 ? '$claimedOfUnlocked% of unlocked' : null,
+                  hint: unlocked > 0
+                      ? l10n.acPercentOfUnlocked(claimedOfUnlocked)
+                      : null,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _StatTile(
-                  label: 'PENDING',
+                  label: l10n.acPendingUpper,
                   value: '$pending',
                   accent: Colors.white70,
                 ),
@@ -226,7 +230,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'No achievements here',
+              AppLocalizations.of(context)!.acEmpty,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 16,
@@ -253,6 +257,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   }
 
   Widget _buildAchievementCard(Achievement achievement, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final isUnlocked = achievement.isUnlocked;
     final progress = achievement.progressPercentage;
 
@@ -417,7 +422,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '+${achievement.xpReward} XP',
+                        l10n.acXpReward(achievement.xpReward),
                         style: const TextStyle(
                           color: Colors.lightBlueAccent,
                           fontSize: 12,
@@ -437,7 +442,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '+${achievement.coinReward} coins',
+                        l10n.mpCoinReward(achievement.coinReward),
                         style: const TextStyle(
                           color: Colors.amber,
                           fontSize: 12,
@@ -470,7 +475,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                     const SizedBox(width: 8),
 
                     Text(
-                      'Unlocked ${_formatDate(achievement.unlockedAt!)}',
+                      l10n.acUnlockedDate(
+                        _formatDate(l10n, achievement.unlockedAt!),
+                      ),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.green.withValues(alpha: 0.8),
@@ -486,18 +493,18 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(AppLocalizations l10n, DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
+      return l10n.frDaysAgo(difference.inDays);
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
+      return l10n.frHoursAgo(difference.inHours);
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+      return l10n.frMinutesAgo(difference.inMinutes);
     } else {
-      return 'just now';
+      return l10n.frJustNow;
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -43,9 +44,10 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
             return Scaffold(
               extendBodyBehindAppBar: true,
               appBar: AppBar(
-                title: const Text(
-                  'Snake Classic Pro',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                title: Text(
+                  AppLocalizations.of(context)!.settingsProTitle,
+                  style:
+                      const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
                 ),
                 backgroundColor: Colors.transparent,
                 elevation: 0,
@@ -99,6 +101,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildPremiumActiveCard(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -136,7 +139,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Premium Active!',
+            l10n.pbActive,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 24,
@@ -145,7 +148,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'You have access to all premium features',
+            l10n.pbActiveSub,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.7),
               fontSize: 16,
@@ -158,6 +161,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildPremiumHeaderCard(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -204,7 +208,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Snake Classic Pro',
+            l10n.settingsProTitle,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 24,
@@ -213,7 +217,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Unlock everything the game has to offer',
+            l10n.pbHeaderSub,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.7),
               fontSize: 16,
@@ -226,6 +230,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildPricingToggle(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -238,8 +243,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       ),
       child: Row(
         children: [
-          Expanded(child: _buildToggleOption('Monthly', false, theme)),
-          Expanded(child: _buildToggleOption('Yearly', true, theme)),
+          Expanded(child: _buildToggleOption(l10n.storeMonthly, false, theme)),
+          Expanded(child: _buildToggleOption(l10n.storeYearly, true, theme)),
         ],
       ),
     );
@@ -284,13 +289,14 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildPricingCards(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         _buildPricingCard(
-          title: 'Monthly Plan',
+          title: l10n.pbMonthlyPlan,
           price: PurchaseService().getStorePriceOrDefault(
               ProductIds.snakeClassicProMonthly, 4.99),
-          period: '/month',
+          period: l10n.storePerMonth,
           badge: null,
           accentColor: Colors.blue,
           isPopular: false,
@@ -298,14 +304,14 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         ),
         const SizedBox(height: 12),
         _buildPricingCard(
-          title: 'Yearly Plan',
+          title: l10n.pbYearlyPlan,
           price: _isYearly
               ? PurchaseService().getStorePriceOrDefault(
                   ProductIds.snakeClassicProYearly, 39.99)
               : PurchaseService().getStorePriceOrDefault(
                   ProductIds.snakeClassicProMonthly, 4.99),
-          period: _isYearly ? '/year' : '/month',
-          badge: _isYearly ? 'Save 33%' : null,
+          period: _isYearly ? l10n.storePerYear : l10n.storePerMonth,
+          badge: _isYearly ? l10n.pbSave33 : null,
           accentColor: Colors.green,
           isPopular: _isYearly,
           theme: theme,
@@ -357,9 +363,9 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                 gradient: LinearGradient(colors: [Colors.amber, Colors.orange]),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                'MOST POPULAR',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.pbMostPopular,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -423,6 +429,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildFeaturesList(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     // Honest list — every entry maps to an entitlement the server actually
     // grants on Pro verify (VerifyPurchaseCommandHandler). The previous
     // 'Exclusive Game Modes' line was a false promise (modes are uniformly
@@ -431,62 +438,62 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     final features = [
       _FeatureItem(
         Icons.favorite,
-        'Always-Free Extra Life',
-        'Crash and keep going — Pro members revive instantly for free, no ad and no coins, once every game',
+        l10n.pbFeatExtraLife,
+        l10n.pbFeatExtraLifeDesc,
         highlighted: true,
       ),
       _FeatureItem(
         Icons.block,
-        'Remove All Ads',
-        'No banners, no interstitials — play completely ad-free, forever',
+        l10n.pbFeatNoAds,
+        l10n.pbFeatNoAdsDesc,
       ),
       _FeatureItem(
         Icons.palette,
-        'All Premium Themes',
-        'Crystal, Cyberpunk, Space, Ocean, Desert, Forest',
+        l10n.pbFeatThemes,
+        l10n.pbFeatThemesDesc,
       ),
       _FeatureItem(
         Icons.pets,
-        'All Premium Snake Skins',
-        'Golden, Galaxy, Dragon, Electric, Fire, Ice & 5 more',
+        l10n.pbFeatSkins,
+        l10n.pbFeatSkinsDesc,
       ),
       _FeatureItem(
         Icons.gradient,
-        'All Premium Trail Effects',
-        'Particle, Glow, Rainbow, Fire, Cosmic, Crystal & 5 more',
+        l10n.pbFeatTrails,
+        l10n.pbFeatTrailsDesc,
       ),
       _FeatureItem(
         Icons.grid_on,
-        'Large Game Boards',
-        'Play on 35x35, 40x40 & 50x50 boards',
+        l10n.pbFeatBoards,
+        l10n.pbFeatBoardsDesc,
       ),
       _FeatureItem(
         Icons.monetization_on,
-        '2x Coin Rewards',
-        'Double Snake Coins from every game',
+        l10n.pbFeatCoins,
+        l10n.pbFeatCoinsDesc,
       ),
       // In-game spawn boosts implemented in food.dart (Food.generateRandom
       // isPremium param) and game_cubit.dart (_trySpawnPowerUp). Backed by
       // the snapshot of PremiumCubit.hasPremium at game start.
       _FeatureItem(
         Icons.auto_awesome,
-        'Lucky Forager — More Special Foods',
-        '+50% chance to spawn the rare 50-point special food in every game',
+        l10n.pbFeatLucky,
+        l10n.pbFeatLuckyDesc,
       ),
       _FeatureItem(
         Icons.bolt,
-        'More In-Game Power-ups',
-        '+30% spawn rate for on-board power-ups during gameplay',
+        l10n.pbFeatPowerUps,
+        l10n.pbFeatPowerUpsDesc,
       ),
       _FeatureItem(
         Icons.flash_on,
-        'Premium Power-up Bundle',
-        '5× Teleport, Ghost Mode, Magnetic Food, Score Shield & Mega Invincibility every billing cycle',
+        l10n.pbFeatBundle,
+        l10n.pbFeatBundleDesc,
       ),
       _FeatureItem(
         Icons.emoji_events,
-        'Tournament Entries',
-        '1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle',
+        l10n.pbFeatTournament,
+        l10n.pbFeatTournamentDesc,
       ),
     ];
 
@@ -494,7 +501,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Premium Includes:',
+          l10n.pbIncludes,
           style: TextStyle(
             color: theme.accentColor,
             fontSize: 20,
@@ -573,9 +580,9 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'PRO PERK',
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(context)!.pbProPerk,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -605,6 +612,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   }
 
   Widget _buildBottomButton(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final productId = _isYearly
         ? ProductIds.snakeClassicProYearly
         : ProductIds.snakeClassicProMonthly;
@@ -612,7 +620,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       productId,
       _isYearly ? 39.99 : 4.99,
     );
-    final period = _isYearly ? '/year' : '/month';
+    final period = _isYearly ? l10n.storePerYear : l10n.storePerMonth;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -660,7 +668,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Subscribe — $price$period',
+                    l10n.pbSubscribeCta(period, price),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -671,7 +679,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
             ),
             const SizedBox(height: 12),
             Text(
-              'No commitment • Cancel anytime • Secure payment',
+              l10n.pbReassurance,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.6),
                 fontSize: 12,
@@ -698,8 +706,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       purchaseService.buyProduct(product);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Premium subscription not available'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.pbNotAvailable),
           backgroundColor: Colors.red,
         ),
       );

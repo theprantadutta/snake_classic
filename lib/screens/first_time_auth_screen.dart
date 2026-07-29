@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -117,6 +118,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     final themeState = context.watch<ThemeCubit>().state;
     final authCubit = context.read<AuthCubit>();
     final theme = themeState.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: AnimatedAppBackground(
@@ -250,7 +252,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                       ],
                                     ).createShader(bounds),
                                     child: Text(
-                                      'Welcome to\nSnake Classic!',
+                                      l10n.faWelcome,
                                       style: TextStyle(
                                         fontSize: isSmallScreen
                                             ? sizingHeight * 0.03
@@ -270,7 +272,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
                                   // Feature highlights
                                   Text(
-                                    'Choose how you\'d like to play:',
+                                    l10n.faChooseHow,
                                     style: TextStyle(
                                       fontSize: isSmallScreen
                                           ? sizingHeight * 0.018
@@ -323,7 +325,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Signing you in...',
+                                    l10n.faSigningIn,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color:
@@ -348,7 +350,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                       TargetPlatform.macOS) ...[
                                 _buildAuthButton(
                                       context,
-                                      'Sign in with Apple',
+                                      l10n.pfSignInApple,
                                       const FaIcon(
                                         FontAwesomeIcons.apple,
                                         color: Colors.white,
@@ -368,7 +370,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                               // Google Sign-In Button
                               _buildAuthButton(
                                     context,
-                                    'Sign in with Google',
+                                    l10n.pfSignInGoogle,
                                     const FaIcon(
                                       FontAwesomeIcons.google,
                                       color: Colors.white,
@@ -384,7 +386,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                               // Email Sign-In Button
                               _buildAuthButton(
                                     context,
-                                    'Sign in with Email',
+                                    l10n.faSignInEmail,
                                     const Icon(
                                       Icons.email_outlined,
                                       color: Colors.white,
@@ -406,7 +408,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                               // first-time users can't miss the warning.
                               _buildAuthButton(
                                     context,
-                                    'Continue as Guest',
+                                    l10n.faContinueGuest,
                                     const Icon(
                                       Icons.person_outline_rounded,
                                       color: Colors.white,
@@ -426,7 +428,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                   horizontal: 16,
                                 ),
                                 child: Text(
-                                  'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.',
+                                  l10n.faGuestNote,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.white
@@ -475,6 +477,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     bool isSmallScreen,
     bool isNarrowScreen,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: (isNarrowScreen ? 16.0 : 24.0) + context.sideInset(),
@@ -520,7 +523,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Privacy & Terms',
+                            l10n.faPrivacyTerms,
                             style: TextStyle(
                               color: theme.accentColor,
                               fontSize: isSmallScreen ? 20 : 24,
@@ -528,7 +531,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                             ),
                           ),
                           Text(
-                            'Please review our Privacy Policy and Terms of Use before continuing',
+                            l10n.faReviewNote,
                             style: TextStyle(
                               color: theme.accentColor.withValues(alpha: 0.7),
                               fontSize: isSmallScreen ? 12 : 14,
@@ -577,9 +580,9 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                 fontSize: isSmallScreen ? 13 : 15,
                                 fontWeight: FontWeight.bold,
                               ),
-                              tabs: const [
-                                Tab(text: 'Privacy Policy'),
-                                Tab(text: 'Terms of Use'),
+                              tabs: [
+                                Tab(text: l10n.settingsPrivacyPolicyTitle),
+                                Tab(text: l10n.settingsTermsTitle),
                               ],
                             ),
                             Expanded(
@@ -643,7 +646,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'I have read and agree to the Privacy Policy and Terms of Use',
+                        l10n.faAgreeCheckbox,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontSize: isSmallScreen ? 14 : 16,
@@ -705,7 +708,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Continue to Sign In',
+                          l10n.faContinueToSignIn,
                           style: TextStyle(
                             color: _privacyAccepted
                                 ? Colors.white
@@ -779,6 +782,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
   }
 
   Future<void> _handleAppleSignIn(AuthCubit authCubit) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoading = true);
 
     try {
@@ -799,11 +803,11 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
           context.go(route);
         }
       } else if (mounted) {
-        _showError('Failed to sign in with Apple. Please try again.');
+        _showError(l10n.faAppleFailed);
       }
     } catch (e) {
       if (mounted) {
-        _showError('An unexpected error occurred. Please try again.');
+        _showError(l10n.faUnexpected);
       }
     } finally {
       if (mounted) {
@@ -813,6 +817,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
   }
 
   Future<void> _handleGoogleSignIn(AuthCubit authCubit) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoading = true);
 
     try {
@@ -845,11 +850,11 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
           context.go(route);
         }
       } else if (mounted) {
-        _showError('Failed to sign in with Google. Please try again.');
+        _showError(l10n.faGoogleFailed);
       }
     } catch (e) {
       if (mounted) {
-        _showError('An unexpected error occurred. Please try again.');
+        _showError(l10n.faUnexpected);
       }
     } finally {
       if (mounted) {
@@ -865,6 +870,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
   /// screen so they can pick Google / Email instead.
   Future<void> _confirmGuestLogin(AuthCubit authCubit) async {
     final theme = context.read<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -889,7 +895,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Heads up',
+                l10n.faHeadsUp,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontWeight: FontWeight.bold,
@@ -905,23 +911,19 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
           children: [
             _GuestWarningBullet(
               icon: Icons.delete_outline_rounded,
-              text: 'Guest data is automatically deleted from our '
-                  'servers after 90 days of inactivity.',
+              text: l10n.faGuestBullet1,
               theme: theme,
             ),
             const SizedBox(height: 14),
             _GuestWarningBullet(
               icon: Icons.cloud_sync_rounded,
-              text: 'To save your progress permanently and play across '
-                  'devices, sign in with Apple, Google or Email instead.',
+              text: l10n.faGuestBullet2,
               theme: theme,
             ),
             const SizedBox(height: 14),
             _GuestWarningBullet(
               icon: Icons.shopping_cart_outlined,
-              text: 'Guest accounts cannot purchase products or '
-                  'subscriptions. Sign in if you want to upgrade to Pro '
-                  'or buy cosmetics.',
+              text: l10n.faGuestBullet3,
               theme: theme,
             ),
           ],
@@ -931,7 +933,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
-              'I changed my mind',
+              l10n.faChangedMind,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.w600,
@@ -941,7 +943,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(
-              'Proceed anyway',
+              l10n.faProceedAnyway,
               style: TextStyle(
                 color: theme.foodColor.withValues(alpha: 0.85),
                 fontWeight: FontWeight.w600,
@@ -958,6 +960,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
   }
 
   Future<void> _handleGuestLogin(AuthCubit authCubit) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoading = true);
 
     try {
@@ -980,7 +983,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
       }
     } catch (e) {
       if (mounted) {
-        _showError('Failed to continue as guest. Please try again.');
+        _showError(l10n.faGuestFailed);
       }
     } finally {
       if (mounted) {

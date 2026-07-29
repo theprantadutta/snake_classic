@@ -6,6 +6,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/providers/leaderboard_provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
@@ -169,7 +170,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
           Icon(Icons.leaderboard, color: theme.accentColor, size: 28),
           const SizedBox(width: 12),
           Text(
-            'Leaderboards',
+            AppLocalizations.of(context)!.lbTitle,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -183,6 +184,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   }
 
   Widget _buildTabBar(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16 + context.sideInset()),
       child: TabBar(
@@ -190,9 +192,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         indicatorColor: theme.accentColor,
         labelColor: theme.accentColor,
         unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-        tabs: const [
-          Tab(text: 'Global'),
-          Tab(text: 'Weekly'),
+        tabs: [
+          Tab(text: l10n.lbGlobal),
+          Tab(text: l10n.lbWeekly),
         ],
       ),
     );
@@ -204,11 +206,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   /// orders by aggregated max(Score.ScoreValue) lifetime; the weekly one
   /// scopes scores to `CreatedAt >= startOfWeek` (Sunday).
   Widget _buildSubtitle(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final isWeekly = _tabController.index == 1;
     final icon = isWeekly ? Icons.calendar_today : Icons.public;
-    final text = isWeekly
-        ? 'Ranked by your best single-game score this week (resets Sunday)'
-        : 'Ranked by your highest single-game score ever';
+    final text = isWeekly ? l10n.lbWeeklySub : l10n.lbGlobalSub;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16 + context.sideInset(),
@@ -254,7 +255,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     // confusing with a "Never updated" label.
     if (ts == null && !hasData) return const SizedBox.shrink();
 
-    final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
+    final l10n = AppLocalizations.of(context)!;
+    final label = ts == null
+        ? l10n.frNoCacheYet
+        : l10n.frUpdatedAgo(_relativeAge(l10n, ts));
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16 + context.sideInset(),
@@ -303,16 +307,17 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  String _relativeAge(DateTime ts) {
+  String _relativeAge(AppLocalizations l10n, DateTime ts) {
     final diff = DateTime.now().difference(ts);
-    if (diff.inSeconds < 5) return 'just now';
-    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    if (diff.inSeconds < 5) return l10n.frJustNow;
+    if (diff.inSeconds < 60) return l10n.frSecondsAgo(diff.inSeconds);
+    if (diff.inMinutes < 60) return l10n.frMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.frHoursAgo(diff.inHours);
+    return l10n.frDaysAgo(diff.inDays);
   }
 
   Widget _buildUserRankCard(AuthState authState, GameTheme theme, Map<String, dynamic> userRank) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: 16 + context.sideInset(),
@@ -354,7 +359,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   ),
                 ),
                 Text(
-                  'Score: ${authState.highScore}',
+                  l10n.lbScoreLine(authState.highScore),
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -373,7 +378,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   Icon(Icons.leaderboard, color: theme.accentColor, size: 20),
                   const SizedBox(width: 4),
                   Text(
-                    '#${userRank['rank']}',
+                    l10n.frRankBadge(userRank['rank'] as Object),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -383,7 +388,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 ],
               ),
               Text(
-                'Top ${userRank['percentile']}%',
+                l10n.tnTopPercent('${userRank['percentile']}'),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.6),
@@ -397,8 +402,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   }
 
   Widget _buildGlobalLeaderboard(GameTheme theme, AuthState authState, CombinedLeaderboardState leaderboardState) {
+    final l10n = AppLocalizations.of(context)!;
     if (leaderboardState.isLoadingGlobal) {
-      return _buildLoadingState(theme, 'Loading global leaderboard...');
+      return _buildLoadingState(theme, l10n.lbLoadingGlobal);
     }
 
     if (leaderboardState.globalError != null) {
@@ -423,7 +429,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             ElevatedButton.icon(
               onPressed: _loadGlobalLeaderboard,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(l10n.commonRetry),
             ),
           ],
         ),
@@ -442,7 +448,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'No scores yet',
+              l10n.lbNoScores,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 16,
@@ -450,7 +456,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Be the first to set a high score!',
+              l10n.lbBeFirst,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 14,
@@ -483,8 +489,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   }
 
   Widget _buildWeeklyLeaderboard(GameTheme theme, AuthState authState, CombinedLeaderboardState leaderboardState) {
+    final l10n = AppLocalizations.of(context)!;
     if (leaderboardState.isLoadingWeekly) {
-      return _buildLoadingState(theme, 'Loading weekly leaderboard...');
+      return _buildLoadingState(theme, l10n.lbLoadingWeekly);
     }
 
     if (leaderboardState.weeklyError != null) {
@@ -509,7 +516,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             ElevatedButton.icon(
               onPressed: _loadWeeklyLeaderboard,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(l10n.commonRetry),
             ),
           ],
         ),
@@ -528,7 +535,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'No weekly scores yet',
+              l10n.lbNoWeekly,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 16,
@@ -536,7 +543,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Play this week to appear here!',
+              l10n.lbPlayThisWeek,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 14,
@@ -574,6 +581,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     GameTheme theme,
     bool isCurrentUser,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     // Top-3 podium styling. Each gets its own metallic tint plus a faint
     // background gradient so the eye lands there first. Beyond rank 3 the
     // entries use the neutral theme treatment.
@@ -694,7 +702,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                       // profile.
                       player['username'] ??
                           player['displayName'] ??
-                          'Anonymous',
+                          l10n.lbAnonymous,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -713,9 +721,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                           color: Colors.orange.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'GUEST',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.lbGuestBadge,
+                          style: const TextStyle(
                             color: Colors.orange,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -756,7 +764,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'YOU',
+                              l10n.frYou,
                               style: TextStyle(
                                 color: theme.backgroundColor,
                                 fontSize: 11,
@@ -771,7 +779,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   ],
                 ),
                 Text(
-                  _formatGamesPlayed(gamesPlayed),
+                  _formatGamesPlayed(l10n, gamesPlayed),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.65),
@@ -790,7 +798,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               _buildScoreText(score, podium, isCurrentUser, theme),
               const SizedBox(height: 2),
               Text(
-                'pts',
+                l10n.lbPts,
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -912,11 +920,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  /// "1 game played" / "12 games played" / "1,234 games played". The
-  /// thousand-separator handles backend-aggregated counts that can get big.
-  String _formatGamesPlayed(int count) {
-    final formatted = _formatThousands(count);
-    return count == 1 ? '$formatted game played' : '$formatted games played';
+  /// "1 game played" / "12 games played" via the localized ICU plural.
+  /// Note: the count is no longer thousand-separated (intl formatting later).
+  String _formatGamesPlayed(AppLocalizations l10n, int count) {
+    return l10n.lbGamesPlayed(count);
   }
 
   String _formatThousands(int n) {

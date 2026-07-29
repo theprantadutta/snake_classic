@@ -4101,6 +4101,1020 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Buy {tier} Entry - {price}'**
   String tnBuyEntry(Object price, Object tier);
+
+  /// No description provided for @acAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get acAll;
+
+  /// No description provided for @acUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get acUnlocked;
+
+  /// No description provided for @acLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get acLocked;
+
+  /// No description provided for @acTotalUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL'**
+  String get acTotalUpper;
+
+  /// No description provided for @acUnlockedUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'UNLOCKED'**
+  String get acUnlockedUpper;
+
+  /// No description provided for @acClaimedUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIMED'**
+  String get acClaimedUpper;
+
+  /// No description provided for @acPendingUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'PENDING'**
+  String get acPendingUpper;
+
+  /// No description provided for @acPercentComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% complete'**
+  String acPercentComplete(Object percent);
+
+  /// No description provided for @acPercentOfUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of unlocked'**
+  String acPercentOfUnlocked(Object percent);
+
+  /// No description provided for @acEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No achievements here'**
+  String get acEmpty;
+
+  /// No description provided for @acXpReward.
+  ///
+  /// In en, this message translates to:
+  /// **'+{xp} XP'**
+  String acXpReward(Object xp);
+
+  /// No description provided for @acUnlockedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked {date}'**
+  String acUnlockedDate(Object date);
+
+  /// No description provided for @rpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Game Replays'**
+  String get rpTitle;
+
+  /// No description provided for @rpRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get rpRecent;
+
+  /// No description provided for @rpBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best'**
+  String get rpBest;
+
+  /// No description provided for @rpCrashes.
+  ///
+  /// In en, this message translates to:
+  /// **'Crashes'**
+  String get rpCrashes;
+
+  /// No description provided for @rpLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading replays...'**
+  String get rpLoading;
+
+  /// No description provided for @rpNoRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent replays'**
+  String get rpNoRecent;
+
+  /// No description provided for @rpNoBest.
+  ///
+  /// In en, this message translates to:
+  /// **'No high-score replays'**
+  String get rpNoBest;
+
+  /// No description provided for @rpNoCrashes.
+  ///
+  /// In en, this message translates to:
+  /// **'No crash replays'**
+  String get rpNoCrashes;
+
+  /// No description provided for @rpEmptySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Play some games to generate replays!'**
+  String get rpEmptySub;
+
+  /// No description provided for @rpScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get rpScore;
+
+  /// No description provided for @rpDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get rpDuration;
+
+  /// No description provided for @rpFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get rpFood;
+
+  /// No description provided for @rpFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Frames'**
+  String get rpFrames;
+
+  /// No description provided for @rpMaxLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Length'**
+  String get rpMaxLength;
+
+  /// No description provided for @rpWatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch'**
+  String get rpWatch;
+
+  /// No description provided for @rpYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get rpYesterday;
+
+  /// No description provided for @rpDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Replay'**
+  String get rpDeleteTitle;
+
+  /// No description provided for @rpDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete replay from {date}?'**
+  String rpDeleteBody(Object date);
+
+  /// No description provided for @rpDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get rpDelete;
+
+  /// No description provided for @rpDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay deleted'**
+  String get rpDeleted;
+
+  /// No description provided for @rpDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete replay'**
+  String get rpDeleteFailed;
+
+  /// No description provided for @lbTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboards'**
+  String get lbTitle;
+
+  /// No description provided for @lbGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get lbGlobal;
+
+  /// No description provided for @lbWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get lbWeekly;
+
+  /// No description provided for @lbWeeklySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranked by your best single-game score this week (resets Sunday)'**
+  String get lbWeeklySub;
+
+  /// No description provided for @lbGlobalSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranked by your highest single-game score ever'**
+  String get lbGlobalSub;
+
+  /// No description provided for @lbScoreLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {score}'**
+  String lbScoreLine(Object score);
+
+  /// No description provided for @lbLoadingGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading global leaderboard...'**
+  String get lbLoadingGlobal;
+
+  /// No description provided for @lbLoadingWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading weekly leaderboard...'**
+  String get lbLoadingWeekly;
+
+  /// No description provided for @lbNoScores.
+  ///
+  /// In en, this message translates to:
+  /// **'No scores yet'**
+  String get lbNoScores;
+
+  /// No description provided for @lbBeFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to set a high score!'**
+  String get lbBeFirst;
+
+  /// No description provided for @lbNoWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'No weekly scores yet'**
+  String get lbNoWeekly;
+
+  /// No description provided for @lbPlayThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Play this week to appear here!'**
+  String get lbPlayThisWeek;
+
+  /// No description provided for @lbAnonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get lbAnonymous;
+
+  /// No description provided for @lbGuestBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'GUEST'**
+  String get lbGuestBadge;
+
+  /// No description provided for @lbPts.
+  ///
+  /// In en, this message translates to:
+  /// **'pts'**
+  String get lbPts;
+
+  /// No description provided for @lbGamesPlayed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} game played} other{{count} games played}}'**
+  String lbGamesPlayed(num count);
+
+  /// No description provided for @bpClaimedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} claimed!'**
+  String bpClaimedToast(Object name);
+
+  /// No description provided for @bpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Battle Pass'**
+  String get bpTitle;
+
+  /// No description provided for @bpTitleUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'BATTLE PASS'**
+  String get bpTitleUpper;
+
+  /// No description provided for @bpLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading battle pass...'**
+  String get bpLoading;
+
+  /// No description provided for @bpWatchAdXp.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad — +50 Battle Pass XP'**
+  String get bpWatchAdXp;
+
+  /// No description provided for @bpXpEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'+50 Battle Pass XP earned!'**
+  String get bpXpEarned;
+
+  /// No description provided for @bpSeasonEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Season ended'**
+  String get bpSeasonEnded;
+
+  /// No description provided for @bpHoursLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h left'**
+  String bpHoursLeft(Object hours);
+
+  /// No description provided for @bpDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d left'**
+  String bpDaysLeft(Object days);
+
+  /// No description provided for @bpTierUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'TIER'**
+  String get bpTierUpper;
+
+  /// No description provided for @bpTierMax.
+  ///
+  /// In en, this message translates to:
+  /// **' / {max}'**
+  String bpTierMax(Object max);
+
+  /// No description provided for @bpSeasonComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Season complete'**
+  String get bpSeasonComplete;
+
+  /// No description provided for @bpSeasonCompleteUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'SEASON COMPLETE'**
+  String get bpSeasonCompleteUpper;
+
+  /// No description provided for @bpXpProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} / {next} XP to Tier {tier}'**
+  String bpXpProgress(Object next, Object tier, Object xp);
+
+  /// No description provided for @bpPremiumBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'PREMIUM'**
+  String get bpPremiumBadge;
+
+  /// No description provided for @bpUnlockedEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve unlocked every tier in this season.'**
+  String get bpUnlockedEverything;
+
+  /// No description provided for @bpComingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'COMING NEXT'**
+  String get bpComingNext;
+
+  /// No description provided for @bpTierN.
+  ///
+  /// In en, this message translates to:
+  /// **'Tier {tier}'**
+  String bpTierN(Object tier);
+
+  /// No description provided for @bpTiersAway.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} tier away} other{{count} tiers away}}'**
+  String bpTiersAway(num count);
+
+  /// No description provided for @bpUnlockWithPro.
+  ///
+  /// In en, this message translates to:
+  /// **'UNLOCK WITH PRO'**
+  String get bpUnlockWithPro;
+
+  /// No description provided for @bpAvailableNow.
+  ///
+  /// In en, this message translates to:
+  /// **'AVAILABLE NOW'**
+  String get bpAvailableNow;
+
+  /// No description provided for @bpTierAbbrev.
+  ///
+  /// In en, this message translates to:
+  /// **'T{tier}'**
+  String bpTierAbbrev(Object tier);
+
+  /// No description provided for @bpClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIM'**
+  String get bpClaim;
+
+  /// No description provided for @bpPremiumWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium rewards waiting'**
+  String get bpPremiumWaiting;
+
+  /// No description provided for @bpSubscribeToClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to Pro to claim them.'**
+  String get bpSubscribeToClaim;
+
+  /// No description provided for @bpHideTiers.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide tiers'**
+  String get bpHideTiers;
+
+  /// No description provided for @bpViewAllTiers.
+  ///
+  /// In en, this message translates to:
+  /// **'View all {count} tiers'**
+  String bpViewAllTiers(Object count);
+
+  /// No description provided for @bpCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'COLLAPSE'**
+  String get bpCollapse;
+
+  /// No description provided for @bpExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'EXPAND'**
+  String get bpExpand;
+
+  /// No description provided for @bpNow.
+  ///
+  /// In en, this message translates to:
+  /// **'NOW'**
+  String get bpNow;
+
+  /// No description provided for @bpTierUpperN.
+  ///
+  /// In en, this message translates to:
+  /// **'TIER {tier}'**
+  String bpTierUpperN(Object tier);
+
+  /// No description provided for @bpUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get bpUnlocked;
+
+  /// No description provided for @bpReachTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Tier {tier} to unlock'**
+  String bpReachTier(Object tier);
+
+  /// No description provided for @bpBetweenSeasons.
+  ///
+  /// In en, this message translates to:
+  /// **'Between Seasons'**
+  String get bpBetweenSeasons;
+
+  /// No description provided for @bpNoSeasonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No Battle Pass is running right now — the next season will start automatically. Check back soon.'**
+  String get bpNoSeasonBody;
+
+  /// No description provided for @bpCheckNewSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for new season'**
+  String get bpCheckNewSeason;
+
+  /// No description provided for @pbActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Active!'**
+  String get pbActive;
+
+  /// No description provided for @pbActiveSub.
+  ///
+  /// In en, this message translates to:
+  /// **'You have access to all premium features'**
+  String get pbActiveSub;
+
+  /// No description provided for @pbHeaderSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock everything the game has to offer'**
+  String get pbHeaderSub;
+
+  /// No description provided for @pbMonthlyPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Plan'**
+  String get pbMonthlyPlan;
+
+  /// No description provided for @pbYearlyPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly Plan'**
+  String get pbYearlyPlan;
+
+  /// No description provided for @pbSave33.
+  ///
+  /// In en, this message translates to:
+  /// **'Save 33%'**
+  String get pbSave33;
+
+  /// No description provided for @pbMostPopular.
+  ///
+  /// In en, this message translates to:
+  /// **'MOST POPULAR'**
+  String get pbMostPopular;
+
+  /// No description provided for @pbFeatExtraLife.
+  ///
+  /// In en, this message translates to:
+  /// **'Always-Free Extra Life'**
+  String get pbFeatExtraLife;
+
+  /// No description provided for @pbFeatExtraLifeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash and keep going — Pro members revive instantly for free, no ad and no coins, once every game'**
+  String get pbFeatExtraLifeDesc;
+
+  /// No description provided for @pbFeatNoAds.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove All Ads'**
+  String get pbFeatNoAds;
+
+  /// No description provided for @pbFeatNoAdsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No banners, no interstitials — play completely ad-free, forever'**
+  String get pbFeatNoAdsDesc;
+
+  /// No description provided for @pbFeatThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'All Premium Themes'**
+  String get pbFeatThemes;
+
+  /// No description provided for @pbFeatThemesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Crystal, Cyberpunk, Space, Ocean, Desert, Forest'**
+  String get pbFeatThemesDesc;
+
+  /// No description provided for @pbFeatSkins.
+  ///
+  /// In en, this message translates to:
+  /// **'All Premium Snake Skins'**
+  String get pbFeatSkins;
+
+  /// No description provided for @pbFeatSkinsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Golden, Galaxy, Dragon, Electric, Fire, Ice & 5 more'**
+  String get pbFeatSkinsDesc;
+
+  /// No description provided for @pbFeatTrails.
+  ///
+  /// In en, this message translates to:
+  /// **'All Premium Trail Effects'**
+  String get pbFeatTrails;
+
+  /// No description provided for @pbFeatTrailsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Particle, Glow, Rainbow, Fire, Cosmic, Crystal & 5 more'**
+  String get pbFeatTrailsDesc;
+
+  /// No description provided for @pbFeatBoards.
+  ///
+  /// In en, this message translates to:
+  /// **'Large Game Boards'**
+  String get pbFeatBoards;
+
+  /// No description provided for @pbFeatBoardsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Play on 35x35, 40x40 & 50x50 boards'**
+  String get pbFeatBoardsDesc;
+
+  /// No description provided for @pbFeatCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'2x Coin Rewards'**
+  String get pbFeatCoins;
+
+  /// No description provided for @pbFeatCoinsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Double Snake Coins from every game'**
+  String get pbFeatCoinsDesc;
+
+  /// No description provided for @pbFeatLucky.
+  ///
+  /// In en, this message translates to:
+  /// **'Lucky Forager — More Special Foods'**
+  String get pbFeatLucky;
+
+  /// No description provided for @pbFeatLuckyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'+50% chance to spawn the rare 50-point special food in every game'**
+  String get pbFeatLuckyDesc;
+
+  /// No description provided for @pbFeatPowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'More In-Game Power-ups'**
+  String get pbFeatPowerUps;
+
+  /// No description provided for @pbFeatPowerUpsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'+30% spawn rate for on-board power-ups during gameplay'**
+  String get pbFeatPowerUpsDesc;
+
+  /// No description provided for @pbFeatBundle.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Power-up Bundle'**
+  String get pbFeatBundle;
+
+  /// No description provided for @pbFeatBundleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'5× Teleport, Ghost Mode, Magnetic Food, Score Shield & Mega Invincibility every billing cycle'**
+  String get pbFeatBundleDesc;
+
+  /// No description provided for @pbFeatTournament.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournament Entries'**
+  String get pbFeatTournament;
+
+  /// No description provided for @pbFeatTournamentDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle'**
+  String get pbFeatTournamentDesc;
+
+  /// No description provided for @pbIncludes.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Includes:'**
+  String get pbIncludes;
+
+  /// No description provided for @pbProPerk.
+  ///
+  /// In en, this message translates to:
+  /// **'PRO PERK'**
+  String get pbProPerk;
+
+  /// No description provided for @pbSubscribeCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe — {price}{period}'**
+  String pbSubscribeCta(Object period, Object price);
+
+  /// No description provided for @pbReassurance.
+  ///
+  /// In en, this message translates to:
+  /// **'No commitment • Cancel anytime • Secure payment'**
+  String get pbReassurance;
+
+  /// No description provided for @pbNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium subscription not available'**
+  String get pbNotAvailable;
+
+  /// No description provided for @eaTitleLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Your Progress'**
+  String get eaTitleLink;
+
+  /// No description provided for @eaTitleSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Sign-In'**
+  String get eaTitleSignIn;
+
+  /// No description provided for @eaExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an email and password to your account so you can buy items, restore on reinstall, and sign in from any device.'**
+  String get eaExplainer;
+
+  /// No description provided for @eaLinkExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Existing'**
+  String get eaLinkExisting;
+
+  /// No description provided for @eaSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get eaSignIn;
+
+  /// No description provided for @eaCreateAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get eaCreateAccount;
+
+  /// No description provided for @eaForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get eaForgotPassword;
+
+  /// No description provided for @eaLinkToExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to Existing Account'**
+  String get eaLinkToExisting;
+
+  /// No description provided for @eaMinChars.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters'**
+  String get eaMinChars;
+
+  /// No description provided for @eaMinCharsN.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {count} characters'**
+  String eaMinCharsN(Object count);
+
+  /// No description provided for @eaCreateAndLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Create & Link Account'**
+  String get eaCreateAndLink;
+
+  /// No description provided for @eaEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get eaEmail;
+
+  /// No description provided for @eaEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get eaEmailRequired;
+
+  /// No description provided for @eaEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email'**
+  String get eaEmailInvalid;
+
+  /// No description provided for @eaPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get eaPassword;
+
+  /// No description provided for @eaPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required'**
+  String get eaPasswordRequired;
+
+  /// No description provided for @eaForgotFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email above first, then tap Forgot password.'**
+  String get eaForgotFirst;
+
+  /// No description provided for @eaResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent to {email}.'**
+  String eaResetSent(Object email);
+
+  /// No description provided for @eaErrInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'That email address is not valid.'**
+  String get eaErrInvalidEmail;
+
+  /// No description provided for @eaErrDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been disabled.'**
+  String get eaErrDisabled;
+
+  /// No description provided for @eaErrNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'No account found with that email.'**
+  String get eaErrNoAccount;
+
+  /// No description provided for @eaErrWrongCreds.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong email or password.'**
+  String get eaErrWrongCreds;
+
+  /// No description provided for @eaErrEmailInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'An account with that email already exists. Try signing in instead.'**
+  String get eaErrEmailInUse;
+
+  /// No description provided for @eaErrWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak. Use at least 8 characters.'**
+  String get eaErrWeakPassword;
+
+  /// No description provided for @eaErrNotEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Email/password sign-in is not enabled. Contact support.'**
+  String get eaErrNotEnabled;
+
+  /// No description provided for @eaErrTooMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please wait a few minutes and try again.'**
+  String get eaErrTooMany;
+
+  /// No description provided for @eaErrNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Check your connection.'**
+  String get eaErrNetwork;
+
+  /// No description provided for @eaErrAlreadyLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is already linked to email/password.'**
+  String get eaErrAlreadyLinked;
+
+  /// No description provided for @eaErrRecentLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'For security, please sign in again before linking.'**
+  String get eaErrRecentLogin;
+
+  /// No description provided for @eaErrGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get eaErrGeneric;
+
+  /// No description provided for @faWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to\nSnake Classic!'**
+  String get faWelcome;
+
+  /// No description provided for @faChooseHow.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how you\'d like to play:'**
+  String get faChooseHow;
+
+  /// No description provided for @faSigningIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing you in...'**
+  String get faSigningIn;
+
+  /// No description provided for @faSignInEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Email'**
+  String get faSignInEmail;
+
+  /// No description provided for @faContinueGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as Guest'**
+  String get faContinueGuest;
+
+  /// No description provided for @faGuestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.'**
+  String get faGuestNote;
+
+  /// No description provided for @faPrivacyTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & Terms'**
+  String get faPrivacyTerms;
+
+  /// No description provided for @faReviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Please review our Privacy Policy and Terms of Use before continuing'**
+  String get faReviewNote;
+
+  /// No description provided for @faAgreeCheckbox.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and agree to the Privacy Policy and Terms of Use'**
+  String get faAgreeCheckbox;
+
+  /// No description provided for @faContinueToSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Sign In'**
+  String get faContinueToSignIn;
+
+  /// No description provided for @faHeadsUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Heads up'**
+  String get faHeadsUp;
+
+  /// No description provided for @faGuestBullet1.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest data is automatically deleted from our servers after 90 days of inactivity.'**
+  String get faGuestBullet1;
+
+  /// No description provided for @faGuestBullet2.
+  ///
+  /// In en, this message translates to:
+  /// **'To save your progress permanently and play across devices, sign in with Apple, Google or Email instead.'**
+  String get faGuestBullet2;
+
+  /// No description provided for @faGuestBullet3.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest accounts cannot purchase products or subscriptions. Sign in if you want to upgrade to Pro or buy cosmetics.'**
+  String get faGuestBullet3;
+
+  /// No description provided for @faChangedMind.
+  ///
+  /// In en, this message translates to:
+  /// **'I changed my mind'**
+  String get faChangedMind;
+
+  /// No description provided for @faProceedAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed anyway'**
+  String get faProceedAnyway;
+
+  /// No description provided for @faAppleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to sign in with Apple. Please try again.'**
+  String get faAppleFailed;
+
+  /// No description provided for @faGoogleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to sign in with Google. Please try again.'**
+  String get faGoogleFailed;
+
+  /// No description provided for @faUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred. Please try again.'**
+  String get faUnexpected;
+
+  /// No description provided for @faGuestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to continue as guest. Please try again.'**
+  String get faGuestFailed;
 }
 
 class _AppLocalizationsDelegate

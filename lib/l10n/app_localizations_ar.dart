@@ -2297,4 +2297,593 @@ class AppLocalizationsAr extends AppLocalizations {
   String tnBuyEntry(Object price, Object tier) {
     return 'اشترِ دخول $tier - $price';
   }
+
+  @override
+  String get acAll => 'الكل';
+
+  @override
+  String get acUnlocked => 'المفتوحة';
+
+  @override
+  String get acLocked => 'المقفلة';
+
+  @override
+  String get acTotalUpper => 'الإجمالي';
+
+  @override
+  String get acUnlockedUpper => 'مفتوحة';
+
+  @override
+  String get acClaimedUpper => 'مستلمة';
+
+  @override
+  String get acPendingUpper => 'معلّقة';
+
+  @override
+  String acPercentComplete(Object percent) {
+    return '$percent% مكتمل';
+  }
+
+  @override
+  String acPercentOfUnlocked(Object percent) {
+    return '$percent% من المفتوحة';
+  }
+
+  @override
+  String get acEmpty => 'لا إنجازات هنا';
+
+  @override
+  String acXpReward(Object xp) {
+    return '+$xp خبرة';
+  }
+
+  @override
+  String acUnlockedDate(Object date) {
+    return 'فُتح $date';
+  }
+
+  @override
+  String get rpTitle => 'إعادات الجولات';
+
+  @override
+  String get rpRecent => 'الأحدث';
+
+  @override
+  String get rpBest => 'الأفضل';
+
+  @override
+  String get rpCrashes => 'الاصطدامات';
+
+  @override
+  String get rpLoading => 'جارٍ تحميل الإعادات...';
+
+  @override
+  String get rpNoRecent => 'لا إعادات حديثة';
+
+  @override
+  String get rpNoBest => 'لا إعادات أرقام قياسية';
+
+  @override
+  String get rpNoCrashes => 'لا إعادات اصطدام';
+
+  @override
+  String get rpEmptySub => 'العب بعض الجولات لإنشاء إعادات!';
+
+  @override
+  String get rpScore => 'النتيجة';
+
+  @override
+  String get rpDuration => 'المدة';
+
+  @override
+  String get rpFood => 'الطعام';
+
+  @override
+  String get rpFrames => 'الإطارات';
+
+  @override
+  String get rpMaxLength => 'أقصى طول';
+
+  @override
+  String get rpWatch => 'مشاهدة';
+
+  @override
+  String get rpYesterday => 'أمس';
+
+  @override
+  String get rpDeleteTitle => 'حذف الإعادة';
+
+  @override
+  String rpDeleteBody(Object date) {
+    return 'حذف إعادة $date؟';
+  }
+
+  @override
+  String get rpDelete => 'حذف';
+
+  @override
+  String get rpDeleted => 'حُذفت الإعادة';
+
+  @override
+  String get rpDeleteFailed => 'تعذر حذف الإعادة';
+
+  @override
+  String get lbTitle => 'التصنيفات';
+
+  @override
+  String get lbGlobal => 'عالمي';
+
+  @override
+  String get lbWeekly => 'أسبوعي';
+
+  @override
+  String get lbWeeklySub =>
+      'مرتب حسب أفضل نتيجة لك هذا الأسبوع (يُعاد الضبط يوم الأحد)';
+
+  @override
+  String get lbGlobalSub => 'مرتب حسب أعلى نتيجة لك على الإطلاق';
+
+  @override
+  String lbScoreLine(Object score) {
+    return 'النتيجة: $score';
+  }
+
+  @override
+  String get lbLoadingGlobal => 'جارٍ تحميل التصنيف العالمي...';
+
+  @override
+  String get lbLoadingWeekly => 'جارٍ تحميل التصنيف الأسبوعي...';
+
+  @override
+  String get lbNoScores => 'لا نتائج بعد';
+
+  @override
+  String get lbBeFirst => 'كن أول من يسجل رقمًا قياسيًا!';
+
+  @override
+  String get lbNoWeekly => 'لا نتائج هذا الأسبوع';
+
+  @override
+  String get lbPlayThisWeek => 'العب هذا الأسبوع لتظهر هنا!';
+
+  @override
+  String get lbAnonymous => 'مجهول';
+
+  @override
+  String get lbGuestBadge => 'ضيف';
+
+  @override
+  String get lbPts => 'نقطة';
+
+  @override
+  String lbGamesPlayed(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'لُعبت $count جولة',
+      many: 'لُعبت $count جولة',
+      few: 'لُعبت $count جولات',
+      two: 'لُعبت جولتان',
+      one: 'لُعبت جولة واحدة',
+      zero: 'لم تُلعب جولات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String bpClaimedToast(Object name) {
+    return 'تم استلام $name!';
+  }
+
+  @override
+  String get bpTitle => 'تذكرة المعركة';
+
+  @override
+  String get bpTitleUpper => 'تذكرة المعركة';
+
+  @override
+  String get bpLoading => 'جارٍ تحميل تذكرة المعركة...';
+
+  @override
+  String get bpWatchAdXp => 'شاهد إعلانًا — +50 خبرة للتذكرة';
+
+  @override
+  String get bpXpEarned => '+50 خبرة لتذكرة المعركة!';
+
+  @override
+  String get bpSeasonEnded => 'انتهى الموسم';
+
+  @override
+  String bpHoursLeft(Object hours) {
+    return 'بقي $hours س';
+  }
+
+  @override
+  String bpDaysLeft(Object days) {
+    return 'بقي $days ي';
+  }
+
+  @override
+  String get bpTierUpper => 'المستوى';
+
+  @override
+  String bpTierMax(Object max) {
+    return ' / $max';
+  }
+
+  @override
+  String get bpSeasonComplete => 'اكتمل الموسم';
+
+  @override
+  String get bpSeasonCompleteUpper => 'اكتمل الموسم';
+
+  @override
+  String bpXpProgress(Object next, Object tier, Object xp) {
+    return '$xp / $next خبرة للمستوى $tier';
+  }
+
+  @override
+  String get bpPremiumBadge => 'مميز';
+
+  @override
+  String get bpUnlockedEverything => 'فتحت كل مستويات هذا الموسم.';
+
+  @override
+  String get bpComingNext => 'القادم';
+
+  @override
+  String bpTierN(Object tier) {
+    return 'المستوى $tier';
+  }
+
+  @override
+  String bpTiersAway(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'على بُعد $count مستوى',
+      many: 'على بُعد $count مستوى',
+      few: 'على بُعد $count مستويات',
+      two: 'على بُعد مستويين',
+      one: 'على بُعد مستوى واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bpUnlockWithPro => 'افتح مع برو';
+
+  @override
+  String get bpAvailableNow => 'متاح الآن';
+
+  @override
+  String bpTierAbbrev(Object tier) {
+    return 'م$tier';
+  }
+
+  @override
+  String get bpClaim => 'استلم';
+
+  @override
+  String get bpPremiumWaiting => 'مكافآت مميزة بانتظارك';
+
+  @override
+  String get bpSubscribeToClaim => 'اشترك في برو لاستلامها.';
+
+  @override
+  String get bpHideTiers => 'إخفاء المستويات';
+
+  @override
+  String bpViewAllTiers(Object count) {
+    return 'عرض كل المستويات ($count)';
+  }
+
+  @override
+  String get bpCollapse => 'طيّ';
+
+  @override
+  String get bpExpand => 'توسيع';
+
+  @override
+  String get bpNow => 'الحالي';
+
+  @override
+  String bpTierUpperN(Object tier) {
+    return 'المستوى $tier';
+  }
+
+  @override
+  String get bpUnlocked => 'مفتوح';
+
+  @override
+  String bpReachTier(Object tier) {
+    return 'صِل إلى المستوى $tier للفتح';
+  }
+
+  @override
+  String get bpBetweenSeasons => 'بين المواسم';
+
+  @override
+  String get bpNoSeasonBody =>
+      'لا تذكرة معركة نشطة الآن — سيبدأ الموسم التالي تلقائيًا. عُد قريبًا.';
+
+  @override
+  String get bpCheckNewSeason => 'التحقق من موسم جديد';
+
+  @override
+  String get pbActive => 'بريميوم نشط!';
+
+  @override
+  String get pbActiveSub => 'لديك وصول إلى كل ميزات بريميوم';
+
+  @override
+  String get pbHeaderSub => 'افتح كل ما تقدمه اللعبة';
+
+  @override
+  String get pbMonthlyPlan => 'الخطة الشهرية';
+
+  @override
+  String get pbYearlyPlan => 'الخطة السنوية';
+
+  @override
+  String get pbSave33 => 'وفّر 33%';
+
+  @override
+  String get pbMostPopular => 'الأكثر شيوعًا';
+
+  @override
+  String get pbFeatExtraLife => 'حياة إضافية مجانية دائمًا';
+
+  @override
+  String get pbFeatExtraLifeDesc =>
+      'اصطدم وواصل — أعضاء برو يعودون فورًا مجانًا، بلا إعلان وبلا عملات، مرة في كل جولة';
+
+  @override
+  String get pbFeatNoAds => 'أزل كل الإعلانات';
+
+  @override
+  String get pbFeatNoAdsDesc =>
+      'بلا لافتات ولا إعلانات بينية — العب من دون إعلانات، للأبد';
+
+  @override
+  String get pbFeatThemes => 'كل السمات المميزة';
+
+  @override
+  String get pbFeatThemesDesc =>
+      'Crystal, Cyberpunk, Space, Ocean, Desert, Forest';
+
+  @override
+  String get pbFeatSkins => 'كل مظاهر الثعبان المميزة';
+
+  @override
+  String get pbFeatSkinsDesc =>
+      'Golden, Galaxy, Dragon, Electric, Fire, Ice و5 أخرى';
+
+  @override
+  String get pbFeatTrails => 'كل الآثار المميزة';
+
+  @override
+  String get pbFeatTrailsDesc =>
+      'Particle, Glow, Rainbow, Fire, Cosmic, Crystal و5 أخرى';
+
+  @override
+  String get pbFeatBoards => 'لوحات لعب كبيرة';
+
+  @override
+  String get pbFeatBoardsDesc => 'العب على لوحات 35x35 و40x40 و50x50';
+
+  @override
+  String get pbFeatCoins => 'مكافآت عملات 2x';
+
+  @override
+  String get pbFeatCoinsDesc => 'ضعف عملات Snake من كل جولة';
+
+  @override
+  String get pbFeatLucky => 'محظوظ — طعام خاص أكثر';
+
+  @override
+  String get pbFeatLuckyDesc =>
+      '+50% فرصة ظهور الطعام الخاص النادر بقيمة 50 نقطة في كل جولة';
+
+  @override
+  String get pbFeatPowerUps => 'تعزيزات أكثر داخل اللعبة';
+
+  @override
+  String get pbFeatPowerUpsDesc => '+30% لمعدل ظهور التعزيزات على اللوحة';
+
+  @override
+  String get pbFeatBundle => 'حزمة تعزيزات مميزة';
+
+  @override
+  String get pbFeatBundleDesc =>
+      '5× Teleport وGhost Mode وMagnetic Food وScore Shield وMega Invincibility في كل دورة فوترة';
+
+  @override
+  String get pbFeatTournament => 'دخول البطولات';
+
+  @override
+  String get pbFeatTournamentDesc =>
+      '1× برونزي + 1× فضي + 1× ذهبي في كل دورة فوترة';
+
+  @override
+  String get pbIncludes => 'يشمل بريميوم:';
+
+  @override
+  String get pbProPerk => 'ميزة برو';
+
+  @override
+  String pbSubscribeCta(Object period, Object price) {
+    return 'اشترك — $price$period';
+  }
+
+  @override
+  String get pbReassurance => 'بلا التزام • ألغِ في أي وقت • دفع آمن';
+
+  @override
+  String get pbNotAvailable => 'اشتراك بريميوم غير متاح';
+
+  @override
+  String get eaTitleLink => 'احفظ تقدمك';
+
+  @override
+  String get eaTitleSignIn => 'الدخول بالبريد';
+
+  @override
+  String get eaExplainer =>
+      'أضف بريدًا وكلمة مرور إلى حسابك لتتمكن من الشراء والاستعادة بعد إعادة التثبيت والدخول من أي جهاز.';
+
+  @override
+  String get eaLinkExisting => 'ربط حساب موجود';
+
+  @override
+  String get eaSignIn => 'تسجيل الدخول';
+
+  @override
+  String get eaCreateAccount => 'إنشاء حساب';
+
+  @override
+  String get eaForgotPassword => 'نسيت كلمة المرور؟';
+
+  @override
+  String get eaLinkToExisting => 'الربط بحساب موجود';
+
+  @override
+  String get eaMinChars => '8 أحرف على الأقل';
+
+  @override
+  String eaMinCharsN(Object count) {
+    return '$count أحرف على الأقل';
+  }
+
+  @override
+  String get eaCreateAndLink => 'إنشاء الحساب وربطه';
+
+  @override
+  String get eaEmail => 'البريد الإلكتروني';
+
+  @override
+  String get eaEmailRequired => 'البريد الإلكتروني مطلوب';
+
+  @override
+  String get eaEmailInvalid => 'أدخل بريدًا صالحًا';
+
+  @override
+  String get eaPassword => 'كلمة المرور';
+
+  @override
+  String get eaPasswordRequired => 'كلمة المرور مطلوبة';
+
+  @override
+  String get eaForgotFirst =>
+      'أدخل بريدك أعلاه أولًا، ثم انقر نسيت كلمة المرور.';
+
+  @override
+  String eaResetSent(Object email) {
+    return 'أُرسل بريد إعادة تعيين كلمة المرور إلى $email.';
+  }
+
+  @override
+  String get eaErrInvalidEmail => 'عنوان البريد هذا غير صالح.';
+
+  @override
+  String get eaErrDisabled => 'هذا الحساب معطّل.';
+
+  @override
+  String get eaErrNoAccount => 'لا يوجد حساب بهذا البريد.';
+
+  @override
+  String get eaErrWrongCreds => 'البريد أو كلمة المرور غير صحيحة.';
+
+  @override
+  String get eaErrEmailInUse =>
+      'يوجد حساب بهذا البريد بالفعل. جرّب تسجيل الدخول.';
+
+  @override
+  String get eaErrWeakPassword =>
+      'كلمة المرور ضعيفة جدًا. استخدم 8 أحرف على الأقل.';
+
+  @override
+  String get eaErrNotEnabled =>
+      'الدخول بالبريد/كلمة المرور غير مفعّل. تواصل مع الدعم.';
+
+  @override
+  String get eaErrTooMany => 'محاولات كثيرة. انتظر بضع دقائق ثم حاول مجددًا.';
+
+  @override
+  String get eaErrNetwork => 'خطأ في الشبكة. تحقق من اتصالك.';
+
+  @override
+  String get eaErrAlreadyLinked => 'هذا الحساب مرتبط بالفعل ببريد/كلمة مرور.';
+
+  @override
+  String get eaErrRecentLogin => 'لأسباب أمنية، سجّل الدخول مجددًا قبل الربط.';
+
+  @override
+  String get eaErrGeneric => 'حدث خطأ ما. حاول مرة أخرى.';
+
+  @override
+  String get faWelcome => 'مرحبًا بك في\nSnake Classic!';
+
+  @override
+  String get faChooseHow => 'اختر طريقة اللعب:';
+
+  @override
+  String get faSigningIn => 'جارٍ تسجيل دخولك...';
+
+  @override
+  String get faSignInEmail => 'تسجيل الدخول بالبريد';
+
+  @override
+  String get faContinueGuest => 'المتابعة كضيف';
+
+  @override
+  String get faGuestNote =>
+      'يمكن للضيوف اللعب وحفظ التقدم محليًا، لكن لا يمكنهم الشراء. سجّل الدخول عبر Apple أو Google أو البريد عندما تريد الاشتراك أو الشراء.';
+
+  @override
+  String get faPrivacyTerms => 'الخصوصية والشروط';
+
+  @override
+  String get faReviewNote =>
+      'يرجى مراجعة سياسة الخصوصية وشروط الاستخدام قبل المتابعة';
+
+  @override
+  String get faAgreeCheckbox =>
+      'قرأت سياسة الخصوصية وشروط الاستخدام وأوافق عليهما';
+
+  @override
+  String get faContinueToSignIn => 'المتابعة إلى تسجيل الدخول';
+
+  @override
+  String get faHeadsUp => 'تنبيه';
+
+  @override
+  String get faGuestBullet1 =>
+      'تُحذف بيانات الضيف تلقائيًا من خوادمنا بعد 90 يومًا من عدم النشاط.';
+
+  @override
+  String get faGuestBullet2 =>
+      'لحفظ تقدمك بشكل دائم واللعب عبر الأجهزة، سجّل الدخول عبر Apple أو Google أو البريد.';
+
+  @override
+  String get faGuestBullet3 =>
+      'لا يمكن لحسابات الضيوف شراء المنتجات أو الاشتراكات. سجّل الدخول إذا أردت الترقية إلى برو أو شراء المظاهر.';
+
+  @override
+  String get faChangedMind => 'غيّرت رأيي';
+
+  @override
+  String get faProceedAnyway => 'المتابعة على أي حال';
+
+  @override
+  String get faAppleFailed => 'تعذر تسجيل الدخول عبر Apple. حاول مرة أخرى.';
+
+  @override
+  String get faGoogleFailed => 'تعذر تسجيل الدخول عبر Google. حاول مرة أخرى.';
+
+  @override
+  String get faUnexpected => 'حدث خطأ غير متوقع. حاول مرة أخرى.';
+
+  @override
+  String get faGuestFailed => 'تعذرت المتابعة كضيف. حاول مرة أخرى.';
 }

@@ -2318,4 +2318,597 @@ class AppLocalizationsRu extends AppLocalizations {
   String tnBuyEntry(Object price, Object tier) {
     return 'Купить $tier вход - $price';
   }
+
+  @override
+  String get acAll => 'Все';
+
+  @override
+  String get acUnlocked => 'Открытые';
+
+  @override
+  String get acLocked => 'Закрытые';
+
+  @override
+  String get acTotalUpper => 'ВСЕГО';
+
+  @override
+  String get acUnlockedUpper => 'ОТКРЫТО';
+
+  @override
+  String get acClaimedUpper => 'ПОЛУЧЕНО';
+
+  @override
+  String get acPendingUpper => 'ОЖИДАЕТ';
+
+  @override
+  String acPercentComplete(Object percent) {
+    return '$percent% выполнено';
+  }
+
+  @override
+  String acPercentOfUnlocked(Object percent) {
+    return '$percent% от открытых';
+  }
+
+  @override
+  String get acEmpty => 'Здесь нет достижений';
+
+  @override
+  String acXpReward(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String acUnlockedDate(Object date) {
+    return 'Открыто $date';
+  }
+
+  @override
+  String get rpTitle => 'Повторы игр';
+
+  @override
+  String get rpRecent => 'Недавние';
+
+  @override
+  String get rpBest => 'Лучшие';
+
+  @override
+  String get rpCrashes => 'Столкновения';
+
+  @override
+  String get rpLoading => 'Загрузка повторов...';
+
+  @override
+  String get rpNoRecent => 'Нет недавних повторов';
+
+  @override
+  String get rpNoBest => 'Нет повторов с рекордами';
+
+  @override
+  String get rpNoCrashes => 'Нет повторов столкновений';
+
+  @override
+  String get rpEmptySub => 'Сыграйте пару игр, чтобы появились повторы!';
+
+  @override
+  String get rpScore => 'Счёт';
+
+  @override
+  String get rpDuration => 'Длительность';
+
+  @override
+  String get rpFood => 'Еда';
+
+  @override
+  String get rpFrames => 'Кадры';
+
+  @override
+  String get rpMaxLength => 'Макс. длина';
+
+  @override
+  String get rpWatch => 'Смотреть';
+
+  @override
+  String get rpYesterday => 'Вчера';
+
+  @override
+  String get rpDeleteTitle => 'Удалить повтор';
+
+  @override
+  String rpDeleteBody(Object date) {
+    return 'Удалить повтор от $date?';
+  }
+
+  @override
+  String get rpDelete => 'Удалить';
+
+  @override
+  String get rpDeleted => 'Повтор удалён';
+
+  @override
+  String get rpDeleteFailed => 'Не удалось удалить повтор';
+
+  @override
+  String get lbTitle => 'Рейтинги';
+
+  @override
+  String get lbGlobal => 'Мировой';
+
+  @override
+  String get lbWeekly => 'Недельный';
+
+  @override
+  String get lbWeeklySub =>
+      'По вашему лучшему счёту за неделю (сброс в воскресенье)';
+
+  @override
+  String get lbGlobalSub => 'По вашему лучшему счёту за всё время';
+
+  @override
+  String lbScoreLine(Object score) {
+    return 'Счёт: $score';
+  }
+
+  @override
+  String get lbLoadingGlobal => 'Загрузка мирового рейтинга...';
+
+  @override
+  String get lbLoadingWeekly => 'Загрузка недельного рейтинга...';
+
+  @override
+  String get lbNoScores => 'Пока нет результатов';
+
+  @override
+  String get lbBeFirst => 'Станьте первым рекордсменом!';
+
+  @override
+  String get lbNoWeekly => 'На этой неделе результатов нет';
+
+  @override
+  String get lbPlayThisWeek => 'Сыграйте на этой неделе, чтобы попасть сюда!';
+
+  @override
+  String get lbAnonymous => 'Аноним';
+
+  @override
+  String get lbGuestBadge => 'ГОСТЬ';
+
+  @override
+  String get lbPts => 'очк.';
+
+  @override
+  String lbGamesPlayed(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'сыграно $count игры',
+      many: 'сыграно $count игр',
+      few: 'сыграно $count игры',
+      one: 'сыграна $count игра',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String bpClaimedToast(Object name) {
+    return '$name — получено!';
+  }
+
+  @override
+  String get bpTitle => 'Боевой пропуск';
+
+  @override
+  String get bpTitleUpper => 'БОЕВОЙ ПРОПУСК';
+
+  @override
+  String get bpLoading => 'Загрузка боевого пропуска...';
+
+  @override
+  String get bpWatchAdXp => 'Смотреть рекламу — +50 XP пропуска';
+
+  @override
+  String get bpXpEarned => '+50 XP боевого пропуска!';
+
+  @override
+  String get bpSeasonEnded => 'Сезон завершён';
+
+  @override
+  String bpHoursLeft(Object hours) {
+    return 'осталось $hoursч';
+  }
+
+  @override
+  String bpDaysLeft(Object days) {
+    return 'осталось $daysд';
+  }
+
+  @override
+  String get bpTierUpper => 'УРОВЕНЬ';
+
+  @override
+  String bpTierMax(Object max) {
+    return ' / $max';
+  }
+
+  @override
+  String get bpSeasonComplete => 'Сезон пройден';
+
+  @override
+  String get bpSeasonCompleteUpper => 'СЕЗОН ПРОЙДЕН';
+
+  @override
+  String bpXpProgress(Object next, Object tier, Object xp) {
+    return '$xp / $next XP до уровня $tier';
+  }
+
+  @override
+  String get bpPremiumBadge => 'ПРЕМИУМ';
+
+  @override
+  String get bpUnlockedEverything => 'Вы открыли все уровни этого сезона.';
+
+  @override
+  String get bpComingNext => 'ДАЛЬШЕ';
+
+  @override
+  String bpTierN(Object tier) {
+    return 'Уровень $tier';
+  }
+
+  @override
+  String bpTiersAway(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'через $count уровня',
+      many: 'через $count уровней',
+      few: 'через $count уровня',
+      one: 'через $count уровень',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bpUnlockWithPro => 'ОТКРЫТЬ С PRO';
+
+  @override
+  String get bpAvailableNow => 'ДОСТУПНО СЕЙЧАС';
+
+  @override
+  String bpTierAbbrev(Object tier) {
+    return 'У$tier';
+  }
+
+  @override
+  String get bpClaim => 'ЗАБРАТЬ';
+
+  @override
+  String get bpPremiumWaiting => 'Премиум-награды ждут';
+
+  @override
+  String get bpSubscribeToClaim => 'Оформите Pro, чтобы забрать их.';
+
+  @override
+  String get bpHideTiers => 'Скрыть уровни';
+
+  @override
+  String bpViewAllTiers(Object count) {
+    return 'Показать все $count уровней';
+  }
+
+  @override
+  String get bpCollapse => 'СВЕРНУТЬ';
+
+  @override
+  String get bpExpand => 'РАЗВЕРНУТЬ';
+
+  @override
+  String get bpNow => 'ТЕКУЩИЙ';
+
+  @override
+  String bpTierUpperN(Object tier) {
+    return 'УРОВЕНЬ $tier';
+  }
+
+  @override
+  String get bpUnlocked => 'Открыто';
+
+  @override
+  String bpReachTier(Object tier) {
+    return 'Достигните уровня $tier, чтобы открыть';
+  }
+
+  @override
+  String get bpBetweenSeasons => 'Между сезонами';
+
+  @override
+  String get bpNoSeasonBody =>
+      'Сейчас боевой пропуск не идёт — новый сезон начнётся автоматически. Загляните позже.';
+
+  @override
+  String get bpCheckNewSeason => 'Проверить новый сезон';
+
+  @override
+  String get pbActive => 'Премиум активен!';
+
+  @override
+  String get pbActiveSub => 'Вам доступны все премиум-функции';
+
+  @override
+  String get pbHeaderSub => 'Откройте всё, что есть в игре';
+
+  @override
+  String get pbMonthlyPlan => 'Месячный план';
+
+  @override
+  String get pbYearlyPlan => 'Годовой план';
+
+  @override
+  String get pbSave33 => 'Экономия 33%';
+
+  @override
+  String get pbMostPopular => 'САМЫЙ ПОПУЛЯРНЫЙ';
+
+  @override
+  String get pbFeatExtraLife => 'Всегда бесплатная доп. жизнь';
+
+  @override
+  String get pbFeatExtraLifeDesc =>
+      'Разбились — играйте дальше: участники Pro мгновенно возрождаются бесплатно, без рекламы и монет, раз за игру';
+
+  @override
+  String get pbFeatNoAds => 'Уберите всю рекламу';
+
+  @override
+  String get pbFeatNoAdsDesc =>
+      'Без баннеров и вставок — играйте совсем без рекламы, навсегда';
+
+  @override
+  String get pbFeatThemes => 'Все премиум-темы';
+
+  @override
+  String get pbFeatThemesDesc =>
+      'Crystal, Cyberpunk, Space, Ocean, Desert, Forest';
+
+  @override
+  String get pbFeatSkins => 'Все премиум-скины';
+
+  @override
+  String get pbFeatSkinsDesc =>
+      'Golden, Galaxy, Dragon, Electric, Fire, Ice и ещё 5';
+
+  @override
+  String get pbFeatTrails => 'Все премиум-следы';
+
+  @override
+  String get pbFeatTrailsDesc =>
+      'Particle, Glow, Rainbow, Fire, Cosmic, Crystal и ещё 5';
+
+  @override
+  String get pbFeatBoards => 'Большие игровые поля';
+
+  @override
+  String get pbFeatBoardsDesc => 'Играйте на полях 35x35, 40x40 и 50x50';
+
+  @override
+  String get pbFeatCoins => 'Монеты 2x';
+
+  @override
+  String get pbFeatCoinsDesc => 'Вдвое больше монет Snake за каждую игру';
+
+  @override
+  String get pbFeatLucky => 'Счастливчик — больше особой еды';
+
+  @override
+  String get pbFeatLuckyDesc =>
+      '+50% шанс появления редкой особой еды на 50 очков в каждой игре';
+
+  @override
+  String get pbFeatPowerUps => 'Больше усилений в игре';
+
+  @override
+  String get pbFeatPowerUpsDesc => '+30% к частоте появления усилений на поле';
+
+  @override
+  String get pbFeatBundle => 'Премиум-набор усилений';
+
+  @override
+  String get pbFeatBundleDesc =>
+      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield и Mega Invincibility каждый платёжный цикл';
+
+  @override
+  String get pbFeatTournament => 'Турнирные входы';
+
+  @override
+  String get pbFeatTournamentDesc =>
+      '1× бронзовый + 1× серебряный + 1× золотой вход каждый платёжный цикл';
+
+  @override
+  String get pbIncludes => 'Премиум включает:';
+
+  @override
+  String get pbProPerk => 'БОНУС PRO';
+
+  @override
+  String pbSubscribeCta(Object period, Object price) {
+    return 'Подписаться — $price$period';
+  }
+
+  @override
+  String get pbReassurance =>
+      'Без обязательств • Отмена в любой момент • Безопасная оплата';
+
+  @override
+  String get pbNotAvailable => 'Премиум-подписка недоступна';
+
+  @override
+  String get eaTitleLink => 'Сохраните прогресс';
+
+  @override
+  String get eaTitleSignIn => 'Вход по почте';
+
+  @override
+  String get eaExplainer =>
+      'Добавьте почту и пароль к аккаунту, чтобы покупать, восстанавливаться после переустановки и входить с любого устройства.';
+
+  @override
+  String get eaLinkExisting => 'Привязать существующий';
+
+  @override
+  String get eaSignIn => 'Войти';
+
+  @override
+  String get eaCreateAccount => 'Создать аккаунт';
+
+  @override
+  String get eaForgotPassword => 'Забыли пароль?';
+
+  @override
+  String get eaLinkToExisting => 'Привязать к существующему аккаунту';
+
+  @override
+  String get eaMinChars => 'Не менее 8 символов';
+
+  @override
+  String eaMinCharsN(Object count) {
+    return 'Не менее $count символов';
+  }
+
+  @override
+  String get eaCreateAndLink => 'Создать и привязать аккаунт';
+
+  @override
+  String get eaEmail => 'Почта';
+
+  @override
+  String get eaEmailRequired => 'Укажите почту';
+
+  @override
+  String get eaEmailInvalid => 'Введите корректную почту';
+
+  @override
+  String get eaPassword => 'Пароль';
+
+  @override
+  String get eaPasswordRequired => 'Укажите пароль';
+
+  @override
+  String get eaForgotFirst =>
+      'Сначала введите почту выше, затем нажмите «Забыли пароль».';
+
+  @override
+  String eaResetSent(Object email) {
+    return 'Письмо для сброса пароля отправлено на $email.';
+  }
+
+  @override
+  String get eaErrInvalidEmail => 'Этот адрес почты некорректен.';
+
+  @override
+  String get eaErrDisabled => 'Этот аккаунт отключён.';
+
+  @override
+  String get eaErrNoAccount => 'Аккаунт с этой почтой не найден.';
+
+  @override
+  String get eaErrWrongCreds => 'Неверная почта или пароль.';
+
+  @override
+  String get eaErrEmailInUse =>
+      'Аккаунт с этой почтой уже существует. Попробуйте войти.';
+
+  @override
+  String get eaErrWeakPassword =>
+      'Пароль слишком слабый. Используйте не менее 8 символов.';
+
+  @override
+  String get eaErrNotEnabled =>
+      'Вход по почте/паролю не включён. Обратитесь в поддержку.';
+
+  @override
+  String get eaErrTooMany =>
+      'Слишком много попыток. Подождите несколько минут и попробуйте снова.';
+
+  @override
+  String get eaErrNetwork => 'Ошибка сети. Проверьте соединение.';
+
+  @override
+  String get eaErrAlreadyLinked => 'Этот аккаунт уже привязан к почте/паролю.';
+
+  @override
+  String get eaErrRecentLogin =>
+      'В целях безопасности войдите снова перед привязкой.';
+
+  @override
+  String get eaErrGeneric => 'Что-то пошло не так. Попробуйте ещё раз.';
+
+  @override
+  String get faWelcome => 'Добро пожаловать в\nSnake Classic!';
+
+  @override
+  String get faChooseHow => 'Выберите, как хотите играть:';
+
+  @override
+  String get faSigningIn => 'Выполняется вход...';
+
+  @override
+  String get faSignInEmail => 'Войти по почте';
+
+  @override
+  String get faContinueGuest => 'Продолжить как гость';
+
+  @override
+  String get faGuestNote =>
+      'Гости могут играть и сохранять прогресс локально, но не могут покупать. Войдите через Apple, Google или почту, когда решите подписаться или купить.';
+
+  @override
+  String get faPrivacyTerms => 'Конфиденциальность и условия';
+
+  @override
+  String get faReviewNote =>
+      'Перед продолжением ознакомьтесь с политикой конфиденциальности и условиями использования';
+
+  @override
+  String get faAgreeCheckbox =>
+      'Я прочитал(а) и принимаю политику конфиденциальности и условия использования';
+
+  @override
+  String get faContinueToSignIn => 'Перейти ко входу';
+
+  @override
+  String get faHeadsUp => 'Обратите внимание';
+
+  @override
+  String get faGuestBullet1 =>
+      'Данные гостя автоматически удаляются с наших серверов после 90 дней неактивности.';
+
+  @override
+  String get faGuestBullet2 =>
+      'Чтобы сохранить прогресс навсегда и играть на разных устройствах, войдите через Apple, Google или почту.';
+
+  @override
+  String get faGuestBullet3 =>
+      'Гостевые аккаунты не могут покупать товары и подписки. Войдите, если хотите оформить Pro или купить косметику.';
+
+  @override
+  String get faChangedMind => 'Я передумал(а)';
+
+  @override
+  String get faProceedAnyway => 'Всё равно продолжить';
+
+  @override
+  String get faAppleFailed =>
+      'Не удалось войти через Apple. Попробуйте ещё раз.';
+
+  @override
+  String get faGoogleFailed =>
+      'Не удалось войти через Google. Попробуйте ещё раз.';
+
+  @override
+  String get faUnexpected =>
+      'Произошла непредвиденная ошибка. Попробуйте ещё раз.';
+
+  @override
+  String get faGuestFailed =>
+      'Не удалось продолжить как гость. Попробуйте ещё раз.';
 }

@@ -2305,4 +2305,592 @@ class AppLocalizationsHi extends AppLocalizations {
   String tnBuyEntry(Object price, Object tier) {
     return '$tier प्रविष्टि खरीदें - $price';
   }
+
+  @override
+  String get acAll => 'सभी';
+
+  @override
+  String get acUnlocked => 'अनलॉक';
+
+  @override
+  String get acLocked => 'लॉक';
+
+  @override
+  String get acTotalUpper => 'कुल';
+
+  @override
+  String get acUnlockedUpper => 'अनलॉक';
+
+  @override
+  String get acClaimedUpper => 'प्राप्त';
+
+  @override
+  String get acPendingUpper => 'लंबित';
+
+  @override
+  String acPercentComplete(Object percent) {
+    return '$percent% पूर्ण';
+  }
+
+  @override
+  String acPercentOfUnlocked(Object percent) {
+    return 'अनलॉक का $percent%';
+  }
+
+  @override
+  String get acEmpty => 'यहाँ कोई उपलब्धि नहीं';
+
+  @override
+  String acXpReward(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String acUnlockedDate(Object date) {
+    return 'अनलॉक $date';
+  }
+
+  @override
+  String get rpTitle => 'गेम रिप्ले';
+
+  @override
+  String get rpRecent => 'हाल के';
+
+  @override
+  String get rpBest => 'सर्वश्रेष्ठ';
+
+  @override
+  String get rpCrashes => 'टक्करें';
+
+  @override
+  String get rpLoading => 'रिप्ले लोड हो रहे हैं...';
+
+  @override
+  String get rpNoRecent => 'कोई हालिया रिप्ले नहीं';
+
+  @override
+  String get rpNoBest => 'कोई हाई-स्कोर रिप्ले नहीं';
+
+  @override
+  String get rpNoCrashes => 'कोई क्रैश रिप्ले नहीं';
+
+  @override
+  String get rpEmptySub => 'रिप्ले बनाने के लिए कुछ गेम खेलें!';
+
+  @override
+  String get rpScore => 'स्कोर';
+
+  @override
+  String get rpDuration => 'अवधि';
+
+  @override
+  String get rpFood => 'भोजन';
+
+  @override
+  String get rpFrames => 'फ़्रेम';
+
+  @override
+  String get rpMaxLength => 'अधिकतम लंबाई';
+
+  @override
+  String get rpWatch => 'देखें';
+
+  @override
+  String get rpYesterday => 'कल';
+
+  @override
+  String get rpDeleteTitle => 'रिप्ले हटाएँ';
+
+  @override
+  String rpDeleteBody(Object date) {
+    return '$date का रिप्ले हटाएँ?';
+  }
+
+  @override
+  String get rpDelete => 'हटाएँ';
+
+  @override
+  String get rpDeleted => 'रिप्ले हटाया गया';
+
+  @override
+  String get rpDeleteFailed => 'रिप्ले नहीं हटाया जा सका';
+
+  @override
+  String get lbTitle => 'लीडरबोर्ड';
+
+  @override
+  String get lbGlobal => 'वैश्विक';
+
+  @override
+  String get lbWeekly => 'साप्ताहिक';
+
+  @override
+  String get lbWeeklySub =>
+      'इस सप्ताह के आपके सर्वश्रेष्ठ एकल-गेम स्कोर से रैंक (रविवार को रीसेट)';
+
+  @override
+  String get lbGlobalSub => 'आपके अब तक के उच्चतम एकल-गेम स्कोर से रैंक';
+
+  @override
+  String lbScoreLine(Object score) {
+    return 'स्कोर: $score';
+  }
+
+  @override
+  String get lbLoadingGlobal => 'वैश्विक लीडरबोर्ड लोड हो रहा है...';
+
+  @override
+  String get lbLoadingWeekly => 'साप्ताहिक लीडरबोर्ड लोड हो रहा है...';
+
+  @override
+  String get lbNoScores => 'अभी कोई स्कोर नहीं';
+
+  @override
+  String get lbBeFirst => 'सबसे पहले हाई स्कोर बनाएँ!';
+
+  @override
+  String get lbNoWeekly => 'इस सप्ताह कोई स्कोर नहीं';
+
+  @override
+  String get lbPlayThisWeek => 'यहाँ दिखने के लिए इस सप्ताह खेलें!';
+
+  @override
+  String get lbAnonymous => 'अनाम';
+
+  @override
+  String get lbGuestBadge => 'अतिथि';
+
+  @override
+  String get lbPts => 'अंक';
+
+  @override
+  String lbGamesPlayed(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count गेम खेले',
+      one: '$count गेम खेला',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String bpClaimedToast(Object name) {
+    return '$name प्राप्त!';
+  }
+
+  @override
+  String get bpTitle => 'बैटल पास';
+
+  @override
+  String get bpTitleUpper => 'बैटल पास';
+
+  @override
+  String get bpLoading => 'बैटल पास लोड हो रहा है...';
+
+  @override
+  String get bpWatchAdXp => 'विज्ञापन देखें — +50 बैटल पास XP';
+
+  @override
+  String get bpXpEarned => '+50 बैटल पास XP मिला!';
+
+  @override
+  String get bpSeasonEnded => 'सीज़न समाप्त';
+
+  @override
+  String bpHoursLeft(Object hours) {
+    return '$hoursघं शेष';
+  }
+
+  @override
+  String bpDaysLeft(Object days) {
+    return '$daysदि शेष';
+  }
+
+  @override
+  String get bpTierUpper => 'टियर';
+
+  @override
+  String bpTierMax(Object max) {
+    return ' / $max';
+  }
+
+  @override
+  String get bpSeasonComplete => 'सीज़न पूर्ण';
+
+  @override
+  String get bpSeasonCompleteUpper => 'सीज़न पूर्ण';
+
+  @override
+  String bpXpProgress(Object next, Object tier, Object xp) {
+    return 'टियर $tier के लिए $xp / $next XP';
+  }
+
+  @override
+  String get bpPremiumBadge => 'प्रीमियम';
+
+  @override
+  String get bpUnlockedEverything =>
+      'आपने इस सीज़न का हर टियर अनलॉक कर लिया है।';
+
+  @override
+  String get bpComingNext => 'आगे क्या';
+
+  @override
+  String bpTierN(Object tier) {
+    return 'टियर $tier';
+  }
+
+  @override
+  String bpTiersAway(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count टियर दूर',
+      one: '$count टियर दूर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bpUnlockWithPro => 'प्रो से अनलॉक करें';
+
+  @override
+  String get bpAvailableNow => 'अभी उपलब्ध';
+
+  @override
+  String bpTierAbbrev(Object tier) {
+    return 'T$tier';
+  }
+
+  @override
+  String get bpClaim => 'लें';
+
+  @override
+  String get bpPremiumWaiting => 'प्रीमियम इनाम प्रतीक्षा में';
+
+  @override
+  String get bpSubscribeToClaim => 'इन्हें पाने के लिए प्रो की सदस्यता लें।';
+
+  @override
+  String get bpHideTiers => 'टियर छिपाएँ';
+
+  @override
+  String bpViewAllTiers(Object count) {
+    return 'सभी $count टियर देखें';
+  }
+
+  @override
+  String get bpCollapse => 'समेटें';
+
+  @override
+  String get bpExpand => 'खोलें';
+
+  @override
+  String get bpNow => 'अभी';
+
+  @override
+  String bpTierUpperN(Object tier) {
+    return 'टियर $tier';
+  }
+
+  @override
+  String get bpUnlocked => 'अनलॉक';
+
+  @override
+  String bpReachTier(Object tier) {
+    return 'अनलॉक करने के लिए टियर $tier तक पहुँचें';
+  }
+
+  @override
+  String get bpBetweenSeasons => 'सीज़न के बीच';
+
+  @override
+  String get bpNoSeasonBody =>
+      'अभी कोई बैटल पास नहीं चल रहा — अगला सीज़न अपने आप शुरू होगा। जल्द वापस देखें।';
+
+  @override
+  String get bpCheckNewSeason => 'नया सीज़न जाँचें';
+
+  @override
+  String get pbActive => 'प्रीमियम सक्रिय!';
+
+  @override
+  String get pbActiveSub => 'आपके पास सभी प्रीमियम सुविधाओं की पहुँच है';
+
+  @override
+  String get pbHeaderSub => 'गेम की हर चीज़ अनलॉक करें';
+
+  @override
+  String get pbMonthlyPlan => 'मासिक प्लान';
+
+  @override
+  String get pbYearlyPlan => 'वार्षिक प्लान';
+
+  @override
+  String get pbSave33 => '33% बचाएँ';
+
+  @override
+  String get pbMostPopular => 'सबसे लोकप्रिय';
+
+  @override
+  String get pbFeatExtraLife => 'हमेशा-मुफ़्त अतिरिक्त जीवन';
+
+  @override
+  String get pbFeatExtraLifeDesc =>
+      'टकराएँ और खेलते रहें — प्रो सदस्य हर गेम में एक बार मुफ़्त तुरंत पुनर्जीवित होते हैं, न विज्ञापन न सिक्के';
+
+  @override
+  String get pbFeatNoAds => 'सभी विज्ञापन हटाएँ';
+
+  @override
+  String get pbFeatNoAdsDesc =>
+      'न बैनर, न इंटरस्टीशियल — हमेशा के लिए विज्ञापन-मुक्त खेलें';
+
+  @override
+  String get pbFeatThemes => 'सभी प्रीमियम थीम';
+
+  @override
+  String get pbFeatThemesDesc =>
+      'Crystal, Cyberpunk, Space, Ocean, Desert, Forest';
+
+  @override
+  String get pbFeatSkins => 'सभी प्रीमियम स्नेक स्किन';
+
+  @override
+  String get pbFeatSkinsDesc =>
+      'Golden, Galaxy, Dragon, Electric, Fire, Ice और 5 अन्य';
+
+  @override
+  String get pbFeatTrails => 'सभी प्रीमियम ट्रेल प्रभाव';
+
+  @override
+  String get pbFeatTrailsDesc =>
+      'Particle, Glow, Rainbow, Fire, Cosmic, Crystal और 5 अन्य';
+
+  @override
+  String get pbFeatBoards => 'बड़े गेम बोर्ड';
+
+  @override
+  String get pbFeatBoardsDesc => '35x35, 40x40 और 50x50 बोर्ड पर खेलें';
+
+  @override
+  String get pbFeatCoins => '2x सिक्का इनाम';
+
+  @override
+  String get pbFeatCoinsDesc => 'हर गेम से दोगुने स्नेक सिक्के';
+
+  @override
+  String get pbFeatLucky => 'लकी फ़ोरेजर — अधिक विशेष भोजन';
+
+  @override
+  String get pbFeatLuckyDesc =>
+      'हर गेम में दुर्लभ 50-अंक विशेष भोजन आने की +50% संभावना';
+
+  @override
+  String get pbFeatPowerUps => 'अधिक इन-गेम पावर-अप';
+
+  @override
+  String get pbFeatPowerUpsDesc => 'गेमप्ले में बोर्ड पावर-अप की +30% दर';
+
+  @override
+  String get pbFeatBundle => 'प्रीमियम पावर-अप बंडल';
+
+  @override
+  String get pbFeatBundleDesc =>
+      'हर बिलिंग चक्र में 5× Teleport, Ghost Mode, Magnetic Food, Score Shield और Mega Invincibility';
+
+  @override
+  String get pbFeatTournament => 'टूर्नामेंट प्रविष्टियाँ';
+
+  @override
+  String get pbFeatTournamentDesc =>
+      'हर बिलिंग चक्र में 1× कांस्य + 1× रजत + 1× स्वर्ण टूर्नामेंट प्रविष्टि';
+
+  @override
+  String get pbIncludes => 'प्रीमियम में शामिल:';
+
+  @override
+  String get pbProPerk => 'प्रो सुविधा';
+
+  @override
+  String pbSubscribeCta(Object period, Object price) {
+    return 'सदस्यता लें — $price$period';
+  }
+
+  @override
+  String get pbReassurance =>
+      'कोई बाध्यता नहीं • कभी भी रद्द करें • सुरक्षित भुगतान';
+
+  @override
+  String get pbNotAvailable => 'प्रीमियम सदस्यता उपलब्ध नहीं';
+
+  @override
+  String get eaTitleLink => 'अपनी प्रगति सहेजें';
+
+  @override
+  String get eaTitleSignIn => 'ईमेल साइन-इन';
+
+  @override
+  String get eaExplainer =>
+      'अपने खाते में ईमेल और पासवर्ड जोड़ें ताकि आप खरीदारी कर सकें, रीइंस्टॉल पर बहाल कर सकें और किसी भी डिवाइस से साइन इन कर सकें।';
+
+  @override
+  String get eaLinkExisting => 'मौजूदा से जोड़ें';
+
+  @override
+  String get eaSignIn => 'साइन इन';
+
+  @override
+  String get eaCreateAccount => 'खाता बनाएँ';
+
+  @override
+  String get eaForgotPassword => 'पासवर्ड भूल गए?';
+
+  @override
+  String get eaLinkToExisting => 'मौजूदा खाते से जोड़ें';
+
+  @override
+  String get eaMinChars => 'कम से कम 8 अक्षर';
+
+  @override
+  String eaMinCharsN(Object count) {
+    return 'कम से कम $count अक्षर';
+  }
+
+  @override
+  String get eaCreateAndLink => 'खाता बनाएँ और जोड़ें';
+
+  @override
+  String get eaEmail => 'ईमेल';
+
+  @override
+  String get eaEmailRequired => 'ईमेल आवश्यक है';
+
+  @override
+  String get eaEmailInvalid => 'मान्य ईमेल दर्ज करें';
+
+  @override
+  String get eaPassword => 'पासवर्ड';
+
+  @override
+  String get eaPasswordRequired => 'पासवर्ड आवश्यक है';
+
+  @override
+  String get eaForgotFirst =>
+      'पहले ऊपर अपना ईमेल दर्ज करें, फिर पासवर्ड भूल गए दबाएँ।';
+
+  @override
+  String eaResetSent(Object email) {
+    return 'पासवर्ड रीसेट ईमेल $email पर भेजा गया।';
+  }
+
+  @override
+  String get eaErrInvalidEmail => 'यह ईमेल पता मान्य नहीं है।';
+
+  @override
+  String get eaErrDisabled => 'यह खाता अक्षम कर दिया गया है।';
+
+  @override
+  String get eaErrNoAccount => 'इस ईमेल से कोई खाता नहीं मिला।';
+
+  @override
+  String get eaErrWrongCreds => 'ईमेल या पासवर्ड गलत है।';
+
+  @override
+  String get eaErrEmailInUse =>
+      'इस ईमेल से पहले से खाता है। साइन इन करके देखें।';
+
+  @override
+  String get eaErrWeakPassword =>
+      'पासवर्ड बहुत कमज़ोर है। कम से कम 8 अक्षर रखें।';
+
+  @override
+  String get eaErrNotEnabled =>
+      'ईमेल/पासवर्ड साइन-इन सक्षम नहीं है। सहायता से संपर्क करें।';
+
+  @override
+  String get eaErrTooMany => 'बहुत अधिक प्रयास। कुछ मिनट रुककर फिर कोशिश करें।';
+
+  @override
+  String get eaErrNetwork => 'नेटवर्क त्रुटि। कनेक्शन जाँचें।';
+
+  @override
+  String get eaErrAlreadyLinked => 'यह खाता पहले से ईमेल/पासवर्ड से जुड़ा है।';
+
+  @override
+  String get eaErrRecentLogin =>
+      'सुरक्षा के लिए, जोड़ने से पहले फिर से साइन इन करें।';
+
+  @override
+  String get eaErrGeneric => 'कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।';
+
+  @override
+  String get faWelcome => 'स्वागत है\nSnake Classic में!';
+
+  @override
+  String get faChooseHow => 'चुनें कि आप कैसे खेलना चाहेंगे:';
+
+  @override
+  String get faSigningIn => 'साइन इन हो रहा है...';
+
+  @override
+  String get faSignInEmail => 'ईमेल से साइन इन करें';
+
+  @override
+  String get faContinueGuest => 'अतिथि के रूप में जारी रखें';
+
+  @override
+  String get faGuestNote =>
+      'अतिथि खेल सकते हैं और प्रगति स्थानीय रूप से सहेज सकते हैं, पर खरीदारी नहीं कर सकते। सदस्यता या खरीद के लिए तैयार हों तो Apple, Google या ईमेल से साइन इन करें।';
+
+  @override
+  String get faPrivacyTerms => 'गोपनीयता और शर्तें';
+
+  @override
+  String get faReviewNote =>
+      'जारी रखने से पहले कृपया हमारी गोपनीयता नीति और उपयोग की शर्तें देखें';
+
+  @override
+  String get faAgreeCheckbox =>
+      'मैंने गोपनीयता नीति और उपयोग की शर्तें पढ़ी हैं और सहमत हूँ';
+
+  @override
+  String get faContinueToSignIn => 'साइन इन जारी रखें';
+
+  @override
+  String get faHeadsUp => 'ध्यान दें';
+
+  @override
+  String get faGuestBullet1 =>
+      'अतिथि डेटा 90 दिनों की निष्क्रियता के बाद हमारे सर्वर से अपने आप हट जाता है।';
+
+  @override
+  String get faGuestBullet2 =>
+      'प्रगति स्थायी रूप से सहेजने और सभी डिवाइस पर खेलने के लिए Apple, Google या ईमेल से साइन इन करें।';
+
+  @override
+  String get faGuestBullet3 =>
+      'अतिथि खाते उत्पाद या सदस्यता नहीं खरीद सकते। प्रो लेने या कॉस्मेटिक्स खरीदने के लिए साइन इन करें।';
+
+  @override
+  String get faChangedMind => 'मैंने विचार बदल लिया';
+
+  @override
+  String get faProceedAnyway => 'फिर भी जारी रखें';
+
+  @override
+  String get faAppleFailed =>
+      'Apple से साइन इन नहीं हो सका। कृपया फिर कोशिश करें।';
+
+  @override
+  String get faGoogleFailed =>
+      'Google से साइन इन नहीं हो सका। कृपया फिर कोशिश करें।';
+
+  @override
+  String get faUnexpected => 'अनपेक्षित त्रुटि हुई। कृपया फिर कोशिश करें।';
+
+  @override
+  String get faGuestFailed =>
+      'अतिथि के रूप में जारी नहीं रखा जा सका। कृपया फिर कोशिश करें।';
 }

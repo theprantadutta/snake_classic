@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
@@ -65,6 +66,8 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
     if (_claiming.contains(claimKey)) return;
     setState(() => _claiming.add(claimKey));
 
+    // Captured before the await — the claim call is an async gap.
+    final l10n = AppLocalizations.of(context)!;
     try {
       final cubit = context.read<BattlePassCubit>();
       final ok = isPremium
@@ -81,7 +84,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                 Text(reward.icon, style: const TextStyle(fontSize: 20)),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text('${reward.name} claimed!',
+                  child: Text(l10n.bpClaimedToast(reward.name),
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ],
@@ -128,6 +131,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
         final theme = themeState.currentTheme;
         return BlocBuilder<BattlePassCubit, BattlePassState>(
           builder: (context, bpState) {
+            final l10n = AppLocalizations.of(context)!;
             final season = bpState.season;
 
             if (bpState.status == BattlePassStatus.loading && season == null) {
@@ -136,11 +140,11 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                   theme: theme,
                   child: SafeArea(
                     child: Column(children: [
-                      _TopBar(theme: theme, title: 'Battle Pass'),
+                      _TopBar(theme: theme, title: l10n.bpTitle),
                       Expanded(
                         child: ThemedLoading(
                           theme: theme,
-                          label: 'Loading battle pass...',
+                          label: l10n.bpLoading,
                         ),
                       ),
                     ]),
@@ -169,7 +173,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                         child: _TopBar(
                           theme: theme,
                           title: season.name.toUpperCase(),
-                          subtitle: _daysRemainingText(season),
+                          subtitle: _daysRemainingText(l10n, season),
                         ),
                       ),
                       SliverToBoxAdapter(
@@ -185,7 +189,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                           child: RewardedActionButton(
                             theme: theme,
                             icon: Icons.bolt,
-                            label: 'Watch ad — +50 Battle Pass XP',
+                            label: l10n.bpWatchAdXp,
                             capKey: AdService.capBattlePassXp,
                             onWatch: () async {
                               final bp = context.read<BattlePassCubit>();
@@ -201,13 +205,13 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                                   bp.flushXP();
                                   messenger.showSnackBar(
                                     SnackBar(
-                                      content: const Row(
+                                      content: Row(
                                         children: [
-                                          Icon(Icons.bolt,
+                                          const Icon(Icons.bolt,
                                               color: Colors.white, size: 20),
-                                          SizedBox(width: 10),
-                                          Text('+50 Battle Pass XP earned!',
-                                              style: TextStyle(
+                                          const SizedBox(width: 10),
+                                          Text(l10n.bpXpEarned,
+                                              style: const TextStyle(
                                                   fontWeight: FontWeight.w600)),
                                         ],
                                       ),
@@ -299,14 +303,14 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
   }
 }
 
-String _daysRemainingText(BattlePassSeason season) {
-  if (season.hasEnded) return 'Season ended';
+String _daysRemainingText(AppLocalizations l10n, BattlePassSeason season) {
+  if (season.hasEnded) return l10n.bpSeasonEnded;
   final days = season.daysRemaining;
   if (days <= 0) {
     final hours = season.timeRemaining.inHours;
-    return hours <= 0 ? 'Ending soon' : '${hours}h left';
+    return hours <= 0 ? l10n.storeEndingSoon : l10n.bpHoursLeft(hours);
   }
-  return '${days}d left';
+  return l10n.bpDaysLeft(days);
 }
 
 // ===========================================================================
@@ -386,6 +390,7 @@ class _StateStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final maxTier = season.levels.length;
     final progress = state.tierProgress;
     final hasPremium = state.isActive;
@@ -415,7 +420,7 @@ class _StateStrip extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'TIER',
+                  l10n.bpTierUpper,
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.65),
                     fontSize: 10,
@@ -435,7 +440,7 @@ class _StateStrip extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  ' / $maxTier',
+                  l10n.bpTierMax(maxTier),
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.5),
                     fontSize: 14,
@@ -477,8 +482,12 @@ class _StateStrip extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               state.currentTier >= maxTier
-                  ? 'Season complete'
-                  : '${state.currentXP} / ${state.xpForNextTier} XP to Tier ${state.currentTier + 1}',
+                  ? l10n.bpSeasonComplete
+                  : l10n.bpXpProgress(
+                      state.xpForNextTier,
+                      state.currentTier + 1,
+                      state.currentXP,
+                    ),
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.75),
                 fontSize: 11,
@@ -500,6 +509,7 @@ class _PremiumStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final color = hasPremium ? Colors.amber : theme.accentColor;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -520,7 +530,7 @@ class _PremiumStatusPill extends StatelessWidget {
           ),
           const SizedBox(width: 5),
           Text(
-            hasPremium ? 'PREMIUM' : 'FREE',
+            hasPremium ? l10n.bpPremiumBadge : l10n.storePillFree,
             style: TextStyle(
               color: color,
               fontSize: 10,
@@ -578,6 +588,7 @@ class _ComingNextSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final next = _findNext();
     if (next == null) {
       // Player is at max tier or season has no rewards left. The strip
@@ -601,7 +612,7 @@ class _ComingNextSection extends StatelessWidget {
               const Text('🏆', style: TextStyle(fontSize: 56)),
               const SizedBox(height: 8),
               Text(
-                'SEASON COMPLETE',
+                l10n.bpSeasonCompleteUpper,
                 style: TextStyle(
                   color: Colors.amber.shade300,
                   fontSize: 14,
@@ -611,7 +622,7 @@ class _ComingNextSection extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'You\'ve unlocked every tier in this season.',
+                l10n.bpUnlockedEverything,
                 style: TextStyle(
                   color: Colors.amber.shade100.withValues(alpha: 0.85),
                   fontSize: 12,
@@ -665,7 +676,7 @@ class _ComingNextSection extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'COMING NEXT',
+                    l10n.bpComingNext,
                     style: TextStyle(
                       color: accent,
                       fontSize: 11,
@@ -682,7 +693,7 @@ class _ComingNextSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      isPremium ? 'PREMIUM' : 'FREE',
+                      isPremium ? l10n.bpPremiumBadge : l10n.storePillFree,
                       style: TextStyle(
                         color: accent,
                         fontSize: 9,
@@ -733,7 +744,7 @@ class _ComingNextSection extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Tier $tier',
+                l10n.bpTierN(tier),
                 style: TextStyle(
                   color: accent,
                   fontSize: 11,
@@ -756,9 +767,7 @@ class _ComingNextSection extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    distance == 1
-                        ? '1 tier away'
-                        : '$distance tiers away',
+                    l10n.bpTiersAway(distance),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -803,21 +812,21 @@ class _UnlockProInline extends StatelessWidget {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.workspace_premium_rounded,
+          children: [
+            const Icon(Icons.workspace_premium_rounded,
                 color: Colors.white, size: 16),
-            SizedBox(width: 6),
+            const SizedBox(width: 6),
             Text(
-              'UNLOCK WITH PRO',
-              style: TextStyle(
+              AppLocalizations.of(context)!.bpUnlockWithPro,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.0,
               ),
             ),
-            SizedBox(width: 4),
-            Icon(Icons.arrow_forward_rounded,
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_forward_rounded,
                 color: Colors.white, size: 14),
           ],
         ),
@@ -896,7 +905,7 @@ class _AvailableNowSection extends StatelessWidget {
           Row(
             children: [
               Text(
-                'AVAILABLE NOW',
+                AppLocalizations.of(context)!.bpAvailableNow,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 11,
@@ -987,6 +996,7 @@ class _ClaimChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final accent = isPremium ? Colors.amber : theme.accentColor;
 
     return InkWell(
@@ -1020,7 +1030,7 @@ class _ClaimChip extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'T$tier',
+                  l10n.bpTierAbbrev(tier),
                   style: TextStyle(
                     color: accent,
                     fontSize: 10,
@@ -1074,7 +1084,7 @@ class _ClaimChip extends StatelessWidget {
                       ),
                     )
                   : Text(
-                      'CLAIM',
+                      l10n.bpClaim,
                       style: TextStyle(
                         color: isPremium
                             ? Colors.black.withValues(alpha: 0.85)
@@ -1099,6 +1109,7 @@ class _PremiumTeaser extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -1124,7 +1135,7 @@ class _PremiumTeaser extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Premium rewards waiting',
+                    l10n.bpPremiumWaiting,
                     style: TextStyle(
                       color: Colors.amber.shade200,
                       fontSize: 13,
@@ -1133,7 +1144,7 @@ class _PremiumTeaser extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Subscribe to Pro to claim them.',
+                    l10n.bpSubscribeToClaim,
                     style: TextStyle(
                       color: Colors.amber.shade100.withValues(alpha: 0.75),
                       fontSize: 11,
@@ -1173,6 +1184,7 @@ class _AllTiersToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
       child: InkWell(
@@ -1198,7 +1210,7 @@ class _AllTiersToggle extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                expanded ? 'Hide tiers' : 'View all $totalTiers tiers',
+                expanded ? l10n.bpHideTiers : l10n.bpViewAllTiers(totalTiers),
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 13,
@@ -1208,7 +1220,7 @@ class _AllTiersToggle extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                expanded ? 'COLLAPSE' : 'EXPAND',
+                expanded ? l10n.bpCollapse : l10n.bpExpand,
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.65),
                   fontSize: 9,
@@ -1287,7 +1299,7 @@ class _TierRow extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
-                      'NOW',
+                      AppLocalizations.of(context)!.bpNow,
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 8,
@@ -1462,6 +1474,7 @@ class _RewardDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final accent = reward.isPremium ? Colors.amber : theme.accentColor;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
@@ -1535,7 +1548,7 @@ class _RewardDetailSheet extends StatelessWidget {
                   border: Border.all(color: accent.withValues(alpha: 0.4)),
                 ),
                 child: Text(
-                  reward.isPremium ? 'PREMIUM' : 'FREE',
+                  reward.isPremium ? l10n.bpPremiumBadge : l10n.storePillFree,
                   style: TextStyle(
                     color: accent,
                     fontSize: 10,
@@ -1553,7 +1566,7 @@ class _RewardDetailSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'TIER $tier',
+                  l10n.bpTierUpperN(tier),
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 10,
@@ -1603,7 +1616,7 @@ class _RewardDetailSheet extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  unlocked ? 'Unlocked' : 'Reach Tier $tier to unlock',
+                  unlocked ? l10n.bpUnlocked : l10n.bpReachTier(tier),
                   style: TextStyle(
                     color: unlocked
                         ? Colors.green.shade200
@@ -1633,13 +1646,14 @@ class _NoActiveSeasonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: AppBackground(
         theme: theme,
         child: SafeArea(
           child: Column(
             children: [
-              _TopBar(theme: theme, title: 'BATTLE PASS'),
+              _TopBar(theme: theme, title: l10n.bpTitleUpper),
               Expanded(
                 child: SingleChildScrollView(
                   padding:
@@ -1675,7 +1689,7 @@ class _NoActiveSeasonScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 22),
                       Text(
-                        'Between Seasons',
+                        l10n.bpBetweenSeasons,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: theme.accentColor,
@@ -1686,8 +1700,7 @@ class _NoActiveSeasonScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "No Battle Pass is running right now — the next "
-                        "season will start automatically. Check back soon.",
+                        l10n.bpNoSeasonBody,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.7),
@@ -1702,7 +1715,7 @@ class _NoActiveSeasonScreen extends StatelessWidget {
                         icon: Icon(Icons.refresh_rounded,
                             color: theme.accentColor),
                         label: Text(
-                          'Check for new season',
+                          l10n.bpCheckNewSeason,
                           style: TextStyle(
                             color: theme.accentColor,
                             fontWeight: FontWeight.w600,

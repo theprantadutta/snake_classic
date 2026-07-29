@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -55,6 +56,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -62,7 +64,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          widget.linkFromAnonymous ? 'Save Your Progress' : 'Email Sign-In',
+          widget.linkFromAnonymous ? l10n.eaTitleLink : l10n.eaTitleSignIn,
           style: const TextStyle(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -81,7 +83,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                 children: [
                   if (widget.linkFromAnonymous) ...[
                     Text(
-                      'Add an email and password to your account so you can buy items, restore on reinstall, and sign in from any device.',
+                      l10n.eaExplainer,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
@@ -117,10 +119,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                       tabs: [
                         Tab(
                           text: widget.linkFromAnonymous
-                              ? 'Link Existing'
-                              : 'Sign In',
+                              ? l10n.eaLinkExisting
+                              : l10n.eaSignIn,
                         ),
-                        const Tab(text: 'Create Account'),
+                        Tab(text: l10n.eaCreateAccount),
                       ],
                     ),
                   ),
@@ -147,6 +149,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
   }
 
   Widget _buildSignInForm(Color accent) {
+    final l10n = AppLocalizations.of(context)!;
     return Form(
       key: _signInFormKey,
       child: Column(
@@ -165,7 +168,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
             child: TextButton(
               onPressed: _busy ? null : _onForgotPassword,
               child: Text(
-                'Forgot password?',
+                l10n.eaForgotPassword,
                 style: TextStyle(color: accent),
               ),
             ),
@@ -173,8 +176,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
           const SizedBox(height: 12),
           _primaryButton(
             label: widget.linkFromAnonymous
-                ? 'Link to Existing Account'
-                : 'Sign In',
+                ? l10n.eaLinkToExisting
+                : l10n.eaSignIn,
             color: accent,
             onPressed: _busy ? null : _onSignInOrLink,
           ),
@@ -184,6 +187,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
   }
 
   Widget _buildCreateForm(Color accent) {
+    final l10n = AppLocalizations.of(context)!;
     return Form(
       key: _createFormKey,
       child: Column(
@@ -196,13 +200,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
             onToggle: () =>
                 setState(() => _showCreatePassword = !_showCreatePassword),
             minLength: 8,
-            helper: 'At least 8 characters',
+            helper: l10n.eaMinChars,
           ),
           const SizedBox(height: 24),
           _primaryButton(
             label: widget.linkFromAnonymous
-                ? 'Create & Link Account'
-                : 'Create Account',
+                ? l10n.eaCreateAndLink
+                : l10n.eaCreateAccount,
             color: accent,
             onPressed: _busy ? null : _onCreateOrLink,
           ),
@@ -212,6 +216,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
   }
 
   Widget _emailField(TextEditingController controller) {
+    final l10n = AppLocalizations.of(context)!;
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.emailAddress,
@@ -219,12 +224,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       enableSuggestions: false,
       textInputAction: TextInputAction.next,
       style: const TextStyle(color: Colors.white),
-      decoration: _decoration('Email', Icons.email_outlined),
+      decoration: _decoration(l10n.eaEmail, Icons.email_outlined),
       validator: (v) {
         final s = (v ?? '').trim();
-        if (s.isEmpty) return 'Email is required';
+        if (s.isEmpty) return l10n.eaEmailRequired;
         final re = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-        if (!re.hasMatch(s)) return 'Enter a valid email';
+        if (!re.hasMatch(s)) return l10n.eaEmailInvalid;
         return null;
       },
     );
@@ -237,12 +242,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     int minLength = 1,
     String? helper,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return TextFormField(
       controller: controller,
       obscureText: obscure,
       style: const TextStyle(color: Colors.white),
       decoration: _decoration(
-        'Password',
+        l10n.eaPassword,
         Icons.lock_outline,
         helperText: helper,
         suffixIcon: IconButton(
@@ -255,8 +261,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       ),
       validator: (v) {
         final s = v ?? '';
-        if (s.isEmpty) return 'Password is required';
-        if (s.length < minLength) return 'At least $minLength characters';
+        if (s.isEmpty) return l10n.eaPasswordRequired;
+        if (s.length < minLength) return l10n.eaMinCharsN(minLength);
         return null;
       },
     );
@@ -340,6 +346,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     final email = _signInEmail.text.trim();
     final password = _signInPassword.text;
     final cubit = context.read<AuthCubit>();
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() => _busy = true);
     final ok = widget.linkFromAnonymous
@@ -357,7 +364,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     if (ok) {
       await _routeAfterSuccess(cubit);
     } else {
-      _showError(_friendlyError(cubit.state.errorMessage));
+      _showError(_friendlyError(l10n, cubit.state.errorMessage));
     }
   }
 
@@ -366,6 +373,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     final email = _createEmail.text.trim();
     final password = _createPassword.text;
     final cubit = context.read<AuthCubit>();
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() => _busy = true);
     final ok = widget.linkFromAnonymous
@@ -383,14 +391,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     if (ok) {
       await _routeAfterSuccess(cubit);
     } else {
-      _showError(_friendlyError(cubit.state.errorMessage));
+      _showError(_friendlyError(l10n, cubit.state.errorMessage));
     }
   }
 
   Future<void> _onForgotPassword() async {
+    final l10n = AppLocalizations.of(context)!;
     final email = _signInEmail.text.trim();
     if (email.isEmpty) {
-      _showError('Enter your email above first, then tap Forgot password.');
+      _showError(l10n.eaForgotFirst);
       return;
     }
     final cubit = context.read<AuthCubit>();
@@ -399,9 +408,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     if (!mounted) return;
     setState(() => _busy = false);
     if (ok) {
-      _showInfo('Password reset email sent to $email.');
+      _showInfo(l10n.eaResetSent(email));
     } else {
-      _showError(_friendlyError(cubit.state.errorMessage));
+      _showError(_friendlyError(l10n, cubit.state.errorMessage));
     }
   }
 
@@ -424,35 +433,35 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
 
   // Maps Firebase Auth error codes to user-facing strings. Anything we don't
   // recognise falls through with the raw code so we still surface something.
-  String _friendlyError(String? code) {
+  String _friendlyError(AppLocalizations l10n, String? code) {
     switch (code) {
       case 'invalid-email':
-        return 'That email address is not valid.';
+        return l10n.eaErrInvalidEmail;
       case 'user-disabled':
-        return 'This account has been disabled.';
+        return l10n.eaErrDisabled;
       case 'user-not-found':
-        return 'No account found with that email.';
+        return l10n.eaErrNoAccount;
       case 'wrong-password':
       case 'invalid-credential':
-        return 'Wrong email or password.';
+        return l10n.eaErrWrongCreds;
       case 'email-already-in-use':
       case 'credential-already-in-use':
-        return 'An account with that email already exists. Try signing in instead.';
+        return l10n.eaErrEmailInUse;
       case 'weak-password':
-        return 'Password is too weak. Use at least 8 characters.';
+        return l10n.eaErrWeakPassword;
       case 'operation-not-allowed':
-        return 'Email/password sign-in is not enabled. Contact support.';
+        return l10n.eaErrNotEnabled;
       case 'too-many-requests':
-        return 'Too many attempts. Please wait a few minutes and try again.';
+        return l10n.eaErrTooMany;
       case 'network-request-failed':
-        return 'Network error. Check your connection.';
+        return l10n.eaErrNetwork;
       case 'provider-already-linked':
-        return 'This account is already linked to email/password.';
+        return l10n.eaErrAlreadyLinked;
       case 'requires-recent-login':
-        return 'For security, please sign in again before linking.';
+        return l10n.eaErrRecentLogin;
       case null:
       case '':
-        return 'Something went wrong. Please try again.';
+        return l10n.eaErrGeneric;
       default:
         return code;
     }
