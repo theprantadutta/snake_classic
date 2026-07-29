@@ -1334,4 +1334,128 @@ class AppLocalizationsFr extends AppLocalizations {
   String storeBundleUnlocked(Object name) {
     return '$name débloqué !';
   }
+
+  @override
+  String get modeClassic => 'Classique';
+
+  @override
+  String get modeZen => 'Mode Zen';
+
+  @override
+  String get modeSpeedChallenge => 'Défi de Vitesse';
+
+  @override
+  String get modeMultiFood => 'Multi-nourriture';
+
+  @override
+  String get modeSurvival => 'Survie';
+
+  @override
+  String get modeTimeAttack => 'Contre-la-montre';
+
+  @override
+  String get modePowerUpMadness => 'Folie Power-Ups';
+
+  @override
+  String get modePerfectGame => 'Partie Parfaite';
+
+  @override
+  String get modeClassicDesc => 'Le jeu du serpent classique avec des murs';
+
+  @override
+  String get modeZenDesc => 'Pas de murs - le serpent traverse l\'écran';
+
+  @override
+  String get modeSpeedChallengeDesc =>
+      'La vitesse augmente rapidement pour un défi maximal';
+
+  @override
+  String get modeMultiFoodDesc =>
+      'Plusieurs nourritures apparaissent à la fois';
+
+  @override
+  String get modeSurvivalDesc =>
+      'Survivez le plus longtemps possible avec des vies limitées';
+
+  @override
+  String get modeTimeAttackDesc =>
+      'Marquez un maximum de points en temps limité';
+
+  @override
+  String get modePowerUpMadnessDesc =>
+      'Les power-ups apparaissent bien plus souvent — embrassez le chaos';
+
+  @override
+  String get modePerfectGameDesc =>
+      'Ne croisez jamais votre propre trace. Un pas sur une case visitée termine la partie.';
+
+  @override
+  String get diffEasy => 'Facile';
+
+  @override
+  String get diffNormal => 'Normal';
+
+  @override
+  String get diffHard => 'Difficile';
+
+  @override
+  String get diffEasyDesc =>
+      'Un serpent plus lent au départ. Les scores restent hors des classements.';
+
+  @override
+  String get diffNormalDesc => 'Le rythme original de Snake Classic.';
+
+  @override
+  String get diffHardDesc => 'Commence vite et ne fait qu\'accélérer.';
+
+  @override
+  String get themeClassic => 'Classique';
+
+  @override
+  String get themeModern => 'Moderne';
+
+  @override
+  String get themeNeon => 'Néon';
+
+  @override
+  String get themeRetro => 'Rétro';
+
+  @override
+  String get themeSpace => 'Espace';
+
+  @override
+  String get themeOcean => 'Océan';
+
+  @override
+  String get themeCyberpunk => 'Cyberpunk';
+
+  @override
+  String get themeForest => 'Forêt';
+
+  @override
+  String get themeDesert => 'Désert';
+
+  @override
+  String get themeCrystal => 'Cristal';
+
+  @override
+  String get dpadLeft => 'Gauche';
+
+  @override
+  String get dpadCenter => 'Centre';
+
+  @override
+  String get dpadRight => 'Droite';
+
+  @override
+  String get mpModeClassicBattle => 'Bataille Classique';
+
+  @override
+  String get mpModeSpeedRun => 'Course de Vitesse';
+
+  @override
+  String get mpModeSurvivalMode => 'Mode Survie';
+
+  @override
+  String get mpModePowerUpMadnessName => 'Folie Power-Ups';
 }

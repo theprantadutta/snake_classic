@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
@@ -541,7 +542,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  game.modeDisplayName,
+                  game.mode.localizedName(l10n),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
@@ -781,8 +782,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   Text(
                     l10n.mpLobbyModePlayers(
                       multiplayerState.matchmakingPlayerCount ?? 2,
-                      multiplayerState.matchmakingMode?.modeDisplayName ??
-                          'Classic',
+                      multiplayerState.matchmakingMode?.localizedName(l10n) ??
+                          l10n.mpModeClassicBattle,
                     ),
                     style: TextStyle(
                       fontSize: 14,
@@ -1171,6 +1172,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   }
 
   Widget _buildGameModeCard(GameTheme theme, MultiplayerGame game) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -1205,7 +1207,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  game.modeDisplayName,
+                  game.mode.localizedName(l10n),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

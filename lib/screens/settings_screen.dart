@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/l10n/supported_locales.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/review_service.dart';
@@ -751,7 +752,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    theme.name,
+                    theme.localizedName(l10n),
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 18,
@@ -843,6 +844,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDPadPositionSelector(GameCubitState gameState, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -855,7 +857,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              AppLocalizations.of(context)!.settingsDPadPosition,
+              l10n.settingsDPadPosition,
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 16,
@@ -906,7 +908,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          position.displayName,
+                          position.localizedName(l10n),
                           style: TextStyle(
                             color: isSelected
                                 ? theme.accentColor
@@ -1057,7 +1059,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_selectedGameMode.icon} ${_selectedGameMode.name}',
+                    '${_selectedGameMode.icon} ${_selectedGameMode.localizedName(l10n)}',
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 18,
@@ -1071,7 +1073,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          _selectedGameMode.description,
+          _selectedGameMode.localizedDescription(l10n),
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
@@ -1116,7 +1118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${mode.icon} ${mode.name}',
+                  '${mode.icon} ${mode.localizedName(l10n)}',
                   style: TextStyle(
                     color: isCurrentlyPlaying
                         ? theme.accentColor.withValues(alpha: 0.5)
@@ -1209,7 +1211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${difficulty.icon} ${difficulty.label}',
+                  '${difficulty.icon} ${difficulty.localizedLabel(l10n)}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: isCurrentlyPlaying
@@ -1228,7 +1230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          _selectedDifficulty.description,
+          _selectedDifficulty.localizedDescription(l10n),
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,

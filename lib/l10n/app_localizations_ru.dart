@@ -1319,4 +1319,128 @@ class AppLocalizationsRu extends AppLocalizations {
   String storeBundleUnlocked(Object name) {
     return '$name открыт!';
   }
+
+  @override
+  String get modeClassic => 'Классика';
+
+  @override
+  String get modeZen => 'Дзен';
+
+  @override
+  String get modeSpeedChallenge => 'Скоростной вызов';
+
+  @override
+  String get modeMultiFood => 'Мульти-еда';
+
+  @override
+  String get modeSurvival => 'Выживание';
+
+  @override
+  String get modeTimeAttack => 'На время';
+
+  @override
+  String get modePowerUpMadness => 'Безумие усилений';
+
+  @override
+  String get modePerfectGame => 'Идеальная игра';
+
+  @override
+  String get modeClassicDesc => 'Классическая змейка со стенами';
+
+  @override
+  String get modeZenDesc => 'Без стен - змейка проходит сквозь края экрана';
+
+  @override
+  String get modeSpeedChallengeDesc =>
+      'Скорость растёт стремительно — максимальный вызов';
+
+  @override
+  String get modeMultiFoodDesc =>
+      'Несколько кусочков еды появляются одновременно';
+
+  @override
+  String get modeSurvivalDesc =>
+      'Продержитесь как можно дольше с ограниченными жизнями';
+
+  @override
+  String get modeTimeAttackDesc =>
+      'Наберите максимум очков за ограниченное время';
+
+  @override
+  String get modePowerUpMadnessDesc =>
+      'Усиления появляются гораздо чаще — окунитесь в хаос';
+
+  @override
+  String get modePerfectGameDesc =>
+      'Никогда не пересекайте свой след. Один шаг на пройденную клетку — конец игры.';
+
+  @override
+  String get diffEasy => 'Лёгкий';
+
+  @override
+  String get diffNormal => 'Обычный';
+
+  @override
+  String get diffHard => 'Сложный';
+
+  @override
+  String get diffEasyDesc =>
+      'Змейка медленнее на старте. Очки не попадают в рейтинги.';
+
+  @override
+  String get diffNormalDesc => 'Оригинальный темп Snake Classic.';
+
+  @override
+  String get diffHardDesc => 'Начинает быстро и только ускоряется.';
+
+  @override
+  String get themeClassic => 'Классика';
+
+  @override
+  String get themeModern => 'Модерн';
+
+  @override
+  String get themeNeon => 'Неон';
+
+  @override
+  String get themeRetro => 'Ретро';
+
+  @override
+  String get themeSpace => 'Космос';
+
+  @override
+  String get themeOcean => 'Океан';
+
+  @override
+  String get themeCyberpunk => 'Киберпанк';
+
+  @override
+  String get themeForest => 'Лес';
+
+  @override
+  String get themeDesert => 'Пустыня';
+
+  @override
+  String get themeCrystal => 'Кристалл';
+
+  @override
+  String get dpadLeft => 'Слева';
+
+  @override
+  String get dpadCenter => 'По центру';
+
+  @override
+  String get dpadRight => 'Справа';
+
+  @override
+  String get mpModeClassicBattle => 'Классическая битва';
+
+  @override
+  String get mpModeSpeedRun => 'Скоростной забег';
+
+  @override
+  String get mpModeSurvivalMode => 'Режим выживания';
+
+  @override
+  String get mpModePowerUpMadnessName => 'Безумие усилений';
 }

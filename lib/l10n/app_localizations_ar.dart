@@ -1306,4 +1306,124 @@ class AppLocalizationsAr extends AppLocalizations {
   String storeBundleUnlocked(Object name) {
     return 'فُتح $name!';
   }
+
+  @override
+  String get modeClassic => 'كلاسيكي';
+
+  @override
+  String get modeZen => 'وضع الاسترخاء';
+
+  @override
+  String get modeSpeedChallenge => 'تحدي السرعة';
+
+  @override
+  String get modeMultiFood => 'طعام متعدد';
+
+  @override
+  String get modeSurvival => 'البقاء';
+
+  @override
+  String get modeTimeAttack => 'ضد الوقت';
+
+  @override
+  String get modePowerUpMadness => 'جنون التعزيزات';
+
+  @override
+  String get modePerfectGame => 'اللعبة المثالية';
+
+  @override
+  String get modeClassicDesc => 'لعبة الثعبان الكلاسيكية مع الجدران';
+
+  @override
+  String get modeZenDesc => 'بلا جدران - يعبر الثعبان حواف الشاشة';
+
+  @override
+  String get modeSpeedChallengeDesc => 'تزداد السرعة بسرعة لأقصى تحدٍ';
+
+  @override
+  String get modeMultiFoodDesc => 'تظهر عدة قطع طعام في آن واحد';
+
+  @override
+  String get modeSurvivalDesc => 'اصمد أطول فترة ممكنة بأرواح محدودة';
+
+  @override
+  String get modeTimeAttackDesc => 'سجّل أكبر عدد من النقاط في وقت محدود';
+
+  @override
+  String get modePowerUpMadnessDesc =>
+      'تظهر التعزيزات أكثر بكثير — استمتع بالفوضى';
+
+  @override
+  String get modePerfectGameDesc =>
+      'لا تقطع أثرك أبدًا. خطوة واحدة على خلية مزارة تنهي الجولة.';
+
+  @override
+  String get diffEasy => 'سهل';
+
+  @override
+  String get diffNormal => 'عادي';
+
+  @override
+  String get diffHard => 'صعب';
+
+  @override
+  String get diffEasyDesc =>
+      'ثعبان أبطأ في البداية. النتائج لا تدخل التصنيفات.';
+
+  @override
+  String get diffNormalDesc => 'إيقاع Snake Classic الأصلي.';
+
+  @override
+  String get diffHardDesc => 'يبدأ سريعًا ولا يزداد إلا سرعة.';
+
+  @override
+  String get themeClassic => 'كلاسيكي';
+
+  @override
+  String get themeModern => 'عصري';
+
+  @override
+  String get themeNeon => 'نيون';
+
+  @override
+  String get themeRetro => 'قديم';
+
+  @override
+  String get themeSpace => 'الفضاء';
+
+  @override
+  String get themeOcean => 'المحيط';
+
+  @override
+  String get themeCyberpunk => 'سايبربانك';
+
+  @override
+  String get themeForest => 'الغابة';
+
+  @override
+  String get themeDesert => 'الصحراء';
+
+  @override
+  String get themeCrystal => 'الكريستال';
+
+  @override
+  String get dpadLeft => 'يسار';
+
+  @override
+  String get dpadCenter => 'الوسط';
+
+  @override
+  String get dpadRight => 'يمين';
+
+  @override
+  String get mpModeClassicBattle => 'معركة كلاسيكية';
+
+  @override
+  String get mpModeSpeedRun => 'سباق سريع';
+
+  @override
+  String get mpModeSurvivalMode => 'وضع البقاء';
+
+  @override
+  String get mpModePowerUpMadnessName => 'جنون التعزيزات';
 }

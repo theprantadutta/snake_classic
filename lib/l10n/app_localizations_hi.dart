@@ -1318,4 +1318,126 @@ class AppLocalizationsHi extends AppLocalizations {
   String storeBundleUnlocked(Object name) {
     return '$name अनलॉक हो गया!';
   }
+
+  @override
+  String get modeClassic => 'क्लासिक';
+
+  @override
+  String get modeZen => 'ज़ेन मोड';
+
+  @override
+  String get modeSpeedChallenge => 'स्पीड चैलेंज';
+
+  @override
+  String get modeMultiFood => 'मल्टी-फ़ूड';
+
+  @override
+  String get modeSurvival => 'सर्वाइवल';
+
+  @override
+  String get modeTimeAttack => 'टाइम अटैक';
+
+  @override
+  String get modePowerUpMadness => 'पावर-अप धमाल';
+
+  @override
+  String get modePerfectGame => 'परफ़ेक्ट गेम';
+
+  @override
+  String get modeClassicDesc => 'दीवारों वाला क्लासिक साँप गेम';
+
+  @override
+  String get modeZenDesc => 'कोई दीवार नहीं - साँप स्क्रीन के आर-पार निकलता है';
+
+  @override
+  String get modeSpeedChallengeDesc =>
+      'अधिकतम चुनौती के लिए गति तेज़ी से बढ़ती है';
+
+  @override
+  String get modeMultiFoodDesc => 'एक साथ कई खाने की चीज़ें आती हैं';
+
+  @override
+  String get modeSurvivalDesc => 'सीमित जीवन के साथ जितना हो सके टिके रहें';
+
+  @override
+  String get modeTimeAttackDesc =>
+      'सीमित समय में ज़्यादा से ज़्यादा स्कोर करें';
+
+  @override
+  String get modePowerUpMadnessDesc =>
+      'पावर-अप कहीं ज़्यादा आते हैं — अराजकता का मज़ा लें';
+
+  @override
+  String get modePerfectGameDesc =>
+      'अपनी ही राह कभी न काटें। एक बार छुए गए खाने पर कदम रखते ही खेल समाप्त।';
+
+  @override
+  String get diffEasy => 'आसान';
+
+  @override
+  String get diffNormal => 'सामान्य';
+
+  @override
+  String get diffHard => 'कठिन';
+
+  @override
+  String get diffEasyDesc =>
+      'शुरुआत में धीमा साँप। स्कोर लीडरबोर्ड पर नहीं जाते।';
+
+  @override
+  String get diffNormalDesc => 'असली Snake Classic की रफ़्तार।';
+
+  @override
+  String get diffHardDesc => 'तेज़ शुरू होता है और और तेज़ ही होता जाता है।';
+
+  @override
+  String get themeClassic => 'क्लासिक';
+
+  @override
+  String get themeModern => 'मॉडर्न';
+
+  @override
+  String get themeNeon => 'नियॉन';
+
+  @override
+  String get themeRetro => 'रेट्रो';
+
+  @override
+  String get themeSpace => 'अंतरिक्ष';
+
+  @override
+  String get themeOcean => 'महासागर';
+
+  @override
+  String get themeCyberpunk => 'साइबरपंक';
+
+  @override
+  String get themeForest => 'जंगल';
+
+  @override
+  String get themeDesert => 'रेगिस्तान';
+
+  @override
+  String get themeCrystal => 'क्रिस्टल';
+
+  @override
+  String get dpadLeft => 'बाएँ';
+
+  @override
+  String get dpadCenter => 'बीच में';
+
+  @override
+  String get dpadRight => 'दाएँ';
+
+  @override
+  String get mpModeClassicBattle => 'क्लासिक मुक़ाबला';
+
+  @override
+  String get mpModeSpeedRun => 'स्पीड रन';
+
+  @override
+  String get mpModeSurvivalMode => 'सर्वाइवल मोड';
+
+  @override
+  String get mpModePowerUpMadnessName => 'पावर-अप धमाल';
 }

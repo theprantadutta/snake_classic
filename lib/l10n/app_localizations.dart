@@ -2409,6 +2409,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} unlocked!'**
   String storeBundleUnlocked(Object name);
+
+  /// No description provided for @modeClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get modeClassic;
+
+  /// No description provided for @modeZen.
+  ///
+  /// In en, this message translates to:
+  /// **'Zen Mode'**
+  String get modeZen;
+
+  /// No description provided for @modeSpeedChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Challenge'**
+  String get modeSpeedChallenge;
+
+  /// No description provided for @modeMultiFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-Food'**
+  String get modeMultiFood;
+
+  /// No description provided for @modeSurvival.
+  ///
+  /// In en, this message translates to:
+  /// **'Survival'**
+  String get modeSurvival;
+
+  /// No description provided for @modeTimeAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Attack'**
+  String get modeTimeAttack;
+
+  /// No description provided for @modePowerUpMadness.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-Up Madness'**
+  String get modePowerUpMadness;
+
+  /// No description provided for @modePerfectGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect Game'**
+  String get modePerfectGame;
+
+  /// No description provided for @modeClassicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The classic Snake game with walls'**
+  String get modeClassicDesc;
+
+  /// No description provided for @modeZenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No walls - snake wraps around the screen'**
+  String get modeZenDesc;
+
+  /// No description provided for @modeSpeedChallengeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed increases rapidly for maximum challenge'**
+  String get modeSpeedChallengeDesc;
+
+  /// No description provided for @modeMultiFoodDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple food items appear at once'**
+  String get modeMultiFoodDesc;
+
+  /// No description provided for @modeSurvivalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive as long as possible with limited lives'**
+  String get modeSurvivalDesc;
+
+  /// No description provided for @modeTimeAttackDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Score as much as possible in limited time'**
+  String get modeTimeAttackDesc;
+
+  /// No description provided for @modePowerUpMadnessDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups spawn far more often — embrace the chaos'**
+  String get modePowerUpMadnessDesc;
+
+  /// No description provided for @modePerfectGameDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Never cross your own trail. One step on a visited cell ends the run.'**
+  String get modePerfectGameDesc;
+
+  /// No description provided for @diffEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get diffEasy;
+
+  /// No description provided for @diffNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get diffNormal;
+
+  /// No description provided for @diffHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get diffHard;
+
+  /// No description provided for @diffEasyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A slower snake to start. Scores stay off the leaderboards.'**
+  String get diffEasyDesc;
+
+  /// No description provided for @diffNormalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The original Snake Classic pace.'**
+  String get diffNormalDesc;
+
+  /// No description provided for @diffHardDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts fast and only gets faster.'**
+  String get diffHardDesc;
+
+  /// No description provided for @themeClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get themeClassic;
+
+  /// No description provided for @themeModern.
+  ///
+  /// In en, this message translates to:
+  /// **'Modern'**
+  String get themeModern;
+
+  /// No description provided for @themeNeon.
+  ///
+  /// In en, this message translates to:
+  /// **'Neon'**
+  String get themeNeon;
+
+  /// No description provided for @themeRetro.
+  ///
+  /// In en, this message translates to:
+  /// **'Retro'**
+  String get themeRetro;
+
+  /// No description provided for @themeSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Space'**
+  String get themeSpace;
+
+  /// No description provided for @themeOcean.
+  ///
+  /// In en, this message translates to:
+  /// **'Ocean'**
+  String get themeOcean;
+
+  /// No description provided for @themeCyberpunk.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyberpunk'**
+  String get themeCyberpunk;
+
+  /// No description provided for @themeForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest'**
+  String get themeForest;
+
+  /// No description provided for @themeDesert.
+  ///
+  /// In en, this message translates to:
+  /// **'Desert'**
+  String get themeDesert;
+
+  /// No description provided for @themeCrystal.
+  ///
+  /// In en, this message translates to:
+  /// **'Crystal'**
+  String get themeCrystal;
+
+  /// No description provided for @dpadLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get dpadLeft;
+
+  /// No description provided for @dpadCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Center'**
+  String get dpadCenter;
+
+  /// No description provided for @dpadRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get dpadRight;
+
+  /// No description provided for @mpModeClassicBattle.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic Battle'**
+  String get mpModeClassicBattle;
+
+  /// No description provided for @mpModeSpeedRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Run'**
+  String get mpModeSpeedRun;
+
+  /// No description provided for @mpModeSurvivalMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Survival Mode'**
+  String get mpModeSurvivalMode;
+
+  /// No description provided for @mpModePowerUpMadnessName.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-up Madness'**
+  String get mpModePowerUpMadnessName;
 }
 
 class _AppLocalizationsDelegate
