@@ -193,19 +193,6 @@ class ConnectivityService extends ChangeNotifier {
     return false;
   }
 
-  /// Get a human-readable description of the current status
-  String getStatusDescription() {
-    if (!_hasNetworkConnection) {
-      return 'No network connection';
-    } else if (!_hasInternetAccess) {
-      return 'No internet access';
-    } else if (!_isBackendReachable) {
-      return 'Server unreachable';
-    } else {
-      return 'Online';
-    }
-  }
-
   /// Get time since last online (for UI display)
   Duration? getTimeSinceOnline() {
     if (isOnline || _lastOnlineTime == null) return null;
