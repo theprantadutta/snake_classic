@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -243,7 +245,7 @@ class _QuestCard extends StatelessWidget {
                       color: _difficultyColor().withValues(alpha: 0.6)),
                 ),
                 child: Text(
-                  quest.difficulty.displayName,
+                  quest.difficulty.localizedName(AppLocalizations.of(context)!),
                   style: TextStyle(
                     color: _difficultyColor(),
                     fontSize: 10,

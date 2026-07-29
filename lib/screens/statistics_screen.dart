@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
@@ -368,7 +369,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   Expanded(
                     child: _buildBreakdownCard(
                       l10n.stFavoritePowerUp,
-                      '${_displayStats['favoritePowerUp'] ?? l10n.stNone}',
+                      _displayStats['favoritePowerUp'] != null
+                          ? localizedPowerUpStatName(
+                              _displayStats['favoritePowerUp'].toString(),
+                              l10n)
+                          : l10n.stNone,
                       powerUpBreakdown,
                       theme,
                     ),

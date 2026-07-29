@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/l10n/supported_locales.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -1294,7 +1295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _selectedBoardSize.name,
+                    _selectedBoardSize.localizedName(l10n),
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 18,
@@ -1335,7 +1336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         Text(
-          _selectedBoardSize.description,
+          _selectedBoardSize.localizedDescription(l10n),
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
@@ -1386,7 +1387,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${boardSize.name}\n${boardSize.width}×${boardSize.height}',
+                  '${boardSize.localizedName(l10n)}\n${boardSize.width}×${boardSize.height}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: isCurrentlyPlaying
@@ -1420,6 +1421,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Render-time localization for the crash-feedback labels. The raw
+  /// GameConstants label stays English ('Skip'/'Until Tap' are also used as
+  /// wire/persisted values elsewhere); numeric labels like '2s' pass through.
+  String _crashLabel(AppLocalizations l10n, Duration duration) {
+    final raw = GameConstants.getCrashFeedbackLabel(duration);
+    return switch (raw) {
+      'Skip' => l10n.crashLabelSkip,
+      'Until Tap' => l10n.crashLabelUntilTap,
+      _ => raw,
+    };
+  }
+
   Widget _buildCrashFeedbackDurationSelector(
     GameCubitState gameState,
     GameTheme theme,
@@ -1442,9 +1455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    GameConstants.getCrashFeedbackLabel(
-                      _selectedCrashFeedbackDuration,
-                    ),
+                    _crashLabel(l10n, _selectedCrashFeedbackDuration),
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 18,
@@ -1524,7 +1535,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  GameConstants.getCrashFeedbackLabel(duration),
+                  _crashLabel(l10n, duration),
                   style: TextStyle(
                     color: isSelected
                         ? theme.accentColor

@@ -4186,4 +4186,473 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get achDescWeekendWarrior => 'वीकेंड पर 10 गेम पूरे करें';
+
+  @override
+  String get ppuMegaSpeedBoost => 'मेगा स्पीड बूस्ट';
+
+  @override
+  String get ppuMegaInvincibility => 'मेगा अजेयता';
+
+  @override
+  String get ppuMegaScoreMultiplier => 'मेगा स्कोर गुणक';
+
+  @override
+  String get ppuMegaSlowMotion => 'मेगा स्लो मोशन';
+
+  @override
+  String get ppuTeleport => 'टेलीपोर्ट';
+
+  @override
+  String get ppuSizeReducer => 'आकार घटाने वाला';
+
+  @override
+  String get ppuScoreShield => 'स्कोर कवच';
+
+  @override
+  String get ppuComboMultiplier => 'कॉम्बो गुणक';
+
+  @override
+  String get ppuTimeWarp => 'टाइम वार्प';
+
+  @override
+  String get ppuMagneticFood => 'चुंबकीय खाना';
+
+  @override
+  String get ppuGhostMode => 'भूत मोड';
+
+  @override
+  String get ppuDoubleTrouble => 'दोहरी मुसीबत';
+
+  @override
+  String get ppuLuckyCharm => 'भाग्यशाली ताबीज़';
+
+  @override
+  String get ppuPowerSurge => 'पावर सर्ज';
+
+  @override
+  String get bundleMegaPack => 'मेगा पावर पैक';
+
+  @override
+  String get bundleMegaPackDesc => 'क्लासिक पावर-अप्स के उन्नत संस्करण';
+
+  @override
+  String get bundleTacticalPack => 'टैक्टिकल पावर पैक';
+
+  @override
+  String get bundleTacticalPackDesc => 'कुशल खिलाड़ियों के लिए रणनीतिक पावर-अप';
+
+  @override
+  String get bundleUltimatePack => 'अल्टीमेट पावर पैक';
+
+  @override
+  String get bundleUltimatePackDesc => 'हर प्रीमियम पावर-अप उपलब्ध';
+
+  @override
+  String get skinClassic => 'क्लासिक';
+
+  @override
+  String get skinGolden => 'सुनहरा साँप';
+
+  @override
+  String get skinRainbow => 'इंद्रधनुषी साँप';
+
+  @override
+  String get skinGalaxy => 'गैलेक्सी साँप';
+
+  @override
+  String get skinDragon => 'ड्रैगन साँप';
+
+  @override
+  String get skinElectric => 'बिजली साँप';
+
+  @override
+  String get skinFire => 'अग्नि साँप';
+
+  @override
+  String get skinIce => 'बर्फ़ीला साँप';
+
+  @override
+  String get skinShadow => 'छाया साँप';
+
+  @override
+  String get skinNeon => 'नियॉन साँप';
+
+  @override
+  String get skinCrystal => 'क्रिस्टल साँप';
+
+  @override
+  String get skinCosmic => 'ब्रह्मांडीय साँप';
+
+  @override
+  String get skinClassicDesc => 'साँप का मूल रूप';
+
+  @override
+  String get skinGoldenDesc => 'हर चाल में चमकता सुनहरा साँप';
+
+  @override
+  String get skinRainbowDesc => 'इंद्रधनुष के रंगों में बदलता रंगीन साँप';
+
+  @override
+  String get skinGalaxyDesc => 'तारों भरे पैटर्न वाला ब्रह्मांडीय साँप';
+
+  @override
+  String get skinDragonDesc => 'रहस्यमयी शक्तियों वाला ड्रैगन-शल्क साँप';
+
+  @override
+  String get skinElectricDesc => 'बिजली की ऊर्जा से कड़कता हुआ';
+
+  @override
+  String get skinFireDesc => 'आग के पैटर्न से दहकता हुआ';
+
+  @override
+  String get skinIceDesc => 'क्रिस्टल प्रभावों वाली जमी हुई सुंदरता';
+
+  @override
+  String get skinShadowDesc => 'गहरा और रहस्यमयी छाया साँप';
+
+  @override
+  String get skinNeonDesc => 'साइबरपंक नियॉन रोशनी से चमकता';
+
+  @override
+  String get skinCrystalDesc =>
+      'प्रिज़्मी प्रभावों वाला पारदर्शी क्रिस्टल साँप';
+
+  @override
+  String get skinCosmicDesc => 'तारों की धूल से बना साँप';
+
+  @override
+  String get trailNone => 'कोई ट्रेल नहीं';
+
+  @override
+  String get trailParticle => 'कण ट्रेल';
+
+  @override
+  String get trailGlow => 'चमक ट्रेल';
+
+  @override
+  String get trailRainbow => 'इंद्रधनुष ट्रेल';
+
+  @override
+  String get trailFire => 'अग्नि ट्रेल';
+
+  @override
+  String get trailElectric => 'बिजली ट्रेल';
+
+  @override
+  String get trailStar => 'तारा ट्रेल';
+
+  @override
+  String get trailCosmic => 'ब्रह्मांडीय ट्रेल';
+
+  @override
+  String get trailNeon => 'नियॉन ट्रेल';
+
+  @override
+  String get trailShadow => 'छाया ट्रेल';
+
+  @override
+  String get trailCrystal => 'क्रिस्टल ट्रेल';
+
+  @override
+  String get trailDragon => 'ड्रैगन ट्रेल';
+
+  @override
+  String get trailNoneDesc => 'बिना किसी ट्रेल का साफ़ साँप';
+
+  @override
+  String get trailParticleDesc => 'चमकते कणों की लकीर छोड़ता है';
+
+  @override
+  String get trailGlowDesc => 'साँप के पीछे धीरे-धीरे मिटती चमक';
+
+  @override
+  String get trailRainbowDesc => 'रंग-बिरंगा इंद्रधनुषी ट्रेल प्रभाव';
+
+  @override
+  String get trailFireDesc => 'अंगारों वाली धधकती आग की लकीर';
+
+  @override
+  String get trailElectricDesc => 'बिजली के प्रभावों वाला कड़कता ट्रेल';
+
+  @override
+  String get trailStarDesc => 'साँप की राह में टिमटिमाते तारे';
+
+  @override
+  String get trailCosmicDesc => 'ब्रह्मांडीय धूल और नीहारिका प्रभाव';
+
+  @override
+  String get trailNeonDesc => 'साइबरपंक अंदाज़ में चमकीली नियॉन रोशनी';
+
+  @override
+  String get trailShadowDesc => 'धुएँदार प्रभावों वाला गहरा छाया ट्रेल';
+
+  @override
+  String get trailCrystalDesc => 'धीरे-धीरे मिटते क्रिस्टल के टुकड़े';
+
+  @override
+  String get trailDragonDesc => 'रहस्यमयी ड्रैगन की साँस का ट्रेल';
+
+  @override
+  String get coinPackSmall => 'स्टार्टर पैक';
+
+  @override
+  String get coinPackMedium => 'वैल्यू पैक';
+
+  @override
+  String get coinPackLarge => 'प्रीमियम पैक';
+
+  @override
+  String get coinPackMega => 'अल्टीमेट पैक';
+
+  @override
+  String coinsAmount(Object coins) {
+    return '$coins सिक्के';
+  }
+
+  @override
+  String coinsAmountBonus(Object coins, Object bonus) {
+    return '$coins + $bonus बोनस';
+  }
+
+  @override
+  String get boardSmall => 'छोटा';
+
+  @override
+  String get boardClassic => 'क्लासिक';
+
+  @override
+  String get boardLarge => 'बड़ा';
+
+  @override
+  String get boardHuge => 'विशाल';
+
+  @override
+  String get boardEpic => 'महाकाय';
+
+  @override
+  String get boardMassive => 'प्रचंड';
+
+  @override
+  String get boardUltimate => 'अल्टीमेट';
+
+  @override
+  String get boardSmallDesc => 'तेज़ गेम, तंग जगह';
+
+  @override
+  String get boardClassicDesc => 'असली स्नेक अनुभव';
+
+  @override
+  String get boardLargeDesc => 'बढ़ने के लिए ज़्यादा जगह';
+
+  @override
+  String get boardHugeDesc => 'अधिकतम चुनौती और जगह';
+
+  @override
+  String get boardEpicDesc => 'उन्नत खिलाड़ियों के लिए बड़ा बोर्ड';
+
+  @override
+  String get boardMassiveDesc => 'महाकाव्य गेम्स के लिए विराट बोर्ड';
+
+  @override
+  String get boardUltimateDesc => 'सबसे बड़ा संभव बोर्ड';
+
+  @override
+  String get crashLabelSkip => 'छोड़ें';
+
+  @override
+  String get crashLabelUntilTap => 'टैप होने तक';
+
+  @override
+  String get tgmClassic => 'क्लासिक';
+
+  @override
+  String get tgmSpeedRun => 'स्पीड रन';
+
+  @override
+  String get tgmSurvival => 'सर्वाइवल';
+
+  @override
+  String get tgmNoWalls => 'बिना दीवारें';
+
+  @override
+  String get tgmPowerUpMadness => 'पावर-अप धमाल';
+
+  @override
+  String get tgmPerfectGame => 'परफ़ेक्ट गेम';
+
+  @override
+  String get tgmClassicDesc => 'मानक स्नेक गेम नियम';
+
+  @override
+  String get tgmSpeedRunDesc => 'गेम की गति तेज़ी से बढ़ती है';
+
+  @override
+  String get tgmSurvivalDesc => 'जितना हो सके टिके रहें';
+
+  @override
+  String get tgmNoWallsDesc => 'साँप स्क्रीन के किनारों से पार निकल जाता है';
+
+  @override
+  String get tgmPowerUpMadnessDesc => 'बार-बार पावर-अप आते हैं';
+
+  @override
+  String get tgmPerfectGameDesc => 'कोई ग़लती नहीं - एक टक्कर से गेम ख़त्म';
+
+  @override
+  String get ttDaily => 'दैनिक चुनौती';
+
+  @override
+  String get ttWeekly => 'साप्ताहिक टूर्नामेंट';
+
+  @override
+  String get ttSpecial => 'विशेष इवेंट';
+
+  @override
+  String get tsUpcoming => 'आगामी';
+
+  @override
+  String get tsActive => 'सक्रिय';
+
+  @override
+  String get tsEnded => 'समाप्त';
+
+  @override
+  String get cdEasy => 'आसान';
+
+  @override
+  String get cdMedium => 'मध्यम';
+
+  @override
+  String get cdHard => 'कठिन';
+
+  @override
+  String get usOnline => 'ऑनलाइन';
+
+  @override
+  String get usOffline => 'ऑफ़लाइन';
+
+  @override
+  String get usPlaying => 'खेल रहे हैं';
+
+  @override
+  String get bprXpBoost => 'XP बूस्ट';
+
+  @override
+  String get bprCoins => 'सिक्के';
+
+  @override
+  String get bprTheme => 'थीम';
+
+  @override
+  String get bprSkin => 'साँप स्किन';
+
+  @override
+  String get bprTrail => 'ट्रेल इफ़ेक्ट';
+
+  @override
+  String get bprPowerUp => 'पावर-अप';
+
+  @override
+  String get bprTournamentEntry => 'टूर्नामेंट प्रवेश';
+
+  @override
+  String get bprTitle => 'खिलाड़ी उपाधि';
+
+  @override
+  String get bprAvatar => 'अवतार';
+
+  @override
+  String get bprSpecial => 'विशेष इनाम';
+
+  @override
+  String get bprFree => 'मुफ़्त';
+
+  @override
+  String get bprPremium => 'प्रीमियम';
+
+  @override
+  String get bprnStarDust => 'तारों की धूल';
+
+  @override
+  String get bprnEnergyPack => 'ऊर्जा पैक';
+
+  @override
+  String get bprnBronzeEntry => 'कांस्य प्रवेश';
+
+  @override
+  String get bprnSilverEntry => 'रजत प्रवेश';
+
+  @override
+  String get bprnStargazer => 'तारों का प्रेमी';
+
+  @override
+  String get bprnVoyager => 'यात्री';
+
+  @override
+  String get bprnNebulaTheme => 'नीहारिका थीम';
+
+  @override
+  String get bprnStardustTrail => 'तारों की धूल ट्रेल';
+
+  @override
+  String get bprnLegendaryCrate => 'पौराणिक संदूक';
+
+  @override
+  String get bprnMegaXp => 'मेगा XP';
+
+  @override
+  String get bprnCosmicCharge => 'ब्रह्मांडीय चार्ज';
+
+  @override
+  String get bprnNovaBurst => 'नोवा विस्फोट';
+
+  @override
+  String get bprnGalaxySkin => 'गैलेक्सी स्किन';
+
+  @override
+  String get bprnCrystalSerpent => 'क्रिस्टल सर्प';
+
+  @override
+  String get bprnPlasmaWake => 'प्लाज़्मा लहर';
+
+  @override
+  String get bprnCosmicAura => 'ब्रह्मांडीय आभा';
+
+  @override
+  String get bprnCyberpunkTheme => 'साइबरपंक थीम';
+
+  @override
+  String get bprnCrystalTheme => 'क्रिस्टल थीम';
+
+  @override
+  String get bprnSeasonTrophy => 'सीज़न ट्रॉफ़ी';
+
+  @override
+  String get bprnCosmicCrown => 'ब्रह्मांडीय मुकुट';
+
+  @override
+  String get bprnCosmicLegend => 'ब्रह्मांडीय किंवदंती';
+
+  @override
+  String get bprnStarCommander => 'स्टार कमांडर';
+
+  @override
+  String bpRewardQtyCoins(Object quantity) {
+    return '$quantity सिक्के';
+  }
+
+  @override
+  String bpRewardTypeQty(Object type, Object quantity) {
+    return '$type x$quantity';
+  }
+
+  @override
+  String bpRewardDescFree(Object type) {
+    return 'मुफ़्त $type इनाम';
+  }
+
+  @override
+  String bpRewardDescPremium(Object type) {
+    return 'विशेष प्रीमियम $type इनाम';
+  }
 }

@@ -4215,4 +4215,479 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get achDescWeekendWarrior => 'Завершите 10 игр в выходные';
+
+  @override
+  String get ppuMegaSpeedBoost => 'Мега-ускорение';
+
+  @override
+  String get ppuMegaInvincibility => 'Мега-неуязвимость';
+
+  @override
+  String get ppuMegaScoreMultiplier => 'Мега-множитель очков';
+
+  @override
+  String get ppuMegaSlowMotion => 'Мега-замедление';
+
+  @override
+  String get ppuTeleport => 'Телепорт';
+
+  @override
+  String get ppuSizeReducer => 'Уменьшитель размера';
+
+  @override
+  String get ppuScoreShield => 'Щит очков';
+
+  @override
+  String get ppuComboMultiplier => 'Множитель комбо';
+
+  @override
+  String get ppuTimeWarp => 'Искажение времени';
+
+  @override
+  String get ppuMagneticFood => 'Магнитная еда';
+
+  @override
+  String get ppuGhostMode => 'Режим призрака';
+
+  @override
+  String get ppuDoubleTrouble => 'Двойная беда';
+
+  @override
+  String get ppuLuckyCharm => 'Талисман удачи';
+
+  @override
+  String get ppuPowerSurge => 'Всплеск силы';
+
+  @override
+  String get bundleMegaPack => 'Мега-набор силы';
+
+  @override
+  String get bundleMegaPackDesc => 'Улучшенные версии классических усилений';
+
+  @override
+  String get bundleTacticalPack => 'Тактический набор';
+
+  @override
+  String get bundleTacticalPackDesc =>
+      'Стратегические усиления для умелых игроков';
+
+  @override
+  String get bundleUltimatePack => 'Абсолютный набор';
+
+  @override
+  String get bundleUltimatePackDesc => 'Все премиум-усиления сразу';
+
+  @override
+  String get skinClassic => 'Классическая';
+
+  @override
+  String get skinGolden => 'Золотая змейка';
+
+  @override
+  String get skinRainbow => 'Радужная змейка';
+
+  @override
+  String get skinGalaxy => 'Галактическая змейка';
+
+  @override
+  String get skinDragon => 'Змейка-дракон';
+
+  @override
+  String get skinElectric => 'Электрическая змейка';
+
+  @override
+  String get skinFire => 'Огненная змейка';
+
+  @override
+  String get skinIce => 'Ледяная змейка';
+
+  @override
+  String get skinShadow => 'Теневая змейка';
+
+  @override
+  String get skinNeon => 'Неоновая змейка';
+
+  @override
+  String get skinCrystal => 'Хрустальная змейка';
+
+  @override
+  String get skinCosmic => 'Космическая змейка';
+
+  @override
+  String get skinClassicDesc => 'Оригинальный облик змейки';
+
+  @override
+  String get skinGoldenDesc =>
+      'Сверкающая золотая змейка, блестящая при каждом движении';
+
+  @override
+  String get skinRainbowDesc =>
+      'Разноцветная змейка, переливающаяся цветами радуги';
+
+  @override
+  String get skinGalaxyDesc => 'Космическая змейка со звёздными узорами';
+
+  @override
+  String get skinDragonDesc =>
+      'Грозная змейка в драконьей чешуе с мистической силой';
+
+  @override
+  String get skinElectricDesc => 'Потрескивает электрической энергией';
+
+  @override
+  String get skinFireDesc => 'Пылает огненными узорами';
+
+  @override
+  String get skinIceDesc => 'Замёрзшая красота с кристальными эффектами';
+
+  @override
+  String get skinShadowDesc => 'Тёмная и загадочная теневая змейка';
+
+  @override
+  String get skinNeonDesc => 'Светится неоновыми огнями в стиле киберпанк';
+
+  @override
+  String get skinCrystalDesc =>
+      'Полупрозрачная хрустальная змейка с призматическими эффектами';
+
+  @override
+  String get skinCosmicDesc => 'Змейка из звёздной пыли и космической материи';
+
+  @override
+  String get trailNone => 'Без следа';
+
+  @override
+  String get trailParticle => 'След из частиц';
+
+  @override
+  String get trailGlow => 'Светящийся след';
+
+  @override
+  String get trailRainbow => 'Радужный след';
+
+  @override
+  String get trailFire => 'Огненный след';
+
+  @override
+  String get trailElectric => 'Электрический след';
+
+  @override
+  String get trailStar => 'Звёздный след';
+
+  @override
+  String get trailCosmic => 'Космический след';
+
+  @override
+  String get trailNeon => 'Неоновый след';
+
+  @override
+  String get trailShadow => 'Теневой след';
+
+  @override
+  String get trailCrystal => 'Хрустальный след';
+
+  @override
+  String get trailDragon => 'Драконий след';
+
+  @override
+  String get trailNoneDesc => 'Чистая змейка без эффектов следа';
+
+  @override
+  String get trailParticleDesc => 'Оставляет след из сверкающих частиц';
+
+  @override
+  String get trailGlowDesc => 'Светящийся след, тающий позади змейки';
+
+  @override
+  String get trailRainbowDesc => 'Разноцветный радужный след';
+
+  @override
+  String get trailFireDesc => 'Пылающий огненный след с угольками';
+
+  @override
+  String get trailElectricDesc =>
+      'Потрескивающий электрический след с молниями';
+
+  @override
+  String get trailStarDesc => 'Мерцающие звёзды следуют по пути змейки';
+
+  @override
+  String get trailCosmicDesc => 'Эффекты космической пыли и туманности';
+
+  @override
+  String get trailNeonDesc => 'Яркое неоновое свечение в стиле киберпанк';
+
+  @override
+  String get trailShadowDesc => 'Тёмный теневой след с дымкой';
+
+  @override
+  String get trailCrystalDesc => 'Тающие кристальные осколки';
+
+  @override
+  String get trailDragonDesc => 'Мистический след драконьего дыхания';
+
+  @override
+  String get coinPackSmall => 'Стартовый набор';
+
+  @override
+  String get coinPackMedium => 'Выгодный набор';
+
+  @override
+  String get coinPackLarge => 'Премиум-набор';
+
+  @override
+  String get coinPackMega => 'Абсолютный набор';
+
+  @override
+  String coinsAmount(Object coins) {
+    return '$coins монет';
+  }
+
+  @override
+  String coinsAmountBonus(Object coins, Object bonus) {
+    return '$coins + $bonus бонусом';
+  }
+
+  @override
+  String get boardSmall => 'Маленькое';
+
+  @override
+  String get boardClassic => 'Классическое';
+
+  @override
+  String get boardLarge => 'Большое';
+
+  @override
+  String get boardHuge => 'Огромное';
+
+  @override
+  String get boardEpic => 'Эпическое';
+
+  @override
+  String get boardMassive => 'Гигантское';
+
+  @override
+  String get boardUltimate => 'Абсолютное';
+
+  @override
+  String get boardSmallDesc => 'Быстрые игры, тесные пространства';
+
+  @override
+  String get boardClassicDesc => 'Оригинальный опыт «Змейки»';
+
+  @override
+  String get boardLargeDesc => 'Больше места для роста';
+
+  @override
+  String get boardHugeDesc => 'Максимум вызова и пространства';
+
+  @override
+  String get boardEpicDesc => 'Большое поле для опытных игроков';
+
+  @override
+  String get boardMassiveDesc => 'Громадное поле для эпичных игр';
+
+  @override
+  String get boardUltimateDesc => 'Самое большое возможное поле';
+
+  @override
+  String get crashLabelSkip => 'Пропустить';
+
+  @override
+  String get crashLabelUntilTap => 'До касания';
+
+  @override
+  String get tgmClassic => 'Классика';
+
+  @override
+  String get tgmSpeedRun => 'Скоростной забег';
+
+  @override
+  String get tgmSurvival => 'Выживание';
+
+  @override
+  String get tgmNoWalls => 'Без стен';
+
+  @override
+  String get tgmPowerUpMadness => 'Безумие усилений';
+
+  @override
+  String get tgmPerfectGame => 'Идеальная игра';
+
+  @override
+  String get tgmClassicDesc => 'Стандартные правила «Змейки»';
+
+  @override
+  String get tgmSpeedRunDesc => 'Скорость игры быстро растёт';
+
+  @override
+  String get tgmSurvivalDesc => 'Продержитесь как можно дольше';
+
+  @override
+  String get tgmNoWallsDesc => 'Змейка проходит сквозь края экрана';
+
+  @override
+  String get tgmPowerUpMadnessDesc => 'Усиления появляются часто';
+
+  @override
+  String get tgmPerfectGameDesc =>
+      'Ошибки запрещены — одно столкновение завершает игру';
+
+  @override
+  String get ttDaily => 'Ежедневный вызов';
+
+  @override
+  String get ttWeekly => 'Еженедельный турнир';
+
+  @override
+  String get ttSpecial => 'Особое событие';
+
+  @override
+  String get tsUpcoming => 'Скоро';
+
+  @override
+  String get tsActive => 'Идёт';
+
+  @override
+  String get tsEnded => 'Завершён';
+
+  @override
+  String get cdEasy => 'Легко';
+
+  @override
+  String get cdMedium => 'Средне';
+
+  @override
+  String get cdHard => 'Сложно';
+
+  @override
+  String get usOnline => 'В сети';
+
+  @override
+  String get usOffline => 'Не в сети';
+
+  @override
+  String get usPlaying => 'Играет';
+
+  @override
+  String get bprXpBoost => 'Буст опыта';
+
+  @override
+  String get bprCoins => 'Монеты';
+
+  @override
+  String get bprTheme => 'Тема';
+
+  @override
+  String get bprSkin => 'Скин змейки';
+
+  @override
+  String get bprTrail => 'Эффект следа';
+
+  @override
+  String get bprPowerUp => 'Усиление';
+
+  @override
+  String get bprTournamentEntry => 'Входной билет на турнир';
+
+  @override
+  String get bprTitle => 'Титул игрока';
+
+  @override
+  String get bprAvatar => 'Аватар';
+
+  @override
+  String get bprSpecial => 'Особая награда';
+
+  @override
+  String get bprFree => 'Бесплатно';
+
+  @override
+  String get bprPremium => 'Премиум';
+
+  @override
+  String get bprnStarDust => 'Звёздная пыль';
+
+  @override
+  String get bprnEnergyPack => 'Энергетический набор';
+
+  @override
+  String get bprnBronzeEntry => 'Бронзовый билет';
+
+  @override
+  String get bprnSilverEntry => 'Серебряный билет';
+
+  @override
+  String get bprnStargazer => 'Звездочёт';
+
+  @override
+  String get bprnVoyager => 'Странник';
+
+  @override
+  String get bprnNebulaTheme => 'Тема «Туманность»';
+
+  @override
+  String get bprnStardustTrail => 'След звёздной пыли';
+
+  @override
+  String get bprnLegendaryCrate => 'Легендарный сундук';
+
+  @override
+  String get bprnMegaXp => 'Мега-опыт';
+
+  @override
+  String get bprnCosmicCharge => 'Космический заряд';
+
+  @override
+  String get bprnNovaBurst => 'Вспышка новой';
+
+  @override
+  String get bprnGalaxySkin => 'Скин «Галактика»';
+
+  @override
+  String get bprnCrystalSerpent => 'Хрустальный змей';
+
+  @override
+  String get bprnPlasmaWake => 'Плазменный шлейф';
+
+  @override
+  String get bprnCosmicAura => 'Космическая аура';
+
+  @override
+  String get bprnCyberpunkTheme => 'Тема «Киберпанк»';
+
+  @override
+  String get bprnCrystalTheme => 'Тема «Кристалл»';
+
+  @override
+  String get bprnSeasonTrophy => 'Трофей сезона';
+
+  @override
+  String get bprnCosmicCrown => 'Космическая корона';
+
+  @override
+  String get bprnCosmicLegend => 'Космическая легенда';
+
+  @override
+  String get bprnStarCommander => 'Звёздный командир';
+
+  @override
+  String bpRewardQtyCoins(Object quantity) {
+    return '$quantity монет';
+  }
+
+  @override
+  String bpRewardTypeQty(Object type, Object quantity) {
+    return '$type x$quantity';
+  }
+
+  @override
+  String bpRewardDescFree(Object type) {
+    return 'Бесплатная награда: $type';
+  }
+
+  @override
+  String bpRewardDescPremium(Object type) {
+    return 'Эксклюзивная премиум-награда: $type';
+  }
 }

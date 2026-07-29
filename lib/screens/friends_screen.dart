@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/providers/friends_provider.dart';
@@ -609,7 +610,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        user.status.displayName,
+                        user.status.localizedName(
+                          AppLocalizations.of(context)!,
+                        ),
                         style: TextStyle(
                           fontSize: 12,
                           color: _getStatusColor(user.status),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
@@ -84,7 +85,9 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                 Text(reward.icon, style: const TextStyle(fontSize: 20)),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(l10n.bpClaimedToast(reward.name),
+                  child: Text(
+                      l10n.bpClaimedToast(
+                          localizedBattlePassRewardName(reward.name, l10n)),
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ],
@@ -1054,7 +1057,7 @@ class _ClaimChip extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              reward.name,
+              localizedBattlePassRewardName(reward.name, l10n),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -1527,7 +1530,7 @@ class _RewardDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            reward.name,
+            localizedBattlePassRewardName(reward.name, l10n),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
@@ -1578,16 +1581,17 @@ class _RewardDetailSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          if (reward.description.isNotEmpty)
-            Text(
-              reward.description,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.75),
-                fontSize: 13,
-                height: 1.4,
-              ),
+          Text(
+            reward.isPremium
+                ? l10n.bpRewardDescPremium(reward.type.localizedName(l10n))
+                : l10n.bpRewardDescFree(reward.type.localizedName(l10n)),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 13,
+              height: 1.4,
             ),
+          ),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

@@ -4225,4 +4225,482 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get achDescWeekendWarrior => 'Termine 10 partidas nos fins de semana';
+
+  @override
+  String get ppuMegaSpeedBoost => 'Mega Aceleração';
+
+  @override
+  String get ppuMegaInvincibility => 'Mega Invencibilidade';
+
+  @override
+  String get ppuMegaScoreMultiplier => 'Mega Multiplicador de Pontos';
+
+  @override
+  String get ppuMegaSlowMotion => 'Mega Câmera Lenta';
+
+  @override
+  String get ppuTeleport => 'Teletransporte';
+
+  @override
+  String get ppuSizeReducer => 'Redutor de Tamanho';
+
+  @override
+  String get ppuScoreShield => 'Escudo de Pontos';
+
+  @override
+  String get ppuComboMultiplier => 'Multiplicador de Combo';
+
+  @override
+  String get ppuTimeWarp => 'Distorção do Tempo';
+
+  @override
+  String get ppuMagneticFood => 'Comida Magnética';
+
+  @override
+  String get ppuGhostMode => 'Modo Fantasma';
+
+  @override
+  String get ppuDoubleTrouble => 'Dose Dupla';
+
+  @override
+  String get ppuLuckyCharm => 'Amuleto da Sorte';
+
+  @override
+  String get ppuPowerSurge => 'Onda de Poder';
+
+  @override
+  String get bundleMegaPack => 'Pacote Mega Poder';
+
+  @override
+  String get bundleMegaPackDesc =>
+      'Versões aprimoradas dos power-ups clássicos';
+
+  @override
+  String get bundleTacticalPack => 'Pacote Tático';
+
+  @override
+  String get bundleTacticalPackDesc =>
+      'Power-ups estratégicos para jogadores habilidosos';
+
+  @override
+  String get bundleUltimatePack => 'Pacote Supremo';
+
+  @override
+  String get bundleUltimatePackDesc => 'Todos os power-ups premium disponíveis';
+
+  @override
+  String get skinClassic => 'Clássica';
+
+  @override
+  String get skinGolden => 'Cobra Dourada';
+
+  @override
+  String get skinRainbow => 'Cobra Arco-Íris';
+
+  @override
+  String get skinGalaxy => 'Cobra Galáxia';
+
+  @override
+  String get skinDragon => 'Cobra Dragão';
+
+  @override
+  String get skinElectric => 'Cobra Elétrica';
+
+  @override
+  String get skinFire => 'Cobra de Fogo';
+
+  @override
+  String get skinIce => 'Cobra de Gelo';
+
+  @override
+  String get skinShadow => 'Cobra Sombria';
+
+  @override
+  String get skinNeon => 'Cobra Neon';
+
+  @override
+  String get skinCrystal => 'Cobra de Cristal';
+
+  @override
+  String get skinCosmic => 'Cobra Cósmica';
+
+  @override
+  String get skinClassicDesc => 'A aparência original da cobra';
+
+  @override
+  String get skinGoldenDesc =>
+      'Cobra de ouro reluzente que brilha a cada movimento';
+
+  @override
+  String get skinRainbowDesc =>
+      'Uma cobra colorida que muda pelas cores do arco-íris';
+
+  @override
+  String get skinGalaxyDesc => 'Cobra cósmica com padrões estrelados';
+
+  @override
+  String get skinDragonDesc =>
+      'Cobra feroz com escamas de dragão e poderes místicos';
+
+  @override
+  String get skinElectricDesc => 'Crepitando com energia elétrica';
+
+  @override
+  String get skinFireDesc => 'Ardendo intensamente com padrões de fogo';
+
+  @override
+  String get skinIceDesc => 'Beleza congelada com efeitos cristalinos';
+
+  @override
+  String get skinShadowDesc => 'Cobra sombria, escura e misteriosa';
+
+  @override
+  String get skinNeonDesc => 'Brilhando com luzes neon cyberpunk';
+
+  @override
+  String get skinCrystalDesc =>
+      'Cobra de cristal translúcida com efeitos prismáticos';
+
+  @override
+  String get skinCosmicDesc =>
+      'Cobra feita de poeira estelar e matéria cósmica';
+
+  @override
+  String get trailNone => 'Sem Rastro';
+
+  @override
+  String get trailParticle => 'Rastro de Partículas';
+
+  @override
+  String get trailGlow => 'Rastro Brilhante';
+
+  @override
+  String get trailRainbow => 'Rastro Arco-Íris';
+
+  @override
+  String get trailFire => 'Rastro de Fogo';
+
+  @override
+  String get trailElectric => 'Rastro Elétrico';
+
+  @override
+  String get trailStar => 'Rastro de Estrelas';
+
+  @override
+  String get trailCosmic => 'Rastro Cósmico';
+
+  @override
+  String get trailNeon => 'Rastro Neon';
+
+  @override
+  String get trailShadow => 'Rastro Sombrio';
+
+  @override
+  String get trailCrystal => 'Rastro de Cristal';
+
+  @override
+  String get trailDragon => 'Rastro de Dragão';
+
+  @override
+  String get trailNoneDesc => 'Cobra limpa, sem efeitos de rastro';
+
+  @override
+  String get trailParticleDesc => 'Deixa um rastro de partículas cintilantes';
+
+  @override
+  String get trailGlowDesc => 'Rastro brilhante que se desfaz atrás da cobra';
+
+  @override
+  String get trailRainbowDesc => 'Efeito colorido de rastro arco-íris';
+
+  @override
+  String get trailFireDesc => 'Rastro de fogo ardente com brasas';
+
+  @override
+  String get trailElectricDesc =>
+      'Rastro elétrico crepitante com efeitos de raios';
+
+  @override
+  String get trailStarDesc => 'Estrelas cintilantes seguem o caminho da cobra';
+
+  @override
+  String get trailCosmicDesc => 'Efeitos de poeira cósmica e nebulosa';
+
+  @override
+  String get trailNeonDesc => 'Brilho neon intenso com estilo cyberpunk';
+
+  @override
+  String get trailShadowDesc =>
+      'Rastro de sombras escuras com efeitos de fumaça';
+
+  @override
+  String get trailCrystalDesc => 'Fragmentos cristalinos que se desfazem';
+
+  @override
+  String get trailDragonDesc => 'Rastro místico de hálito de dragão';
+
+  @override
+  String get coinPackSmall => 'Pacote Inicial';
+
+  @override
+  String get coinPackMedium => 'Pacote Vantajoso';
+
+  @override
+  String get coinPackLarge => 'Pacote Premium';
+
+  @override
+  String get coinPackMega => 'Pacote Supremo';
+
+  @override
+  String coinsAmount(Object coins) {
+    return '$coins moedas';
+  }
+
+  @override
+  String coinsAmountBonus(Object coins, Object bonus) {
+    return '$coins + $bonus de bônus';
+  }
+
+  @override
+  String get boardSmall => 'Pequeno';
+
+  @override
+  String get boardClassic => 'Clássico';
+
+  @override
+  String get boardLarge => 'Grande';
+
+  @override
+  String get boardHuge => 'Enorme';
+
+  @override
+  String get boardEpic => 'Épico';
+
+  @override
+  String get boardMassive => 'Colossal';
+
+  @override
+  String get boardUltimate => 'Supremo';
+
+  @override
+  String get boardSmallDesc => 'Partidas rápidas, espaços apertados';
+
+  @override
+  String get boardClassicDesc => 'A experiência original do Snake';
+
+  @override
+  String get boardLargeDesc => 'Mais espaço para crescer';
+
+  @override
+  String get boardHugeDesc => 'Desafio e espaço máximos';
+
+  @override
+  String get boardEpicDesc => 'Um tabuleiro grande para jogadores avançados';
+
+  @override
+  String get boardMassiveDesc => 'Tabuleiro gigantesco para partidas épicas';
+
+  @override
+  String get boardUltimateDesc => 'O maior tabuleiro possível';
+
+  @override
+  String get crashLabelSkip => 'Pular';
+
+  @override
+  String get crashLabelUntilTap => 'Até Tocar';
+
+  @override
+  String get tgmClassic => 'Clássico';
+
+  @override
+  String get tgmSpeedRun => 'Corrida Veloz';
+
+  @override
+  String get tgmSurvival => 'Sobrevivência';
+
+  @override
+  String get tgmNoWalls => 'Sem Paredes';
+
+  @override
+  String get tgmPowerUpMadness => 'Loucura de Power-ups';
+
+  @override
+  String get tgmPerfectGame => 'Partida Perfeita';
+
+  @override
+  String get tgmClassicDesc => 'Regras padrão do jogo Snake';
+
+  @override
+  String get tgmSpeedRunDesc => 'A velocidade do jogo aumenta rapidamente';
+
+  @override
+  String get tgmSurvivalDesc => 'Sobreviva o máximo possível';
+
+  @override
+  String get tgmNoWallsDesc => 'A cobra atravessa as bordas da tela';
+
+  @override
+  String get tgmPowerUpMadnessDesc => 'Power-ups surgem com frequência';
+
+  @override
+  String get tgmPerfectGameDesc =>
+      'Nenhum erro permitido - um toque encerra o jogo';
+
+  @override
+  String get ttDaily => 'Desafio Diário';
+
+  @override
+  String get ttWeekly => 'Torneio Semanal';
+
+  @override
+  String get ttSpecial => 'Evento Especial';
+
+  @override
+  String get tsUpcoming => 'Em Breve';
+
+  @override
+  String get tsActive => 'Ativo';
+
+  @override
+  String get tsEnded => 'Encerrado';
+
+  @override
+  String get cdEasy => 'Fácil';
+
+  @override
+  String get cdMedium => 'Médio';
+
+  @override
+  String get cdHard => 'Difícil';
+
+  @override
+  String get usOnline => 'Online';
+
+  @override
+  String get usOffline => 'Offline';
+
+  @override
+  String get usPlaying => 'Jogando';
+
+  @override
+  String get bprXpBoost => 'Impulso de XP';
+
+  @override
+  String get bprCoins => 'Moedas';
+
+  @override
+  String get bprTheme => 'Tema';
+
+  @override
+  String get bprSkin => 'Skin de Cobra';
+
+  @override
+  String get bprTrail => 'Efeito de Rastro';
+
+  @override
+  String get bprPowerUp => 'Power-Up';
+
+  @override
+  String get bprTournamentEntry => 'Entrada de Torneio';
+
+  @override
+  String get bprTitle => 'Título de Jogador';
+
+  @override
+  String get bprAvatar => 'Avatar';
+
+  @override
+  String get bprSpecial => 'Recompensa Especial';
+
+  @override
+  String get bprFree => 'Grátis';
+
+  @override
+  String get bprPremium => 'Premium';
+
+  @override
+  String get bprnStarDust => 'Poeira Estelar';
+
+  @override
+  String get bprnEnergyPack => 'Pacote de Energia';
+
+  @override
+  String get bprnBronzeEntry => 'Entrada Bronze';
+
+  @override
+  String get bprnSilverEntry => 'Entrada Prata';
+
+  @override
+  String get bprnStargazer => 'Observador de Estrelas';
+
+  @override
+  String get bprnVoyager => 'Viajante';
+
+  @override
+  String get bprnNebulaTheme => 'Tema Nebulosa';
+
+  @override
+  String get bprnStardustTrail => 'Rastro de Poeira Estelar';
+
+  @override
+  String get bprnLegendaryCrate => 'Baú Lendário';
+
+  @override
+  String get bprnMegaXp => 'Mega XP';
+
+  @override
+  String get bprnCosmicCharge => 'Carga Cósmica';
+
+  @override
+  String get bprnNovaBurst => 'Explosão de Nova';
+
+  @override
+  String get bprnGalaxySkin => 'Skin Galáxia';
+
+  @override
+  String get bprnCrystalSerpent => 'Serpente de Cristal';
+
+  @override
+  String get bprnPlasmaWake => 'Esteira de Plasma';
+
+  @override
+  String get bprnCosmicAura => 'Aura Cósmica';
+
+  @override
+  String get bprnCyberpunkTheme => 'Tema Cyberpunk';
+
+  @override
+  String get bprnCrystalTheme => 'Tema Cristal';
+
+  @override
+  String get bprnSeasonTrophy => 'Troféu da Temporada';
+
+  @override
+  String get bprnCosmicCrown => 'Coroa Cósmica';
+
+  @override
+  String get bprnCosmicLegend => 'Lenda Cósmica';
+
+  @override
+  String get bprnStarCommander => 'Comandante Estelar';
+
+  @override
+  String bpRewardQtyCoins(Object quantity) {
+    return '$quantity Moedas';
+  }
+
+  @override
+  String bpRewardTypeQty(Object type, Object quantity) {
+    return '$type x$quantity';
+  }
+
+  @override
+  String bpRewardDescFree(Object type) {
+    return 'Recompensa grátis: $type';
+  }
+
+  @override
+  String bpRewardDescPremium(Object type) {
+    return 'Recompensa premium exclusiva: $type';
+  }
 }

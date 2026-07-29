@@ -4193,4 +4193,478 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get achDescWeekendWarrior => 'Finish 10 games on weekends';
+
+  @override
+  String get ppuMegaSpeedBoost => 'Mega Speed Boost';
+
+  @override
+  String get ppuMegaInvincibility => 'Mega Invincibility';
+
+  @override
+  String get ppuMegaScoreMultiplier => 'Mega Score Multiplier';
+
+  @override
+  String get ppuMegaSlowMotion => 'Mega Slow Motion';
+
+  @override
+  String get ppuTeleport => 'Teleport';
+
+  @override
+  String get ppuSizeReducer => 'Size Reducer';
+
+  @override
+  String get ppuScoreShield => 'Score Shield';
+
+  @override
+  String get ppuComboMultiplier => 'Combo Multiplier';
+
+  @override
+  String get ppuTimeWarp => 'Time Warp';
+
+  @override
+  String get ppuMagneticFood => 'Magnetic Food';
+
+  @override
+  String get ppuGhostMode => 'Ghost Mode';
+
+  @override
+  String get ppuDoubleTrouble => 'Double Trouble';
+
+  @override
+  String get ppuLuckyCharm => 'Lucky Charm';
+
+  @override
+  String get ppuPowerSurge => 'Power Surge';
+
+  @override
+  String get bundleMegaPack => 'Mega Power Pack';
+
+  @override
+  String get bundleMegaPackDesc => 'Enhanced versions of classic power-ups';
+
+  @override
+  String get bundleTacticalPack => 'Tactical Power Pack';
+
+  @override
+  String get bundleTacticalPackDesc =>
+      'Strategic power-ups for skilled players';
+
+  @override
+  String get bundleUltimatePack => 'Ultimate Power Pack';
+
+  @override
+  String get bundleUltimatePackDesc => 'Every premium power-up available';
+
+  @override
+  String get skinClassic => 'Classic';
+
+  @override
+  String get skinGolden => 'Golden Snake';
+
+  @override
+  String get skinRainbow => 'Rainbow Snake';
+
+  @override
+  String get skinGalaxy => 'Galaxy Snake';
+
+  @override
+  String get skinDragon => 'Dragon Snake';
+
+  @override
+  String get skinElectric => 'Electric Snake';
+
+  @override
+  String get skinFire => 'Fire Snake';
+
+  @override
+  String get skinIce => 'Ice Snake';
+
+  @override
+  String get skinShadow => 'Shadow Snake';
+
+  @override
+  String get skinNeon => 'Neon Snake';
+
+  @override
+  String get skinCrystal => 'Crystal Snake';
+
+  @override
+  String get skinCosmic => 'Cosmic Snake';
+
+  @override
+  String get skinClassicDesc => 'The original snake appearance';
+
+  @override
+  String get skinGoldenDesc =>
+      'Gleaming gold snake that shines with every move';
+
+  @override
+  String get skinRainbowDesc =>
+      'A colorful snake that shifts through rainbow colors';
+
+  @override
+  String get skinGalaxyDesc => 'Cosmic snake with starry patterns';
+
+  @override
+  String get skinDragonDesc =>
+      'Fierce dragon-scaled snake with mystical powers';
+
+  @override
+  String get skinElectricDesc => 'Crackling with electric energy';
+
+  @override
+  String get skinFireDesc => 'Burning bright with fiery patterns';
+
+  @override
+  String get skinIceDesc => 'Frozen beauty with crystalline effects';
+
+  @override
+  String get skinShadowDesc => 'Dark and mysterious shadow snake';
+
+  @override
+  String get skinNeonDesc => 'Glowing with cyberpunk neon lights';
+
+  @override
+  String get skinCrystalDesc =>
+      'Translucent crystal snake with prismatic effects';
+
+  @override
+  String get skinCosmicDesc => 'Snake made of stardust and cosmic matter';
+
+  @override
+  String get trailNone => 'No Trail';
+
+  @override
+  String get trailParticle => 'Particle Trail';
+
+  @override
+  String get trailGlow => 'Glow Trail';
+
+  @override
+  String get trailRainbow => 'Rainbow Trail';
+
+  @override
+  String get trailFire => 'Fire Trail';
+
+  @override
+  String get trailElectric => 'Electric Trail';
+
+  @override
+  String get trailStar => 'Star Trail';
+
+  @override
+  String get trailCosmic => 'Cosmic Trail';
+
+  @override
+  String get trailNeon => 'Neon Trail';
+
+  @override
+  String get trailShadow => 'Shadow Trail';
+
+  @override
+  String get trailCrystal => 'Crystal Trail';
+
+  @override
+  String get trailDragon => 'Dragon Trail';
+
+  @override
+  String get trailNoneDesc => 'Clean snake with no trail effects';
+
+  @override
+  String get trailParticleDesc => 'Leaves a trail of sparkling particles';
+
+  @override
+  String get trailGlowDesc => 'Glowing trail that fades behind the snake';
+
+  @override
+  String get trailRainbowDesc => 'Colorful rainbow trail effect';
+
+  @override
+  String get trailFireDesc => 'Blazing fire trail with ember particles';
+
+  @override
+  String get trailElectricDesc =>
+      'Crackling electric trail with lightning effects';
+
+  @override
+  String get trailStarDesc => 'Twinkling stars follow the snake\'s path';
+
+  @override
+  String get trailCosmicDesc => 'Cosmic dust and nebula effects';
+
+  @override
+  String get trailNeonDesc => 'Bright neon glow with cyberpunk style';
+
+  @override
+  String get trailShadowDesc => 'Dark shadow trail with smoky effects';
+
+  @override
+  String get trailCrystalDesc => 'Crystalline shards that fade away';
+
+  @override
+  String get trailDragonDesc => 'Mystical dragon breath trail';
+
+  @override
+  String get coinPackSmall => 'Starter Pack';
+
+  @override
+  String get coinPackMedium => 'Value Pack';
+
+  @override
+  String get coinPackLarge => 'Premium Pack';
+
+  @override
+  String get coinPackMega => 'Ultimate Pack';
+
+  @override
+  String coinsAmount(Object coins) {
+    return '$coins coins';
+  }
+
+  @override
+  String coinsAmountBonus(Object coins, Object bonus) {
+    return '$coins + $bonus bonus';
+  }
+
+  @override
+  String get boardSmall => 'Small';
+
+  @override
+  String get boardClassic => 'Classic';
+
+  @override
+  String get boardLarge => 'Large';
+
+  @override
+  String get boardHuge => 'Huge';
+
+  @override
+  String get boardEpic => 'Epic';
+
+  @override
+  String get boardMassive => 'Massive';
+
+  @override
+  String get boardUltimate => 'Ultimate';
+
+  @override
+  String get boardSmallDesc => 'Quick games, tight spaces';
+
+  @override
+  String get boardClassicDesc => 'The original Snake experience';
+
+  @override
+  String get boardLargeDesc => 'More room to grow';
+
+  @override
+  String get boardHugeDesc => 'Maximum challenge and space';
+
+  @override
+  String get boardEpicDesc => 'A big board for advanced players';
+
+  @override
+  String get boardMassiveDesc => 'Enormous board for epic games';
+
+  @override
+  String get boardUltimateDesc => 'The largest possible board';
+
+  @override
+  String get crashLabelSkip => 'Skip';
+
+  @override
+  String get crashLabelUntilTap => 'Until Tap';
+
+  @override
+  String get tgmClassic => 'Classic';
+
+  @override
+  String get tgmSpeedRun => 'Speed Run';
+
+  @override
+  String get tgmSurvival => 'Survival';
+
+  @override
+  String get tgmNoWalls => 'No Walls';
+
+  @override
+  String get tgmPowerUpMadness => 'Power-up Madness';
+
+  @override
+  String get tgmPerfectGame => 'Perfect Game';
+
+  @override
+  String get tgmClassicDesc => 'Standard Snake game rules';
+
+  @override
+  String get tgmSpeedRunDesc => 'Game speed increases rapidly';
+
+  @override
+  String get tgmSurvivalDesc => 'Survive as long as possible';
+
+  @override
+  String get tgmNoWallsDesc => 'Snake wraps around screen edges';
+
+  @override
+  String get tgmPowerUpMadnessDesc => 'Frequent power-ups spawn';
+
+  @override
+  String get tgmPerfectGameDesc => 'No mistakes allowed - one hit ends game';
+
+  @override
+  String get ttDaily => 'Daily Challenge';
+
+  @override
+  String get ttWeekly => 'Weekly Tournament';
+
+  @override
+  String get ttSpecial => 'Special Event';
+
+  @override
+  String get tsUpcoming => 'Upcoming';
+
+  @override
+  String get tsActive => 'Active';
+
+  @override
+  String get tsEnded => 'Ended';
+
+  @override
+  String get cdEasy => 'Easy';
+
+  @override
+  String get cdMedium => 'Medium';
+
+  @override
+  String get cdHard => 'Hard';
+
+  @override
+  String get usOnline => 'Online';
+
+  @override
+  String get usOffline => 'Offline';
+
+  @override
+  String get usPlaying => 'Playing';
+
+  @override
+  String get bprXpBoost => 'XP Boost';
+
+  @override
+  String get bprCoins => 'Coins';
+
+  @override
+  String get bprTheme => 'Theme';
+
+  @override
+  String get bprSkin => 'Snake Skin';
+
+  @override
+  String get bprTrail => 'Trail Effect';
+
+  @override
+  String get bprPowerUp => 'Power-Up';
+
+  @override
+  String get bprTournamentEntry => 'Tournament Entry';
+
+  @override
+  String get bprTitle => 'Player Title';
+
+  @override
+  String get bprAvatar => 'Avatar';
+
+  @override
+  String get bprSpecial => 'Special Reward';
+
+  @override
+  String get bprFree => 'Free';
+
+  @override
+  String get bprPremium => 'Premium';
+
+  @override
+  String get bprnStarDust => 'Star Dust';
+
+  @override
+  String get bprnEnergyPack => 'Energy Pack';
+
+  @override
+  String get bprnBronzeEntry => 'Bronze Entry';
+
+  @override
+  String get bprnSilverEntry => 'Silver Entry';
+
+  @override
+  String get bprnStargazer => 'Stargazer';
+
+  @override
+  String get bprnVoyager => 'Voyager';
+
+  @override
+  String get bprnNebulaTheme => 'Nebula Theme';
+
+  @override
+  String get bprnStardustTrail => 'Stardust Trail';
+
+  @override
+  String get bprnLegendaryCrate => 'Legendary Crate';
+
+  @override
+  String get bprnMegaXp => 'Mega XP';
+
+  @override
+  String get bprnCosmicCharge => 'Cosmic Charge';
+
+  @override
+  String get bprnNovaBurst => 'Nova Burst';
+
+  @override
+  String get bprnGalaxySkin => 'Galaxy Skin';
+
+  @override
+  String get bprnCrystalSerpent => 'Crystal Serpent';
+
+  @override
+  String get bprnPlasmaWake => 'Plasma Wake';
+
+  @override
+  String get bprnCosmicAura => 'Cosmic Aura';
+
+  @override
+  String get bprnCyberpunkTheme => 'Cyberpunk Theme';
+
+  @override
+  String get bprnCrystalTheme => 'Crystal Theme';
+
+  @override
+  String get bprnSeasonTrophy => 'Season Trophy';
+
+  @override
+  String get bprnCosmicCrown => 'Cosmic Crown';
+
+  @override
+  String get bprnCosmicLegend => 'Cosmic Legend';
+
+  @override
+  String get bprnStarCommander => 'Star Commander';
+
+  @override
+  String bpRewardQtyCoins(Object quantity) {
+    return '$quantity Coins';
+  }
+
+  @override
+  String bpRewardTypeQty(Object type, Object quantity) {
+    return '$type x$quantity';
+  }
+
+  @override
+  String bpRewardDescFree(Object type) {
+    return 'Free $type reward';
+  }
+
+  @override
+  String bpRewardDescPremium(Object type) {
+    return 'Exclusive premium $type reward';
+  }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -445,7 +447,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                                       ),
                                     ),
                                     child: Text(
-                                      challenge.difficulty.displayName,
+                                      challenge.difficulty.localizedName(
+                                        AppLocalizations.of(context)!,
+                                      ),
                                       style: TextStyle(
                                         color: difficultyColor,
                                         fontSize: 11,

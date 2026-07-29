@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/providers/tournaments_provider.dart';
@@ -385,7 +386,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          tournament.type.displayName,
+                          tournament.type.localizedName(l10n),
                           style: TextStyle(
                             fontSize: 12,
                             color: _getTournamentTypeColor(tournament.type),
@@ -407,7 +408,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      tournament.status.displayName,
+                      tournament.status.localizedName(l10n),
                       style: TextStyle(
                         fontSize: 10,
                         color: _getTournamentStatusColor(tournament.status),
@@ -452,7 +453,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          tournament.gameMode.displayName,
+                          tournament.gameMode.localizedName(l10n),
                           style: const TextStyle(
                             fontSize: 10,
                             color: Colors.blue,

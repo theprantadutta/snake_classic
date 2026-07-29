@@ -4227,4 +4227,474 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get achDescWeekendWarrior => 'Ukończ 10 gier w weekendy';
+
+  @override
+  String get ppuMegaSpeedBoost => 'Mega Przyspieszenie';
+
+  @override
+  String get ppuMegaInvincibility => 'Mega Niezniszczalność';
+
+  @override
+  String get ppuMegaScoreMultiplier => 'Mega Mnożnik Punktów';
+
+  @override
+  String get ppuMegaSlowMotion => 'Mega Spowolnienie';
+
+  @override
+  String get ppuTeleport => 'Teleport';
+
+  @override
+  String get ppuSizeReducer => 'Reduktor Rozmiaru';
+
+  @override
+  String get ppuScoreShield => 'Tarcza Punktów';
+
+  @override
+  String get ppuComboMultiplier => 'Mnożnik Combo';
+
+  @override
+  String get ppuTimeWarp => 'Zakrzywienie Czasu';
+
+  @override
+  String get ppuMagneticFood => 'Magnetyczne Jedzenie';
+
+  @override
+  String get ppuGhostMode => 'Tryb Ducha';
+
+  @override
+  String get ppuDoubleTrouble => 'Podwójny Kłopot';
+
+  @override
+  String get ppuLuckyCharm => 'Szczęśliwy Amulet';
+
+  @override
+  String get ppuPowerSurge => 'Przypływ Mocy';
+
+  @override
+  String get bundleMegaPack => 'Mega Pakiet Mocy';
+
+  @override
+  String get bundleMegaPackDesc => 'Ulepszone wersje klasycznych wzmocnień';
+
+  @override
+  String get bundleTacticalPack => 'Pakiet Taktyczny';
+
+  @override
+  String get bundleTacticalPackDesc =>
+      'Strategiczne wzmocnienia dla wprawnych graczy';
+
+  @override
+  String get bundleUltimatePack => 'Pakiet Ostateczny';
+
+  @override
+  String get bundleUltimatePackDesc => 'Wszystkie wzmocnienia premium w jednym';
+
+  @override
+  String get skinClassic => 'Klasyczna';
+
+  @override
+  String get skinGolden => 'Złoty Wąż';
+
+  @override
+  String get skinRainbow => 'Tęczowy Wąż';
+
+  @override
+  String get skinGalaxy => 'Galaktyczny Wąż';
+
+  @override
+  String get skinDragon => 'Smoczy Wąż';
+
+  @override
+  String get skinElectric => 'Elektryczny Wąż';
+
+  @override
+  String get skinFire => 'Ognisty Wąż';
+
+  @override
+  String get skinIce => 'Lodowy Wąż';
+
+  @override
+  String get skinShadow => 'Cienisty Wąż';
+
+  @override
+  String get skinNeon => 'Neonowy Wąż';
+
+  @override
+  String get skinCrystal => 'Kryształowy Wąż';
+
+  @override
+  String get skinCosmic => 'Kosmiczny Wąż';
+
+  @override
+  String get skinClassicDesc => 'Oryginalny wygląd węża';
+
+  @override
+  String get skinGoldenDesc => 'Lśniący złoty wąż błyszczący przy każdym ruchu';
+
+  @override
+  String get skinRainbowDesc => 'Kolorowy wąż mieniący się barwami tęczy';
+
+  @override
+  String get skinGalaxyDesc => 'Kosmiczny wąż w gwiezdne wzory';
+
+  @override
+  String get skinDragonDesc => 'Groźny wąż w smoczych łuskach z mistyczną mocą';
+
+  @override
+  String get skinElectricDesc => 'Trzeszczy elektryczną energią';
+
+  @override
+  String get skinFireDesc => 'Płonie ognistymi wzorami';
+
+  @override
+  String get skinIceDesc => 'Zamrożone piękno z krystalicznymi efektami';
+
+  @override
+  String get skinShadowDesc => 'Mroczny i tajemniczy wąż cienia';
+
+  @override
+  String get skinNeonDesc => 'Świeci neonowymi światłami w stylu cyberpunk';
+
+  @override
+  String get skinCrystalDesc =>
+      'Półprzezroczysty kryształowy wąż z pryzmatycznymi efektami';
+
+  @override
+  String get skinCosmicDesc => 'Wąż z gwiezdnego pyłu i kosmicznej materii';
+
+  @override
+  String get trailNone => 'Bez Śladu';
+
+  @override
+  String get trailParticle => 'Ślad Cząsteczek';
+
+  @override
+  String get trailGlow => 'Świetlisty Ślad';
+
+  @override
+  String get trailRainbow => 'Tęczowy Ślad';
+
+  @override
+  String get trailFire => 'Ognisty Ślad';
+
+  @override
+  String get trailElectric => 'Elektryczny Ślad';
+
+  @override
+  String get trailStar => 'Gwiezdny Ślad';
+
+  @override
+  String get trailCosmic => 'Kosmiczny Ślad';
+
+  @override
+  String get trailNeon => 'Neonowy Ślad';
+
+  @override
+  String get trailShadow => 'Cienisty Ślad';
+
+  @override
+  String get trailCrystal => 'Kryształowy Ślad';
+
+  @override
+  String get trailDragon => 'Smoczy Ślad';
+
+  @override
+  String get trailNoneDesc => 'Czysty wąż bez efektów śladu';
+
+  @override
+  String get trailParticleDesc => 'Zostawia ślad błyszczących cząsteczek';
+
+  @override
+  String get trailGlowDesc => 'Świetlisty ślad gasnący za wężem';
+
+  @override
+  String get trailRainbowDesc => 'Kolorowy efekt tęczowego śladu';
+
+  @override
+  String get trailFireDesc => 'Płonący ognisty ślad z żarem';
+
+  @override
+  String get trailElectricDesc => 'Trzeszczący elektryczny ślad z błyskawicami';
+
+  @override
+  String get trailStarDesc => 'Migoczące gwiazdy podążają za wężem';
+
+  @override
+  String get trailCosmicDesc => 'Efekty kosmicznego pyłu i mgławic';
+
+  @override
+  String get trailNeonDesc => 'Jaskrawy neonowy blask w stylu cyberpunk';
+
+  @override
+  String get trailShadowDesc => 'Mroczny ślad cienia z dymnymi efektami';
+
+  @override
+  String get trailCrystalDesc => 'Krystaliczne odłamki, które znikają';
+
+  @override
+  String get trailDragonDesc => 'Mistyczny ślad smoczego oddechu';
+
+  @override
+  String get coinPackSmall => 'Pakiet Startowy';
+
+  @override
+  String get coinPackMedium => 'Pakiet Korzystny';
+
+  @override
+  String get coinPackLarge => 'Pakiet Premium';
+
+  @override
+  String get coinPackMega => 'Pakiet Ostateczny';
+
+  @override
+  String coinsAmount(Object coins) {
+    return '$coins monet';
+  }
+
+  @override
+  String coinsAmountBonus(Object coins, Object bonus) {
+    return '$coins + $bonus bonusu';
+  }
+
+  @override
+  String get boardSmall => 'Mała';
+
+  @override
+  String get boardClassic => 'Klasyczna';
+
+  @override
+  String get boardLarge => 'Duża';
+
+  @override
+  String get boardHuge => 'Ogromna';
+
+  @override
+  String get boardEpic => 'Epicka';
+
+  @override
+  String get boardMassive => 'Gigantyczna';
+
+  @override
+  String get boardUltimate => 'Ostateczna';
+
+  @override
+  String get boardSmallDesc => 'Szybkie gry, ciasne przestrzenie';
+
+  @override
+  String get boardClassicDesc => 'Oryginalne doświadczenie Snake\'a';
+
+  @override
+  String get boardLargeDesc => 'Więcej miejsca na wzrost';
+
+  @override
+  String get boardHugeDesc => 'Maksimum wyzwania i przestrzeni';
+
+  @override
+  String get boardEpicDesc => 'Duża plansza dla zaawansowanych graczy';
+
+  @override
+  String get boardMassiveDesc => 'Olbrzymia plansza do epickich gier';
+
+  @override
+  String get boardUltimateDesc => 'Największa możliwa plansza';
+
+  @override
+  String get crashLabelSkip => 'Pomiń';
+
+  @override
+  String get crashLabelUntilTap => 'Do Dotknięcia';
+
+  @override
+  String get tgmClassic => 'Klasyczny';
+
+  @override
+  String get tgmSpeedRun => 'Wyścig Prędkości';
+
+  @override
+  String get tgmSurvival => 'Przetrwanie';
+
+  @override
+  String get tgmNoWalls => 'Bez Ścian';
+
+  @override
+  String get tgmPowerUpMadness => 'Szaleństwo Wzmocnień';
+
+  @override
+  String get tgmPerfectGame => 'Perfekcyjna Gra';
+
+  @override
+  String get tgmClassicDesc => 'Standardowe zasady gry Snake';
+
+  @override
+  String get tgmSpeedRunDesc => 'Prędkość gry szybko rośnie';
+
+  @override
+  String get tgmSurvivalDesc => 'Przetrwaj jak najdłużej';
+
+  @override
+  String get tgmNoWallsDesc => 'Wąż przechodzi przez krawędzie ekranu';
+
+  @override
+  String get tgmPowerUpMadnessDesc => 'Wzmocnienia pojawiają się często';
+
+  @override
+  String get tgmPerfectGameDesc => 'Zero błędów - jedno uderzenie kończy grę';
+
+  @override
+  String get ttDaily => 'Dzienne Wyzwanie';
+
+  @override
+  String get ttWeekly => 'Tygodniowy Turniej';
+
+  @override
+  String get ttSpecial => 'Wydarzenie Specjalne';
+
+  @override
+  String get tsUpcoming => 'Nadchodzący';
+
+  @override
+  String get tsActive => 'Aktywny';
+
+  @override
+  String get tsEnded => 'Zakończony';
+
+  @override
+  String get cdEasy => 'Łatwy';
+
+  @override
+  String get cdMedium => 'Średni';
+
+  @override
+  String get cdHard => 'Trudny';
+
+  @override
+  String get usOnline => 'Online';
+
+  @override
+  String get usOffline => 'Offline';
+
+  @override
+  String get usPlaying => 'W grze';
+
+  @override
+  String get bprXpBoost => 'Zastrzyk XP';
+
+  @override
+  String get bprCoins => 'Monety';
+
+  @override
+  String get bprTheme => 'Motyw';
+
+  @override
+  String get bprSkin => 'Skórka Węża';
+
+  @override
+  String get bprTrail => 'Efekt Śladu';
+
+  @override
+  String get bprPowerUp => 'Wzmocnienie';
+
+  @override
+  String get bprTournamentEntry => 'Wejściówka na Turniej';
+
+  @override
+  String get bprTitle => 'Tytuł Gracza';
+
+  @override
+  String get bprAvatar => 'Awatar';
+
+  @override
+  String get bprSpecial => 'Nagroda Specjalna';
+
+  @override
+  String get bprFree => 'Darmowa';
+
+  @override
+  String get bprPremium => 'Premium';
+
+  @override
+  String get bprnStarDust => 'Gwiezdny Pył';
+
+  @override
+  String get bprnEnergyPack => 'Pakiet Energii';
+
+  @override
+  String get bprnBronzeEntry => 'Brązowa Wejściówka';
+
+  @override
+  String get bprnSilverEntry => 'Srebrna Wejściówka';
+
+  @override
+  String get bprnStargazer => 'Obserwator Gwiazd';
+
+  @override
+  String get bprnVoyager => 'Podróżnik';
+
+  @override
+  String get bprnNebulaTheme => 'Motyw Mgławica';
+
+  @override
+  String get bprnStardustTrail => 'Ślad Gwiezdnego Pyłu';
+
+  @override
+  String get bprnLegendaryCrate => 'Legendarna Skrzynia';
+
+  @override
+  String get bprnMegaXp => 'Mega XP';
+
+  @override
+  String get bprnCosmicCharge => 'Kosmiczny Ładunek';
+
+  @override
+  String get bprnNovaBurst => 'Wybuch Nowej';
+
+  @override
+  String get bprnGalaxySkin => 'Skórka Galaktyka';
+
+  @override
+  String get bprnCrystalSerpent => 'Kryształowy Wąż';
+
+  @override
+  String get bprnPlasmaWake => 'Smuga Plazmy';
+
+  @override
+  String get bprnCosmicAura => 'Kosmiczna Aura';
+
+  @override
+  String get bprnCyberpunkTheme => 'Motyw Cyberpunk';
+
+  @override
+  String get bprnCrystalTheme => 'Motyw Kryształ';
+
+  @override
+  String get bprnSeasonTrophy => 'Trofeum Sezonu';
+
+  @override
+  String get bprnCosmicCrown => 'Kosmiczna Korona';
+
+  @override
+  String get bprnCosmicLegend => 'Kosmiczna Legenda';
+
+  @override
+  String get bprnStarCommander => 'Gwiezdny Dowódca';
+
+  @override
+  String bpRewardQtyCoins(Object quantity) {
+    return '$quantity Monet';
+  }
+
+  @override
+  String bpRewardTypeQty(Object type, Object quantity) {
+    return '$type x$quantity';
+  }
+
+  @override
+  String bpRewardDescFree(Object type) {
+    return 'Darmowa nagroda: $type';
+  }
+
+  @override
+  String bpRewardDescPremium(Object type) {
+    return 'Ekskluzywna nagroda premium: $type';
+  }
 }

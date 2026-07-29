@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/power_up.dart';
@@ -843,7 +844,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           ),
           const SizedBox(width: 8),
           Text(
-            '${tournamentMode!.emoji} ${tournamentMode!.displayName.toUpperCase()}',
+            '${tournamentMode!.emoji} ${tournamentMode!.localizedName(AppLocalizations.of(context)!).toUpperCase()}',
             style: TextStyle(
               color: Colors.purple,
               fontSize: isSmallScreen ? 11 : 12,

@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/power_up.dart';
@@ -449,12 +450,12 @@ class _PauseOverlayState extends State<PauseOverlay> {
             _buildGuideRowIcon(
                 PickupIcon.powerUp(PowerUpType.speedBoost,
                     size: context.scaled(15)),
-                'Speed Boost',
+                PowerUpType.speedBoost.localizedName(l10n),
                 l10n.poDur7s),
             _buildGuideRowIcon(
                 PickupIcon.powerUp(PowerUpType.invincibility,
                     size: context.scaled(15)),
-                'Invincibility',
+                PowerUpType.invincibility.localizedName(l10n),
                 l10n.poDur6s),
             _buildGuideRowIcon(
                 PickupIcon.powerUp(PowerUpType.scoreMultiplier,
@@ -464,7 +465,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
             _buildGuideRowIcon(
                 PickupIcon.powerUp(PowerUpType.slowMotion,
                     size: context.scaled(15)),
-                'Slow Motion',
+                PowerUpType.slowMotion.localizedName(l10n),
                 l10n.poDur8s),
             const SizedBox(height: 2),
             _buildGuideHint(l10n.poPowerUpHint),

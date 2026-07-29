@@ -4178,4 +4178,472 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get achDescWeekendWarrior => 'أنهِ 10 ألعاب في عطلات نهاية الأسبوع';
+
+  @override
+  String get ppuMegaSpeedBoost => 'تسريع خارق';
+
+  @override
+  String get ppuMegaInvincibility => 'حصانة خارقة';
+
+  @override
+  String get ppuMegaScoreMultiplier => 'مضاعف نقاط خارق';
+
+  @override
+  String get ppuMegaSlowMotion => 'تبطيء خارق';
+
+  @override
+  String get ppuTeleport => 'انتقال فوري';
+
+  @override
+  String get ppuSizeReducer => 'مقلّص الحجم';
+
+  @override
+  String get ppuScoreShield => 'درع النقاط';
+
+  @override
+  String get ppuComboMultiplier => 'مضاعف السلاسل';
+
+  @override
+  String get ppuTimeWarp => 'تشويه الزمن';
+
+  @override
+  String get ppuMagneticFood => 'طعام مغناطيسي';
+
+  @override
+  String get ppuGhostMode => 'وضع الشبح';
+
+  @override
+  String get ppuDoubleTrouble => 'مشكلة مزدوجة';
+
+  @override
+  String get ppuLuckyCharm => 'تميمة الحظ';
+
+  @override
+  String get ppuPowerSurge => 'دفقة القوة';
+
+  @override
+  String get bundleMegaPack => 'حزمة القوة الخارقة';
+
+  @override
+  String get bundleMegaPackDesc => 'نسخ محسّنة من التعزيزات الكلاسيكية';
+
+  @override
+  String get bundleTacticalPack => 'الحزمة التكتيكية';
+
+  @override
+  String get bundleTacticalPackDesc => 'تعزيزات استراتيجية للاعبين المهرة';
+
+  @override
+  String get bundleUltimatePack => 'الحزمة المطلقة';
+
+  @override
+  String get bundleUltimatePackDesc => 'كل التعزيزات المميزة المتاحة';
+
+  @override
+  String get skinClassic => 'كلاسيكي';
+
+  @override
+  String get skinGolden => 'الثعبان الذهبي';
+
+  @override
+  String get skinRainbow => 'ثعبان قوس قزح';
+
+  @override
+  String get skinGalaxy => 'ثعبان المجرة';
+
+  @override
+  String get skinDragon => 'ثعبان التنين';
+
+  @override
+  String get skinElectric => 'الثعبان الكهربائي';
+
+  @override
+  String get skinFire => 'ثعبان النار';
+
+  @override
+  String get skinIce => 'ثعبان الجليد';
+
+  @override
+  String get skinShadow => 'ثعبان الظل';
+
+  @override
+  String get skinNeon => 'ثعبان النيون';
+
+  @override
+  String get skinCrystal => 'الثعبان البلوري';
+
+  @override
+  String get skinCosmic => 'الثعبان الكوني';
+
+  @override
+  String get skinClassicDesc => 'المظهر الأصلي للثعبان';
+
+  @override
+  String get skinGoldenDesc => 'ثعبان ذهبي لامع يتألق مع كل حركة';
+
+  @override
+  String get skinRainbowDesc => 'ثعبان ملوّن يتنقل بين ألوان قوس قزح';
+
+  @override
+  String get skinGalaxyDesc => 'ثعبان كوني بنقوش نجمية';
+
+  @override
+  String get skinDragonDesc => 'ثعبان شرس بحراشف تنين وقوى غامضة';
+
+  @override
+  String get skinElectricDesc => 'يتطاير منه شرر الطاقة الكهربائية';
+
+  @override
+  String get skinFireDesc => 'يتوهج بنقوش نارية';
+
+  @override
+  String get skinIceDesc => 'جمال متجمد بتأثيرات بلورية';
+
+  @override
+  String get skinShadowDesc => 'ثعبان ظل داكن وغامض';
+
+  @override
+  String get skinNeonDesc => 'يتوهج بأضواء نيون بأسلوب السايبربانك';
+
+  @override
+  String get skinCrystalDesc => 'ثعبان بلوري شفاف بتأثيرات منشورية';
+
+  @override
+  String get skinCosmicDesc => 'ثعبان من غبار النجوم والمادة الكونية';
+
+  @override
+  String get trailNone => 'بدون أثر';
+
+  @override
+  String get trailParticle => 'أثر الجسيمات';
+
+  @override
+  String get trailGlow => 'أثر متوهج';
+
+  @override
+  String get trailRainbow => 'أثر قوس قزح';
+
+  @override
+  String get trailFire => 'أثر ناري';
+
+  @override
+  String get trailElectric => 'أثر كهربائي';
+
+  @override
+  String get trailStar => 'أثر النجوم';
+
+  @override
+  String get trailCosmic => 'أثر كوني';
+
+  @override
+  String get trailNeon => 'أثر النيون';
+
+  @override
+  String get trailShadow => 'أثر الظل';
+
+  @override
+  String get trailCrystal => 'أثر بلوري';
+
+  @override
+  String get trailDragon => 'أثر التنين';
+
+  @override
+  String get trailNoneDesc => 'ثعبان نظيف بدون تأثيرات أثر';
+
+  @override
+  String get trailParticleDesc => 'يترك أثرًا من الجسيمات المتلألئة';
+
+  @override
+  String get trailGlowDesc => 'أثر متوهج يتلاشى خلف الثعبان';
+
+  @override
+  String get trailRainbowDesc => 'تأثير أثر ملوّن بألوان قوس قزح';
+
+  @override
+  String get trailFireDesc => 'أثر ناري متّقد مع جمرات';
+
+  @override
+  String get trailElectricDesc => 'أثر كهربائي متطاير مع تأثيرات البرق';
+
+  @override
+  String get trailStarDesc => 'نجوم متلألئة تتبع مسار الثعبان';
+
+  @override
+  String get trailCosmicDesc => 'تأثيرات الغبار الكوني والسديم';
+
+  @override
+  String get trailNeonDesc => 'توهج نيون ساطع بأسلوب السايبربانك';
+
+  @override
+  String get trailShadowDesc => 'أثر ظل داكن بتأثيرات دخانية';
+
+  @override
+  String get trailCrystalDesc => 'شظايا بلورية تتلاشى';
+
+  @override
+  String get trailDragonDesc => 'أثر غامض من نفَس التنين';
+
+  @override
+  String get coinPackSmall => 'حزمة البداية';
+
+  @override
+  String get coinPackMedium => 'حزمة القيمة';
+
+  @override
+  String get coinPackLarge => 'الحزمة المميزة';
+
+  @override
+  String get coinPackMega => 'الحزمة المطلقة';
+
+  @override
+  String coinsAmount(Object coins) {
+    return '$coins عملة';
+  }
+
+  @override
+  String coinsAmountBonus(Object coins, Object bonus) {
+    return '$coins + $bonus مكافأة';
+  }
+
+  @override
+  String get boardSmall => 'صغيرة';
+
+  @override
+  String get boardClassic => 'كلاسيكية';
+
+  @override
+  String get boardLarge => 'كبيرة';
+
+  @override
+  String get boardHuge => 'ضخمة';
+
+  @override
+  String get boardEpic => 'ملحمية';
+
+  @override
+  String get boardMassive => 'هائلة';
+
+  @override
+  String get boardUltimate => 'المطلقة';
+
+  @override
+  String get boardSmallDesc => 'ألعاب سريعة ومساحات ضيقة';
+
+  @override
+  String get boardClassicDesc => 'تجربة الثعبان الأصلية';
+
+  @override
+  String get boardLargeDesc => 'مساحة أكبر للنمو';
+
+  @override
+  String get boardHugeDesc => 'أقصى تحدٍ وأكبر مساحة';
+
+  @override
+  String get boardEpicDesc => 'لوحة كبيرة للاعبين المتقدمين';
+
+  @override
+  String get boardMassiveDesc => 'لوحة عملاقة لألعاب ملحمية';
+
+  @override
+  String get boardUltimateDesc => 'أكبر لوحة ممكنة';
+
+  @override
+  String get crashLabelSkip => 'تخطٍ';
+
+  @override
+  String get crashLabelUntilTap => 'حتى اللمس';
+
+  @override
+  String get tgmClassic => 'كلاسيكي';
+
+  @override
+  String get tgmSpeedRun => 'سباق السرعة';
+
+  @override
+  String get tgmSurvival => 'البقاء';
+
+  @override
+  String get tgmNoWalls => 'بدون جدران';
+
+  @override
+  String get tgmPowerUpMadness => 'جنون التعزيزات';
+
+  @override
+  String get tgmPerfectGame => 'لعبة مثالية';
+
+  @override
+  String get tgmClassicDesc => 'قواعد لعبة الثعبان القياسية';
+
+  @override
+  String get tgmSpeedRunDesc => 'سرعة اللعبة تزداد بسرعة';
+
+  @override
+  String get tgmSurvivalDesc => 'اصمد أطول فترة ممكنة';
+
+  @override
+  String get tgmNoWallsDesc => 'الثعبان يعبر من حواف الشاشة';
+
+  @override
+  String get tgmPowerUpMadnessDesc => 'التعزيزات تظهر كثيرًا';
+
+  @override
+  String get tgmPerfectGameDesc => 'لا مجال للخطأ - اصطدام واحد ينهي اللعبة';
+
+  @override
+  String get ttDaily => 'التحدي اليومي';
+
+  @override
+  String get ttWeekly => 'البطولة الأسبوعية';
+
+  @override
+  String get ttSpecial => 'حدث خاص';
+
+  @override
+  String get tsUpcoming => 'قادمة';
+
+  @override
+  String get tsActive => 'جارية';
+
+  @override
+  String get tsEnded => 'منتهية';
+
+  @override
+  String get cdEasy => 'سهل';
+
+  @override
+  String get cdMedium => 'متوسط';
+
+  @override
+  String get cdHard => 'صعب';
+
+  @override
+  String get usOnline => 'متصل';
+
+  @override
+  String get usOffline => 'غير متصل';
+
+  @override
+  String get usPlaying => 'يلعب';
+
+  @override
+  String get bprXpBoost => 'دفعة خبرة';
+
+  @override
+  String get bprCoins => 'عملات';
+
+  @override
+  String get bprTheme => 'سمة';
+
+  @override
+  String get bprSkin => 'مظهر ثعبان';
+
+  @override
+  String get bprTrail => 'تأثير أثر';
+
+  @override
+  String get bprPowerUp => 'تعزيز';
+
+  @override
+  String get bprTournamentEntry => 'دخول بطولة';
+
+  @override
+  String get bprTitle => 'لقب لاعب';
+
+  @override
+  String get bprAvatar => 'صورة رمزية';
+
+  @override
+  String get bprSpecial => 'مكافأة خاصة';
+
+  @override
+  String get bprFree => 'مجاني';
+
+  @override
+  String get bprPremium => 'مميز';
+
+  @override
+  String get bprnStarDust => 'غبار النجوم';
+
+  @override
+  String get bprnEnergyPack => 'حزمة الطاقة';
+
+  @override
+  String get bprnBronzeEntry => 'دخول برونزي';
+
+  @override
+  String get bprnSilverEntry => 'دخول فضي';
+
+  @override
+  String get bprnStargazer => 'راصد النجوم';
+
+  @override
+  String get bprnVoyager => 'الرحّالة';
+
+  @override
+  String get bprnNebulaTheme => 'سمة السديم';
+
+  @override
+  String get bprnStardustTrail => 'أثر غبار النجوم';
+
+  @override
+  String get bprnLegendaryCrate => 'صندوق أسطوري';
+
+  @override
+  String get bprnMegaXp => 'خبرة خارقة';
+
+  @override
+  String get bprnCosmicCharge => 'شحنة كونية';
+
+  @override
+  String get bprnNovaBurst => 'انفجار المستعر';
+
+  @override
+  String get bprnGalaxySkin => 'مظهر المجرة';
+
+  @override
+  String get bprnCrystalSerpent => 'الأفعوان البلوري';
+
+  @override
+  String get bprnPlasmaWake => 'موجة البلازما';
+
+  @override
+  String get bprnCosmicAura => 'هالة كونية';
+
+  @override
+  String get bprnCyberpunkTheme => 'سمة السايبربانك';
+
+  @override
+  String get bprnCrystalTheme => 'سمة البلور';
+
+  @override
+  String get bprnSeasonTrophy => 'كأس الموسم';
+
+  @override
+  String get bprnCosmicCrown => 'التاج الكوني';
+
+  @override
+  String get bprnCosmicLegend => 'الأسطورة الكونية';
+
+  @override
+  String get bprnStarCommander => 'قائد النجوم';
+
+  @override
+  String bpRewardQtyCoins(Object quantity) {
+    return '$quantity عملة';
+  }
+
+  @override
+  String bpRewardTypeQty(Object type, Object quantity) {
+    return '$type ×$quantity';
+  }
+
+  @override
+  String bpRewardDescFree(Object type) {
+    return 'مكافأة مجانية: $type';
+  }
+
+  @override
+  String bpRewardDescPremium(Object type) {
+    return 'مكافأة مميزة حصرية: $type';
+  }
 }

@@ -6,6 +6,7 @@ import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -1089,8 +1090,9 @@ class _StoreScreenState extends State<StoreScreen>
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.storeBuyItem(option.name)),
-        content: Text(l10n.storeBuyCoinsBody(option.displayCoins, price)),
+        title: Text(l10n.storeBuyItem(option.localizedName(l10n))),
+        content:
+            Text(l10n.storeBuyCoinsBody(option.localizedDisplayCoins(l10n), price)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -1107,7 +1109,8 @@ class _StoreScreenState extends State<StoreScreen>
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
-                      content: Text(l10n.storeInitiatingFor(option.name)),
+                      content:
+                          Text(l10n.storeInitiatingFor(option.localizedName(l10n))),
                       backgroundColor: theme.accentColor,
                     ),
                   );
@@ -1131,6 +1134,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildCoinPackCard(CoinPurchaseOption option, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: () => _purchaseCoinPack(option, theme),
       child: Container(
@@ -1178,7 +1182,7 @@ class _StoreScreenState extends State<StoreScreen>
                   Row(
                     children: [
                       Text(
-                        option.name,
+                        option.localizedName(l10n),
                         style: TextStyle(
                           color: theme.accentColor,
                           fontSize: 16,
@@ -1210,7 +1214,7 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    option.displayCoins,
+                    option.localizedDisplayCoins(l10n),
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.7),
                       fontSize: 14,
@@ -1981,7 +1985,8 @@ class _StoreScreenState extends State<StoreScreen>
               context.read<PremiumCubit>().selectSkin(skin.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(l10n.storeEquippedToast(skin.displayName)),
+                  content:
+                      Text(l10n.storeEquippedToast(skin.localizedName(l10n))),
                   backgroundColor: Colors.green,
                   duration: const Duration(seconds: 1),
                 ),
@@ -1989,7 +1994,7 @@ class _StoreScreenState extends State<StoreScreen>
             } else {
               _purchaseCosmetic(
                 productId: productId,
-                displayName: skin.displayName,
+                displayName: skin.localizedName(l10n),
                 fallbackPrice: skin.price,
               );
             }
@@ -2016,6 +2021,7 @@ class _StoreScreenState extends State<StoreScreen>
     required GameTheme theme,
     required VoidCallback onTap,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     final palette = skin.colors.isNotEmpty
         ? skin.colors
         : [
@@ -2129,7 +2135,7 @@ class _StoreScreenState extends State<StoreScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    skin.displayName,
+                    skin.localizedName(l10n),
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 13,
@@ -2141,7 +2147,7 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    skin.description,
+                    skin.localizedDescription(l10n),
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.65),
                       fontSize: 10,
@@ -2220,7 +2226,8 @@ class _StoreScreenState extends State<StoreScreen>
               context.read<PremiumCubit>().selectTrail(trail.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(l10n.storeEquippedToast(trail.displayName)),
+                  content:
+                      Text(l10n.storeEquippedToast(trail.localizedName(l10n))),
                   backgroundColor: Colors.green,
                   duration: const Duration(seconds: 1),
                 ),
@@ -2228,7 +2235,7 @@ class _StoreScreenState extends State<StoreScreen>
             } else {
               _purchaseCosmetic(
                 productId: productId,
-                displayName: trail.displayName,
+                displayName: trail.localizedName(l10n),
                 fallbackPrice: trail.price,
               );
             }
@@ -2256,6 +2263,7 @@ class _StoreScreenState extends State<StoreScreen>
     required GameTheme theme,
     required VoidCallback onTap,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     // Header palette for the gradient backdrop. Use the trail's own
     // colors when it has them; fall back to theme accent for the
     // "No Trail" entry.
@@ -2379,7 +2387,7 @@ class _StoreScreenState extends State<StoreScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    trail.displayName,
+                    trail.localizedName(l10n),
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 13,
@@ -2391,7 +2399,7 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    trail.description,
+                    trail.localizedDescription(l10n),
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.65),
                       fontSize: 10,
@@ -3001,7 +3009,7 @@ class _StoreScreenState extends State<StoreScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      bundle.name,
+                      bundle.localizedName(l10n),
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 15,
@@ -3010,7 +3018,7 @@ class _StoreScreenState extends State<StoreScreen>
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      bundle.description,
+                      bundle.localizedDescription(l10n),
                       style: TextStyle(
                         color: theme.accentColor.withValues(alpha: 0.7),
                         fontSize: 12,
@@ -3037,7 +3045,7 @@ class _StoreScreenState extends State<StoreScreen>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${p.icon} ${p.displayName}',
+                      '${p.icon} ${p.localizedName(l10n)}',
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 10,
@@ -3140,7 +3148,7 @@ class _StoreScreenState extends State<StoreScreen>
     if (!mounted) return;
     scaffoldMessenger.showSnackBar(
       SnackBar(
-        content: Text(l10n.storeBundleUnlocked(bundle.name)),
+        content: Text(l10n.storeBundleUnlocked(bundle.localizedName(l10n))),
         backgroundColor: Colors.green,
       ),
     );

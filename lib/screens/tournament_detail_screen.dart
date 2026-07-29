@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
@@ -280,7 +281,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                   ),
                 ),
                 Text(
-                  tournament.type.displayName,
+                  tournament.type.localizedName(AppLocalizations.of(context)!),
                   style: TextStyle(
                     fontSize: 14,
                     color: _getTournamentTypeColor(tournament.type),
@@ -357,7 +358,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            tournament.status.displayName,
+                            tournament.status.localizedName(l10n),
                             style: TextStyle(
                               fontSize: 12,
                               color: _getTournamentStatusColor(
@@ -386,7 +387,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                tournament.gameMode.displayName,
+                                tournament.gameMode.localizedName(l10n),
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: Colors.blue,
@@ -829,6 +830,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildGameModeCard(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final tournament = _tournament!;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -848,7 +850,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                tournament.gameMode.displayName,
+                tournament.gameMode.localizedName(l10n),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -859,7 +861,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            tournament.gameMode.description,
+            tournament.gameMode.localizedDescription(l10n),
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.8),

@@ -7605,6 +7605,918 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish 10 games on weekends'**
   String get achDescWeekendWarrior;
+
+  /// No description provided for @ppuMegaSpeedBoost.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega Speed Boost'**
+  String get ppuMegaSpeedBoost;
+
+  /// No description provided for @ppuMegaInvincibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega Invincibility'**
+  String get ppuMegaInvincibility;
+
+  /// No description provided for @ppuMegaScoreMultiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega Score Multiplier'**
+  String get ppuMegaScoreMultiplier;
+
+  /// No description provided for @ppuMegaSlowMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega Slow Motion'**
+  String get ppuMegaSlowMotion;
+
+  /// No description provided for @ppuTeleport.
+  ///
+  /// In en, this message translates to:
+  /// **'Teleport'**
+  String get ppuTeleport;
+
+  /// No description provided for @ppuSizeReducer.
+  ///
+  /// In en, this message translates to:
+  /// **'Size Reducer'**
+  String get ppuSizeReducer;
+
+  /// No description provided for @ppuScoreShield.
+  ///
+  /// In en, this message translates to:
+  /// **'Score Shield'**
+  String get ppuScoreShield;
+
+  /// No description provided for @ppuComboMultiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Combo Multiplier'**
+  String get ppuComboMultiplier;
+
+  /// No description provided for @ppuTimeWarp.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Warp'**
+  String get ppuTimeWarp;
+
+  /// No description provided for @ppuMagneticFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Magnetic Food'**
+  String get ppuMagneticFood;
+
+  /// No description provided for @ppuGhostMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost Mode'**
+  String get ppuGhostMode;
+
+  /// No description provided for @ppuDoubleTrouble.
+  ///
+  /// In en, this message translates to:
+  /// **'Double Trouble'**
+  String get ppuDoubleTrouble;
+
+  /// No description provided for @ppuLuckyCharm.
+  ///
+  /// In en, this message translates to:
+  /// **'Lucky Charm'**
+  String get ppuLuckyCharm;
+
+  /// No description provided for @ppuPowerSurge.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Surge'**
+  String get ppuPowerSurge;
+
+  /// No description provided for @bundleMegaPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega Power Pack'**
+  String get bundleMegaPack;
+
+  /// No description provided for @bundleMegaPackDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced versions of classic power-ups'**
+  String get bundleMegaPackDesc;
+
+  /// No description provided for @bundleTacticalPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Tactical Power Pack'**
+  String get bundleTacticalPack;
+
+  /// No description provided for @bundleTacticalPackDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Strategic power-ups for skilled players'**
+  String get bundleTacticalPackDesc;
+
+  /// No description provided for @bundleUltimatePack.
+  ///
+  /// In en, this message translates to:
+  /// **'Ultimate Power Pack'**
+  String get bundleUltimatePack;
+
+  /// No description provided for @bundleUltimatePackDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Every premium power-up available'**
+  String get bundleUltimatePackDesc;
+
+  /// No description provided for @skinClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get skinClassic;
+
+  /// No description provided for @skinGolden.
+  ///
+  /// In en, this message translates to:
+  /// **'Golden Snake'**
+  String get skinGolden;
+
+  /// No description provided for @skinRainbow.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainbow Snake'**
+  String get skinRainbow;
+
+  /// No description provided for @skinGalaxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Galaxy Snake'**
+  String get skinGalaxy;
+
+  /// No description provided for @skinDragon.
+  ///
+  /// In en, this message translates to:
+  /// **'Dragon Snake'**
+  String get skinDragon;
+
+  /// No description provided for @skinElectric.
+  ///
+  /// In en, this message translates to:
+  /// **'Electric Snake'**
+  String get skinElectric;
+
+  /// No description provided for @skinFire.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire Snake'**
+  String get skinFire;
+
+  /// No description provided for @skinIce.
+  ///
+  /// In en, this message translates to:
+  /// **'Ice Snake'**
+  String get skinIce;
+
+  /// No description provided for @skinShadow.
+  ///
+  /// In en, this message translates to:
+  /// **'Shadow Snake'**
+  String get skinShadow;
+
+  /// No description provided for @skinNeon.
+  ///
+  /// In en, this message translates to:
+  /// **'Neon Snake'**
+  String get skinNeon;
+
+  /// No description provided for @skinCrystal.
+  ///
+  /// In en, this message translates to:
+  /// **'Crystal Snake'**
+  String get skinCrystal;
+
+  /// No description provided for @skinCosmic.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic Snake'**
+  String get skinCosmic;
+
+  /// No description provided for @skinClassicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The original snake appearance'**
+  String get skinClassicDesc;
+
+  /// No description provided for @skinGoldenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Gleaming gold snake that shines with every move'**
+  String get skinGoldenDesc;
+
+  /// No description provided for @skinRainbowDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A colorful snake that shifts through rainbow colors'**
+  String get skinRainbowDesc;
+
+  /// No description provided for @skinGalaxyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic snake with starry patterns'**
+  String get skinGalaxyDesc;
+
+  /// No description provided for @skinDragonDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Fierce dragon-scaled snake with mystical powers'**
+  String get skinDragonDesc;
+
+  /// No description provided for @skinElectricDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Crackling with electric energy'**
+  String get skinElectricDesc;
+
+  /// No description provided for @skinFireDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Burning bright with fiery patterns'**
+  String get skinFireDesc;
+
+  /// No description provided for @skinIceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Frozen beauty with crystalline effects'**
+  String get skinIceDesc;
+
+  /// No description provided for @skinShadowDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark and mysterious shadow snake'**
+  String get skinShadowDesc;
+
+  /// No description provided for @skinNeonDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Glowing with cyberpunk neon lights'**
+  String get skinNeonDesc;
+
+  /// No description provided for @skinCrystalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Translucent crystal snake with prismatic effects'**
+  String get skinCrystalDesc;
+
+  /// No description provided for @skinCosmicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake made of stardust and cosmic matter'**
+  String get skinCosmicDesc;
+
+  /// No description provided for @trailNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No Trail'**
+  String get trailNone;
+
+  /// No description provided for @trailParticle.
+  ///
+  /// In en, this message translates to:
+  /// **'Particle Trail'**
+  String get trailParticle;
+
+  /// No description provided for @trailGlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Glow Trail'**
+  String get trailGlow;
+
+  /// No description provided for @trailRainbow.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainbow Trail'**
+  String get trailRainbow;
+
+  /// No description provided for @trailFire.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire Trail'**
+  String get trailFire;
+
+  /// No description provided for @trailElectric.
+  ///
+  /// In en, this message translates to:
+  /// **'Electric Trail'**
+  String get trailElectric;
+
+  /// No description provided for @trailStar.
+  ///
+  /// In en, this message translates to:
+  /// **'Star Trail'**
+  String get trailStar;
+
+  /// No description provided for @trailCosmic.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic Trail'**
+  String get trailCosmic;
+
+  /// No description provided for @trailNeon.
+  ///
+  /// In en, this message translates to:
+  /// **'Neon Trail'**
+  String get trailNeon;
+
+  /// No description provided for @trailShadow.
+  ///
+  /// In en, this message translates to:
+  /// **'Shadow Trail'**
+  String get trailShadow;
+
+  /// No description provided for @trailCrystal.
+  ///
+  /// In en, this message translates to:
+  /// **'Crystal Trail'**
+  String get trailCrystal;
+
+  /// No description provided for @trailDragon.
+  ///
+  /// In en, this message translates to:
+  /// **'Dragon Trail'**
+  String get trailDragon;
+
+  /// No description provided for @trailNoneDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean snake with no trail effects'**
+  String get trailNoneDesc;
+
+  /// No description provided for @trailParticleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaves a trail of sparkling particles'**
+  String get trailParticleDesc;
+
+  /// No description provided for @trailGlowDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Glowing trail that fades behind the snake'**
+  String get trailGlowDesc;
+
+  /// No description provided for @trailRainbowDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Colorful rainbow trail effect'**
+  String get trailRainbowDesc;
+
+  /// No description provided for @trailFireDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Blazing fire trail with ember particles'**
+  String get trailFireDesc;
+
+  /// No description provided for @trailElectricDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Crackling electric trail with lightning effects'**
+  String get trailElectricDesc;
+
+  /// No description provided for @trailStarDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Twinkling stars follow the snake\'s path'**
+  String get trailStarDesc;
+
+  /// No description provided for @trailCosmicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic dust and nebula effects'**
+  String get trailCosmicDesc;
+
+  /// No description provided for @trailNeonDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Bright neon glow with cyberpunk style'**
+  String get trailNeonDesc;
+
+  /// No description provided for @trailShadowDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark shadow trail with smoky effects'**
+  String get trailShadowDesc;
+
+  /// No description provided for @trailCrystalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Crystalline shards that fade away'**
+  String get trailCrystalDesc;
+
+  /// No description provided for @trailDragonDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Mystical dragon breath trail'**
+  String get trailDragonDesc;
+
+  /// No description provided for @coinPackSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Starter Pack'**
+  String get coinPackSmall;
+
+  /// No description provided for @coinPackMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Value Pack'**
+  String get coinPackMedium;
+
+  /// No description provided for @coinPackLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Pack'**
+  String get coinPackLarge;
+
+  /// No description provided for @coinPackMega.
+  ///
+  /// In en, this message translates to:
+  /// **'Ultimate Pack'**
+  String get coinPackMega;
+
+  /// No description provided for @coinsAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} coins'**
+  String coinsAmount(Object coins);
+
+  /// No description provided for @coinsAmountBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} + {bonus} bonus'**
+  String coinsAmountBonus(Object coins, Object bonus);
+
+  /// No description provided for @boardSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get boardSmall;
+
+  /// No description provided for @boardClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get boardClassic;
+
+  /// No description provided for @boardLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get boardLarge;
+
+  /// No description provided for @boardHuge.
+  ///
+  /// In en, this message translates to:
+  /// **'Huge'**
+  String get boardHuge;
+
+  /// No description provided for @boardEpic.
+  ///
+  /// In en, this message translates to:
+  /// **'Epic'**
+  String get boardEpic;
+
+  /// No description provided for @boardMassive.
+  ///
+  /// In en, this message translates to:
+  /// **'Massive'**
+  String get boardMassive;
+
+  /// No description provided for @boardUltimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Ultimate'**
+  String get boardUltimate;
+
+  /// No description provided for @boardSmallDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick games, tight spaces'**
+  String get boardSmallDesc;
+
+  /// No description provided for @boardClassicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The original Snake experience'**
+  String get boardClassicDesc;
+
+  /// No description provided for @boardLargeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'More room to grow'**
+  String get boardLargeDesc;
+
+  /// No description provided for @boardHugeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum challenge and space'**
+  String get boardHugeDesc;
+
+  /// No description provided for @boardEpicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A big board for advanced players'**
+  String get boardEpicDesc;
+
+  /// No description provided for @boardMassiveDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Enormous board for epic games'**
+  String get boardMassiveDesc;
+
+  /// No description provided for @boardUltimateDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The largest possible board'**
+  String get boardUltimateDesc;
+
+  /// No description provided for @crashLabelSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get crashLabelSkip;
+
+  /// No description provided for @crashLabelUntilTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Until Tap'**
+  String get crashLabelUntilTap;
+
+  /// No description provided for @tgmClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get tgmClassic;
+
+  /// No description provided for @tgmSpeedRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Run'**
+  String get tgmSpeedRun;
+
+  /// No description provided for @tgmSurvival.
+  ///
+  /// In en, this message translates to:
+  /// **'Survival'**
+  String get tgmSurvival;
+
+  /// No description provided for @tgmNoWalls.
+  ///
+  /// In en, this message translates to:
+  /// **'No Walls'**
+  String get tgmNoWalls;
+
+  /// No description provided for @tgmPowerUpMadness.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-up Madness'**
+  String get tgmPowerUpMadness;
+
+  /// No description provided for @tgmPerfectGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect Game'**
+  String get tgmPerfectGame;
+
+  /// No description provided for @tgmClassicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard Snake game rules'**
+  String get tgmClassicDesc;
+
+  /// No description provided for @tgmSpeedRunDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Game speed increases rapidly'**
+  String get tgmSpeedRunDesc;
+
+  /// No description provided for @tgmSurvivalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive as long as possible'**
+  String get tgmSurvivalDesc;
+
+  /// No description provided for @tgmNoWallsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake wraps around screen edges'**
+  String get tgmNoWallsDesc;
+
+  /// No description provided for @tgmPowerUpMadnessDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequent power-ups spawn'**
+  String get tgmPowerUpMadnessDesc;
+
+  /// No description provided for @tgmPerfectGameDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No mistakes allowed - one hit ends game'**
+  String get tgmPerfectGameDesc;
+
+  /// No description provided for @ttDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Challenge'**
+  String get ttDaily;
+
+  /// No description provided for @ttWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Tournament'**
+  String get ttWeekly;
+
+  /// No description provided for @ttSpecial.
+  ///
+  /// In en, this message translates to:
+  /// **'Special Event'**
+  String get ttSpecial;
+
+  /// No description provided for @tsUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get tsUpcoming;
+
+  /// No description provided for @tsActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get tsActive;
+
+  /// No description provided for @tsEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get tsEnded;
+
+  /// No description provided for @cdEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get cdEasy;
+
+  /// No description provided for @cdMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get cdMedium;
+
+  /// No description provided for @cdHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get cdHard;
+
+  /// No description provided for @usOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get usOnline;
+
+  /// No description provided for @usOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get usOffline;
+
+  /// No description provided for @usPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get usPlaying;
+
+  /// No description provided for @bprXpBoost.
+  ///
+  /// In en, this message translates to:
+  /// **'XP Boost'**
+  String get bprXpBoost;
+
+  /// No description provided for @bprCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins'**
+  String get bprCoins;
+
+  /// No description provided for @bprTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get bprTheme;
+
+  /// No description provided for @bprSkin.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Skin'**
+  String get bprSkin;
+
+  /// No description provided for @bprTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail Effect'**
+  String get bprTrail;
+
+  /// No description provided for @bprPowerUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-Up'**
+  String get bprPowerUp;
+
+  /// No description provided for @bprTournamentEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournament Entry'**
+  String get bprTournamentEntry;
+
+  /// No description provided for @bprTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Player Title'**
+  String get bprTitle;
+
+  /// No description provided for @bprAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar'**
+  String get bprAvatar;
+
+  /// No description provided for @bprSpecial.
+  ///
+  /// In en, this message translates to:
+  /// **'Special Reward'**
+  String get bprSpecial;
+
+  /// No description provided for @bprFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get bprFree;
+
+  /// No description provided for @bprPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get bprPremium;
+
+  /// No description provided for @bprnStarDust.
+  ///
+  /// In en, this message translates to:
+  /// **'Star Dust'**
+  String get bprnStarDust;
+
+  /// No description provided for @bprnEnergyPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy Pack'**
+  String get bprnEnergyPack;
+
+  /// No description provided for @bprnBronzeEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze Entry'**
+  String get bprnBronzeEntry;
+
+  /// No description provided for @bprnSilverEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver Entry'**
+  String get bprnSilverEntry;
+
+  /// No description provided for @bprnStargazer.
+  ///
+  /// In en, this message translates to:
+  /// **'Stargazer'**
+  String get bprnStargazer;
+
+  /// No description provided for @bprnVoyager.
+  ///
+  /// In en, this message translates to:
+  /// **'Voyager'**
+  String get bprnVoyager;
+
+  /// No description provided for @bprnNebulaTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Nebula Theme'**
+  String get bprnNebulaTheme;
+
+  /// No description provided for @bprnStardustTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Stardust Trail'**
+  String get bprnStardustTrail;
+
+  /// No description provided for @bprnLegendaryCrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Legendary Crate'**
+  String get bprnLegendaryCrate;
+
+  /// No description provided for @bprnMegaXp.
+  ///
+  /// In en, this message translates to:
+  /// **'Mega XP'**
+  String get bprnMegaXp;
+
+  /// No description provided for @bprnCosmicCharge.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic Charge'**
+  String get bprnCosmicCharge;
+
+  /// No description provided for @bprnNovaBurst.
+  ///
+  /// In en, this message translates to:
+  /// **'Nova Burst'**
+  String get bprnNovaBurst;
+
+  /// No description provided for @bprnGalaxySkin.
+  ///
+  /// In en, this message translates to:
+  /// **'Galaxy Skin'**
+  String get bprnGalaxySkin;
+
+  /// No description provided for @bprnCrystalSerpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Crystal Serpent'**
+  String get bprnCrystalSerpent;
+
+  /// No description provided for @bprnPlasmaWake.
+  ///
+  /// In en, this message translates to:
+  /// **'Plasma Wake'**
+  String get bprnPlasmaWake;
+
+  /// No description provided for @bprnCosmicAura.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic Aura'**
+  String get bprnCosmicAura;
+
+  /// No description provided for @bprnCyberpunkTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyberpunk Theme'**
+  String get bprnCyberpunkTheme;
+
+  /// No description provided for @bprnCrystalTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Crystal Theme'**
+  String get bprnCrystalTheme;
+
+  /// No description provided for @bprnSeasonTrophy.
+  ///
+  /// In en, this message translates to:
+  /// **'Season Trophy'**
+  String get bprnSeasonTrophy;
+
+  /// No description provided for @bprnCosmicCrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic Crown'**
+  String get bprnCosmicCrown;
+
+  /// No description provided for @bprnCosmicLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic Legend'**
+  String get bprnCosmicLegend;
+
+  /// No description provided for @bprnStarCommander.
+  ///
+  /// In en, this message translates to:
+  /// **'Star Commander'**
+  String get bprnStarCommander;
+
+  /// No description provided for @bpRewardQtyCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'{quantity} Coins'**
+  String bpRewardQtyCoins(Object quantity);
+
+  /// No description provided for @bpRewardTypeQty.
+  ///
+  /// In en, this message translates to:
+  /// **'{type} x{quantity}'**
+  String bpRewardTypeQty(Object type, Object quantity);
+
+  /// No description provided for @bpRewardDescFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free {type} reward'**
+  String bpRewardDescFree(Object type);
+
+  /// No description provided for @bpRewardDescPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclusive premium {type} reward'**
+  String bpRewardDescPremium(Object type);
 }
 
 class _AppLocalizationsDelegate
