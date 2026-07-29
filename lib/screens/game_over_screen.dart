@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -124,6 +125,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     if (!getIt.isRegistered<AdService>() || !getIt<AdService>().adsEnabled) {
       return const SizedBox.shrink();
     }
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: GestureDetector(
@@ -132,8 +134,8 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
           if (!ads.isRewardedReady) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('No ad available right now, try again shortly'),
+                SnackBar(
+                  content: Text(l10n.goNoAdAvailable),
                 ),
               );
             }
@@ -155,7 +157,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
               if (mounted) setState(() => _doubledCoins = true);
               showRewardToast(
                 messenger,
-                '🎉 Coins doubled — +$coins bonus coins!',
+                l10n.goCoinsDoubled(coins),
                 icon: Icons.monetization_on,
               );
             },
@@ -177,7 +179,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
               const Icon(Icons.play_circle_fill, color: Colors.amber, size: 22),
               const SizedBox(width: 8),
               Text(
-                'Watch to double your $coins coins',
+                l10n.goWatchToDouble(coins),
                 style: TextStyle(
                   color: theme.accentColor,
                   fontWeight: FontWeight.w700,
@@ -266,7 +268,8 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
 
       if (!mounted) return;
       _showClaimSnackbar(
-        '+${challenge.coinReward} coins  •  +${challenge.xpReward} XP',
+        AppLocalizations.of(context)!
+            .goRewardClaimLine(challenge.coinReward, challenge.xpReward),
       );
     }
   }
@@ -299,7 +302,9 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
       _audioService.playSound('coin_collect');
 
       if (!mounted) return;
-      _showClaimSnackbar('Claimed $totalClaimed coins from daily challenges!');
+      _showClaimSnackbar(
+        AppLocalizations.of(context)!.goClaimedTotal(totalClaimed),
+      );
     }
   }
 
@@ -359,6 +364,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
               );
             }
 
+            final l10n = AppLocalizations.of(context)!;
             final authState = context.watch<AuthCubit>().state;
             final displayHighScore = math.max(
               gameState.highScore,
@@ -419,7 +425,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                       if (isHighScore)
                                         _OutcomeRibbon(
                                           icon: Icons.emoji_events,
-                                          label: 'NEW HIGH SCORE!',
+                                          label: l10n.goRibbonNewHighScore,
                                           colors: const [
                                             Colors.amber,
                                             Colors.orange,
@@ -445,12 +451,12 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                               .tournamentScoreSubmission) {
                                             TournamentScoreSubmission
                                                   .submitted =>
-                                              'TOURNAMENT SCORE SUBMITTED!',
+                                              l10n.goRibbonTournamentSubmitted,
                                             TournamentScoreSubmission
                                                   .failed =>
-                                              'SCORE NOT SUBMITTED — CHECK CONNECTION',
+                                              l10n.goRibbonTournamentFailed,
                                             _ =>
-                                              'SUBMITTING TOURNAMENT SCORE…',
+                                              l10n.goRibbonTournamentSubmitting,
                                           },
                                           colors: gameCubitState
                                                       .tournamentScoreSubmission ==
@@ -547,8 +553,9 @@ class _HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final color = isHighScore ? Colors.amber : theme.foodColor;
-    final title = isHighScore ? 'VICTORY!' : 'GAME OVER';
+    final title = isHighScore ? l10n.goVictory : l10n.goGameOver;
     final icon = isHighScore
         ? Icons.emoji_events_rounded
         : Icons.sentiment_very_dissatisfied_rounded;
@@ -707,6 +714,7 @@ class _ScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.all(compact ? 16 : 20),
       decoration: BoxDecoration(
@@ -740,7 +748,7 @@ class _ScoreCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'FINAL SCORE',
+                l10n.goFinalScore,
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.75),
                   fontSize: compact ? 12 : 13,
@@ -778,7 +786,7 @@ class _ScoreCard extends StatelessWidget {
           Row(
             children: [
               _StatTile(
-                label: 'LENGTH',
+                label: l10n.mpLength,
                 value: gameState.snake.length,
                 icon: Icons.straighten,
                 theme: theme,
@@ -787,7 +795,7 @@ class _ScoreCard extends StatelessWidget {
               ),
               _StatDivider(theme: theme),
               _StatTile(
-                label: 'LEVEL',
+                label: l10n.goLevel,
                 value: gameState.level,
                 icon: Icons.trending_up,
                 theme: theme,
@@ -796,7 +804,7 @@ class _ScoreCard extends StatelessWidget {
               ),
               _StatDivider(theme: theme),
               _StatTile(
-                label: 'BEST',
+                label: l10n.goBest,
                 value: displayHighScore,
                 icon: Icons.emoji_events,
                 theme: theme,
@@ -925,7 +933,7 @@ class _CoinsEarnedRow extends StatelessWidget {
                   color: Colors.amber, size: 22),
               const SizedBox(width: 10),
               Text(
-                'Coins Earned',
+                AppLocalizations.of(context)!.goCoinsEarned,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 14,
@@ -974,6 +982,7 @@ class _DailyRewardsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final totalCoins = claimable.fold<int>(0, (s, c) => s + c.coinReward);
     final totalXp = claimable.fold<int>(0, (s, c) => s + c.xpReward);
 
@@ -1023,7 +1032,7 @@ class _DailyRewardsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'DAILY REWARDS READY',
+                      l10n.goDailyRewardsReady,
                       style: TextStyle(
                         color: Colors.amber.shade300,
                         fontSize: compact ? 12 : 13,
@@ -1033,9 +1042,11 @@ class _DailyRewardsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${claimable.length} '
-                      '${claimable.length == 1 ? 'reward' : 'rewards'}'
-                      '  •  +$totalCoins coins  •  +$totalXp XP',
+                      l10n.goRewardsSummary(
+                        totalCoins,
+                        claimable.length,
+                        totalXp,
+                      ),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 11,
@@ -1112,14 +1123,14 @@ class _ClaimAllPill extends StatelessWidget {
                       AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : const Row(
+            : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.bolt, size: 14, color: Colors.white),
-                  SizedBox(width: 4),
+                  const Icon(Icons.bolt, size: 14, color: Colors.white),
+                  const SizedBox(width: 4),
                   Text(
-                    'CLAIM ALL',
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.goClaimAll,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
@@ -1178,6 +1189,7 @@ class _ClaimableRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1241,7 +1253,7 @@ class _ClaimableRow extends StatelessWidget {
                             color: Colors.purpleAccent, size: 12),
                         const SizedBox(width: 3),
                         Text(
-                          '${challenge.xpReward} XP',
+                          l10n.goXpAmount(challenge.xpReward),
                           style: TextStyle(
                             color: Colors.purple.shade200,
                             fontSize: 11,
@@ -1281,14 +1293,14 @@ class _ClaimableRow extends StatelessWidget {
                                     Colors.white),
                           ),
                         )
-                      : const Row(
+                      : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.redeem, size: 14),
-                            SizedBox(width: 4),
+                            const Icon(Icons.redeem, size: 14),
+                            const SizedBox(width: 4),
                             Text(
-                              'Claim',
-                              style: TextStyle(
+                              l10n.goClaim,
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -1325,6 +1337,7 @@ class _AchievementSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) => Transform.scale(
@@ -1367,7 +1380,7 @@ class _AchievementSection extends StatelessWidget {
                         color: Colors.amber, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      'ACHIEVEMENTS',
+                      l10n.goAchievements,
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 14,
@@ -1380,7 +1393,7 @@ class _AchievementSection extends StatelessWidget {
                 SizedBox(height: compact ? 8 : 10),
                 if (recent.isNotEmpty) ...[
                   _SubsectionLabel(
-                    text: 'Recently Unlocked',
+                    text: l10n.goRecentlyUnlocked,
                     color: Colors.green,
                     compact: compact,
                   ),
@@ -1398,7 +1411,7 @@ class _AchievementSection extends StatelessWidget {
                 ],
                 if (progress.isNotEmpty) ...[
                   _SubsectionLabel(
-                    text: 'In Progress',
+                    text: l10n.goInProgress,
                     color: Colors.orange,
                     compact: compact,
                   ),
@@ -1582,6 +1595,7 @@ class _BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.fromLTRB(
         16 + context.sideInset(),
@@ -1614,7 +1628,7 @@ class _BottomActionBar extends StatelessWidget {
                 context.read<GameCubit>().resetGame();
                 context.go(AppRoutes.game);
               },
-              text: 'PLAY AGAIN',
+              text: l10n.goPlayAgain,
               primaryColor: theme.accentColor,
               secondaryColor: theme.foodColor,
               icon: Icons.refresh,
@@ -1631,7 +1645,7 @@ class _BottomActionBar extends StatelessWidget {
                 context.read<GameCubit>().backToMenu();
                 context.go(AppRoutes.home);
               },
-              text: 'MENU',
+              text: l10n.goMenu,
               primaryColor: theme.snakeColor.withValues(alpha: 0.85),
               secondaryColor: theme.snakeColor.withValues(alpha: 0.6),
               icon: Icons.home,

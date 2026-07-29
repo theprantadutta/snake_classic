@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
@@ -89,10 +90,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   Future<void> _showInviteFriendSheet(GameTheme theme, String roomCode) async {
     final friends = await SocialService().getFriends();
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
     if (friends.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No friends yet — add some from the Friends screen!'),
+        SnackBar(
+          content: Text(l10n.mpLobbyNoFriends),
         ),
       );
       return;
@@ -111,7 +113,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Invite a friend to room $roomCode',
+                l10n.mpLobbyInviteFriendTo(roomCode),
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 16,
@@ -164,12 +166,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         final (sent, message) = await SocialService()
             .pingFriendForMatch(friend.uid, roomCode: roomCode);
         if (!mounted) return;
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               sent
-                  ? '🎮 Invite sent to ${friend.displayName}!'
-                  : (message ?? 'Could not send the invite — try again'),
+                  ? l10n.mpLobbyInviteSent(friend.displayName)
+                  : (message ?? l10n.mpLobbyInviteFailed),
             ),
             backgroundColor:
                 sent ? Colors.green.shade700 : Colors.red.shade700,
@@ -191,10 +194,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           children: [
             const Icon(Icons.cloud_off, color: Colors.white, size: 20),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                'You\'re offline. Multiplayer requires an internet connection.',
-                style: TextStyle(color: Colors.white),
+                AppLocalizations.of(context)!.mpLobbyOffline,
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ],
@@ -240,7 +243,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(seconds: 4),
                 action: SnackBarAction(
-                  label: 'DISMISS',
+                  label: AppLocalizations.of(context)!.mpLobbyDismiss,
                   textColor: Colors.white,
                   onPressed: () {
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -411,6 +414,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   Widget _buildCountdownOverlay(GameTheme theme, int countdownSeconds) {
     // Seconds come from the GameStarting payload so a server-side tuning
     // change can't drift from this animation.
+    final l10n = AppLocalizations.of(context)!;
     return TweenAnimationBuilder<int>(
       tween: IntTween(begin: countdownSeconds, end: 0),
       duration: Duration(seconds: countdownSeconds),
@@ -434,7 +438,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                         );
                       },
                   child: Text(
-                    value > 0 ? '$value' : 'GO!',
+                    value > 0 ? '$value' : l10n.mpLobbyGo,
                     key: ValueKey<int>(value),
                     style: TextStyle(
                       fontSize: 120,
@@ -451,7 +455,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  value > 0 ? 'Get Ready!' : '',
+                  value > 0 ? l10n.mpLobbyGetReady : '',
                   style: TextStyle(
                     fontSize: 24,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -467,6 +471,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   }
 
   Widget _buildHeader(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.fromLTRB(
         20 + context.sideInset(),
@@ -487,7 +492,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'MULTIPLAYER',
+                l10n.mpLobbyTitle,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -497,7 +502,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               ).gameEntrance(),
 
               Text(
-                'Play with friends online',
+                l10n.mpLobbySubtitle,
                 style: TextStyle(
                   fontSize: 14,
                   color: theme.accentColor.withValues(alpha: 0.7),
@@ -511,6 +516,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   }
 
   Widget _buildGameHeader(GameTheme theme, MultiplayerGame game) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.fromLTRB(
         20 + context.sideInset(),
@@ -563,7 +569,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                         Icon(Icons.key, size: 16, color: theme.foodColor),
                         const SizedBox(width: 6),
                         Text(
-                          'Room: ${game.roomCode}',
+                          l10n.mpLobbyRoomCode(game.roomCode ?? ''),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -578,7 +584,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Room code copied!'),
+                                content: Text(l10n.mpLobbyRoomCodeCopied),
                                 backgroundColor: theme.foodColor,
                                 duration: const Duration(seconds: 2),
                               ),
@@ -618,6 +624,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -638,7 +645,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           const SizedBox(height: 16),
 
           Text(
-            'QUICK MATCH',
+            l10n.mpLobbyQuickMatch,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -652,7 +659,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           // 1v1 classic only in this release — the server match engine
           // enforces exactly two players, so no mode/count selectors.
           Text(
-            '1v1 Classic — find an opponent automatically',
+            l10n.mpLobbyQuickMatchSubtitle,
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.7),
@@ -670,7 +677,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       playerCount: 2,
                     );
                   },
-            text: multiplayerState.isLoading ? 'FINDING...' : 'FIND MATCH',
+            text: multiplayerState.isLoading
+                ? l10n.mpLobbyFinding
+                : l10n.mpLobbyFindMatch,
             primaryColor: Colors.green,
             secondaryColor: Colors.green.withValues(alpha: 0.8),
             icon: Icons.search,
@@ -685,6 +694,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final elapsed = multiplayerState.matchmakingElapsedSeconds;
     final remaining = 60 - elapsed;
     final progress = elapsed / 60.0;
@@ -743,7 +753,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                             ),
                           ),
                           Text(
-                            'sec',
+                            l10n.mpLobbySeconds,
                             style: TextStyle(
                               fontSize: 12,
                               color: theme.accentColor.withValues(alpha: 0.7),
@@ -757,7 +767,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   const SizedBox(height: 32),
 
                   Text(
-                    'SEARCHING FOR PLAYERS...',
+                    l10n.mpLobbySearching,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -769,7 +779,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   const SizedBox(height: 16),
 
                   Text(
-                    '${multiplayerState.matchmakingMode?.modeDisplayName ?? 'Classic'} • ${multiplayerState.matchmakingPlayerCount ?? 2} Players',
+                    l10n.mpLobbyModePlayers(
+                      multiplayerState.matchmakingPlayerCount ?? 2,
+                      multiplayerState.matchmakingMode?.modeDisplayName ??
+                          'Classic',
+                    ),
                     style: TextStyle(
                       fontSize: 14,
                       color: theme.accentColor.withValues(alpha: 0.7),
@@ -779,7 +793,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   if (multiplayerState.matchmakingQueuePosition > 0) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'Queue Position: ${multiplayerState.matchmakingQueuePosition}',
+                      l10n.mpLobbyQueuePosition(
+                        multiplayerState.matchmakingQueuePosition,
+                      ),
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.accentColor.withValues(alpha: 0.5),
@@ -793,7 +809,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     onPressed: () {
                       context.read<MultiplayerCubit>().cancelMatchmaking();
                     },
-                    text: 'CANCEL',
+                    text: l10n.mpLobbyCancelUpper,
                     primaryColor: Colors.red,
                     secondaryColor: Colors.red.withValues(alpha: 0.8),
                     icon: Icons.close,
@@ -814,6 +830,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         _buildHeader(theme),
@@ -856,7 +873,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   const SizedBox(height: 32),
 
                   Text(
-                    'NO PLAYERS FOUND',
+                    l10n.mpLobbyNoPlayersFound,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -868,7 +885,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   const SizedBox(height: 16),
 
                   Text(
-                    'Sorry, we couldn\'t find any opponents.\nTry again or create your own room!',
+                    l10n.mpLobbyNoPlayersBody,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -888,7 +905,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                                 .read<MultiplayerCubit>()
                                 .clearMatchmakingTimeout();
                           },
-                          text: 'GO BACK',
+                          text: l10n.mpLobbyGoBack,
                           primaryColor: Colors.grey,
                           secondaryColor: Colors.grey.withValues(alpha: 0.8),
                           icon: Icons.arrow_back,
@@ -909,7 +926,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                                   multiplayerState.matchmakingPlayerCount ?? 2,
                             );
                           },
-                          text: 'TRY AGAIN',
+                          text: l10n.mpLobbyTryAgain,
                           primaryColor: Colors.green,
                           secondaryColor: Colors.green.withValues(alpha: 0.8),
                           icon: Icons.refresh,
@@ -929,6 +946,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   /// Compact lifetime record chip row: "W · L · D" plus rating.
   Widget _buildRecordStrip(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final wins = (_record?['wins'] as num?)?.toInt() ?? 0;
     final losses = (_record?['losses'] as num?)?.toInt() ?? 0;
     final draws = (_record?['draws'] as num?)?.toInt() ?? 0;
@@ -966,17 +984,17 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         chip(
           Icons.emoji_events,
           Colors.green,
-          '$wins W',
+          l10n.mpLobbyWinsChip(wins),
         ),
         const SizedBox(width: 10),
         chip(
           Icons.close,
           Colors.red.shade400,
-          '$losses L',
+          l10n.mpLobbyLossesChip(losses),
         ),
         if (draws > 0) ...[
           const SizedBox(width: 10),
-          chip(Icons.handshake, Colors.orange, '$draws D'),
+          chip(Icons.handshake, Colors.orange, l10n.mpLobbyDrawsChip(draws)),
         ],
         const SizedBox(width: 10),
         chip(Icons.military_tech, theme.accentColor, '$rating'),
@@ -989,6 +1007,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -1009,7 +1028,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           const SizedBox(height: 16),
 
           Text(
-            'JOIN ROOM',
+            l10n.mpLobbyJoinRoom,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -1021,7 +1040,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           const SizedBox(height: 8),
 
           Text(
-            'Enter room code to join',
+            l10n.mpLobbyJoinSubtitle,
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.7),
@@ -1033,7 +1052,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           TextField(
             controller: _roomCodeController,
             decoration: InputDecoration(
-              hintText: 'Enter room code',
+              hintText: l10n.mpLobbyEnterRoomCode,
               hintStyle: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.5),
               ),
@@ -1072,7 +1091,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       _roomCodeController.text.trim(),
                     );
                   },
-            text: 'JOIN ROOM',
+            text: l10n.mpLobbyJoinRoom,
             primaryColor: Colors.blue,
             secondaryColor: Colors.blue.withValues(alpha: 0.8),
             icon: Icons.login,
@@ -1087,6 +1106,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     MultiplayerState multiplayerState,
     GameTheme theme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -1107,7 +1127,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           const SizedBox(height: 16),
 
           Text(
-            'CREATE ROOM',
+            l10n.mpLobbyCreateRoom,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -1122,7 +1142,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           // room header) to fill the second slot. No mode picker: the
           // server engine only runs classic 1v1 in this release.
           Text(
-            'Start a 1v1 room and invite a friend',
+            l10n.mpLobbyCreateSubtitle,
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.7),
@@ -1140,7 +1160,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       maxPlayers: 2,
                     );
                   },
-            text: 'CREATE ROOM',
+            text: l10n.mpLobbyCreateRoom,
             primaryColor: Colors.purple,
             secondaryColor: Colors.purple.withValues(alpha: 0.8),
             icon: Icons.add_circle_outline,
@@ -1225,7 +1245,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'PLAYERS (${game.players.length}/${game.maxPlayers})',
+            AppLocalizations.of(
+              context,
+            )!.mpLobbyPlayersHeader(game.players.length, game.maxPlayers),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -1308,7 +1330,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'YOU',
+                          AppLocalizations.of(context)!.mpLobbyYouBadge,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -1371,7 +1393,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           const SizedBox(width: 12),
 
           Text(
-            'Waiting for player...',
+            AppLocalizations.of(context)!.mpLobbyWaitingForPlayer,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey,
@@ -1390,6 +1412,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     MultiplayerGame game,
     AuthState authState,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final currentUserId = authState.userId;
     final currentPlayer = game.getPlayer(currentUserId ?? '');
     final isReady = currentPlayer?.status == PlayerStatus.ready;
@@ -1410,7 +1433,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 : () {
                     context.read<MultiplayerCubit>().startGame();
                   },
-            text: 'START GAME',
+            text: l10n.mpLobbyStartGame,
             primaryColor: Colors.green,
             secondaryColor: Colors.green.shade700,
             icon: Icons.play_arrow,
@@ -1440,7 +1463,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Waiting for host to start...',
+                  l10n.mpLobbyWaitingForHost,
                   style: TextStyle(fontSize: 14, color: Colors.green),
                 ),
               ],
@@ -1457,7 +1480,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   context.read<MultiplayerCubit>().leaveGame();
                   context.pop();
                 },
-                text: 'LEAVE',
+                text: l10n.mpLobbyLeave,
                 primaryColor: Colors.red,
                 secondaryColor: Colors.red.withValues(alpha: 0.8),
                 icon: Icons.exit_to_app,
@@ -1478,7 +1501,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                           isReady: !isReady,
                         );
                       },
-                text: isReady ? 'READY!' : 'READY',
+                text: isReady ? l10n.mpLobbyReadyDone : l10n.mpLobbyReady,
                 primaryColor: isReady ? Colors.green : theme.accentColor,
                 secondaryColor: isReady
                     ? Colors.green.withValues(alpha: 0.8)
@@ -1493,15 +1516,16 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   }
 
   String _getGameModeDescription(MultiplayerGameMode mode) {
+    final l10n = AppLocalizations.of(context)!;
     switch (mode) {
       case MultiplayerGameMode.classic:
-        return 'Traditional Snake battle';
+        return l10n.mpModeClassicDesc;
       case MultiplayerGameMode.speedRun:
-        return 'Speed increases over time';
+        return l10n.mpModeSpeedDesc;
       case MultiplayerGameMode.survival:
-        return 'Last snake standing wins';
+        return l10n.mpModeSurvivalDesc;
       case MultiplayerGameMode.powerUpMadness:
-        return 'Power-ups everywhere!';
+        return l10n.mpModePowerUpDesc;
     }
   }
 
@@ -1521,17 +1545,18 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   }
 
   String _getStatusText(PlayerStatus status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case PlayerStatus.waiting:
-        return 'Waiting';
+        return l10n.mpStatusWaiting;
       case PlayerStatus.ready:
-        return 'Ready';
+        return l10n.mpStatusReady;
       case PlayerStatus.playing:
-        return 'Playing';
+        return l10n.mpStatusPlaying;
       case PlayerStatus.crashed:
-        return 'Crashed';
+        return l10n.mpStatusCrashed;
       case PlayerStatus.disconnected:
-        return 'Disconnected';
+        return l10n.mpStatusDisconnected;
     }
   }
 }

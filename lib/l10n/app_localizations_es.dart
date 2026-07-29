@@ -646,4 +646,693 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsUnknownDate => 'Fecha desconocida';
+
+  @override
+  String get mpLobbyNoFriends =>
+      'Aún no tienes amigos — ¡añade algunos desde la pantalla de Amigos!';
+
+  @override
+  String mpLobbyInviteFriendTo(Object code) {
+    return 'Invita a un amigo a la sala $code';
+  }
+
+  @override
+  String mpLobbyInviteSent(Object name) {
+    return '🎮 ¡Invitación enviada a $name!';
+  }
+
+  @override
+  String get mpLobbyInviteFailed =>
+      'No se pudo enviar la invitación — inténtalo de nuevo';
+
+  @override
+  String get mpLobbyOffline =>
+      'Estás sin conexión. El multijugador requiere internet.';
+
+  @override
+  String get mpLobbyDismiss => 'CERRAR';
+
+  @override
+  String get mpLobbyGo => '¡YA!';
+
+  @override
+  String get mpLobbyGetReady => '¡Prepárate!';
+
+  @override
+  String get mpLobbyTitle => 'MULTIJUGADOR';
+
+  @override
+  String get mpLobbySubtitle => 'Juega online con amigos';
+
+  @override
+  String mpLobbyRoomCode(Object code) {
+    return 'Sala: $code';
+  }
+
+  @override
+  String get mpLobbyRoomCodeCopied => '¡Código de sala copiado!';
+
+  @override
+  String get mpLobbyQuickMatch => 'PARTIDA RÁPIDA';
+
+  @override
+  String get mpLobbyQuickMatchSubtitle =>
+      '1v1 Clásico — encuentra un oponente automáticamente';
+
+  @override
+  String get mpLobbyFinding => 'BUSCANDO...';
+
+  @override
+  String get mpLobbyFindMatch => 'BUSCAR PARTIDA';
+
+  @override
+  String get mpLobbySeconds => 'seg';
+
+  @override
+  String get mpLobbySearching => 'BUSCANDO JUGADORES...';
+
+  @override
+  String mpLobbyModePlayers(num count, Object mode) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jugadores',
+      one: '$count jugador',
+    );
+    return '$mode • $_temp0';
+  }
+
+  @override
+  String mpLobbyQueuePosition(Object position) {
+    return 'Posición en la cola: $position';
+  }
+
+  @override
+  String get mpLobbyCancelUpper => 'CANCELAR';
+
+  @override
+  String get mpLobbyNoPlayersFound => 'NO SE ENCONTRARON JUGADORES';
+
+  @override
+  String get mpLobbyNoPlayersBody =>
+      'Lo sentimos, no encontramos oponentes.\n¡Inténtalo de nuevo o crea tu propia sala!';
+
+  @override
+  String get mpLobbyGoBack => 'VOLVER';
+
+  @override
+  String get mpLobbyTryAgain => 'REINTENTAR';
+
+  @override
+  String mpLobbyWinsChip(Object count) {
+    return '$count V';
+  }
+
+  @override
+  String mpLobbyLossesChip(Object count) {
+    return '$count D';
+  }
+
+  @override
+  String mpLobbyDrawsChip(Object count) {
+    return '$count E';
+  }
+
+  @override
+  String get mpLobbyJoinRoom => 'UNIRSE A SALA';
+
+  @override
+  String get mpLobbyJoinSubtitle => 'Introduce el código de sala para unirte';
+
+  @override
+  String get mpLobbyEnterRoomCode => 'Introduce el código de sala';
+
+  @override
+  String get mpLobbyCreateRoom => 'CREAR SALA';
+
+  @override
+  String get mpLobbyCreateSubtitle => 'Crea una sala 1v1 e invita a un amigo';
+
+  @override
+  String mpLobbyPlayersHeader(Object current, Object max) {
+    return 'JUGADORES ($current/$max)';
+  }
+
+  @override
+  String get mpLobbyYouBadge => 'TÚ';
+
+  @override
+  String get mpLobbyWaitingForPlayer => 'Esperando jugador...';
+
+  @override
+  String get mpLobbyStartGame => 'INICIAR PARTIDA';
+
+  @override
+  String get mpLobbyWaitingForHost => 'Esperando a que el anfitrión empiece...';
+
+  @override
+  String get mpLobbyLeave => 'SALIR';
+
+  @override
+  String get mpLobbyReadyDone => '¡LISTO!';
+
+  @override
+  String get mpLobbyReady => 'LISTO';
+
+  @override
+  String get mpModeClassicDesc => 'Batalla de serpientes tradicional';
+
+  @override
+  String get mpModeSpeedDesc => 'La velocidad aumenta con el tiempo';
+
+  @override
+  String get mpModeSurvivalDesc => 'Gana la última serpiente en pie';
+
+  @override
+  String get mpModePowerUpDesc => '¡Potenciadores por todas partes!';
+
+  @override
+  String get mpStatusWaiting => 'Esperando';
+
+  @override
+  String get mpStatusReady => 'Listo';
+
+  @override
+  String get mpStatusPlaying => 'Jugando';
+
+  @override
+  String get mpStatusCrashed => 'Chocó';
+
+  @override
+  String get mpStatusDisconnected => 'Desconectado';
+
+  @override
+  String get goNoAdAvailable =>
+      'No hay anuncios disponibles ahora, inténtalo en un momento';
+
+  @override
+  String goCoinsDoubled(Object count) {
+    return '🎉 Monedas duplicadas — ¡+$count monedas extra!';
+  }
+
+  @override
+  String goWatchToDouble(Object count) {
+    return 'Mira un anuncio para duplicar tus $count monedas';
+  }
+
+  @override
+  String goRewardClaimLine(Object coins, Object xp) {
+    return '+$coins monedas  •  +$xp XP';
+  }
+
+  @override
+  String goClaimedTotal(Object count) {
+    return '¡Reclamaste $count monedas de los desafíos diarios!';
+  }
+
+  @override
+  String get goRibbonNewHighScore => '¡NUEVO RÉCORD!';
+
+  @override
+  String get goRibbonTournamentSubmitted => '¡PUNTUACIÓN DE TORNEO ENVIADA!';
+
+  @override
+  String get goRibbonTournamentFailed =>
+      'PUNTUACIÓN NO ENVIADA — REVISA LA CONEXIÓN';
+
+  @override
+  String get goRibbonTournamentSubmitting => 'ENVIANDO PUNTUACIÓN DE TORNEO…';
+
+  @override
+  String get goVictory => '¡VICTORIA!';
+
+  @override
+  String get goGameOver => 'FIN DEL JUEGO';
+
+  @override
+  String get goFinalScore => 'PUNTUACIÓN FINAL';
+
+  @override
+  String get goLevel => 'NIVEL';
+
+  @override
+  String get goBest => 'RÉCORD';
+
+  @override
+  String get goCoinsEarned => 'Monedas ganadas';
+
+  @override
+  String get goDailyRewardsReady => 'RECOMPENSAS DIARIAS LISTAS';
+
+  @override
+  String goRewardsSummary(Object coins, num count, Object xp) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recompensas',
+      one: '$count recompensa',
+    );
+    return '$_temp0  •  +$coins monedas  •  +$xp XP';
+  }
+
+  @override
+  String get goClaimAll => 'RECLAMAR TODO';
+
+  @override
+  String goXpAmount(Object xp) {
+    return '$xp XP';
+  }
+
+  @override
+  String get goClaim => 'Reclamar';
+
+  @override
+  String get goAchievements => 'LOGROS';
+
+  @override
+  String get goRecentlyUnlocked => 'Desbloqueados recientemente';
+
+  @override
+  String get goInProgress => 'En progreso';
+
+  @override
+  String get goPlayAgain => 'JUGAR OTRA VEZ';
+
+  @override
+  String get goMenu => 'MENÚ';
+
+  @override
+  String get storeTitle => 'Tienda Snake';
+
+  @override
+  String get storeTabPro => 'Pro';
+
+  @override
+  String get storeTabCoins => 'Monedas';
+
+  @override
+  String get storeTabThemes => 'Temas';
+
+  @override
+  String get storeTabSkins => 'Aspectos';
+
+  @override
+  String get storeTabTrails => 'Estelas';
+
+  @override
+  String get storeTabPowerUps => 'Potenciadores';
+
+  @override
+  String get storeYourCoins => 'Tus Monedas Snake';
+
+  @override
+  String storeBonusMultiplier(Object multiplier) {
+    return 'BONO ${multiplier}x';
+  }
+
+  @override
+  String get storeSubscribeBeforePromoEnds =>
+      'Suscríbete antes de que acabe tu Pro gratis';
+
+  @override
+  String get storeChooseYourPlan => 'Elige tu plan';
+
+  @override
+  String get storeWhatYouGet => 'Lo que obtienes';
+
+  @override
+  String get storeProHeroSubtitle =>
+      'Todos los temas, aspectos y estelas premium · tableros grandes · 2× monedas · potenciadores premium · entradas de torneo · Pase de Batalla Premium';
+
+  @override
+  String get storeMonthly => 'Mensual';
+
+  @override
+  String get storeYearly => 'Anual';
+
+  @override
+  String get storePerMonth => '/mes';
+
+  @override
+  String get storePerYear => '/año';
+
+  @override
+  String get storeSave17 => 'Ahorra un 17%';
+
+  @override
+  String storePlanDisplayName(Object title) {
+    return 'plan $title';
+  }
+
+  @override
+  String get storeVerifyingEllipsis => 'Verificando…';
+
+  @override
+  String get storeSubscribe => 'Suscribirse';
+
+  @override
+  String get storeYoureOnFreePro => '¡Tienes Pro gratis!';
+
+  @override
+  String get storeYourePro => '¡Eres Pro!';
+
+  @override
+  String get storeFreePro => 'Pro gratis';
+
+  @override
+  String get storeProMonthly => 'Pro Mensual';
+
+  @override
+  String get storeKeepPro => 'Mantener Pro — Suscribirse';
+
+  @override
+  String get storePromoBadge => 'PROMO';
+
+  @override
+  String get storeEndingSoon => 'Termina pronto';
+
+  @override
+  String storeEndsInDh(Object days, Object hours) {
+    return 'Termina en ${days}d ${hours}h';
+  }
+
+  @override
+  String storeEndsInHm(Object hours, Object minutes) {
+    return 'Termina en ${hours}h ${minutes}min';
+  }
+
+  @override
+  String storeEndsInM(Object minutes) {
+    return 'Termina en ${minutes}min';
+  }
+
+  @override
+  String get storeFeatureExtraLife =>
+      'Vida extra siempre gratis — revive en cada partida, sin anuncio, sin monedas';
+
+  @override
+  String get storeFeatureNoAds =>
+      'Sin anuncios — juega totalmente libre de publicidad';
+
+  @override
+  String get storeFeatureThemes => 'Los 6 temas premium';
+
+  @override
+  String get storeFeatureSkins => 'Los 11 aspectos premium';
+
+  @override
+  String get storeFeatureTrails => 'Las 11 estelas premium';
+
+  @override
+  String get storeFeatureBoards => 'Tableros premium (35×35, 40×40, 50×50)';
+
+  @override
+  String get storeFeatureCoins => 'Ganancia de monedas 2×';
+
+  @override
+  String get storeFeaturePowerUps => '5× potenciadores premium por ciclo';
+
+  @override
+  String get storeFeatureTournaments =>
+      'Entradas de torneo Bronce + Plata + Oro por ciclo';
+
+  @override
+  String get storeFeatureBattlePass =>
+      'Vía Premium del Pase de Batalla cada temporada';
+
+  @override
+  String storeInitiatingPurchase(Object name) {
+    return 'Iniciando compra de $name...';
+  }
+
+  @override
+  String get storeSubNotAvailable =>
+      'Suscripción no disponible. Inténtalo más tarde.';
+
+  @override
+  String get storePurchaseFailed => 'La compra falló. Inténtalo de nuevo.';
+
+  @override
+  String get storeBuyCoins => 'Comprar Monedas Snake';
+
+  @override
+  String get storeEarnFreeCoins => 'Gana monedas gratis';
+
+  @override
+  String get storeEarnPlay => 'Juega una partida';
+
+  @override
+  String get storeEarnPlayReward => '5 monedas por partida';
+
+  @override
+  String get storeEarnDaily => 'Inicio de sesión diario';
+
+  @override
+  String get storeEarnDailyReward => '10-50 monedas al día';
+
+  @override
+  String get storeEarnAchievements => 'Logros';
+
+  @override
+  String get storeEarnAchievementsReward => '25-100 monedas';
+
+  @override
+  String get storeEarnTournaments => 'Torneos';
+
+  @override
+  String get storeEarnTournamentsReward => 'Más de 100 monedas';
+
+  @override
+  String get storePopularBadge => 'POPULAR';
+
+  @override
+  String storeBuyItem(Object name) {
+    return 'Comprar $name';
+  }
+
+  @override
+  String storeBuyCoinsBody(Object coins, Object price) {
+    return '¿Comprar $coins por $price?';
+  }
+
+  @override
+  String storeBuyForPrice(Object price) {
+    return 'Comprar - $price';
+  }
+
+  @override
+  String storeInitiatingFor(Object name) {
+    return 'Iniciando compra de $name...';
+  }
+
+  @override
+  String get storeProductNotAvailable =>
+      'Producto no disponible. Inténtalo más tarde.';
+
+  @override
+  String get storeUnlockedWithPro => 'Desbloqueado con Pro';
+
+  @override
+  String get storeIncludedWithPro => 'Incluido con Snake Classic Pro';
+
+  @override
+  String get storeProBannerThemesOwned =>
+      'Todos los temas de aquí son tuyos con tu suscripción.';
+
+  @override
+  String get storeProBannerThemesUpsell =>
+      'Suscríbete a Pro para desbloquear todos los temas — sin compras separadas.';
+
+  @override
+  String get storeProBannerSkinsOwned =>
+      'Todos los aspectos de aquí son tuyos con tu suscripción.';
+
+  @override
+  String get storeProBannerSkinsUpsell =>
+      'Suscríbete a Pro para desbloquear todos los aspectos — sin compras separadas.';
+
+  @override
+  String get storeProBannerTrailsOwned =>
+      'Todas las estelas de aquí son tuyas con tu suscripción.';
+
+  @override
+  String get storeProBannerTrailsUpsell =>
+      'Suscríbete a Pro para desbloquear todas las estelas — sin compras separadas.';
+
+  @override
+  String get storePremiumThemes => 'Temas premium';
+
+  @override
+  String get storeFreeThemes => 'Temas gratis';
+
+  @override
+  String get storeFreeThemesSubtitle =>
+      'Siempre disponibles — vuelve cuando quieras.';
+
+  @override
+  String get storeAllThemesBundle => 'Pack de Todos los Temas';
+
+  @override
+  String get storeAllThemesBundleSubtitle =>
+      'Los 6 temas premium · ahorra un 33%';
+
+  @override
+  String get storePillVerifying => 'VERIFICANDO';
+
+  @override
+  String get storePillOwned => 'TUYO';
+
+  @override
+  String get storePillFree => 'GRATIS';
+
+  @override
+  String get storePillActive => 'ACTIVO';
+
+  @override
+  String get storePillApply => 'APLICAR';
+
+  @override
+  String get storePillEquipped => 'EQUIPADO';
+
+  @override
+  String get storePillEquip => 'EQUIPAR';
+
+  @override
+  String get storeThemeDescClassic => 'El aspecto original';
+
+  @override
+  String get storeThemeDescModern => 'Limpio y minimalista';
+
+  @override
+  String get storeThemeDescNeon => 'Noches de neón brillante';
+
+  @override
+  String get storeThemeDescRetro => 'Arcade ochentero de neón';
+
+  @override
+  String get storeThemeDescSpace => 'Campo de estrellas cósmico';
+
+  @override
+  String get storeThemeDescOcean => 'Azules de mar profundo';
+
+  @override
+  String get storeThemeDescCyberpunk => 'Cian eléctrico y rosa';
+
+  @override
+  String get storeThemeDescForest => 'Jungla esmeralda vívida';
+
+  @override
+  String get storeThemeDescDesert => 'Cañón y cactus turquesa';
+
+  @override
+  String get storeThemeDescCrystal => 'Azul cristalino helado';
+
+  @override
+  String storeUnlockFor(Object name, Object price) {
+    return '¿Desbloquear $name por $price?';
+  }
+
+  @override
+  String storeVerifyingPurchase(Object name) {
+    return 'Verificando la compra de $name…';
+  }
+
+  @override
+  String get storeThemeNotAvailable =>
+      'Tema no disponible. Inténtalo más tarde.';
+
+  @override
+  String get storeItemNotAvailable =>
+      'Artículo no disponible. Inténtalo más tarde.';
+
+  @override
+  String storeEquippedToast(Object name) {
+    return '$name equipado';
+  }
+
+  @override
+  String get storeFreeSpeedBoostInventory =>
+      '🎉 ¡Impulso de Velocidad gratis añadido a tu inventario!';
+
+  @override
+  String get storeWatchAdTitle =>
+      'Ver un anuncio — Impulso de Velocidad gratis';
+
+  @override
+  String get storeWatchAdReady =>
+      'Añade 1 Impulso de Velocidad a tu equipamiento';
+
+  @override
+  String get storeWatchAdNotReady => 'No hay anuncios disponibles ahora';
+
+  @override
+  String get puSpeedBoostDesc =>
+      'Aumenta la velocidad de la serpiente durante 7 segundos.';
+
+  @override
+  String get puInvincibilityDesc =>
+      'Atraviesa paredes y tu propio cuerpo durante 6 segundos.';
+
+  @override
+  String get puScoreMultiplierDesc => 'Puntos dobles durante 10 segundos.';
+
+  @override
+  String get puSlowMotionDesc =>
+      'Ralentiza el juego para más precisión (8 segundos).';
+
+  @override
+  String get storePowerUpsInfo =>
+      'Compra con monedas y luego arma uno desde el chip de equipamiento de la pantalla de inicio — se activa 5 s después de empezar tu próxima partida.';
+
+  @override
+  String get storePowerUps => 'Potenciadores';
+
+  @override
+  String get storePowerUpBundles => 'Packs de potenciadores';
+
+  @override
+  String get storeBundlesSubtitle =>
+      'Desbloquea varios tipos de potenciador con descuento.';
+
+  @override
+  String storeOwnedCountBadge(Object count) {
+    return 'x$count';
+  }
+
+  @override
+  String get storeInsufficientCoins => '¡Monedas insuficientes!';
+
+  @override
+  String storeBuyPowerUpBody(Object cost, Object name) {
+    return '¿Comprar 1 $name por $cost monedas?';
+  }
+
+  @override
+  String storeBuyCostCoins(Object cost) {
+    return 'Comprar - $cost monedas';
+  }
+
+  @override
+  String get storePurchaseFailedRetry => 'La compra falló. Inténtalo de nuevo.';
+
+  @override
+  String storeAddedToLoadout(Object name) {
+    return '¡$name añadido a tu equipamiento!';
+  }
+
+  @override
+  String storeCoinsAmount(Object count) {
+    return '$count monedas';
+  }
+
+  @override
+  String get storeBuyUpper => 'COMPRAR';
+
+  @override
+  String get storeNeedCoins => 'FALTAN MONEDAS';
+
+  @override
+  String storeBundleUnlocked(Object name) {
+    return '¡$name desbloqueado!';
+  }
 }

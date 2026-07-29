@@ -1257,6 +1257,1158 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unknown date'**
   String get settingsUnknownDate;
+
+  /// No description provided for @mpLobbyNoFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'No friends yet — add some from the Friends screen!'**
+  String get mpLobbyNoFriends;
+
+  /// No description provided for @mpLobbyInviteFriendTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite a friend to room {code}'**
+  String mpLobbyInviteFriendTo(Object code);
+
+  /// No description provided for @mpLobbyInviteSent.
+  ///
+  /// In en, this message translates to:
+  /// **'🎮 Invite sent to {name}!'**
+  String mpLobbyInviteSent(Object name);
+
+  /// No description provided for @mpLobbyInviteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the invite — try again'**
+  String get mpLobbyInviteFailed;
+
+  /// No description provided for @mpLobbyOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Multiplayer requires an internet connection.'**
+  String get mpLobbyOffline;
+
+  /// No description provided for @mpLobbyDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'DISMISS'**
+  String get mpLobbyDismiss;
+
+  /// No description provided for @mpLobbyGo.
+  ///
+  /// In en, this message translates to:
+  /// **'GO!'**
+  String get mpLobbyGo;
+
+  /// No description provided for @mpLobbyGetReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Ready!'**
+  String get mpLobbyGetReady;
+
+  /// No description provided for @mpLobbyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'MULTIPLAYER'**
+  String get mpLobbyTitle;
+
+  /// No description provided for @mpLobbySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Play with friends online'**
+  String get mpLobbySubtitle;
+
+  /// No description provided for @mpLobbyRoomCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Room: {code}'**
+  String mpLobbyRoomCode(Object code);
+
+  /// No description provided for @mpLobbyRoomCodeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Room code copied!'**
+  String get mpLobbyRoomCodeCopied;
+
+  /// No description provided for @mpLobbyQuickMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'QUICK MATCH'**
+  String get mpLobbyQuickMatch;
+
+  /// No description provided for @mpLobbyQuickMatchSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'1v1 Classic — find an opponent automatically'**
+  String get mpLobbyQuickMatchSubtitle;
+
+  /// No description provided for @mpLobbyFinding.
+  ///
+  /// In en, this message translates to:
+  /// **'FINDING...'**
+  String get mpLobbyFinding;
+
+  /// No description provided for @mpLobbyFindMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'FIND MATCH'**
+  String get mpLobbyFindMatch;
+
+  /// No description provided for @mpLobbySeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'sec'**
+  String get mpLobbySeconds;
+
+  /// No description provided for @mpLobbySearching.
+  ///
+  /// In en, this message translates to:
+  /// **'SEARCHING FOR PLAYERS...'**
+  String get mpLobbySearching;
+
+  /// No description provided for @mpLobbyModePlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'{mode} • {count, plural, one{{count} Player} other{{count} Players}}'**
+  String mpLobbyModePlayers(num count, Object mode);
+
+  /// No description provided for @mpLobbyQueuePosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue Position: {position}'**
+  String mpLobbyQueuePosition(Object position);
+
+  /// No description provided for @mpLobbyCancelUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'CANCEL'**
+  String get mpLobbyCancelUpper;
+
+  /// No description provided for @mpLobbyNoPlayersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'NO PLAYERS FOUND'**
+  String get mpLobbyNoPlayersFound;
+
+  /// No description provided for @mpLobbyNoPlayersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, we couldn\'t find any opponents.\nTry again or create your own room!'**
+  String get mpLobbyNoPlayersBody;
+
+  /// No description provided for @mpLobbyGoBack.
+  ///
+  /// In en, this message translates to:
+  /// **'GO BACK'**
+  String get mpLobbyGoBack;
+
+  /// No description provided for @mpLobbyTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'TRY AGAIN'**
+  String get mpLobbyTryAgain;
+
+  /// No description provided for @mpLobbyWinsChip.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} W'**
+  String mpLobbyWinsChip(Object count);
+
+  /// No description provided for @mpLobbyLossesChip.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} L'**
+  String mpLobbyLossesChip(Object count);
+
+  /// No description provided for @mpLobbyDrawsChip.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} D'**
+  String mpLobbyDrawsChip(Object count);
+
+  /// No description provided for @mpLobbyJoinRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'JOIN ROOM'**
+  String get mpLobbyJoinRoom;
+
+  /// No description provided for @mpLobbyJoinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter room code to join'**
+  String get mpLobbyJoinSubtitle;
+
+  /// No description provided for @mpLobbyEnterRoomCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter room code'**
+  String get mpLobbyEnterRoomCode;
+
+  /// No description provided for @mpLobbyCreateRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'CREATE ROOM'**
+  String get mpLobbyCreateRoom;
+
+  /// No description provided for @mpLobbyCreateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a 1v1 room and invite a friend'**
+  String get mpLobbyCreateSubtitle;
+
+  /// No description provided for @mpLobbyPlayersHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'PLAYERS ({current}/{max})'**
+  String mpLobbyPlayersHeader(Object current, Object max);
+
+  /// No description provided for @mpLobbyYouBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'YOU'**
+  String get mpLobbyYouBadge;
+
+  /// No description provided for @mpLobbyWaitingForPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for player...'**
+  String get mpLobbyWaitingForPlayer;
+
+  /// No description provided for @mpLobbyStartGame.
+  ///
+  /// In en, this message translates to:
+  /// **'START GAME'**
+  String get mpLobbyStartGame;
+
+  /// No description provided for @mpLobbyWaitingForHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for host to start...'**
+  String get mpLobbyWaitingForHost;
+
+  /// No description provided for @mpLobbyLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'LEAVE'**
+  String get mpLobbyLeave;
+
+  /// No description provided for @mpLobbyReadyDone.
+  ///
+  /// In en, this message translates to:
+  /// **'READY!'**
+  String get mpLobbyReadyDone;
+
+  /// No description provided for @mpLobbyReady.
+  ///
+  /// In en, this message translates to:
+  /// **'READY'**
+  String get mpLobbyReady;
+
+  /// No description provided for @mpModeClassicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Traditional Snake battle'**
+  String get mpModeClassicDesc;
+
+  /// No description provided for @mpModeSpeedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed increases over time'**
+  String get mpModeSpeedDesc;
+
+  /// No description provided for @mpModeSurvivalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Last snake standing wins'**
+  String get mpModeSurvivalDesc;
+
+  /// No description provided for @mpModePowerUpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups everywhere!'**
+  String get mpModePowerUpDesc;
+
+  /// No description provided for @mpStatusWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get mpStatusWaiting;
+
+  /// No description provided for @mpStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get mpStatusReady;
+
+  /// No description provided for @mpStatusPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get mpStatusPlaying;
+
+  /// No description provided for @mpStatusCrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'Crashed'**
+  String get mpStatusCrashed;
+
+  /// No description provided for @mpStatusDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected'**
+  String get mpStatusDisconnected;
+
+  /// No description provided for @goNoAdAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No ad available right now, try again shortly'**
+  String get goNoAdAvailable;
+
+  /// No description provided for @goCoinsDoubled.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Coins doubled — +{count} bonus coins!'**
+  String goCoinsDoubled(Object count);
+
+  /// No description provided for @goWatchToDouble.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch to double your {count} coins'**
+  String goWatchToDouble(Object count);
+
+  /// No description provided for @goRewardClaimLine.
+  ///
+  /// In en, this message translates to:
+  /// **'+{coins} coins  •  +{xp} XP'**
+  String goRewardClaimLine(Object coins, Object xp);
+
+  /// No description provided for @goClaimedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed {count} coins from daily challenges!'**
+  String goClaimedTotal(Object count);
+
+  /// No description provided for @goRibbonNewHighScore.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW HIGH SCORE!'**
+  String get goRibbonNewHighScore;
+
+  /// No description provided for @goRibbonTournamentSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'TOURNAMENT SCORE SUBMITTED!'**
+  String get goRibbonTournamentSubmitted;
+
+  /// No description provided for @goRibbonTournamentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'SCORE NOT SUBMITTED — CHECK CONNECTION'**
+  String get goRibbonTournamentFailed;
+
+  /// No description provided for @goRibbonTournamentSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'SUBMITTING TOURNAMENT SCORE…'**
+  String get goRibbonTournamentSubmitting;
+
+  /// No description provided for @goVictory.
+  ///
+  /// In en, this message translates to:
+  /// **'VICTORY!'**
+  String get goVictory;
+
+  /// No description provided for @goGameOver.
+  ///
+  /// In en, this message translates to:
+  /// **'GAME OVER'**
+  String get goGameOver;
+
+  /// No description provided for @goFinalScore.
+  ///
+  /// In en, this message translates to:
+  /// **'FINAL SCORE'**
+  String get goFinalScore;
+
+  /// No description provided for @goLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'LEVEL'**
+  String get goLevel;
+
+  /// No description provided for @goBest.
+  ///
+  /// In en, this message translates to:
+  /// **'BEST'**
+  String get goBest;
+
+  /// No description provided for @goCoinsEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins Earned'**
+  String get goCoinsEarned;
+
+  /// No description provided for @goDailyRewardsReady.
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY REWARDS READY'**
+  String get goDailyRewardsReady;
+
+  /// No description provided for @goRewardsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} reward} other{{count} rewards}}  •  +{coins} coins  •  +{xp} XP'**
+  String goRewardsSummary(Object coins, num count, Object xp);
+
+  /// No description provided for @goClaimAll.
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIM ALL'**
+  String get goClaimAll;
+
+  /// No description provided for @goXpAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} XP'**
+  String goXpAmount(Object xp);
+
+  /// No description provided for @goClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get goClaim;
+
+  /// No description provided for @goAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'ACHIEVEMENTS'**
+  String get goAchievements;
+
+  /// No description provided for @goRecentlyUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Unlocked'**
+  String get goRecentlyUnlocked;
+
+  /// No description provided for @goInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get goInProgress;
+
+  /// No description provided for @goPlayAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'PLAY AGAIN'**
+  String get goPlayAgain;
+
+  /// No description provided for @goMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'MENU'**
+  String get goMenu;
+
+  /// No description provided for @storeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Store'**
+  String get storeTitle;
+
+  /// No description provided for @storeTabPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get storeTabPro;
+
+  /// No description provided for @storeTabCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins'**
+  String get storeTabCoins;
+
+  /// No description provided for @storeTabThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes'**
+  String get storeTabThemes;
+
+  /// No description provided for @storeTabSkins.
+  ///
+  /// In en, this message translates to:
+  /// **'Skins'**
+  String get storeTabSkins;
+
+  /// No description provided for @storeTabTrails.
+  ///
+  /// In en, this message translates to:
+  /// **'Trails'**
+  String get storeTabTrails;
+
+  /// No description provided for @storeTabPowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-Ups'**
+  String get storeTabPowerUps;
+
+  /// No description provided for @storeYourCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Snake Coins'**
+  String get storeYourCoins;
+
+  /// No description provided for @storeBonusMultiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'{multiplier}x BONUS'**
+  String storeBonusMultiplier(Object multiplier);
+
+  /// No description provided for @storeSubscribeBeforePromoEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe before your free Pro ends'**
+  String get storeSubscribeBeforePromoEnds;
+
+  /// No description provided for @storeChooseYourPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your plan'**
+  String get storeChooseYourPlan;
+
+  /// No description provided for @storeWhatYouGet.
+  ///
+  /// In en, this message translates to:
+  /// **'What you get'**
+  String get storeWhatYouGet;
+
+  /// No description provided for @storeProHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All premium themes, skins & trails · big boards · 2× coins · premium power-ups · tournament entries · Battle Pass Premium'**
+  String get storeProHeroSubtitle;
+
+  /// No description provided for @storeMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get storeMonthly;
+
+  /// No description provided for @storeYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get storeYearly;
+
+  /// No description provided for @storePerMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'/month'**
+  String get storePerMonth;
+
+  /// No description provided for @storePerYear.
+  ///
+  /// In en, this message translates to:
+  /// **'/year'**
+  String get storePerYear;
+
+  /// No description provided for @storeSave17.
+  ///
+  /// In en, this message translates to:
+  /// **'Save 17%'**
+  String get storeSave17;
+
+  /// No description provided for @storePlanDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} plan'**
+  String storePlanDisplayName(Object title);
+
+  /// No description provided for @storeVerifyingEllipsis.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying…'**
+  String get storeVerifyingEllipsis;
+
+  /// No description provided for @storeSubscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe'**
+  String get storeSubscribe;
+
+  /// No description provided for @storeYoureOnFreePro.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re on free Pro!'**
+  String get storeYoureOnFreePro;
+
+  /// No description provided for @storeYourePro.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re Pro!'**
+  String get storeYourePro;
+
+  /// No description provided for @storeFreePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Free Pro'**
+  String get storeFreePro;
+
+  /// No description provided for @storeProMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro Monthly'**
+  String get storeProMonthly;
+
+  /// No description provided for @storeKeepPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Pro — Subscribe'**
+  String get storeKeepPro;
+
+  /// No description provided for @storePromoBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'PROMO'**
+  String get storePromoBadge;
+
+  /// No description provided for @storeEndingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Ending soon'**
+  String get storeEndingSoon;
+
+  /// No description provided for @storeEndsInDh.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends in {days}d {hours}h'**
+  String storeEndsInDh(Object days, Object hours);
+
+  /// No description provided for @storeEndsInHm.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends in {hours}h {minutes}m'**
+  String storeEndsInHm(Object hours, Object minutes);
+
+  /// No description provided for @storeEndsInM.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends in {minutes}m'**
+  String storeEndsInM(Object minutes);
+
+  /// No description provided for @storeFeatureExtraLife.
+  ///
+  /// In en, this message translates to:
+  /// **'Always-free extra life — revive every game, no ad, no coins'**
+  String get storeFeatureExtraLife;
+
+  /// No description provided for @storeFeatureNoAds.
+  ///
+  /// In en, this message translates to:
+  /// **'No ads — play completely ad-free'**
+  String get storeFeatureNoAds;
+
+  /// No description provided for @storeFeatureThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'All 6 premium themes'**
+  String get storeFeatureThemes;
+
+  /// No description provided for @storeFeatureSkins.
+  ///
+  /// In en, this message translates to:
+  /// **'All 11 premium snake skins'**
+  String get storeFeatureSkins;
+
+  /// No description provided for @storeFeatureTrails.
+  ///
+  /// In en, this message translates to:
+  /// **'All 11 premium trail effects'**
+  String get storeFeatureTrails;
+
+  /// No description provided for @storeFeatureBoards.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium board sizes (35×35, 40×40, 50×50)'**
+  String get storeFeatureBoards;
+
+  /// No description provided for @storeFeatureCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'2× coin earnings'**
+  String get storeFeatureCoins;
+
+  /// No description provided for @storeFeaturePowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'5× premium power-ups every cycle'**
+  String get storeFeaturePowerUps;
+
+  /// No description provided for @storeFeatureTournaments.
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze + Silver + Gold tournament entries each cycle'**
+  String get storeFeatureTournaments;
+
+  /// No description provided for @storeFeatureBattlePass.
+  ///
+  /// In en, this message translates to:
+  /// **'Battle Pass Premium track every season'**
+  String get storeFeatureBattlePass;
+
+  /// No description provided for @storeInitiatingPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Initiating {name} purchase...'**
+  String storeInitiatingPurchase(Object name);
+
+  /// No description provided for @storeSubNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription not available. Please try again later.'**
+  String get storeSubNotAvailable;
+
+  /// No description provided for @storePurchaseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed. Please try again.'**
+  String get storePurchaseFailed;
+
+  /// No description provided for @storeBuyCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy Snake Coins'**
+  String get storeBuyCoins;
+
+  /// No description provided for @storeEarnFreeCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn Free Coins'**
+  String get storeEarnFreeCoins;
+
+  /// No description provided for @storeEarnPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a Game'**
+  String get storeEarnPlay;
+
+  /// No description provided for @storeEarnPlayReward.
+  ///
+  /// In en, this message translates to:
+  /// **'5 coins per game'**
+  String get storeEarnPlayReward;
+
+  /// No description provided for @storeEarnDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Login'**
+  String get storeEarnDaily;
+
+  /// No description provided for @storeEarnDailyReward.
+  ///
+  /// In en, this message translates to:
+  /// **'10-50 coins daily'**
+  String get storeEarnDailyReward;
+
+  /// No description provided for @storeEarnAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get storeEarnAchievements;
+
+  /// No description provided for @storeEarnAchievementsReward.
+  ///
+  /// In en, this message translates to:
+  /// **'25-100 coins'**
+  String get storeEarnAchievementsReward;
+
+  /// No description provided for @storeEarnTournaments.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournaments'**
+  String get storeEarnTournaments;
+
+  /// No description provided for @storeEarnTournamentsReward.
+  ///
+  /// In en, this message translates to:
+  /// **'100+ coins'**
+  String get storeEarnTournamentsReward;
+
+  /// No description provided for @storePopularBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'POPULAR'**
+  String get storePopularBadge;
+
+  /// No description provided for @storeBuyItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy {name}'**
+  String storeBuyItem(Object name);
+
+  /// No description provided for @storeBuyCoinsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase {coins} for {price}?'**
+  String storeBuyCoinsBody(Object coins, Object price);
+
+  /// No description provided for @storeBuyForPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy - {price}'**
+  String storeBuyForPrice(Object price);
+
+  /// No description provided for @storeInitiatingFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Initiating purchase for {name}...'**
+  String storeInitiatingFor(Object name);
+
+  /// No description provided for @storeProductNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Product not available. Please try again later.'**
+  String get storeProductNotAvailable;
+
+  /// No description provided for @storeUnlockedWithPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked with Pro'**
+  String get storeUnlockedWithPro;
+
+  /// No description provided for @storeIncludedWithPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Included with Snake Classic Pro'**
+  String get storeIncludedWithPro;
+
+  /// No description provided for @storeProBannerThemesOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Every theme here is yours with your subscription.'**
+  String get storeProBannerThemesOwned;
+
+  /// No description provided for @storeProBannerThemesUpsell.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to Pro to unlock every theme here — no separate purchase needed.'**
+  String get storeProBannerThemesUpsell;
+
+  /// No description provided for @storeProBannerSkinsOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Every skin here is yours with your subscription.'**
+  String get storeProBannerSkinsOwned;
+
+  /// No description provided for @storeProBannerSkinsUpsell.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to Pro to unlock every skin here — no separate purchase needed.'**
+  String get storeProBannerSkinsUpsell;
+
+  /// No description provided for @storeProBannerTrailsOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Every trail here is yours with your subscription.'**
+  String get storeProBannerTrailsOwned;
+
+  /// No description provided for @storeProBannerTrailsUpsell.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to Pro to unlock every trail here — no separate purchase needed.'**
+  String get storeProBannerTrailsUpsell;
+
+  /// No description provided for @storePremiumThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium themes'**
+  String get storePremiumThemes;
+
+  /// No description provided for @storeFreeThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'Free themes'**
+  String get storeFreeThemes;
+
+  /// No description provided for @storeFreeThemesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Always available — switch back any time.'**
+  String get storeFreeThemesSubtitle;
+
+  /// No description provided for @storeAllThemesBundle.
+  ///
+  /// In en, this message translates to:
+  /// **'All Themes Bundle'**
+  String get storeAllThemesBundle;
+
+  /// No description provided for @storeAllThemesBundleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All 6 premium themes · save 33%'**
+  String get storeAllThemesBundleSubtitle;
+
+  /// No description provided for @storePillVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'VERIFYING'**
+  String get storePillVerifying;
+
+  /// No description provided for @storePillOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'OWNED'**
+  String get storePillOwned;
+
+  /// No description provided for @storePillFree.
+  ///
+  /// In en, this message translates to:
+  /// **'FREE'**
+  String get storePillFree;
+
+  /// No description provided for @storePillActive.
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVE'**
+  String get storePillActive;
+
+  /// No description provided for @storePillApply.
+  ///
+  /// In en, this message translates to:
+  /// **'APPLY'**
+  String get storePillApply;
+
+  /// No description provided for @storePillEquipped.
+  ///
+  /// In en, this message translates to:
+  /// **'EQUIPPED'**
+  String get storePillEquipped;
+
+  /// No description provided for @storePillEquip.
+  ///
+  /// In en, this message translates to:
+  /// **'EQUIP'**
+  String get storePillEquip;
+
+  /// No description provided for @storeThemeDescClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'The original look'**
+  String get storeThemeDescClassic;
+
+  /// No description provided for @storeThemeDescModern.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean and minimal'**
+  String get storeThemeDescModern;
+
+  /// No description provided for @storeThemeDescNeon.
+  ///
+  /// In en, this message translates to:
+  /// **'Glowing neon nights'**
+  String get storeThemeDescNeon;
+
+  /// No description provided for @storeThemeDescRetro.
+  ///
+  /// In en, this message translates to:
+  /// **'80s neon arcade'**
+  String get storeThemeDescRetro;
+
+  /// No description provided for @storeThemeDescSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic starfield'**
+  String get storeThemeDescSpace;
+
+  /// No description provided for @storeThemeDescOcean.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep-sea blues'**
+  String get storeThemeDescOcean;
+
+  /// No description provided for @storeThemeDescCyberpunk.
+  ///
+  /// In en, this message translates to:
+  /// **'Electric cyan & pink'**
+  String get storeThemeDescCyberpunk;
+
+  /// No description provided for @storeThemeDescForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Vivid emerald jungle'**
+  String get storeThemeDescForest;
+
+  /// No description provided for @storeThemeDescDesert.
+  ///
+  /// In en, this message translates to:
+  /// **'Canyon + cactus teal'**
+  String get storeThemeDescDesert;
+
+  /// No description provided for @storeThemeDescCrystal.
+  ///
+  /// In en, this message translates to:
+  /// **'Icy crystalline blue'**
+  String get storeThemeDescCrystal;
+
+  /// No description provided for @storeUnlockFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock {name} for {price}?'**
+  String storeUnlockFor(Object name, Object price);
+
+  /// No description provided for @storeVerifyingPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying {name} purchase…'**
+  String storeVerifyingPurchase(Object name);
+
+  /// No description provided for @storeThemeNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme not available. Please try again later.'**
+  String get storeThemeNotAvailable;
+
+  /// No description provided for @storeItemNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Item not available. Please try again later.'**
+  String get storeItemNotAvailable;
+
+  /// No description provided for @storeEquippedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} equipped'**
+  String storeEquippedToast(Object name);
+
+  /// No description provided for @storeFreeSpeedBoostInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Free Speed Boost added to your inventory!'**
+  String get storeFreeSpeedBoostInventory;
+
+  /// No description provided for @storeWatchAdTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch an ad — free Speed Boost'**
+  String get storeWatchAdTitle;
+
+  /// No description provided for @storeWatchAdReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds 1 Speed Boost to your loadout'**
+  String get storeWatchAdReady;
+
+  /// No description provided for @storeWatchAdNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'No ad available right now'**
+  String get storeWatchAdNotReady;
+
+  /// No description provided for @puSpeedBoostDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Increases snake speed for 7 seconds.'**
+  String get puSpeedBoostDesc;
+
+  /// No description provided for @puInvincibilityDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass through walls and yourself for 6 seconds.'**
+  String get puInvincibilityDesc;
+
+  /// No description provided for @puScoreMultiplierDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Double points for 10 seconds.'**
+  String get puScoreMultiplierDesc;
+
+  /// No description provided for @puSlowMotionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Slows the game for precision (8 seconds).'**
+  String get puSlowMotionDesc;
+
+  /// No description provided for @storePowerUpsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy with coins, then arm one from the home screen loadout chip — it activates 5s into your next game.'**
+  String get storePowerUpsInfo;
+
+  /// No description provided for @storePowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-Ups'**
+  String get storePowerUps;
+
+  /// No description provided for @storePowerUpBundles.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-Up Bundles'**
+  String get storePowerUpBundles;
+
+  /// No description provided for @storeBundlesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock multiple power-up types at a discount.'**
+  String get storeBundlesSubtitle;
+
+  /// No description provided for @storeOwnedCountBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'x{count}'**
+  String storeOwnedCountBadge(Object count);
+
+  /// No description provided for @storeInsufficientCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient coins!'**
+  String get storeInsufficientCoins;
+
+  /// No description provided for @storeBuyPowerUpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy 1 {name} for {cost} coins?'**
+  String storeBuyPowerUpBody(Object cost, Object name);
+
+  /// No description provided for @storeBuyCostCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy - {cost} coins'**
+  String storeBuyCostCoins(Object cost);
+
+  /// No description provided for @storePurchaseFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed. Try again.'**
+  String get storePurchaseFailedRetry;
+
+  /// No description provided for @storeAddedToLoadout.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} added to your loadout!'**
+  String storeAddedToLoadout(Object name);
+
+  /// No description provided for @storeCoinsAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} coins'**
+  String storeCoinsAmount(Object count);
+
+  /// No description provided for @storeBuyUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'BUY'**
+  String get storeBuyUpper;
+
+  /// No description provided for @storeNeedCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'NEED COINS'**
+  String get storeNeedCoins;
+
+  /// No description provided for @storeBundleUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} unlocked!'**
+  String storeBundleUnlocked(Object name);
 }
 
 class _AppLocalizationsDelegate

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -101,8 +102,8 @@ class _StoreScreenState extends State<StoreScreen>
     // should quietly return the card to its "Buy" state.
     if (failed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Purchase failed. Please try again.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.storePurchaseFailed),
           backgroundColor: Colors.red,
         ),
       );
@@ -124,6 +125,7 @@ class _StoreScreenState extends State<StoreScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<PremiumCubit, PremiumState>(
       builder: (context, premiumState) {
         return BlocBuilder<ThemeCubit, ThemeState>(
@@ -135,9 +137,9 @@ class _StoreScreenState extends State<StoreScreen>
                   bottomNavigationBar: const SnakeBannerAd(),
                   extendBodyBehindAppBar: true,
                   appBar: AppBar(
-                    title: const Text(
-                      'Snake Store',
-                      style: TextStyle(
+                    title: Text(
+                      l10n.storeTitle,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
                       ),
@@ -168,27 +170,30 @@ class _StoreScreenState extends State<StoreScreen>
                           unselectedLabelColor:
                               theme.accentColor.withValues(alpha: 0.6),
                           isScrollable: true,
-                          tabs: const [
-                            Tab(text: 'Pro', icon: Icon(Icons.diamond, size: 16)),
+                          tabs: [
                             Tab(
-                              text: 'Coins',
-                              icon: Icon(Icons.monetization_on, size: 16),
+                              text: l10n.storeTabPro,
+                              icon: const Icon(Icons.diamond, size: 16),
                             ),
                             Tab(
-                              text: 'Themes',
-                              icon: Icon(Icons.color_lens, size: 16),
+                              text: l10n.storeTabCoins,
+                              icon: const Icon(Icons.monetization_on, size: 16),
                             ),
                             Tab(
-                              text: 'Skins',
-                              icon: Icon(Icons.pets, size: 16),
+                              text: l10n.storeTabThemes,
+                              icon: const Icon(Icons.color_lens, size: 16),
                             ),
                             Tab(
-                              text: 'Trails',
-                              icon: Icon(Icons.auto_awesome, size: 16),
+                              text: l10n.storeTabSkins,
+                              icon: const Icon(Icons.pets, size: 16),
                             ),
                             Tab(
-                              text: 'Power-Ups',
-                              icon: Icon(Icons.flash_on, size: 16),
+                              text: l10n.storeTabTrails,
+                              icon: const Icon(Icons.auto_awesome, size: 16),
+                            ),
+                            Tab(
+                              text: l10n.storeTabPowerUps,
+                              icon: const Icon(Icons.flash_on, size: 16),
                             ),
                           ],
                         ),
@@ -232,6 +237,7 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
 
   Widget _buildCoinsHeader(GameTheme theme, CoinsState coinsState) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: 16 + context.sideInset(maxWidth: 760),
@@ -290,7 +296,7 @@ class _StoreScreenState extends State<StoreScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Your Snake Coins',
+                    l10n.storeYourCoins,
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 14,
@@ -322,7 +328,7 @@ class _StoreScreenState extends State<StoreScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${coinsState.earningMultiplier}x BONUS',
+                  l10n.storeBonusMultiplier('${coinsState.earningMultiplier}'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -346,6 +352,7 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
 
   Widget _buildProTab(GameTheme theme, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
     // Drops any Pro SKU from the pending set once PremiumCubit reports
     // hasPremium=true — the spinner on the plan cards stops the moment the
     // backend's VerifyPurchase response lands.
@@ -379,7 +386,7 @@ class _StoreScreenState extends State<StoreScreen>
             _buildProFeatureGrid(theme),
             const SizedBox(height: 24),
             Text(
-              'Subscribe before your free Pro ends',
+              l10n.storeSubscribeBeforePromoEnds,
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 18,
@@ -392,10 +399,10 @@ class _StoreScreenState extends State<StoreScreen>
                 Expanded(
                   child: _buildProPlanCard(
                     theme: theme,
-                    title: 'Monthly',
+                    title: l10n.storeMonthly,
                     productId: ProductIds.snakeClassicProMonthly,
                     fallbackPrice: 4.99,
-                    cadence: '/month',
+                    cadence: l10n.storePerMonth,
                     savingsLabel: null,
                     highlight: false,
                   ),
@@ -404,11 +411,11 @@ class _StoreScreenState extends State<StoreScreen>
                 Expanded(
                   child: _buildProPlanCard(
                     theme: theme,
-                    title: 'Yearly',
+                    title: l10n.storeYearly,
                     productId: ProductIds.snakeClassicProYearly,
                     fallbackPrice: 49.99,
-                    cadence: '/year',
-                    savingsLabel: 'Save 17%',
+                    cadence: l10n.storePerYear,
+                    savingsLabel: l10n.storeSave17,
                     highlight: true,
                   ),
                 ),
@@ -429,7 +436,7 @@ class _StoreScreenState extends State<StoreScreen>
           _buildProHero(theme),
           const SizedBox(height: 20),
           Text(
-            'Choose your plan',
+            l10n.storeChooseYourPlan,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 18,
@@ -442,10 +449,10 @@ class _StoreScreenState extends State<StoreScreen>
               Expanded(
                 child: _buildProPlanCard(
                   theme: theme,
-                  title: 'Monthly',
+                  title: l10n.storeMonthly,
                   productId: ProductIds.snakeClassicProMonthly,
                   fallbackPrice: 4.99,
-                  cadence: '/month',
+                  cadence: l10n.storePerMonth,
                   savingsLabel: null,
                   highlight: false,
                 ),
@@ -454,11 +461,11 @@ class _StoreScreenState extends State<StoreScreen>
               Expanded(
                 child: _buildProPlanCard(
                   theme: theme,
-                  title: 'Yearly',
+                  title: l10n.storeYearly,
                   productId: ProductIds.snakeClassicProYearly,
                   fallbackPrice: 49.99,
-                  cadence: '/year',
-                  savingsLabel: 'Save 17%',
+                  cadence: l10n.storePerYear,
+                  savingsLabel: l10n.storeSave17,
                   highlight: true,
                 ),
               ),
@@ -466,7 +473,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 24),
           Text(
-            "What you get",
+            l10n.storeWhatYouGet,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 18,
@@ -483,6 +490,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildProHero(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -523,7 +531,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 14),
           Text(
-            'Snake Classic Pro',
+            l10n.settingsProTitle,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 22,
@@ -532,8 +540,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            'All premium themes, skins & trails · big boards · 2× coins · '
-            'premium power-ups · tournament entries · Battle Pass Premium',
+            l10n.storeProHeroSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.75),
@@ -554,6 +561,7 @@ class _StoreScreenState extends State<StoreScreen>
     required String? savingsLabel,
     required bool highlight,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     final price =
         PurchaseService().getStorePriceOrDefault(productId, fallbackPrice);
     final isPending = _pendingProductIds.contains(productId);
@@ -570,7 +578,8 @@ class _StoreScreenState extends State<StoreScreen>
     return GestureDetector(
       onTap: anyProPending
           ? null
-          : () => _purchaseSubscription(productId, '$title plan'),
+          : () => _purchaseSubscription(
+              productId, l10n.storePlanDisplayName(title)),
       child: Container(
         padding: EdgeInsets.all(context.scaled(16)),
         decoration: BoxDecoration(
@@ -644,7 +653,8 @@ class _StoreScreenState extends State<StoreScreen>
               child: ElevatedButton(
                 onPressed: anyProPending
                     ? null
-                    : () => _purchaseSubscription(productId, '$title plan'),
+                    : () => _purchaseSubscription(
+                        productId, l10n.storePlanDisplayName(title)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: highlight
                       ? Colors.amber
@@ -679,16 +689,16 @@ class _StoreScreenState extends State<StoreScreen>
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            'Verifying…',
-                            style: TextStyle(
+                          Text(
+                            l10n.storeVerifyingEllipsis,
+                            style: const TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ],
                       )
-                    : const Text(
-                        'Subscribe',
-                        style: TextStyle(
+                    : Text(
+                        l10n.storeSubscribe,
+                        style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13),
                       ),
               ),
@@ -700,6 +710,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildProActiveBanner(GameTheme theme, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
     // Promo grants (welcome bonus / app-wide giveaway) get amber-orange
     // theming + a FREE PRO chip + a convert CTA so the user knows this is a
     // limited window and there's an action they can take. Paid Pro keeps
@@ -724,10 +735,10 @@ class _StoreScreenState extends State<StoreScreen>
         ? const LinearGradient(colors: [Colors.amber, Colors.orange])
         : const LinearGradient(colors: [Colors.green, Colors.teal]);
     final icon = isPromo ? Icons.card_giftcard : Icons.verified;
-    final title = isPromo ? "You're on free Pro!" : "You're Pro!";
+    final title = isPromo ? l10n.storeYoureOnFreePro : l10n.storeYourePro;
     final expiryLabel = isPromo
-        ? (expiry != null ? _formatPromoCountdown(expiry) : 'Free Pro')
-        : (expiry != null ? 'Renews ${_formatDate(expiry)}' : null);
+        ? (expiry != null ? _formatPromoCountdown(expiry) : l10n.storeFreePro)
+        : (expiry != null ? l10n.settingsRenews(_formatDate(expiry)) : null);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -806,13 +817,14 @@ class _StoreScreenState extends State<StoreScreen>
                   // keep the path consistent with the Subscribe button.
                   _purchaseSubscription(
                     ProductIds.snakeClassicProMonthly,
-                    'Pro Monthly',
+                    l10n.storeProMonthly,
                   );
                 },
                 icon: const Icon(Icons.workspace_premium, size: 18),
-                label: const Text(
-                  'Keep Pro — Subscribe',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                label: Text(
+                  l10n.storeKeepPro,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.amber.shade700,
@@ -846,9 +858,9 @@ class _StoreScreenState extends State<StoreScreen>
           ),
         ],
       ),
-      child: const Text(
-        'PROMO',
-        style: TextStyle(
+      child: Text(
+        AppLocalizations.of(context)!.storePromoBadge,
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 10,
           fontWeight: FontWeight.w900,
@@ -862,16 +874,17 @@ class _StoreScreenState extends State<StoreScreen>
   /// 14h 20m" / "Ends in 32m" / "Ending soon". Negative durations
   /// (race between sync + revoke job) fall back to "Ending soon".
   String _formatPromoCountdown(DateTime expiry) {
+    final l10n = AppLocalizations.of(context)!;
     final remaining = expiry.difference(DateTime.now());
     if (remaining.isNegative || remaining.inMinutes <= 0) {
-      return 'Ending soon';
+      return l10n.storeEndingSoon;
     }
     final days = remaining.inDays;
     final hours = remaining.inHours.remainder(24);
     final minutes = remaining.inMinutes.remainder(60);
-    if (days > 0) return 'Ends in ${days}d ${hours}h';
-    if (hours > 0) return 'Ends in ${hours}h ${minutes}m';
-    return 'Ends in ${minutes}m';
+    if (days > 0) return l10n.storeEndsInDh(days, hours);
+    if (hours > 0) return l10n.storeEndsInHm(hours, minutes);
+    return l10n.storeEndsInM(minutes);
   }
 
   Widget _buildProFeatureGrid(GameTheme theme) {
@@ -882,17 +895,18 @@ class _StoreScreenState extends State<StoreScreen>
     // as unimplemented.)
     // (icon, label, highlight). The always-free revive is highlighted in amber
     // so it stands out as the headline Pro perk.
-    final features = const [
-      (Icons.favorite, 'Always-free extra life — revive every game, no ad, no coins', true),
-      (Icons.block, 'No ads — play completely ad-free', false),
-      (Icons.color_lens, 'All 6 premium themes', false),
-      (Icons.pets, 'All 11 premium snake skins', false),
-      (Icons.gradient, 'All 11 premium trail effects', false),
-      (Icons.grid_4x4, 'Premium board sizes (35×35, 40×40, 50×50)', false),
-      (Icons.monetization_on, '2× coin earnings', false),
-      (Icons.flash_on, '5× premium power-ups every cycle', false),
-      (Icons.emoji_events, 'Bronze + Silver + Gold tournament entries each cycle', false),
-      (Icons.workspace_premium, 'Battle Pass Premium track every season', false),
+    final l10n = AppLocalizations.of(context)!;
+    final features = [
+      (Icons.favorite, l10n.storeFeatureExtraLife, true),
+      (Icons.block, l10n.storeFeatureNoAds, false),
+      (Icons.color_lens, l10n.storeFeatureThemes, false),
+      (Icons.pets, l10n.storeFeatureSkins, false),
+      (Icons.gradient, l10n.storeFeatureTrails, false),
+      (Icons.grid_4x4, l10n.storeFeatureBoards, false),
+      (Icons.monetization_on, l10n.storeFeatureCoins, false),
+      (Icons.flash_on, l10n.storeFeaturePowerUps, false),
+      (Icons.emoji_events, l10n.storeFeatureTournaments, false),
+      (Icons.workspace_premium, l10n.storeFeatureBattlePass, false),
     ];
     return Column(
       children: features
@@ -966,6 +980,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Future<void> _purchaseSubscription(String productId, String displayName) async {
+    final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -980,7 +995,7 @@ class _StoreScreenState extends State<StoreScreen>
       if (mounted) {
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text('Initiating $displayName purchase...'),
+            content: Text(l10n.storeInitiatingPurchase(displayName)),
             backgroundColor: Colors.blue,
           ),
         );
@@ -991,9 +1006,8 @@ class _StoreScreenState extends State<StoreScreen>
       if (mounted) {
         setState(() => _pendingProductIds.remove(productId));
         scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content:
-                Text('Subscription not available. Please try again later.'),
+          SnackBar(
+            content: Text(l10n.storeSubNotAvailable),
             backgroundColor: Colors.red,
           ),
         );
@@ -1006,13 +1020,14 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
 
   Widget _buildCoinsTab(GameTheme theme, CoinsState coinsState) {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Buy Snake Coins',
+            l10n.storeBuyCoins,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 20,
@@ -1025,7 +1040,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 24),
           Text(
-            'Earn Free Coins',
+            l10n.storeEarnFreeCoins,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 20,
@@ -1036,26 +1051,26 @@ class _StoreScreenState extends State<StoreScreen>
           // Rewarded ad — self-hides for Pro / when no ad is available.
           RewardedCoinsButton(theme: theme),
           _buildEarnMethodCard(
-            'Play a Game',
-            '5 coins per game',
+            l10n.storeEarnPlay,
+            l10n.storeEarnPlayReward,
             Icons.games,
             theme,
           ),
           _buildEarnMethodCard(
-            'Daily Login',
-            '10-50 coins daily',
+            l10n.storeEarnDaily,
+            l10n.storeEarnDailyReward,
             Icons.calendar_today,
             theme,
           ),
           _buildEarnMethodCard(
-            'Achievements',
-            '25-100 coins',
+            l10n.storeEarnAchievements,
+            l10n.storeEarnAchievementsReward,
             Icons.emoji_events,
             theme,
           ),
           _buildEarnMethodCard(
-            'Tournaments',
-            '100+ coins',
+            l10n.storeEarnTournaments,
+            l10n.storeEarnTournamentsReward,
             Icons.leaderboard,
             theme,
           ),
@@ -1066,6 +1081,7 @@ class _StoreScreenState extends State<StoreScreen>
 
   Future<void> _purchaseCoinPack(
       CoinPurchaseOption option, GameTheme theme) async {
+    final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final price = PurchaseService().getStorePriceOrDefault(
@@ -1073,12 +1089,12 @@ class _StoreScreenState extends State<StoreScreen>
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Buy ${option.name}'),
-        content: Text('Purchase ${option.displayCoins} for $price?'),
+        title: Text(l10n.storeBuyItem(option.name)),
+        content: Text(l10n.storeBuyCoinsBody(option.displayCoins, price)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1091,8 +1107,7 @@ class _StoreScreenState extends State<StoreScreen>
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
-                      content:
-                          Text('Initiating purchase for ${option.name}...'),
+                      content: Text(l10n.storeInitiatingFor(option.name)),
                       backgroundColor: theme.accentColor,
                     ),
                   );
@@ -1100,16 +1115,15 @@ class _StoreScreenState extends State<StoreScreen>
               } catch (e) {
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'Product not available. Please try again later.'),
+                    SnackBar(
+                      content: Text(l10n.storeProductNotAvailable),
                       backgroundColor: Colors.red,
                     ),
                   );
                 }
               }
             },
-            child: Text('Buy - $price'),
+            child: Text(l10n.storeBuyForPrice(price)),
           ),
         ],
       ),
@@ -1182,9 +1196,9 @@ class _StoreScreenState extends State<StoreScreen>
                             color: Colors.red,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            'POPULAR',
-                            style: TextStyle(
+                          child: Text(
+                            AppLocalizations.of(context)!.storePopularBadge,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -1281,9 +1295,11 @@ class _StoreScreenState extends State<StoreScreen>
   /// Pro doesn't unlock the power-up catalog.
   Widget _buildProIncludedBanner(
     GameTheme theme,
-    PremiumState premiumState,
-    String itemNoun,
-  ) {
+    PremiumState premiumState, {
+    required String ownedBody,
+    required String upsellBody,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
     final isPro = premiumState.hasPremium;
     return GestureDetector(
       onTap: isPro ? null : () => _tabController.animateTo(0),
@@ -1313,8 +1329,8 @@ class _StoreScreenState extends State<StoreScreen>
                 children: [
                   Text(
                     isPro
-                        ? 'Unlocked with Pro'
-                        : 'Included with Snake Classic Pro',
+                        ? l10n.storeUnlockedWithPro
+                        : l10n.storeIncludedWithPro,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -1323,9 +1339,7 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    isPro
-                        ? 'Every $itemNoun here is yours with your subscription.'
-                        : 'Subscribe to Pro to unlock every $itemNoun here — no separate purchase needed.',
+                    isPro ? ownedBody : upsellBody,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 12,
@@ -1346,6 +1360,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildThemesTab(GameTheme theme, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
     // Premium themes — listed as products in the Play Store catalog.
     const premiumThemes = [
       GameTheme.crystal,
@@ -1375,12 +1390,17 @@ class _StoreScreenState extends State<StoreScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProIncludedBanner(theme, premiumState, 'theme'),
+          _buildProIncludedBanner(
+            theme,
+            premiumState,
+            ownedBody: l10n.storeProBannerThemesOwned,
+            upsellBody: l10n.storeProBannerThemesUpsell,
+          ),
           const SizedBox(height: 16),
           _buildThemesBundleCard(theme, premiumState),
           const SizedBox(height: 20),
           Text(
-            'Premium themes',
+            l10n.storePremiumThemes,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 18,
@@ -1399,7 +1419,7 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           const SizedBox(height: 18),
           Text(
-            'Free themes',
+            l10n.storeFreeThemes,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 18,
@@ -1408,7 +1428,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(height: 2),
           Text(
-            'Always available — switch back any time.',
+            l10n.storeFreeThemesSubtitle,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.65),
               fontSize: 12,
@@ -1479,6 +1499,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildThemesBundleCard(GameTheme theme, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
     final bundleOwned = premiumState.isBundleOwned('premium_themes_bundle');
     final isPending = _pendingProductIds.contains(ProductIds.themesBundle);
     final price = PurchaseService().getStorePriceOrDefault(
@@ -1490,7 +1511,7 @@ class _StoreScreenState extends State<StoreScreen>
           ? null
           : () => _purchaseThemeProduct(
                 ProductIds.themesBundle,
-                'All Themes Bundle',
+                l10n.storeAllThemesBundle,
               ),
       child: Container(
         width: double.infinity,
@@ -1527,7 +1548,7 @@ class _StoreScreenState extends State<StoreScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'All Themes Bundle',
+                    l10n.storeAllThemesBundle,
                     style: TextStyle(
                       color: theme.accentColor,
                       fontSize: 16,
@@ -1536,7 +1557,7 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'All 6 premium themes · save 33%',
+                    l10n.storeAllThemesBundleSubtitle,
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.7),
                       fontSize: 12,
@@ -1561,6 +1582,7 @@ class _StoreScreenState extends State<StoreScreen>
     required bool isPending,
     required String priceLabel,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     if (isPending) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1568,10 +1590,10 @@ class _StoreScreenState extends State<StoreScreen>
           color: Colors.blueGrey,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
+            const SizedBox(
               width: 12,
               height: 12,
               child: CircularProgressIndicator(
@@ -1579,10 +1601,10 @@ class _StoreScreenState extends State<StoreScreen>
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ),
-            SizedBox(width: 6),
+            const SizedBox(width: 6),
             Text(
-              'VERIFYING',
-              style: TextStyle(
+              l10n.storePillVerifying,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
@@ -1599,7 +1621,7 @@ class _StoreScreenState extends State<StoreScreen>
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        isOwned ? 'OWNED' : priceLabel,
+        isOwned ? l10n.storePillOwned : priceLabel,
         style: TextStyle(
           color: isOwned ? Colors.white : Colors.black,
           fontSize: 13,
@@ -1620,7 +1642,7 @@ class _StoreScreenState extends State<StoreScreen>
     final isPending =
         productId != null && _pendingProductIds.contains(productId);
     final price = productId == null
-        ? 'FREE'
+        ? AppLocalizations.of(context)!.storePillFree
         : PurchaseService().getStorePriceOrDefault(productId, 1.99);
     return GestureDetector(
       onTap: isPending
@@ -1702,27 +1724,28 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   String _shortThemeDescription(GameTheme target) {
+    final l10n = AppLocalizations.of(context)!;
     switch (target) {
       case GameTheme.classic:
-        return 'The original look';
+        return l10n.storeThemeDescClassic;
       case GameTheme.modern:
-        return 'Clean and minimal';
+        return l10n.storeThemeDescModern;
       case GameTheme.neon:
-        return 'Glowing neon nights';
+        return l10n.storeThemeDescNeon;
       case GameTheme.retro:
-        return '80s neon arcade';
+        return l10n.storeThemeDescRetro;
       case GameTheme.space:
-        return 'Cosmic starfield';
+        return l10n.storeThemeDescSpace;
       case GameTheme.ocean:
-        return 'Deep-sea blues';
+        return l10n.storeThemeDescOcean;
       case GameTheme.cyberpunk:
-        return 'Electric cyan & pink';
+        return l10n.storeThemeDescCyberpunk;
       case GameTheme.forest:
-        return 'Vivid emerald jungle';
+        return l10n.storeThemeDescForest;
       case GameTheme.desert:
-        return 'Canyon + cactus teal';
+        return l10n.storeThemeDescDesert;
       case GameTheme.crystal:
-        return 'Icy crystalline blue';
+        return l10n.storeThemeDescCrystal;
     }
   }
 
@@ -1736,6 +1759,7 @@ class _StoreScreenState extends State<StoreScreen>
     required bool isPending,
     required String fallbackPriceLabel,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     final Color background;
     final Color foreground;
     Widget child;
@@ -1755,7 +1779,7 @@ class _StoreScreenState extends State<StoreScreen>
           ),
           const SizedBox(width: 6),
           Text(
-            'VERIFYING',
+            l10n.storePillVerifying,
             style: TextStyle(
               color: foreground,
               fontSize: 11,
@@ -1768,7 +1792,7 @@ class _StoreScreenState extends State<StoreScreen>
       background = currentTheme.accentColor;
       foreground = currentTheme.backgroundColor;
       child = Text(
-        'ACTIVE',
+        l10n.storePillActive,
         style: TextStyle(
           color: foreground,
           fontSize: 11,
@@ -1779,7 +1803,7 @@ class _StoreScreenState extends State<StoreScreen>
       background = Colors.green;
       foreground = Colors.white;
       child = Text(
-        'APPLY',
+        l10n.storePillApply,
         style: TextStyle(
           color: foreground,
           fontSize: 11,
@@ -1829,6 +1853,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Future<void> _purchaseThemeProduct(String productId, String displayName) async {
+    final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -1849,17 +1874,17 @@ class _StoreScreenState extends State<StoreScreen>
           ],
         ),
         content: Text(
-          'Unlock $displayName for $price?',
+          l10n.storeUnlockFor(displayName, price),
           style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text('Buy - $price'),
+            child: Text(l10n.storeBuyForPrice(price)),
           ),
         ],
       ),
@@ -1873,15 +1898,15 @@ class _StoreScreenState extends State<StoreScreen>
       _markPending(productId);
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text('Verifying $displayName purchase…'),
+          content: Text(l10n.storeVerifyingPurchase(displayName)),
           backgroundColor: Colors.blue,
         ),
       );
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content: Text('Theme not available. Please try again later.'),
+          SnackBar(
+            content: Text(l10n.storeThemeNotAvailable),
             backgroundColor: Colors.red,
           ),
         );
@@ -1908,12 +1933,18 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
 
   Widget _buildSkinsTab(GameTheme theme, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
     _reconcilePendingPurchases(premiumState);
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: _buildProIncludedBanner(theme, premiumState, 'skin'),
+          child: _buildProIncludedBanner(
+            theme,
+            premiumState,
+            ownedBody: l10n.storeProBannerSkinsOwned,
+            upsellBody: l10n.storeProBannerSkinsUpsell,
+          ),
         ),
         Expanded(
           child: GridView.builder(
@@ -1943,14 +1974,14 @@ class _StoreScreenState extends State<StoreScreen>
           price: skin.isPremium
               ? PurchaseService()
                   .getStorePriceOrDefault(productId, skin.price)
-              : 'FREE',
+              : l10n.storePillFree,
           theme: theme,
           onTap: () {
             if (isUnlocked) {
               context.read<PremiumCubit>().selectSkin(skin.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('${skin.displayName} equipped'),
+                  content: Text(l10n.storeEquippedToast(skin.displayName)),
                   backgroundColor: Colors.green,
                   duration: const Duration(seconds: 1),
                 ),
@@ -2070,13 +2101,13 @@ class _StoreScreenState extends State<StoreScreen>
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.lock,
+                            children: [
+                              const Icon(Icons.lock,
                                   color: Colors.white, size: 11),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
-                                'PRO',
-                                style: TextStyle(
+                                AppLocalizations.of(context)!.settingsProBadge,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
@@ -2141,12 +2172,18 @@ class _StoreScreenState extends State<StoreScreen>
   // ===========================================================================
 
   Widget _buildTrailsTab(GameTheme theme, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
     _reconcilePendingPurchases(premiumState);
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: _buildProIncludedBanner(theme, premiumState, 'trail'),
+          child: _buildProIncludedBanner(
+            theme,
+            premiumState,
+            ownedBody: l10n.storeProBannerTrailsOwned,
+            upsellBody: l10n.storeProBannerTrailsUpsell,
+          ),
         ),
         Expanded(
           child: GridView.builder(
@@ -2176,14 +2213,14 @@ class _StoreScreenState extends State<StoreScreen>
           price: trail.isPremium
               ? PurchaseService()
                   .getStorePriceOrDefault(productId, trail.price)
-              : 'FREE',
+              : l10n.storePillFree,
           theme: theme,
           onTap: () {
             if (isUnlocked) {
               context.read<PremiumCubit>().selectTrail(trail.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('${trail.displayName} equipped'),
+                  content: Text(l10n.storeEquippedToast(trail.displayName)),
                   backgroundColor: Colors.green,
                   duration: const Duration(seconds: 1),
                 ),
@@ -2313,13 +2350,13 @@ class _StoreScreenState extends State<StoreScreen>
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.lock,
+                            children: [
+                              const Icon(Icons.lock,
                                   color: Colors.white, size: 11),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
-                                'PRO',
-                                style: TextStyle(
+                                AppLocalizations.of(context)!.settingsProBadge,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
@@ -2387,6 +2424,7 @@ class _StoreScreenState extends State<StoreScreen>
     required bool isPending,
     required String priceLabel,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     if (isPending) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -2394,10 +2432,10 @@ class _StoreScreenState extends State<StoreScreen>
           color: Colors.blueGrey,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
+            const SizedBox(
               width: 9,
               height: 9,
               child: CircularProgressIndicator(
@@ -2405,10 +2443,10 @@ class _StoreScreenState extends State<StoreScreen>
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ),
-            SizedBox(width: 4),
+            const SizedBox(width: 4),
             Text(
-              'VERIFYING',
-              style: TextStyle(
+              l10n.storePillVerifying,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
@@ -2430,9 +2468,9 @@ class _StoreScreenState extends State<StoreScreen>
       ),
       child: Text(
         isSelected
-            ? 'EQUIPPED'
+            ? l10n.storePillEquipped
             : isUnlocked
-                ? 'EQUIP'
+                ? l10n.storePillEquip
                 : priceLabel,
         style: TextStyle(
           color: isSelected
@@ -2452,6 +2490,7 @@ class _StoreScreenState extends State<StoreScreen>
     required String displayName,
     required double fallbackPrice,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -2473,17 +2512,17 @@ class _StoreScreenState extends State<StoreScreen>
           ],
         ),
         content: Text(
-          'Unlock $displayName for $price?',
+          l10n.storeUnlockFor(displayName, price),
           style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text('Buy - $price'),
+            child: Text(l10n.storeBuyForPrice(price)),
           ),
         ],
       ),
@@ -2497,15 +2536,15 @@ class _StoreScreenState extends State<StoreScreen>
       _markPending(productId);
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text('Verifying $displayName purchase…'),
+          content: Text(l10n.storeVerifyingPurchase(displayName)),
           backgroundColor: Colors.blue,
         ),
       );
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content: Text('Item not available. Please try again later.'),
+          SnackBar(
+            content: Text(l10n.storeItemNotAvailable),
             backgroundColor: Colors.red,
           ),
         );
@@ -2526,6 +2565,7 @@ class _StoreScreenState extends State<StoreScreen>
   /// Rewarded-ad card granting one free Speed Boost. Self-hides for Pro /
   /// web / when the SDK isn't ready; disables when no ad is loaded.
   Widget _buildFreePowerUpAdCard(BuildContext context, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
     // Opt-in placement, uncapped by design (the daily caps were removed) —
@@ -2546,7 +2586,7 @@ class _StoreScreenState extends State<StoreScreen>
                     powerUps.grantFreePowerUp();
                     showRewardToast(
                       messenger,
-                      '🎉 Free Speed Boost added to your inventory!',
+                      l10n.storeFreeSpeedBoostInventory,
                       icon: Icons.flash_on,
                     );
                   },
@@ -2574,7 +2614,7 @@ class _StoreScreenState extends State<StoreScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Watch an ad — free Speed Boost',
+                      l10n.storeWatchAdTitle,
                       style: TextStyle(
                         color: theme.accentColor,
                         fontWeight: FontWeight.w800,
@@ -2583,9 +2623,7 @@ class _StoreScreenState extends State<StoreScreen>
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      ready
-                          ? 'Adds 1 Speed Boost to your loadout'
-                          : 'No ad available right now',
+                      ready ? l10n.storeWatchAdReady : l10n.storeWatchAdNotReady,
                       style: TextStyle(
                         color: theme.accentColor.withValues(alpha: 0.65),
                         fontSize: 12,
@@ -2609,38 +2647,39 @@ class _StoreScreenState extends State<StoreScreen>
     PremiumState premiumState,
     CoinsState coinsState,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     // Power-up types use snake_case to match the JSON dictionary keys
     // returned by the backend (ASP.NET applies DictionaryKeyPolicy =
     // SnakeCaseLower to outgoing dicts). Mapping back to PowerUpType for
     // activation lives in the game cubit (next commit).
     // Coin costs MUST match PurchasePowerUpWithCoinsCommandHandler.AllowedCosts
     // on the backend — server rejects request.CoinCost mismatches outright.
-    final powerUps = const [
+    final powerUps = [
       _PowerUpCatalogItem(
         type: 'speed_boost',
-        name: 'Speed Boost',
-        description: 'Increases snake speed for 7 seconds.',
+        name: l10n.puSpeedBoost,
+        description: l10n.puSpeedBoostDesc,
         icon: Icons.speed,
         coinCost: 500,
       ),
       _PowerUpCatalogItem(
         type: 'invincibility',
-        name: 'Invincibility',
-        description: 'Pass through walls and yourself for 6 seconds.',
+        name: l10n.puInvincibility,
+        description: l10n.puInvincibilityDesc,
         icon: Icons.shield,
         coinCost: 1000,
       ),
       _PowerUpCatalogItem(
         type: 'score_multiplier',
-        name: 'Score Multiplier',
-        description: 'Double points for 10 seconds.',
+        name: l10n.puScoreMultiplier,
+        description: l10n.puScoreMultiplierDesc,
         icon: Icons.star,
         coinCost: 750,
       ),
       _PowerUpCatalogItem(
         type: 'slow_motion',
-        name: 'Slow Motion',
-        description: 'Slows the game for precision (8 seconds).',
+        name: l10n.puSlowMotion,
+        description: l10n.puSlowMotionDesc,
         icon: Icons.slow_motion_video,
         coinCost: 500,
       ),
@@ -2669,8 +2708,7 @@ class _StoreScreenState extends State<StoreScreen>
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Buy with coins, then arm one from the home screen '
-                        'loadout chip — it activates 5s into your next game.',
+                        l10n.storePowerUpsInfo,
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.85),
                           fontSize: 12,
@@ -2685,7 +2723,7 @@ class _StoreScreenState extends State<StoreScreen>
               // Rewarded ad — free Speed Boost. Self-hides for Pro / no ad.
               _buildFreePowerUpAdCard(context, theme),
               Text(
-                'Power-Ups',
+                l10n.storePowerUps,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 18,
@@ -2698,7 +2736,7 @@ class _StoreScreenState extends State<StoreScreen>
               ),
               const SizedBox(height: 24),
               Text(
-                'Power-Up Bundles',
+                l10n.storePowerUpBundles,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 18,
@@ -2707,7 +2745,7 @@ class _StoreScreenState extends State<StoreScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                'Unlock multiple power-up types at a discount.',
+                l10n.storeBundlesSubtitle,
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.7),
                   fontSize: 12,
@@ -2771,7 +2809,7 @@ class _StoreScreenState extends State<StoreScreen>
                       border: Border.all(color: Colors.white, width: 1.5),
                     ),
                     child: Text(
-                      'x$owned',
+                      AppLocalizations.of(context)!.storeOwnedCountBadge(owned),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -2841,6 +2879,7 @@ class _StoreScreenState extends State<StoreScreen>
 
   Future<void> _purchasePowerUpWithCoins(
       _PowerUpCatalogItem item, GameTheme theme) async {
+    final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -2849,8 +2888,8 @@ class _StoreScreenState extends State<StoreScreen>
     final coinsBalance = coinsCubit.state.balance.total;
     if (coinsBalance < item.coinCost) {
       scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Insufficient coins!'),
+        SnackBar(
+          content: Text(l10n.storeInsufficientCoins),
           backgroundColor: Colors.red,
         ),
       );
@@ -2872,17 +2911,17 @@ class _StoreScreenState extends State<StoreScreen>
           ],
         ),
         content: Text(
-          'Buy 1 ${item.name} for ${item.coinCost} coins?',
+          l10n.storeBuyPowerUpBody(item.coinCost, item.name),
           style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text('Buy - ${item.coinCost} coins'),
+            child: Text(l10n.storeBuyCostCoins(item.coinCost)),
           ),
         ],
       ),
@@ -2894,8 +2933,8 @@ class _StoreScreenState extends State<StoreScreen>
     if (!mounted) return;
     if (newBalance == null) {
       scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Purchase failed. Try again.'),
+        SnackBar(
+          content: Text(l10n.storePurchaseFailedRetry),
           backgroundColor: Colors.red,
         ),
       );
@@ -2906,7 +2945,7 @@ class _StoreScreenState extends State<StoreScreen>
     await coinsCubit.setServerBalance(newBalance);
     scaffoldMessenger.showSnackBar(
       SnackBar(
-        content: Text('${item.name} added to your loadout!'),
+        content: Text(l10n.storeAddedToLoadout(item.name)),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
@@ -2919,6 +2958,7 @@ class _StoreScreenState extends State<StoreScreen>
     PremiumState premiumState,
     CoinsState coinsState,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final isOwned = premiumState.isBundleOwned(bundle.id);
     final canAfford = coinsState.balance.total >= bundle.bundlePrice;
     return Container(
@@ -3013,7 +3053,7 @@ class _StoreScreenState extends State<StoreScreen>
             children: [
               if (bundle.originalPrice > bundle.bundlePrice)
                 Text(
-                  '${bundle.originalPrice.toInt()} coins',
+                  l10n.storeCoinsAmount(bundle.originalPrice.toInt()),
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.5),
                     fontSize: 12,
@@ -3022,7 +3062,7 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
               const SizedBox(width: 8),
               Text(
-                '${bundle.bundlePrice.toInt()} coins',
+                l10n.storeCoinsAmount(bundle.bundlePrice.toInt()),
                 style: const TextStyle(
                   color: Colors.amber,
                   fontSize: 16,
@@ -3050,10 +3090,10 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                 ),
                 child: Text(isOwned
-                    ? 'OWNED'
+                    ? l10n.storePillOwned
                     : canAfford
-                        ? 'BUY'
-                        : 'NEED COINS'),
+                        ? l10n.storeBuyUpper
+                        : l10n.storeNeedCoins),
               ),
             ],
           ),
@@ -3063,13 +3103,14 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Future<void> _purchaseCoinBundle(PowerUpBundle bundle, bool canAfford) async {
+    final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     if (!canAfford) {
       scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Insufficient coins!'),
+        SnackBar(
+          content: Text(l10n.storeInsufficientCoins),
           backgroundColor: Colors.red,
         ),
       );
@@ -3084,8 +3125,8 @@ class _StoreScreenState extends State<StoreScreen>
     if (!mounted) return;
     if (newBalance == null) {
       scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Purchase failed. Try again.'),
+        SnackBar(
+          content: Text(l10n.storePurchaseFailedRetry),
           backgroundColor: Colors.red,
         ),
       );
@@ -3099,7 +3140,7 @@ class _StoreScreenState extends State<StoreScreen>
     if (!mounted) return;
     scaffoldMessenger.showSnackBar(
       SnackBar(
-        content: Text('${bundle.name} unlocked!'),
+        content: Text(l10n.storeBundleUnlocked(bundle.name)),
         backgroundColor: Colors.green,
       ),
     );
