@@ -1777,4 +1777,554 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get stInsightSolid =>
       'Mantienes un rendimiento sólido en las partidas recientes.';
+
+  @override
+  String get frTitle => 'Amigos';
+
+  @override
+  String get frBlockedUsers => 'Usuarios bloqueados';
+
+  @override
+  String get frSearchHint => 'Buscar por nombre o correo...';
+
+  @override
+  String get frSearching => 'Buscando...';
+
+  @override
+  String get frSearchTitle => 'Buscar amigos';
+
+  @override
+  String get frSearchSubtitle =>
+      'Escribe un nombre o correo para encontrar amigos';
+
+  @override
+  String get frNoUsersFound => 'No se encontraron usuarios';
+
+  @override
+  String get frNoUsersFoundSub => 'Prueba con otro nombre o correo';
+
+  @override
+  String get frRequests => 'Solicitudes';
+
+  @override
+  String get frSearch => 'Buscar';
+
+  @override
+  String get frNoCacheYet => 'Aún sin caché';
+
+  @override
+  String frUpdatedAgo(Object ago) {
+    return 'Actualizado $ago';
+  }
+
+  @override
+  String frRefreshFailed(Object base) {
+    return '$base · error al actualizar, toca para reintentar';
+  }
+
+  @override
+  String get frJustNow => 'justo ahora';
+
+  @override
+  String frSecondsAgo(Object count) {
+    return 'hace ${count}s';
+  }
+
+  @override
+  String frMinutesAgo(Object count) {
+    return 'hace ${count}min';
+  }
+
+  @override
+  String frHoursAgo(Object count) {
+    return 'hace ${count}h';
+  }
+
+  @override
+  String frDaysAgo(Object count) {
+    return 'hace ${count}d';
+  }
+
+  @override
+  String get frLoadingFriends => 'Cargando amigos...';
+
+  @override
+  String get frNoFriendsYet => 'Aún sin amigos';
+
+  @override
+  String get frNoFriendsSub => '¡Busca usuarios para añadirlos como amigos!';
+
+  @override
+  String get frNoRequests => 'Sin solicitudes de amistad';
+
+  @override
+  String get frNoRequestsSub => 'Las solicitudes de amistad aparecerán aquí';
+
+  @override
+  String get frChallengeMenu => 'Desafiar a una partida';
+
+  @override
+  String get frViewProfile => 'Ver perfil';
+
+  @override
+  String get frRemoveFriend => 'Eliminar amigo';
+
+  @override
+  String get frBlockUser => 'Bloquear usuario';
+
+  @override
+  String frReceivedHeader(Object count) {
+    return 'Recibidas ($count)';
+  }
+
+  @override
+  String frSentHeader(Object count) {
+    return 'Enviadas ($count)';
+  }
+
+  @override
+  String frGamesCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count partidas',
+      one: '$count partida',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String frSentDate(Object date) {
+    return 'Enviada $date';
+  }
+
+  @override
+  String get frPending => 'Pendiente';
+
+  @override
+  String get frCancelRequest => 'Cancelar solicitud';
+
+  @override
+  String get frReject => 'Rechazar';
+
+  @override
+  String get frAccept => 'Aceptar';
+
+  @override
+  String get frAlreadyFriends => '✓ Amigos';
+
+  @override
+  String get frAddFriend => 'Añadir';
+
+  @override
+  String get frSendRequestFailed =>
+      'No se pudo enviar la solicitud — revisa tu conexión e inténtalo de nuevo';
+
+  @override
+  String get frAcceptFailed =>
+      'No se pudo aceptar la solicitud — revisa tu conexión e inténtalo de nuevo';
+
+  @override
+  String get frRejectFailed =>
+      'No se pudo rechazar la solicitud — revisa tu conexión e inténtalo de nuevo';
+
+  @override
+  String get frCancelFailed =>
+      'No se pudo cancelar la solicitud — revisa tu conexión e inténtalo de nuevo';
+
+  @override
+  String get frBlockFailed =>
+      'No se pudo bloquear al usuario — revisa tu conexión e inténtalo de nuevo';
+
+  @override
+  String get frSignInSocial =>
+      'Inicia sesión para añadir amigos y usar las funciones sociales';
+
+  @override
+  String get frRequestSent => '¡Solicitud de amistad enviada!';
+
+  @override
+  String get frRequestAccepted => '¡Solicitud de amistad aceptada!';
+
+  @override
+  String get frRequestRejected => 'Solicitud de amistad rechazada';
+
+  @override
+  String get frRequestCancelled => 'Solicitud de amistad cancelada';
+
+  @override
+  String frChallengeSent(Object name) {
+    return '🎮 ¡Desafío enviado a $name!';
+  }
+
+  @override
+  String get frChallengeFailed =>
+      'No se pudo enviar el desafío — inténtalo de nuevo';
+
+  @override
+  String frBlocked(Object name) {
+    return '$name bloqueado';
+  }
+
+  @override
+  String frUnblocked(Object name) {
+    return '$name desbloqueado';
+  }
+
+  @override
+  String get frUnblockFailed => 'No se pudo desbloquear — inténtalo de nuevo';
+
+  @override
+  String frRemoved(Object name) {
+    return '$name eliminado de tus amigos';
+  }
+
+  @override
+  String frBlockTitle(Object name) {
+    return '¿Bloquear a $name?';
+  }
+
+  @override
+  String get frBlockBody =>
+      'Se eliminará de tus amigos y no podrá enviarte solicitudes de amistad ni desafíos. No recibirá ninguna notificación.';
+
+  @override
+  String get frBlock => 'Bloquear';
+
+  @override
+  String get frNoBlocked => 'No has bloqueado a nadie.';
+
+  @override
+  String get frUnblock => 'Desbloquear';
+
+  @override
+  String frHighScoreLine(Object score) {
+    return 'Récord: $score';
+  }
+
+  @override
+  String frTotalGamesLine(Object count) {
+    return 'Partidas totales: $count';
+  }
+
+  @override
+  String frLevelLine(Object level) {
+    return 'Nivel: $level';
+  }
+
+  @override
+  String frStatusLine(Object status) {
+    return 'Estado: \"$status\"';
+  }
+
+  @override
+  String frRemoveBody(Object name) {
+    return '¿Eliminar a $name de tu lista de amigos?';
+  }
+
+  @override
+  String get frRemove => 'Eliminar';
+
+  @override
+  String get frLeaderboardTitle => 'Clasificación de amigos';
+
+  @override
+  String get frLeaderboardSubtitle => 'Compite con tus amigos';
+
+  @override
+  String get frLoadingLeaderboard => 'Cargando clasificación...';
+
+  @override
+  String frRankBadge(Object rank) {
+    return 'n.º $rank';
+  }
+
+  @override
+  String get frYou => 'TÚ';
+
+  @override
+  String get frLeaderboardEmptySub =>
+      '¡Añade amigos para ver tu clasificación privada!';
+
+  @override
+  String get frAddFriends => 'Añadir amigos';
+
+  @override
+  String get tnTitle => 'Torneos';
+
+  @override
+  String get tnActive => 'Activos';
+
+  @override
+  String get tnHistory => 'Historial';
+
+  @override
+  String get tnMyStats => 'Mis estadísticas';
+
+  @override
+  String get tnLoading => 'Cargando torneos...';
+
+  @override
+  String get tnNoActive => 'Sin torneos activos';
+
+  @override
+  String get tnNoActiveSub => '¡Vuelve más tarde para ver nuevos torneos!';
+
+  @override
+  String get tnNoHistory => 'Sin historial de torneos';
+
+  @override
+  String get tnNoHistorySub => '¡Participa en torneos para ver tu historial!';
+
+  @override
+  String get tnNoStats => 'Sin estadísticas de torneos';
+
+  @override
+  String get tnNoStatsSub => '¡Únete a torneos para seguir tu progreso!';
+
+  @override
+  String tnPlayersCount(Object current, Object max) {
+    return '$current/$max jugadores';
+  }
+
+  @override
+  String get tnJoined => 'Inscrito';
+
+  @override
+  String tnBestScoreChip(Object score) {
+    return 'Mejor: $score';
+  }
+
+  @override
+  String tnRankReward(Object rank, Object reward) {
+    return 'Puesto n.º $rank - $reward';
+  }
+
+  @override
+  String tnRewardsAvailable(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recompensas disponibles',
+      one: '$count recompensa disponible',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tnViewDetails => 'Ver detalles →';
+
+  @override
+  String get tnOverviewCard => 'Resumen de torneos';
+
+  @override
+  String get tnWins => 'Victorias';
+
+  @override
+  String get tnTopThree => 'Top 3';
+
+  @override
+  String get tnBestScore => 'Mejor puntuación';
+
+  @override
+  String get tnDetailedStats => 'Estadísticas detalladas';
+
+  @override
+  String get tnTotalAttempts => 'Intentos totales';
+
+  @override
+  String get tnWinRate => 'Tasa de victorias';
+
+  @override
+  String tnPercentValue(Object value) {
+    return '$value%';
+  }
+
+  @override
+  String get tnAvgPerformance => 'Rendimiento medio';
+
+  @override
+  String tnTopPercent(Object percent) {
+    return 'Top $percent%';
+  }
+
+  @override
+  String get tnNotFound => 'Torneo no encontrado';
+
+  @override
+  String get tnLoadFailed => 'No se pudo cargar el torneo';
+
+  @override
+  String get tnLoadingTournament => 'Cargando torneo...';
+
+  @override
+  String get tnGoBack => 'Volver';
+
+  @override
+  String get tnParticipating => '¡Estás participando!';
+
+  @override
+  String tnBestAttempts(Object count, Object score) {
+    return 'Mejor: $score • Intentos: $count';
+  }
+
+  @override
+  String tnRankChip(Object rank) {
+    return 'Puesto n.º $rank';
+  }
+
+  @override
+  String get tnOverview => 'Resumen';
+
+  @override
+  String get tnLeaderboard => 'Clasificación';
+
+  @override
+  String get tnRules => 'Reglas';
+
+  @override
+  String get tnLeaderboardFailed => 'No se pudo cargar la clasificación';
+
+  @override
+  String get tnCheckConnection => 'Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get tnNoParticipants => 'Aún no hay participantes';
+
+  @override
+  String get tnBeFirst => '¡Sé el primero en unirte!';
+
+  @override
+  String get tnDescription => 'Descripción';
+
+  @override
+  String get tnRewards => 'Recompensas';
+
+  @override
+  String tnAttemptsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count intentos',
+      one: '$count intento',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tnRulesHeader => 'Reglas del torneo';
+
+  @override
+  String get tnScoringSystem => 'Sistema de puntuación';
+
+  @override
+  String get tnScoringBody =>
+      'Tu puntuación más alta durante el periodo del torneo contará para la clasificación final. Puedes jugar varias veces para mejorarla.';
+
+  @override
+  String get tnJoining => 'UNIÉNDOTE…';
+
+  @override
+  String get tnJoin => 'UNIRSE AL TORNEO';
+
+  @override
+  String get tnPlayNow => 'JUGAR AHORA';
+
+  @override
+  String get tnProUnlimited => 'Pro · Entradas ilimitadas';
+
+  @override
+  String tnEntriesRemaining(Object count) {
+    return 'Entradas restantes: $count';
+  }
+
+  @override
+  String get tnNoEntries => 'Sin entradas — toca UNIRSE para comprar';
+
+  @override
+  String tnStarts(Object time) {
+    return 'Empieza $time';
+  }
+
+  @override
+  String get tnRule1 =>
+      'Juega durante el periodo del torneo para que tus puntuaciones cuenten';
+
+  @override
+  String get tnRule2 =>
+      'Puedes jugar varias veces - solo cuenta tu puntuación más alta';
+
+  @override
+  String get tnRule3 => 'Debes iniciar sesión para participar';
+
+  @override
+  String get tnRule4 =>
+      'La clasificación final se determina al terminar el torneo';
+
+  @override
+  String get tnRuleSpeed =>
+      'La velocidad del juego aumenta rápido cada 10 puntos';
+
+  @override
+  String get tnRuleSurvival =>
+      'La puntuación se basa en el tiempo de supervivencia, no en la comida';
+
+  @override
+  String get tnRuleNoWalls =>
+      'La serpiente atraviesa los bordes en lugar de chocar con las paredes';
+
+  @override
+  String get tnRulePowerUps => 'Los potenciadores aparecen cada 5 segundos';
+
+  @override
+  String get tnRulePerfect => 'Cualquier choque termina la partida al instante';
+
+  @override
+  String get tnRuleClassic => 'Se aplican las reglas clásicas de la serpiente';
+
+  @override
+  String get tnJoinSuccess => '¡Te has unido al torneo!';
+
+  @override
+  String get tnJoinFailed => 'No se pudo unir al torneo';
+
+  @override
+  String get tnJoinError => 'Error al unirse al torneo';
+
+  @override
+  String get tnTierBronze => 'Bronce';
+
+  @override
+  String get tnTierSilver => 'Plata';
+
+  @override
+  String get tnTierGold => 'Oro';
+
+  @override
+  String get tnEntryRequired => 'Entrada necesaria';
+
+  @override
+  String tnEntryNeeded(Object tier) {
+    return 'Necesitas una entrada $tier para unirte a este torneo.';
+  }
+
+  @override
+  String tnCurrentEntries(Object count, Object tier) {
+    return 'Entradas $tier actuales: $count';
+  }
+
+  @override
+  String get tnProUnlimitedNote =>
+      'Los suscriptores Pro tienen acceso ilimitado a los torneos.';
+
+  @override
+  String get tnFreeBronzeAdded => '🎉 ¡Entrada Bronce gratis añadida!';
+
+  @override
+  String get tnFreeEntryAd => 'Entrada gratis (anuncio)';
+
+  @override
+  String tnBuyEntry(Object price, Object tier) {
+    return 'Comprar entrada $tier - $price';
+  }
 }

@@ -3,6 +3,7 @@ import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
@@ -139,6 +140,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
   }
 
   Widget _buildHeader(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.fromLTRB(
         16 + context.sideInset(),
@@ -163,7 +165,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Friends Leaderboard',
+                  l10n.frLeaderboardTitle,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -201,7 +203,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Compete with your friends',
+                  l10n.frLeaderboardSubtitle,
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.8),
                     fontSize: 14,
@@ -226,7 +228,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Loading leaderboard...',
+            AppLocalizations.of(context)!.frLoadingLeaderboard,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.8),
               fontSize: 16,
@@ -470,7 +472,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           ),
           child: Center(
             child: Text(
-              '#$rank',
+              AppLocalizations.of(context)!.frRankBadge(rank),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: rank == 1 ? 24 : 18,
@@ -656,7 +658,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                   ],
                 ),
                 Text(
-                  'High Score',
+                  AppLocalizations.of(context)!.pfHighScore,
                   style: TextStyle(
                     fontSize: 10,
                     color: theme.accentColor.withValues(alpha: 0.6),
@@ -705,7 +707,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           ),
           const SizedBox(width: 3),
           Text(
-            'YOU',
+            AppLocalizations.of(context)!.frYou,
             style: TextStyle(
               color: theme.backgroundColor,
               fontSize: 10,
@@ -719,8 +721,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
   }
 
   String _formatGamesPlayed(int count) {
-    final formatted = _formatThousands(count);
-    return count == 1 ? '$formatted game' : '$formatted games';
+    // Plural key takes the raw count, so the value renders without the
+    // thousands separator for now (intl-based formatting comes later).
+    return AppLocalizations.of(context)!.frGamesCount(count);
   }
 
   String _formatThousands(int n) {
@@ -734,6 +737,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
   }
 
   Widget _buildEmptyState(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -745,7 +749,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'No Friends Yet',
+            l10n.frNoFriendsYet,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -754,7 +758,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Add friends to see your private leaderboard!',
+            l10n.frLeaderboardEmptySub,
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.5),
@@ -765,7 +769,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
           ElevatedButton.icon(
             onPressed: () => context.push(AppRoutes.friends),
             icon: const Icon(Icons.person_add),
-            label: const Text('Add Friends'),
+            label: Text(l10n.frAddFriends),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.accentColor,
               foregroundColor: Colors.white,

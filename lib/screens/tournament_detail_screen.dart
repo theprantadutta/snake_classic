@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
@@ -55,6 +56,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   bool _leaderboardLoadFailed = false;
   bool _isLoadingTournament = false;
   bool _isJoining = false;
+  // Error codes ('not_found' / 'load_failed') rather than user-facing
+  // strings — resolved to localized text at render time in
+  // _buildContent, where a BuildContext with AppLocalizations exists.
   String? _loadError;
 
   @override
@@ -91,7 +95,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           _loadLeaderboard();
         } else {
           setState(() {
-            _loadError = 'Tournament not found';
+            _loadError = 'not_found';
             _isLoadingTournament = false;
           });
         }
@@ -99,7 +103,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _loadError = 'Failed to load tournament';
+          _loadError = 'load_failed';
           _isLoadingTournament = false;
         });
       }
@@ -187,9 +191,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildContent(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     // Show loading state when fetching tournament from deep link
     if (_isLoadingTournament) {
-      return ThemedLoading(theme: theme, label: 'Loading tournament...');
+      return ThemedLoading(theme: theme, label: l10n.tnLoadingTournament);
     }
 
     // Show error state
@@ -205,7 +210,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              _loadError ?? 'Tournament not found',
+              _loadError == 'load_failed' ? l10n.tnLoadFailed : l10n.tnNotFound,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.8),
                 fontSize: 16,
@@ -217,7 +222,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.accentColor,
               ),
-              child: const Text('Go Back'),
+              child: Text(l10n.tnGoBack),
             ),
           ],
         ),
@@ -299,6 +304,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildTournamentInfo(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final tournament = _tournament!;
     return Container(
       margin: EdgeInsets.symmetric(
@@ -421,7 +427,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${tournament.currentParticipants}/${tournament.maxParticipants} players',
+                          l10n.tnPlayersCount(
+                            tournament.currentParticipants,
+                            tournament.maxParticipants,
+                          ),
                           style: TextStyle(
                             fontSize: 14,
                             color: theme.accentColor.withValues(alpha: 0.8),
@@ -452,7 +461,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'You\'re participating!',
+                          l10n.tnParticipating,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -462,7 +471,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                         if (tournament.userBestScore != null &&
                             tournament.userAttempts != null)
                           Text(
-                            'Best Score: ${tournament.userBestScore} • Attempts: ${tournament.userAttempts}',
+                            l10n.tnBestAttempts(
+                              tournament.userAttempts!,
+                              tournament.userBestScore!,
+                            ),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.green.withValues(alpha: 0.8),
@@ -485,7 +497,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Rank #${_serverUserRank ?? tournament.userRank}',
+                        l10n.tnRankChip(_serverUserRank ?? tournament.userRank),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.amber,
@@ -503,6 +515,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildTabBar(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: 16 + context.sideInset(),
@@ -513,10 +526,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         indicatorColor: theme.accentColor,
         labelColor: theme.accentColor,
         unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-        tabs: const [
-          Tab(text: 'Overview'),
-          Tab(text: 'Leaderboard'),
-          Tab(text: 'Rules'),
+        tabs: [
+          Tab(text: l10n.tnOverview),
+          Tab(text: l10n.tnLeaderboard),
+          Tab(text: l10n.tnRules),
         ],
       ),
     );
@@ -542,8 +555,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildLeaderboardTab(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     if (_isLoading) {
-      return ThemedLoading(theme: theme, label: 'Loading leaderboard...');
+      return ThemedLoading(theme: theme, label: l10n.frLoadingLeaderboard);
     }
 
     // Explicit load-failure state. Distinguishes "fetch crashed" from
@@ -563,7 +577,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                "Couldn't load the leaderboard",
+                l10n.tnLeaderboardFailed,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -572,7 +586,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Check your connection and try again.',
+                l10n.tnCheckConnection,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -583,7 +597,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ElevatedButton.icon(
                 onPressed: _loadLeaderboard,
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
+                label: Text(l10n.commonRetry),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.accentColor,
                   foregroundColor: theme.backgroundColor,
@@ -611,7 +625,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'No participants yet',
+              l10n.tnNoParticipants,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -620,7 +634,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Be the first to join!',
+              l10n.tnBeFirst,
               style: TextStyle(
                 fontSize: 14,
                 color: theme.accentColor.withValues(alpha: 0.5),
@@ -684,7 +698,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               Icon(Icons.info_outline, color: theme.accentColor, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Description',
+                AppLocalizations.of(context)!.tnDescription,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -726,6 +740,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildRewardsCard(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final tournament = _tournament!;
     if (tournament.rewards.isEmpty) return const SizedBox.shrink();
 
@@ -744,7 +759,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               Icon(Icons.emoji_events, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Rewards',
+                l10n.tnRewards,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -771,7 +786,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                     ),
                     child: Center(
                       child: Text(
-                        '#$rank',
+                        l10n.frRankBadge(rank),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -795,7 +810,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                         ),
                         if (reward.coins > 0)
                           Text(
-                            '+${reward.coins} coins',
+                            l10n.mpCoinReward(reward.coins),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.amber.withValues(alpha: 0.8),
@@ -861,6 +876,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     int rank,
     GameTheme theme,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     // AuthService is a singleton (factory pattern in auth_service.dart),
     // NOT a registered Provider. The previous context.read<AuthService>()
     // threw ProviderNotFoundException because nothing in the widget tree
@@ -893,7 +909,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ),
             child: Center(
               child: Text(
-                '#$rank',
+                l10n.frRankBadge(rank),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -937,7 +953,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                   ),
                 ),
                 Text(
-                  '${participant.attempts} attempts',
+                  l10n.tnAttemptsCount(participant.attempts),
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.accentColor.withValues(alpha: 0.6),
@@ -960,6 +976,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildRulesCard(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -975,7 +992,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               Icon(Icons.rule, color: theme.accentColor, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Tournament Rules',
+                l10n.tnRulesHeader,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -985,7 +1002,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ],
           ),
           const SizedBox(height: 12),
-          ..._getTournamentRules().map(
+          ..._getTournamentRules(l10n).map(
             (rule) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -1020,6 +1037,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildScoringCard(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1035,7 +1053,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               Icon(Icons.calculate, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Scoring System',
+                l10n.tnScoringSystem,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -1046,7 +1064,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            'Your highest score during the tournament period will count towards the final ranking. You can play multiple times to improve your score.',
+            l10n.tnScoringBody,
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.8),
@@ -1059,6 +1077,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Widget _buildActionButtons(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final tournament = _tournament!;
     // Bottom CTA bar — anchored full-width with a subtle top divider so
     // it reads as a sticky action bar rather than a centered chip
@@ -1096,7 +1115,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           if (!tournament.hasJoined && tournament.status.canJoin)
             GradientButton(
               onPressed: _isJoining ? null : () => _joinTournament(),
-              text: _isJoining ? 'JOINING…' : 'JOIN TOURNAMENT',
+              text: _isJoining ? l10n.tnJoining : l10n.tnJoin,
               primaryColor: Colors.blue,
               secondaryColor: Colors.cyan,
               icon: Icons.person_add,
@@ -1106,7 +1125,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           else if (tournament.status.canSubmitScore)
             GradientButton(
               onPressed: _playTournament,
-              text: 'PLAY NOW',
+              text: l10n.tnPlayNow,
               primaryColor: theme.accentColor,
               secondaryColor: theme.foodColor,
               icon: Icons.play_arrow,
@@ -1122,7 +1141,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                 if (premiumCubit.state.hasPremium) {
                   return _buildEntryStatusChip(
                     icon: Icons.diamond,
-                    label: 'Pro · Unlimited entries',
+                    label: l10n.tnProUnlimited,
                     color: Colors.amber,
                   );
                 }
@@ -1133,8 +1152,8 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                       ? Icons.confirmation_number
                       : Icons.error_outline,
                   label: count > 0
-                      ? 'Entries remaining: $count'
-                      : 'No entries — tap JOIN to buy',
+                      ? l10n.tnEntriesRemaining(count)
+                      : l10n.tnNoEntries,
                   color: count > 0 ? Colors.green : Colors.redAccent,
                 );
               },
@@ -1145,7 +1164,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             const SizedBox(height: 10),
             _buildEntryStatusChip(
               icon: Icons.schedule,
-              label: 'Starts ${tournament.timeRemainingFormatted}',
+              label: l10n.tnStarts(tournament.timeRemainingFormatted),
               color: theme.accentColor,
             ),
           ],
@@ -1188,36 +1207,34 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     );
   }
 
-  List<String> _getTournamentRules() {
+  List<String> _getTournamentRules(AppLocalizations l10n) {
     final tournament = _tournament!;
     final baseRules = [
-      'Play during the tournament period to have your scores counted',
-      'You can play multiple times - only your highest score counts',
-      'Must be signed in to participate',
-      'Final rankings are determined at tournament end',
+      l10n.tnRule1,
+      l10n.tnRule2,
+      l10n.tnRule3,
+      l10n.tnRule4,
     ];
 
     // Add game mode specific rules
     switch (tournament.gameMode) {
       case TournamentGameMode.speedRun:
-        baseRules.add('Game speed increases rapidly every 10 points');
+        baseRules.add(l10n.tnRuleSpeed);
         break;
       case TournamentGameMode.survival:
-        baseRules.add('Score is based on survival time, not food consumed');
+        baseRules.add(l10n.tnRuleSurvival);
         break;
       case TournamentGameMode.noWalls:
-        baseRules.add(
-          'Snake wraps around screen edges instead of hitting walls',
-        );
+        baseRules.add(l10n.tnRuleNoWalls);
         break;
       case TournamentGameMode.powerUpMadness:
-        baseRules.add('Power-ups spawn every 5 seconds');
+        baseRules.add(l10n.tnRulePowerUps);
         break;
       case TournamentGameMode.perfectGame:
-        baseRules.add('Any collision immediately ends the game');
+        baseRules.add(l10n.tnRulePerfect);
         break;
       case TournamentGameMode.classic:
-        baseRules.add('Standard Snake rules apply');
+        baseRules.add(l10n.tnRuleClassic);
         break;
     }
 
@@ -1271,6 +1288,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
   }
 
   Future<void> _joinTournament() async {
+    // Captured before any await — the snackbar messages below fire after
+    // async gaps where a fresh context lookup would be unsafe.
+    final l10n = AppLocalizations.of(context)!;
     final tournament = _tournament!;
     final tier = _getTournamentTier(tournament.type);
     final entryCost = tournament.entryCost.clamp(1, 99);
@@ -1326,18 +1346,18 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Successfully joined tournament!')),
+          SnackBar(content: Text(l10n.tnJoinSuccess)),
         );
         await _refreshTournament();
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to join tournament')),
+          SnackBar(content: Text(l10n.tnJoinFailed)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error joining tournament')),
+          SnackBar(content: Text(l10n.tnJoinError)),
         );
       }
     }
@@ -1347,7 +1367,22 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     }
   }
 
+  /// Localized display name for a tournament entry tier id.
+  /// The tier ids themselves ('bronze'/'silver'/'gold') stay
+  /// untranslated — they're control-flow/product keys, not UI text.
+  String _tierDisplayName(AppLocalizations l10n, String tier) {
+    switch (tier) {
+      case 'silver':
+        return l10n.tnTierSilver;
+      case 'gold':
+        return l10n.tnTierGold;
+      default:
+        return l10n.tnTierBronze;
+    }
+  }
+
   void _showNoEntryDialog(String tier) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = context.read<ThemeCubit>().state.currentTheme;
     final premiumCubit = context.read<PremiumCubit>();
     final entryCount = premiumCubit.state.getTournamentEntryCount(tier);
@@ -1370,7 +1405,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         return;
     }
 
-    final tierName = '${tier[0].toUpperCase()}${tier.substring(1)}';
+    final tierName = _tierDisplayName(l10n, tier);
 
     showDialog(
       context: context,
@@ -1385,7 +1420,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               Icon(Icons.confirmation_num, color: Colors.amber, size: 24),
               const SizedBox(width: 8),
               Text(
-                'Entry Required',
+                l10n.tnEntryRequired,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontWeight: FontWeight.bold,
@@ -1398,7 +1433,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'You need a $tierName tournament entry to join this tournament.',
+                l10n.tnEntryNeeded(tierName),
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.8),
                   fontSize: 14,
@@ -1406,7 +1441,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
               const SizedBox(height: 12),
               Text(
-                'Current $tierName entries: $entryCount',
+                l10n.tnCurrentEntries(entryCount, tierName),
                 style: TextStyle(
                   color: entryCount > 0 ? Colors.green : Colors.red,
                   fontSize: 14,
@@ -1415,7 +1450,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                'Pro subscribers get unlimited tournament access.',
+                l10n.tnProUnlimitedNote,
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.5),
                   fontSize: 12,
@@ -1428,7 +1463,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
-                'Cancel',
+                l10n.commonCancel,
                 style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
               ),
             ),
@@ -1451,7 +1486,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                       premiumCubit.addTournamentEntry('bronze');
                       showRewardToast(
                         messenger,
-                        '🎉 Free bronze tournament entry added!',
+                        l10n.tnFreeBronzeAdded,
                         icon: Icons.emoji_events,
                       );
                     },
@@ -1459,7 +1494,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                 },
                 icon: const Icon(Icons.play_circle_fill,
                     color: Colors.amber, size: 18),
-                label: Text('Free entry (ad)',
+                label: Text(l10n.tnFreeEntryAd,
                     style: TextStyle(color: theme.accentColor)),
               ),
             // Paid entry IAP — Silver and Gold only (bronze has no productId).
@@ -1480,7 +1515,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                     purchaseService.buyProduct(product);
                   }
                 },
-                child: Text('Buy $tierName Entry - ${PurchaseService().getStorePrice(productId) ?? _getDefaultPrice(tier)}'),
+                child: Text(
+                  l10n.tnBuyEntry(
+                    PurchaseService().getStorePrice(productId) ??
+                        _getDefaultPrice(tier),
+                    tierName,
+                  ),
+                ),
               ),
           ],
         );

@@ -3,6 +3,7 @@ import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/providers/tournaments_provider.dart';
@@ -102,7 +103,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           Icon(Icons.emoji_events, color: theme.accentColor, size: 28),
           const SizedBox(width: 12),
           Text(
-            'Tournaments',
+            AppLocalizations.of(context)!.tnTitle,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -124,6 +125,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
   }
 
   Widget _buildTabBar(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16 + context.sideInset()),
       child: TabBar(
@@ -131,10 +133,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         indicatorColor: theme.accentColor,
         labelColor: theme.accentColor,
         unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-        tabs: const [
-          Tab(text: 'Active'),
-          Tab(text: 'History'),
-          Tab(text: 'My Stats'),
+        tabs: [
+          Tab(text: l10n.tnActive),
+          Tab(text: l10n.tnHistory),
+          Tab(text: l10n.tnMyStats),
         ],
       ),
     );
@@ -161,7 +163,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         ts = state.activeLastRefreshedAt ?? state.historyLastRefreshedAt;
     }
 
-    final label = ts == null ? 'No cache yet' : 'Updated ${_relativeAge(ts)}';
+    final l10n = AppLocalizations.of(context)!;
+    final label = ts == null
+        ? l10n.frNoCacheYet
+        : l10n.frUpdatedAgo(_relativeAge(l10n, ts));
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -210,13 +215,13 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     );
   }
 
-  String _relativeAge(DateTime ts) {
+  String _relativeAge(AppLocalizations l10n, DateTime ts) {
     final diff = DateTime.now().difference(ts);
-    if (diff.inSeconds < 5) return 'just now';
-    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    if (diff.inSeconds < 5) return l10n.frJustNow;
+    if (diff.inSeconds < 60) return l10n.frSecondsAgo(diff.inSeconds);
+    if (diff.inMinutes < 60) return l10n.frMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.frHoursAgo(diff.inHours);
+    return l10n.frDaysAgo(diff.inDays);
   }
 
   Widget _buildLoadingIndicator(GameTheme theme) {
@@ -229,7 +234,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Loading tournaments...',
+            AppLocalizations.of(context)!.tnLoading,
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.8),
               fontSize: 16,
@@ -242,10 +247,11 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
 
   Widget _buildActiveTournaments(GameTheme theme, List<Tournament> activeTournaments) {
     if (activeTournaments.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       return _buildEmptyState(
         icon: Icons.emoji_events,
-        title: 'No Active Tournaments',
-        subtitle: 'Check back later for new tournaments!',
+        title: l10n.tnNoActive,
+        subtitle: l10n.tnNoActiveSub,
         theme: theme,
       );
     }
@@ -269,10 +275,11 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
 
   Widget _buildTournamentHistory(GameTheme theme, List<Tournament> historyTournaments) {
     if (historyTournaments.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       return _buildEmptyState(
         icon: Icons.history,
-        title: 'No Tournament History',
-        subtitle: 'Participate in tournaments to see your history!',
+        title: l10n.tnNoHistory,
+        subtitle: l10n.tnNoHistorySub,
         theme: theme,
       );
     }
@@ -297,10 +304,11 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
 
   Widget _buildUserStats(GameTheme theme, Map<String, dynamic> userStats) {
     if (userStats.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       return _buildEmptyState(
         icon: Icons.bar_chart,
-        title: 'No Tournament Stats',
-        subtitle: 'Join tournaments to track your progress!',
+        title: l10n.tnNoStats,
+        subtitle: l10n.tnNoStatsSub,
         theme: theme,
       );
     }
@@ -326,6 +334,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     bool showResults = false,
     required VoidCallback onTap,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       color: theme.backgroundColor.withValues(alpha: 0.5),
       margin: const EdgeInsets.only(bottom: 12),
@@ -483,7 +492,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '${tournament.currentParticipants}/${tournament.maxParticipants} players',
+                    l10n.tnPlayersCount(
+                      tournament.currentParticipants,
+                      tournament.maxParticipants,
+                    ),
                     style: TextStyle(
                       fontSize: 12,
                       color: theme.accentColor.withValues(alpha: 0.6),
@@ -501,7 +513,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Joined',
+                        l10n.tnJoined,
                         style: TextStyle(
                           fontSize: 10,
                           color: Colors.green,
@@ -512,7 +524,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                     if (tournament.userBestScore != null) ...[
                       const SizedBox(width: 8),
                       Text(
-                        'Best: ${tournament.userBestScore}',
+                        l10n.tnBestScoreChip(tournament.userBestScore!),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.amber,
@@ -545,7 +557,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Rank #${tournament.userRank} - ${tournament.userReward!.name}',
+                              l10n.tnRankReward(
+                                tournament.userRank,
+                                tournament.userReward!.name,
+                              ),
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -554,7 +569,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                             ),
                             if (tournament.userReward!.coins > 0)
                               Text(
-                                '+${tournament.userReward!.coins} coins',
+                                l10n.mpCoinReward(tournament.userReward!.coins),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.amber.withValues(alpha: 0.8),
@@ -587,7 +602,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '${tournament.rewards.length} reward${tournament.rewards.length > 1 ? 's' : ''} available',
+                          l10n.tnRewardsAvailable(tournament.rewards.length),
                           style: TextStyle(
                             fontSize: 12,
                             color: theme.accentColor,
@@ -596,7 +611,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                         ),
                       ),
                       Text(
-                        'View Details →',
+                        l10n.tnViewDetails,
                         style: TextStyle(
                           fontSize: 10,
                           color: theme.accentColor.withValues(alpha: 0.7),
@@ -614,6 +629,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
   }
 
   Widget _buildStatsOverview(GameTheme theme, Map<String, dynamic> userStats) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -625,7 +641,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tournament Overview',
+            l10n.tnOverviewCard,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -637,7 +653,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
             children: [
               Expanded(
                 child: _buildStatItem(
-                  'Tournaments',
+                  l10n.tnTitle,
                   '${userStats['totalTournaments'] ?? 0}',
                   Icons.emoji_events,
                   Colors.blue,
@@ -646,7 +662,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
               ),
               Expanded(
                 child: _buildStatItem(
-                  'Wins',
+                  l10n.tnWins,
                   '${userStats['wins'] ?? 0}',
                   Icons.emoji_events,
                   Colors.amber,
@@ -660,7 +676,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
             children: [
               Expanded(
                 child: _buildStatItem(
-                  'Top 3 Finishes',
+                  l10n.tnTopThree,
                   '${userStats['topThreeFinishes'] ?? 0}',
                   Icons.military_tech,
                   Colors.orange,
@@ -669,7 +685,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
               ),
               Expanded(
                 child: _buildStatItem(
-                  'Best Score',
+                  l10n.tnBestScore,
                   '${userStats['bestScore'] ?? 0}',
                   Icons.star,
                   Colors.purple,
@@ -684,6 +700,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
   }
 
   Widget _buildStatsDetails(GameTheme theme, Map<String, dynamic> userStats) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -695,7 +712,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Detailed Statistics',
+            l10n.tnDetailedStats,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -704,14 +721,18 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
-            'Total Attempts',
+            l10n.tnTotalAttempts,
             '${userStats['totalAttempts'] ?? 0}',
             theme,
           ),
-          _buildDetailRow('Win Rate', '${userStats['winRate'] ?? 0}%', theme),
           _buildDetailRow(
-            'Average Performance',
-            'Top ${100 - (userStats['winRate'] ?? 0)}%',
+            l10n.tnWinRate,
+            l10n.tnPercentValue('${userStats['winRate'] ?? 0}'),
+            theme,
+          ),
+          _buildDetailRow(
+            l10n.tnAvgPerformance,
+            l10n.tnTopPercent('${100 - (userStats['winRate'] ?? 0)}'),
             theme,
           ),
         ],

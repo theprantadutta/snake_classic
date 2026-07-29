@@ -3213,6 +3213,894 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'re maintaining solid performance across recent games.'**
   String get stInsightSolid;
+
+  /// No description provided for @frTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get frTitle;
+
+  /// No description provided for @frBlockedUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked users'**
+  String get frBlockedUsers;
+
+  /// No description provided for @frSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or email...'**
+  String get frSearchHint;
+
+  /// No description provided for @frSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching...'**
+  String get frSearching;
+
+  /// No description provided for @frSearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for Friends'**
+  String get frSearchTitle;
+
+  /// No description provided for @frSearchSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name or email to find friends'**
+  String get frSearchSubtitle;
+
+  /// No description provided for @frNoUsersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No Users Found'**
+  String get frNoUsersFound;
+
+  /// No description provided for @frNoUsersFoundSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Try searching with a different name or email'**
+  String get frNoUsersFoundSub;
+
+  /// No description provided for @frRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get frRequests;
+
+  /// No description provided for @frSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get frSearch;
+
+  /// No description provided for @frNoCacheYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No cache yet'**
+  String get frNoCacheYet;
+
+  /// No description provided for @frUpdatedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {ago}'**
+  String frUpdatedAgo(Object ago);
+
+  /// No description provided for @frRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{base} · refresh failed, tap to retry'**
+  String frRefreshFailed(Object base);
+
+  /// No description provided for @frJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get frJustNow;
+
+  /// No description provided for @frSecondsAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}s ago'**
+  String frSecondsAgo(Object count);
+
+  /// No description provided for @frMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String frMinutesAgo(Object count);
+
+  /// No description provided for @frHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h ago'**
+  String frHoursAgo(Object count);
+
+  /// No description provided for @frDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String frDaysAgo(Object count);
+
+  /// No description provided for @frLoadingFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading friends...'**
+  String get frLoadingFriends;
+
+  /// No description provided for @frNoFriendsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No Friends Yet'**
+  String get frNoFriendsYet;
+
+  /// No description provided for @frNoFriendsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for users to add as friends!'**
+  String get frNoFriendsSub;
+
+  /// No description provided for @frNoRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No Friend Requests'**
+  String get frNoRequests;
+
+  /// No description provided for @frNoRequestsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests will appear here'**
+  String get frNoRequestsSub;
+
+  /// No description provided for @frChallengeMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge to a Match'**
+  String get frChallengeMenu;
+
+  /// No description provided for @frViewProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'View Profile'**
+  String get frViewProfile;
+
+  /// No description provided for @frRemoveFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Friend'**
+  String get frRemoveFriend;
+
+  /// No description provided for @frBlockUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Block User'**
+  String get frBlockUser;
+
+  /// No description provided for @frReceivedHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Received ({count})'**
+  String frReceivedHeader(Object count);
+
+  /// No description provided for @frSentHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent ({count})'**
+  String frSentHeader(Object count);
+
+  /// No description provided for @frGamesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} game} other{{count} games}}'**
+  String frGamesCount(num count);
+
+  /// No description provided for @frSentDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent {date}'**
+  String frSentDate(Object date);
+
+  /// No description provided for @frPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get frPending;
+
+  /// No description provided for @frCancelRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel request'**
+  String get frCancelRequest;
+
+  /// No description provided for @frReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get frReject;
+
+  /// No description provided for @frAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get frAccept;
+
+  /// No description provided for @frAlreadyFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Friends'**
+  String get frAlreadyFriends;
+
+  /// No description provided for @frAddFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Friend'**
+  String get frAddFriend;
+
+  /// No description provided for @frSendRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the friend request — check your connection and try again'**
+  String get frSendRequestFailed;
+
+  /// No description provided for @frAcceptFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not accept the request — check your connection and try again'**
+  String get frAcceptFailed;
+
+  /// No description provided for @frRejectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reject the request — check your connection and try again'**
+  String get frRejectFailed;
+
+  /// No description provided for @frCancelFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not cancel the request — check your connection and try again'**
+  String get frCancelFailed;
+
+  /// No description provided for @frBlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not block this user — check your connection and try again'**
+  String get frBlockFailed;
+
+  /// No description provided for @frSignInSocial.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to add friends and use social features'**
+  String get frSignInSocial;
+
+  /// No description provided for @frRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent!'**
+  String get frRequestSent;
+
+  /// No description provided for @frRequestAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request accepted!'**
+  String get frRequestAccepted;
+
+  /// No description provided for @frRequestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request rejected'**
+  String get frRequestRejected;
+
+  /// No description provided for @frRequestCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request cancelled'**
+  String get frRequestCancelled;
+
+  /// No description provided for @frChallengeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'🎮 Challenge sent to {name}!'**
+  String frChallengeSent(Object name);
+
+  /// No description provided for @frChallengeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the challenge — try again'**
+  String get frChallengeFailed;
+
+  /// No description provided for @frBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} blocked'**
+  String frBlocked(Object name);
+
+  /// No description provided for @frUnblocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} unblocked'**
+  String frUnblocked(Object name);
+
+  /// No description provided for @frUnblockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not unblock — try again'**
+  String get frUnblockFailed;
+
+  /// No description provided for @frRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} removed from friends'**
+  String frRemoved(Object name);
+
+  /// No description provided for @frBlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String frBlockTitle(Object name);
+
+  /// No description provided for @frBlockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They will be removed from your friends and unable to send you friend requests or match challenges. They will not be notified.'**
+  String get frBlockBody;
+
+  /// No description provided for @frBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get frBlock;
+
+  /// No description provided for @frNoBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not blocked anyone.'**
+  String get frNoBlocked;
+
+  /// No description provided for @frUnblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get frUnblock;
+
+  /// No description provided for @frHighScoreLine.
+  ///
+  /// In en, this message translates to:
+  /// **'High Score: {score}'**
+  String frHighScoreLine(Object score);
+
+  /// No description provided for @frTotalGamesLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Games: {count}'**
+  String frTotalGamesLine(Object count);
+
+  /// No description provided for @frLevelLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Level: {level}'**
+  String frLevelLine(Object level);
+
+  /// No description provided for @frStatusLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Status: \"{status}\"'**
+  String frStatusLine(Object status);
+
+  /// No description provided for @frRemoveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from your friends list?'**
+  String frRemoveBody(Object name);
+
+  /// No description provided for @frRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get frRemove;
+
+  /// No description provided for @frLeaderboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends Leaderboard'**
+  String get frLeaderboardTitle;
+
+  /// No description provided for @frLeaderboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compete with your friends'**
+  String get frLeaderboardSubtitle;
+
+  /// No description provided for @frLoadingLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading leaderboard...'**
+  String get frLoadingLeaderboard;
+
+  /// No description provided for @frRankBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'#{rank}'**
+  String frRankBadge(Object rank);
+
+  /// No description provided for @frYou.
+  ///
+  /// In en, this message translates to:
+  /// **'YOU'**
+  String get frYou;
+
+  /// No description provided for @frLeaderboardEmptySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Add friends to see your private leaderboard!'**
+  String get frLeaderboardEmptySub;
+
+  /// No description provided for @frAddFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Friends'**
+  String get frAddFriends;
+
+  /// No description provided for @tnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournaments'**
+  String get tnTitle;
+
+  /// No description provided for @tnActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get tnActive;
+
+  /// No description provided for @tnHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get tnHistory;
+
+  /// No description provided for @tnMyStats.
+  ///
+  /// In en, this message translates to:
+  /// **'My Stats'**
+  String get tnMyStats;
+
+  /// No description provided for @tnLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tournaments...'**
+  String get tnLoading;
+
+  /// No description provided for @tnNoActive.
+  ///
+  /// In en, this message translates to:
+  /// **'No Active Tournaments'**
+  String get tnNoActive;
+
+  /// No description provided for @tnNoActiveSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Check back later for new tournaments!'**
+  String get tnNoActiveSub;
+
+  /// No description provided for @tnNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No Tournament History'**
+  String get tnNoHistory;
+
+  /// No description provided for @tnNoHistorySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Participate in tournaments to see your history!'**
+  String get tnNoHistorySub;
+
+  /// No description provided for @tnNoStats.
+  ///
+  /// In en, this message translates to:
+  /// **'No Tournament Stats'**
+  String get tnNoStats;
+
+  /// No description provided for @tnNoStatsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Join tournaments to track your progress!'**
+  String get tnNoStatsSub;
+
+  /// No description provided for @tnPlayersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{current}/{max} players'**
+  String tnPlayersCount(Object current, Object max);
+
+  /// No description provided for @tnJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get tnJoined;
+
+  /// No description provided for @tnBestScoreChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Best: {score}'**
+  String tnBestScoreChip(Object score);
+
+  /// No description provided for @tnRankReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Rank #{rank} - {reward}'**
+  String tnRankReward(Object rank, Object reward);
+
+  /// No description provided for @tnRewardsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} reward available} other{{count} rewards available}}'**
+  String tnRewardsAvailable(num count);
+
+  /// No description provided for @tnViewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details →'**
+  String get tnViewDetails;
+
+  /// No description provided for @tnOverviewCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournament Overview'**
+  String get tnOverviewCard;
+
+  /// No description provided for @tnWins.
+  ///
+  /// In en, this message translates to:
+  /// **'Wins'**
+  String get tnWins;
+
+  /// No description provided for @tnTopThree.
+  ///
+  /// In en, this message translates to:
+  /// **'Top 3 Finishes'**
+  String get tnTopThree;
+
+  /// No description provided for @tnBestScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Score'**
+  String get tnBestScore;
+
+  /// No description provided for @tnDetailedStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed Statistics'**
+  String get tnDetailedStats;
+
+  /// No description provided for @tnTotalAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Attempts'**
+  String get tnTotalAttempts;
+
+  /// No description provided for @tnWinRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Win Rate'**
+  String get tnWinRate;
+
+  /// No description provided for @tnPercentValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}%'**
+  String tnPercentValue(Object value);
+
+  /// No description provided for @tnAvgPerformance.
+  ///
+  /// In en, this message translates to:
+  /// **'Average Performance'**
+  String get tnAvgPerformance;
+
+  /// No description provided for @tnTopPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Top {percent}%'**
+  String tnTopPercent(Object percent);
+
+  /// No description provided for @tnNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournament not found'**
+  String get tnNotFound;
+
+  /// No description provided for @tnLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load tournament'**
+  String get tnLoadFailed;
+
+  /// No description provided for @tnLoadingTournament.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tournament...'**
+  String get tnLoadingTournament;
+
+  /// No description provided for @tnGoBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Back'**
+  String get tnGoBack;
+
+  /// No description provided for @tnParticipating.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re participating!'**
+  String get tnParticipating;
+
+  /// No description provided for @tnBestAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Score: {score} • Attempts: {count}'**
+  String tnBestAttempts(Object count, Object score);
+
+  /// No description provided for @tnRankChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Rank #{rank}'**
+  String tnRankChip(Object rank);
+
+  /// No description provided for @tnOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get tnOverview;
+
+  /// No description provided for @tnLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard'**
+  String get tnLeaderboard;
+
+  /// No description provided for @tnRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get tnRules;
+
+  /// No description provided for @tnLeaderboardFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the leaderboard'**
+  String get tnLeaderboardFailed;
+
+  /// No description provided for @tnCheckConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get tnCheckConnection;
+
+  /// No description provided for @tnNoParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'No participants yet'**
+  String get tnNoParticipants;
+
+  /// No description provided for @tnBeFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to join!'**
+  String get tnBeFirst;
+
+  /// No description provided for @tnDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get tnDescription;
+
+  /// No description provided for @tnRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards'**
+  String get tnRewards;
+
+  /// No description provided for @tnAttemptsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} attempt} other{{count} attempts}}'**
+  String tnAttemptsCount(num count);
+
+  /// No description provided for @tnRulesHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournament Rules'**
+  String get tnRulesHeader;
+
+  /// No description provided for @tnScoringSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Scoring System'**
+  String get tnScoringSystem;
+
+  /// No description provided for @tnScoringBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your highest score during the tournament period will count towards the final ranking. You can play multiple times to improve your score.'**
+  String get tnScoringBody;
+
+  /// No description provided for @tnJoining.
+  ///
+  /// In en, this message translates to:
+  /// **'JOINING…'**
+  String get tnJoining;
+
+  /// No description provided for @tnJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'JOIN TOURNAMENT'**
+  String get tnJoin;
+
+  /// No description provided for @tnPlayNow.
+  ///
+  /// In en, this message translates to:
+  /// **'PLAY NOW'**
+  String get tnPlayNow;
+
+  /// No description provided for @tnProUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro · Unlimited entries'**
+  String get tnProUnlimited;
+
+  /// No description provided for @tnEntriesRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries remaining: {count}'**
+  String tnEntriesRemaining(Object count);
+
+  /// No description provided for @tnNoEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries — tap JOIN to buy'**
+  String get tnNoEntries;
+
+  /// No description provided for @tnStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {time}'**
+  String tnStarts(Object time);
+
+  /// No description provided for @tnRule1.
+  ///
+  /// In en, this message translates to:
+  /// **'Play during the tournament period to have your scores counted'**
+  String get tnRule1;
+
+  /// No description provided for @tnRule2.
+  ///
+  /// In en, this message translates to:
+  /// **'You can play multiple times - only your highest score counts'**
+  String get tnRule2;
+
+  /// No description provided for @tnRule3.
+  ///
+  /// In en, this message translates to:
+  /// **'Must be signed in to participate'**
+  String get tnRule3;
+
+  /// No description provided for @tnRule4.
+  ///
+  /// In en, this message translates to:
+  /// **'Final rankings are determined at tournament end'**
+  String get tnRule4;
+
+  /// No description provided for @tnRuleSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Game speed increases rapidly every 10 points'**
+  String get tnRuleSpeed;
+
+  /// No description provided for @tnRuleSurvival.
+  ///
+  /// In en, this message translates to:
+  /// **'Score is based on survival time, not food consumed'**
+  String get tnRuleSurvival;
+
+  /// No description provided for @tnRuleNoWalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake wraps around screen edges instead of hitting walls'**
+  String get tnRuleNoWalls;
+
+  /// No description provided for @tnRulePowerUps.
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups spawn every 5 seconds'**
+  String get tnRulePowerUps;
+
+  /// No description provided for @tnRulePerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'Any collision immediately ends the game'**
+  String get tnRulePerfect;
+
+  /// No description provided for @tnRuleClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard Snake rules apply'**
+  String get tnRuleClassic;
+
+  /// No description provided for @tnJoinSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully joined tournament!'**
+  String get tnJoinSuccess;
+
+  /// No description provided for @tnJoinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to join tournament'**
+  String get tnJoinFailed;
+
+  /// No description provided for @tnJoinError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error joining tournament'**
+  String get tnJoinError;
+
+  /// No description provided for @tnTierBronze.
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze'**
+  String get tnTierBronze;
+
+  /// No description provided for @tnTierSilver.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver'**
+  String get tnTierSilver;
+
+  /// No description provided for @tnTierGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get tnTierGold;
+
+  /// No description provided for @tnEntryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry Required'**
+  String get tnEntryRequired;
+
+  /// No description provided for @tnEntryNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'You need a {tier} tournament entry to join this tournament.'**
+  String tnEntryNeeded(Object tier);
+
+  /// No description provided for @tnCurrentEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Current {tier} entries: {count}'**
+  String tnCurrentEntries(Object count, Object tier);
+
+  /// No description provided for @tnProUnlimitedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro subscribers get unlimited tournament access.'**
+  String get tnProUnlimitedNote;
+
+  /// No description provided for @tnFreeBronzeAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Free Bronze tournament entry added!'**
+  String get tnFreeBronzeAdded;
+
+  /// No description provided for @tnFreeEntryAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Free entry (ad)'**
+  String get tnFreeEntryAd;
+
+  /// No description provided for @tnBuyEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy {tier} Entry - {price}'**
+  String tnBuyEntry(Object price, Object tier);
 }
 
 class _AppLocalizationsDelegate
