@@ -2,6 +2,18 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:snake_classic/services/api_service.dart';
 
+/// Stable validation error codes. The service never produces user-facing
+/// English — render sites map these codes to localized strings.
+enum UsernameError {
+  empty,
+  tooShort,
+  tooLong,
+  invalidFormat,
+  reserved,
+  taken,
+  updateFailed,
+}
+
 class UsernameService {
   static final UsernameService _instance = UsernameService._internal();
   factory UsernameService() => _instance;
@@ -131,33 +143,32 @@ class UsernameService {
   UsernameValidationResult validateUsername(String username) {
     // Check length
     if (username.length < minLength) {
-      return UsernameValidationResult(
+      return const UsernameValidationResult(
         isValid: false,
-        error: 'Username must be at least $minLength characters long',
+        errorCode: UsernameError.tooShort,
       );
     }
 
     if (username.length > maxLength) {
-      return UsernameValidationResult(
+      return const UsernameValidationResult(
         isValid: false,
-        error: 'Username must be no more than $maxLength characters long',
+        errorCode: UsernameError.tooLong,
       );
     }
 
     // Check format (alphanumeric + underscore, must start with letter)
     if (!_validUsernameRegex.hasMatch(username)) {
-      return UsernameValidationResult(
+      return const UsernameValidationResult(
         isValid: false,
-        error:
-            'Username must start with a letter and contain only letters, numbers, and underscores',
+        errorCode: UsernameError.invalidFormat,
       );
     }
 
     // Check reserved words
     if (_reservedUsernames.contains(username.toLowerCase())) {
-      return UsernameValidationResult(
+      return const UsernameValidationResult(
         isValid: false,
-        error: 'This username is reserved and cannot be used',
+        errorCode: UsernameError.reserved,
       );
     }
 
@@ -190,9 +201,9 @@ class UsernameService {
     // Then check availability
     final isAvailable = await isUsernameAvailable(username);
     if (!isAvailable) {
-      return UsernameValidationResult(
+      return const UsernameValidationResult(
         isValid: false,
-        error: 'This username is already taken',
+        errorCode: UsernameError.taken,
       );
     }
 
@@ -302,23 +313,26 @@ class UsernameService {
       // Validate the new username
       final validation = await validateUsernameComplete(newUsername);
       if (!validation.isValid) {
-        return UsernameUpdateResult(success: false, error: validation.error!);
+        return UsernameUpdateResult(
+          success: false,
+          errorCode: validation.errorCode ?? UsernameError.updateFailed,
+        );
       }
 
       // Update via API
       final result = await _apiService.setUsername(newUsername);
       if (result == null) {
-        return UsernameUpdateResult(
+        return const UsernameUpdateResult(
           success: false,
-          error: 'Failed to update username',
+          errorCode: UsernameError.updateFailed,
         );
       }
 
-      return UsernameUpdateResult(success: true);
+      return const UsernameUpdateResult(success: true);
     } catch (e) {
-      return UsernameUpdateResult(
+      return const UsernameUpdateResult(
         success: false,
-        error: 'Failed to update username: $e',
+        errorCode: UsernameError.updateFailed,
       );
     }
   }
@@ -342,14 +356,14 @@ class UsernameService {
 
 class UsernameValidationResult {
   final bool isValid;
-  final String? error;
+  final UsernameError? errorCode;
 
-  const UsernameValidationResult({required this.isValid, this.error});
+  const UsernameValidationResult({required this.isValid, this.errorCode});
 }
 
 class UsernameUpdateResult {
   final bool success;
-  final String? error;
+  final UsernameError? errorCode;
 
-  const UsernameUpdateResult({required this.success, this.error});
+  const UsernameUpdateResult({required this.success, this.errorCode});
 }

@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/game/flame/multiplayer_flame_game.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -51,6 +52,9 @@ class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
         if (widget.boardSize != _game.boardSize) {
           _game = _createGame(theme);
         }
+        // Thread the localized "You" label into the (context-less) Flame
+        // painter layer. Cheap plain-field write, safe to do every build.
+        _game.youLabel = AppLocalizations.of(context)!.mpYou;
         _game.syncState(snapshot: widget.snapshot, theme: theme);
 
         return RepaintBoundary(

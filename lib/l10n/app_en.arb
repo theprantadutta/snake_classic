@@ -1549,5 +1549,337 @@
     "placeholders": {
       "type": {}
     }
-  }
+  },
+  "insHowToPlay": "HOW TO PLAY",
+  "insObjective": "OBJECTIVE",
+  "insObjectiveBody": "Control the snake to eat food and grow as long as possible without hitting walls or yourself!",
+  "insControls": "CONTROLS",
+  "insSwipeUp": "Swipe Up ↑",
+  "insSwipeUpDesc": "Move snake up",
+  "insSwipeDown": "Swipe Down ↓",
+  "insSwipeDownDesc": "Move snake down",
+  "insSwipeLeft": "Swipe Left ←",
+  "insSwipeLeftDesc": "Move snake left",
+  "insSwipeRight": "Swipe Right →",
+  "insSwipeRightDesc": "Move snake right",
+  "insTapScreen": "Tap Screen",
+  "insTapScreenDesc": "Pause/Resume game",
+  "insArrowKeys": "Arrow Keys (Desktop)",
+  "insArrowKeysDesc": "Change direction",
+  "insWasd": "WASD (Desktop)",
+  "insWasdDesc": "Change direction",
+  "insSpacebar": "Spacebar (Desktop)",
+  "insSpacebarDesc": "Pause/Resume game",
+  "insFoodTypes": "FOOD TYPES",
+  "insNormalFood": "Normal Food",
+  "insBonusFood": "Bonus Food",
+  "insSpecialFood": "Special Food",
+  "insRules": "RULES",
+  "insRule1": "• Eat food to grow and increase score",
+  "insRule2": "• Snake speeds up as you level up",
+  "insRule3": "• Game ends if you hit walls or yourself",
+  "insRule4": "• Special food appears every 10 normal foods",
+  "insRule5": "• Bonus food expires after 15 seconds",
+  "insProTips": "PRO TIPS",
+  "insTip1": "Plan your moves ahead of time",
+  "insTip2": "Use edges to create safe spaces",
+  "insTip3": "Watch for visual swipe feedback",
+  "insTip4": "Practice different difficulty levels",
+  "insBackToGame": "BACK TO GAME",
+  "dchClaimedReward": "Claimed {coins} coins and {xp} XP!",
+  "@dchClaimedReward": {
+    "placeholders": {
+      "coins": {},
+      "xp": {}
+    }
+  },
+  "dchClaimedCoins": "Claimed {coins} coins!",
+  "@dchClaimedCoins": {
+    "placeholders": {
+      "coins": {}
+    }
+  },
+  "dchWatchTo2x": "WATCH TO 2×",
+  "dchDoubledBonus": "🎉 Doubled! +{coins} bonus coins!",
+  "@dchDoubledBonus": {
+    "placeholders": {
+      "coins": {}
+    }
+  },
+  "dchClaimAll": "Claim All",
+  "dchTodaysProgress": "Today's Progress",
+  "dchClaim": "Claim",
+  "dchClaimed": "Claimed",
+  "dchAllCompleteTitle": "All Challenges Complete!",
+  "dchBonusClaimed": "Bonus reward claimed",
+  "dchBonusPending": "Bonus reward pending — claim any challenge",
+  "dchLoading": "Loading challenges...",
+  "dchCheckBack": "Check back later for new daily challenges!",
+  "dchAbout": "About Daily Challenges",
+  "dchAbout1": "New challenges every day at midnight",
+  "dchAbout2": "Complete challenges to earn coins",
+  "dchAbout3": "Gain XP to level up your profile",
+  "dchAbout4": "Complete all 3 for a bonus reward!",
+  "dchAllBonusTitle": "All Challenges Bonus",
+  "dchAllBonusDesc": "Completed every daily challenge today.",
+  "wqNoQuests": "No weekly quests yet — check back Monday",
+  "wqTitle": "Weekly Quests",
+  "wqClaimReward": "Claim Reward",
+  "rvNotFound": "Replay not found",
+  "rvLoadFailed": "Failed to load replay",
+  "rvTitle": "Replay: {name}",
+  "@rvTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "rvLoadingTitle": "Loading Replay...",
+  "rvLoading": "Loading replay...",
+  "rvGoBack": "Go Back",
+  "rvScore": "Score",
+  "rvLevel": "Level",
+  "rvFrame": "Frame",
+  "rvTime": "Time",
+  "rvNoFrameData": "No frame data",
+  "rvSpeedLabel": "Speed: ",
+  "rvAteFood": "🍎 Ate {type} food",
+  "@rvAteFood": {
+    "placeholders": {
+      "type": {}
+    }
+  },
+  "rvCollectedPowerUp": "⚡ Collected {type} power-up",
+  "@rvCollectedPowerUp": {
+    "placeholders": {
+      "type": {}
+    }
+  },
+  "unEmpty": "Username cannot be empty",
+  "unSetFailed": "Failed to set username",
+  "unPickTitle": "Pick your username",
+  "unPickBody": "It's how you'll show up on the leaderboard. We've picked one for you — keep it or change it.",
+  "unLabel": "Username",
+  "unSaving": "SAVING...",
+  "unContinue": "CONTINUE",
+  "unChangeAnytime": "You can change this anytime in Settings.",
+  "unMinLength": "Username must be at least {min} characters long",
+  "@unMinLength": {
+    "placeholders": {
+      "min": {}
+    }
+  },
+  "unMaxLength": "Username must be no more than {max} characters long",
+  "@unMaxLength": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "unPattern": "Username must start with a letter and contain only letters, numbers, and underscores",
+  "unReserved": "This username is reserved and cannot be used",
+  "unTaken": "This username is already taken",
+  "unUpdateFailed": "Failed to update username",
+  "pcTitle": "Privacy & Terms Updated",
+  "pcVersionLine": "Version {version} · please review and accept to continue",
+  "@pcVersionLine": {
+    "placeholders": {
+      "version": {}
+    }
+  },
+  "pcTabPrivacy": "Privacy Policy",
+  "pcTabTerms": "Terms of Use",
+  "pcAgree": "I have read and agree to the updated Privacy Policy and Terms of Use",
+  "pcContinue": "Continue",
+  "lgAvailableAt": "This document is available at {url}.",
+  "@lgAvailableAt": {
+    "placeholders": {
+      "url": {}
+    }
+  },
+  "lgUnavailable": "This document is currently unavailable. Please try again later.",
+  "commonClose": "Close",
+  "auTitle": "Sign up to make purchases",
+  "auBody": "Guest accounts can play and save progress locally, but cannot buy items or subscribe. Link a Google or email account to unlock purchases — your existing coins, cosmetics, and high scores stay attached.",
+  "auGoogle": "Continue with Google",
+  "auGoogleSub": "Fastest option. Sign in with your Google account.",
+  "auLinked": "Account linked. You can now make purchases.",
+  "auEmail": "Create an Email Account",
+  "auEmailSub": "Use any email and a password you choose. Restore on any device.",
+  "auNotNow": "Not now",
+  "auErrCredentialInUse": "That credential is already linked to another account. Try signing in with it instead.",
+  "auErrAlreadyLinked": "This account is already linked.",
+  "auErrRequiresRecentLogin": "For security, sign in again before linking.",
+  "auErrNetwork": "Network error. Check your connection.",
+  "auErrGeneric": "Linking failed. Please try again.",
+  "sroSettingUpTitle": "Setting up your account…",
+  "sroSettingUpBody": "Getting things ready for your first session. This only happens once.",
+  "sroLoadingTitle": "Loading your previous data…",
+  "sroLoadingBody": "Fetching your stats, achievements, coins, and unlocks from the cloud.",
+  "sroRestoringTitle": "Restoring your progress…",
+  "sroRestoringBody": "Applying everything to this device. Don't close the app.",
+  "sroDoneTitle": "All set!",
+  "sroDoneBody": "Your progress has been restored.",
+  "sroFailedTitle": "Couldn't restore your data",
+  "sroFailedBody": "We couldn't reach the cloud just now. Check your internet connection and try again. You can also continue without restoring — we'll retry the next time you open the app.",
+  "sroTryAgain": "Try Again",
+  "sroContinueAnyway": "Continue Anyway",
+  "ssiOfflinePending": "Offline - Changes will sync when connected",
+  "ssiSyncing": "Syncing...",
+  "ssiAllSynced": "All data synced",
+  "ssiFailedCount": "{count, plural, one{1 item failed to sync} other{{count} items failed to sync}}",
+  "@ssiFailedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "ssiPendingCount": "{count, plural, one{1 item pending sync} other{{count} items pending sync}}",
+  "@ssiPendingCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "ssiOffline": "Offline",
+  "rvoContinue": "CONTINUE?",
+  "rvoSubtitlePro": "Revive and keep your score · Free with Pro",
+  "rvoSubtitleTimer": "Revive and keep your score · {seconds}s",
+  "@rvoSubtitleTimer": {
+    "placeholders": {
+      "seconds": {}
+    }
+  },
+  "rvoGetLifePro": "Get Life · Free for Pro",
+  "rvoWatchAd": "Watch ad to revive",
+  "rvoUseCoins": "Use {coins} coins",
+  "@rvoUseCoins": {
+    "placeholders": {
+      "coins": {}
+    }
+  },
+  "rvoNoThanks": "No thanks",
+  "tbTimesUp": "TIME'S UP!",
+  "tbKeepGoing": "Keep going · {seconds}s",
+  "@tbKeepGoing": {
+    "placeholders": {
+      "seconds": {}
+    }
+  },
+  "tbWatchAd": "Watch ad — +{seconds}s",
+  "@tbWatchAd": {
+    "placeholders": {
+      "seconds": {}
+    }
+  },
+  "tbEndRun": "End run",
+  "dbTitle": "Daily Bonus",
+  "dbClaimToday": "Claim your daily reward!",
+  "dbComeBack": "Come back tomorrow!",
+  "dbDayChip": "D{day}",
+  "@dbDayChip": {
+    "placeholders": {
+      "day": {}
+    }
+  },
+  "dbTodaysReward": "Today's Reward",
+  "dbAlreadyClaimed": "Already claimed today",
+  "dbClaim": "CLAIM REWARD",
+  "dbClaim2x": "CLAIM 2× — WATCH AD",
+  "npPrimerTitle": "Don't miss out!",
+  "npPrimerBody": "We only send a couple of notifications a day — your daily challenge reminder and special events.\n\nNo spam, promise. 🐍",
+  "npMaybeLater": "Maybe later",
+  "npAllSet": "🎉 You're all set!",
+  "npTurnOn": "Turn on",
+  "npSoftTitle": "Stay in the loop?",
+  "npSoftBody": "Turn on notifications and we'll remind you about your daily challenges and streaks — plus the big stuff like FREE Premium giveaways and special events.\n\nJust a couple a day, no spam. 🐍",
+  "npNotNow": "Not now",
+  "npEnable": "Enable notifications",
+  "aroUnlocked": "ACHIEVEMENT UNLOCKED",
+  "aroTapToContinue": "Tap to continue",
+  "aroSkip": "SKIP",
+  "aroSkipCount": "SKIP ({count})",
+  "@aroSkipCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "luLevelUp": "LEVEL UP!",
+  "luReached": "You reached Level {level}",
+  "@luReached": {
+    "placeholders": {
+      "level": {}
+    }
+  },
+  "luNice": "NICE",
+  "cfTapContinue": "Tap anywhere to continue",
+  "cfTapSkip": "Tap anywhere to skip",
+  "ppgLvShort": "Lv {level}",
+  "@ppgLvShort": {
+    "placeholders": {
+      "level": {}
+    }
+  },
+  "ppgLvUpper": "LV {level}",
+  "@ppgLvUpper": {
+    "placeholders": {
+      "level": {}
+    }
+  },
+  "ppgLevel": "Level {level}",
+  "@ppgLevel": {
+    "placeholders": {
+      "level": {}
+    }
+  },
+  "xgTitle": "Exit Game?",
+  "xgBody": "Are you sure you want to exit? Your current progress will be lost.",
+  "xgExit": "Exit",
+  "ccTitle": "How do you want to play?",
+  "ccBody": "Pick one — you can change it anytime in Settings → Controls.",
+  "ccSwipe": "Swipe Gestures",
+  "ccSwipeSub": "Swipe anywhere on the board to turn.",
+  "ccDpad": "D-Pad Controls",
+  "ccDpadSub": "On-screen directional buttons.",
+  "rcCoinsAdded": "🎉 +{coins} coins added to your wallet!",
+  "@rcCoinsAdded": {
+    "placeholders": {
+      "coins": {}
+    }
+  },
+  "rcWatchAd": "Watch an ad — +{coins} coins",
+  "@rcWatchAd": {
+    "placeholders": {
+      "coins": {}
+    }
+  },
+  "rcNoAd": "No ad available right now",
+  "raOptIn": "Opt-in — watch to earn",
+  "mpYou": "You",
+  "compassSemantics": "Swipe direction indicator",
+  "homeBonusDoubled": "🎉 Daily bonus doubled — +{coins} bonus coins!",
+  "@homeBonusDoubled": {
+    "placeholders": {
+      "coins": {}
+    }
+  },
+  "nsNewNotification": "You have a new notification",
+  "nsAchievementUnlocked": "🏆 Achievement Unlocked!",
+  "nsDailyReminderTitle": "🐍 Time to play Snake Classic!",
+  "nsDailyReminderBody": "Complete your daily challenge and climb the leaderboard!",
+  "mpErrMatchmaking": "Matchmaking failed. Please try again.",
+  "mpErrCreateFailed": "Failed to create game",
+  "mpErrJoinFailed": "Failed to join game. Game might be full or not exist.",
+  "mpErrReadyFailed": "Failed to update ready status",
+  "mpErrStartFailed": "Failed to start game",
+  "mpErrStartTimeout": "Start game timed out. Please try again.",
+  "mpErrReconnectFailed": "Could not reconnect to the match.",
+  "mpErrConnectionLost": "Connection lost — the match could not be resumed.",
+  "mpErrMatchEndedAway": "The match ended while you were away.",
+  "mpErrWaitingReady": "Waiting for all players to be ready",
+  "mpErrOnlyHost": "Only the host can start the game",
+  "mpErrSessionExpired": "Game session expired. Please create a new game",
+  "mpErrAlreadyStarted": "This game has already started",
+  "mpErrNeedTwoPlayers": "Matches need exactly 2 players",
+  "mpErrSignIn": "Please sign in to play multiplayer",
+  "mpErrReconnectExpired": "Reconnection time expired",
+  "mpErrCheckInternet": "Connection lost. Please check your internet",
+  "mpErrUnableJoin": "Unable to join room. Please try again",
+  "mpErrGeneric": "Something went wrong. Please try again"
 }

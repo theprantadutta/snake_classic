@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Data class for daily bonus reward
@@ -325,7 +326,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
           const SizedBox(height: 12),
 
           Text(
-            'Daily Bonus',
+            AppLocalizations.of(context)!.dbTitle,
             style: TextStyle(
               color: widget.theme.accentColor,
               fontSize: 24,
@@ -338,8 +339,8 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
 
           Text(
             widget.status.canClaim
-                ? 'Claim your daily reward!'
-                : 'Come back tomorrow!',
+                ? AppLocalizations.of(context)!.dbClaimToday
+                : AppLocalizations.of(context)!.dbComeBack,
             style: TextStyle(
               color: widget.theme.accentColor.withValues(alpha: 0.7),
               fontSize: 14,
@@ -474,7 +475,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
         circle,
         const SizedBox(height: 4),
         Text(
-          'D$day',
+          AppLocalizations.of(context)!.dbDayChip(day),
           style: TextStyle(
             color: isToday
                 ? Colors.amber
@@ -506,7 +507,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
       child: Column(
         children: [
           Text(
-            "Today's Reward",
+            AppLocalizations.of(context)!.dbTodaysReward,
             style: TextStyle(
               color: widget.theme.accentColor.withValues(alpha: 0.7),
               fontSize: 12,
@@ -606,7 +607,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
             ),
             const SizedBox(width: 8),
             Text(
-              'Already claimed today',
+              AppLocalizations.of(context)!.dbAlreadyClaimed,
               style: TextStyle(
                 color: widget.theme.accentColor.withValues(alpha: 0.6),
                 fontSize: 14,
@@ -642,15 +643,15 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
                   strokeWidth: 2,
                 ),
               )
-            : const Row(
+            : Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('🎉', style: TextStyle(fontSize: 20)),
-                  SizedBox(width: 8),
+                  const Text('🎉', style: TextStyle(fontSize: 20)),
+                  const SizedBox(width: 8),
                   Text(
-                    'CLAIM REWARD',
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.dbClaim,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -697,7 +698,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
                       color: widget.theme.accentColor, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'CLAIM 2× — WATCH AD',
+                    AppLocalizations.of(context)!.dbClaim2x,
                     style: TextStyle(
                       color: widget.theme.accentColor,
                       fontSize: 14,
@@ -718,7 +719,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
     return TextButton(
       onPressed: widget.onClose,
       child: Text(
-        'Close',
+        AppLocalizations.of(context)!.commonClose,
         style: TextStyle(
           color: widget.theme.accentColor.withValues(alpha: 0.6),
           fontSize: 14,

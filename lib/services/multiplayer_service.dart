@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:signalr_netcore/signalr_client.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
+import 'package:snake_classic/models/multiplayer_error.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/utils/direction.dart';
@@ -16,7 +17,7 @@ class MatchmakingStatus {
   final String? gameId;
   final String? roomCode;
   final int? playerIndex;
-  final String? error;
+  final MultiplayerError? error;
   final MultiplayerGameMode? mode;
   final int? playerCount;
 
@@ -90,7 +91,7 @@ class MultiplayerService {
       StreamController<MultiplayerGameAction>.broadcast();
   final _matchmakingStreamController =
       StreamController<MatchmakingStatus>.broadcast();
-  final _errorController = StreamController<String>.broadcast();
+  final _errorController = StreamController<MultiplayerError>.broadcast();
   final _snapshotController = StreamController<MatchSnapshot>.broadcast();
   final _matchEndController = StreamController<MatchEndResult>.broadcast();
 
@@ -128,8 +129,8 @@ class MultiplayerService {
   Stream<MatchmakingStatus> get matchmakingStream =>
       _matchmakingStreamController.stream;
 
-  /// Stream of error messages for UI display.
-  Stream<String> get errorStream => _errorController.stream;
+  /// Stream of error codes for UI display (localized at render time).
+  Stream<MultiplayerError> get errorStream => _errorController.stream;
 
   /// Authoritative match snapshots (GameStarted / Tick / MatchResumed).
   Stream<MatchSnapshot> get snapshotStream => _snapshotController.stream;
@@ -538,10 +539,11 @@ class MultiplayerService {
         } else {
           rawError = 'Unknown error';
         }
-        _errorController.add(_mapErrorToUserFriendly(rawError));
+        AppLogger.error('SignalR hub error: $rawError');
+        _errorController.add(_mapErrorToCode(rawError));
       } catch (e) {
         AppLogger.error('Error parsing SignalR error', e);
-        _errorController.add('Something went wrong. Please try again');
+        _errorController.add(MultiplayerError.generic);
       }
     });
   }
@@ -847,8 +849,9 @@ class MultiplayerService {
     if (data == null) return;
 
     _isInMatchmaking = false;
+    AppLogger.error('Matchmaking error: ${data['error']}');
     _matchmakingStreamController.add(
-      MatchmakingStatus(error: data['error']?.toString()),
+      const MatchmakingStatus(error: MultiplayerError.matchmaking),
     );
   }
 
@@ -960,42 +963,43 @@ class MultiplayerService {
     );
   }
 
-  /// Map backend error messages to user-friendly messages.
-  String _mapErrorToUserFriendly(String error) {
+  /// Map backend error messages to stable error codes (localized at
+  /// render time).
+  MultiplayerError _mapErrorToCode(String error) {
     final errorLower = error.toLowerCase();
 
     if (errorLower.contains('not all players are ready')) {
-      return 'Waiting for all players to be ready';
+      return MultiplayerError.waitingReady;
     }
     if (errorLower.contains('only the host can start')) {
-      return 'Only the host can start the game';
+      return MultiplayerError.onlyHost;
     }
     if (errorLower.contains('game not found')) {
-      return 'Game session expired. Please create a new game';
+      return MultiplayerError.sessionExpired;
     }
     if (errorLower.contains('game already in progress') ||
         errorLower.contains('game cannot be started')) {
-      return 'This game has already started';
+      return MultiplayerError.alreadyStarted;
     }
     if (errorLower.contains('exactly 2 players')) {
-      return 'Matches need exactly 2 players';
+      return MultiplayerError.needTwoPlayers;
     }
     if (errorLower.contains('user not authenticated') ||
         errorLower.contains('not authenticated')) {
-      return 'Please sign in to play multiplayer';
+      return MultiplayerError.signIn;
     }
     if (errorLower.contains('reconnection window expired') ||
         errorLower.contains('reconnect')) {
-      return 'Reconnection time expired';
+      return MultiplayerError.reconnectExpired;
     }
     if (errorLower.contains('connection')) {
-      return 'Connection lost. Please check your internet';
+      return MultiplayerError.checkInternet;
     }
     if (errorLower.contains('must join the game via api first')) {
-      return 'Unable to join room. Please try again';
+      return MultiplayerError.unableJoin;
     }
 
-    return 'Something went wrong. Please try again';
+    return MultiplayerError.generic;
   }
 
   /// Dispose the service.

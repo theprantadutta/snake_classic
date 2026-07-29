@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -78,8 +79,8 @@ class _RewardedActionButtonState extends State<RewardedActionButton> {
 
     final theme = widget.theme;
     final enabled = _enabled(ads);
-    final subtitle =
-        enabled ? 'Opt-in — watch to earn' : 'No ad available right now';
+    final l10n = AppLocalizations.of(context)!;
+    final subtitle = enabled ? l10n.raOptIn : l10n.rcNoAd;
 
     return Opacity(
       opacity: enabled ? 1 : 0.5,

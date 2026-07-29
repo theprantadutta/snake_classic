@@ -332,6 +332,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 // Capture before the ad — onReward fires after dismissal,
                 // an async gap where reading context is unsafe.
                 final messenger = ScaffoldMessenger.of(context);
+                final l10n = AppLocalizations.of(context)!;
                 final ok = await coins.collectDailyBonus();
                 if (!ok) return;
                 getIt<AnalyticsFacade>().trackDailyBonusCollected();
@@ -346,7 +347,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     );
                     showRewardToast(
                       messenger,
-                      '🎉 Daily bonus doubled — +$bonusCoins bonus coins!',
+                      l10n.homeBonusDoubled(bonusCoins),
                     );
                   },
                 );

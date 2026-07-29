@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
@@ -94,8 +95,8 @@ class CrashFeedbackOverlay extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         _untilTap
-                            ? 'Tap anywhere to continue'
-                            : 'Tap anywhere to skip',
+                            ? AppLocalizations.of(context)!.cfTapContinue
+                            : AppLocalizations.of(context)!.cfTapSkip,
                         style: TextStyle(
                           fontSize: 12,
                           color: theme.accentColor.withValues(alpha: 0.75),

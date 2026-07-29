@@ -4655,4 +4655,702 @@ class AppLocalizationsHi extends AppLocalizations {
   String bpRewardDescPremium(Object type) {
     return 'विशेष प्रीमियम $type इनाम';
   }
+
+  @override
+  String get insHowToPlay => 'कैसे खेलें';
+
+  @override
+  String get insObjective => 'लक्ष्य';
+
+  @override
+  String get insObjectiveBody =>
+      'साँप को नियंत्रित करें, खाना खाएँ और दीवारों या खुद से टकराए बिना जितना हो सके लंबे बनें!';
+
+  @override
+  String get insControls => 'नियंत्रण';
+
+  @override
+  String get insSwipeUp => 'ऊपर स्वाइप ↑';
+
+  @override
+  String get insSwipeUpDesc => 'साँप को ऊपर ले जाएँ';
+
+  @override
+  String get insSwipeDown => 'नीचे स्वाइप ↓';
+
+  @override
+  String get insSwipeDownDesc => 'साँप को नीचे ले जाएँ';
+
+  @override
+  String get insSwipeLeft => 'बाएँ स्वाइप ←';
+
+  @override
+  String get insSwipeLeftDesc => 'साँप को बाएँ ले जाएँ';
+
+  @override
+  String get insSwipeRight => 'दाएँ स्वाइप →';
+
+  @override
+  String get insSwipeRightDesc => 'साँप को दाएँ ले जाएँ';
+
+  @override
+  String get insTapScreen => 'स्क्रीन टैप करें';
+
+  @override
+  String get insTapScreenDesc => 'गेम रोकें/जारी रखें';
+
+  @override
+  String get insArrowKeys => 'एरो कुंजियाँ (डेस्कटॉप)';
+
+  @override
+  String get insArrowKeysDesc => 'दिशा बदलें';
+
+  @override
+  String get insWasd => 'WASD (डेस्कटॉप)';
+
+  @override
+  String get insWasdDesc => 'दिशा बदलें';
+
+  @override
+  String get insSpacebar => 'स्पेसबार (डेस्कटॉप)';
+
+  @override
+  String get insSpacebarDesc => 'गेम रोकें/जारी रखें';
+
+  @override
+  String get insFoodTypes => 'खाने के प्रकार';
+
+  @override
+  String get insNormalFood => 'सामान्य खाना';
+
+  @override
+  String get insBonusFood => 'बोनस खाना';
+
+  @override
+  String get insSpecialFood => 'ख़ास खाना';
+
+  @override
+  String get insRules => 'नियम';
+
+  @override
+  String get insRule1 => '• खाना खाकर बढ़ें और स्कोर बढ़ाएँ';
+
+  @override
+  String get insRule2 => '• लेवल बढ़ने पर साँप तेज़ होता है';
+
+  @override
+  String get insRule3 => '• दीवार या खुद से टकराने पर गेम ख़त्म';
+
+  @override
+  String get insRule4 => '• हर 10 सामान्य खाने पर ख़ास खाना आता है';
+
+  @override
+  String get insRule5 => '• बोनस खाना 15 सेकंड में ग़ायब हो जाता है';
+
+  @override
+  String get insProTips => 'प्रो टिप्स';
+
+  @override
+  String get insTip1 => 'अपनी चालें पहले से सोचें';
+
+  @override
+  String get insTip2 => 'किनारों से सुरक्षित जगह बनाएँ';
+
+  @override
+  String get insTip3 => 'स्वाइप के दृश्य संकेत देखें';
+
+  @override
+  String get insTip4 => 'अलग-अलग कठिनाई स्तरों का अभ्यास करें';
+
+  @override
+  String get insBackToGame => 'गेम पर वापस';
+
+  @override
+  String dchClaimedReward(Object coins, Object xp) {
+    return '$coins सिक्के और $xp XP मिले!';
+  }
+
+  @override
+  String dchClaimedCoins(Object coins) {
+    return '$coins सिक्के मिले!';
+  }
+
+  @override
+  String get dchWatchTo2x => 'देखें और 2× पाएँ';
+
+  @override
+  String dchDoubledBonus(Object coins) {
+    return '🎉 दोगुना! +$coins बोनस सिक्के!';
+  }
+
+  @override
+  String get dchClaimAll => 'सब लें';
+
+  @override
+  String get dchTodaysProgress => 'आज की प्रगति';
+
+  @override
+  String get dchClaim => 'लें';
+
+  @override
+  String get dchClaimed => 'मिल गया';
+
+  @override
+  String get dchAllCompleteTitle => 'सारी चुनौतियाँ पूरी!';
+
+  @override
+  String get dchBonusClaimed => 'बोनस इनाम मिल गया';
+
+  @override
+  String get dchBonusPending => 'बोनस इनाम बाकी — कोई भी चुनौती क्लेम करें';
+
+  @override
+  String get dchLoading => 'चुनौतियाँ लोड हो रही हैं...';
+
+  @override
+  String get dchCheckBack => 'नई दैनिक चुनौतियों के लिए बाद में देखें!';
+
+  @override
+  String get dchAbout => 'दैनिक चुनौतियों के बारे में';
+
+  @override
+  String get dchAbout1 => 'हर दिन आधी रात को नई चुनौतियाँ';
+
+  @override
+  String get dchAbout2 => 'चुनौतियाँ पूरी कर सिक्के कमाएँ';
+
+  @override
+  String get dchAbout3 => 'XP पाकर अपनी प्रोफ़ाइल का लेवल बढ़ाएँ';
+
+  @override
+  String get dchAbout4 => 'तीनों पूरी करें और बोनस इनाम पाएँ!';
+
+  @override
+  String get dchAllBonusTitle => 'सभी चुनौतियों का बोनस';
+
+  @override
+  String get dchAllBonusDesc => 'आज की हर दैनिक चुनौती पूरी की।';
+
+  @override
+  String get wqNoQuests => 'अभी कोई साप्ताहिक क्वेस्ट नहीं — सोमवार को देखें';
+
+  @override
+  String get wqTitle => 'साप्ताहिक क्वेस्ट';
+
+  @override
+  String get wqClaimReward => 'इनाम लें';
+
+  @override
+  String get rvNotFound => 'रिप्ले नहीं मिला';
+
+  @override
+  String get rvLoadFailed => 'रिप्ले लोड नहीं हो सका';
+
+  @override
+  String rvTitle(Object name) {
+    return 'रिप्ले: $name';
+  }
+
+  @override
+  String get rvLoadingTitle => 'रिप्ले लोड हो रहा है...';
+
+  @override
+  String get rvLoading => 'रिप्ले लोड हो रहा है...';
+
+  @override
+  String get rvGoBack => 'वापस जाएँ';
+
+  @override
+  String get rvScore => 'स्कोर';
+
+  @override
+  String get rvLevel => 'लेवल';
+
+  @override
+  String get rvFrame => 'फ़्रेम';
+
+  @override
+  String get rvTime => 'समय';
+
+  @override
+  String get rvNoFrameData => 'फ़्रेम डेटा नहीं है';
+
+  @override
+  String get rvSpeedLabel => 'गति: ';
+
+  @override
+  String rvAteFood(Object type) {
+    return '🍎 $type खाना खाया';
+  }
+
+  @override
+  String rvCollectedPowerUp(Object type) {
+    return '⚡ $type पावर-अप लिया';
+  }
+
+  @override
+  String get unEmpty => 'यूज़रनेम खाली नहीं हो सकता';
+
+  @override
+  String get unSetFailed => 'यूज़रनेम सेट नहीं हो सका';
+
+  @override
+  String get unPickTitle => 'अपना यूज़रनेम चुनें';
+
+  @override
+  String get unPickBody =>
+      'लीडरबोर्ड पर आप इसी नाम से दिखेंगे। हमने आपके लिए एक चुन लिया है — रखें या बदल लें।';
+
+  @override
+  String get unLabel => 'यूज़रनेम';
+
+  @override
+  String get unSaving => 'सहेजा जा रहा है...';
+
+  @override
+  String get unContinue => 'जारी रखें';
+
+  @override
+  String get unChangeAnytime => 'इसे आप कभी भी सेटिंग्स में बदल सकते हैं।';
+
+  @override
+  String unMinLength(Object min) {
+    return 'यूज़रनेम कम से कम $min अक्षरों का होना चाहिए';
+  }
+
+  @override
+  String unMaxLength(Object max) {
+    return 'यूज़रनेम ज़्यादा से ज़्यादा $max अक्षरों का हो सकता है';
+  }
+
+  @override
+  String get unPattern =>
+      'यूज़रनेम अक्षर से शुरू हो और उसमें सिर्फ़ अक्षर, अंक और अंडरस्कोर हों';
+
+  @override
+  String get unReserved => 'यह यूज़रनेम आरक्षित है और इस्तेमाल नहीं हो सकता';
+
+  @override
+  String get unTaken => 'यह यूज़रनेम पहले से लिया जा चुका है';
+
+  @override
+  String get unUpdateFailed => 'यूज़रनेम अपडेट नहीं हो सका';
+
+  @override
+  String get pcTitle => 'गोपनीयता और शर्तें अपडेट हुईं';
+
+  @override
+  String pcVersionLine(Object version) {
+    return 'संस्करण $version · कृपया पढ़कर स्वीकार करें';
+  }
+
+  @override
+  String get pcTabPrivacy => 'गोपनीयता नीति';
+
+  @override
+  String get pcTabTerms => 'उपयोग की शर्तें';
+
+  @override
+  String get pcAgree =>
+      'मैंने अपडेट की गई गोपनीयता नीति और उपयोग की शर्तें पढ़ी हैं और उनसे सहमत हूँ';
+
+  @override
+  String get pcContinue => 'जारी रखें';
+
+  @override
+  String lgAvailableAt(Object url) {
+    return 'यह दस्तावेज़ $url पर उपलब्ध है।';
+  }
+
+  @override
+  String get lgUnavailable =>
+      'यह दस्तावेज़ अभी उपलब्ध नहीं है। कृपया बाद में कोशिश करें।';
+
+  @override
+  String get auTitle => 'ख़रीदारी के लिए साइन अप करें';
+
+  @override
+  String get auBody =>
+      'गेस्ट खाते खेल सकते हैं और प्रगति डिवाइस पर सहेज सकते हैं, लेकिन ख़रीदारी या सदस्यता नहीं ले सकते। ख़रीदारी के लिए Google या ईमेल खाता जोड़ें — आपके सिक्के, कॉस्मेटिक्स और हाई स्कोर सुरक्षित रहेंगे।';
+
+  @override
+  String get auGoogle => 'Google से जारी रखें';
+
+  @override
+  String get auGoogleSub =>
+      'सबसे तेज़ तरीका। अपने Google खाते से साइन इन करें।';
+
+  @override
+  String get auLinked => 'खाता जुड़ गया। अब आप ख़रीदारी कर सकते हैं।';
+
+  @override
+  String get auEmail => 'ईमेल खाता बनाएँ';
+
+  @override
+  String get auEmailSub =>
+      'कोई भी ईमेल और अपना पासवर्ड चुनें। किसी भी डिवाइस पर वापस पाएँ।';
+
+  @override
+  String get auNotNow => 'अभी नहीं';
+
+  @override
+  String get auErrCredentialInUse =>
+      'यह क्रेडेंशियल पहले से दूसरे खाते से जुड़ा है। उसी से साइन इन करने की कोशिश करें।';
+
+  @override
+  String get auErrAlreadyLinked => 'यह खाता पहले से जुड़ा हुआ है।';
+
+  @override
+  String get auErrRequiresRecentLogin =>
+      'सुरक्षा के लिए, जोड़ने से पहले दोबारा साइन इन करें।';
+
+  @override
+  String get auErrNetwork => 'नेटवर्क त्रुटि। अपना कनेक्शन जाँचें।';
+
+  @override
+  String get auErrGeneric => 'जोड़ना विफल रहा। कृपया फिर कोशिश करें।';
+
+  @override
+  String get sroSettingUpTitle => 'आपका खाता तैयार हो रहा है…';
+
+  @override
+  String get sroSettingUpBody =>
+      'आपके पहले सत्र की तैयारी हो रही है। यह सिर्फ़ एक बार होता है।';
+
+  @override
+  String get sroLoadingTitle => 'आपका पिछला डेटा लोड हो रहा है…';
+
+  @override
+  String get sroLoadingBody =>
+      'क्लाउड से आपके आँकड़े, उपलब्धियाँ, सिक्के और अनलॉक लाए जा रहे हैं।';
+
+  @override
+  String get sroRestoringTitle => 'आपकी प्रगति बहाल हो रही है…';
+
+  @override
+  String get sroRestoringBody =>
+      'सब कुछ इस डिवाइस पर लागू हो रहा है। ऐप बंद न करें।';
+
+  @override
+  String get sroDoneTitle => 'सब तैयार!';
+
+  @override
+  String get sroDoneBody => 'आपकी प्रगति बहाल हो गई है।';
+
+  @override
+  String get sroFailedTitle => 'आपका डेटा बहाल नहीं हो सका';
+
+  @override
+  String get sroFailedBody =>
+      'अभी क्लाउड से संपर्क नहीं हो पाया। इंटरनेट कनेक्शन जाँचकर फिर कोशिश करें। आप बिना बहाल किए भी जारी रख सकते हैं — अगली बार ऐप खोलने पर हम फिर कोशिश करेंगे।';
+
+  @override
+  String get sroTryAgain => 'फिर कोशिश करें';
+
+  @override
+  String get sroContinueAnyway => 'फिर भी जारी रखें';
+
+  @override
+  String get ssiOfflinePending => 'ऑफ़लाइन - कनेक्ट होने पर बदलाव सिंक होंगे';
+
+  @override
+  String get ssiSyncing => 'सिंक हो रहा है...';
+
+  @override
+  String get ssiAllSynced => 'सारा डेटा सिंक हो गया';
+
+  @override
+  String ssiFailedCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count आइटम सिंक नहीं हो सके',
+      one: '1 आइटम सिंक नहीं हो सका',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ssiPendingCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count आइटम सिंक बाकी',
+      one: '1 आइटम सिंक बाकी',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ssiOffline => 'ऑफ़लाइन';
+
+  @override
+  String get rvoContinue => 'जारी रखें?';
+
+  @override
+  String get rvoSubtitlePro => 'रिवाइव करें और स्कोर बचाएँ · Pro के साथ मुफ़्त';
+
+  @override
+  String rvoSubtitleTimer(Object seconds) {
+    return 'रिवाइव करें और स्कोर बचाएँ · $seconds से.';
+  }
+
+  @override
+  String get rvoGetLifePro => 'जान पाएँ · Pro के लिए मुफ़्त';
+
+  @override
+  String get rvoWatchAd => 'रिवाइव के लिए विज्ञापन देखें';
+
+  @override
+  String rvoUseCoins(Object coins) {
+    return '$coins सिक्के लगाएँ';
+  }
+
+  @override
+  String get rvoNoThanks => 'नहीं, धन्यवाद';
+
+  @override
+  String get tbTimesUp => 'समय समाप्त!';
+
+  @override
+  String tbKeepGoing(Object seconds) {
+    return 'जारी रखें · $seconds से.';
+  }
+
+  @override
+  String tbWatchAd(Object seconds) {
+    return 'विज्ञापन देखें — +$seconds से.';
+  }
+
+  @override
+  String get tbEndRun => 'रन ख़त्म करें';
+
+  @override
+  String get dbTitle => 'दैनिक बोनस';
+
+  @override
+  String get dbClaimToday => 'अपना दैनिक इनाम लें!';
+
+  @override
+  String get dbComeBack => 'कल फिर आएँ!';
+
+  @override
+  String dbDayChip(Object day) {
+    return 'दिन $day';
+  }
+
+  @override
+  String get dbTodaysReward => 'आज का इनाम';
+
+  @override
+  String get dbAlreadyClaimed => 'आज ले लिया गया';
+
+  @override
+  String get dbClaim => 'इनाम लें';
+
+  @override
+  String get dbClaim2x => '2× लें — विज्ञापन देखें';
+
+  @override
+  String get npPrimerTitle => 'कुछ न छूटे!';
+
+  @override
+  String get npPrimerBody =>
+      'हम दिन में बस एक-दो सूचनाएँ भेजते हैं — आपकी दैनिक चुनौती की याद और ख़ास इवेंट।\n\nस्पैम नहीं, वादा। 🐍';
+
+  @override
+  String get npMaybeLater => 'शायद बाद में';
+
+  @override
+  String get npAllSet => '🎉 सब सेट!';
+
+  @override
+  String get npTurnOn => 'चालू करें';
+
+  @override
+  String get npSoftTitle => 'जुड़े रहना चाहेंगे?';
+
+  @override
+  String get npSoftBody =>
+      'सूचनाएँ चालू करें और हम आपको दैनिक चुनौतियों और स्ट्रीक की याद दिलाएँगे — साथ ही मुफ़्त प्रीमियम गिवअवे और ख़ास इवेंट जैसी बड़ी बातें भी।\n\nदिन में बस एक-दो, कोई स्पैम नहीं। 🐍';
+
+  @override
+  String get npNotNow => 'अभी नहीं';
+
+  @override
+  String get npEnable => 'सूचनाएँ चालू करें';
+
+  @override
+  String get aroUnlocked => 'उपलब्धि अनलॉक हुई';
+
+  @override
+  String get aroTapToContinue => 'जारी रखने के लिए टैप करें';
+
+  @override
+  String get aroSkip => 'छोड़ें';
+
+  @override
+  String aroSkipCount(Object count) {
+    return 'छोड़ें ($count)';
+  }
+
+  @override
+  String get luLevelUp => 'लेवल अप!';
+
+  @override
+  String luReached(Object level) {
+    return 'आप लेवल $level पर पहुँचे';
+  }
+
+  @override
+  String get luNice => 'बढ़िया';
+
+  @override
+  String get cfTapContinue => 'जारी रखने के लिए कहीं भी टैप करें';
+
+  @override
+  String get cfTapSkip => 'छोड़ने के लिए कहीं भी टैप करें';
+
+  @override
+  String ppgLvShort(Object level) {
+    return 'Lv $level';
+  }
+
+  @override
+  String ppgLvUpper(Object level) {
+    return 'LV $level';
+  }
+
+  @override
+  String ppgLevel(Object level) {
+    return 'लेवल $level';
+  }
+
+  @override
+  String get xgTitle => 'गेम छोड़ें?';
+
+  @override
+  String get xgBody =>
+      'क्या आप वाक़ई बाहर निकलना चाहते हैं? आपकी मौजूदा प्रगति खो जाएगी।';
+
+  @override
+  String get xgExit => 'बाहर निकलें';
+
+  @override
+  String get ccTitle => 'आप कैसे खेलना चाहेंगे?';
+
+  @override
+  String get ccBody =>
+      'एक चुनें — इसे आप कभी भी सेटिंग्स → नियंत्रण में बदल सकते हैं।';
+
+  @override
+  String get ccSwipe => 'स्वाइप इशारे';
+
+  @override
+  String get ccSwipeSub => 'मुड़ने के लिए बोर्ड पर कहीं भी स्वाइप करें।';
+
+  @override
+  String get ccDpad => 'D-पैड नियंत्रण';
+
+  @override
+  String get ccDpadSub => 'स्क्रीन पर दिशा बटन।';
+
+  @override
+  String rcCoinsAdded(Object coins) {
+    return '🎉 +$coins सिक्के आपके वॉलेट में जुड़े!';
+  }
+
+  @override
+  String rcWatchAd(Object coins) {
+    return 'विज्ञापन देखें — +$coins सिक्के';
+  }
+
+  @override
+  String get rcNoAd => 'अभी कोई विज्ञापन उपलब्ध नहीं';
+
+  @override
+  String get raOptIn => 'चुनें — देखकर कमाएँ';
+
+  @override
+  String get compassSemantics => 'स्वाइप दिशा संकेतक';
+
+  @override
+  String homeBonusDoubled(Object coins) {
+    return '🎉 दैनिक बोनस दोगुना — +$coins बोनस सिक्के!';
+  }
+
+  @override
+  String get nsNewNotification => 'आपके लिए एक नई सूचना है';
+
+  @override
+  String get nsAchievementUnlocked => '🏆 उपलब्धि अनलॉक हुई!';
+
+  @override
+  String get nsDailyReminderTitle => '🐍 Snake Classic खेलने का समय!';
+
+  @override
+  String get nsDailyReminderBody =>
+      'अपनी दैनिक चुनौती पूरी करें और लीडरबोर्ड पर चढ़ें!';
+
+  @override
+  String get mpErrMatchmaking => 'मैचमेकिंग विफल रही। कृपया फिर कोशिश करें।';
+
+  @override
+  String get mpErrCreateFailed => 'गेम नहीं बन सका';
+
+  @override
+  String get mpErrJoinFailed =>
+      'गेम में शामिल नहीं हो सके। गेम भरा हो सकता है या मौजूद नहीं है।';
+
+  @override
+  String get mpErrReadyFailed => 'तैयार स्थिति अपडेट नहीं हो सकी';
+
+  @override
+  String get mpErrStartFailed => 'गेम शुरू नहीं हो सका';
+
+  @override
+  String get mpErrStartTimeout =>
+      'गेम शुरू करने में समय समाप्त। कृपया फिर कोशिश करें।';
+
+  @override
+  String get mpErrReconnectFailed => 'मैच से दोबारा नहीं जुड़ सके।';
+
+  @override
+  String get mpErrConnectionLost =>
+      'कनेक्शन टूट गया — मैच फिर शुरू नहीं हो सका।';
+
+  @override
+  String get mpErrMatchEndedAway => 'आपकी गैरमौजूदगी में मैच ख़त्म हो गया।';
+
+  @override
+  String get mpErrWaitingReady => 'सभी खिलाड़ियों के तैयार होने का इंतज़ार';
+
+  @override
+  String get mpErrOnlyHost => 'सिर्फ़ होस्ट ही गेम शुरू कर सकता है';
+
+  @override
+  String get mpErrSessionExpired =>
+      'गेम सत्र समाप्त हो गया। कृपया नया गेम बनाएँ';
+
+  @override
+  String get mpErrAlreadyStarted => 'यह गेम पहले ही शुरू हो चुका है';
+
+  @override
+  String get mpErrNeedTwoPlayers => 'मैच में ठीक 2 खिलाड़ी चाहिए';
+
+  @override
+  String get mpErrSignIn => 'मल्टीप्लेयर खेलने के लिए साइन इन करें';
+
+  @override
+  String get mpErrReconnectExpired => 'दोबारा जुड़ने का समय समाप्त';
+
+  @override
+  String get mpErrCheckInternet => 'कनेक्शन टूट गया। कृपया अपना इंटरनेट जाँचें';
+
+  @override
+  String get mpErrUnableJoin =>
+      'रूम में शामिल नहीं हो सके। कृपया फिर कोशिश करें';
+
+  @override
+  String get mpErrGeneric => 'कुछ गड़बड़ हो गई। कृपया फिर कोशिश करें';
 }

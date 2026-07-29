@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -36,6 +37,7 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.55,
@@ -84,7 +86,7 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Sign up to make purchases',
+                      l10n.auTitle,
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 20,
@@ -96,7 +98,7 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Guest accounts can play and save progress locally, but cannot buy items or subscribe. Link a Google or email account to unlock purchases — your existing coins, cosmetics, and high scores stay attached.',
+                l10n.auBody,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 14,
@@ -106,9 +108,8 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
               const SizedBox(height: 24),
               _UpgradeOption(
                 icon: Icons.g_mobiledata_outlined,
-                title: 'Continue with Google',
-                subtitle:
-                    'Fastest option. Sign in with your Google account.',
+                title: l10n.auGoogle,
+                subtitle: l10n.auGoogleSub,
                 color: Colors.red.shade700,
                 busy: _busy,
                 onPressed: () async {
@@ -117,6 +118,7 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                   final cubit = context.read<AuthCubit>();
                   final navigator = Navigator.of(context);
                   final messenger = ScaffoldMessenger.of(context);
+                  final l10n = AppLocalizations.of(context)!;
                   setState(() => _busy = true);
                   final ok = await cubit.linkAnonymousToGoogle();
                   if (!mounted) return;
@@ -126,9 +128,7 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                     messenger.showSnackBar(
                       SnackBar(
                         backgroundColor: Colors.green.shade700,
-                        content: const Text(
-                          'Account linked. You can now make purchases.',
-                        ),
+                        content: Text(l10n.auLinked),
                       ),
                     );
                   } else {
@@ -137,7 +137,7 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                       messenger.showSnackBar(
                         SnackBar(
                           backgroundColor: Colors.red.shade700,
-                          content: Text(_linkError(code)),
+                          content: Text(_linkError(l10n, code)),
                         ),
                       );
                     }
@@ -147,9 +147,8 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
               const SizedBox(height: 12),
               _UpgradeOption(
                 icon: Icons.email_outlined,
-                title: 'Create an Email Account',
-                subtitle:
-                    'Use any email and a password you choose. Restore on any device.',
+                title: l10n.auEmail,
+                subtitle: l10n.auEmailSub,
                 color: theme.accentColor,
                 busy: _busy,
                 onPressed: () {
@@ -161,7 +160,7 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
               TextButton(
                 onPressed: _busy ? null : () => Navigator.of(context).pop(false),
                 child: Text(
-                  'Not now',
+                  l10n.auNotNow,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
@@ -174,19 +173,19 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
     );
   }
 
-  String _linkError(String code) {
+  String _linkError(AppLocalizations l10n, String code) {
     switch (code) {
       case 'credential-already-in-use':
       case 'email-already-in-use':
-        return 'That credential is already linked to another account. Try signing in with it instead.';
+        return l10n.auErrCredentialInUse;
       case 'provider-already-linked':
-        return 'This account is already linked.';
+        return l10n.auErrAlreadyLinked;
       case 'requires-recent-login':
-        return 'For security, sign in again before linking.';
+        return l10n.auErrRequiresRecentLogin;
       case 'network-request-failed':
-        return 'Network error. Check your connection.';
+        return l10n.auErrNetwork;
       default:
-        return 'Linking failed. Please try again.';
+        return l10n.auErrGeneric;
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -57,6 +58,7 @@ class NotificationPermissionPrimer {
   }
 
   static Future<void> _showDialog(BuildContext context, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -71,7 +73,7 @@ class NotificationPermissionPrimer {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                "Don't miss out!",
+                l10n.npPrimerTitle,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontWeight: FontWeight.bold,
@@ -81,9 +83,7 @@ class NotificationPermissionPrimer {
           ],
         ),
         content: Text(
-          'We only send a couple of notifications a day — your daily '
-          'challenges, and the important stuff like FREE Premium giveaways '
-          'and special events.\n\nNo spam, promise. 🐍',
+          l10n.npPrimerBody,
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.85),
             height: 1.4,
@@ -93,7 +93,7 @@ class NotificationPermissionPrimer {
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
-              'Maybe later',
+              l10n.npMaybeLater,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.6),
               ),
@@ -117,13 +117,14 @@ class NotificationPermissionPrimer {
               if (granted) {
                 messenger.showSnackBar(
                   SnackBar(
-                    content: const Row(
+                    content: Row(
                       children: [
-                        Icon(Icons.notifications_active,
+                        const Icon(Icons.notifications_active,
                             color: Colors.white, size: 20),
-                        SizedBox(width: 10),
-                        Text("🎉 You're all set!",
-                            style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 10),
+                        Text(l10n.npAllSet,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600)),
                       ],
                     ),
                     backgroundColor: Colors.green.shade700,
@@ -141,9 +142,9 @@ class NotificationPermissionPrimer {
                 await service.openSystemNotificationSettings();
               }
             },
-            child: const Text(
-              'Turn on',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            child: Text(
+              l10n.npTurnOn,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],

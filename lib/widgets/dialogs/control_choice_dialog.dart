@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -13,6 +14,7 @@ import 'package:snake_classic/utils/constants.dart';
 Future<void> showControlChoiceDialog(BuildContext context) async {
   final settingsCubit = context.read<GameSettingsCubit>();
   final theme = context.read<ThemeCubit>().state.currentTheme;
+  final l10n = AppLocalizations.of(context)!;
 
   await showDialog<void>(
     context: context,
@@ -33,7 +35,7 @@ Future<void> showControlChoiceDialog(BuildContext context) async {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'How do you want to play?',
+              l10n.ccTitle,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.bold,
@@ -42,7 +44,7 @@ Future<void> showControlChoiceDialog(BuildContext context) async {
             ),
             const SizedBox(height: 4),
             Text(
-              'Pick one — you can change it anytime in Settings → Controls.',
+              l10n.ccBody,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.7),
                 fontSize: 12,
@@ -60,8 +62,8 @@ Future<void> showControlChoiceDialog(BuildContext context) async {
               dialogContext: dialogContext,
               theme: theme,
               icon: Icons.swipe_rounded,
-              title: 'Swipe Gestures',
-              subtitle: 'Swipe anywhere on the board to turn.',
+              title: l10n.ccSwipe,
+              subtitle: l10n.ccSwipeSub,
               onTap: () async {
                 await settingsCubit.updateDPadEnabled(false);
                 if (dialogContext.mounted) Navigator.of(dialogContext).pop();
@@ -72,8 +74,8 @@ Future<void> showControlChoiceDialog(BuildContext context) async {
               dialogContext: dialogContext,
               theme: theme,
               icon: Icons.gamepad_rounded,
-              title: 'D-Pad Controls',
-              subtitle: 'On-screen directional buttons.',
+              title: l10n.ccDpad,
+              subtitle: l10n.ccDpadSub,
               onTap: () async {
                 await settingsCubit.updateDPadEnabled(true);
                 if (dialogContext.mounted) Navigator.of(dialogContext).pop();

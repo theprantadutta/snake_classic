@@ -11,6 +11,7 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/utils/logger.dart';
 
 import 'multiplayer_state.dart';
 
@@ -94,7 +95,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _errorSubscription = _multiplayerService.errorStream.listen((error) {
       _hapticService.heavyImpact();
       _startGameTimeoutTimer?.cancel();
-      emit(state.copyWith(errorMessage: error, isLoading: false));
+      emit(state.copyWith(errorCode: error, isLoading: false));
     });
   }
 
@@ -125,7 +126,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           emit(
             state.copyWith(
               status: MultiplayerStatus.error,
-              errorMessage: status.error,
+              errorCode: status.error,
               clearMatchmaking: true,
             ),
           );
@@ -144,9 +145,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       },
       onError: (error) {
         _stopMatchmakingTimer();
+        AppLogger.error('Matchmaking stream error', error);
         emit(
           state.copyWith(
-            errorMessage: 'Matchmaking error: $error',
+            errorCode: MultiplayerError.matchmaking,
             clearMatchmaking: true,
           ),
         );
@@ -261,7 +263,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         emit(
           state.copyWith(
             isLoading: false,
-            errorMessage: 'Failed to create game',
+            errorCode: MultiplayerError.createFailed,
           ),
         );
         return false;
@@ -269,10 +271,11 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     } catch (e) {
       _audioService.playSound('game_over');
       _hapticService.heavyImpact();
+      AppLogger.error('Error creating game', e);
       emit(
         state.copyWith(
           isLoading: false,
-          errorMessage: 'Error creating game: $e',
+          errorCode: MultiplayerError.createFailed,
         ),
       );
       return false;
@@ -306,8 +309,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         emit(
           state.copyWith(
             isLoading: false,
-            errorMessage:
-                'Failed to join game. Game might be full or not exist.',
+            errorCode: MultiplayerError.joinFailed,
           ),
         );
         return false;
@@ -315,10 +317,11 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     } catch (e) {
       _audioService.playSound('game_over');
       _hapticService.heavyImpact();
+      AppLogger.error('Error joining game', e);
       emit(
         state.copyWith(
           isLoading: false,
-          errorMessage: 'Error joining game: $e',
+          errorCode: MultiplayerError.joinFailed,
         ),
       );
       return false;
@@ -340,7 +343,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         ),
       );
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Error leaving game: $e'));
+      AppLogger.error('Error leaving game', e);
+      emit(state.copyWith(errorCode: MultiplayerError.generic));
     }
   }
 
@@ -361,12 +365,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         }
       } else {
         _audioService.playSound('game_over');
-        emit(state.copyWith(errorMessage: 'Failed to update ready status'));
+        emit(state.copyWith(errorCode: MultiplayerError.readyFailed));
       }
       return success;
     } catch (e) {
       _audioService.playSound('game_over');
-      emit(state.copyWith(errorMessage: 'Error updating ready status: $e'));
+      AppLogger.error('Error updating ready status', e);
+      emit(state.copyWith(errorCode: MultiplayerError.readyFailed));
       return false;
     }
   }
@@ -436,10 +441,11 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
       return true;
     } catch (e) {
+      AppLogger.error('Error starting matchmaking', e);
       emit(
         state.copyWith(
           isLoading: false,
-          errorMessage: 'Error starting matchmaking: $e',
+          errorCode: MultiplayerError.matchmaking,
         ),
       );
       return false;
@@ -507,7 +513,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         state.copyWith(status: MultiplayerStatus.idle, clearMatchmaking: true),
       );
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Error canceling matchmaking: $e'));
+      AppLogger.error('Error canceling matchmaking', e);
+      emit(state.copyWith(errorCode: MultiplayerError.generic));
     }
   }
 
@@ -541,11 +548,12 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         return true;
       } else {
         _audioService.playSound('game_over');
-        _giveUpOnMatch('Could not reconnect to the match.');
+        _giveUpOnMatch(MultiplayerError.reconnectFailed);
         return false;
       }
     } catch (e) {
-      _giveUpOnMatch('Could not reconnect to the match.');
+      AppLogger.error('Error attempting reconnect', e);
+      _giveUpOnMatch(MultiplayerError.reconnectFailed);
       return false;
     }
   }
@@ -557,7 +565,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _reconnectTimeoutTimer?.cancel();
     _reconnectTimeoutTimer = Timer(const Duration(seconds: 12), () {
       if (state.status == MultiplayerStatus.reconnecting) {
-        _giveUpOnMatch('Connection lost — the match could not be resumed.');
+        _giveUpOnMatch(MultiplayerError.connectionLost);
       }
     });
   }
@@ -568,9 +576,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   }
 
   /// Terminal exit from a match we can no longer reach: clear the match
-  /// state and surface a message. The game screen reacts to the status
-  /// change by returning to the lobby.
-  void _giveUpOnMatch(String message) {
+  /// state and surface an error code. The game screen reacts to the
+  /// status change by returning to the lobby.
+  void _giveUpOnMatch(MultiplayerError code) {
     _cancelReconnectTimeout();
     _matchActive = false;
     if (_matchTimer.isRunning) _matchTimer.stop();
@@ -579,7 +587,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         status: MultiplayerStatus.idle,
         isLoading: false,
         clearGame: true,
-        errorMessage: message,
+        errorCode: code,
       ),
     );
   }
@@ -648,7 +656,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       if (!success) {
         emit(
           state.copyWith(
-            errorMessage: 'Failed to start game',
+            errorCode: MultiplayerError.startFailed,
             isLoading: false,
           ),
         );
@@ -661,7 +669,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         if (state.isLoading && state.status != MultiplayerStatus.playing) {
           emit(
             state.copyWith(
-              errorMessage: 'Start game timed out. Please try again.',
+              errorCode: MultiplayerError.startTimeout,
               isLoading: false,
             ),
           );
@@ -670,9 +678,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
       return success;
     } catch (e) {
+      AppLogger.error('Error starting game', e);
       emit(
         state.copyWith(
-          errorMessage: 'Error starting game: $e',
+          errorCode: MultiplayerError.startFailed,
           isLoading: false,
         ),
       );
@@ -696,7 +705,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         _applyGameUpdate(game);
       },
       onError: (error) {
-        emit(state.copyWith(errorMessage: 'Game stream error: $error'));
+        AppLogger.error('Game stream error', error);
+        emit(state.copyWith(errorCode: MultiplayerError.generic));
       },
     );
 
@@ -940,7 +950,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       case 'reconnect_failed':
         if (state.status == MultiplayerStatus.playing ||
             state.status == MultiplayerStatus.reconnecting) {
-          _giveUpOnMatch('The match ended while you were away.');
+          _giveUpOnMatch(MultiplayerError.matchEndedAway);
         }
         break;
 

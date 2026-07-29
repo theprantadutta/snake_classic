@@ -314,7 +314,7 @@ class _RevealCardState extends State<_RevealCard>
                     const SizedBox(height: 28),
                     // "ACHIEVEMENT UNLOCKED" eyebrow — slide-up + fade in.
                     Text(
-                      'ACHIEVEMENT UNLOCKED',
+                      AppLocalizations.of(context)!.aroUnlocked,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: rarityColor,
@@ -402,7 +402,7 @@ class _RevealCardState extends State<_RevealCard>
                         .fadeIn(duration: 450.ms, delay: 850.ms),
                     const SizedBox(height: 24),
                     Text(
-                      'Tap to continue',
+                      AppLocalizations.of(context)!.aroTapToContinue,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.45),
                         fontSize: 11,
@@ -873,7 +873,8 @@ class _SkipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = remaining > 0 ? 'SKIP ($remaining)' : 'SKIP';
+    final l10n = AppLocalizations.of(context)!;
+    final label = remaining > 0 ? l10n.aroSkipCount(remaining) : l10n.aroSkip;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(

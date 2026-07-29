@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 
@@ -57,7 +58,7 @@ class _SnakeCompassIndicatorState extends State<SnakeCompassIndicator>
   Widget build(BuildContext context) {
     final size = widget.size;
     return Semantics(
-      label: 'Swipe direction indicator',
+      label: AppLocalizations.of(context)!.compassSemantics,
       child: AnimatedBuilder(
         animation:
             Listenable.merge([_swimController, widget.swipeAnimation]),

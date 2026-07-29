@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,13 +19,14 @@ class InstructionsScreen extends StatelessWidget {
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, state) {
         final theme = state.currentTheme;
+        final l10n = AppLocalizations.of(context)!;
 
         return Scaffold(
           bottomNavigationBar: const SnakeBannerAd(),
           extendBodyBehindAppBar: true,
           appBar: AppBar(
             title: Text(
-              'HOW TO PLAY',
+              l10n.insHowToPlay,
               style: TextStyle(
                 color: theme.accentColor,
                 fontWeight: FontWeight.bold,
@@ -61,8 +63,8 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Game Objective
                       _buildSection(
-                        'OBJECTIVE',
-                        'Control the snake to eat food and grow as long as possible without hitting walls or yourself!',
+                        l10n.insObjective,
+                        l10n.insObjectiveBody,
                         Icons.flag,
                         theme,
                         0,
@@ -72,51 +74,51 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Controls Section
                       _buildSection(
-                        'CONTROLS',
+                        l10n.insControls,
                         '',
                         Icons.touch_app,
                         theme,
                         1,
                         children: [
                           _buildControlItem(
-                            'Swipe Up ↑',
-                            'Move snake up',
+                            l10n.insSwipeUp,
+                            l10n.insSwipeUpDesc,
                             theme,
                           ),
                           _buildControlItem(
-                            'Swipe Down ↓',
-                            'Move snake down',
+                            l10n.insSwipeDown,
+                            l10n.insSwipeDownDesc,
                             theme,
                           ),
                           _buildControlItem(
-                            'Swipe Left ←',
-                            'Move snake left',
+                            l10n.insSwipeLeft,
+                            l10n.insSwipeLeftDesc,
                             theme,
                           ),
                           _buildControlItem(
-                            'Swipe Right →',
-                            'Move snake right',
+                            l10n.insSwipeRight,
+                            l10n.insSwipeRightDesc,
                             theme,
                           ),
                           _buildControlItem(
-                            'Tap Screen',
-                            'Pause/Resume game',
+                            l10n.insTapScreen,
+                            l10n.insTapScreenDesc,
                             theme,
                           ),
                           const SizedBox(height: 8),
                           _buildControlItem(
-                            'Arrow Keys (Desktop)',
-                            'Change direction',
+                            l10n.insArrowKeys,
+                            l10n.insArrowKeysDesc,
                             theme,
                           ),
                           _buildControlItem(
-                            'WASD (Desktop)',
-                            'Change direction',
+                            l10n.insWasd,
+                            l10n.insWasdDesc,
                             theme,
                           ),
                           _buildControlItem(
-                            'Spacebar (Desktop)',
-                            'Pause/Resume game',
+                            l10n.insSpacebar,
+                            l10n.insSpacebarDesc,
                             theme,
                           ),
                         ],
@@ -126,26 +128,26 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Food Types
                       _buildSection(
-                        'FOOD TYPES',
+                        l10n.insFoodTypes,
                         '',
                         Icons.apple,
                         theme,
                         2,
                         children: [
                           _buildFoodItem(
-                            'Normal Food',
+                            l10n.insNormalFood,
                             '10 points',
                             theme.foodColor,
                             theme,
                           ),
                           _buildFoodItem(
-                            'Bonus Food',
+                            l10n.insBonusFood,
                             '25 points',
                             Colors.orange,
                             theme,
                           ),
                           _buildFoodItem(
-                            'Special Food',
+                            l10n.insSpecialFood,
                             '50 points + Level Up',
                             const Color(0xFFFFD700),
                             theme,
@@ -157,32 +159,17 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Rules
                       _buildSection(
-                        'RULES',
+                        l10n.insRules,
                         '',
                         Icons.rule,
                         theme,
                         3,
                         children: [
-                          _buildRuleItem(
-                            '• Eat food to grow and increase score',
-                            theme,
-                          ),
-                          _buildRuleItem(
-                            '• Snake speeds up as you level up',
-                            theme,
-                          ),
-                          _buildRuleItem(
-                            '• Game ends if you hit walls or yourself',
-                            theme,
-                          ),
-                          _buildRuleItem(
-                            '• Special food appears every 10 normal foods',
-                            theme,
-                          ),
-                          _buildRuleItem(
-                            '• Bonus food expires after 15 seconds',
-                            theme,
-                          ),
+                          _buildRuleItem(l10n.insRule1, theme),
+                          _buildRuleItem(l10n.insRule2, theme),
+                          _buildRuleItem(l10n.insRule3, theme),
+                          _buildRuleItem(l10n.insRule4, theme),
+                          _buildRuleItem(l10n.insRule5, theme),
                         ],
                       ),
 
@@ -190,25 +177,16 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Tips
                       _buildSection(
-                        'PRO TIPS',
+                        l10n.insProTips,
                         '',
                         Icons.lightbulb,
                         theme,
                         4,
                         children: [
-                          _buildTipItem('Plan your moves ahead of time', theme),
-                          _buildTipItem(
-                            'Use edges to create safe spaces',
-                            theme,
-                          ),
-                          _buildTipItem(
-                            'Watch for visual swipe feedback',
-                            theme,
-                          ),
-                          _buildTipItem(
-                            'Practice different difficulty levels',
-                            theme,
-                          ),
+                          _buildTipItem(l10n.insTip1, theme),
+                          _buildTipItem(l10n.insTip2, theme),
+                          _buildTipItem(l10n.insTip3, theme),
+                          _buildTipItem(l10n.insTip4, theme),
                         ],
                       ),
 
@@ -218,7 +196,7 @@ class InstructionsScreen extends StatelessWidget {
                       Center(
                             child: GradientButton(
                               onPressed: () => context.pop(),
-                              text: 'BACK TO GAME',
+                              text: l10n.insBackToGame,
                               primaryColor: theme.accentColor,
                               secondaryColor: theme.foodColor,
                               icon: Icons.arrow_back,

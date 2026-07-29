@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -51,7 +52,7 @@ class PlayerLevelBadge extends StatelessWidget {
               ),
               SizedBox(width: isSmallScreen ? 3 : 5),
               Text(
-                'Lv $level',
+                AppLocalizations.of(context)!.ppgLvShort(level),
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: isSmallScreen ? 13 : 15,
@@ -188,7 +189,7 @@ class PlayerIdentityBadge extends StatelessWidget {
                         ],
                       ),
                       child: Text(
-                        'LV $level',
+                        AppLocalizations.of(context)!.ppgLvUpper(level),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: isSmallScreen ? 8.5 : 9.5,
@@ -272,7 +273,7 @@ class PlayerProgressionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Level $level',
+                        AppLocalizations.of(context)!.ppgLevel(level),
                         style: TextStyle(
                           color: theme.accentColor,
                           fontSize: 20,

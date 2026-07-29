@@ -4697,4 +4697,710 @@ class AppLocalizationsPl extends AppLocalizations {
   String bpRewardDescPremium(Object type) {
     return 'Ekskluzywna nagroda premium: $type';
   }
+
+  @override
+  String get insHowToPlay => 'JAK GRAĆ';
+
+  @override
+  String get insObjective => 'CEL';
+
+  @override
+  String get insObjectiveBody =>
+      'Steruj wężem, jedz i rośnij jak najdłuższy, nie uderzając w ściany ani w siebie!';
+
+  @override
+  String get insControls => 'STEROWANIE';
+
+  @override
+  String get insSwipeUp => 'Przesuń w Górę ↑';
+
+  @override
+  String get insSwipeUpDesc => 'Przesuwa węża w górę';
+
+  @override
+  String get insSwipeDown => 'Przesuń w Dół ↓';
+
+  @override
+  String get insSwipeDownDesc => 'Przesuwa węża w dół';
+
+  @override
+  String get insSwipeLeft => 'Przesuń w Lewo ←';
+
+  @override
+  String get insSwipeLeftDesc => 'Przesuwa węża w lewo';
+
+  @override
+  String get insSwipeRight => 'Przesuń w Prawo →';
+
+  @override
+  String get insSwipeRightDesc => 'Przesuwa węża w prawo';
+
+  @override
+  String get insTapScreen => 'Dotknij Ekranu';
+
+  @override
+  String get insTapScreenDesc => 'Pauza/wznowienie gry';
+
+  @override
+  String get insArrowKeys => 'Strzałki (Komputer)';
+
+  @override
+  String get insArrowKeysDesc => 'Zmiana kierunku';
+
+  @override
+  String get insWasd => 'WASD (Komputer)';
+
+  @override
+  String get insWasdDesc => 'Zmiana kierunku';
+
+  @override
+  String get insSpacebar => 'Spacja (Komputer)';
+
+  @override
+  String get insSpacebarDesc => 'Pauza/wznowienie gry';
+
+  @override
+  String get insFoodTypes => 'RODZAJE JEDZENIA';
+
+  @override
+  String get insNormalFood => 'Zwykłe Jedzenie';
+
+  @override
+  String get insBonusFood => 'Jedzenie Bonusowe';
+
+  @override
+  String get insSpecialFood => 'Jedzenie Specjalne';
+
+  @override
+  String get insRules => 'ZASADY';
+
+  @override
+  String get insRule1 => '• Jedz, aby rosnąć i zdobywać punkty';
+
+  @override
+  String get insRule2 => '• Wąż przyspiesza z każdym poziomem';
+
+  @override
+  String get insRule3 => '• Gra kończy się po uderzeniu w ścianę lub w siebie';
+
+  @override
+  String get insRule4 => '• Jedzenie specjalne pojawia się co 10 zwykłych';
+
+  @override
+  String get insRule5 => '• Jedzenie bonusowe znika po 15 sekundach';
+
+  @override
+  String get insProTips => 'PORADY PRO';
+
+  @override
+  String get insTip1 => 'Planuj ruchy z wyprzedzeniem';
+
+  @override
+  String get insTip2 => 'Wykorzystuj krawędzie do tworzenia bezpiecznych stref';
+
+  @override
+  String get insTip3 => 'Obserwuj wizualne potwierdzenia przesunięć';
+
+  @override
+  String get insTip4 => 'Ćwicz na różnych poziomach trudności';
+
+  @override
+  String get insBackToGame => 'POWRÓT DO GRY';
+
+  @override
+  String dchClaimedReward(Object coins, Object xp) {
+    return 'Odebrano $coins monet i $xp XP!';
+  }
+
+  @override
+  String dchClaimedCoins(Object coins) {
+    return 'Odebrano $coins monet!';
+  }
+
+  @override
+  String get dchWatchTo2x => 'OBEJRZYJ ZA 2×';
+
+  @override
+  String dchDoubledBonus(Object coins) {
+    return '🎉 Podwojono! +$coins monet bonusu!';
+  }
+
+  @override
+  String get dchClaimAll => 'Odbierz Wszystko';
+
+  @override
+  String get dchTodaysProgress => 'Dzisiejszy Postęp';
+
+  @override
+  String get dchClaim => 'Odbierz';
+
+  @override
+  String get dchClaimed => 'Odebrano';
+
+  @override
+  String get dchAllCompleteTitle => 'Wszystkie Wyzwania Ukończone!';
+
+  @override
+  String get dchBonusClaimed => 'Nagroda bonusowa odebrana';
+
+  @override
+  String get dchBonusPending => 'Bonus czeka — odbierz dowolne wyzwanie';
+
+  @override
+  String get dchLoading => 'Wczytywanie wyzwań...';
+
+  @override
+  String get dchCheckBack => 'Wróć później po nowe dzienne wyzwania!';
+
+  @override
+  String get dchAbout => 'O Dziennych Wyzwaniach';
+
+  @override
+  String get dchAbout1 => 'Nowe wyzwania codziennie o północy';
+
+  @override
+  String get dchAbout2 => 'Ukończ wyzwania, aby zdobyć monety';
+
+  @override
+  String get dchAbout3 => 'Zdobywaj XP i awansuj swój profil';
+
+  @override
+  String get dchAbout4 => 'Ukończ wszystkie 3 po nagrodę bonusową!';
+
+  @override
+  String get dchAllBonusTitle => 'Bonus za Wszystkie Wyzwania';
+
+  @override
+  String get dchAllBonusDesc => 'Ukończono dziś wszystkie dzienne wyzwania.';
+
+  @override
+  String get wqNoQuests => 'Brak zadań tygodniowych — wróć w poniedziałek';
+
+  @override
+  String get wqTitle => 'Zadania Tygodniowe';
+
+  @override
+  String get wqClaimReward => 'Odbierz Nagrodę';
+
+  @override
+  String get rvNotFound => 'Nie znaleziono powtórki';
+
+  @override
+  String get rvLoadFailed => 'Nie udało się wczytać powtórki';
+
+  @override
+  String rvTitle(Object name) {
+    return 'Powtórka: $name';
+  }
+
+  @override
+  String get rvLoadingTitle => 'Wczytywanie Powtórki...';
+
+  @override
+  String get rvLoading => 'Wczytywanie powtórki...';
+
+  @override
+  String get rvGoBack => 'Wróć';
+
+  @override
+  String get rvScore => 'Punkty';
+
+  @override
+  String get rvLevel => 'Poziom';
+
+  @override
+  String get rvFrame => 'Klatka';
+
+  @override
+  String get rvTime => 'Czas';
+
+  @override
+  String get rvNoFrameData => 'Brak danych klatek';
+
+  @override
+  String get rvSpeedLabel => 'Prędkość: ';
+
+  @override
+  String rvAteFood(Object type) {
+    return '🍎 Zjedzono jedzenie: $type';
+  }
+
+  @override
+  String rvCollectedPowerUp(Object type) {
+    return '⚡ Zebrano wzmocnienie: $type';
+  }
+
+  @override
+  String get unEmpty => 'Nazwa użytkownika nie może być pusta';
+
+  @override
+  String get unSetFailed => 'Nie udało się ustawić nazwy użytkownika';
+
+  @override
+  String get unPickTitle => 'Wybierz swoją nazwę użytkownika';
+
+  @override
+  String get unPickBody =>
+      'Tak będziesz widoczny w rankingu. Wybraliśmy jedną dla ciebie — zostaw ją lub zmień.';
+
+  @override
+  String get unLabel => 'Nazwa użytkownika';
+
+  @override
+  String get unSaving => 'ZAPISYWANIE...';
+
+  @override
+  String get unContinue => 'DALEJ';
+
+  @override
+  String get unChangeAnytime =>
+      'Możesz ją zmienić w każdej chwili w Ustawieniach.';
+
+  @override
+  String unMinLength(Object min) {
+    return 'Nazwa użytkownika musi mieć co najmniej $min znaków';
+  }
+
+  @override
+  String unMaxLength(Object max) {
+    return 'Nazwa użytkownika może mieć najwyżej $max znaków';
+  }
+
+  @override
+  String get unPattern =>
+      'Nazwa musi zaczynać się literą i zawierać tylko litery, cyfry i podkreślenia';
+
+  @override
+  String get unReserved =>
+      'Ta nazwa użytkownika jest zastrzeżona i nie może być użyta';
+
+  @override
+  String get unTaken => 'Ta nazwa użytkownika jest już zajęta';
+
+  @override
+  String get unUpdateFailed => 'Nie udało się zaktualizować nazwy użytkownika';
+
+  @override
+  String get pcTitle => 'Zaktualizowano Prywatność i Warunki';
+
+  @override
+  String pcVersionLine(Object version) {
+    return 'Wersja $version · zapoznaj się i zaakceptuj, aby kontynuować';
+  }
+
+  @override
+  String get pcTabPrivacy => 'Polityka Prywatności';
+
+  @override
+  String get pcTabTerms => 'Warunki Użytkowania';
+
+  @override
+  String get pcAgree =>
+      'Przeczytałem(-am) i akceptuję zaktualizowaną Politykę Prywatności oraz Warunki Użytkowania';
+
+  @override
+  String get pcContinue => 'Kontynuuj';
+
+  @override
+  String lgAvailableAt(Object url) {
+    return 'Ten dokument jest dostępny pod adresem $url.';
+  }
+
+  @override
+  String get lgUnavailable =>
+      'Dokument jest obecnie niedostępny. Spróbuj ponownie później.';
+
+  @override
+  String get auTitle => 'Zarejestruj się, aby kupować';
+
+  @override
+  String get auBody =>
+      'Konta gości mogą grać i zapisywać postęp lokalnie, ale nie mogą kupować ani subskrybować. Połącz konto Google lub e-mail, aby odblokować zakupy — twoje monety, kosmetyki i rekordy zostaną zachowane.';
+
+  @override
+  String get auGoogle => 'Kontynuuj z Google';
+
+  @override
+  String get auGoogleSub => 'Najszybsza opcja. Zaloguj się kontem Google.';
+
+  @override
+  String get auLinked => 'Konto połączone. Możesz teraz robić zakupy.';
+
+  @override
+  String get auEmail => 'Utwórz Konto E-mail';
+
+  @override
+  String get auEmailSub =>
+      'Użyj dowolnego e-maila i wybranego hasła. Przywróć na dowolnym urządzeniu.';
+
+  @override
+  String get auNotNow => 'Nie teraz';
+
+  @override
+  String get auErrCredentialInUse =>
+      'Te dane logowania są już połączone z innym kontem. Spróbuj się nimi zalogować.';
+
+  @override
+  String get auErrAlreadyLinked => 'To konto jest już połączone.';
+
+  @override
+  String get auErrRequiresRecentLogin =>
+      'Ze względów bezpieczeństwa zaloguj się ponownie przed połączeniem.';
+
+  @override
+  String get auErrNetwork => 'Błąd sieci. Sprawdź połączenie.';
+
+  @override
+  String get auErrGeneric => 'Łączenie nie powiodło się. Spróbuj ponownie.';
+
+  @override
+  String get sroSettingUpTitle => 'Konfigurowanie konta…';
+
+  @override
+  String get sroSettingUpBody =>
+      'Przygotowujemy wszystko na twoją pierwszą sesję. To zdarza się tylko raz.';
+
+  @override
+  String get sroLoadingTitle => 'Wczytywanie poprzednich danych…';
+
+  @override
+  String get sroLoadingBody =>
+      'Pobieramy z chmury twoje statystyki, osiągnięcia, monety i odblokowania.';
+
+  @override
+  String get sroRestoringTitle => 'Przywracanie postępu…';
+
+  @override
+  String get sroRestoringBody =>
+      'Stosujemy wszystko na tym urządzeniu. Nie zamykaj aplikacji.';
+
+  @override
+  String get sroDoneTitle => 'Gotowe!';
+
+  @override
+  String get sroDoneBody => 'Twój postęp został przywrócony.';
+
+  @override
+  String get sroFailedTitle => 'Nie udało się przywrócić danych';
+
+  @override
+  String get sroFailedBody =>
+      'Nie mogliśmy teraz połączyć się z chmurą. Sprawdź internet i spróbuj ponownie. Możesz też kontynuować bez przywracania — spróbujemy przy następnym uruchomieniu aplikacji.';
+
+  @override
+  String get sroTryAgain => 'Spróbuj Ponownie';
+
+  @override
+  String get sroContinueAnyway => 'Kontynuuj Mimo To';
+
+  @override
+  String get ssiOfflinePending =>
+      'Offline - zmiany zsynchronizują się po połączeniu';
+
+  @override
+  String get ssiSyncing => 'Synchronizacja...';
+
+  @override
+  String get ssiAllSynced => 'Wszystkie dane zsynchronizowane';
+
+  @override
+  String ssiFailedCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementu nie zostało zsynchronizowane',
+      many: '$count elementów nie zostało zsynchronizowanych',
+      few: '$count elementy nie zostały zsynchronizowane',
+      one: '$count element nie został zsynchronizowany',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ssiPendingCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementu czeka na synchronizację',
+      many: '$count elementów czeka na synchronizację',
+      few: '$count elementy czekają na synchronizację',
+      one: '$count element czeka na synchronizację',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ssiOffline => 'Offline';
+
+  @override
+  String get rvoContinue => 'KONTYNUOWAĆ?';
+
+  @override
+  String get rvoSubtitlePro => 'Odrodź się i zachowaj wynik · Za darmo z Pro';
+
+  @override
+  String rvoSubtitleTimer(Object seconds) {
+    return 'Odrodź się i zachowaj wynik · $seconds s';
+  }
+
+  @override
+  String get rvoGetLifePro => 'Zdobądź Życie · Darmowe dla Pro';
+
+  @override
+  String get rvoWatchAd => 'Obejrzyj reklamę, aby się odrodzić';
+
+  @override
+  String rvoUseCoins(Object coins) {
+    return 'Użyj $coins monet';
+  }
+
+  @override
+  String get rvoNoThanks => 'Nie, dziękuję';
+
+  @override
+  String get tbTimesUp => 'CZAS MINĄŁ!';
+
+  @override
+  String tbKeepGoing(Object seconds) {
+    return 'Graj dalej · $seconds s';
+  }
+
+  @override
+  String tbWatchAd(Object seconds) {
+    return 'Obejrzyj reklamę — +$seconds s';
+  }
+
+  @override
+  String get tbEndRun => 'Zakończ grę';
+
+  @override
+  String get dbTitle => 'Dzienny Bonus';
+
+  @override
+  String get dbClaimToday => 'Odbierz dzienną nagrodę!';
+
+  @override
+  String get dbComeBack => 'Wróć jutro!';
+
+  @override
+  String dbDayChip(Object day) {
+    return 'D$day';
+  }
+
+  @override
+  String get dbTodaysReward => 'Dzisiejsza Nagroda';
+
+  @override
+  String get dbAlreadyClaimed => 'Dziś już odebrano';
+
+  @override
+  String get dbClaim => 'ODBIERZ NAGRODĘ';
+
+  @override
+  String get dbClaim2x => 'ODBIERZ 2× — OBEJRZYJ REKLAMĘ';
+
+  @override
+  String get npPrimerTitle => 'Nie przegap!';
+
+  @override
+  String get npPrimerBody =>
+      'Wysyłamy tylko kilka powiadomień dziennie — przypomnienie o dziennym wyzwaniu i wydarzenia specjalne.\n\nBez spamu, obiecujemy. 🐍';
+
+  @override
+  String get npMaybeLater => 'Może później';
+
+  @override
+  String get npAllSet => '🎉 Wszystko gotowe!';
+
+  @override
+  String get npTurnOn => 'Włącz';
+
+  @override
+  String get npSoftTitle => 'Chcesz być na bieżąco?';
+
+  @override
+  String get npSoftBody =>
+      'Włącz powiadomienia, a przypomnimy o dziennych wyzwaniach i seriach — plus ważne rzeczy, jak DARMOWE rozdania Premium i wydarzenia specjalne.\n\nTylko kilka dziennie, zero spamu. 🐍';
+
+  @override
+  String get npNotNow => 'Nie teraz';
+
+  @override
+  String get npEnable => 'Włącz powiadomienia';
+
+  @override
+  String get aroUnlocked => 'OSIĄGNIĘCIE ODBLOKOWANE';
+
+  @override
+  String get aroTapToContinue => 'Dotknij, aby kontynuować';
+
+  @override
+  String get aroSkip => 'POMIŃ';
+
+  @override
+  String aroSkipCount(Object count) {
+    return 'POMIŃ ($count)';
+  }
+
+  @override
+  String get luLevelUp => 'NOWY POZIOM!';
+
+  @override
+  String luReached(Object level) {
+    return 'Osiągnięto Poziom $level';
+  }
+
+  @override
+  String get luNice => 'SUPER';
+
+  @override
+  String get cfTapContinue => 'Dotknij gdziekolwiek, aby kontynuować';
+
+  @override
+  String get cfTapSkip => 'Dotknij gdziekolwiek, aby pominąć';
+
+  @override
+  String ppgLvShort(Object level) {
+    return 'Poz. $level';
+  }
+
+  @override
+  String ppgLvUpper(Object level) {
+    return 'POZ. $level';
+  }
+
+  @override
+  String ppgLevel(Object level) {
+    return 'Poziom $level';
+  }
+
+  @override
+  String get xgTitle => 'Wyjść z Gry?';
+
+  @override
+  String get xgBody =>
+      'Na pewno chcesz wyjść? Obecny postęp zostanie utracony.';
+
+  @override
+  String get xgExit => 'Wyjdź';
+
+  @override
+  String get ccTitle => 'Jak chcesz grać?';
+
+  @override
+  String get ccBody =>
+      'Wybierz — możesz to zmienić w każdej chwili w Ustawienia → Sterowanie.';
+
+  @override
+  String get ccSwipe => 'Gesty Przesunięć';
+
+  @override
+  String get ccSwipeSub =>
+      'Przesuń palcem gdziekolwiek na planszy, aby skręcić.';
+
+  @override
+  String get ccDpad => 'Sterowanie D-Pad';
+
+  @override
+  String get ccDpadSub => 'Ekranowe przyciski kierunkowe.';
+
+  @override
+  String rcCoinsAdded(Object coins) {
+    return '🎉 +$coins monet dodano do portfela!';
+  }
+
+  @override
+  String rcWatchAd(Object coins) {
+    return 'Obejrzyj reklamę — +$coins monet';
+  }
+
+  @override
+  String get rcNoAd => 'Brak dostępnych reklam';
+
+  @override
+  String get raOptIn => 'Dobrowolnie — obejrzyj i zarabiaj';
+
+  @override
+  String get compassSemantics => 'Wskaźnik kierunku przesunięcia';
+
+  @override
+  String homeBonusDoubled(Object coins) {
+    return '🎉 Dzienny bonus podwojony — +$coins monet bonusu!';
+  }
+
+  @override
+  String get nsNewNotification => 'Masz nowe powiadomienie';
+
+  @override
+  String get nsAchievementUnlocked => '🏆 Osiągnięcie Odblokowane!';
+
+  @override
+  String get nsDailyReminderTitle => '🐍 Czas zagrać w Snake Classic!';
+
+  @override
+  String get nsDailyReminderBody =>
+      'Ukończ dzienne wyzwanie i wspinaj się w rankingu!';
+
+  @override
+  String get mpErrMatchmaking =>
+      'Dobieranie graczy nie powiodło się. Spróbuj ponownie.';
+
+  @override
+  String get mpErrCreateFailed => 'Nie udało się utworzyć gry';
+
+  @override
+  String get mpErrJoinFailed =>
+      'Nie udało się dołączyć. Gra może być pełna lub nie istnieć.';
+
+  @override
+  String get mpErrReadyFailed => 'Nie udało się zmienić statusu gotowości';
+
+  @override
+  String get mpErrStartFailed => 'Nie udało się rozpocząć gry';
+
+  @override
+  String get mpErrStartTimeout =>
+      'Upłynął limit czasu startu. Spróbuj ponownie.';
+
+  @override
+  String get mpErrReconnectFailed =>
+      'Nie udało się ponownie połączyć z meczem.';
+
+  @override
+  String get mpErrConnectionLost =>
+      'Utracono połączenie — nie udało się wznowić meczu.';
+
+  @override
+  String get mpErrMatchEndedAway => 'Mecz zakończył się pod twoją nieobecność.';
+
+  @override
+  String get mpErrWaitingReady => 'Czekamy, aż wszyscy gracze będą gotowi';
+
+  @override
+  String get mpErrOnlyHost => 'Tylko gospodarz może rozpocząć grę';
+
+  @override
+  String get mpErrSessionExpired => 'Sesja gry wygasła. Utwórz nową grę';
+
+  @override
+  String get mpErrAlreadyStarted => 'Ta gra już się rozpoczęła';
+
+  @override
+  String get mpErrNeedTwoPlayers => 'Mecze wymagają dokładnie 2 graczy';
+
+  @override
+  String get mpErrSignIn => 'Zaloguj się, aby grać w trybie wieloosobowym';
+
+  @override
+  String get mpErrReconnectExpired => 'Czas na ponowne połączenie minął';
+
+  @override
+  String get mpErrCheckInternet => 'Utracono połączenie. Sprawdź internet';
+
+  @override
+  String get mpErrUnableJoin =>
+      'Nie udało się dołączyć do pokoju. Spróbuj ponownie';
+
+  @override
+  String get mpErrGeneric => 'Coś poszło nie tak. Spróbuj ponownie';
 }

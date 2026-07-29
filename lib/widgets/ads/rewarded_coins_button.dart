@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -20,6 +21,9 @@ Future<void> watchAdForCoins(
 }) async {
   final coins = context.read<CoinsCubit>();
   final messenger = ScaffoldMessenger.of(context);
+  // Captured before the ad — onCoins fires after dismissal, an async gap
+  // where reading context is unsafe.
+  final l10n = AppLocalizations.of(context)!;
   await ads.showRewardedForCoins(
     onCoins: (amount) {
       coins.earnCoins(
@@ -30,7 +34,7 @@ Future<void> watchAdForCoins(
       );
       showRewardToast(
         messenger,
-        '🎉 +$amount coins added to your wallet!',
+        l10n.rcCoinsAdded(amount),
         icon: Icons.monetization_on,
       );
     },
@@ -99,7 +103,8 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Watch an ad — +${AdService.freeCoinsPerAd} coins',
+                      AppLocalizations.of(context)!
+                          .rcWatchAd(AdService.freeCoinsPerAd),
                       style: TextStyle(
                         color: theme.accentColor,
                         fontWeight: FontWeight.w800,
@@ -109,8 +114,8 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
                     const SizedBox(height: 2),
                     Text(
                       enabled
-                          ? 'Opt-in — watch as often as you like'
-                          : 'No ad available right now',
+                          ? AppLocalizations.of(context)!.raOptIn
+                          : AppLocalizations.of(context)!.rcNoAd,
                       style: TextStyle(
                         color: theme.accentColor.withValues(alpha: 0.65),
                         fontSize: 12,

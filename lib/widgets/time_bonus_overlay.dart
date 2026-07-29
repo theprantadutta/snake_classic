@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Time-Attack "out of time" offer shown over the frozen board when the clock
@@ -74,6 +75,7 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
+    final l10n = AppLocalizations.of(context)!;
     return Positioned.fill(
       child: Container(
         color: Colors.black.withValues(alpha: 0.78),
@@ -132,7 +134,7 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
               ),
               const SizedBox(height: 16),
               Text(
-                "TIME'S UP!",
+                l10n.tbTimesUp,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 24,
@@ -142,7 +144,7 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Keep going · ${_remaining}s',
+                l10n.tbKeepGoing(_remaining),
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.7),
                   fontSize: 13,
@@ -174,7 +176,7 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
                             color: Colors.white, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          'Watch ad — +${widget.bonusSeconds}s',
+                          l10n.tbWatchAd(widget.bonusSeconds),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
@@ -190,7 +192,7 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
               TextButton(
                 onPressed: () => _resolve(widget.onDecline),
                 child: Text(
-                  'End run',
+                  l10n.tbEndRun,
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.6),
                     fontSize: 14,

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -26,6 +27,9 @@ class NotificationPermissionSoftAsk {
   /// Android — if notifications are already enabled.
   static Future<void> maybeShow(BuildContext context, GameTheme theme) async {
     try {
+      // Capture before the awaits — the snackbar fires after async gaps
+      // where reading context is unsafe.
+      final l10n = AppLocalizations.of(context)!;
       final prefs = await SharedPreferences.getInstance();
       if (prefs.getBool(_shownKey) ?? false) return;
 
@@ -55,12 +59,13 @@ class NotificationPermissionSoftAsk {
       if (granted) {
         messenger?.showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
-                Icon(Icons.notifications_active, color: Colors.white, size: 20),
-                SizedBox(width: 10),
-                Text("🎉 You're all set!",
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const Icon(Icons.notifications_active,
+                    color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Text(l10n.npAllSet,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ],
             ),
             backgroundColor: Colors.green.shade700,
@@ -80,6 +85,7 @@ class NotificationPermissionSoftAsk {
 
   /// Returns `true` if the user chose to enable, `false`/`null` otherwise.
   static Future<bool?> _showDialog(BuildContext context, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -94,7 +100,7 @@ class NotificationPermissionSoftAsk {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Stay in the loop?',
+                l10n.npSoftTitle,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontWeight: FontWeight.bold,
@@ -104,9 +110,7 @@ class NotificationPermissionSoftAsk {
           ],
         ),
         content: Text(
-          "Turn on notifications and we'll remind you about your daily "
-          'challenges and streaks — plus the big stuff like FREE Premium '
-          'giveaways and special events.\n\nJust a couple a day, no spam. 🐍',
+          l10n.npSoftBody,
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.85),
             height: 1.4,
@@ -116,7 +120,7 @@ class NotificationPermissionSoftAsk {
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
-              'Not now',
+              l10n.npNotNow,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.6),
               ),
@@ -131,9 +135,9 @@ class NotificationPermissionSoftAsk {
               ),
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text(
-              'Enable notifications',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            child: Text(
+              l10n.npEnable,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],

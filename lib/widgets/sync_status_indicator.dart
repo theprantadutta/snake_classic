@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 
@@ -61,7 +62,7 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
           return ListenableBuilder(
             listenable: _connectivityService,
             builder: (context, child) {
-              return _buildIndicator(syncService);
+              return _buildIndicator(context, syncService);
             },
           );
         },
@@ -69,7 +70,7 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
     );
   }
 
-  Widget _buildIndicator(DataSyncService syncService) {
+  Widget _buildIndicator(BuildContext context, DataSyncService syncService) {
     final isOnline = _connectivityService.isOnline;
     final syncStatus = syncService.syncStatus;
     final pendingCount = syncService.pendingCount;
@@ -114,6 +115,7 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
 
     return Tooltip(
       message: _getTooltipMessage(
+        AppLocalizations.of(context)!,
         isOnline,
         syncStatus,
         pendingCount,
@@ -160,26 +162,27 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
   }
 
   String _getTooltipMessage(
+    AppLocalizations l10n,
     bool isOnline,
     SyncStatus status,
     int pendingCount,
     int failedCount,
   ) {
     if (!isOnline) {
-      return 'Offline - Changes will sync when connected';
+      return l10n.ssiOfflinePending;
     }
 
     switch (status) {
       case SyncStatus.syncing:
-        return 'Syncing...';
+        return l10n.ssiSyncing;
       case SyncStatus.synced:
-        return 'All data synced';
+        return l10n.ssiAllSynced;
       case SyncStatus.error:
-        return '$failedCount item(s) failed to sync';
+        return l10n.ssiFailedCount(failedCount);
       case SyncStatus.idle:
-        return '$pendingCount item(s) pending sync';
+        return l10n.ssiPendingCount(pendingCount);
       case SyncStatus.offline:
-        return 'Offline';
+        return l10n.ssiOffline;
     }
   }
 }

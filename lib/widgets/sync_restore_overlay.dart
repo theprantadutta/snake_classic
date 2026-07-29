@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -59,12 +60,12 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
   }
 
   ({String title, String body, bool spinning, IconData? icon, Color? iconColor})
-      _copyForState() {
+      _copyForState(AppLocalizations? l10n) {
     switch (_state) {
       case FirstSignInState.welcoming:
         return (
-          title: 'Setting up your account…',
-          body:
+          title: l10n?.sroSettingUpTitle ?? 'Setting up your account…',
+          body: l10n?.sroSettingUpBody ??
               'Getting things ready for your first session. This only happens once.',
           spinning: true,
           icon: null,
@@ -72,8 +73,8 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
         );
       case FirstSignInState.pulling:
         return (
-          title: 'Loading your previous data…',
-          body:
+          title: l10n?.sroLoadingTitle ?? 'Loading your previous data…',
+          body: l10n?.sroLoadingBody ??
               'Fetching your stats, achievements, coins, and unlocks from the cloud.',
           spinning: true,
           icon: null,
@@ -81,27 +82,28 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
         );
       case FirstSignInState.applying:
         return (
-          title: 'Restoring your progress…',
-          body: "Applying everything to this device. Don't close the app.",
+          title: l10n?.sroRestoringTitle ?? 'Restoring your progress…',
+          body: l10n?.sroRestoringBody ??
+              "Applying everything to this device. Don't close the app.",
           spinning: true,
           icon: null,
           iconColor: null,
         );
       case FirstSignInState.restored:
         return (
-          title: 'All set!',
-          body: 'Your progress has been restored.',
+          title: l10n?.sroDoneTitle ?? 'All set!',
+          body: l10n?.sroDoneBody ?? 'Your progress has been restored.',
           spinning: false,
           icon: Icons.check_circle_outline_rounded,
           iconColor: Colors.greenAccent,
         );
       case FirstSignInState.failed:
         return (
-          title: "Couldn't restore your data",
-          body:
+          title: l10n?.sroFailedTitle ?? "Couldn't restore your data",
+          body: l10n?.sroFailedBody ??
               "We couldn't reach the cloud just now. Check your internet "
-              "connection and try again. You can also continue without "
-              "restoring — we'll retry the next time you open the app.",
+                  "connection and try again. You can also continue without "
+                  "restoring — we'll retry the next time you open the app.",
           spinning: false,
           icon: Icons.cloud_off_rounded,
           iconColor: Colors.orangeAccent,
@@ -123,7 +125,11 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
-        final copy = _copyForState();
+        // Resolved inside build — this widget lives in an OverlayEntry, so
+        // the lookup can miss if the entry sits above MaterialApp's
+        // Localizations; the copy falls back to English in that case.
+        final l10n = AppLocalizations.of(context);
+        final copy = _copyForState(l10n);
         final isFailed = _state == FirstSignInState.failed;
 
         // Backdrop catches taps so they don't pass through to widgets
@@ -200,7 +206,7 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
                       const SizedBox(height: 24),
                       _PrimaryButton(
                         theme: theme,
-                        label: 'Try Again',
+                        label: l10n?.sroTryAgain ?? 'Try Again',
                         icon: Icons.refresh_rounded,
                         onPressed: () =>
                             SyncEngine().retryFirstSignInPull(),
@@ -208,7 +214,7 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
                       const SizedBox(height: 10),
                       _SecondaryButton(
                         theme: theme,
-                        label: 'Continue Anyway',
+                        label: l10n?.sroContinueAnyway ?? 'Continue Anyway',
                         onPressed: () =>
                             SyncEngine().dismissFirstSignInOverlay(),
                       ),

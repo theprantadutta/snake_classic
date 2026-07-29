@@ -490,10 +490,16 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     state.status == MultiplayerStatus.error);
             if (stranded) {
               _exiting = true;
-              final message = state.errorMessage;
-              if (message != null) {
+              final errorCode = state.errorCode;
+              if (errorCode != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(message)),
+                  SnackBar(
+                    content: Text(
+                      errorCode.localizedMessage(
+                        AppLocalizations.of(context)!,
+                      ),
+                    ),
+                  ),
                 );
               }
               context.pushReplacement(AppRoutes.multiplayerLobby);

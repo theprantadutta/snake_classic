@@ -218,8 +218,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
         return BlocListener<MultiplayerCubit, MultiplayerState>(
           listenWhen: (prev, curr) =>
-              prev.errorMessage != curr.errorMessage &&
-              curr.errorMessage != null,
+              prev.errorCode != curr.errorCode && curr.errorCode != null,
           listener: (context, state) {
             // Show error snackbar
             ScaffoldMessenger.of(context).showSnackBar(
@@ -234,7 +233,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        state.errorMessage!,
+                        state.errorCode!.localizedMessage(
+                          AppLocalizations.of(context)!,
+                        ),
                         style: const TextStyle(color: Colors.white),
                       ),
                     ),

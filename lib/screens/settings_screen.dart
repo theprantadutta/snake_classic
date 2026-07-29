@@ -2393,9 +2393,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               final validation = usernameService
                                   .validateUsername(newUsername);
                               setState(() {
-                                errorMessage =
-                                    validation.error ??
-                                    l10n.settingsUsernameUpdateFailed;
+                                errorMessage = validation.errorCode != null
+                                    ? _usernameErrorText(
+                                        validation.errorCode!, l10n)
+                                    : l10n.settingsUsernameUpdateFailed;
                               });
                             }
                           } else {
@@ -2406,9 +2407,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               final validation = await UsernameService()
                                   .validateUsernameComplete(newUsername);
                               setState(() {
-                                errorMessage =
-                                    validation.error ??
-                                    l10n.settingsUsernameUpdateFailed;
+                                errorMessage = validation.errorCode != null
+                                    ? _usernameErrorText(
+                                        validation.errorCode!, l10n)
+                                    : l10n.settingsUsernameUpdateFailed;
                               });
                             }
                           }
@@ -2836,6 +2838,27 @@ extension _SettingsPremium on _SettingsScreenState {
           ),
         );
       }
+    }
+  }
+
+  /// Maps a stable [UsernameError] code from UsernameService to the
+  /// localized message shown in the username dialog.
+  String _usernameErrorText(UsernameError code, AppLocalizations l10n) {
+    switch (code) {
+      case UsernameError.empty:
+        return l10n.unEmpty;
+      case UsernameError.tooShort:
+        return l10n.unMinLength(UsernameService.minLength);
+      case UsernameError.tooLong:
+        return l10n.unMaxLength(UsernameService.maxLength);
+      case UsernameError.invalidFormat:
+        return l10n.unPattern;
+      case UsernameError.reserved:
+        return l10n.unReserved;
+      case UsernameError.taken:
+        return l10n.unTaken;
+      case UsernameError.updateFailed:
+        return l10n.unUpdateFailed;
     }
   }
 

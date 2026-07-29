@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// The exit-confirmation dialog UI. Pure presentation: resolves with `true`
@@ -6,6 +7,7 @@ import 'package:snake_classic/utils/constants.dart';
 /// is popped some other way (e.g. system back). The caller (game screen)
 /// owns the pause-on-open, resume-on-cancel and navigation side effects.
 Future<bool?> showExitGameDialog(BuildContext context, GameTheme theme) {
+  final l10n = AppLocalizations.of(context)!;
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -16,27 +18,27 @@ Future<bool?> showExitGameDialog(BuildContext context, GameTheme theme) {
         side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
       ),
       title: Text(
-        'Exit Game?',
+        l10n.xgTitle,
         style: TextStyle(
           color: theme.accentColor,
           fontWeight: FontWeight.bold,
         ),
       ),
       content: Text(
-        'Are you sure you want to exit? Your current progress will be lost.',
+        l10n.xgBody,
         style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
           child: Text(
-            'Cancel',
+            l10n.commonCancel,
             style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
           ),
         ),
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: Text('Exit', style: TextStyle(color: theme.foodColor)),
+          child: Text(l10n.xgExit, style: TextStyle(color: theme.foodColor)),
         ),
       ],
     ),

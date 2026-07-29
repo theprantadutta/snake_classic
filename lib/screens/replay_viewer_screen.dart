@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/models/game_replay.dart';
@@ -68,7 +69,8 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
           });
         } else {
           setState(() {
-            _loadError = 'Replay not found';
+            // Stable error codes — resolved to localized text at render time.
+            _loadError = 'not_found';
             _isLoadingReplay = false;
           });
         }
@@ -76,10 +78,20 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _loadError = 'Failed to load replay';
+          _loadError = 'load_failed';
           _isLoadingReplay = false;
         });
       }
+    }
+  }
+
+  String _loadErrorText(AppLocalizations l10n) {
+    switch (_loadError) {
+      case 'load_failed':
+        return l10n.rvLoadFailed;
+      case 'not_found':
+      default:
+        return l10n.rvNotFound;
     }
   }
 
@@ -106,7 +118,9 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
       bottomNavigationBar: const SnakeBannerAd(),
       appBar: AppBar(
         title: Text(
-          _replay != null ? 'Replay: ${_replay!.playerName}' : 'Loading Replay...',
+          _replay != null
+              ? AppLocalizations.of(context)!.rvTitle(_replay!.playerName)
+              : AppLocalizations.of(context)!.rvLoadingTitle,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: Colors.transparent,
@@ -147,7 +161,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Loading replay...',
+              AppLocalizations.of(context)!.rvLoading,
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.8),
                 fontSize: 16,
@@ -171,7 +185,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _loadError ?? 'Replay not found',
+              _loadErrorText(AppLocalizations.of(context)!),
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.8),
                 fontSize: 16,
@@ -183,7 +197,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.accentColor,
               ),
-              child: const Text('Go Back'),
+              child: Text(AppLocalizations.of(context)!.rvGoBack),
             ),
           ],
         ),
@@ -213,6 +227,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
   Widget _buildGameInfo(GameTheme theme) {
     final replay = _replay!;
     final frame = _currentFrame;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -228,22 +243,22 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildInfoItem(
-                'Score',
+                l10n.rvScore,
                 frame?.score.toString() ?? '0',
                 Icons.star,
               ),
               _buildInfoItem(
-                'Level',
+                l10n.rvLevel,
                 frame?.level.toString() ?? '1',
                 Icons.trending_up,
               ),
               _buildInfoItem(
-                'Frame',
+                l10n.rvFrame,
                 '${_currentFrameIndex + 1}/${replay.totalFrames}',
                 Icons.movie,
               ),
               _buildInfoItem(
-                'Time',
+                l10n.rvTime,
                 replay.formattedDuration,
                 Icons.timer,
               ),
@@ -336,9 +351,11 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
               border:
                   Border.all(color: theme.primaryColor.withValues(alpha: 0.3)),
             ),
-            child: const Center(
-              child:
-                  Text('No frame data', style: TextStyle(color: Colors.white)),
+            child: Center(
+              child: Text(
+                AppLocalizations.of(context)!.rvNoFrameData,
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           );
         }
@@ -462,9 +479,9 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'Speed: ',
-                style: TextStyle(color: Colors.white, fontSize: 14),
+              Text(
+                AppLocalizations.of(context)!.rvSpeedLabel,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -586,12 +603,13 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
   }
 
   String _formatGameEvent(Map<String, dynamic> event) {
+    final l10n = AppLocalizations.of(context)!;
     final type = event['type'] as String;
     switch (type) {
       case 'food_consumed':
-        return '🍎 Ate ${event['foodType']} food';
+        return l10n.rvAteFood(event['foodType']);
       case 'power_up_collected':
-        return '⚡ Collected ${event['powerUpType']} power-up';
+        return l10n.rvCollectedPowerUp(event['powerUpType']);
       default:
         return event.toString();
     }

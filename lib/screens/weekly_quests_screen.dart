@@ -94,7 +94,8 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
                                 child: _service.quests.isEmpty
                                     ? Center(
                                         child: Text(
-                                          "No weekly quests yet — check back Monday",
+                                          AppLocalizations.of(context)!
+                                              .wqNoQuests,
                                           style: TextStyle(
                                               color: theme.accentColor
                                                   .withValues(alpha: 0.7)),
@@ -147,7 +148,7 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            'Weekly Quests',
+            AppLocalizations.of(context)!.wqTitle,
             style: TextStyle(
               color: theme.accentColor,
               fontSize: 22,
@@ -329,7 +330,7 @@ class _QuestCard extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onClaim,
                   icon: const Icon(Icons.card_giftcard, size: 16),
-                  label: const Text('Claim Reward'),
+                  label: Text(AppLocalizations.of(context)!.wqClaimReward),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade700,
                     foregroundColor: Colors.white,
@@ -346,7 +347,7 @@ class _QuestCard extends StatelessWidget {
                       color: Colors.green, size: 14),
                   const SizedBox(width: 6),
                   Text(
-                    'Claimed',
+                    AppLocalizations.of(context)!.dchClaimed,
                     style: TextStyle(
                       color: Colors.green.shade300,
                       fontSize: 11,

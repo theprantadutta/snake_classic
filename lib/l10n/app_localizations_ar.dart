@@ -4646,4 +4646,703 @@ class AppLocalizationsAr extends AppLocalizations {
   String bpRewardDescPremium(Object type) {
     return 'مكافأة مميزة حصرية: $type';
   }
+
+  @override
+  String get insHowToPlay => 'طريقة اللعب';
+
+  @override
+  String get insObjective => 'الهدف';
+
+  @override
+  String get insObjectiveBody =>
+      'تحكم في الثعبان ليأكل الطعام ويكبر قدر الإمكان دون الاصطدام بالجدران أو بنفسه!';
+
+  @override
+  String get insControls => 'التحكم';
+
+  @override
+  String get insSwipeUp => 'اسحب لأعلى ↑';
+
+  @override
+  String get insSwipeUpDesc => 'يحرّك الثعبان لأعلى';
+
+  @override
+  String get insSwipeDown => 'اسحب لأسفل ↓';
+
+  @override
+  String get insSwipeDownDesc => 'يحرّك الثعبان لأسفل';
+
+  @override
+  String get insSwipeLeft => 'اسحب لليسار ←';
+
+  @override
+  String get insSwipeLeftDesc => 'يحرّك الثعبان لليسار';
+
+  @override
+  String get insSwipeRight => 'اسحب لليمين →';
+
+  @override
+  String get insSwipeRightDesc => 'يحرّك الثعبان لليمين';
+
+  @override
+  String get insTapScreen => 'المس الشاشة';
+
+  @override
+  String get insTapScreenDesc => 'إيقاف/استئناف اللعبة';
+
+  @override
+  String get insArrowKeys => 'مفاتيح الأسهم (كمبيوتر)';
+
+  @override
+  String get insArrowKeysDesc => 'تغيير الاتجاه';
+
+  @override
+  String get insWasd => 'WASD (كمبيوتر)';
+
+  @override
+  String get insWasdDesc => 'تغيير الاتجاه';
+
+  @override
+  String get insSpacebar => 'مفتاح المسافة (كمبيوتر)';
+
+  @override
+  String get insSpacebarDesc => 'إيقاف/استئناف اللعبة';
+
+  @override
+  String get insFoodTypes => 'أنواع الطعام';
+
+  @override
+  String get insNormalFood => 'طعام عادي';
+
+  @override
+  String get insBonusFood => 'طعام مكافأة';
+
+  @override
+  String get insSpecialFood => 'طعام خاص';
+
+  @override
+  String get insRules => 'القواعد';
+
+  @override
+  String get insRule1 => '• كُل الطعام لتكبر وتزيد نقاطك';
+
+  @override
+  String get insRule2 => '• يتسارع الثعبان كلما ارتفع مستواك';
+
+  @override
+  String get insRule3 => '• تنتهي اللعبة إذا اصطدمت بجدار أو بنفسك';
+
+  @override
+  String get insRule4 => '• يظهر الطعام الخاص كل 10 وجبات عادية';
+
+  @override
+  String get insRule5 => '• يختفي طعام المكافأة بعد 15 ثانية';
+
+  @override
+  String get insProTips => 'نصائح احترافية';
+
+  @override
+  String get insTip1 => 'خطط لحركاتك مسبقًا';
+
+  @override
+  String get insTip2 => 'استخدم الحواف لإنشاء مساحات آمنة';
+
+  @override
+  String get insTip3 => 'انتبه لمؤشرات السحب المرئية';
+
+  @override
+  String get insTip4 => 'تدرّب على مستويات صعوبة مختلفة';
+
+  @override
+  String get insBackToGame => 'العودة إلى اللعبة';
+
+  @override
+  String dchClaimedReward(Object coins, Object xp) {
+    return 'حصلت على $coins عملة و$xp خبرة!';
+  }
+
+  @override
+  String dchClaimedCoins(Object coins) {
+    return 'حصلت على $coins عملة!';
+  }
+
+  @override
+  String get dchWatchTo2x => 'شاهد لمضاعفة 2×';
+
+  @override
+  String dchDoubledBonus(Object coins) {
+    return '🎉 تضاعفت! +$coins عملة مكافأة!';
+  }
+
+  @override
+  String get dchClaimAll => 'استلام الكل';
+
+  @override
+  String get dchTodaysProgress => 'تقدم اليوم';
+
+  @override
+  String get dchClaim => 'استلام';
+
+  @override
+  String get dchClaimed => 'تم الاستلام';
+
+  @override
+  String get dchAllCompleteTitle => 'اكتملت كل التحديات!';
+
+  @override
+  String get dchBonusClaimed => 'تم استلام مكافأة الإكمال';
+
+  @override
+  String get dchBonusPending => 'المكافأة بانتظارك — استلم أي تحدٍ';
+
+  @override
+  String get dchLoading => 'جارٍ تحميل التحديات...';
+
+  @override
+  String get dchCheckBack => 'عُد لاحقًا لتحديات يومية جديدة!';
+
+  @override
+  String get dchAbout => 'عن التحديات اليومية';
+
+  @override
+  String get dchAbout1 => 'تحديات جديدة كل يوم عند منتصف الليل';
+
+  @override
+  String get dchAbout2 => 'أكمل التحديات لتكسب العملات';
+
+  @override
+  String get dchAbout3 => 'اكسب الخبرة لترفع مستوى ملفك';
+
+  @override
+  String get dchAbout4 => 'أكمل الثلاثة كلها لمكافأة إضافية!';
+
+  @override
+  String get dchAllBonusTitle => 'مكافأة كل التحديات';
+
+  @override
+  String get dchAllBonusDesc => 'أكملت كل تحديات اليوم.';
+
+  @override
+  String get wqNoQuests => 'لا مهام أسبوعية بعد — عُد يوم الاثنين';
+
+  @override
+  String get wqTitle => 'المهام الأسبوعية';
+
+  @override
+  String get wqClaimReward => 'استلام المكافأة';
+
+  @override
+  String get rvNotFound => 'الإعادة غير موجودة';
+
+  @override
+  String get rvLoadFailed => 'تعذّر تحميل الإعادة';
+
+  @override
+  String rvTitle(Object name) {
+    return 'إعادة: $name';
+  }
+
+  @override
+  String get rvLoadingTitle => 'جارٍ تحميل الإعادة...';
+
+  @override
+  String get rvLoading => 'جارٍ تحميل الإعادة...';
+
+  @override
+  String get rvGoBack => 'رجوع';
+
+  @override
+  String get rvScore => 'النقاط';
+
+  @override
+  String get rvLevel => 'المستوى';
+
+  @override
+  String get rvFrame => 'الإطار';
+
+  @override
+  String get rvTime => 'الوقت';
+
+  @override
+  String get rvNoFrameData => 'لا بيانات إطارات';
+
+  @override
+  String get rvSpeedLabel => 'السرعة: ';
+
+  @override
+  String rvAteFood(Object type) {
+    return '🍎 أكل طعام $type';
+  }
+
+  @override
+  String rvCollectedPowerUp(Object type) {
+    return '⚡ جمع تعزيز $type';
+  }
+
+  @override
+  String get unEmpty => 'اسم المستخدم لا يمكن أن يكون فارغًا';
+
+  @override
+  String get unSetFailed => 'تعذّر تعيين اسم المستخدم';
+
+  @override
+  String get unPickTitle => 'اختر اسم المستخدم';
+
+  @override
+  String get unPickBody =>
+      'هكذا ستظهر في لوحة الصدارة. اخترنا لك اسمًا — احتفظ به أو غيّره.';
+
+  @override
+  String get unLabel => 'اسم المستخدم';
+
+  @override
+  String get unSaving => 'جارٍ الحفظ...';
+
+  @override
+  String get unContinue => 'متابعة';
+
+  @override
+  String get unChangeAnytime => 'يمكنك تغييره في أي وقت من الإعدادات.';
+
+  @override
+  String unMinLength(Object min) {
+    return 'يجب ألا يقل اسم المستخدم عن $min حرفًا';
+  }
+
+  @override
+  String unMaxLength(Object max) {
+    return 'يجب ألا يزيد اسم المستخدم عن $max حرفًا';
+  }
+
+  @override
+  String get unPattern =>
+      'يجب أن يبدأ الاسم بحرف وأن يحتوي على حروف وأرقام وشرطات سفلية فقط';
+
+  @override
+  String get unReserved => 'اسم المستخدم هذا محجوز ولا يمكن استخدامه';
+
+  @override
+  String get unTaken => 'اسم المستخدم هذا مستخدم بالفعل';
+
+  @override
+  String get unUpdateFailed => 'تعذّر تحديث اسم المستخدم';
+
+  @override
+  String get pcTitle => 'تحديث الخصوصية والشروط';
+
+  @override
+  String pcVersionLine(Object version) {
+    return 'الإصدار $version · يُرجى المراجعة والموافقة للمتابعة';
+  }
+
+  @override
+  String get pcTabPrivacy => 'سياسة الخصوصية';
+
+  @override
+  String get pcTabTerms => 'شروط الاستخدام';
+
+  @override
+  String get pcAgree =>
+      'قرأت سياسة الخصوصية وشروط الاستخدام المحدّثتين وأوافق عليهما';
+
+  @override
+  String get pcContinue => 'متابعة';
+
+  @override
+  String lgAvailableAt(Object url) {
+    return 'هذا المستند متاح على $url.';
+  }
+
+  @override
+  String get lgUnavailable =>
+      'هذا المستند غير متاح حاليًا. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get auTitle => 'سجّل لإتمام المشتريات';
+
+  @override
+  String get auBody =>
+      'حسابات الضيوف يمكنها اللعب وحفظ التقدم محليًا، لكن لا يمكنها الشراء أو الاشتراك. اربط حساب Google أو بريدًا إلكترونيًا لفتح المشتريات — ستبقى عملاتك ومظاهرك وأرقامك القياسية كما هي.';
+
+  @override
+  String get auGoogle => 'المتابعة عبر Google';
+
+  @override
+  String get auGoogleSub => 'الخيار الأسرع. سجّل الدخول بحساب Google.';
+
+  @override
+  String get auLinked => 'تم ربط الحساب. يمكنك الآن الشراء.';
+
+  @override
+  String get auEmail => 'إنشاء حساب بريد إلكتروني';
+
+  @override
+  String get auEmailSub =>
+      'استخدم أي بريد وكلمة مرور تختارها. استعد بياناتك على أي جهاز.';
+
+  @override
+  String get auNotNow => 'ليس الآن';
+
+  @override
+  String get auErrCredentialInUse =>
+      'بيانات الاعتماد هذه مرتبطة بحساب آخر. جرّب تسجيل الدخول بها.';
+
+  @override
+  String get auErrAlreadyLinked => 'هذا الحساب مرتبط بالفعل.';
+
+  @override
+  String get auErrRequiresRecentLogin =>
+      'لأمانك، سجّل الدخول مجددًا قبل الربط.';
+
+  @override
+  String get auErrNetwork => 'خطأ في الشبكة. تحقق من اتصالك.';
+
+  @override
+  String get auErrGeneric => 'فشل الربط. حاول مرة أخرى.';
+
+  @override
+  String get sroSettingUpTitle => 'جارٍ إعداد حسابك…';
+
+  @override
+  String get sroSettingUpBody =>
+      'نجهّز كل شيء لجلستك الأولى. يحدث هذا مرة واحدة فقط.';
+
+  @override
+  String get sroLoadingTitle => 'جارٍ تحميل بياناتك السابقة…';
+
+  @override
+  String get sroLoadingBody =>
+      'نجلب إحصاءاتك وإنجازاتك وعملاتك ومفتوحاتك من السحابة.';
+
+  @override
+  String get sroRestoringTitle => 'جارٍ استعادة تقدمك…';
+
+  @override
+  String get sroRestoringBody =>
+      'نطبّق كل شيء على هذا الجهاز. لا تغلق التطبيق.';
+
+  @override
+  String get sroDoneTitle => 'كل شيء جاهز!';
+
+  @override
+  String get sroDoneBody => 'تمت استعادة تقدمك.';
+
+  @override
+  String get sroFailedTitle => 'تعذّرت استعادة بياناتك';
+
+  @override
+  String get sroFailedBody =>
+      'لم نتمكن من الوصول إلى السحابة الآن. تحقق من الإنترنت وحاول مجددًا. يمكنك أيضًا المتابعة دون استعادة — سنحاول مرة أخرى عند فتح التطبيق تاليًا.';
+
+  @override
+  String get sroTryAgain => 'حاول مرة أخرى';
+
+  @override
+  String get sroContinueAnyway => 'متابعة على أي حال';
+
+  @override
+  String get ssiOfflinePending => 'غير متصل - ستتزامن التغييرات عند الاتصال';
+
+  @override
+  String get ssiSyncing => 'جارٍ المزامنة...';
+
+  @override
+  String get ssiAllSynced => 'تمت مزامنة كل البيانات';
+
+  @override
+  String ssiFailedCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'فشل $count عنصر في المزامنة',
+      many: 'فشل $count عنصرًا في المزامنة',
+      few: 'فشلت $count عناصر في المزامنة',
+      two: 'فشل عنصران في المزامنة',
+      one: 'فشل عنصر واحد في المزامنة',
+      zero: 'لا عناصر فشلت في المزامنة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ssiPendingCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصر بانتظار المزامنة',
+      many: '$count عنصرًا بانتظار المزامنة',
+      few: '$count عناصر بانتظار المزامنة',
+      two: 'عنصران بانتظار المزامنة',
+      one: 'عنصر واحد بانتظار المزامنة',
+      zero: 'لا عناصر بانتظار المزامنة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ssiOffline => 'غير متصل';
+
+  @override
+  String get rvoContinue => 'متابعة؟';
+
+  @override
+  String get rvoSubtitlePro => 'عُد للحياة واحتفظ بنقاطك · مجانًا مع Pro';
+
+  @override
+  String rvoSubtitleTimer(Object seconds) {
+    return 'عُد للحياة واحتفظ بنقاطك · $seconds ث';
+  }
+
+  @override
+  String get rvoGetLifePro => 'احصل على حياة · مجانًا لمشتركي Pro';
+
+  @override
+  String get rvoWatchAd => 'شاهد إعلانًا لتعود للحياة';
+
+  @override
+  String rvoUseCoins(Object coins) {
+    return 'استخدم $coins عملة';
+  }
+
+  @override
+  String get rvoNoThanks => 'لا، شكرًا';
+
+  @override
+  String get tbTimesUp => 'انتهى الوقت!';
+
+  @override
+  String tbKeepGoing(Object seconds) {
+    return 'واصل اللعب · $seconds ث';
+  }
+
+  @override
+  String tbWatchAd(Object seconds) {
+    return 'شاهد إعلانًا — +$seconds ث';
+  }
+
+  @override
+  String get tbEndRun => 'إنهاء الجولة';
+
+  @override
+  String get dbTitle => 'المكافأة اليومية';
+
+  @override
+  String get dbClaimToday => 'استلم مكافأتك اليومية!';
+
+  @override
+  String get dbComeBack => 'عُد غدًا!';
+
+  @override
+  String dbDayChip(Object day) {
+    return 'يوم $day';
+  }
+
+  @override
+  String get dbTodaysReward => 'مكافأة اليوم';
+
+  @override
+  String get dbAlreadyClaimed => 'تم الاستلام اليوم';
+
+  @override
+  String get dbClaim => 'استلام المكافأة';
+
+  @override
+  String get dbClaim2x => 'استلام 2× — شاهد إعلانًا';
+
+  @override
+  String get npPrimerTitle => 'لا يفوتك شيء!';
+
+  @override
+  String get npPrimerBody =>
+      'نرسل إشعارين أو ثلاثة في اليوم فقط — تذكير تحدّيك اليومي والأحداث الخاصة.\n\nبلا إزعاج، وعدٌ منا. 🐍';
+
+  @override
+  String get npMaybeLater => 'ربما لاحقًا';
+
+  @override
+  String get npAllSet => '🎉 كل شيء جاهز!';
+
+  @override
+  String get npTurnOn => 'تفعيل';
+
+  @override
+  String get npSoftTitle => 'تريد البقاء على اطلاع؟';
+
+  @override
+  String get npSoftBody =>
+      'فعّل الإشعارات وسنذكّرك بتحدياتك اليومية وسلاسلك — إضافة إلى الأخبار الكبيرة مثل هدايا Premium المجانية والأحداث الخاصة.\n\nإشعاران في اليوم فقط، بلا إزعاج. 🐍';
+
+  @override
+  String get npNotNow => 'ليس الآن';
+
+  @override
+  String get npEnable => 'تفعيل الإشعارات';
+
+  @override
+  String get aroUnlocked => 'إنجاز جديد';
+
+  @override
+  String get aroTapToContinue => 'المس للمتابعة';
+
+  @override
+  String get aroSkip => 'تخطٍ';
+
+  @override
+  String aroSkipCount(Object count) {
+    return 'تخطٍ ($count)';
+  }
+
+  @override
+  String get luLevelUp => 'مستوى جديد!';
+
+  @override
+  String luReached(Object level) {
+    return 'وصلت إلى المستوى $level';
+  }
+
+  @override
+  String get luNice => 'رائع';
+
+  @override
+  String get cfTapContinue => 'المس أي مكان للمتابعة';
+
+  @override
+  String get cfTapSkip => 'المس أي مكان للتخطي';
+
+  @override
+  String ppgLvShort(Object level) {
+    return 'مس $level';
+  }
+
+  @override
+  String ppgLvUpper(Object level) {
+    return 'مس $level';
+  }
+
+  @override
+  String ppgLevel(Object level) {
+    return 'المستوى $level';
+  }
+
+  @override
+  String get xgTitle => 'الخروج من اللعبة؟';
+
+  @override
+  String get xgBody => 'هل تريد الخروج فعلًا؟ سيضيع تقدمك الحالي.';
+
+  @override
+  String get xgExit => 'خروج';
+
+  @override
+  String get ccTitle => 'كيف تريد اللعب؟';
+
+  @override
+  String get ccBody =>
+      'اختر واحدة — يمكنك تغييرها في أي وقت من الإعدادات ← التحكم.';
+
+  @override
+  String get ccSwipe => 'إيماءات السحب';
+
+  @override
+  String get ccSwipeSub => 'اسحب في أي مكان على اللوحة للانعطاف.';
+
+  @override
+  String get ccDpad => 'أزرار D-Pad';
+
+  @override
+  String get ccDpadSub => 'أزرار اتجاهات على الشاشة.';
+
+  @override
+  String rcCoinsAdded(Object coins) {
+    return '🎉 أُضيفت +$coins عملة إلى محفظتك!';
+  }
+
+  @override
+  String rcWatchAd(Object coins) {
+    return 'شاهد إعلانًا — +$coins عملة';
+  }
+
+  @override
+  String get rcNoAd => 'لا إعلانات متاحة الآن';
+
+  @override
+  String get raOptIn => 'اختياري — شاهد واكسب';
+
+  @override
+  String get compassSemantics => 'مؤشر اتجاه السحب';
+
+  @override
+  String homeBonusDoubled(Object coins) {
+    return '🎉 تضاعفت المكافأة اليومية — +$coins عملة مكافأة!';
+  }
+
+  @override
+  String get nsNewNotification => 'لديك إشعار جديد';
+
+  @override
+  String get nsAchievementUnlocked => '🏆 إنجاز جديد!';
+
+  @override
+  String get nsDailyReminderTitle => '🐍 حان وقت لعب Snake Classic!';
+
+  @override
+  String get nsDailyReminderBody => 'أكمل تحدّيك اليومي وتسلّق لوحة الصدارة!';
+
+  @override
+  String get mpErrMatchmaking => 'فشل البحث عن مباراة. حاول مرة أخرى.';
+
+  @override
+  String get mpErrCreateFailed => 'تعذّر إنشاء اللعبة';
+
+  @override
+  String get mpErrJoinFailed =>
+      'تعذّر الانضمام. قد تكون اللعبة ممتلئة أو غير موجودة.';
+
+  @override
+  String get mpErrReadyFailed => 'تعذّر تحديث حالة الاستعداد';
+
+  @override
+  String get mpErrStartFailed => 'تعذّر بدء اللعبة';
+
+  @override
+  String get mpErrStartTimeout => 'انتهت مهلة بدء اللعبة. حاول مرة أخرى.';
+
+  @override
+  String get mpErrReconnectFailed => 'تعذّر إعادة الاتصال بالمباراة.';
+
+  @override
+  String get mpErrConnectionLost => 'انقطع الاتصال — تعذّر استئناف المباراة.';
+
+  @override
+  String get mpErrMatchEndedAway => 'انتهت المباراة أثناء غيابك.';
+
+  @override
+  String get mpErrWaitingReady => 'بانتظار استعداد جميع اللاعبين';
+
+  @override
+  String get mpErrOnlyHost => 'المضيف فقط يمكنه بدء اللعبة';
+
+  @override
+  String get mpErrSessionExpired => 'انتهت جلسة اللعبة. أنشئ لعبة جديدة';
+
+  @override
+  String get mpErrAlreadyStarted => 'هذه اللعبة بدأت بالفعل';
+
+  @override
+  String get mpErrNeedTwoPlayers => 'تتطلب المباريات لاعبَين اثنين بالضبط';
+
+  @override
+  String get mpErrSignIn => 'سجّل الدخول للعب أونلاين';
+
+  @override
+  String get mpErrReconnectExpired => 'انتهت مهلة إعادة الاتصال';
+
+  @override
+  String get mpErrCheckInternet => 'انقطع الاتصال. تحقق من الإنترنت';
+
+  @override
+  String get mpErrUnableJoin => 'تعذّر دخول الغرفة. حاول مرة أخرى';
+
+  @override
+  String get mpErrGeneric => 'حدث خطأ ما. حاول مرة أخرى';
 }

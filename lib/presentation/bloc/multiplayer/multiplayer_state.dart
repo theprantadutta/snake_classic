@@ -1,7 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
+import 'package:snake_classic/models/multiplayer_error.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/utils/direction.dart';
+
+export 'package:snake_classic/models/multiplayer_error.dart';
 
 /// Status of the multiplayer cubit
 enum MultiplayerStatus {
@@ -20,7 +23,11 @@ enum MultiplayerStatus {
 class MultiplayerState extends Equatable {
   final MultiplayerStatus status;
   final MultiplayerGame? currentGame;
-  final String? errorMessage;
+
+  /// Stable error code resolved to a localized message at render time
+  /// (see MultiplayerErrorL10n.localizedMessage). State never carries
+  /// user-facing English.
+  final MultiplayerError? errorCode;
   final bool isLoading;
 
   // Server-authoritative match state. [snapshot] is the latest engine
@@ -51,7 +58,7 @@ class MultiplayerState extends Equatable {
   const MultiplayerState({
     this.status = MultiplayerStatus.initial,
     this.currentGame,
-    this.errorMessage,
+    this.errorCode,
     this.isLoading = false,
     this.snapshot,
     this.matchEnd,
@@ -74,7 +81,7 @@ class MultiplayerState extends Equatable {
   MultiplayerState copyWith({
     MultiplayerStatus? status,
     MultiplayerGame? currentGame,
-    String? errorMessage,
+    MultiplayerError? errorCode,
     bool? isLoading,
     bool clearGame = false,
     bool clearError = false,
@@ -97,7 +104,7 @@ class MultiplayerState extends Equatable {
     return MultiplayerState(
       status: status ?? this.status,
       currentGame: clearGame ? null : (currentGame ?? this.currentGame),
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
       isLoading: isLoading ?? this.isLoading,
       snapshot: (clearMatch || clearGame) ? null : (snapshot ?? this.snapshot),
       matchEnd: (clearMatch || clearGame) ? null : (matchEnd ?? this.matchEnd),
@@ -172,7 +179,7 @@ class MultiplayerState extends Equatable {
   List<Object?> get props => [
     status,
     currentGame,
-    errorMessage,
+    errorCode,
     isLoading,
     snapshot,
     matchEnd,

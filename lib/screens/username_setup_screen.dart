@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -52,10 +53,32 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
     super.dispose();
   }
 
+  /// Maps a stable [UsernameError] code to the localized message.
+  String _usernameErrorText(UsernameError code, AppLocalizations l10n) {
+    switch (code) {
+      case UsernameError.empty:
+        return l10n.unEmpty;
+      case UsernameError.tooShort:
+        return l10n.unMinLength(UsernameService.minLength);
+      case UsernameError.tooLong:
+        return l10n.unMaxLength(UsernameService.maxLength);
+      case UsernameError.invalidFormat:
+        return l10n.unPattern;
+      case UsernameError.reserved:
+        return l10n.unReserved;
+      case UsernameError.taken:
+        return l10n.unTaken;
+      case UsernameError.updateFailed:
+        return l10n.unUpdateFailed;
+    }
+  }
+
   Future<void> _onContinue() async {
+    // Capture before the awaits below — used after async gaps.
+    final l10n = AppLocalizations.of(context)!;
     final newUsername = _controller.text.trim();
     if (newUsername.isEmpty) {
-      setState(() => _errorMessage = 'Username cannot be empty');
+      setState(() => _errorMessage = l10n.unEmpty);
       return;
     }
 
@@ -94,9 +117,12 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
       final validation = await _usernameService.validateUsernameComplete(
         newUsername,
       );
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = validation.error ?? 'Failed to set username';
+        _errorMessage = validation.errorCode != null
+            ? _usernameErrorText(validation.errorCode!, l10n)
+            : l10n.unSetFailed;
       });
     }
   }
@@ -111,6 +137,7 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
+        final l10n = AppLocalizations.of(context)!;
         return Scaffold(
           backgroundColor: theme.backgroundColor,
           body: AppBackground(
@@ -145,7 +172,7 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Pick your username',
+                      l10n.unPickTitle,
                       style: TextStyle(
                         color: theme.accentColor,
                         fontSize: 28,
@@ -155,8 +182,7 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "It's how you'll show up on the leaderboard. "
-                      "We've picked one for you — keep it or change it.",
+                      l10n.unPickBody,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 14,
@@ -176,7 +202,7 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
                         LengthLimitingTextInputFormatter(20),
                       ],
                       decoration: InputDecoration(
-                        labelText: 'Username',
+                        labelText: l10n.unLabel,
                         labelStyle: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.7),
                         ),
@@ -217,7 +243,7 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
                     const Spacer(),
                     GradientButton(
                       onPressed: _isLoading ? null : _onContinue,
-                      text: _isLoading ? 'SAVING...' : 'CONTINUE',
+                      text: _isLoading ? l10n.unSaving : l10n.unContinue,
                       primaryColor: theme.accentColor,
                       secondaryColor: theme.foodColor,
                       icon: Icons.arrow_forward,
@@ -225,7 +251,7 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'You can change this anytime in Settings.',
+                      l10n.unChangeAnytime,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 12,

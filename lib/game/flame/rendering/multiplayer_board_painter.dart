@@ -87,6 +87,10 @@ class MultiplayerBoardPainter extends CustomPainter {
   final double moveProgress;
   final int boardSize;
 
+  /// Localized label drawn above the local player's snake. The painter has
+  /// no BuildContext, so the widget layer threads the translation in.
+  final String youLabel;
+
   MultiplayerBoardPainter({
     required this.snapshot,
     required this.previousSnapshot,
@@ -95,6 +99,7 @@ class MultiplayerBoardPainter extends CustomPainter {
     required this.pulseAnimation,
     required this.moveProgress,
     required this.boardSize,
+    this.youLabel = 'You',
   }) : super(repaint: pulseAnimation);
 
   @override
@@ -129,7 +134,7 @@ class MultiplayerBoardPainter extends CustomPainter {
         cellWidth,
         cellHeight,
         isCurrentPlayer: isCurrentPlayer,
-        playerName: isCurrentPlayer ? 'You' : player.username,
+        playerName: isCurrentPlayer ? youLabel : player.username,
       );
     }
   }

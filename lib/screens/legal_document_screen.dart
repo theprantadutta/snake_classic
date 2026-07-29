@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -31,6 +32,10 @@ class LegalDocumentScreen extends StatefulWidget {
 class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
   String _content = '';
 
+  // Set when the bundled asset can't be loaded — the localized fallback
+  // message is resolved at render time (no context/l10n in the async load).
+  bool _loadFailed = false;
+
   @override
   void initState() {
     super.initState();
@@ -43,9 +48,7 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
       if (mounted) setState(() => _content = content);
     } catch (_) {
       if (mounted) {
-        setState(() => _content = widget.fallbackUrl != null
-            ? 'This document is available at ${widget.fallbackUrl}.'
-            : 'This document is currently unavailable. Please try again later.');
+        setState(() => _loadFailed = true);
       }
     }
   }
@@ -54,6 +57,12 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeCubit>().state.currentTheme;
     final isSmall = MediaQuery.of(context).size.height < 800;
+    final l10n = AppLocalizations.of(context)!;
+    final content = _loadFailed
+        ? (widget.fallbackUrl != null
+            ? l10n.lgAvailableAt(widget.fallbackUrl!)
+            : l10n.lgUnavailable)
+        : _content;
 
     return Scaffold(
       body: AnimatedAppBackground(
@@ -107,7 +116,7 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         icon: Icon(Icons.close, color: theme.accentColor),
-                        tooltip: 'Close',
+                        tooltip: l10n.commonClose,
                       ),
                     ],
                   ),
@@ -133,7 +142,7 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
                         width: 1,
                       ),
                     ),
-                    child: _content.isEmpty
+                    child: content.isEmpty
                         ? Center(
                             child: CircularProgressIndicator(
                               color: theme.accentColor,
@@ -141,7 +150,7 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
                           )
                         : SingleChildScrollView(
                             child: Text(
-                              _content,
+                              content,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 13,

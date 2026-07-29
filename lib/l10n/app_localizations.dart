@@ -8517,6 +8517,1230 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exclusive premium {type} reward'**
   String bpRewardDescPremium(Object type);
+
+  /// No description provided for @insHowToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'HOW TO PLAY'**
+  String get insHowToPlay;
+
+  /// No description provided for @insObjective.
+  ///
+  /// In en, this message translates to:
+  /// **'OBJECTIVE'**
+  String get insObjective;
+
+  /// No description provided for @insObjectiveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Control the snake to eat food and grow as long as possible without hitting walls or yourself!'**
+  String get insObjectiveBody;
+
+  /// No description provided for @insControls.
+  ///
+  /// In en, this message translates to:
+  /// **'CONTROLS'**
+  String get insControls;
+
+  /// No description provided for @insSwipeUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe Up ↑'**
+  String get insSwipeUp;
+
+  /// No description provided for @insSwipeUpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Move snake up'**
+  String get insSwipeUpDesc;
+
+  /// No description provided for @insSwipeDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe Down ↓'**
+  String get insSwipeDown;
+
+  /// No description provided for @insSwipeDownDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Move snake down'**
+  String get insSwipeDownDesc;
+
+  /// No description provided for @insSwipeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe Left ←'**
+  String get insSwipeLeft;
+
+  /// No description provided for @insSwipeLeftDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Move snake left'**
+  String get insSwipeLeftDesc;
+
+  /// No description provided for @insSwipeRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe Right →'**
+  String get insSwipeRight;
+
+  /// No description provided for @insSwipeRightDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Move snake right'**
+  String get insSwipeRightDesc;
+
+  /// No description provided for @insTapScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Screen'**
+  String get insTapScreen;
+
+  /// No description provided for @insTapScreenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause/Resume game'**
+  String get insTapScreenDesc;
+
+  /// No description provided for @insArrowKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrow Keys (Desktop)'**
+  String get insArrowKeys;
+
+  /// No description provided for @insArrowKeysDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Change direction'**
+  String get insArrowKeysDesc;
+
+  /// No description provided for @insWasd.
+  ///
+  /// In en, this message translates to:
+  /// **'WASD (Desktop)'**
+  String get insWasd;
+
+  /// No description provided for @insWasdDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Change direction'**
+  String get insWasdDesc;
+
+  /// No description provided for @insSpacebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Spacebar (Desktop)'**
+  String get insSpacebar;
+
+  /// No description provided for @insSpacebarDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause/Resume game'**
+  String get insSpacebarDesc;
+
+  /// No description provided for @insFoodTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'FOOD TYPES'**
+  String get insFoodTypes;
+
+  /// No description provided for @insNormalFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal Food'**
+  String get insNormalFood;
+
+  /// No description provided for @insBonusFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus Food'**
+  String get insBonusFood;
+
+  /// No description provided for @insSpecialFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Special Food'**
+  String get insSpecialFood;
+
+  /// No description provided for @insRules.
+  ///
+  /// In en, this message translates to:
+  /// **'RULES'**
+  String get insRules;
+
+  /// No description provided for @insRule1.
+  ///
+  /// In en, this message translates to:
+  /// **'• Eat food to grow and increase score'**
+  String get insRule1;
+
+  /// No description provided for @insRule2.
+  ///
+  /// In en, this message translates to:
+  /// **'• Snake speeds up as you level up'**
+  String get insRule2;
+
+  /// No description provided for @insRule3.
+  ///
+  /// In en, this message translates to:
+  /// **'• Game ends if you hit walls or yourself'**
+  String get insRule3;
+
+  /// No description provided for @insRule4.
+  ///
+  /// In en, this message translates to:
+  /// **'• Special food appears every 10 normal foods'**
+  String get insRule4;
+
+  /// No description provided for @insRule5.
+  ///
+  /// In en, this message translates to:
+  /// **'• Bonus food expires after 15 seconds'**
+  String get insRule5;
+
+  /// No description provided for @insProTips.
+  ///
+  /// In en, this message translates to:
+  /// **'PRO TIPS'**
+  String get insProTips;
+
+  /// No description provided for @insTip1.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan your moves ahead of time'**
+  String get insTip1;
+
+  /// No description provided for @insTip2.
+  ///
+  /// In en, this message translates to:
+  /// **'Use edges to create safe spaces'**
+  String get insTip2;
+
+  /// No description provided for @insTip3.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch for visual swipe feedback'**
+  String get insTip3;
+
+  /// No description provided for @insTip4.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice different difficulty levels'**
+  String get insTip4;
+
+  /// No description provided for @insBackToGame.
+  ///
+  /// In en, this message translates to:
+  /// **'BACK TO GAME'**
+  String get insBackToGame;
+
+  /// No description provided for @dchClaimedReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed {coins} coins and {xp} XP!'**
+  String dchClaimedReward(Object coins, Object xp);
+
+  /// No description provided for @dchClaimedCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed {coins} coins!'**
+  String dchClaimedCoins(Object coins);
+
+  /// No description provided for @dchWatchTo2x.
+  ///
+  /// In en, this message translates to:
+  /// **'WATCH TO 2×'**
+  String get dchWatchTo2x;
+
+  /// No description provided for @dchDoubledBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Doubled! +{coins} bonus coins!'**
+  String dchDoubledBonus(Object coins);
+
+  /// No description provided for @dchClaimAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim All'**
+  String get dchClaimAll;
+
+  /// No description provided for @dchTodaysProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Progress'**
+  String get dchTodaysProgress;
+
+  /// No description provided for @dchClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get dchClaim;
+
+  /// No description provided for @dchClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed'**
+  String get dchClaimed;
+
+  /// No description provided for @dchAllCompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All Challenges Complete!'**
+  String get dchAllCompleteTitle;
+
+  /// No description provided for @dchBonusClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus reward claimed'**
+  String get dchBonusClaimed;
+
+  /// No description provided for @dchBonusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus reward pending — claim any challenge'**
+  String get dchBonusPending;
+
+  /// No description provided for @dchLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading challenges...'**
+  String get dchLoading;
+
+  /// No description provided for @dchCheckBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Check back later for new daily challenges!'**
+  String get dchCheckBack;
+
+  /// No description provided for @dchAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About Daily Challenges'**
+  String get dchAbout;
+
+  /// No description provided for @dchAbout1.
+  ///
+  /// In en, this message translates to:
+  /// **'New challenges every day at midnight'**
+  String get dchAbout1;
+
+  /// No description provided for @dchAbout2.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete challenges to earn coins'**
+  String get dchAbout2;
+
+  /// No description provided for @dchAbout3.
+  ///
+  /// In en, this message translates to:
+  /// **'Gain XP to level up your profile'**
+  String get dchAbout3;
+
+  /// No description provided for @dchAbout4.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete all 3 for a bonus reward!'**
+  String get dchAbout4;
+
+  /// No description provided for @dchAllBonusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All Challenges Bonus'**
+  String get dchAllBonusTitle;
+
+  /// No description provided for @dchAllBonusDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed every daily challenge today.'**
+  String get dchAllBonusDesc;
+
+  /// No description provided for @wqNoQuests.
+  ///
+  /// In en, this message translates to:
+  /// **'No weekly quests yet — check back Monday'**
+  String get wqNoQuests;
+
+  /// No description provided for @wqTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Quests'**
+  String get wqTitle;
+
+  /// No description provided for @wqClaimReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim Reward'**
+  String get wqClaimReward;
+
+  /// No description provided for @rvNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay not found'**
+  String get rvNotFound;
+
+  /// No description provided for @rvLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load replay'**
+  String get rvLoadFailed;
+
+  /// No description provided for @rvTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay: {name}'**
+  String rvTitle(Object name);
+
+  /// No description provided for @rvLoadingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Replay...'**
+  String get rvLoadingTitle;
+
+  /// No description provided for @rvLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading replay...'**
+  String get rvLoading;
+
+  /// No description provided for @rvGoBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Back'**
+  String get rvGoBack;
+
+  /// No description provided for @rvScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get rvScore;
+
+  /// No description provided for @rvLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get rvLevel;
+
+  /// No description provided for @rvFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame'**
+  String get rvFrame;
+
+  /// No description provided for @rvTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get rvTime;
+
+  /// No description provided for @rvNoFrameData.
+  ///
+  /// In en, this message translates to:
+  /// **'No frame data'**
+  String get rvNoFrameData;
+
+  /// No description provided for @rvSpeedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed: '**
+  String get rvSpeedLabel;
+
+  /// No description provided for @rvAteFood.
+  ///
+  /// In en, this message translates to:
+  /// **'🍎 Ate {type} food'**
+  String rvAteFood(Object type);
+
+  /// No description provided for @rvCollectedPowerUp.
+  ///
+  /// In en, this message translates to:
+  /// **'⚡ Collected {type} power-up'**
+  String rvCollectedPowerUp(Object type);
+
+  /// No description provided for @unEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Username cannot be empty'**
+  String get unEmpty;
+
+  /// No description provided for @unSetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to set username'**
+  String get unSetFailed;
+
+  /// No description provided for @unPickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your username'**
+  String get unPickTitle;
+
+  /// No description provided for @unPickBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s how you\'ll show up on the leaderboard. We\'ve picked one for you — keep it or change it.'**
+  String get unPickBody;
+
+  /// No description provided for @unLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get unLabel;
+
+  /// No description provided for @unSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVING...'**
+  String get unSaving;
+
+  /// No description provided for @unContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'CONTINUE'**
+  String get unContinue;
+
+  /// No description provided for @unChangeAnytime.
+  ///
+  /// In en, this message translates to:
+  /// **'You can change this anytime in Settings.'**
+  String get unChangeAnytime;
+
+  /// No description provided for @unMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Username must be at least {min} characters long'**
+  String unMinLength(Object min);
+
+  /// No description provided for @unMaxLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Username must be no more than {max} characters long'**
+  String unMaxLength(Object max);
+
+  /// No description provided for @unPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Username must start with a letter and contain only letters, numbers, and underscores'**
+  String get unPattern;
+
+  /// No description provided for @unReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'This username is reserved and cannot be used'**
+  String get unReserved;
+
+  /// No description provided for @unTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'This username is already taken'**
+  String get unTaken;
+
+  /// No description provided for @unUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update username'**
+  String get unUpdateFailed;
+
+  /// No description provided for @pcTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & Terms Updated'**
+  String get pcTitle;
+
+  /// No description provided for @pcVersionLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} · please review and accept to continue'**
+  String pcVersionLine(Object version);
+
+  /// No description provided for @pcTabPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get pcTabPrivacy;
+
+  /// No description provided for @pcTabTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Use'**
+  String get pcTabTerms;
+
+  /// No description provided for @pcAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and agree to the updated Privacy Policy and Terms of Use'**
+  String get pcAgree;
+
+  /// No description provided for @pcContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get pcContinue;
+
+  /// No description provided for @lgAvailableAt.
+  ///
+  /// In en, this message translates to:
+  /// **'This document is available at {url}.'**
+  String lgAvailableAt(Object url);
+
+  /// No description provided for @lgUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This document is currently unavailable. Please try again later.'**
+  String get lgUnavailable;
+
+  /// No description provided for @auTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up to make purchases'**
+  String get auTitle;
+
+  /// No description provided for @auBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest accounts can play and save progress locally, but cannot buy items or subscribe. Link a Google or email account to unlock purchases — your existing coins, cosmetics, and high scores stay attached.'**
+  String get auBody;
+
+  /// No description provided for @auGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get auGoogle;
+
+  /// No description provided for @auGoogleSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Fastest option. Sign in with your Google account.'**
+  String get auGoogleSub;
+
+  /// No description provided for @auLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Account linked. You can now make purchases.'**
+  String get auLinked;
+
+  /// No description provided for @auEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an Email Account'**
+  String get auEmail;
+
+  /// No description provided for @auEmailSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Use any email and a password you choose. Restore on any device.'**
+  String get auEmailSub;
+
+  /// No description provided for @auNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get auNotNow;
+
+  /// No description provided for @auErrCredentialInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'That credential is already linked to another account. Try signing in with it instead.'**
+  String get auErrCredentialInUse;
+
+  /// No description provided for @auErrAlreadyLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is already linked.'**
+  String get auErrAlreadyLinked;
+
+  /// No description provided for @auErrRequiresRecentLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'For security, sign in again before linking.'**
+  String get auErrRequiresRecentLogin;
+
+  /// No description provided for @auErrNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Check your connection.'**
+  String get auErrNetwork;
+
+  /// No description provided for @auErrGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Linking failed. Please try again.'**
+  String get auErrGeneric;
+
+  /// No description provided for @sroSettingUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting up your account…'**
+  String get sroSettingUpTitle;
+
+  /// No description provided for @sroSettingUpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting things ready for your first session. This only happens once.'**
+  String get sroSettingUpBody;
+
+  /// No description provided for @sroLoadingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your previous data…'**
+  String get sroLoadingTitle;
+
+  /// No description provided for @sroLoadingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching your stats, achievements, coins, and unlocks from the cloud.'**
+  String get sroLoadingBody;
+
+  /// No description provided for @sroRestoringTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring your progress…'**
+  String get sroRestoringTitle;
+
+  /// No description provided for @sroRestoringBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying everything to this device. Don\'t close the app.'**
+  String get sroRestoringBody;
+
+  /// No description provided for @sroDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All set!'**
+  String get sroDoneTitle;
+
+  /// No description provided for @sroDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress has been restored.'**
+  String get sroDoneBody;
+
+  /// No description provided for @sroFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t restore your data'**
+  String get sroFailedTitle;
+
+  /// No description provided for @sroFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t reach the cloud just now. Check your internet connection and try again. You can also continue without restoring — we\'ll retry the next time you open the app.'**
+  String get sroFailedBody;
+
+  /// No description provided for @sroTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get sroTryAgain;
+
+  /// No description provided for @sroContinueAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Anyway'**
+  String get sroContinueAnyway;
+
+  /// No description provided for @ssiOfflinePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline - Changes will sync when connected'**
+  String get ssiOfflinePending;
+
+  /// No description provided for @ssiSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing...'**
+  String get ssiSyncing;
+
+  /// No description provided for @ssiAllSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'All data synced'**
+  String get ssiAllSynced;
+
+  /// No description provided for @ssiFailedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 item failed to sync} other{{count} items failed to sync}}'**
+  String ssiFailedCount(num count);
+
+  /// No description provided for @ssiPendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 item pending sync} other{{count} items pending sync}}'**
+  String ssiPendingCount(num count);
+
+  /// No description provided for @ssiOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get ssiOffline;
+
+  /// No description provided for @rvoContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'CONTINUE?'**
+  String get rvoContinue;
+
+  /// No description provided for @rvoSubtitlePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Revive and keep your score · Free with Pro'**
+  String get rvoSubtitlePro;
+
+  /// No description provided for @rvoSubtitleTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Revive and keep your score · {seconds}s'**
+  String rvoSubtitleTimer(Object seconds);
+
+  /// No description provided for @rvoGetLifePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Life · Free for Pro'**
+  String get rvoGetLifePro;
+
+  /// No description provided for @rvoWatchAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad to revive'**
+  String get rvoWatchAd;
+
+  /// No description provided for @rvoUseCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {coins} coins'**
+  String rvoUseCoins(Object coins);
+
+  /// No description provided for @rvoNoThanks.
+  ///
+  /// In en, this message translates to:
+  /// **'No thanks'**
+  String get rvoNoThanks;
+
+  /// No description provided for @tbTimesUp.
+  ///
+  /// In en, this message translates to:
+  /// **'TIME\'S UP!'**
+  String get tbTimesUp;
+
+  /// No description provided for @tbKeepGoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep going · {seconds}s'**
+  String tbKeepGoing(Object seconds);
+
+  /// No description provided for @tbWatchAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad — +{seconds}s'**
+  String tbWatchAd(Object seconds);
+
+  /// No description provided for @tbEndRun.
+  ///
+  /// In en, this message translates to:
+  /// **'End run'**
+  String get tbEndRun;
+
+  /// No description provided for @dbTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Bonus'**
+  String get dbTitle;
+
+  /// No description provided for @dbClaimToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim your daily reward!'**
+  String get dbClaimToday;
+
+  /// No description provided for @dbComeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Come back tomorrow!'**
+  String get dbComeBack;
+
+  /// No description provided for @dbDayChip.
+  ///
+  /// In en, this message translates to:
+  /// **'D{day}'**
+  String dbDayChip(Object day);
+
+  /// No description provided for @dbTodaysReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Reward'**
+  String get dbTodaysReward;
+
+  /// No description provided for @dbAlreadyClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Already claimed today'**
+  String get dbAlreadyClaimed;
+
+  /// No description provided for @dbClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIM REWARD'**
+  String get dbClaim;
+
+  /// No description provided for @dbClaim2x.
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIM 2× — WATCH AD'**
+  String get dbClaim2x;
+
+  /// No description provided for @npPrimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t miss out!'**
+  String get npPrimerTitle;
+
+  /// No description provided for @npPrimerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We only send a couple of notifications a day — your daily challenge reminder and special events.\n\nNo spam, promise. 🐍'**
+  String get npPrimerBody;
+
+  /// No description provided for @npMaybeLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe later'**
+  String get npMaybeLater;
+
+  /// No description provided for @npAllSet.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 You\'re all set!'**
+  String get npAllSet;
+
+  /// No description provided for @npTurnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get npTurnOn;
+
+  /// No description provided for @npSoftTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay in the loop?'**
+  String get npSoftTitle;
+
+  /// No description provided for @npSoftBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on notifications and we\'ll remind you about your daily challenges and streaks — plus the big stuff like FREE Premium giveaways and special events.\n\nJust a couple a day, no spam. 🐍'**
+  String get npSoftBody;
+
+  /// No description provided for @npNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get npNotNow;
+
+  /// No description provided for @npEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notifications'**
+  String get npEnable;
+
+  /// No description provided for @aroUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'ACHIEVEMENT UNLOCKED'**
+  String get aroUnlocked;
+
+  /// No description provided for @aroTapToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to continue'**
+  String get aroTapToContinue;
+
+  /// No description provided for @aroSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'SKIP'**
+  String get aroSkip;
+
+  /// No description provided for @aroSkipCount.
+  ///
+  /// In en, this message translates to:
+  /// **'SKIP ({count})'**
+  String aroSkipCount(Object count);
+
+  /// No description provided for @luLevelUp.
+  ///
+  /// In en, this message translates to:
+  /// **'LEVEL UP!'**
+  String get luLevelUp;
+
+  /// No description provided for @luReached.
+  ///
+  /// In en, this message translates to:
+  /// **'You reached Level {level}'**
+  String luReached(Object level);
+
+  /// No description provided for @luNice.
+  ///
+  /// In en, this message translates to:
+  /// **'NICE'**
+  String get luNice;
+
+  /// No description provided for @cfTapContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap anywhere to continue'**
+  String get cfTapContinue;
+
+  /// No description provided for @cfTapSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap anywhere to skip'**
+  String get cfTapSkip;
+
+  /// No description provided for @ppgLvShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv {level}'**
+  String ppgLvShort(Object level);
+
+  /// No description provided for @ppgLvUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'LV {level}'**
+  String ppgLvUpper(Object level);
+
+  /// No description provided for @ppgLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level}'**
+  String ppgLevel(Object level);
+
+  /// No description provided for @xgTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit Game?'**
+  String get xgTitle;
+
+  /// No description provided for @xgBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to exit? Your current progress will be lost.'**
+  String get xgBody;
+
+  /// No description provided for @xgExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get xgExit;
+
+  /// No description provided for @ccTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How do you want to play?'**
+  String get ccTitle;
+
+  /// No description provided for @ccBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one — you can change it anytime in Settings → Controls.'**
+  String get ccBody;
+
+  /// No description provided for @ccSwipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe Gestures'**
+  String get ccSwipe;
+
+  /// No description provided for @ccSwipeSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe anywhere on the board to turn.'**
+  String get ccSwipeSub;
+
+  /// No description provided for @ccDpad.
+  ///
+  /// In en, this message translates to:
+  /// **'D-Pad Controls'**
+  String get ccDpad;
+
+  /// No description provided for @ccDpadSub.
+  ///
+  /// In en, this message translates to:
+  /// **'On-screen directional buttons.'**
+  String get ccDpadSub;
+
+  /// No description provided for @rcCoinsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 +{coins} coins added to your wallet!'**
+  String rcCoinsAdded(Object coins);
+
+  /// No description provided for @rcWatchAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch an ad — +{coins} coins'**
+  String rcWatchAd(Object coins);
+
+  /// No description provided for @rcNoAd.
+  ///
+  /// In en, this message translates to:
+  /// **'No ad available right now'**
+  String get rcNoAd;
+
+  /// No description provided for @raOptIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Opt-in — watch to earn'**
+  String get raOptIn;
+
+  /// No description provided for @compassSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe direction indicator'**
+  String get compassSemantics;
+
+  /// No description provided for @homeBonusDoubled.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Daily bonus doubled — +{coins} bonus coins!'**
+  String homeBonusDoubled(Object coins);
+
+  /// No description provided for @nsNewNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'You have a new notification'**
+  String get nsNewNotification;
+
+  /// No description provided for @nsAchievementUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'🏆 Achievement Unlocked!'**
+  String get nsAchievementUnlocked;
+
+  /// No description provided for @nsDailyReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'🐍 Time to play Snake Classic!'**
+  String get nsDailyReminderTitle;
+
+  /// No description provided for @nsDailyReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your daily challenge and climb the leaderboard!'**
+  String get nsDailyReminderBody;
+
+  /// No description provided for @mpErrMatchmaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Matchmaking failed. Please try again.'**
+  String get mpErrMatchmaking;
+
+  /// No description provided for @mpErrCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create game'**
+  String get mpErrCreateFailed;
+
+  /// No description provided for @mpErrJoinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to join game. Game might be full or not exist.'**
+  String get mpErrJoinFailed;
+
+  /// No description provided for @mpErrReadyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update ready status'**
+  String get mpErrReadyFailed;
+
+  /// No description provided for @mpErrStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start game'**
+  String get mpErrStartFailed;
+
+  /// No description provided for @mpErrStartTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Start game timed out. Please try again.'**
+  String get mpErrStartTimeout;
+
+  /// No description provided for @mpErrReconnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reconnect to the match.'**
+  String get mpErrReconnectFailed;
+
+  /// No description provided for @mpErrConnectionLost.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost — the match could not be resumed.'**
+  String get mpErrConnectionLost;
+
+  /// No description provided for @mpErrMatchEndedAway.
+  ///
+  /// In en, this message translates to:
+  /// **'The match ended while you were away.'**
+  String get mpErrMatchEndedAway;
+
+  /// No description provided for @mpErrWaitingReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for all players to be ready'**
+  String get mpErrWaitingReady;
+
+  /// No description provided for @mpErrOnlyHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the host can start the game'**
+  String get mpErrOnlyHost;
+
+  /// No description provided for @mpErrSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Game session expired. Please create a new game'**
+  String get mpErrSessionExpired;
+
+  /// No description provided for @mpErrAlreadyStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'This game has already started'**
+  String get mpErrAlreadyStarted;
+
+  /// No description provided for @mpErrNeedTwoPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches need exactly 2 players'**
+  String get mpErrNeedTwoPlayers;
+
+  /// No description provided for @mpErrSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to play multiplayer'**
+  String get mpErrSignIn;
+
+  /// No description provided for @mpErrReconnectExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnection time expired'**
+  String get mpErrReconnectExpired;
+
+  /// No description provided for @mpErrCheckInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost. Please check your internet'**
+  String get mpErrCheckInternet;
+
+  /// No description provided for @mpErrUnableJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to join room. Please try again'**
+  String get mpErrUnableJoin;
+
+  /// No description provided for @mpErrGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again'**
+  String get mpErrGeneric;
 }
 
 class _AppLocalizationsDelegate

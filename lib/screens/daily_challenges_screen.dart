@@ -64,7 +64,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                 Icon(Icons.monetization_on, color: Colors.amber),
                 const SizedBox(width: 8),
                 Text(
-                  'Claimed ${challenge.coinReward} coins and ${challenge.xpReward} XP!',
+                  AppLocalizations.of(context)!.dchClaimedReward(
+                    challenge.coinReward,
+                    challenge.xpReward,
+                  ),
                 ),
               ],
             ),
@@ -99,20 +102,21 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         // Capture before the ad — onReward fires after dismissal, an async
         // gap where reading context is unsafe.
         final messenger = ScaffoldMessenger.of(context);
+        final l10n = AppLocalizations.of(context)!;
         messenger.showSnackBar(
           SnackBar(
             content: Row(
               children: [
                 Icon(Icons.celebration, color: Colors.amber),
                 const SizedBox(width: 8),
-                Text('Claimed $totalClaimed coins!'),
+                Text(l10n.dchClaimedCoins(totalClaimed)),
               ],
             ),
             backgroundColor: Colors.green.shade700,
             duration: Duration(seconds: canDouble ? 6 : 2),
             action: canDouble
                 ? SnackBarAction(
-                    label: 'WATCH TO 2×',
+                    label: l10n.dchWatchTo2x,
                     textColor: Colors.amber,
                     onPressed: () => ads.showRewarded(
                       placement: 'challenge_2x',
@@ -125,7 +129,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                         );
                         showRewardToast(
                           messenger,
-                          '🎉 Doubled! +$totalClaimed bonus coins!',
+                          l10n.dchDoubledBonus(totalClaimed),
                           icon: Icons.monetization_on,
                         );
                       },
@@ -160,9 +164,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     return Scaffold(
       bottomNavigationBar: const SnakeBannerAd(),
       appBar: AppBar(
-        title: const Text(
-          'Daily Challenges',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        title: Text(
+          AppLocalizations.of(context)!.dcTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -175,7 +179,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             TextButton.icon(
               onPressed: _claimAllRewards,
               icon: Icon(Icons.redeem, color: Colors.amber),
-              label: Text('Claim All', style: TextStyle(color: Colors.amber)),
+              label: Text(
+                AppLocalizations.of(context)!.dchClaimAll,
+                style: TextStyle(color: Colors.amber),
+              ),
             ),
           IconButton(
             icon: isRefreshing
@@ -273,7 +280,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Today's Progress",
+                          AppLocalizations.of(context)!.dchTodaysProgress,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -339,6 +346,25 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
           ),
         )
         .gameZoomIn();
+  }
+
+  /// Maps the locally-generated "all challenges" bonus row's English title
+  /// to its localized string at render time; server-provided titles pass
+  /// through untouched (the Drift row stays English).
+  String _localizedChallengeTitle(DailyChallenge challenge, AppLocalizations l10n) {
+    if (challenge.title == 'All Challenges Bonus') return l10n.dchAllBonusTitle;
+    return challenge.title;
+  }
+
+  /// Same render-time mapping for the bonus row's description.
+  String _localizedChallengeDescription(
+    DailyChallenge challenge,
+    AppLocalizations l10n,
+  ) {
+    if (challenge.description == 'Completed every daily challenge today.') {
+      return l10n.dchAllBonusDesc;
+    }
+    return challenge.description;
   }
 
   Widget _buildChallengeCard(
@@ -421,7 +447,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      challenge.title,
+                                      _localizedChallengeTitle(
+                                        challenge,
+                                        AppLocalizations.of(context)!,
+                                      ),
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -461,7 +490,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                challenge.description,
+                                _localizedChallengeDescription(
+                                  challenge,
+                                  AppLocalizations.of(context)!,
+                                ),
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.7),
                                   fontSize: 13,
@@ -588,7 +620,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                               children: [
                                 Icon(Icons.redeem, size: 18),
                                 const SizedBox(width: 4),
-                                Text('Claim'),
+                                Text(AppLocalizations.of(context)!.dchClaim),
                               ],
                             ),
                           ),
@@ -613,7 +645,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Claimed',
+                                  AppLocalizations.of(context)!.dchClaimed,
                                   style: TextStyle(
                                     color: Colors.green,
                                     fontWeight: FontWeight.bold,
@@ -666,7 +698,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'All Challenges Complete!',
+                      AppLocalizations.of(context)!.dchAllCompleteTitle,
                       style: TextStyle(
                         color: Colors.amber,
                         fontSize: 18,
@@ -675,8 +707,8 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                     ),
                     Text(
                       challengesState.isBonusClaimed
-                          ? 'Bonus reward claimed'
-                          : 'Bonus reward pending — claim any challenge',
+                          ? AppLocalizations.of(context)!.dchBonusClaimed
+                          : AppLocalizations.of(context)!.dchBonusPending,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 14,
@@ -735,7 +767,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Loading challenges...',
+              AppLocalizations.of(context)!.dchLoading,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
             ),
           ],
@@ -757,7 +789,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No challenges available',
+              AppLocalizations.of(context)!.dcNoChallenges,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -766,7 +798,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Check back later for new daily challenges!',
+              AppLocalizations.of(context)!.dchCheckBack,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
               textAlign: TextAlign.center,
             ),
@@ -777,6 +809,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   }
 
   Widget _buildInfoSection(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -792,7 +825,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
               Icon(Icons.info_outline, color: theme.accentColor, size: 20),
               const SizedBox(width: 8),
               Text(
-                'About Daily Challenges',
+                l10n.dchAbout,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -802,19 +835,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          _buildInfoItem(
-            Icons.schedule,
-            'New challenges every day at midnight',
-          ),
-          _buildInfoItem(
-            Icons.monetization_on,
-            'Complete challenges to earn coins',
-          ),
-          _buildInfoItem(Icons.star, 'Gain XP to level up your profile'),
-          _buildInfoItem(
-            Icons.celebration,
-            'Complete all 3 for a bonus reward!',
-          ),
+          _buildInfoItem(Icons.schedule, l10n.dchAbout1),
+          _buildInfoItem(Icons.monetization_on, l10n.dchAbout2),
+          _buildInfoItem(Icons.star, l10n.dchAbout3),
+          _buildInfoItem(Icons.celebration, l10n.dchAbout4),
         ],
       ),
     ).gameEntrance(delay: 300.ms);

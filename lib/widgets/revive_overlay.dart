@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Post-crash "Continue?" offer shown over the frozen board. Counts down, then
@@ -86,6 +87,7 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
+    final l10n = AppLocalizations.of(context)!;
     return Positioned.fill(
       child: Container(
         color: Colors.black.withValues(alpha: 0.78),
@@ -146,7 +148,7 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
               ),
               const SizedBox(height: 16),
               Text(
-                'CONTINUE?',
+                l10n.rvoContinue,
                 style: TextStyle(
                   color: theme.accentColor,
                   fontSize: 24,
@@ -157,8 +159,8 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
               const SizedBox(height: 4),
               Text(
                 widget.isPro
-                    ? 'Revive and keep your score · Free with Pro'
-                    : 'Revive and keep your score · ${_remaining}s',
+                    ? l10n.rvoSubtitlePro
+                    : l10n.rvoSubtitleTimer(_remaining),
                 style: TextStyle(
                   color: theme.accentColor.withValues(alpha: 0.7),
                   fontSize: 13,
@@ -171,7 +173,7 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
                 _ActionButton(
                   theme: theme,
                   icon: Icons.workspace_premium,
-                  label: 'Get Life · Free for Pro',
+                  label: l10n.rvoGetLifePro,
                   enabled: true,
                   filled: true,
                   onTap: () => _resolve(widget.onProRevive ?? widget.onDecline),
@@ -181,7 +183,7 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
                 _ActionButton(
                   theme: theme,
                   icon: Icons.play_circle_fill,
-                  label: 'Watch ad to revive',
+                  label: l10n.rvoWatchAd,
                   enabled: widget.isAdReady(),
                   filled: true,
                   onTap: _onWatchAd,
@@ -191,7 +193,7 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
                 _ActionButton(
                   theme: theme,
                   icon: Icons.monetization_on,
-                  label: 'Use ${widget.coinCost} coins',
+                  label: l10n.rvoUseCoins(widget.coinCost),
                   enabled: widget.canAffordCoins,
                   filled: false,
                   onTap: () => _resolve(widget.onUseCoins),
@@ -201,7 +203,7 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
               TextButton(
                 onPressed: () => _resolve(widget.onDecline),
                 child: Text(
-                  'No thanks',
+                  l10n.rvoNoThanks,
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.6),
                     fontSize: 14,

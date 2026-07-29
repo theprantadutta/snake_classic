@@ -39,6 +39,11 @@ class MultiplayerFlameGame extends FlameGame {
   final int boardSize;
   GameTheme theme;
 
+  /// Localized "You" label for the local snake's name tag. The painter has
+  /// no BuildContext, so the hosting widget pushes the translation in on
+  /// every build (see MultiplayerFlameBoard).
+  String youLabel = 'You';
+
   int _lastMyScore;
 
   double _elapsed = 0;
@@ -145,6 +150,7 @@ class _MultiplayerBoardComponent extends Component
       pulseAnimation: AlwaysStoppedAnimation<double>(game.pulse),
       moveProgress: game.moveProgress,
       boardSize: game.boardSize,
+      youLabel: game.youLabel,
     ).paint(canvas, size);
   }
 }

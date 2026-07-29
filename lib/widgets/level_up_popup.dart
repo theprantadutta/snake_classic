@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -86,7 +87,7 @@ class LevelUpPopup extends StatelessWidget {
                 ),
             const SizedBox(height: 20),
             Text(
-              'LEVEL UP!',
+              AppLocalizations.of(context)!.luLevelUp,
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 26,
@@ -96,7 +97,7 @@ class LevelUpPopup extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'You reached Level $level',
+              AppLocalizations.of(context)!.luReached(level),
               style: TextStyle(
                 color: theme.accentColor.withValues(alpha: 0.85),
                 fontSize: 16,
@@ -145,9 +146,9 @@ class LevelUpPopup extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Text(
-                  'NICE',
-                  style: TextStyle(
+                child: Text(
+                  AppLocalizations.of(context)!.luNice,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

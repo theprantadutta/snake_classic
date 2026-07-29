@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
@@ -73,6 +74,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeCubit>().state.currentTheme;
     final isSmall = MediaQuery.of(context).size.height < 800;
+    final l10n = AppLocalizations.of(context)!;
 
     return PopScope(
       // Block back-out — the user must accept the updated policy to proceed.
@@ -124,7 +126,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Privacy & Terms Updated',
+                                l10n.pcTitle,
                                 style: TextStyle(
                                   color: theme.accentColor,
                                   fontSize: isSmall ? 20 : 24,
@@ -132,7 +134,8 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                                 ),
                               ),
                               Text(
-                                'Version ${LegalAcceptance.currentLegalVersion} · please review and accept to continue',
+                                l10n.pcVersionLine(
+                                    LegalAcceptance.currentLegalVersion),
                                 style: TextStyle(
                                   color: theme.accentColor.withValues(alpha: 0.7),
                                   fontSize: isSmall ? 12 : 14,
@@ -185,9 +188,9 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                    tabs: const [
-                                      Tab(text: 'Privacy Policy'),
-                                      Tab(text: 'Terms of Use'),
+                                    tabs: [
+                                      Tab(text: l10n.pcTabPrivacy),
+                                      Tab(text: l10n.pcTabTerms),
                                     ],
                                   ),
                                   Expanded(
@@ -241,7 +244,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'I have read and agree to the updated Privacy Policy and Terms of Use',
+                            l10n.pcAgree,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.9),
                               fontSize: isSmall ? 14 : 16,
@@ -270,9 +273,9 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         alignment: Alignment.center,
-                        child: const Text(
-                          'Continue',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.pcContinue,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
