@@ -3526,4 +3526,664 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get gbLevel => 'स्तर';
+
+  @override
+  String get rarityCommon => 'सामान्य';
+
+  @override
+  String get rarityRare => 'दुर्लभ';
+
+  @override
+  String get rarityEpic => 'महाकाव्य';
+
+  @override
+  String get rarityLegendary => 'पौराणिक';
+
+  @override
+  String get rarityDiamond => 'हीरा';
+
+  @override
+  String get achTitleFirstBite => 'पहला निवाला';
+
+  @override
+  String get achDescFirstBite => 'अपना पहला अंक बनाएँ';
+
+  @override
+  String get achTitleGettingStarted => 'शुरुआत';
+
+  @override
+  String get achDescGettingStarted => '100 अंक बनाएँ';
+
+  @override
+  String get achTitleHighScorer => 'हाई स्कोरर';
+
+  @override
+  String get achDescHighScorer => 'एक ही गेम में 500 अंक बनाएँ';
+
+  @override
+  String get achTitleMasterScorer => 'मास्टर स्कोरर';
+
+  @override
+  String get achDescMasterScorer => 'एक ही गेम में 1000 अंक बनाएँ';
+
+  @override
+  String get achTitleLegendaryScorer => 'पौराणिक स्कोरर';
+
+  @override
+  String get achDescLegendaryScorer => 'एक ही गेम में 2000 अंक बनाएँ';
+
+  @override
+  String get achTitleFirstGame => 'पहला गेम';
+
+  @override
+  String get achDescFirstGame => 'अपना पहला गेम खेलें';
+
+  @override
+  String get achTitleRegularPlayer => 'नियमित खिलाड़ी';
+
+  @override
+  String get achDescRegularPlayer => '10 गेम खेलें';
+
+  @override
+  String get achTitleDedicatedPlayer => 'समर्पित खिलाड़ी';
+
+  @override
+  String get achDescDedicatedPlayer => '50 गेम खेलें';
+
+  @override
+  String get achTitleSnakeEnthusiast => 'साँप प्रेमी';
+
+  @override
+  String get achDescSnakeEnthusiast => '100 गेम खेलें';
+
+  @override
+  String get achTitleSnakeAddict => 'साँप का दीवाना';
+
+  @override
+  String get achDescSnakeAddict => '500 गेम खेलें';
+
+  @override
+  String get achTitleSurvivor => 'उत्तरजीवी';
+
+  @override
+  String get achDescSurvivor => '60 सेकंड तक टिके रहें';
+
+  @override
+  String get achTitleEndurance => 'सहनशक्ति';
+
+  @override
+  String get achDescEndurance => '2 मिनट तक टिके रहें';
+
+  @override
+  String get achTitleMarathon => 'मैराथन';
+
+  @override
+  String get achDescMarathon => '5 मिनट तक टिके रहें';
+
+  @override
+  String get achTitleNoWalls => 'दीवारों से दूर';
+
+  @override
+  String get achDescNoWalls => 'दीवारों से टकराए बिना 5 गेम खेलें';
+
+  @override
+  String get achTitleSpeedster => 'रफ़्तार का बादशाह';
+
+  @override
+  String get achDescSpeedster => 'लेवल 10 तक पहुँचें (अधिकतम गति)';
+
+  @override
+  String get achTitlePerfectionist => 'पूर्णतावादी';
+
+  @override
+  String get achDescPerfectionist => 'खुद से टकराए बिना एक गेम पूरा करें';
+
+  @override
+  String get achTitleAllFoodTypes => 'पेटू';
+
+  @override
+  String get achDescAllFoodTypes => 'एक ही गेम में तीनों तरह का खाना खाएँ';
+
+  @override
+  String get achTitleHalfGrand => 'पाँच सौ पार';
+
+  @override
+  String get achDescHalfGrand => 'एक ही गेम में 5,000 अंक बनाएँ';
+
+  @override
+  String get achTitleScoreSniper => 'स्कोर स्नाइपर';
+
+  @override
+  String get achDescScoreSniper => 'एक ही गेम में 10,000 अंक बनाएँ';
+
+  @override
+  String get achTitleFiveDigitClub => 'पाँच-अंकों का क्लब';
+
+  @override
+  String get achDescFiveDigitClub => 'एक ही गेम में 25,000 अंक बनाएँ';
+
+  @override
+  String get achTitleScoreTycoon => 'स्कोर टाइकून';
+
+  @override
+  String get achDescScoreTycoon => 'एक ही गेम में 50,000 अंक बनाएँ';
+
+  @override
+  String get achTitleScoreGod => 'स्कोर के देवता';
+
+  @override
+  String get achDescScoreGod => 'एक ही गेम में 100,000 अंक बनाएँ';
+
+  @override
+  String get achTitlePointCollector => 'अंक संग्राहक';
+
+  @override
+  String get achDescPointCollector => 'कुल 10,000 अंक जमा करें';
+
+  @override
+  String get achTitlePointHoarder => 'अंकों का खज़ांची';
+
+  @override
+  String get achDescPointHoarder => 'कुल 100,000 अंक जमा करें';
+
+  @override
+  String get achTitleHalfMillionClub => 'पाँच लाख क्लब';
+
+  @override
+  String get achDescHalfMillionClub => 'कुल 500,000 अंक जमा करें';
+
+  @override
+  String get achTitlePointMillionaire => 'अंक करोड़पति';
+
+  @override
+  String get achDescPointMillionaire => 'कुल 1,000,000 अंक जमा करें';
+
+  @override
+  String get achTitleDecamillionaire => 'महा-करोड़पति';
+
+  @override
+  String get achDescDecamillionaire => 'कुल 10,000,000 अंक जमा करें';
+
+  @override
+  String get achTitleSnakeVeteran => 'साँप का अनुभवी';
+
+  @override
+  String get achDescSnakeVeteran => '1,000 गेम खेलें';
+
+  @override
+  String get achTitleSnakeLegend => 'साँप की किंवदंती';
+
+  @override
+  String get achDescSnakeLegend => '5,000 गेम खेलें';
+
+  @override
+  String get achTitleIronWill => 'फ़ौलादी इरादा';
+
+  @override
+  String get achDescIronWill => 'एक ही गेम में 10 मिनट टिके रहें';
+
+  @override
+  String get achTitleEternalSnake => 'अमर साँप';
+
+  @override
+  String get achDescEternalSnake => 'एक ही गेम में 20 मिनट टिके रहें';
+
+  @override
+  String get achTitleTimeLord => 'समय के स्वामी';
+
+  @override
+  String get achDescTimeLord => 'एक ही गेम में 30 मिनट टिके रहें';
+
+  @override
+  String get achTitleFirstBiteSnack => 'पहला नाश्ता';
+
+  @override
+  String get achDescFirstBiteSnack => 'एक गेम में 5 खाने खाएँ';
+
+  @override
+  String get achTitleHungrySnake => 'भूखा साँप';
+
+  @override
+  String get achDescHungrySnake => 'एक गेम में 20 खाने खाएँ';
+
+  @override
+  String get achTitleFamished => 'भूख से बेहाल';
+
+  @override
+  String get achDescFamished => 'एक गेम में 50 खाने खाएँ';
+
+  @override
+  String get achTitleRavenous => 'अतृप्त भूख';
+
+  @override
+  String get achDescRavenous => 'एक गेम में 100 खाने खाएँ';
+
+  @override
+  String get achTitleInsatiable => 'कभी न भरने वाला';
+
+  @override
+  String get achDescInsatiable => 'एक गेम में 200 खाने खाएँ';
+
+  @override
+  String get achTitleBlackHoleStomach => 'ब्लैक होल पेट';
+
+  @override
+  String get achDescBlackHoleStomach => 'एक गेम में 500 खाने खाएँ';
+
+  @override
+  String get achTitleFoodieApprentice => 'खाने का नौसिखिया';
+
+  @override
+  String get achDescFoodieApprentice => 'कुल 100 खाने खाएँ';
+
+  @override
+  String get achTitleFoodiePro => 'खाने का उस्ताद';
+
+  @override
+  String get achDescFoodiePro => 'कुल 1,000 खाने खाएँ';
+
+  @override
+  String get achTitleFoodieMaster => 'खाने का महारथी';
+
+  @override
+  String get achDescFoodieMaster => 'कुल 10,000 खाने खाएँ';
+
+  @override
+  String get achTitleFoodieGod => 'खाने के देवता';
+
+  @override
+  String get achDescFoodieGod => 'कुल 50,000 खाने खाएँ';
+
+  @override
+  String get achTitleQuickPlayer => 'फुर्तीला खिलाड़ी';
+
+  @override
+  String get achDescQuickPlayer => 'कुल 1 घंटा खेलें';
+
+  @override
+  String get achTitleEngagedPlayer => 'जुड़ा हुआ खिलाड़ी';
+
+  @override
+  String get achDescEngagedPlayer => 'कुल 10 घंटे खेलें';
+
+  @override
+  String get achTitleHardcorePlayer => 'कट्टर खिलाड़ी';
+
+  @override
+  String get achDescHardcorePlayer => 'कुल 50 घंटे खेलें';
+
+  @override
+  String get achTitleSnakeObsessed => 'साँप का जुनूनी';
+
+  @override
+  String get achDescSnakeObsessed => 'कुल 100 घंटे खेलें';
+
+  @override
+  String get achTitleTouchGrass => 'थोड़ी हवा खा लो';
+
+  @override
+  String get achDescTouchGrass => 'कुल 250 घंटे खेलें — शायद बाहर घूम आएँ?';
+
+  @override
+  String get achTitleLevel5 => 'शिष्य';
+
+  @override
+  String get achDescLevel5 => 'लेवल 5 तक पहुँचें';
+
+  @override
+  String get achTitleLevel10 => 'कारीगर';
+
+  @override
+  String get achDescLevel10 => 'लेवल 10 तक पहुँचें';
+
+  @override
+  String get achTitleLevel25 => 'विशेषज्ञ';
+
+  @override
+  String get achDescLevel25 => 'लेवल 25 तक पहुँचें';
+
+  @override
+  String get achTitleLevel50 => 'मास्टर';
+
+  @override
+  String get achDescLevel50 => 'लेवल 50 तक पहुँचें';
+
+  @override
+  String get achTitleLevel100 => 'ग्रैंडमास्टर';
+
+  @override
+  String get achDescLevel100 => 'लेवल 100 तक पहुँचें';
+
+  @override
+  String get achTitleClassicInitiate => 'क्लासिक शुरुआती';
+
+  @override
+  String get achDescClassicInitiate => 'क्लासिक मोड में 10 गेम पूरे करें';
+
+  @override
+  String get achTitleClassicVeteran => 'क्लासिक अनुभवी';
+
+  @override
+  String get achDescClassicVeteran => 'क्लासिक मोड में 100 गेम पूरे करें';
+
+  @override
+  String get achTitleClassic1000 => 'क्लासिक पारखी';
+
+  @override
+  String get achDescClassic1000 => 'क्लासिक मोड में 1,000 अंक बनाएँ';
+
+  @override
+  String get achTitleClassic5000 => 'क्लासिक उस्ताद';
+
+  @override
+  String get achDescClassic5000 => 'क्लासिक मोड में 5,000 अंक बनाएँ';
+
+  @override
+  String get achTitleZenInitiate => 'ज़ेन शुरुआती';
+
+  @override
+  String get achDescZenInitiate => '10 ज़ेन गेम पूरे करें';
+
+  @override
+  String get achTitleZenGarden => 'ज़ेन उद्यान';
+
+  @override
+  String get achDescZenGarden => 'ज़ेन मोड में 500 अंक बनाएँ';
+
+  @override
+  String get achTitleZenMaster => 'ज़ेन मास्टर';
+
+  @override
+  String get achDescZenMaster => 'ज़ेन मोड में 5,000 अंक बनाएँ';
+
+  @override
+  String get achTitleSpeedInitiate => 'रफ़्तार की चाहत';
+
+  @override
+  String get achDescSpeedInitiate => '10 स्पीड चैलेंज गेम पूरे करें';
+
+  @override
+  String get achTitleSpeedrunner => 'स्पीडरनर';
+
+  @override
+  String get achDescSpeedrunner => 'स्पीड चैलेंज में 500 अंक बनाएँ';
+
+  @override
+  String get achTitleLightning => 'बिजली';
+
+  @override
+  String get achDescLightning => 'स्पीड चैलेंज में 2,000 अंक बनाएँ';
+
+  @override
+  String get achTitleMultifoodInitiate => 'खाने की दुनिया';
+
+  @override
+  String get achDescMultifoodInitiate => '10 मल्टीफ़ूड गेम पूरे करें';
+
+  @override
+  String get achTitleBuffet => 'बुफ़े';
+
+  @override
+  String get achDescBuffet => 'मल्टीफ़ूड में 1,000 अंक बनाएँ';
+
+  @override
+  String get achTitleSmorgasbord => 'भोज';
+
+  @override
+  String get achDescSmorgasbord => 'मल्टीफ़ूड में 5,000 अंक बनाएँ';
+
+  @override
+  String get achTitleSurvivalInitiate => 'सर्वाइवल शुरुआती';
+
+  @override
+  String get achDescSurvivalInitiate => '10 सर्वाइवल गेम पूरे करें';
+
+  @override
+  String get achTitleSurvivalPro => 'सर्वाइवल प्रो';
+
+  @override
+  String get achDescSurvivalPro => 'सर्वाइवल मोड में 5 मिनट टिके रहें';
+
+  @override
+  String get achTitleLastSnakeStanding => 'आख़िरी साँप';
+
+  @override
+  String get achDescLastSnakeStanding => 'सर्वाइवल में 2,500 अंक बनाएँ';
+
+  @override
+  String get achTitleTimeattackInitiate => 'टाइम अटैकर';
+
+  @override
+  String get achDescTimeattackInitiate => '10 टाइमअटैक गेम पूरे करें';
+
+  @override
+  String get achTitleBeatTheClock => 'घड़ी को हराओ';
+
+  @override
+  String get achDescBeatTheClock => 'पूरे 3 मिनट का टाइमअटैक झेल जाएँ';
+
+  @override
+  String get achTitleTimeattackMaster => 'टाइमअटैक मास्टर';
+
+  @override
+  String get achDescTimeattackMaster => 'टाइमअटैक में 3,000 अंक बनाएँ';
+
+  @override
+  String get achTitleComboStarter => 'कॉम्बो शुरुआती';
+
+  @override
+  String get achDescComboStarter => 'एक ही गेम में 5x कॉम्बो लगाएँ';
+
+  @override
+  String get achTitleComboMaster => 'कॉम्बो मास्टर';
+
+  @override
+  String get achDescComboMaster => 'एक ही गेम में 10x कॉम्बो लगाएँ';
+
+  @override
+  String get achTitleComboPro => 'कॉम्बो प्रो';
+
+  @override
+  String get achDescComboPro => 'एक ही गेम में 20x कॉम्बो लगाएँ';
+
+  @override
+  String get achTitleComboGod => 'कॉम्बो के देवता';
+
+  @override
+  String get achDescComboGod => 'एक ही गेम में 50x कॉम्बो लगाएँ';
+
+  @override
+  String get achTitleComboLegend => 'कॉम्बो किंवदंती';
+
+  @override
+  String get achDescComboLegend => 'एक ही गेम में 100x कॉम्बो लगाएँ';
+
+  @override
+  String get achTitleGrowingSnake => 'बढ़ता साँप';
+
+  @override
+  String get achDescGrowingSnake => 'साँप को 20 लंबाई तक बढ़ाएँ';
+
+  @override
+  String get achTitleBigSnake => 'बड़ा साँप';
+
+  @override
+  String get achDescBigSnake => 'साँप को 50 लंबाई तक बढ़ाएँ';
+
+  @override
+  String get achTitleHugeSnake => 'विशाल साँप';
+
+  @override
+  String get achDescHugeSnake => 'साँप को 100 लंबाई तक बढ़ाएँ';
+
+  @override
+  String get achTitleMassiveSnake => 'महाकाय साँप';
+
+  @override
+  String get achDescMassiveSnake => 'साँप को 200 लंबाई तक बढ़ाएँ';
+
+  @override
+  String get achTitleAnaconda => 'एनाकोंडा';
+
+  @override
+  String get achDescAnaconda => 'साँप को 500 लंबाई तक बढ़ाएँ';
+
+  @override
+  String get achTitleFirstPowerUp => 'पावर अप!';
+
+  @override
+  String get achDescFirstPowerUp => 'अपना पहला पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitlePowerPlayer => 'पावर खिलाड़ी';
+
+  @override
+  String get achDescPowerPlayer => 'कुल 10 पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitlePowerHungry => 'पावर का भूखा';
+
+  @override
+  String get achDescPowerHungry => 'कुल 50 पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitlePowerAddict => 'पावर का दीवाना';
+
+  @override
+  String get achDescPowerAddict => 'कुल 200 पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitlePowerMaster => 'पावर मास्टर';
+
+  @override
+  String get achDescPowerMaster => 'कुल 1,000 पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitleVarietyPack => 'वैरायटी पैक';
+
+  @override
+  String get achDescVarietyPack =>
+      'चारों तरह के पावर-अप कम से कम एक-एक बार इकट्ठा करें';
+
+  @override
+  String get achTitleSpeedDemon => 'रफ़्तार का दानव';
+
+  @override
+  String get achDescSpeedDemon => '25 स्पीड बूस्ट पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitleImmortalStreak => 'अमरता की लड़ी';
+
+  @override
+  String get achDescImmortalStreak => '25 अजेयता पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitleSpecialDiet => 'ख़ास खुराक';
+
+  @override
+  String get achDescSpecialDiet => 'कुल 50 ख़ास खाने खाएँ';
+
+  @override
+  String get achTitleBonusHunter => 'बोनस शिकारी';
+
+  @override
+  String get achDescBonusHunter => 'कुल 100 बोनस खाने खाएँ';
+
+  @override
+  String get achTitleUntouchable5 => 'अछूता';
+
+  @override
+  String get achDescUntouchable5 =>
+      '5 परफ़ेक्ट गेम पूरे करें (बिना टकराए, 30 सेकंड+)';
+
+  @override
+  String get achTitleUntouchable20 => 'बेदाग़';
+
+  @override
+  String get achDescUntouchable20 => '20 परफ़ेक्ट गेम पूरे करें';
+
+  @override
+  String get achTitleUntouchable50 => 'अछूती किंवदंती';
+
+  @override
+  String get achDescUntouchable50 => '50 परफ़ेक्ट गेम पूरे करें';
+
+  @override
+  String get achTitleHotStreak => 'जोश की लड़ी';
+
+  @override
+  String get achDescHotStreak =>
+      'लगातार 5 गेम में 0 से ज़्यादा अंक और 30 सेकंड+ टिकें';
+
+  @override
+  String get achTitleOnFire => 'आग लगा दी';
+
+  @override
+  String get achDescOnFire => '10 गेम की लड़ी (हर गेम 30 सेकंड+)';
+
+  @override
+  String get achTitleUnstoppable => 'अजेय';
+
+  @override
+  String get achDescUnstoppable => '25 गेम की लड़ी (हर गेम 30 सेकंड+)';
+
+  @override
+  String get achTitleDailyThree => 'रोज़ का खिलाड़ी';
+
+  @override
+  String get achDescDailyThree => 'लगातार 3 दिन खेलें';
+
+  @override
+  String get achTitleWeekWarrior => 'हफ़्ते का योद्धा';
+
+  @override
+  String get achDescWeekWarrior => 'लगातार 7 दिन खेलें';
+
+  @override
+  String get achTitleVelocity => 'वेग';
+
+  @override
+  String get achDescVelocity => 'एक गेम में इन-गेम लेवल 15 तक पहुँचें';
+
+  @override
+  String get achTitleMachSpeed => 'माक स्पीड';
+
+  @override
+  String get achDescMachSpeed => 'एक गेम में इन-गेम लेवल 20 तक पहुँचें';
+
+  @override
+  String get achTitleCosmicSnake => 'ब्रह्मांडीय साँप';
+
+  @override
+  String get achDescCosmicSnake => 'एक गेम में इन-गेम लेवल 25 तक पहुँचें';
+
+  @override
+  String get achTitleModeExplorer => 'मोड खोजी';
+
+  @override
+  String get achDescModeExplorer => '3 अलग-अलग मोड में कम से कम एक गेम खेलें';
+
+  @override
+  String get achTitleAllModePlayer => 'हर मोड का खिलाड़ी';
+
+  @override
+  String get achDescAllModePlayer => 'हर मोड में कम से कम एक गेम खेलें (8 मोड)';
+
+  @override
+  String get achTitleNightOwl => 'रात का उल्लू';
+
+  @override
+  String get achDescNightOwl => 'आधी रात से सुबह 5 बजे के बीच एक गेम पूरा करें';
+
+  @override
+  String get achTitleEarlyBird => 'सुबह का पंछी';
+
+  @override
+  String get achDescEarlyBird => 'सुबह 5 से 8 बजे के बीच एक गेम पूरा करें';
+
+  @override
+  String get achTitleWeekendWarrior => 'वीकेंड योद्धा';
+
+  @override
+  String get achDescWeekendWarrior => 'वीकेंड पर 10 गेम पूरे करें';
 }

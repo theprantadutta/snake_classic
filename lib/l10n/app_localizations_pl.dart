@@ -3560,4 +3560,671 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get gbLevel => 'Poziom';
+
+  @override
+  String get rarityCommon => 'Pospolite';
+
+  @override
+  String get rarityRare => 'Rzadkie';
+
+  @override
+  String get rarityEpic => 'Epickie';
+
+  @override
+  String get rarityLegendary => 'Legendarne';
+
+  @override
+  String get rarityDiamond => 'Diamentowe';
+
+  @override
+  String get achTitleFirstBite => 'Pierwszy Kęs';
+
+  @override
+  String get achDescFirstBite => 'Zdobądź swój pierwszy punkt';
+
+  @override
+  String get achTitleGettingStarted => 'Pierwsze Kroki';
+
+  @override
+  String get achDescGettingStarted => 'Zdobądź 100 punktów';
+
+  @override
+  String get achTitleHighScorer => 'Dobry Strzelec';
+
+  @override
+  String get achDescHighScorer => 'Zdobądź 500 punktów w jednej grze';
+
+  @override
+  String get achTitleMasterScorer => 'Mistrz Punktów';
+
+  @override
+  String get achDescMasterScorer => 'Zdobądź 1000 punktów w jednej grze';
+
+  @override
+  String get achTitleLegendaryScorer => 'Legendarny Strzelec';
+
+  @override
+  String get achDescLegendaryScorer => 'Zdobądź 2000 punktów w jednej grze';
+
+  @override
+  String get achTitleFirstGame => 'Pierwsza Gra';
+
+  @override
+  String get achDescFirstGame => 'Zagraj swoją pierwszą grę';
+
+  @override
+  String get achTitleRegularPlayer => 'Stały Gracz';
+
+  @override
+  String get achDescRegularPlayer => 'Zagraj 10 gier';
+
+  @override
+  String get achTitleDedicatedPlayer => 'Oddany Gracz';
+
+  @override
+  String get achDescDedicatedPlayer => 'Zagraj 50 gier';
+
+  @override
+  String get achTitleSnakeEnthusiast => 'Entuzjasta Węża';
+
+  @override
+  String get achDescSnakeEnthusiast => 'Zagraj 100 gier';
+
+  @override
+  String get achTitleSnakeAddict => 'Uzależniony od Węża';
+
+  @override
+  String get achDescSnakeAddict => 'Zagraj 500 gier';
+
+  @override
+  String get achTitleSurvivor => 'Ocalały';
+
+  @override
+  String get achDescSurvivor => 'Przetrwaj 60 sekund';
+
+  @override
+  String get achTitleEndurance => 'Wytrzymałość';
+
+  @override
+  String get achDescEndurance => 'Przetrwaj 2 minuty';
+
+  @override
+  String get achTitleMarathon => 'Maraton';
+
+  @override
+  String get achDescMarathon => 'Przetrwaj 5 minut';
+
+  @override
+  String get achTitleNoWalls => 'Unikacz Ścian';
+
+  @override
+  String get achDescNoWalls => 'Zagraj 5 gier bez uderzenia w ścianę';
+
+  @override
+  String get achTitleSpeedster => 'Szybki jak Błyskawica';
+
+  @override
+  String get achDescSpeedster => 'Osiągnij poziom 10 (maksymalna prędkość)';
+
+  @override
+  String get achTitlePerfectionist => 'Perfekcjonista';
+
+  @override
+  String get achDescPerfectionist => 'Ukończ grę bez uderzenia w siebie';
+
+  @override
+  String get achTitleAllFoodTypes => 'Smakosz';
+
+  @override
+  String get achDescAllFoodTypes =>
+      'Zjedz wszystkie 3 rodzaje jedzenia w jednej grze';
+
+  @override
+  String get achTitleHalfGrand => 'Pięć Tysięcy';
+
+  @override
+  String get achDescHalfGrand => 'Zdobądź 5 000 w jednej grze';
+
+  @override
+  String get achTitleScoreSniper => 'Snajper Punktów';
+
+  @override
+  String get achDescScoreSniper => 'Zdobądź 10 000 w jednej grze';
+
+  @override
+  String get achTitleFiveDigitClub => 'Klub Pięciu Cyfr';
+
+  @override
+  String get achDescFiveDigitClub => 'Zdobądź 25 000 w jednej grze';
+
+  @override
+  String get achTitleScoreTycoon => 'Potentat Punktów';
+
+  @override
+  String get achDescScoreTycoon => 'Zdobądź 50 000 w jednej grze';
+
+  @override
+  String get achTitleScoreGod => 'Bóg Punktów';
+
+  @override
+  String get achDescScoreGod => 'Zdobądź 100 000 w jednej grze';
+
+  @override
+  String get achTitlePointCollector => 'Kolekcjoner Punktów';
+
+  @override
+  String get achDescPointCollector => 'Zgromadź łącznie 10 000 punktów';
+
+  @override
+  String get achTitlePointHoarder => 'Zbieracz Punktów';
+
+  @override
+  String get achDescPointHoarder => 'Zgromadź łącznie 100 000 punktów';
+
+  @override
+  String get achTitleHalfMillionClub => 'Klub Pół Miliona';
+
+  @override
+  String get achDescHalfMillionClub => 'Zgromadź łącznie 500 000 punktów';
+
+  @override
+  String get achTitlePointMillionaire => 'Punktowy Milioner';
+
+  @override
+  String get achDescPointMillionaire => 'Zgromadź łącznie 1 000 000 punktów';
+
+  @override
+  String get achTitleDecamillionaire => 'Dekamilioner';
+
+  @override
+  String get achDescDecamillionaire => 'Zgromadź łącznie 10 000 000 punktów';
+
+  @override
+  String get achTitleSnakeVeteran => 'Weteran Węża';
+
+  @override
+  String get achDescSnakeVeteran => 'Zagraj 1 000 gier';
+
+  @override
+  String get achTitleSnakeLegend => 'Legenda Węża';
+
+  @override
+  String get achDescSnakeLegend => 'Zagraj 5 000 gier';
+
+  @override
+  String get achTitleIronWill => 'Żelazna Wola';
+
+  @override
+  String get achDescIronWill => 'Przetrwaj 10 minut w jednej grze';
+
+  @override
+  String get achTitleEternalSnake => 'Wieczny Wąż';
+
+  @override
+  String get achDescEternalSnake => 'Przetrwaj 20 minut w jednej grze';
+
+  @override
+  String get achTitleTimeLord => 'Władca Czasu';
+
+  @override
+  String get achDescTimeLord => 'Przetrwaj 30 minut w jednej grze';
+
+  @override
+  String get achTitleFirstBiteSnack => 'Pierwsza Przekąska';
+
+  @override
+  String get achDescFirstBiteSnack => 'Zjedz 5 porcji jedzenia w jednej grze';
+
+  @override
+  String get achTitleHungrySnake => 'Głodny Wąż';
+
+  @override
+  String get achDescHungrySnake => 'Zjedz 20 porcji jedzenia w jednej grze';
+
+  @override
+  String get achTitleFamished => 'Wygłodniały';
+
+  @override
+  String get achDescFamished => 'Zjedz 50 porcji jedzenia w jednej grze';
+
+  @override
+  String get achTitleRavenous => 'Żarłoczny';
+
+  @override
+  String get achDescRavenous => 'Zjedz 100 porcji jedzenia w jednej grze';
+
+  @override
+  String get achTitleInsatiable => 'Nienasycony';
+
+  @override
+  String get achDescInsatiable => 'Zjedz 200 porcji jedzenia w jednej grze';
+
+  @override
+  String get achTitleBlackHoleStomach => 'Żołądek jak Czarna Dziura';
+
+  @override
+  String get achDescBlackHoleStomach =>
+      'Zjedz 500 porcji jedzenia w jednej grze';
+
+  @override
+  String get achTitleFoodieApprentice => 'Uczeń Smakosza';
+
+  @override
+  String get achDescFoodieApprentice => 'Zjedz łącznie 100 porcji jedzenia';
+
+  @override
+  String get achTitleFoodiePro => 'Zawodowy Smakosz';
+
+  @override
+  String get achDescFoodiePro => 'Zjedz łącznie 1 000 porcji jedzenia';
+
+  @override
+  String get achTitleFoodieMaster => 'Mistrz Smakoszy';
+
+  @override
+  String get achDescFoodieMaster => 'Zjedz łącznie 10 000 porcji jedzenia';
+
+  @override
+  String get achTitleFoodieGod => 'Bóg Smakoszy';
+
+  @override
+  String get achDescFoodieGod => 'Zjedz łącznie 50 000 porcji jedzenia';
+
+  @override
+  String get achTitleQuickPlayer => 'Szybki Gracz';
+
+  @override
+  String get achDescQuickPlayer => 'Graj łącznie 1 godzinę';
+
+  @override
+  String get achTitleEngagedPlayer => 'Zaangażowany Gracz';
+
+  @override
+  String get achDescEngagedPlayer => 'Graj łącznie 10 godzin';
+
+  @override
+  String get achTitleHardcorePlayer => 'Hardkorowy Gracz';
+
+  @override
+  String get achDescHardcorePlayer => 'Graj łącznie 50 godzin';
+
+  @override
+  String get achTitleSnakeObsessed => 'Owładnięty Wężem';
+
+  @override
+  String get achDescSnakeObsessed => 'Graj łącznie 100 godzin';
+
+  @override
+  String get achTitleTouchGrass => 'Dotknij Trawy';
+
+  @override
+  String get achDescTouchGrass =>
+      'Graj łącznie 250 godzin — może czas wyjść na dwór?';
+
+  @override
+  String get achTitleLevel5 => 'Uczeń';
+
+  @override
+  String get achDescLevel5 => 'Osiągnij Poziom 5';
+
+  @override
+  String get achTitleLevel10 => 'Czeladnik';
+
+  @override
+  String get achDescLevel10 => 'Osiągnij Poziom 10';
+
+  @override
+  String get achTitleLevel25 => 'Ekspert';
+
+  @override
+  String get achDescLevel25 => 'Osiągnij Poziom 25';
+
+  @override
+  String get achTitleLevel50 => 'Mistrz';
+
+  @override
+  String get achDescLevel50 => 'Osiągnij Poziom 50';
+
+  @override
+  String get achTitleLevel100 => 'Arcymistrz';
+
+  @override
+  String get achDescLevel100 => 'Osiągnij Poziom 100';
+
+  @override
+  String get achTitleClassicInitiate => 'Adept Klasyki';
+
+  @override
+  String get achDescClassicInitiate => 'Ukończ 10 gier w trybie klasycznym';
+
+  @override
+  String get achTitleClassicVeteran => 'Weteran Klasyki';
+
+  @override
+  String get achDescClassicVeteran => 'Ukończ 100 gier w trybie klasycznym';
+
+  @override
+  String get achTitleClassic1000 => 'Koneser Klasyki';
+
+  @override
+  String get achDescClassic1000 => 'Zdobądź 1 000 w trybie klasycznym';
+
+  @override
+  String get achTitleClassic5000 => 'Maestro Klasyki';
+
+  @override
+  String get achDescClassic5000 => 'Zdobądź 5 000 w trybie klasycznym';
+
+  @override
+  String get achTitleZenInitiate => 'Adept Zen';
+
+  @override
+  String get achDescZenInitiate => 'Ukończ 10 gier Zen';
+
+  @override
+  String get achTitleZenGarden => 'Ogród Zen';
+
+  @override
+  String get achDescZenGarden => 'Zdobądź 500 w trybie Zen';
+
+  @override
+  String get achTitleZenMaster => 'Mistrz Zen';
+
+  @override
+  String get achDescZenMaster => 'Zdobądź 5 000 w trybie Zen';
+
+  @override
+  String get achTitleSpeedInitiate => 'Żądza Prędkości';
+
+  @override
+  String get achDescSpeedInitiate => 'Ukończ 10 gier Wyzwania Prędkości';
+
+  @override
+  String get achTitleSpeedrunner => 'Speedrunner';
+
+  @override
+  String get achDescSpeedrunner => 'Zdobądź 500 w Wyzwaniu Prędkości';
+
+  @override
+  String get achTitleLightning => 'Błyskawica';
+
+  @override
+  String get achDescLightning => 'Zdobądź 2 000 w Wyzwaniu Prędkości';
+
+  @override
+  String get achTitleMultifoodInitiate => 'Kraina Jedzenia';
+
+  @override
+  String get achDescMultifoodInitiate => 'Ukończ 10 gier MultiJedzenia';
+
+  @override
+  String get achTitleBuffet => 'Bufet';
+
+  @override
+  String get achDescBuffet => 'Zdobądź 1 000 w MultiJedzeniu';
+
+  @override
+  String get achTitleSmorgasbord => 'Uczta';
+
+  @override
+  String get achDescSmorgasbord => 'Zdobądź 5 000 w MultiJedzeniu';
+
+  @override
+  String get achTitleSurvivalInitiate => 'Adept Przetrwania';
+
+  @override
+  String get achDescSurvivalInitiate => 'Ukończ 10 gier Przetrwania';
+
+  @override
+  String get achTitleSurvivalPro => 'Zawodowiec Przetrwania';
+
+  @override
+  String get achDescSurvivalPro => 'Przetrwaj 5 minut w trybie Przetrwania';
+
+  @override
+  String get achTitleLastSnakeStanding => 'Ostatni Wąż na Placu Boju';
+
+  @override
+  String get achDescLastSnakeStanding => 'Zdobądź 2 500 w Przetrwaniu';
+
+  @override
+  String get achTitleTimeattackInitiate => 'Atakujący Czas';
+
+  @override
+  String get achDescTimeattackInitiate => 'Ukończ 10 gier Na Czas';
+
+  @override
+  String get achTitleBeatTheClock => 'Pokonaj Zegar';
+
+  @override
+  String get achDescBeatTheClock => 'Przetrwaj pełne 3 minuty trybu Na Czas';
+
+  @override
+  String get achTitleTimeattackMaster => 'Mistrz Gry Na Czas';
+
+  @override
+  String get achDescTimeattackMaster => 'Zdobądź 3 000 w trybie Na Czas';
+
+  @override
+  String get achTitleComboStarter => 'Początkujący Combo';
+
+  @override
+  String get achDescComboStarter => 'Zalicz combo 5x w jednej grze';
+
+  @override
+  String get achTitleComboMaster => 'Mistrz Combo';
+
+  @override
+  String get achDescComboMaster => 'Zalicz combo 10x w jednej grze';
+
+  @override
+  String get achTitleComboPro => 'Zawodowiec Combo';
+
+  @override
+  String get achDescComboPro => 'Zalicz combo 20x w jednej grze';
+
+  @override
+  String get achTitleComboGod => 'Bóg Combo';
+
+  @override
+  String get achDescComboGod => 'Zalicz combo 50x w jednej grze';
+
+  @override
+  String get achTitleComboLegend => 'Legenda Combo';
+
+  @override
+  String get achDescComboLegend => 'Zalicz combo 100x w jednej grze';
+
+  @override
+  String get achTitleGrowingSnake => 'Rosnący Wąż';
+
+  @override
+  String get achDescGrowingSnake => 'Wyhoduj węża do długości 20';
+
+  @override
+  String get achTitleBigSnake => 'Duży Wąż';
+
+  @override
+  String get achDescBigSnake => 'Wyhoduj węża do długości 50';
+
+  @override
+  String get achTitleHugeSnake => 'Ogromny Wąż';
+
+  @override
+  String get achDescHugeSnake => 'Wyhoduj węża do długości 100';
+
+  @override
+  String get achTitleMassiveSnake => 'Gigantyczny Wąż';
+
+  @override
+  String get achDescMassiveSnake => 'Wyhoduj węża do długości 200';
+
+  @override
+  String get achTitleAnaconda => 'Anakonda';
+
+  @override
+  String get achDescAnaconda => 'Wyhoduj węża do długości 500';
+
+  @override
+  String get achTitleFirstPowerUp => 'Wzmocnienie!';
+
+  @override
+  String get achDescFirstPowerUp => 'Zbierz swoje pierwsze wzmocnienie';
+
+  @override
+  String get achTitlePowerPlayer => 'Gracz Mocy';
+
+  @override
+  String get achDescPowerPlayer => 'Zbierz łącznie 10 wzmocnień';
+
+  @override
+  String get achTitlePowerHungry => 'Głodny Mocy';
+
+  @override
+  String get achDescPowerHungry => 'Zbierz łącznie 50 wzmocnień';
+
+  @override
+  String get achTitlePowerAddict => 'Uzależniony od Mocy';
+
+  @override
+  String get achDescPowerAddict => 'Zbierz łącznie 200 wzmocnień';
+
+  @override
+  String get achTitlePowerMaster => 'Mistrz Mocy';
+
+  @override
+  String get achDescPowerMaster => 'Zbierz łącznie 1 000 wzmocnień';
+
+  @override
+  String get achTitleVarietyPack => 'Pełen Zestaw';
+
+  @override
+  String get achDescVarietyPack =>
+      'Zbierz każdy z 4 rodzajów wzmocnień co najmniej raz';
+
+  @override
+  String get achTitleSpeedDemon => 'Demon Prędkości';
+
+  @override
+  String get achDescSpeedDemon => 'Zbierz 25 wzmocnień Przyspieszenia';
+
+  @override
+  String get achTitleImmortalStreak => 'Nieśmiertelna Seria';
+
+  @override
+  String get achDescImmortalStreak => 'Zbierz 25 wzmocnień Niezniszczalności';
+
+  @override
+  String get achTitleSpecialDiet => 'Specjalna Dieta';
+
+  @override
+  String get achDescSpecialDiet =>
+      'Zjedz łącznie 50 specjalnych porcji jedzenia';
+
+  @override
+  String get achTitleBonusHunter => 'Łowca Bonusów';
+
+  @override
+  String get achDescBonusHunter =>
+      'Zjedz łącznie 100 bonusowych porcji jedzenia';
+
+  @override
+  String get achTitleUntouchable5 => 'Nietykalny';
+
+  @override
+  String get achDescUntouchable5 =>
+      'Ukończ 5 perfekcyjnych gier (bez kolizji, 30 s+)';
+
+  @override
+  String get achTitleUntouchable20 => 'Nieskazitelny';
+
+  @override
+  String get achDescUntouchable20 => 'Ukończ 20 perfekcyjnych gier';
+
+  @override
+  String get achTitleUntouchable50 => 'Nietykalna Legenda';
+
+  @override
+  String get achDescUntouchable50 => 'Ukończ 50 perfekcyjnych gier';
+
+  @override
+  String get achTitleHotStreak => 'Gorąca Seria';
+
+  @override
+  String get achDescHotStreak => '5 gier z rzędu z wynikiem >0 i czasem 30 s+';
+
+  @override
+  String get achTitleOnFire => 'W Ogniu';
+
+  @override
+  String get achDescOnFire => 'Seria 10 gier (każda 30 s+)';
+
+  @override
+  String get achTitleUnstoppable => 'Nie do Zatrzymania';
+
+  @override
+  String get achDescUnstoppable => 'Seria 25 gier (każda 30 s+)';
+
+  @override
+  String get achTitleDailyThree => 'Codzienny Gracz';
+
+  @override
+  String get achDescDailyThree => 'Graj przez 3 dni z rzędu';
+
+  @override
+  String get achTitleWeekWarrior => 'Wojownik Tygodnia';
+
+  @override
+  String get achDescWeekWarrior => 'Graj przez 7 dni z rzędu';
+
+  @override
+  String get achTitleVelocity => 'Prędkość';
+
+  @override
+  String get achDescVelocity => 'Osiągnij 15. poziom rozgrywki w jednej grze';
+
+  @override
+  String get achTitleMachSpeed => 'Prędkość Mach';
+
+  @override
+  String get achDescMachSpeed => 'Osiągnij 20. poziom rozgrywki w jednej grze';
+
+  @override
+  String get achTitleCosmicSnake => 'Kosmiczny Wąż';
+
+  @override
+  String get achDescCosmicSnake =>
+      'Osiągnij 25. poziom rozgrywki w jednej grze';
+
+  @override
+  String get achTitleModeExplorer => 'Odkrywca Trybów';
+
+  @override
+  String get achDescModeExplorer =>
+      'Zagraj co najmniej jedną grę w 3 różnych trybach';
+
+  @override
+  String get achTitleAllModePlayer => 'Gracz Wszystkich Trybów';
+
+  @override
+  String get achDescAllModePlayer =>
+      'Zagraj co najmniej jedną grę w każdym trybie (8 trybów)';
+
+  @override
+  String get achTitleNightOwl => 'Nocny Marek';
+
+  @override
+  String get achDescNightOwl => 'Ukończ grę między północą a 5 rano';
+
+  @override
+  String get achTitleEarlyBird => 'Ranny Ptaszek';
+
+  @override
+  String get achDescEarlyBird => 'Ukończ grę między 5 a 8 rano';
+
+  @override
+  String get achTitleWeekendWarrior => 'Weekendowy Wojownik';
+
+  @override
+  String get achDescWeekendWarrior => 'Ukończ 10 gier w weekendy';
 }

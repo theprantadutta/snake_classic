@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -305,7 +306,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         children: [
                           Expanded(
                             child: Text(
-                              achievement.title,
+                              achievement.localizedTitle(l10n),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -329,7 +330,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              achievement.rarityName.toUpperCase(),
+                              achievement.localizedRarityName(l10n).toUpperCase(),
                               style: TextStyle(
                                 color: achievement.rarityColor,
                                 fontSize: 10,
@@ -343,7 +344,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                       const SizedBox(height: 4),
 
                       Text(
-                        achievement.description,
+                        achievement.localizedDescription(l10n),
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white.withValues(alpha: 0.8),

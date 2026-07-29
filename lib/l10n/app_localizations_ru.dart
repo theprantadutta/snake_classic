@@ -3549,4 +3549,670 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gbLevel => 'Уровень';
+
+  @override
+  String get rarityCommon => 'Обычное';
+
+  @override
+  String get rarityRare => 'Редкое';
+
+  @override
+  String get rarityEpic => 'Эпическое';
+
+  @override
+  String get rarityLegendary => 'Легендарное';
+
+  @override
+  String get rarityDiamond => 'Алмазное';
+
+  @override
+  String get achTitleFirstBite => 'Первый укус';
+
+  @override
+  String get achDescFirstBite => 'Наберите свой первый балл';
+
+  @override
+  String get achTitleGettingStarted => 'Начало пути';
+
+  @override
+  String get achDescGettingStarted => 'Наберите 100 очков';
+
+  @override
+  String get achTitleHighScorer => 'Хороший счёт';
+
+  @override
+  String get achDescHighScorer => 'Наберите 500 очков за одну игру';
+
+  @override
+  String get achTitleMasterScorer => 'Мастер очков';
+
+  @override
+  String get achDescMasterScorer => 'Наберите 1000 очков за одну игру';
+
+  @override
+  String get achTitleLegendaryScorer => 'Легендарный счёт';
+
+  @override
+  String get achDescLegendaryScorer => 'Наберите 2000 очков за одну игру';
+
+  @override
+  String get achTitleFirstGame => 'Первая игра';
+
+  @override
+  String get achDescFirstGame => 'Сыграйте свою первую игру';
+
+  @override
+  String get achTitleRegularPlayer => 'Постоянный игрок';
+
+  @override
+  String get achDescRegularPlayer => 'Сыграйте 10 игр';
+
+  @override
+  String get achTitleDedicatedPlayer => 'Преданный игрок';
+
+  @override
+  String get achDescDedicatedPlayer => 'Сыграйте 50 игр';
+
+  @override
+  String get achTitleSnakeEnthusiast => 'Энтузиаст змейки';
+
+  @override
+  String get achDescSnakeEnthusiast => 'Сыграйте 100 игр';
+
+  @override
+  String get achTitleSnakeAddict => 'Зависимый от змейки';
+
+  @override
+  String get achDescSnakeAddict => 'Сыграйте 500 игр';
+
+  @override
+  String get achTitleSurvivor => 'Выживший';
+
+  @override
+  String get achDescSurvivor => 'Продержитесь 60 секунд';
+
+  @override
+  String get achTitleEndurance => 'Выносливость';
+
+  @override
+  String get achDescEndurance => 'Продержитесь 2 минуты';
+
+  @override
+  String get achTitleMarathon => 'Марафон';
+
+  @override
+  String get achDescMarathon => 'Продержитесь 5 минут';
+
+  @override
+  String get achTitleNoWalls => 'Мимо стен';
+
+  @override
+  String get achDescNoWalls => 'Сыграйте 5 игр, не врезаясь в стены';
+
+  @override
+  String get achTitleSpeedster => 'Гонщик';
+
+  @override
+  String get achDescSpeedster => 'Достигните уровня 10 (максимальная скорость)';
+
+  @override
+  String get achTitlePerfectionist => 'Перфекционист';
+
+  @override
+  String get achDescPerfectionist => 'Завершите игру, не врезавшись в себя';
+
+  @override
+  String get achTitleAllFoodTypes => 'Гурман';
+
+  @override
+  String get achDescAllFoodTypes => 'Съешьте все 3 вида еды за одну игру';
+
+  @override
+  String get achTitleHalfGrand => 'Пять тысяч';
+
+  @override
+  String get achDescHalfGrand => 'Наберите 5 000 за одну игру';
+
+  @override
+  String get achTitleScoreSniper => 'Снайпер очков';
+
+  @override
+  String get achDescScoreSniper => 'Наберите 10 000 за одну игру';
+
+  @override
+  String get achTitleFiveDigitClub => 'Клуб пяти цифр';
+
+  @override
+  String get achDescFiveDigitClub => 'Наберите 25 000 за одну игру';
+
+  @override
+  String get achTitleScoreTycoon => 'Магнат очков';
+
+  @override
+  String get achDescScoreTycoon => 'Наберите 50 000 за одну игру';
+
+  @override
+  String get achTitleScoreGod => 'Бог очков';
+
+  @override
+  String get achDescScoreGod => 'Наберите 100 000 за одну игру';
+
+  @override
+  String get achTitlePointCollector => 'Коллекционер очков';
+
+  @override
+  String get achDescPointCollector => 'Накопите 10 000 очков за всё время';
+
+  @override
+  String get achTitlePointHoarder => 'Накопитель очков';
+
+  @override
+  String get achDescPointHoarder => 'Накопите 100 000 очков за всё время';
+
+  @override
+  String get achTitleHalfMillionClub => 'Клуб полумиллиона';
+
+  @override
+  String get achDescHalfMillionClub => 'Накопите 500 000 очков за всё время';
+
+  @override
+  String get achTitlePointMillionaire => 'Миллионер очков';
+
+  @override
+  String get achDescPointMillionaire => 'Накопите 1 000 000 очков за всё время';
+
+  @override
+  String get achTitleDecamillionaire => 'Декамиллионер';
+
+  @override
+  String get achDescDecamillionaire => 'Накопите 10 000 000 очков за всё время';
+
+  @override
+  String get achTitleSnakeVeteran => 'Ветеран змейки';
+
+  @override
+  String get achDescSnakeVeteran => 'Сыграйте 1 000 игр';
+
+  @override
+  String get achTitleSnakeLegend => 'Легенда змейки';
+
+  @override
+  String get achDescSnakeLegend => 'Сыграйте 5 000 игр';
+
+  @override
+  String get achTitleIronWill => 'Железная воля';
+
+  @override
+  String get achDescIronWill => 'Продержитесь 10 минут за одну игру';
+
+  @override
+  String get achTitleEternalSnake => 'Вечная змейка';
+
+  @override
+  String get achDescEternalSnake => 'Продержитесь 20 минут за одну игру';
+
+  @override
+  String get achTitleTimeLord => 'Повелитель времени';
+
+  @override
+  String get achDescTimeLord => 'Продержитесь 30 минут за одну игру';
+
+  @override
+  String get achTitleFirstBiteSnack => 'Первый перекус';
+
+  @override
+  String get achDescFirstBiteSnack => 'Съешьте 5 единиц еды за игру';
+
+  @override
+  String get achTitleHungrySnake => 'Голодная змейка';
+
+  @override
+  String get achDescHungrySnake => 'Съешьте 20 единиц еды за игру';
+
+  @override
+  String get achTitleFamished => 'Изголодавшийся';
+
+  @override
+  String get achDescFamished => 'Съешьте 50 единиц еды за игру';
+
+  @override
+  String get achTitleRavenous => 'Прожорливый';
+
+  @override
+  String get achDescRavenous => 'Съешьте 100 единиц еды за игру';
+
+  @override
+  String get achTitleInsatiable => 'Ненасытный';
+
+  @override
+  String get achDescInsatiable => 'Съешьте 200 единиц еды за игру';
+
+  @override
+  String get achTitleBlackHoleStomach => 'Желудок — чёрная дыра';
+
+  @override
+  String get achDescBlackHoleStomach => 'Съешьте 500 единиц еды за игру';
+
+  @override
+  String get achTitleFoodieApprentice => 'Начинающий гурман';
+
+  @override
+  String get achDescFoodieApprentice => 'Съешьте 100 единиц еды за всё время';
+
+  @override
+  String get achTitleFoodiePro => 'Гурман-профи';
+
+  @override
+  String get achDescFoodiePro => 'Съешьте 1 000 единиц еды за всё время';
+
+  @override
+  String get achTitleFoodieMaster => 'Мастер-гурман';
+
+  @override
+  String get achDescFoodieMaster => 'Съешьте 10 000 единиц еды за всё время';
+
+  @override
+  String get achTitleFoodieGod => 'Бог-гурман';
+
+  @override
+  String get achDescFoodieGod => 'Съешьте 50 000 единиц еды за всё время';
+
+  @override
+  String get achTitleQuickPlayer => 'Быстрый игрок';
+
+  @override
+  String get achDescQuickPlayer => 'Играйте 1 час в сумме';
+
+  @override
+  String get achTitleEngagedPlayer => 'Увлечённый игрок';
+
+  @override
+  String get achDescEngagedPlayer => 'Играйте 10 часов в сумме';
+
+  @override
+  String get achTitleHardcorePlayer => 'Хардкорный игрок';
+
+  @override
+  String get achDescHardcorePlayer => 'Играйте 50 часов в сумме';
+
+  @override
+  String get achTitleSnakeObsessed => 'Одержимый змейкой';
+
+  @override
+  String get achDescSnakeObsessed => 'Играйте 100 часов в сумме';
+
+  @override
+  String get achTitleTouchGrass => 'Потрогай траву';
+
+  @override
+  String get achDescTouchGrass =>
+      'Играйте 250 часов в сумме — может, пора на улицу?';
+
+  @override
+  String get achTitleLevel5 => 'Ученик';
+
+  @override
+  String get achDescLevel5 => 'Достигните 5-го уровня';
+
+  @override
+  String get achTitleLevel10 => 'Подмастерье';
+
+  @override
+  String get achDescLevel10 => 'Достигните 10-го уровня';
+
+  @override
+  String get achTitleLevel25 => 'Эксперт';
+
+  @override
+  String get achDescLevel25 => 'Достигните 25-го уровня';
+
+  @override
+  String get achTitleLevel50 => 'Мастер';
+
+  @override
+  String get achDescLevel50 => 'Достигните 50-го уровня';
+
+  @override
+  String get achTitleLevel100 => 'Гроссмейстер';
+
+  @override
+  String get achDescLevel100 => 'Достигните 100-го уровня';
+
+  @override
+  String get achTitleClassicInitiate => 'Новичок классики';
+
+  @override
+  String get achDescClassicInitiate => 'Завершите 10 игр в классическом режиме';
+
+  @override
+  String get achTitleClassicVeteran => 'Ветеран классики';
+
+  @override
+  String get achDescClassicVeteran => 'Завершите 100 игр в классическом режиме';
+
+  @override
+  String get achTitleClassic1000 => 'Знаток классики';
+
+  @override
+  String get achDescClassic1000 => 'Наберите 1 000 в классическом режиме';
+
+  @override
+  String get achTitleClassic5000 => 'Маэстро классики';
+
+  @override
+  String get achDescClassic5000 => 'Наберите 5 000 в классическом режиме';
+
+  @override
+  String get achTitleZenInitiate => 'Новичок дзена';
+
+  @override
+  String get achDescZenInitiate => 'Завершите 10 игр в режиме «Дзен»';
+
+  @override
+  String get achTitleZenGarden => 'Сад дзен';
+
+  @override
+  String get achDescZenGarden => 'Наберите 500 в режиме «Дзен»';
+
+  @override
+  String get achTitleZenMaster => 'Мастер дзена';
+
+  @override
+  String get achDescZenMaster => 'Наберите 5 000 в режиме «Дзен»';
+
+  @override
+  String get achTitleSpeedInitiate => 'Жажда скорости';
+
+  @override
+  String get achDescSpeedInitiate => 'Завершите 10 игр «Скоростного вызова»';
+
+  @override
+  String get achTitleSpeedrunner => 'Спидраннер';
+
+  @override
+  String get achDescSpeedrunner => 'Наберите 500 в «Скоростном вызове»';
+
+  @override
+  String get achTitleLightning => 'Молния';
+
+  @override
+  String get achDescLightning => 'Наберите 2 000 в «Скоростном вызове»';
+
+  @override
+  String get achTitleMultifoodInitiate => 'Мир еды';
+
+  @override
+  String get achDescMultifoodInitiate => 'Завершите 10 игр «Мультиеды»';
+
+  @override
+  String get achTitleBuffet => 'Буфет';
+
+  @override
+  String get achDescBuffet => 'Наберите 1 000 в «Мультиеде»';
+
+  @override
+  String get achTitleSmorgasbord => 'Пир';
+
+  @override
+  String get achDescSmorgasbord => 'Наберите 5 000 в «Мультиеде»';
+
+  @override
+  String get achTitleSurvivalInitiate => 'Новичок выживания';
+
+  @override
+  String get achDescSurvivalInitiate => 'Завершите 10 игр «Выживания»';
+
+  @override
+  String get achTitleSurvivalPro => 'Профи выживания';
+
+  @override
+  String get achDescSurvivalPro => 'Продержитесь 5 минут в режиме «Выживание»';
+
+  @override
+  String get achTitleLastSnakeStanding => 'Последняя змейка';
+
+  @override
+  String get achDescLastSnakeStanding => 'Наберите 2 500 в «Выживании»';
+
+  @override
+  String get achTitleTimeattackInitiate => 'Атакующий время';
+
+  @override
+  String get achDescTimeattackInitiate => 'Завершите 10 игр «На время»';
+
+  @override
+  String get achTitleBeatTheClock => 'Обгони часы';
+
+  @override
+  String get achDescBeatTheClock =>
+      'Продержитесь все 3 минуты режима «На время»';
+
+  @override
+  String get achTitleTimeattackMaster => 'Мастер режима «На время»';
+
+  @override
+  String get achDescTimeattackMaster => 'Наберите 3 000 в режиме «На время»';
+
+  @override
+  String get achTitleComboStarter => 'Начинающий комбо';
+
+  @override
+  String get achDescComboStarter => 'Сделайте комбо 5x за одну игру';
+
+  @override
+  String get achTitleComboMaster => 'Мастер комбо';
+
+  @override
+  String get achDescComboMaster => 'Сделайте комбо 10x за одну игру';
+
+  @override
+  String get achTitleComboPro => 'Профи комбо';
+
+  @override
+  String get achDescComboPro => 'Сделайте комбо 20x за одну игру';
+
+  @override
+  String get achTitleComboGod => 'Бог комбо';
+
+  @override
+  String get achDescComboGod => 'Сделайте комбо 50x за одну игру';
+
+  @override
+  String get achTitleComboLegend => 'Легенда комбо';
+
+  @override
+  String get achDescComboLegend => 'Сделайте комбо 100x за одну игру';
+
+  @override
+  String get achTitleGrowingSnake => 'Растущая змейка';
+
+  @override
+  String get achDescGrowingSnake => 'Вырастите змейку до длины 20';
+
+  @override
+  String get achTitleBigSnake => 'Большая змейка';
+
+  @override
+  String get achDescBigSnake => 'Вырастите змейку до длины 50';
+
+  @override
+  String get achTitleHugeSnake => 'Огромная змейка';
+
+  @override
+  String get achDescHugeSnake => 'Вырастите змейку до длины 100';
+
+  @override
+  String get achTitleMassiveSnake => 'Гигантская змейка';
+
+  @override
+  String get achDescMassiveSnake => 'Вырастите змейку до длины 200';
+
+  @override
+  String get achTitleAnaconda => 'Анаконда';
+
+  @override
+  String get achDescAnaconda => 'Вырастите змейку до длины 500';
+
+  @override
+  String get achTitleFirstPowerUp => 'Усиление!';
+
+  @override
+  String get achDescFirstPowerUp => 'Соберите своё первое усиление';
+
+  @override
+  String get achTitlePowerPlayer => 'Игрок силы';
+
+  @override
+  String get achDescPowerPlayer => 'Соберите 10 усилений за всё время';
+
+  @override
+  String get achTitlePowerHungry => 'Жаждущий силы';
+
+  @override
+  String get achDescPowerHungry => 'Соберите 50 усилений за всё время';
+
+  @override
+  String get achTitlePowerAddict => 'Зависимый от силы';
+
+  @override
+  String get achDescPowerAddict => 'Соберите 200 усилений за всё время';
+
+  @override
+  String get achTitlePowerMaster => 'Мастер силы';
+
+  @override
+  String get achDescPowerMaster => 'Соберите 1 000 усилений за всё время';
+
+  @override
+  String get achTitleVarietyPack => 'Полный набор';
+
+  @override
+  String get achDescVarietyPack =>
+      'Соберите каждое из 4 усилений хотя бы по разу';
+
+  @override
+  String get achTitleSpeedDemon => 'Демон скорости';
+
+  @override
+  String get achDescSpeedDemon => 'Соберите 25 усилений «Ускорение»';
+
+  @override
+  String get achTitleImmortalStreak => 'Бессмертная серия';
+
+  @override
+  String get achDescImmortalStreak => 'Соберите 25 усилений «Неуязвимость»';
+
+  @override
+  String get achTitleSpecialDiet => 'Особая диета';
+
+  @override
+  String get achDescSpecialDiet => 'Съешьте 50 особой еды за всё время';
+
+  @override
+  String get achTitleBonusHunter => 'Охотник за бонусами';
+
+  @override
+  String get achDescBonusHunter => 'Съешьте 100 бонусной еды за всё время';
+
+  @override
+  String get achTitleUntouchable5 => 'Неприкасаемый';
+
+  @override
+  String get achDescUntouchable5 =>
+      'Завершите 5 идеальных игр (без столкновений, 30 с+)';
+
+  @override
+  String get achTitleUntouchable20 => 'Безупречный';
+
+  @override
+  String get achDescUntouchable20 => 'Завершите 20 идеальных игр';
+
+  @override
+  String get achTitleUntouchable50 => 'Легенда без единой ошибки';
+
+  @override
+  String get achDescUntouchable50 => 'Завершите 50 идеальных игр';
+
+  @override
+  String get achTitleHotStreak => 'Горячая серия';
+
+  @override
+  String get achDescHotStreak =>
+      '5 игр подряд со счётом >0 и длительностью 30 с+';
+
+  @override
+  String get achTitleOnFire => 'В ударе';
+
+  @override
+  String get achDescOnFire => 'Серия из 10 игр (каждая 30 с+)';
+
+  @override
+  String get achTitleUnstoppable => 'Неудержимый';
+
+  @override
+  String get achDescUnstoppable => 'Серия из 25 игр (каждая 30 с+)';
+
+  @override
+  String get achTitleDailyThree => 'Ежедневный игрок';
+
+  @override
+  String get achDescDailyThree => 'Играйте 3 дня подряд';
+
+  @override
+  String get achTitleWeekWarrior => 'Воин недели';
+
+  @override
+  String get achDescWeekWarrior => 'Играйте 7 дней подряд';
+
+  @override
+  String get achTitleVelocity => 'Скорость';
+
+  @override
+  String get achDescVelocity => 'Достигните 15-го игрового уровня за одну игру';
+
+  @override
+  String get achTitleMachSpeed => 'Скорость Маха';
+
+  @override
+  String get achDescMachSpeed =>
+      'Достигните 20-го игрового уровня за одну игру';
+
+  @override
+  String get achTitleCosmicSnake => 'Космическая змейка';
+
+  @override
+  String get achDescCosmicSnake =>
+      'Достигните 25-го игрового уровня за одну игру';
+
+  @override
+  String get achTitleModeExplorer => 'Исследователь режимов';
+
+  @override
+  String get achDescModeExplorer =>
+      'Сыграйте хотя бы одну игру в 3 разных режимах';
+
+  @override
+  String get achTitleAllModePlayer => 'Игрок всех режимов';
+
+  @override
+  String get achDescAllModePlayer =>
+      'Сыграйте хотя бы одну игру в каждом режиме (8 режимов)';
+
+  @override
+  String get achTitleNightOwl => 'Сова';
+
+  @override
+  String get achDescNightOwl => 'Завершите игру между полуночью и 5 утра';
+
+  @override
+  String get achTitleEarlyBird => 'Жаворонок';
+
+  @override
+  String get achDescEarlyBird => 'Завершите игру между 5 и 8 утра';
+
+  @override
+  String get achTitleWeekendWarrior => 'Воин выходных';
+
+  @override
+  String get achDescWeekendWarrior => 'Завершите 10 игр в выходные';
 }

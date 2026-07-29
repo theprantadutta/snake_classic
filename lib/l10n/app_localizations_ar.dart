@@ -3514,4 +3514,668 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get gbLevel => 'المستوى';
+
+  @override
+  String get rarityCommon => 'شائع';
+
+  @override
+  String get rarityRare => 'نادر';
+
+  @override
+  String get rarityEpic => 'ملحمي';
+
+  @override
+  String get rarityLegendary => 'أسطوري';
+
+  @override
+  String get rarityDiamond => 'ماسي';
+
+  @override
+  String get achTitleFirstBite => 'القضمة الأولى';
+
+  @override
+  String get achDescFirstBite => 'سجّل نقطتك الأولى';
+
+  @override
+  String get achTitleGettingStarted => 'البداية';
+
+  @override
+  String get achDescGettingStarted => 'سجّل 100 نقطة';
+
+  @override
+  String get achTitleHighScorer => 'هدّاف بارع';
+
+  @override
+  String get achDescHighScorer => 'سجّل 500 نقطة في لعبة واحدة';
+
+  @override
+  String get achTitleMasterScorer => 'هدّاف محترف';
+
+  @override
+  String get achDescMasterScorer => 'سجّل 1000 نقطة في لعبة واحدة';
+
+  @override
+  String get achTitleLegendaryScorer => 'هدّاف أسطوري';
+
+  @override
+  String get achDescLegendaryScorer => 'سجّل 2000 نقطة في لعبة واحدة';
+
+  @override
+  String get achTitleFirstGame => 'اللعبة الأولى';
+
+  @override
+  String get achDescFirstGame => 'العب أول لعبة لك';
+
+  @override
+  String get achTitleRegularPlayer => 'لاعب منتظم';
+
+  @override
+  String get achDescRegularPlayer => 'العب 10 ألعاب';
+
+  @override
+  String get achTitleDedicatedPlayer => 'لاعب مخلص';
+
+  @override
+  String get achDescDedicatedPlayer => 'العب 50 لعبة';
+
+  @override
+  String get achTitleSnakeEnthusiast => 'عاشق الثعبان';
+
+  @override
+  String get achDescSnakeEnthusiast => 'العب 100 لعبة';
+
+  @override
+  String get achTitleSnakeAddict => 'مدمن الثعبان';
+
+  @override
+  String get achDescSnakeAddict => 'العب 500 لعبة';
+
+  @override
+  String get achTitleSurvivor => 'الناجي';
+
+  @override
+  String get achDescSurvivor => 'اصمد لمدة 60 ثانية';
+
+  @override
+  String get achTitleEndurance => 'التحمّل';
+
+  @override
+  String get achDescEndurance => 'اصمد لمدة دقيقتين';
+
+  @override
+  String get achTitleMarathon => 'الماراثون';
+
+  @override
+  String get achDescMarathon => 'اصمد لمدة 5 دقائق';
+
+  @override
+  String get achTitleNoWalls => 'متجنّب الجدران';
+
+  @override
+  String get achDescNoWalls => 'العب 5 ألعاب دون الاصطدام بالجدران';
+
+  @override
+  String get achTitleSpeedster => 'السريع';
+
+  @override
+  String get achDescSpeedster => 'صِل إلى المستوى 10 (السرعة القصوى)';
+
+  @override
+  String get achTitlePerfectionist => 'الساعي للكمال';
+
+  @override
+  String get achDescPerfectionist => 'أكمل لعبة دون الاصطدام بنفسك';
+
+  @override
+  String get achTitleAllFoodTypes => 'الذوّاق';
+
+  @override
+  String get achDescAllFoodTypes => 'كُل أنواع الطعام الثلاثة في لعبة واحدة';
+
+  @override
+  String get achTitleHalfGrand => 'خمسة آلاف';
+
+  @override
+  String get achDescHalfGrand => 'سجّل 5,000 في لعبة واحدة';
+
+  @override
+  String get achTitleScoreSniper => 'قنّاص النقاط';
+
+  @override
+  String get achDescScoreSniper => 'سجّل 10,000 في لعبة واحدة';
+
+  @override
+  String get achTitleFiveDigitClub => 'نادي الخمس خانات';
+
+  @override
+  String get achDescFiveDigitClub => 'سجّل 25,000 في لعبة واحدة';
+
+  @override
+  String get achTitleScoreTycoon => 'قطب النقاط';
+
+  @override
+  String get achDescScoreTycoon => 'سجّل 50,000 في لعبة واحدة';
+
+  @override
+  String get achTitleScoreGod => 'إله النقاط';
+
+  @override
+  String get achDescScoreGod => 'سجّل 100,000 في لعبة واحدة';
+
+  @override
+  String get achTitlePointCollector => 'جامع النقاط';
+
+  @override
+  String get achDescPointCollector => 'اجمع 10,000 نقطة إجمالًا';
+
+  @override
+  String get achTitlePointHoarder => 'مكتنز النقاط';
+
+  @override
+  String get achDescPointHoarder => 'اجمع 100,000 نقطة إجمالًا';
+
+  @override
+  String get achTitleHalfMillionClub => 'نادي نصف المليون';
+
+  @override
+  String get achDescHalfMillionClub => 'اجمع 500,000 نقطة إجمالًا';
+
+  @override
+  String get achTitlePointMillionaire => 'مليونير النقاط';
+
+  @override
+  String get achDescPointMillionaire => 'اجمع 1,000,000 نقطة إجمالًا';
+
+  @override
+  String get achTitleDecamillionaire => 'صاحب العشرة ملايين';
+
+  @override
+  String get achDescDecamillionaire => 'اجمع 10,000,000 نقطة إجمالًا';
+
+  @override
+  String get achTitleSnakeVeteran => 'محارب الثعبان القديم';
+
+  @override
+  String get achDescSnakeVeteran => 'العب 1,000 لعبة';
+
+  @override
+  String get achTitleSnakeLegend => 'أسطورة الثعبان';
+
+  @override
+  String get achDescSnakeLegend => 'العب 5,000 لعبة';
+
+  @override
+  String get achTitleIronWill => 'إرادة حديدية';
+
+  @override
+  String get achDescIronWill => 'اصمد 10 دقائق في لعبة واحدة';
+
+  @override
+  String get achTitleEternalSnake => 'الثعبان الخالد';
+
+  @override
+  String get achDescEternalSnake => 'اصمد 20 دقيقة في لعبة واحدة';
+
+  @override
+  String get achTitleTimeLord => 'سيد الزمن';
+
+  @override
+  String get achDescTimeLord => 'اصمد 30 دقيقة في لعبة واحدة';
+
+  @override
+  String get achTitleFirstBiteSnack => 'الوجبة الخفيفة الأولى';
+
+  @override
+  String get achDescFirstBiteSnack => 'كُل 5 وحدات طعام في لعبة واحدة';
+
+  @override
+  String get achTitleHungrySnake => 'الثعبان الجائع';
+
+  @override
+  String get achDescHungrySnake => 'كُل 20 وحدة طعام في لعبة واحدة';
+
+  @override
+  String get achTitleFamished => 'الجوعان';
+
+  @override
+  String get achDescFamished => 'كُل 50 وحدة طعام في لعبة واحدة';
+
+  @override
+  String get achTitleRavenous => 'النهم';
+
+  @override
+  String get achDescRavenous => 'كُل 100 وحدة طعام في لعبة واحدة';
+
+  @override
+  String get achTitleInsatiable => 'الذي لا يشبع';
+
+  @override
+  String get achDescInsatiable => 'كُل 200 وحدة طعام في لعبة واحدة';
+
+  @override
+  String get achTitleBlackHoleStomach => 'معدة الثقب الأسود';
+
+  @override
+  String get achDescBlackHoleStomach => 'كُل 500 وحدة طعام في لعبة واحدة';
+
+  @override
+  String get achTitleFoodieApprentice => 'ذوّاق مبتدئ';
+
+  @override
+  String get achDescFoodieApprentice => 'كُل 100 وحدة طعام إجمالًا';
+
+  @override
+  String get achTitleFoodiePro => 'ذوّاق محترف';
+
+  @override
+  String get achDescFoodiePro => 'كُل 1,000 وحدة طعام إجمالًا';
+
+  @override
+  String get achTitleFoodieMaster => 'سيد الذوّاقين';
+
+  @override
+  String get achDescFoodieMaster => 'كُل 10,000 وحدة طعام إجمالًا';
+
+  @override
+  String get achTitleFoodieGod => 'إله الذوّاقين';
+
+  @override
+  String get achDescFoodieGod => 'كُل 50,000 وحدة طعام إجمالًا';
+
+  @override
+  String get achTitleQuickPlayer => 'اللاعب السريع';
+
+  @override
+  String get achDescQuickPlayer => 'العب ساعة واحدة إجمالًا';
+
+  @override
+  String get achTitleEngagedPlayer => 'اللاعب المتفاعل';
+
+  @override
+  String get achDescEngagedPlayer => 'العب 10 ساعات إجمالًا';
+
+  @override
+  String get achTitleHardcorePlayer => 'اللاعب المتفاني';
+
+  @override
+  String get achDescHardcorePlayer => 'العب 50 ساعة إجمالًا';
+
+  @override
+  String get achTitleSnakeObsessed => 'مهووس الثعبان';
+
+  @override
+  String get achDescSnakeObsessed => 'العب 100 ساعة إجمالًا';
+
+  @override
+  String get achTitleTouchGrass => 'المس العشب';
+
+  @override
+  String get achDescTouchGrass =>
+      'العب 250 ساعة إجمالًا — ربما حان وقت الخروج؟';
+
+  @override
+  String get achTitleLevel5 => 'المبتدئ';
+
+  @override
+  String get achDescLevel5 => 'صِل إلى المستوى 5';
+
+  @override
+  String get achTitleLevel10 => 'المتمرّس';
+
+  @override
+  String get achDescLevel10 => 'صِل إلى المستوى 10';
+
+  @override
+  String get achTitleLevel25 => 'الخبير';
+
+  @override
+  String get achDescLevel25 => 'صِل إلى المستوى 25';
+
+  @override
+  String get achTitleLevel50 => 'الماهر';
+
+  @override
+  String get achDescLevel50 => 'صِل إلى المستوى 50';
+
+  @override
+  String get achTitleLevel100 => 'الأستاذ الكبير';
+
+  @override
+  String get achDescLevel100 => 'صِل إلى المستوى 100';
+
+  @override
+  String get achTitleClassicInitiate => 'مبتدئ الكلاسيكي';
+
+  @override
+  String get achDescClassicInitiate => 'أنهِ 10 ألعاب في الوضع الكلاسيكي';
+
+  @override
+  String get achTitleClassicVeteran => 'محارب الكلاسيكي';
+
+  @override
+  String get achDescClassicVeteran => 'أنهِ 100 لعبة في الوضع الكلاسيكي';
+
+  @override
+  String get achTitleClassic1000 => 'خبير الكلاسيكي';
+
+  @override
+  String get achDescClassic1000 => 'سجّل 1,000 في الوضع الكلاسيكي';
+
+  @override
+  String get achTitleClassic5000 => 'أستاذ الكلاسيكي';
+
+  @override
+  String get achDescClassic5000 => 'سجّل 5,000 في الوضع الكلاسيكي';
+
+  @override
+  String get achTitleZenInitiate => 'مبتدئ الاسترخاء';
+
+  @override
+  String get achDescZenInitiate => 'أنهِ 10 ألعاب في وضع الاسترخاء';
+
+  @override
+  String get achTitleZenGarden => 'حديقة الاسترخاء';
+
+  @override
+  String get achDescZenGarden => 'سجّل 500 في وضع الاسترخاء';
+
+  @override
+  String get achTitleZenMaster => 'سيد الاسترخاء';
+
+  @override
+  String get achDescZenMaster => 'سجّل 5,000 في وضع الاسترخاء';
+
+  @override
+  String get achTitleSpeedInitiate => 'شغف السرعة';
+
+  @override
+  String get achDescSpeedInitiate => 'أنهِ 10 ألعاب في تحدي السرعة';
+
+  @override
+  String get achTitleSpeedrunner => 'عدّاء السرعة';
+
+  @override
+  String get achDescSpeedrunner => 'سجّل 500 في تحدي السرعة';
+
+  @override
+  String get achTitleLightning => 'البرق';
+
+  @override
+  String get achDescLightning => 'سجّل 2,000 في تحدي السرعة';
+
+  @override
+  String get achTitleMultifoodInitiate => 'عالم الطعام';
+
+  @override
+  String get achDescMultifoodInitiate => 'أنهِ 10 ألعاب في وضع الطعام المتعدد';
+
+  @override
+  String get achTitleBuffet => 'البوفيه';
+
+  @override
+  String get achDescBuffet => 'سجّل 1,000 في وضع الطعام المتعدد';
+
+  @override
+  String get achTitleSmorgasbord => 'الوليمة';
+
+  @override
+  String get achDescSmorgasbord => 'سجّل 5,000 في وضع الطعام المتعدد';
+
+  @override
+  String get achTitleSurvivalInitiate => 'مبتدئ البقاء';
+
+  @override
+  String get achDescSurvivalInitiate => 'أنهِ 10 ألعاب في وضع البقاء';
+
+  @override
+  String get achTitleSurvivalPro => 'محترف البقاء';
+
+  @override
+  String get achDescSurvivalPro => 'اصمد 5 دقائق في وضع البقاء';
+
+  @override
+  String get achTitleLastSnakeStanding => 'آخر ثعبان صامد';
+
+  @override
+  String get achDescLastSnakeStanding => 'سجّل 2,500 في وضع البقاء';
+
+  @override
+  String get achTitleTimeattackInitiate => 'مهاجم الوقت';
+
+  @override
+  String get achDescTimeattackInitiate => 'أنهِ 10 ألعاب في وضع سباق الزمن';
+
+  @override
+  String get achTitleBeatTheClock => 'اهزم الساعة';
+
+  @override
+  String get achDescBeatTheClock => 'اصمد طوال الدقائق الثلاث في سباق الزمن';
+
+  @override
+  String get achTitleTimeattackMaster => 'سيد سباق الزمن';
+
+  @override
+  String get achDescTimeattackMaster => 'سجّل 3,000 في سباق الزمن';
+
+  @override
+  String get achTitleComboStarter => 'مبتدئ السلاسل';
+
+  @override
+  String get achDescComboStarter => 'حقق سلسلة 5x في لعبة واحدة';
+
+  @override
+  String get achTitleComboMaster => 'سيد السلاسل';
+
+  @override
+  String get achDescComboMaster => 'حقق سلسلة 10x في لعبة واحدة';
+
+  @override
+  String get achTitleComboPro => 'محترف السلاسل';
+
+  @override
+  String get achDescComboPro => 'حقق سلسلة 20x في لعبة واحدة';
+
+  @override
+  String get achTitleComboGod => 'إله السلاسل';
+
+  @override
+  String get achDescComboGod => 'حقق سلسلة 50x في لعبة واحدة';
+
+  @override
+  String get achTitleComboLegend => 'أسطورة السلاسل';
+
+  @override
+  String get achDescComboLegend => 'حقق سلسلة 100x في لعبة واحدة';
+
+  @override
+  String get achTitleGrowingSnake => 'الثعبان النامي';
+
+  @override
+  String get achDescGrowingSnake => 'نمِّ الثعبان حتى طول 20';
+
+  @override
+  String get achTitleBigSnake => 'الثعبان الكبير';
+
+  @override
+  String get achDescBigSnake => 'نمِّ الثعبان حتى طول 50';
+
+  @override
+  String get achTitleHugeSnake => 'الثعبان الضخم';
+
+  @override
+  String get achDescHugeSnake => 'نمِّ الثعبان حتى طول 100';
+
+  @override
+  String get achTitleMassiveSnake => 'الثعبان الهائل';
+
+  @override
+  String get achDescMassiveSnake => 'نمِّ الثعبان حتى طول 200';
+
+  @override
+  String get achTitleAnaconda => 'الأناكوندا';
+
+  @override
+  String get achDescAnaconda => 'نمِّ الثعبان حتى طول 500';
+
+  @override
+  String get achTitleFirstPowerUp => 'تعزيز!';
+
+  @override
+  String get achDescFirstPowerUp => 'اجمع أول تعزيز لك';
+
+  @override
+  String get achTitlePowerPlayer => 'لاعب القوة';
+
+  @override
+  String get achDescPowerPlayer => 'اجمع 10 تعزيزات إجمالًا';
+
+  @override
+  String get achTitlePowerHungry => 'المتعطش للقوة';
+
+  @override
+  String get achDescPowerHungry => 'اجمع 50 تعزيزًا إجمالًا';
+
+  @override
+  String get achTitlePowerAddict => 'مدمن القوة';
+
+  @override
+  String get achDescPowerAddict => 'اجمع 200 تعزيز إجمالًا';
+
+  @override
+  String get achTitlePowerMaster => 'سيد القوة';
+
+  @override
+  String get achDescPowerMaster => 'اجمع 1,000 تعزيز إجمالًا';
+
+  @override
+  String get achTitleVarietyPack => 'التشكيلة الكاملة';
+
+  @override
+  String get achDescVarietyPack =>
+      'اجمع كل نوع من أنواع التعزيزات الأربعة مرة على الأقل';
+
+  @override
+  String get achTitleSpeedDemon => 'شيطان السرعة';
+
+  @override
+  String get achDescSpeedDemon => 'اجمع 25 تعزيز تسريع';
+
+  @override
+  String get achTitleImmortalStreak => 'سلسلة الخلود';
+
+  @override
+  String get achDescImmortalStreak => 'اجمع 25 تعزيز حصانة';
+
+  @override
+  String get achTitleSpecialDiet => 'حمية خاصة';
+
+  @override
+  String get achDescSpecialDiet => 'كُل 50 وحدة طعام خاص إجمالًا';
+
+  @override
+  String get achTitleBonusHunter => 'صائد المكافآت';
+
+  @override
+  String get achDescBonusHunter => 'كُل 100 وحدة طعام مكافأة إجمالًا';
+
+  @override
+  String get achTitleUntouchable5 => 'من لا يُمَس';
+
+  @override
+  String get achDescUntouchable5 =>
+      'أكمل 5 ألعاب مثالية (دون اصطدام، 30 ثانية+)';
+
+  @override
+  String get achTitleUntouchable20 => 'بلا عيوب';
+
+  @override
+  String get achDescUntouchable20 => 'أكمل 20 لعبة مثالية';
+
+  @override
+  String get achTitleUntouchable50 => 'الأسطورة التي لا تُمَس';
+
+  @override
+  String get achDescUntouchable50 => 'أكمل 50 لعبة مثالية';
+
+  @override
+  String get achTitleHotStreak => 'سلسلة ملتهبة';
+
+  @override
+  String get achDescHotStreak =>
+      '5 ألعاب متتالية بنقاط أكبر من 0 ومدة 30 ثانية+';
+
+  @override
+  String get achTitleOnFire => 'مشتعل';
+
+  @override
+  String get achDescOnFire => 'سلسلة من 10 ألعاب (كل منها 30 ثانية+)';
+
+  @override
+  String get achTitleUnstoppable => 'لا يُوقَف';
+
+  @override
+  String get achDescUnstoppable => 'سلسلة من 25 لعبة (كل منها 30 ثانية+)';
+
+  @override
+  String get achTitleDailyThree => 'اللاعب اليومي';
+
+  @override
+  String get achDescDailyThree => 'العب 3 أيام متتالية';
+
+  @override
+  String get achTitleWeekWarrior => 'محارب الأسبوع';
+
+  @override
+  String get achDescWeekWarrior => 'العب 7 أيام متتالية';
+
+  @override
+  String get achTitleVelocity => 'الانطلاقة';
+
+  @override
+  String get achDescVelocity => 'صِل إلى المستوى 15 داخل اللعبة في جولة واحدة';
+
+  @override
+  String get achTitleMachSpeed => 'سرعة ماخ';
+
+  @override
+  String get achDescMachSpeed => 'صِل إلى المستوى 20 داخل اللعبة في جولة واحدة';
+
+  @override
+  String get achTitleCosmicSnake => 'الثعبان الكوني';
+
+  @override
+  String get achDescCosmicSnake =>
+      'صِل إلى المستوى 25 داخل اللعبة في جولة واحدة';
+
+  @override
+  String get achTitleModeExplorer => 'مستكشف الأوضاع';
+
+  @override
+  String get achDescModeExplorer =>
+      'العب لعبة واحدة على الأقل في 3 أوضاع مختلفة';
+
+  @override
+  String get achTitleAllModePlayer => 'لاعب كل الأوضاع';
+
+  @override
+  String get achDescAllModePlayer =>
+      'العب لعبة واحدة على الأقل في كل وضع (8 أوضاع)';
+
+  @override
+  String get achTitleNightOwl => 'بومة الليل';
+
+  @override
+  String get achDescNightOwl => 'أنهِ لعبة بين منتصف الليل والخامسة فجرًا';
+
+  @override
+  String get achTitleEarlyBird => 'الطائر المبكر';
+
+  @override
+  String get achDescEarlyBird => 'أنهِ لعبة بين الخامسة والثامنة صباحًا';
+
+  @override
+  String get achTitleWeekendWarrior => 'محارب عطلة الأسبوع';
+
+  @override
+  String get achDescWeekendWarrior => 'أنهِ 10 ألعاب في عطلات نهاية الأسبوع';
 }

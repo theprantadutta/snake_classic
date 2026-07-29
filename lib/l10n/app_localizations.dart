@@ -6291,6 +6291,1320 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Level'**
   String get gbLevel;
+
+  /// No description provided for @rarityCommon.
+  ///
+  /// In en, this message translates to:
+  /// **'Common'**
+  String get rarityCommon;
+
+  /// No description provided for @rarityRare.
+  ///
+  /// In en, this message translates to:
+  /// **'Rare'**
+  String get rarityRare;
+
+  /// No description provided for @rarityEpic.
+  ///
+  /// In en, this message translates to:
+  /// **'Epic'**
+  String get rarityEpic;
+
+  /// No description provided for @rarityLegendary.
+  ///
+  /// In en, this message translates to:
+  /// **'Legendary'**
+  String get rarityLegendary;
+
+  /// No description provided for @rarityDiamond.
+  ///
+  /// In en, this message translates to:
+  /// **'Diamond'**
+  String get rarityDiamond;
+
+  /// No description provided for @achTitleFirstBite.
+  ///
+  /// In en, this message translates to:
+  /// **'First Bite'**
+  String get achTitleFirstBite;
+
+  /// No description provided for @achDescFirstBite.
+  ///
+  /// In en, this message translates to:
+  /// **'Score your first point'**
+  String get achDescFirstBite;
+
+  /// No description provided for @achTitleGettingStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting Started'**
+  String get achTitleGettingStarted;
+
+  /// No description provided for @achDescGettingStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 100 points'**
+  String get achDescGettingStarted;
+
+  /// No description provided for @achTitleHighScorer.
+  ///
+  /// In en, this message translates to:
+  /// **'High Scorer'**
+  String get achTitleHighScorer;
+
+  /// No description provided for @achDescHighScorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 500 points in a single game'**
+  String get achDescHighScorer;
+
+  /// No description provided for @achTitleMasterScorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Master Scorer'**
+  String get achTitleMasterScorer;
+
+  /// No description provided for @achDescMasterScorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 1000 points in a single game'**
+  String get achDescMasterScorer;
+
+  /// No description provided for @achTitleLegendaryScorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Legendary Scorer'**
+  String get achTitleLegendaryScorer;
+
+  /// No description provided for @achDescLegendaryScorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 2000 points in a single game'**
+  String get achDescLegendaryScorer;
+
+  /// No description provided for @achTitleFirstGame.
+  ///
+  /// In en, this message translates to:
+  /// **'First Game'**
+  String get achTitleFirstGame;
+
+  /// No description provided for @achDescFirstGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Play your first game'**
+  String get achDescFirstGame;
+
+  /// No description provided for @achTitleRegularPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Regular Player'**
+  String get achTitleRegularPlayer;
+
+  /// No description provided for @achDescRegularPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Play 10 games'**
+  String get achDescRegularPlayer;
+
+  /// No description provided for @achTitleDedicatedPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Dedicated Player'**
+  String get achTitleDedicatedPlayer;
+
+  /// No description provided for @achDescDedicatedPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Play 50 games'**
+  String get achDescDedicatedPlayer;
+
+  /// No description provided for @achTitleSnakeEnthusiast.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Enthusiast'**
+  String get achTitleSnakeEnthusiast;
+
+  /// No description provided for @achDescSnakeEnthusiast.
+  ///
+  /// In en, this message translates to:
+  /// **'Play 100 games'**
+  String get achDescSnakeEnthusiast;
+
+  /// No description provided for @achTitleSnakeAddict.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Addict'**
+  String get achTitleSnakeAddict;
+
+  /// No description provided for @achDescSnakeAddict.
+  ///
+  /// In en, this message translates to:
+  /// **'Play 500 games'**
+  String get achDescSnakeAddict;
+
+  /// No description provided for @achTitleSurvivor.
+  ///
+  /// In en, this message translates to:
+  /// **'Survivor'**
+  String get achTitleSurvivor;
+
+  /// No description provided for @achDescSurvivor.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive for 60 seconds'**
+  String get achDescSurvivor;
+
+  /// No description provided for @achTitleEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance'**
+  String get achTitleEndurance;
+
+  /// No description provided for @achDescEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive for 2 minutes'**
+  String get achDescEndurance;
+
+  /// No description provided for @achTitleMarathon.
+  ///
+  /// In en, this message translates to:
+  /// **'Marathon'**
+  String get achTitleMarathon;
+
+  /// No description provided for @achDescMarathon.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive for 5 minutes'**
+  String get achDescMarathon;
+
+  /// No description provided for @achTitleNoWalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Wall Avoider'**
+  String get achTitleNoWalls;
+
+  /// No description provided for @achDescNoWalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Play 5 games without hitting walls'**
+  String get achDescNoWalls;
+
+  /// No description provided for @achTitleSpeedster.
+  ///
+  /// In en, this message translates to:
+  /// **'Speedster'**
+  String get achTitleSpeedster;
+
+  /// No description provided for @achDescSpeedster.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach level 10 (max speed)'**
+  String get achDescSpeedster;
+
+  /// No description provided for @achTitlePerfectionist.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfectionist'**
+  String get achTitlePerfectionist;
+
+  /// No description provided for @achDescPerfectionist.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete a game without hitting yourself'**
+  String get achDescPerfectionist;
+
+  /// No description provided for @achTitleAllFoodTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'Gourmet'**
+  String get achTitleAllFoodTypes;
+
+  /// No description provided for @achDescAllFoodTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat all 3 types of food in a single game'**
+  String get achDescAllFoodTypes;
+
+  /// No description provided for @achTitleHalfGrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Half Grand'**
+  String get achTitleHalfGrand;
+
+  /// No description provided for @achDescHalfGrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 5,000 in a single game'**
+  String get achDescHalfGrand;
+
+  /// No description provided for @achTitleScoreSniper.
+  ///
+  /// In en, this message translates to:
+  /// **'Score Sniper'**
+  String get achTitleScoreSniper;
+
+  /// No description provided for @achDescScoreSniper.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 10,000 in a single game'**
+  String get achDescScoreSniper;
+
+  /// No description provided for @achTitleFiveDigitClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Five-Digit Club'**
+  String get achTitleFiveDigitClub;
+
+  /// No description provided for @achDescFiveDigitClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 25,000 in a single game'**
+  String get achDescFiveDigitClub;
+
+  /// No description provided for @achTitleScoreTycoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Score Tycoon'**
+  String get achTitleScoreTycoon;
+
+  /// No description provided for @achDescScoreTycoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 50,000 in a single game'**
+  String get achDescScoreTycoon;
+
+  /// No description provided for @achTitleScoreGod.
+  ///
+  /// In en, this message translates to:
+  /// **'Score God'**
+  String get achTitleScoreGod;
+
+  /// No description provided for @achDescScoreGod.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 100,000 in a single game'**
+  String get achDescScoreGod;
+
+  /// No description provided for @achTitlePointCollector.
+  ///
+  /// In en, this message translates to:
+  /// **'Point Collector'**
+  String get achTitlePointCollector;
+
+  /// No description provided for @achDescPointCollector.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulate 10,000 points lifetime'**
+  String get achDescPointCollector;
+
+  /// No description provided for @achTitlePointHoarder.
+  ///
+  /// In en, this message translates to:
+  /// **'Point Hoarder'**
+  String get achTitlePointHoarder;
+
+  /// No description provided for @achDescPointHoarder.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulate 100,000 points lifetime'**
+  String get achDescPointHoarder;
+
+  /// No description provided for @achTitleHalfMillionClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Half Million Club'**
+  String get achTitleHalfMillionClub;
+
+  /// No description provided for @achDescHalfMillionClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulate 500,000 points lifetime'**
+  String get achDescHalfMillionClub;
+
+  /// No description provided for @achTitlePointMillionaire.
+  ///
+  /// In en, this message translates to:
+  /// **'Point Millionaire'**
+  String get achTitlePointMillionaire;
+
+  /// No description provided for @achDescPointMillionaire.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulate 1,000,000 points lifetime'**
+  String get achDescPointMillionaire;
+
+  /// No description provided for @achTitleDecamillionaire.
+  ///
+  /// In en, this message translates to:
+  /// **'Decamillionaire'**
+  String get achTitleDecamillionaire;
+
+  /// No description provided for @achDescDecamillionaire.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulate 10,000,000 points lifetime'**
+  String get achDescDecamillionaire;
+
+  /// No description provided for @achTitleSnakeVeteran.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Veteran'**
+  String get achTitleSnakeVeteran;
+
+  /// No description provided for @achDescSnakeVeteran.
+  ///
+  /// In en, this message translates to:
+  /// **'Play 1,000 games'**
+  String get achDescSnakeVeteran;
+
+  /// No description provided for @achTitleSnakeLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Legend'**
+  String get achTitleSnakeLegend;
+
+  /// No description provided for @achDescSnakeLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Play 5,000 games'**
+  String get achDescSnakeLegend;
+
+  /// No description provided for @achTitleIronWill.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron Will'**
+  String get achTitleIronWill;
+
+  /// No description provided for @achDescIronWill.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive 10 minutes in a single game'**
+  String get achDescIronWill;
+
+  /// No description provided for @achTitleEternalSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Eternal Snake'**
+  String get achTitleEternalSnake;
+
+  /// No description provided for @achDescEternalSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive 20 minutes in a single game'**
+  String get achDescEternalSnake;
+
+  /// No description provided for @achTitleTimeLord.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Lord'**
+  String get achTitleTimeLord;
+
+  /// No description provided for @achDescTimeLord.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive 30 minutes in a single game'**
+  String get achDescTimeLord;
+
+  /// No description provided for @achTitleFirstBiteSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'First Bite Snack'**
+  String get achTitleFirstBiteSnack;
+
+  /// No description provided for @achDescFirstBiteSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 5 foods in one game'**
+  String get achDescFirstBiteSnack;
+
+  /// No description provided for @achTitleHungrySnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Hungry Snake'**
+  String get achTitleHungrySnake;
+
+  /// No description provided for @achDescHungrySnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 20 foods in one game'**
+  String get achDescHungrySnake;
+
+  /// No description provided for @achTitleFamished.
+  ///
+  /// In en, this message translates to:
+  /// **'Famished'**
+  String get achTitleFamished;
+
+  /// No description provided for @achDescFamished.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 50 foods in one game'**
+  String get achDescFamished;
+
+  /// No description provided for @achTitleRavenous.
+  ///
+  /// In en, this message translates to:
+  /// **'Ravenous'**
+  String get achTitleRavenous;
+
+  /// No description provided for @achDescRavenous.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 100 foods in one game'**
+  String get achDescRavenous;
+
+  /// No description provided for @achTitleInsatiable.
+  ///
+  /// In en, this message translates to:
+  /// **'Insatiable'**
+  String get achTitleInsatiable;
+
+  /// No description provided for @achDescInsatiable.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 200 foods in one game'**
+  String get achDescInsatiable;
+
+  /// No description provided for @achTitleBlackHoleStomach.
+  ///
+  /// In en, this message translates to:
+  /// **'Black Hole Stomach'**
+  String get achTitleBlackHoleStomach;
+
+  /// No description provided for @achDescBlackHoleStomach.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 500 foods in one game'**
+  String get achDescBlackHoleStomach;
+
+  /// No description provided for @achTitleFoodieApprentice.
+  ///
+  /// In en, this message translates to:
+  /// **'Foodie Apprentice'**
+  String get achTitleFoodieApprentice;
+
+  /// No description provided for @achDescFoodieApprentice.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 100 foods lifetime'**
+  String get achDescFoodieApprentice;
+
+  /// No description provided for @achTitleFoodiePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Foodie Pro'**
+  String get achTitleFoodiePro;
+
+  /// No description provided for @achDescFoodiePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 1,000 foods lifetime'**
+  String get achDescFoodiePro;
+
+  /// No description provided for @achTitleFoodieMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Foodie Master'**
+  String get achTitleFoodieMaster;
+
+  /// No description provided for @achDescFoodieMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 10,000 foods lifetime'**
+  String get achDescFoodieMaster;
+
+  /// No description provided for @achTitleFoodieGod.
+  ///
+  /// In en, this message translates to:
+  /// **'Foodie God'**
+  String get achTitleFoodieGod;
+
+  /// No description provided for @achDescFoodieGod.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 50,000 foods lifetime'**
+  String get achDescFoodieGod;
+
+  /// No description provided for @achTitleQuickPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Player'**
+  String get achTitleQuickPlayer;
+
+  /// No description provided for @achDescQuickPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Play for 1 hour total'**
+  String get achDescQuickPlayer;
+
+  /// No description provided for @achTitleEngagedPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Engaged Player'**
+  String get achTitleEngagedPlayer;
+
+  /// No description provided for @achDescEngagedPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Play for 10 hours total'**
+  String get achDescEngagedPlayer;
+
+  /// No description provided for @achTitleHardcorePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Hardcore Player'**
+  String get achTitleHardcorePlayer;
+
+  /// No description provided for @achDescHardcorePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Play for 50 hours total'**
+  String get achDescHardcorePlayer;
+
+  /// No description provided for @achTitleSnakeObsessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Obsessed'**
+  String get achTitleSnakeObsessed;
+
+  /// No description provided for @achDescSnakeObsessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Play for 100 hours total'**
+  String get achDescSnakeObsessed;
+
+  /// No description provided for @achTitleTouchGrass.
+  ///
+  /// In en, this message translates to:
+  /// **'Touch Grass'**
+  String get achTitleTouchGrass;
+
+  /// No description provided for @achDescTouchGrass.
+  ///
+  /// In en, this message translates to:
+  /// **'Play for 250 hours total — maybe step outside?'**
+  String get achDescTouchGrass;
+
+  /// No description provided for @achTitleLevel5.
+  ///
+  /// In en, this message translates to:
+  /// **'Apprentice'**
+  String get achTitleLevel5;
+
+  /// No description provided for @achDescLevel5.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Level 5'**
+  String get achDescLevel5;
+
+  /// No description provided for @achTitleLevel10.
+  ///
+  /// In en, this message translates to:
+  /// **'Journeyman'**
+  String get achTitleLevel10;
+
+  /// No description provided for @achDescLevel10.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Level 10'**
+  String get achDescLevel10;
+
+  /// No description provided for @achTitleLevel25.
+  ///
+  /// In en, this message translates to:
+  /// **'Expert'**
+  String get achTitleLevel25;
+
+  /// No description provided for @achDescLevel25.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Level 25'**
+  String get achDescLevel25;
+
+  /// No description provided for @achTitleLevel50.
+  ///
+  /// In en, this message translates to:
+  /// **'Master'**
+  String get achTitleLevel50;
+
+  /// No description provided for @achDescLevel50.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Level 50'**
+  String get achDescLevel50;
+
+  /// No description provided for @achTitleLevel100.
+  ///
+  /// In en, this message translates to:
+  /// **'Grandmaster'**
+  String get achTitleLevel100;
+
+  /// No description provided for @achDescLevel100.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Level 100'**
+  String get achDescLevel100;
+
+  /// No description provided for @achTitleClassicInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic Initiate'**
+  String get achTitleClassicInitiate;
+
+  /// No description provided for @achDescClassicInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish 10 Classic-mode games'**
+  String get achDescClassicInitiate;
+
+  /// No description provided for @achTitleClassicVeteran.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic Veteran'**
+  String get achTitleClassicVeteran;
+
+  /// No description provided for @achDescClassicVeteran.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish 100 Classic-mode games'**
+  String get achDescClassicVeteran;
+
+  /// No description provided for @achTitleClassic1000.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic Connoisseur'**
+  String get achTitleClassic1000;
+
+  /// No description provided for @achDescClassic1000.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 1,000 in Classic mode'**
+  String get achDescClassic1000;
+
+  /// No description provided for @achTitleClassic5000.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic Maestro'**
+  String get achTitleClassic5000;
+
+  /// No description provided for @achDescClassic5000.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 5,000 in Classic mode'**
+  String get achDescClassic5000;
+
+  /// No description provided for @achTitleZenInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Zen Initiate'**
+  String get achTitleZenInitiate;
+
+  /// No description provided for @achDescZenInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish 10 Zen games'**
+  String get achDescZenInitiate;
+
+  /// No description provided for @achTitleZenGarden.
+  ///
+  /// In en, this message translates to:
+  /// **'Zen Garden'**
+  String get achTitleZenGarden;
+
+  /// No description provided for @achDescZenGarden.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 500 in Zen mode'**
+  String get achDescZenGarden;
+
+  /// No description provided for @achTitleZenMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Zen Master'**
+  String get achTitleZenMaster;
+
+  /// No description provided for @achDescZenMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 5,000 in Zen mode'**
+  String get achDescZenMaster;
+
+  /// No description provided for @achTitleSpeedInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Need For Speed'**
+  String get achTitleSpeedInitiate;
+
+  /// No description provided for @achDescSpeedInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish 10 Speed Challenge games'**
+  String get achDescSpeedInitiate;
+
+  /// No description provided for @achTitleSpeedrunner.
+  ///
+  /// In en, this message translates to:
+  /// **'Speedrunner'**
+  String get achTitleSpeedrunner;
+
+  /// No description provided for @achDescSpeedrunner.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 500 in Speed Challenge'**
+  String get achDescSpeedrunner;
+
+  /// No description provided for @achTitleLightning.
+  ///
+  /// In en, this message translates to:
+  /// **'Lightning'**
+  String get achTitleLightning;
+
+  /// No description provided for @achDescLightning.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 2,000 in Speed Challenge'**
+  String get achDescLightning;
+
+  /// No description provided for @achTitleMultifoodInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Foodscape'**
+  String get achTitleMultifoodInitiate;
+
+  /// No description provided for @achDescMultifoodInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish 10 MultiFood games'**
+  String get achDescMultifoodInitiate;
+
+  /// No description provided for @achTitleBuffet.
+  ///
+  /// In en, this message translates to:
+  /// **'Buffet'**
+  String get achTitleBuffet;
+
+  /// No description provided for @achDescBuffet.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 1,000 in MultiFood'**
+  String get achDescBuffet;
+
+  /// No description provided for @achTitleSmorgasbord.
+  ///
+  /// In en, this message translates to:
+  /// **'Smorgasbord'**
+  String get achTitleSmorgasbord;
+
+  /// No description provided for @achDescSmorgasbord.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 5,000 in MultiFood'**
+  String get achDescSmorgasbord;
+
+  /// No description provided for @achTitleSurvivalInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Survival Initiate'**
+  String get achTitleSurvivalInitiate;
+
+  /// No description provided for @achDescSurvivalInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish 10 Survival games'**
+  String get achDescSurvivalInitiate;
+
+  /// No description provided for @achTitleSurvivalPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Survival Pro'**
+  String get achTitleSurvivalPro;
+
+  /// No description provided for @achDescSurvivalPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive 5 minutes in Survival mode'**
+  String get achDescSurvivalPro;
+
+  /// No description provided for @achTitleLastSnakeStanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Snake Standing'**
+  String get achTitleLastSnakeStanding;
+
+  /// No description provided for @achDescLastSnakeStanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 2,500 in Survival'**
+  String get achDescLastSnakeStanding;
+
+  /// No description provided for @achTitleTimeattackInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Attacker'**
+  String get achTitleTimeattackInitiate;
+
+  /// No description provided for @achDescTimeattackInitiate.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish 10 TimeAttack games'**
+  String get achDescTimeattackInitiate;
+
+  /// No description provided for @achTitleBeatTheClock.
+  ///
+  /// In en, this message translates to:
+  /// **'Beat the Clock'**
+  String get achTitleBeatTheClock;
+
+  /// No description provided for @achDescBeatTheClock.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive the full 3-minute TimeAttack'**
+  String get achDescBeatTheClock;
+
+  /// No description provided for @achTitleTimeattackMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'TimeAttack Master'**
+  String get achTitleTimeattackMaster;
+
+  /// No description provided for @achDescTimeattackMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 3,000 in TimeAttack'**
+  String get achDescTimeattackMaster;
+
+  /// No description provided for @achTitleComboStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Combo Starter'**
+  String get achTitleComboStarter;
+
+  /// No description provided for @achDescComboStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit a 5x combo in a single game'**
+  String get achDescComboStarter;
+
+  /// No description provided for @achTitleComboMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Combo Master'**
+  String get achTitleComboMaster;
+
+  /// No description provided for @achDescComboMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit a 10x combo in a single game'**
+  String get achDescComboMaster;
+
+  /// No description provided for @achTitleComboPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Combo Pro'**
+  String get achTitleComboPro;
+
+  /// No description provided for @achDescComboPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit a 20x combo in a single game'**
+  String get achDescComboPro;
+
+  /// No description provided for @achTitleComboGod.
+  ///
+  /// In en, this message translates to:
+  /// **'Combo God'**
+  String get achTitleComboGod;
+
+  /// No description provided for @achDescComboGod.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit a 50x combo in a single game'**
+  String get achDescComboGod;
+
+  /// No description provided for @achTitleComboLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Combo Legend'**
+  String get achTitleComboLegend;
+
+  /// No description provided for @achDescComboLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit a 100x combo in a single game'**
+  String get achDescComboLegend;
+
+  /// No description provided for @achTitleGrowingSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Growing Snake'**
+  String get achTitleGrowingSnake;
+
+  /// No description provided for @achDescGrowingSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Grow snake to length 20'**
+  String get achDescGrowingSnake;
+
+  /// No description provided for @achTitleBigSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Big Snake'**
+  String get achTitleBigSnake;
+
+  /// No description provided for @achDescBigSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Grow snake to length 50'**
+  String get achDescBigSnake;
+
+  /// No description provided for @achTitleHugeSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Huge Snake'**
+  String get achTitleHugeSnake;
+
+  /// No description provided for @achDescHugeSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Grow snake to length 100'**
+  String get achDescHugeSnake;
+
+  /// No description provided for @achTitleMassiveSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Massive Snake'**
+  String get achTitleMassiveSnake;
+
+  /// No description provided for @achDescMassiveSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Grow snake to length 200'**
+  String get achDescMassiveSnake;
+
+  /// No description provided for @achTitleAnaconda.
+  ///
+  /// In en, this message translates to:
+  /// **'Anaconda'**
+  String get achTitleAnaconda;
+
+  /// No description provided for @achDescAnaconda.
+  ///
+  /// In en, this message translates to:
+  /// **'Grow snake to length 500'**
+  String get achDescAnaconda;
+
+  /// No description provided for @achTitleFirstPowerUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Up!'**
+  String get achTitleFirstPowerUp;
+
+  /// No description provided for @achDescFirstPowerUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect your first power-up'**
+  String get achDescFirstPowerUp;
+
+  /// No description provided for @achTitlePowerPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Player'**
+  String get achTitlePowerPlayer;
+
+  /// No description provided for @achDescPowerPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect 10 power-ups lifetime'**
+  String get achDescPowerPlayer;
+
+  /// No description provided for @achTitlePowerHungry.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Hungry'**
+  String get achTitlePowerHungry;
+
+  /// No description provided for @achDescPowerHungry.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect 50 power-ups lifetime'**
+  String get achDescPowerHungry;
+
+  /// No description provided for @achTitlePowerAddict.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Addict'**
+  String get achTitlePowerAddict;
+
+  /// No description provided for @achDescPowerAddict.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect 200 power-ups lifetime'**
+  String get achDescPowerAddict;
+
+  /// No description provided for @achTitlePowerMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Master'**
+  String get achTitlePowerMaster;
+
+  /// No description provided for @achDescPowerMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect 1,000 power-ups lifetime'**
+  String get achDescPowerMaster;
+
+  /// No description provided for @achTitleVarietyPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Variety Pack'**
+  String get achTitleVarietyPack;
+
+  /// No description provided for @achDescVarietyPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect each of the 4 power-up types at least once'**
+  String get achDescVarietyPack;
+
+  /// No description provided for @achTitleSpeedDemon.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Demon'**
+  String get achTitleSpeedDemon;
+
+  /// No description provided for @achDescSpeedDemon.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect 25 Speed Boost power-ups'**
+  String get achDescSpeedDemon;
+
+  /// No description provided for @achTitleImmortalStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Immortal Streak'**
+  String get achTitleImmortalStreak;
+
+  /// No description provided for @achDescImmortalStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect 25 Invincibility power-ups'**
+  String get achDescImmortalStreak;
+
+  /// No description provided for @achTitleSpecialDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Special Diet'**
+  String get achTitleSpecialDiet;
+
+  /// No description provided for @achDescSpecialDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 50 special foods lifetime'**
+  String get achDescSpecialDiet;
+
+  /// No description provided for @achTitleBonusHunter.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus Hunter'**
+  String get achTitleBonusHunter;
+
+  /// No description provided for @achDescBonusHunter.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat 100 bonus foods lifetime'**
+  String get achDescBonusHunter;
+
+  /// No description provided for @achTitleUntouchable5.
+  ///
+  /// In en, this message translates to:
+  /// **'Untouchable'**
+  String get achTitleUntouchable5;
+
+  /// No description provided for @achDescUntouchable5.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 5 perfect games (no hits, 30s+)'**
+  String get achDescUntouchable5;
+
+  /// No description provided for @achTitleUntouchable20.
+  ///
+  /// In en, this message translates to:
+  /// **'Flawless'**
+  String get achTitleUntouchable20;
+
+  /// No description provided for @achDescUntouchable20.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 20 perfect games'**
+  String get achDescUntouchable20;
+
+  /// No description provided for @achTitleUntouchable50.
+  ///
+  /// In en, this message translates to:
+  /// **'Untouchable Legend'**
+  String get achTitleUntouchable50;
+
+  /// No description provided for @achDescUntouchable50.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete 50 perfect games'**
+  String get achDescUntouchable50;
+
+  /// No description provided for @achTitleHotStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot Streak'**
+  String get achTitleHotStreak;
+
+  /// No description provided for @achDescHotStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'5 consecutive games scoring >0 and lasting 30s+'**
+  String get achDescHotStreak;
+
+  /// No description provided for @achTitleOnFire.
+  ///
+  /// In en, this message translates to:
+  /// **'On Fire'**
+  String get achTitleOnFire;
+
+  /// No description provided for @achDescOnFire.
+  ///
+  /// In en, this message translates to:
+  /// **'10-game streak (30s+ each)'**
+  String get achDescOnFire;
+
+  /// No description provided for @achTitleUnstoppable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unstoppable'**
+  String get achTitleUnstoppable;
+
+  /// No description provided for @achDescUnstoppable.
+  ///
+  /// In en, this message translates to:
+  /// **'25-game streak (30s+ each)'**
+  String get achDescUnstoppable;
+
+  /// No description provided for @achTitleDailyThree.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Player'**
+  String get achTitleDailyThree;
+
+  /// No description provided for @achDescDailyThree.
+  ///
+  /// In en, this message translates to:
+  /// **'Play on 3 consecutive days'**
+  String get achDescDailyThree;
+
+  /// No description provided for @achTitleWeekWarrior.
+  ///
+  /// In en, this message translates to:
+  /// **'Week Warrior'**
+  String get achTitleWeekWarrior;
+
+  /// No description provided for @achDescWeekWarrior.
+  ///
+  /// In en, this message translates to:
+  /// **'Play on 7 consecutive days'**
+  String get achDescWeekWarrior;
+
+  /// No description provided for @achTitleVelocity.
+  ///
+  /// In en, this message translates to:
+  /// **'Velocity'**
+  String get achTitleVelocity;
+
+  /// No description provided for @achDescVelocity.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach in-game level 15 in one game'**
+  String get achDescVelocity;
+
+  /// No description provided for @achTitleMachSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mach Speed'**
+  String get achTitleMachSpeed;
+
+  /// No description provided for @achDescMachSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach in-game level 20 in one game'**
+  String get achDescMachSpeed;
+
+  /// No description provided for @achTitleCosmicSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic Snake'**
+  String get achTitleCosmicSnake;
+
+  /// No description provided for @achDescCosmicSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach in-game level 25 in one game'**
+  String get achDescCosmicSnake;
+
+  /// No description provided for @achTitleModeExplorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode Explorer'**
+  String get achTitleModeExplorer;
+
+  /// No description provided for @achDescModeExplorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Play at least one game in 3 distinct modes'**
+  String get achDescModeExplorer;
+
+  /// No description provided for @achTitleAllModePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'All-Mode Player'**
+  String get achTitleAllModePlayer;
+
+  /// No description provided for @achDescAllModePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Play at least one game in every mode (8 modes)'**
+  String get achDescAllModePlayer;
+
+  /// No description provided for @achTitleNightOwl.
+  ///
+  /// In en, this message translates to:
+  /// **'Night Owl'**
+  String get achTitleNightOwl;
+
+  /// No description provided for @achDescNightOwl.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish a game between midnight and 5 AM'**
+  String get achDescNightOwl;
+
+  /// No description provided for @achTitleEarlyBird.
+  ///
+  /// In en, this message translates to:
+  /// **'Early Bird'**
+  String get achTitleEarlyBird;
+
+  /// No description provided for @achDescEarlyBird.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish a game between 5 and 8 AM'**
+  String get achDescEarlyBird;
+
+  /// No description provided for @achTitleWeekendWarrior.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekend Warrior'**
+  String get achTitleWeekendWarrior;
+
+  /// No description provided for @achDescWeekendWarrior.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish 10 games on weekends'**
+  String get achDescWeekendWarrior;
 }
 
 class _AppLocalizationsDelegate

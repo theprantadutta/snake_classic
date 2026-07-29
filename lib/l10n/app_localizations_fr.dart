@@ -3567,4 +3567,682 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get gbLevel => 'Niveau';
+
+  @override
+  String get rarityCommon => 'Commun';
+
+  @override
+  String get rarityRare => 'Rare';
+
+  @override
+  String get rarityEpic => 'Épique';
+
+  @override
+  String get rarityLegendary => 'Légendaire';
+
+  @override
+  String get rarityDiamond => 'Diamant';
+
+  @override
+  String get achTitleFirstBite => 'Première Bouchée';
+
+  @override
+  String get achDescFirstBite => 'Marquez votre premier point';
+
+  @override
+  String get achTitleGettingStarted => 'Premiers Pas';
+
+  @override
+  String get achDescGettingStarted => 'Marquez 100 points';
+
+  @override
+  String get achTitleHighScorer => 'Bon Marqueur';
+
+  @override
+  String get achDescHighScorer => 'Marquez 500 points en une seule partie';
+
+  @override
+  String get achTitleMasterScorer => 'Maître Marqueur';
+
+  @override
+  String get achDescMasterScorer => 'Marquez 1000 points en une seule partie';
+
+  @override
+  String get achTitleLegendaryScorer => 'Marqueur Légendaire';
+
+  @override
+  String get achDescLegendaryScorer =>
+      'Marquez 2000 points en une seule partie';
+
+  @override
+  String get achTitleFirstGame => 'Première Partie';
+
+  @override
+  String get achDescFirstGame => 'Jouez votre première partie';
+
+  @override
+  String get achTitleRegularPlayer => 'Joueur Régulier';
+
+  @override
+  String get achDescRegularPlayer => 'Jouez 10 parties';
+
+  @override
+  String get achTitleDedicatedPlayer => 'Joueur Dévoué';
+
+  @override
+  String get achDescDedicatedPlayer => 'Jouez 50 parties';
+
+  @override
+  String get achTitleSnakeEnthusiast => 'Passionné du Serpent';
+
+  @override
+  String get achDescSnakeEnthusiast => 'Jouez 100 parties';
+
+  @override
+  String get achTitleSnakeAddict => 'Accro du Serpent';
+
+  @override
+  String get achDescSnakeAddict => 'Jouez 500 parties';
+
+  @override
+  String get achTitleSurvivor => 'Survivant';
+
+  @override
+  String get achDescSurvivor => 'Survivez 60 secondes';
+
+  @override
+  String get achTitleEndurance => 'Endurance';
+
+  @override
+  String get achDescEndurance => 'Survivez 2 minutes';
+
+  @override
+  String get achTitleMarathon => 'Marathon';
+
+  @override
+  String get achDescMarathon => 'Survivez 5 minutes';
+
+  @override
+  String get achTitleNoWalls => 'Éviteur de Murs';
+
+  @override
+  String get achDescNoWalls => 'Jouez 5 parties sans toucher les murs';
+
+  @override
+  String get achTitleSpeedster => 'Bolide';
+
+  @override
+  String get achDescSpeedster => 'Atteignez le niveau 10 (vitesse max)';
+
+  @override
+  String get achTitlePerfectionist => 'Perfectionniste';
+
+  @override
+  String get achDescPerfectionist => 'Terminez une partie sans vous toucher';
+
+  @override
+  String get achTitleAllFoodTypes => 'Gourmet';
+
+  @override
+  String get achDescAllFoodTypes =>
+      'Mangez les 3 types de nourriture en une seule partie';
+
+  @override
+  String get achTitleHalfGrand => 'Demi-Millier';
+
+  @override
+  String get achDescHalfGrand => 'Marquez 5 000 en une seule partie';
+
+  @override
+  String get achTitleScoreSniper => 'Sniper du Score';
+
+  @override
+  String get achDescScoreSniper => 'Marquez 10 000 en une seule partie';
+
+  @override
+  String get achTitleFiveDigitClub => 'Club des Cinq Chiffres';
+
+  @override
+  String get achDescFiveDigitClub => 'Marquez 25 000 en une seule partie';
+
+  @override
+  String get achTitleScoreTycoon => 'Magnat du Score';
+
+  @override
+  String get achDescScoreTycoon => 'Marquez 50 000 en une seule partie';
+
+  @override
+  String get achTitleScoreGod => 'Dieu du Score';
+
+  @override
+  String get achDescScoreGod => 'Marquez 100 000 en une seule partie';
+
+  @override
+  String get achTitlePointCollector => 'Collectionneur de Points';
+
+  @override
+  String get achDescPointCollector => 'Cumulez 10 000 points au total';
+
+  @override
+  String get achTitlePointHoarder => 'Amasseur de Points';
+
+  @override
+  String get achDescPointHoarder => 'Cumulez 100 000 points au total';
+
+  @override
+  String get achTitleHalfMillionClub => 'Club du Demi-Million';
+
+  @override
+  String get achDescHalfMillionClub => 'Cumulez 500 000 points au total';
+
+  @override
+  String get achTitlePointMillionaire => 'Millionnaire des Points';
+
+  @override
+  String get achDescPointMillionaire => 'Cumulez 1 000 000 de points au total';
+
+  @override
+  String get achTitleDecamillionaire => 'Décamillionnaire';
+
+  @override
+  String get achDescDecamillionaire => 'Cumulez 10 000 000 de points au total';
+
+  @override
+  String get achTitleSnakeVeteran => 'Vétéran du Serpent';
+
+  @override
+  String get achDescSnakeVeteran => 'Jouez 1 000 parties';
+
+  @override
+  String get achTitleSnakeLegend => 'Légende du Serpent';
+
+  @override
+  String get achDescSnakeLegend => 'Jouez 5 000 parties';
+
+  @override
+  String get achTitleIronWill => 'Volonté de Fer';
+
+  @override
+  String get achDescIronWill => 'Survivez 10 minutes en une seule partie';
+
+  @override
+  String get achTitleEternalSnake => 'Serpent Éternel';
+
+  @override
+  String get achDescEternalSnake => 'Survivez 20 minutes en une seule partie';
+
+  @override
+  String get achTitleTimeLord => 'Seigneur du Temps';
+
+  @override
+  String get achDescTimeLord => 'Survivez 30 minutes en une seule partie';
+
+  @override
+  String get achTitleFirstBiteSnack => 'Premier En-cas';
+
+  @override
+  String get achDescFirstBiteSnack => 'Mangez 5 aliments en une partie';
+
+  @override
+  String get achTitleHungrySnake => 'Serpent Affamé';
+
+  @override
+  String get achDescHungrySnake => 'Mangez 20 aliments en une partie';
+
+  @override
+  String get achTitleFamished => 'Affamé';
+
+  @override
+  String get achDescFamished => 'Mangez 50 aliments en une partie';
+
+  @override
+  String get achTitleRavenous => 'Vorace';
+
+  @override
+  String get achDescRavenous => 'Mangez 100 aliments en une partie';
+
+  @override
+  String get achTitleInsatiable => 'Insatiable';
+
+  @override
+  String get achDescInsatiable => 'Mangez 200 aliments en une partie';
+
+  @override
+  String get achTitleBlackHoleStomach => 'Estomac Trou Noir';
+
+  @override
+  String get achDescBlackHoleStomach => 'Mangez 500 aliments en une partie';
+
+  @override
+  String get achTitleFoodieApprentice => 'Apprenti Gourmand';
+
+  @override
+  String get achDescFoodieApprentice => 'Mangez 100 aliments au total';
+
+  @override
+  String get achTitleFoodiePro => 'Gourmand Pro';
+
+  @override
+  String get achDescFoodiePro => 'Mangez 1 000 aliments au total';
+
+  @override
+  String get achTitleFoodieMaster => 'Maître Gourmand';
+
+  @override
+  String get achDescFoodieMaster => 'Mangez 10 000 aliments au total';
+
+  @override
+  String get achTitleFoodieGod => 'Dieu Gourmand';
+
+  @override
+  String get achDescFoodieGod => 'Mangez 50 000 aliments au total';
+
+  @override
+  String get achTitleQuickPlayer => 'Joueur Éclair';
+
+  @override
+  String get achDescQuickPlayer => 'Jouez 1 heure au total';
+
+  @override
+  String get achTitleEngagedPlayer => 'Joueur Engagé';
+
+  @override
+  String get achDescEngagedPlayer => 'Jouez 10 heures au total';
+
+  @override
+  String get achTitleHardcorePlayer => 'Joueur Hardcore';
+
+  @override
+  String get achDescHardcorePlayer => 'Jouez 50 heures au total';
+
+  @override
+  String get achTitleSnakeObsessed => 'Obsédé du Serpent';
+
+  @override
+  String get achDescSnakeObsessed => 'Jouez 100 heures au total';
+
+  @override
+  String get achTitleTouchGrass => 'Prendre l\'Air';
+
+  @override
+  String get achDescTouchGrass =>
+      'Jouez 250 heures au total — et si vous sortiez un peu ?';
+
+  @override
+  String get achTitleLevel5 => 'Apprenti';
+
+  @override
+  String get achDescLevel5 => 'Atteignez le Niveau 5';
+
+  @override
+  String get achTitleLevel10 => 'Compagnon';
+
+  @override
+  String get achDescLevel10 => 'Atteignez le Niveau 10';
+
+  @override
+  String get achTitleLevel25 => 'Expert';
+
+  @override
+  String get achDescLevel25 => 'Atteignez le Niveau 25';
+
+  @override
+  String get achTitleLevel50 => 'Maître';
+
+  @override
+  String get achDescLevel50 => 'Atteignez le Niveau 50';
+
+  @override
+  String get achTitleLevel100 => 'Grand Maître';
+
+  @override
+  String get achDescLevel100 => 'Atteignez le Niveau 100';
+
+  @override
+  String get achTitleClassicInitiate => 'Initié du Classique';
+
+  @override
+  String get achDescClassicInitiate => 'Terminez 10 parties en mode Classique';
+
+  @override
+  String get achTitleClassicVeteran => 'Vétéran du Classique';
+
+  @override
+  String get achDescClassicVeteran => 'Terminez 100 parties en mode Classique';
+
+  @override
+  String get achTitleClassic1000 => 'Connaisseur du Classique';
+
+  @override
+  String get achDescClassic1000 => 'Marquez 1 000 en mode Classique';
+
+  @override
+  String get achTitleClassic5000 => 'Maestro du Classique';
+
+  @override
+  String get achDescClassic5000 => 'Marquez 5 000 en mode Classique';
+
+  @override
+  String get achTitleZenInitiate => 'Initié Zen';
+
+  @override
+  String get achDescZenInitiate => 'Terminez 10 parties Zen';
+
+  @override
+  String get achTitleZenGarden => 'Jardin Zen';
+
+  @override
+  String get achDescZenGarden => 'Marquez 500 en mode Zen';
+
+  @override
+  String get achTitleZenMaster => 'Maître Zen';
+
+  @override
+  String get achDescZenMaster => 'Marquez 5 000 en mode Zen';
+
+  @override
+  String get achTitleSpeedInitiate => 'Soif de Vitesse';
+
+  @override
+  String get achDescSpeedInitiate => 'Terminez 10 parties de Défi Vitesse';
+
+  @override
+  String get achTitleSpeedrunner => 'Speedrunner';
+
+  @override
+  String get achDescSpeedrunner => 'Marquez 500 en Défi Vitesse';
+
+  @override
+  String get achTitleLightning => 'Éclair';
+
+  @override
+  String get achDescLightning => 'Marquez 2 000 en Défi Vitesse';
+
+  @override
+  String get achTitleMultifoodInitiate => 'Paysage Gourmand';
+
+  @override
+  String get achDescMultifoodInitiate => 'Terminez 10 parties MultiNourriture';
+
+  @override
+  String get achTitleBuffet => 'Buffet';
+
+  @override
+  String get achDescBuffet => 'Marquez 1 000 en MultiNourriture';
+
+  @override
+  String get achTitleSmorgasbord => 'Festin';
+
+  @override
+  String get achDescSmorgasbord => 'Marquez 5 000 en MultiNourriture';
+
+  @override
+  String get achTitleSurvivalInitiate => 'Initié de la Survie';
+
+  @override
+  String get achDescSurvivalInitiate => 'Terminez 10 parties de Survie';
+
+  @override
+  String get achTitleSurvivalPro => 'Pro de la Survie';
+
+  @override
+  String get achDescSurvivalPro => 'Survivez 5 minutes en mode Survie';
+
+  @override
+  String get achTitleLastSnakeStanding => 'Dernier Serpent Debout';
+
+  @override
+  String get achDescLastSnakeStanding => 'Marquez 2 500 en Survie';
+
+  @override
+  String get achTitleTimeattackInitiate => 'Attaquant du Chrono';
+
+  @override
+  String get achDescTimeattackInitiate =>
+      'Terminez 10 parties Contre-la-Montre';
+
+  @override
+  String get achTitleBeatTheClock => 'Battez le Chrono';
+
+  @override
+  String get achDescBeatTheClock =>
+      'Survivez aux 3 minutes complètes du Contre-la-Montre';
+
+  @override
+  String get achTitleTimeattackMaster => 'Maître du Contre-la-Montre';
+
+  @override
+  String get achDescTimeattackMaster => 'Marquez 3 000 en Contre-la-Montre';
+
+  @override
+  String get achTitleComboStarter => 'Débutant des Combos';
+
+  @override
+  String get achDescComboStarter =>
+      'Réussissez un combo 5x en une seule partie';
+
+  @override
+  String get achTitleComboMaster => 'Maître des Combos';
+
+  @override
+  String get achDescComboMaster =>
+      'Réussissez un combo 10x en une seule partie';
+
+  @override
+  String get achTitleComboPro => 'Pro des Combos';
+
+  @override
+  String get achDescComboPro => 'Réussissez un combo 20x en une seule partie';
+
+  @override
+  String get achTitleComboGod => 'Dieu des Combos';
+
+  @override
+  String get achDescComboGod => 'Réussissez un combo 50x en une seule partie';
+
+  @override
+  String get achTitleComboLegend => 'Légende des Combos';
+
+  @override
+  String get achDescComboLegend =>
+      'Réussissez un combo 100x en une seule partie';
+
+  @override
+  String get achTitleGrowingSnake => 'Serpent en Croissance';
+
+  @override
+  String get achDescGrowingSnake =>
+      'Faites grandir le serpent jusqu\'à 20 de longueur';
+
+  @override
+  String get achTitleBigSnake => 'Grand Serpent';
+
+  @override
+  String get achDescBigSnake =>
+      'Faites grandir le serpent jusqu\'à 50 de longueur';
+
+  @override
+  String get achTitleHugeSnake => 'Serpent Géant';
+
+  @override
+  String get achDescHugeSnake =>
+      'Faites grandir le serpent jusqu\'à 100 de longueur';
+
+  @override
+  String get achTitleMassiveSnake => 'Serpent Colossal';
+
+  @override
+  String get achDescMassiveSnake =>
+      'Faites grandir le serpent jusqu\'à 200 de longueur';
+
+  @override
+  String get achTitleAnaconda => 'Anaconda';
+
+  @override
+  String get achDescAnaconda =>
+      'Faites grandir le serpent jusqu\'à 500 de longueur';
+
+  @override
+  String get achTitleFirstPowerUp => 'Power-Up !';
+
+  @override
+  String get achDescFirstPowerUp => 'Ramassez votre premier power-up';
+
+  @override
+  String get achTitlePowerPlayer => 'Joueur Puissant';
+
+  @override
+  String get achDescPowerPlayer => 'Ramassez 10 power-ups au total';
+
+  @override
+  String get achTitlePowerHungry => 'Assoiffé de Puissance';
+
+  @override
+  String get achDescPowerHungry => 'Ramassez 50 power-ups au total';
+
+  @override
+  String get achTitlePowerAddict => 'Accro à la Puissance';
+
+  @override
+  String get achDescPowerAddict => 'Ramassez 200 power-ups au total';
+
+  @override
+  String get achTitlePowerMaster => 'Maître de la Puissance';
+
+  @override
+  String get achDescPowerMaster => 'Ramassez 1 000 power-ups au total';
+
+  @override
+  String get achTitleVarietyPack => 'Pack Varié';
+
+  @override
+  String get achDescVarietyPack =>
+      'Ramassez chacun des 4 types de power-up au moins une fois';
+
+  @override
+  String get achTitleSpeedDemon => 'Démon de la Vitesse';
+
+  @override
+  String get achDescSpeedDemon => 'Ramassez 25 power-ups Accélération';
+
+  @override
+  String get achTitleImmortalStreak => 'Série Immortelle';
+
+  @override
+  String get achDescImmortalStreak => 'Ramassez 25 power-ups Invincibilité';
+
+  @override
+  String get achTitleSpecialDiet => 'Régime Spécial';
+
+  @override
+  String get achDescSpecialDiet => 'Mangez 50 aliments spéciaux au total';
+
+  @override
+  String get achTitleBonusHunter => 'Chasseur de Bonus';
+
+  @override
+  String get achDescBonusHunter => 'Mangez 100 aliments bonus au total';
+
+  @override
+  String get achTitleUntouchable5 => 'Intouchable';
+
+  @override
+  String get achDescUntouchable5 =>
+      'Réussissez 5 parties parfaites (aucun choc, 30 s+)';
+
+  @override
+  String get achTitleUntouchable20 => 'Impeccable';
+
+  @override
+  String get achDescUntouchable20 => 'Réussissez 20 parties parfaites';
+
+  @override
+  String get achTitleUntouchable50 => 'Légende Intouchable';
+
+  @override
+  String get achDescUntouchable50 => 'Réussissez 50 parties parfaites';
+
+  @override
+  String get achTitleHotStreak => 'Série Chaude';
+
+  @override
+  String get achDescHotStreak =>
+      '5 parties d\'affilée avec score >0 et durée 30 s+';
+
+  @override
+  String get achTitleOnFire => 'En Feu';
+
+  @override
+  String get achDescOnFire => 'Série de 10 parties (30 s+ chacune)';
+
+  @override
+  String get achTitleUnstoppable => 'Inarrêtable';
+
+  @override
+  String get achDescUnstoppable => 'Série de 25 parties (30 s+ chacune)';
+
+  @override
+  String get achTitleDailyThree => 'Joueur Quotidien';
+
+  @override
+  String get achDescDailyThree => 'Jouez 3 jours consécutifs';
+
+  @override
+  String get achTitleWeekWarrior => 'Guerrier de la Semaine';
+
+  @override
+  String get achDescWeekWarrior => 'Jouez 7 jours consécutifs';
+
+  @override
+  String get achTitleVelocity => 'Vélocité';
+
+  @override
+  String get achDescVelocity =>
+      'Atteignez le niveau 15 en jeu dans une même partie';
+
+  @override
+  String get achTitleMachSpeed => 'Vitesse Mach';
+
+  @override
+  String get achDescMachSpeed =>
+      'Atteignez le niveau 20 en jeu dans une même partie';
+
+  @override
+  String get achTitleCosmicSnake => 'Serpent Cosmique';
+
+  @override
+  String get achDescCosmicSnake =>
+      'Atteignez le niveau 25 en jeu dans une même partie';
+
+  @override
+  String get achTitleModeExplorer => 'Explorateur de Modes';
+
+  @override
+  String get achDescModeExplorer =>
+      'Jouez au moins une partie dans 3 modes différents';
+
+  @override
+  String get achTitleAllModePlayer => 'Joueur Tous Modes';
+
+  @override
+  String get achDescAllModePlayer =>
+      'Jouez au moins une partie dans chaque mode (8 modes)';
+
+  @override
+  String get achTitleNightOwl => 'Oiseau de Nuit';
+
+  @override
+  String get achDescNightOwl => 'Terminez une partie entre minuit et 5 h';
+
+  @override
+  String get achTitleEarlyBird => 'Lève-Tôt';
+
+  @override
+  String get achDescEarlyBird => 'Terminez une partie entre 5 h et 8 h';
+
+  @override
+  String get achTitleWeekendWarrior => 'Guerrier du Week-end';
+
+  @override
+  String get achDescWeekendWarrior => 'Terminez 10 parties le week-end';
 }

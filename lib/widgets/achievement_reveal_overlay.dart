@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:snake_classic/l10n/achievement_l10n.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/services/audio_service.dart';
 
@@ -338,7 +340,7 @@ class _RevealCardState extends State<_RevealCard>
                         .fadeIn(duration: 400.ms, delay: 350.ms),
                     const SizedBox(height: 14),
                     Text(
-                      achievement.title,
+                      achievement.localizedTitle(AppLocalizations.of(context)!),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
@@ -366,7 +368,8 @@ class _RevealCardState extends State<_RevealCard>
                         .fadeIn(duration: 450.ms, delay: 500.ms),
                     const SizedBox(height: 10),
                     Text(
-                      achievement.description,
+                      achievement.localizedDescription(
+                          AppLocalizations.of(context)!),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.78),
@@ -606,7 +609,9 @@ class _RaysAndMedallion extends StatelessWidget {
                 ],
               ),
               child: Text(
-                achievement.rarityName.toUpperCase(),
+                achievement
+                    .localizedRarityName(AppLocalizations.of(context)!)
+                    .toUpperCase(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 11,

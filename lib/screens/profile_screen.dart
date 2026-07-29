@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -1195,22 +1196,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String _getRarityDisplayName(AchievementRarity rarity) {
-    switch (rarity) {
-      case AchievementRarity.common:
-        return 'Common';
-      case AchievementRarity.rare:
-        return 'Rare';
-      case AchievementRarity.epic:
-        return 'Epic';
-      case AchievementRarity.legendary:
-        return 'Legendary';
-      case AchievementRarity.diamond:
-        return 'Diamond';
-    }
-  }
-
   Widget _buildAchievementCard(Achievement achievement, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final rarityColor = _getRarityColor(achievement.rarity);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1241,7 +1228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  achievement.title,
+                  achievement.localizedTitle(l10n),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1250,7 +1237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  achievement.description,
+                  achievement.localizedDescription(l10n),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.7),
@@ -1266,7 +1253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              _getRarityDisplayName(achievement.rarity),
+              achievement.localizedRarityName(l10n),
               style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

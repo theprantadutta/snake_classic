@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
@@ -1510,7 +1511,8 @@ class _AchievementTile extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        achievement.title,
+                        achievement.localizedTitle(
+                            AppLocalizations.of(context)!),
                         style: TextStyle(
                           color: theme.accentColor,
                           fontSize: compact ? 11 : 12,
@@ -1550,7 +1552,8 @@ class _AchievementTile extends StatelessWidget {
                 ] else ...[
                   const SizedBox(height: 2),
                   Text(
-                    achievement.description,
+                    achievement.localizedDescription(
+                        AppLocalizations.of(context)!),
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.7),
                       fontSize: 10,
