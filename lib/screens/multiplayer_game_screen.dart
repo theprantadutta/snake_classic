@@ -12,6 +12,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/dpad_controls.dart';
@@ -350,7 +351,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         ),
         const SizedBox(height: 6),
         Text(
-          '$score',
+          context.formatInt(score),
           style: TextStyle(
             color: theme.accentColor,
             fontSize: 34,
@@ -1039,7 +1040,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         ),
         const SizedBox(height: 2),
         Text(
-          '$score',
+          context.formatInt(score),
           style: TextStyle(
             color: alive ? theme.accentColor : Colors.grey,
             fontSize: 28,

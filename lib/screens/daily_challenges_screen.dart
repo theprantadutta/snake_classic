@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
+import 'package:snake_classic/l10n/server_text_l10n.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -288,7 +289,8 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                           ),
                         ),
                         Text(
-                          '$completed of $total challenges completed',
+                          AppLocalizations.of(context)!
+                              .dchProgressSummary(completed, total),
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.white.withValues(alpha: 0.7),
@@ -353,7 +355,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   /// through untouched (the Drift row stays English).
   String _localizedChallengeTitle(DailyChallenge challenge, AppLocalizations l10n) {
     if (challenge.title == 'All Challenges Bonus') return l10n.dchAllBonusTitle;
-    return challenge.title;
+    return challenge.localizedTitle(l10n);
   }
 
   /// Same render-time mapping for the bonus row's description.
@@ -364,7 +366,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     if (challenge.description == 'Completed every daily challenge today.') {
       return l10n.dchAllBonusDesc;
     }
-    return challenge.description;
+    return challenge.localizedDescription(l10n);
   }
 
   Widget _buildChallengeCard(

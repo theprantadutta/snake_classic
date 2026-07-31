@@ -490,26 +490,23 @@ class StatisticsService extends ChangeNotifier {
     return {
       'totalGames': _currentStatistics.totalGamesPlayed,
       'highScore': _currentStatistics.highScore,
-      // Use _formatDuration (already used for longestSurvival) instead of
-      // the rounded integer hours so users with sub-hour totals don't see
-      // a confusing '0h'. The formatter emits 'Xs' / 'Xm Ys' / 'Xh Ym'
-      // depending on magnitude; the screen drops the inline 'h' suffix.
-      'totalPlayTime': _formatDuration(_currentStatistics.totalGameTime),
+      // Durations are returned as RAW seconds (int) and rates as RAW 0..1
+      // fractions (double). The UI layer formats them locale-aware
+      // (l10n stDur* keys / NumberFormat.percentPattern) — no pre-formatted
+      // strings here so every consumer can localize consistently.
+      'totalPlayTime': _currentStatistics.totalGameTime,
       'averageScore': _currentStatistics.averageScore.round(),
       'totalFood': _currentStatistics.totalFoodConsumed,
       'totalPowerUps': _currentStatistics.totalPowerUpsCollected,
-      'longestSurvival': _formatDuration(
-        _currentStatistics.longestSurvivalTime,
-      ),
+      'longestSurvival': _currentStatistics.longestSurvivalTime,
       'highestLevel': _currentStatistics.highestLevel,
       'winStreak': _currentStatistics.currentWinStreak,
       'longestStreak': _currentStatistics.longestWinStreak,
-      'survivalRate': '${(_currentStatistics.survivalRate * 100).round()}%',
+      'survivalRate': _currentStatistics.survivalRate,
       'perfectGames': _currentStatistics.perfectGames,
       'favoriteFood': _currentStatistics.favoriteFood,
       'favoritePowerUp': _currentStatistics.favoritePowerUp,
-      'achievementProgress':
-          '${(_currentStatistics.achievementProgress * 100).round()}%',
+      'achievementProgress': _currentStatistics.achievementProgress,
       'recentScores': _currentStatistics.recentScores,
       'foodBreakdown': _currentStatistics.foodTypeCount,
       'powerUpBreakdown': _currentStatistics.powerUpTypeCount,
@@ -569,20 +566,6 @@ class StatisticsService extends ChangeNotifier {
       return 'declining';
     } else {
       return 'stable';
-    }
-  }
-
-  String _formatDuration(int seconds) {
-    if (seconds < 60) {
-      return '${seconds}s';
-    } else if (seconds < 3600) {
-      final minutes = seconds ~/ 60;
-      final remainingSeconds = seconds % 60;
-      return '${minutes}m ${remainingSeconds}s';
-    } else {
-      final hours = seconds ~/ 3600;
-      final minutes = (seconds % 3600) ~/ 60;
-      return '${hours}h ${minutes}m';
     }
   }
 

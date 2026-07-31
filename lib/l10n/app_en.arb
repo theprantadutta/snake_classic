@@ -1881,5 +1881,198 @@
   "mpErrReconnectExpired": "Reconnection time expired",
   "mpErrCheckInternet": "Connection lost. Please check your internet",
   "mpErrUnableJoin": "Unable to join room. Please try again",
-  "mpErrGeneric": "Something went wrong. Please try again"
+  "mpErrGeneric": "Something went wrong. Please try again",
+  "stDurSeconds": "{s}s",
+  "@stDurSeconds": {
+    "placeholders": {
+      "s": {}
+    }
+  },
+  "stDurMinutes": "{m}m",
+  "@stDurMinutes": {
+    "placeholders": {
+      "m": {}
+    }
+  },
+  "stDurHours": "{h}h",
+  "@stDurHours": {
+    "placeholders": {
+      "h": {}
+    }
+  },
+  "stDurMinSec": "{m}m {s}s",
+  "@stDurMinSec": {
+    "placeholders": {
+      "m": {},
+      "s": {}
+    }
+  },
+  "stDurHourMin": "{h}h {m}m",
+  "@stDurHourMin": {
+    "placeholders": {
+      "h": {},
+      "m": {}
+    }
+  },
+  "dchProgressSummary": "{completed} of {total} challenges completed",
+  "@dchProgressSummary": {
+    "placeholders": {
+      "completed": {},
+      "total": {}
+    }
+  },
+  "wqProgressSummary": "{completed} / {total} complete",
+  "@wqProgressSummary": {
+    "placeholders": {
+      "completed": {},
+      "total": {}
+    }
+  },
+  "wqClaimable": "{count} claimable",
+  "@wqClaimable": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "wqClaimToast": "+{coins} coins, +{xp} BP XP",
+  "@wqClaimToast": {
+    "placeholders": {
+      "coins": {},
+      "xp": {}
+    }
+  },
+  "insPoints10": "10 points",
+  "insPoints25": "25 points",
+  "insPoints50": "50 points + Level Up",
+  "unRules": "• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only",
+  "dcTitleScoreEasy": "Beginner Score",
+  "dcTitleScoreMedium": "Skilled Player",
+  "dcTitleScoreHard": "Score Master",
+  "dcTitleFoodEasy": "Hungry Snake",
+  "dcTitleFoodMedium": "Feast Mode",
+  "dcTitleFoodHard": "Insatiable",
+  "dcTitleSurvivalEasy": "Survivor",
+  "dcTitleSurvivalMedium": "Endurance",
+  "dcTitleSurvivalHard": "Immortal",
+  "dcTitleGamesEasy": "Casual Player",
+  "dcTitleGamesMedium": "Dedicated",
+  "dcTitleGamesHard": "Snake Addict",
+  "dcTitleModeEasy": "Classic Lover",
+  "dcTitleModeMedium": "Zen Master",
+  "dcTitleModeHard": "Speed Demon",
+  "dcDescScore": "Score at least {target} points in a single game",
+  "@dcDescScore": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "dcDescFood": "Eat {target} foods today",
+  "@dcDescFood": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "dcDescSurvival": "Survive for {target} seconds in a single game",
+  "@dcDescSurvival": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "dcDescGames": "{target, plural, one{Play 1 game today} other{Play {target} games today}}",
+  "@dcDescGames": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "dcDescMode": "{target, plural, one{Play 1 game in {mode} mode} other{Play {target} games in {mode} mode}}",
+  "@dcDescMode": {
+    "placeholders": {
+      "target": {},
+      "mode": {}
+    }
+  },
+  "wqTitleScoreEasy": "Weekly Warmup",
+  "wqTitleScoreMedium": "Sharper Reflexes",
+  "wqTitleScoreHard": "Score Champion",
+  "wqTitleFoodEasy": "Weekly Snacker",
+  "wqTitleFoodMedium": "Voracious",
+  "wqTitleFoodHard": "Bottomless",
+  "wqTitleGamesEasy": "Five-a-Week",
+  "wqTitleGamesMedium": "Routine Hatched",
+  "wqTitleGamesHard": "Marathon Hatcher",
+  "wqTitleSurvivalEasy": "Two-Minute Slither",
+  "wqTitleSurvivalMedium": "Five-Minute Slither",
+  "wqTitleSurvivalHard": "Ten-Minute Slither",
+  "wqTitleTournament": "Tournament Regular",
+  "wqTitleDailyEasy": "Daily Doer",
+  "wqTitleDailyMedium": "Daily Adept",
+  "wqDescScore": "Score {target} in a single game",
+  "@wqDescScore": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "wqDescFood": "Eat {target} foods this week",
+  "@wqDescFood": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "wqDescGames": "Play {target} games this week",
+  "@wqDescGames": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "wqDescSurvival": "Survive {target}s in a single game",
+  "@wqDescSurvival": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "wqDescTournament": "{target, plural, one{Play 1 tournament game} other{Play {target} tournament games}}",
+  "@wqDescTournament": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "wqDescDaily": "Complete {target} daily challenges this week",
+  "@wqDescDaily": {
+    "placeholders": {
+      "target": {}
+    }
+  },
+  "tnNameDaily": "Daily Challenge - {date}",
+  "@tnNameDaily": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "tnNameWeekly": "Weekly Championship - Week {week}",
+  "@tnNameWeekly": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "tnNameMonthly": "Monthly Grand Prix - {monthYear}",
+  "@tnNameMonthly": {
+    "placeholders": {
+      "monthYear": {}
+    }
+  },
+  "tnDescDaily": "Compete for the highest score in today's 24-hour challenge! Top players win coins and glory.",
+  "tnDescWeekly": "The ultimate weekly showdown! Compete against the best players for massive rewards.",
+  "tnDescMonthly": "The biggest tournament of the month! Prove you're the ultimate Snake master.",
+  "tnRewardRank": "Rank {rank}",
+  "@tnRewardRank": {
+    "placeholders": {
+      "rank": {}
+    }
+  },
+  "tnRewardCoinDesc": "Coin reward for rank {rank}",
+  "@tnRewardCoinDesc": {
+    "placeholders": {
+      "rank": {}
+    }
+  }
 }

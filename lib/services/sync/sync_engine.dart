@@ -994,6 +994,9 @@ class SyncEngine {
         'notify_special_event': r.notifySpecialEvent,
         'selected_skin_id': r.selectedSkinId,
         'selected_trail_id': r.selectedTrailId,
+        // Null = "follow device". The backend keeps its stored value on
+        // null, so pre-i18n rows aren't wiped by legacy payloads.
+        'locale_code': r.localeCode,
         'updated_at': _utcIso(r.updatedAt),
       };
 

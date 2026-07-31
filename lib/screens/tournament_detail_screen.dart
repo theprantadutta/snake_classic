@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
+import 'package:snake_classic/l10n/server_text_l10n.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
@@ -16,6 +17,7 @@ import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -273,7 +275,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tournament.name,
+                  tournament.localizedName(
+                    AppLocalizations.of(context)!,
+                    Localizations.localeOf(context),
+                  ),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -710,7 +715,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            tournament.description,
+            tournament.localizedDescription(AppLocalizations.of(context)!),
             style: TextStyle(
               fontSize: 14,
               color: theme.accentColor.withValues(alpha: 0.8),
@@ -727,7 +732,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                tournament.formattedDateRange,
+                context.formatDateRange(
+                  tournament.startDate,
+                  tournament.endDate,
+                ),
                 style: TextStyle(
                   fontSize: 14,
                   color: theme.accentColor.withValues(alpha: 0.7),
@@ -802,7 +810,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          reward.name,
+                          localizedTournamentRewardName(reward.name, l10n),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,

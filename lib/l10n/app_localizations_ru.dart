@@ -5396,4 +5396,268 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mpErrGeneric => 'Что-то пошло не так. Попробуйте ещё раз';
+
+  @override
+  String stDurSeconds(Object s) {
+    return '$s с';
+  }
+
+  @override
+  String stDurMinutes(Object m) {
+    return '$m мин';
+  }
+
+  @override
+  String stDurHours(Object h) {
+    return '$h ч';
+  }
+
+  @override
+  String stDurMinSec(Object m, Object s) {
+    return '$m мин $s с';
+  }
+
+  @override
+  String stDurHourMin(Object h, Object m) {
+    return '$h ч $m мин';
+  }
+
+  @override
+  String dchProgressSummary(Object completed, Object total) {
+    return 'Выполнено $completed из $total вызовов';
+  }
+
+  @override
+  String wqProgressSummary(Object completed, Object total) {
+    return '$completed / $total выполнено';
+  }
+
+  @override
+  String wqClaimable(Object count) {
+    return '$count можно забрать';
+  }
+
+  @override
+  String wqClaimToast(Object coins, Object xp) {
+    return '+$coins монет, +$xp опыта пропуска';
+  }
+
+  @override
+  String get insPoints10 => '10 очков';
+
+  @override
+  String get insPoints25 => '25 очков';
+
+  @override
+  String get insPoints50 => '50 очков + новый уровень';
+
+  @override
+  String get unRules =>
+      '• 3–20 символов\n• Должно начинаться с буквы\n• Только буквы, цифры и подчёркивания';
+
+  @override
+  String get dcTitleScoreEasy => 'Счёт новичка';
+
+  @override
+  String get dcTitleScoreMedium => 'Умелый игрок';
+
+  @override
+  String get dcTitleScoreHard => 'Мастер очков';
+
+  @override
+  String get dcTitleFoodEasy => 'Голодная змейка';
+
+  @override
+  String get dcTitleFoodMedium => 'Режим пира';
+
+  @override
+  String get dcTitleFoodHard => 'Ненасытный';
+
+  @override
+  String get dcTitleSurvivalEasy => 'Выживший';
+
+  @override
+  String get dcTitleSurvivalMedium => 'Выносливость';
+
+  @override
+  String get dcTitleSurvivalHard => 'Бессмертный';
+
+  @override
+  String get dcTitleGamesEasy => 'Казуальный игрок';
+
+  @override
+  String get dcTitleGamesMedium => 'Преданный';
+
+  @override
+  String get dcTitleGamesHard => 'Зависимый от змейки';
+
+  @override
+  String get dcTitleModeEasy => 'Любитель классики';
+
+  @override
+  String get dcTitleModeMedium => 'Мастер дзена';
+
+  @override
+  String get dcTitleModeHard => 'Демон скорости';
+
+  @override
+  String dcDescScore(Object target) {
+    return 'Наберите не менее $target очков за одну игру';
+  }
+
+  @override
+  String dcDescFood(Object target) {
+    return 'Съешьте сегодня $target единиц еды';
+  }
+
+  @override
+  String dcDescSurvival(Object target) {
+    return 'Продержитесь $target секунд за одну игру';
+  }
+
+  @override
+  String dcDescGames(num target) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Сыграйте сегодня $target игры',
+      many: 'Сыграйте сегодня $target игр',
+      few: 'Сыграйте сегодня $target игры',
+      one: 'Сыграйте сегодня $target игру',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dcDescMode(num target, Object mode) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Сыграйте $target игры в режиме «$mode»',
+      many: 'Сыграйте $target игр в режиме «$mode»',
+      few: 'Сыграйте $target игры в режиме «$mode»',
+      one: 'Сыграйте $target игру в режиме «$mode»',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wqTitleScoreEasy => 'Недельная разминка';
+
+  @override
+  String get wqTitleScoreMedium => 'Острые рефлексы';
+
+  @override
+  String get wqTitleScoreHard => 'Чемпион очков';
+
+  @override
+  String get wqTitleFoodEasy => 'Недельный перекус';
+
+  @override
+  String get wqTitleFoodMedium => 'Прожорливый';
+
+  @override
+  String get wqTitleFoodHard => 'Бездонный';
+
+  @override
+  String get wqTitleGamesEasy => 'Пять за неделю';
+
+  @override
+  String get wqTitleGamesMedium => 'Дело привычки';
+
+  @override
+  String get wqTitleGamesHard => 'Марафонец';
+
+  @override
+  String get wqTitleSurvivalEasy => 'Двухминутный заплыв';
+
+  @override
+  String get wqTitleSurvivalMedium => 'Пятиминутный заплыв';
+
+  @override
+  String get wqTitleSurvivalHard => 'Десятиминутный заплыв';
+
+  @override
+  String get wqTitleTournament => 'Завсегдатай турниров';
+
+  @override
+  String get wqTitleDailyEasy => 'Ежедневный исполнитель';
+
+  @override
+  String get wqTitleDailyMedium => 'Ежедневный знаток';
+
+  @override
+  String wqDescScore(Object target) {
+    return 'Наберите $target за одну игру';
+  }
+
+  @override
+  String wqDescFood(Object target) {
+    return 'Съешьте $target единиц еды за неделю';
+  }
+
+  @override
+  String wqDescGames(Object target) {
+    return 'Сыграйте $target игр за неделю';
+  }
+
+  @override
+  String wqDescSurvival(Object target) {
+    return 'Продержитесь $target с за одну игру';
+  }
+
+  @override
+  String wqDescTournament(num target) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Сыграйте $target турнирной игры',
+      many: 'Сыграйте $target турнирных игр',
+      few: 'Сыграйте $target турнирные игры',
+      one: 'Сыграйте $target турнирную игру',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wqDescDaily(Object target) {
+    return 'Выполните $target ежедневных вызовов за неделю';
+  }
+
+  @override
+  String tnNameDaily(Object date) {
+    return 'Ежедневный вызов - $date';
+  }
+
+  @override
+  String tnNameWeekly(Object week) {
+    return 'Еженедельный чемпионат - неделя $week';
+  }
+
+  @override
+  String tnNameMonthly(Object monthYear) {
+    return 'Месячное Гран-при - $monthYear';
+  }
+
+  @override
+  String get tnDescDaily =>
+      'Сразитесь за лучший счёт в сегодняшнем 24-часовом вызове! Лучшие получают монеты и славу.';
+
+  @override
+  String get tnDescWeekly =>
+      'Главная битва недели! Соревнуйтесь с сильнейшими за крупные награды.';
+
+  @override
+  String get tnDescMonthly =>
+      'Крупнейший турнир месяца! Докажите, что вы — истинный мастер «Змейки».';
+
+  @override
+  String tnRewardRank(Object rank) {
+    return 'Место $rank';
+  }
+
+  @override
+  String tnRewardCoinDesc(Object rank) {
+    return 'Награда монетами за место $rank';
+  }
 }

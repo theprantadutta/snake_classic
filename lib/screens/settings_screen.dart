@@ -26,6 +26,7 @@ import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -2575,7 +2576,7 @@ extension _SettingsPremium on _SettingsScreenState {
                     premiumState.subscriptionExpiry != null)
                   Text(
                     l10n.settingsRenews(
-                      '${premiumState.subscriptionExpiry!.day}/${premiumState.subscriptionExpiry!.month}',
+                      context.formatMonthDay(premiumState.subscriptionExpiry!),
                     ),
                     style: TextStyle(
                       color: Colors.black.withValues(alpha: 0.6),
@@ -2970,7 +2971,7 @@ extension _SettingsPremium on _SettingsScreenState {
   String _formatDate(String timestamp) {
     try {
       final date = DateTime.parse(timestamp);
-      return '${date.day}/${date.month}/${date.year}';
+      return context.formatDate(date);
     } catch (e) {
       return AppLocalizations.of(context)!.settingsUnknownDate;
     }

@@ -232,9 +232,7 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '• 3-20 characters\n'
-                      '• Must start with a letter\n'
-                      '• Letters, numbers, and underscores only',
+                      l10n.unRules,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,

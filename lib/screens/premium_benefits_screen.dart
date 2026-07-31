@@ -295,7 +295,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         _buildPricingCard(
           title: l10n.pbMonthlyPlan,
           price: PurchaseService().getStorePriceOrDefault(
-              ProductIds.snakeClassicProMonthly, 4.99),
+              ProductIds.snakeClassicProMonthly, 4.99,
+              localeTag: Localizations.localeOf(context).toLanguageTag()),
           period: l10n.storePerMonth,
           badge: null,
           accentColor: Colors.blue,
@@ -307,9 +308,11 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           title: l10n.pbYearlyPlan,
           price: _isYearly
               ? PurchaseService().getStorePriceOrDefault(
-                  ProductIds.snakeClassicProYearly, 39.99)
+                  ProductIds.snakeClassicProYearly, 39.99,
+                  localeTag: Localizations.localeOf(context).toLanguageTag())
               : PurchaseService().getStorePriceOrDefault(
-                  ProductIds.snakeClassicProMonthly, 4.99),
+                  ProductIds.snakeClassicProMonthly, 4.99,
+                  localeTag: Localizations.localeOf(context).toLanguageTag()),
           period: _isYearly ? l10n.storePerYear : l10n.storePerMonth,
           badge: _isYearly ? l10n.pbSave33 : null,
           accentColor: Colors.green,
@@ -619,6 +622,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     final price = PurchaseService().getStorePriceOrDefault(
       productId,
       _isYearly ? 39.99 : 4.99,
+      localeTag: Localizations.localeOf(context).toLanguageTag(),
     );
     final period = _isYearly ? l10n.storePerYear : l10n.storePerMonth;
 

@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show Locale, PlatformDispatcher;
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/data/database/app_database.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import '../utils/logger.dart';
 import 'api_service.dart';
 import 'data_sync_service.dart';
@@ -508,7 +511,8 @@ class NotificationService {
     // _showLocalNotification — previously foreground messages skipped it.
     await _showLocalNotification(
       title: message.notification?.title ?? 'Snake Classic',
-      body: message.notification?.body ?? 'You have a new notification',
+      body: message.notification?.body ??
+          (await _resolveL10n()).nsNewNotification,
       type: type,
       payload: jsonEncode(message.data),
     );
@@ -755,10 +759,30 @@ class NotificationService {
   Map<NotificationType, bool> get notificationPreferences =>
       Map.from(_notificationPreferences);
 
+  /// Context-free AppLocalizations for service-built notification text.
+  /// Resolves the user's Settings language (null = follow device), guarded
+  /// to the supported set — lookupAppLocalizations throws on unknowns.
+  Future<AppLocalizations> _resolveL10n() async {
+    String? code;
+    try {
+      code = await StorageService().getLocaleCode();
+    } catch (_) {
+      // Drift unavailable this early — fall through to the device locale.
+    }
+    const supported = {'en', 'hi', 'pt', 'es', 'fr', 'ru', 'pl', 'ar', 'it'};
+    final lang = (code ?? PlatformDispatcher.instance.locale.languageCode)
+        .split(RegExp('[-_]'))
+        .first
+        .toLowerCase();
+    return lookupAppLocalizations(
+      Locale(supported.contains(lang) ? lang : 'en'),
+    );
+  }
+
   // Game-specific notification methods
   Future<void> showAchievementNotification(String achievementName) async {
     await _showLocalNotification(
-      title: '🏆 Achievement Unlocked!',
+      title: (await _resolveL10n()).nsAchievementUnlocked,
       body: achievementName,
       type: NotificationType.achievement,
       payload: jsonEncode({
@@ -798,9 +822,10 @@ class NotificationService {
   }
 
   Future<void> showDailyReminderNotification() async {
+    final l10n = await _resolveL10n();
     await _showLocalNotification(
-      title: '🐍 Time to play Snake Classic!',
-      body: 'Complete your daily challenge and climb the leaderboard!',
+      title: l10n.nsDailyReminderTitle,
+      body: l10n.nsDailyReminderBody,
       type: NotificationType.dailyReminder,
       payload: jsonEncode({'route': 'home'}),
     );

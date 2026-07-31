@@ -22,6 +22,7 @@ import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
@@ -898,7 +899,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   ),
                 ),
                 child: Text(
-                  '${(_progress * 100).toInt()}%',
+                  context.formatPercent(_progress),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,

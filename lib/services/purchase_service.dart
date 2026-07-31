@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
 import 'ads/ad_service.dart';
@@ -808,9 +809,18 @@ class PurchaseService {
   String? getStorePrice(String productId) => _displayPrice(getProduct(productId));
 
   /// Get the store price, falling back to a formatted default.
-  String getStorePriceOrDefault(String productId, double fallbackPrice) {
+  ///
+  /// The fallback is a USD amount; pass [localeTag] (e.g.
+  /// `Localizations.localeOf(context).toLanguageTag()`) so the currency
+  /// symbol/separators render for the user's locale.
+  String getStorePriceOrDefault(
+    String productId,
+    double fallbackPrice, {
+    String? localeTag,
+  }) {
     return _displayPrice(getProduct(productId)) ??
-        '\$${fallbackPrice.toStringAsFixed(2)}';
+        NumberFormat.simpleCurrency(locale: localeTag ?? 'en_US', name: 'USD')
+            .format(fallbackPrice);
   }
 
   Future<bool> purchaseProduct(String productId) async {

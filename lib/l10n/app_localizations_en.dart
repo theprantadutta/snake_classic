@@ -5363,4 +5363,262 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mpErrGeneric => 'Something went wrong. Please try again';
+
+  @override
+  String stDurSeconds(Object s) {
+    return '${s}s';
+  }
+
+  @override
+  String stDurMinutes(Object m) {
+    return '${m}m';
+  }
+
+  @override
+  String stDurHours(Object h) {
+    return '${h}h';
+  }
+
+  @override
+  String stDurMinSec(Object m, Object s) {
+    return '${m}m ${s}s';
+  }
+
+  @override
+  String stDurHourMin(Object h, Object m) {
+    return '${h}h ${m}m';
+  }
+
+  @override
+  String dchProgressSummary(Object completed, Object total) {
+    return '$completed of $total challenges completed';
+  }
+
+  @override
+  String wqProgressSummary(Object completed, Object total) {
+    return '$completed / $total complete';
+  }
+
+  @override
+  String wqClaimable(Object count) {
+    return '$count claimable';
+  }
+
+  @override
+  String wqClaimToast(Object coins, Object xp) {
+    return '+$coins coins, +$xp BP XP';
+  }
+
+  @override
+  String get insPoints10 => '10 points';
+
+  @override
+  String get insPoints25 => '25 points';
+
+  @override
+  String get insPoints50 => '50 points + Level Up';
+
+  @override
+  String get unRules =>
+      '• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only';
+
+  @override
+  String get dcTitleScoreEasy => 'Beginner Score';
+
+  @override
+  String get dcTitleScoreMedium => 'Skilled Player';
+
+  @override
+  String get dcTitleScoreHard => 'Score Master';
+
+  @override
+  String get dcTitleFoodEasy => 'Hungry Snake';
+
+  @override
+  String get dcTitleFoodMedium => 'Feast Mode';
+
+  @override
+  String get dcTitleFoodHard => 'Insatiable';
+
+  @override
+  String get dcTitleSurvivalEasy => 'Survivor';
+
+  @override
+  String get dcTitleSurvivalMedium => 'Endurance';
+
+  @override
+  String get dcTitleSurvivalHard => 'Immortal';
+
+  @override
+  String get dcTitleGamesEasy => 'Casual Player';
+
+  @override
+  String get dcTitleGamesMedium => 'Dedicated';
+
+  @override
+  String get dcTitleGamesHard => 'Snake Addict';
+
+  @override
+  String get dcTitleModeEasy => 'Classic Lover';
+
+  @override
+  String get dcTitleModeMedium => 'Zen Master';
+
+  @override
+  String get dcTitleModeHard => 'Speed Demon';
+
+  @override
+  String dcDescScore(Object target) {
+    return 'Score at least $target points in a single game';
+  }
+
+  @override
+  String dcDescFood(Object target) {
+    return 'Eat $target foods today';
+  }
+
+  @override
+  String dcDescSurvival(Object target) {
+    return 'Survive for $target seconds in a single game';
+  }
+
+  @override
+  String dcDescGames(num target) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Play $target games today',
+      one: 'Play 1 game today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dcDescMode(num target, Object mode) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Play $target games in $mode mode',
+      one: 'Play 1 game in $mode mode',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wqTitleScoreEasy => 'Weekly Warmup';
+
+  @override
+  String get wqTitleScoreMedium => 'Sharper Reflexes';
+
+  @override
+  String get wqTitleScoreHard => 'Score Champion';
+
+  @override
+  String get wqTitleFoodEasy => 'Weekly Snacker';
+
+  @override
+  String get wqTitleFoodMedium => 'Voracious';
+
+  @override
+  String get wqTitleFoodHard => 'Bottomless';
+
+  @override
+  String get wqTitleGamesEasy => 'Five-a-Week';
+
+  @override
+  String get wqTitleGamesMedium => 'Routine Hatched';
+
+  @override
+  String get wqTitleGamesHard => 'Marathon Hatcher';
+
+  @override
+  String get wqTitleSurvivalEasy => 'Two-Minute Slither';
+
+  @override
+  String get wqTitleSurvivalMedium => 'Five-Minute Slither';
+
+  @override
+  String get wqTitleSurvivalHard => 'Ten-Minute Slither';
+
+  @override
+  String get wqTitleTournament => 'Tournament Regular';
+
+  @override
+  String get wqTitleDailyEasy => 'Daily Doer';
+
+  @override
+  String get wqTitleDailyMedium => 'Daily Adept';
+
+  @override
+  String wqDescScore(Object target) {
+    return 'Score $target in a single game';
+  }
+
+  @override
+  String wqDescFood(Object target) {
+    return 'Eat $target foods this week';
+  }
+
+  @override
+  String wqDescGames(Object target) {
+    return 'Play $target games this week';
+  }
+
+  @override
+  String wqDescSurvival(Object target) {
+    return 'Survive ${target}s in a single game';
+  }
+
+  @override
+  String wqDescTournament(num target) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Play $target tournament games',
+      one: 'Play 1 tournament game',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wqDescDaily(Object target) {
+    return 'Complete $target daily challenges this week';
+  }
+
+  @override
+  String tnNameDaily(Object date) {
+    return 'Daily Challenge - $date';
+  }
+
+  @override
+  String tnNameWeekly(Object week) {
+    return 'Weekly Championship - Week $week';
+  }
+
+  @override
+  String tnNameMonthly(Object monthYear) {
+    return 'Monthly Grand Prix - $monthYear';
+  }
+
+  @override
+  String get tnDescDaily =>
+      'Compete for the highest score in today\'s 24-hour challenge! Top players win coins and glory.';
+
+  @override
+  String get tnDescWeekly =>
+      'The ultimate weekly showdown! Compete against the best players for massive rewards.';
+
+  @override
+  String get tnDescMonthly =>
+      'The biggest tournament of the month! Prove you\'re the ultimate Snake master.';
+
+  @override
+  String tnRewardRank(Object rank) {
+    return 'Rank $rank';
+  }
+
+  @override
+  String tnRewardCoinDesc(Object rank) {
+    return 'Coin reward for rank $rank';
+  }
 }

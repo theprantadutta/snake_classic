@@ -22,6 +22,7 @@ import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -651,7 +652,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                         SizedBox(width: isSmallScreen ? 4 : 6),
                         Text(
-                          _formatCoins(coinsState.total),
+                          context.formatCompact(coinsState.total),
                           style: TextStyle(
                             color: Colors.amber,
                             fontSize: isSmallScreen ? 14 : 16,
@@ -1311,7 +1312,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$highScore',
+                      context.formatInt(highScore),
                       style: TextStyle(
                         fontSize: isSmallScreen ? 28 : 34,
                         fontWeight: FontWeight.w900,
@@ -1945,18 +1946,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   //     },
   //   );
   // }
-
-  /// Format coin balance for display (e.g., 1.2K, 1.5M)
-  String _formatCoins(int coins) {
-    if (coins >= 1000000) {
-      final value = coins / 1000000;
-      return '${value.toStringAsFixed(value >= 10 ? 0 : 1)}M';
-    } else if (coins >= 1000) {
-      final value = coins / 1000;
-      return '${value.toStringAsFixed(value >= 10 ? 0 : 1)}K';
-    }
-    return '$coins';
-  }
 
   double _getResponsiveNavButtonSize(double screenHeight) {
     // Each tier bumped ~6dp from the previous values (38/44/50/56) to

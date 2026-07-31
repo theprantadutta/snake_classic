@@ -21,7 +21,10 @@ enum ChallengeType {
   }
 
   static ChallengeType fromString(String value) {
-    switch (value.toLowerCase()) {
+    // The backend serializes enums as snake_case_lower ("food_eaten");
+    // legacy rows/clients may carry PascalCase ("FoodEaten"). Normalize
+    // both by stripping underscores before matching.
+    switch (value.toLowerCase().replaceAll('_', '')) {
       case 'score':
         return ChallengeType.score;
       case 'foodeaten':

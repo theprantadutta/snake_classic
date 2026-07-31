@@ -136,19 +136,19 @@ class InstructionsScreen extends StatelessWidget {
                         children: [
                           _buildFoodItem(
                             l10n.insNormalFood,
-                            '10 points',
+                            l10n.insPoints10,
                             theme.foodColor,
                             theme,
                           ),
                           _buildFoodItem(
                             l10n.insBonusFood,
-                            '25 points',
+                            l10n.insPoints25,
                             Colors.orange,
                             theme,
                           ),
                           _buildFoodItem(
                             l10n.insSpecialFood,
-                            '50 points + Level Up',
+                            l10n.insPoints50,
                             const Color(0xFFFFD700),
                             theme,
                           ),

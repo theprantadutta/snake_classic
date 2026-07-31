@@ -11,6 +11,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 
@@ -442,7 +443,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
 
         // Score — thousands-separated
         Text(
-          _formatThousands(user.highScore),
+          context.formatInt(user.highScore),
           style: TextStyle(
             color: rankColors[0],
             fontSize: rank == 1 ? 16 : 14,
@@ -647,7 +648,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                     Icon(Icons.emoji_events, size: 16, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text(
-                      _formatThousands(user.highScore),
+                      context.formatInt(user.highScore),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
@@ -721,19 +722,9 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
   }
 
   String _formatGamesPlayed(int count) {
-    // Plural key takes the raw count, so the value renders without the
-    // thousands separator for now (intl-based formatting comes later).
+    // The count is intentionally passed raw (no thousands separator): the
+    // ICU plural needs the num to pick the right form per locale.
     return AppLocalizations.of(context)!.frGamesCount(count);
-  }
-
-  String _formatThousands(int n) {
-    final s = n.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(s[i]);
-    }
-    return buffer.toString();
   }
 
   Widget _buildEmptyState(GameTheme theme) {

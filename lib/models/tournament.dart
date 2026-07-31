@@ -239,6 +239,12 @@ class TournamentParticipant {
 
 class Tournament {
   final String id;
+
+  /// Server-side slug ("daily-2026-07-30", "weekly-2026-W31",
+  /// "monthly-2026-07"). Prefix identifies the job template that authored
+  /// [name]/[description], which is what render-time localization keys on.
+  /// Null for rows cached before this field existed.
+  final String? tournamentId;
   final String name;
   final String description;
   final TournamentType type;
@@ -266,6 +272,7 @@ class Tournament {
 
   const Tournament({
     required this.id,
+    this.tournamentId,
     required this.name,
     required this.description,
     required this.type,
@@ -360,6 +367,7 @@ class Tournament {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'tournament_id': tournamentId,
       'name': name,
       'description': description,
       'type': type.name,
@@ -413,6 +421,7 @@ class Tournament {
 
     return Tournament(
       id: pick<String>('id', 'id') ?? '',
+      tournamentId: pick<String>('tournament_id', 'tournamentId'),
       name: pick<String>('name', 'name') ?? '',
       description: pick<String>('description', 'description') ?? '',
       type: TournamentType.values.firstWhere(
@@ -503,6 +512,7 @@ class Tournament {
 
   Tournament copyWith({
     String? id,
+    String? tournamentId,
     String? name,
     String? description,
     TournamentType? type,
@@ -526,6 +536,7 @@ class Tournament {
   }) {
     return Tournament(
       id: id ?? this.id,
+      tournamentId: tournamentId ?? this.tournamentId,
       name: name ?? this.name,
       description: description ?? this.description,
       type: type ?? this.type,

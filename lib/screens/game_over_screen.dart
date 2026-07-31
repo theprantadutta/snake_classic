@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/server_text_l10n.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -1226,7 +1227,9 @@ class _ClaimableRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      challenge.title,
+                      challenge.title == 'All Challenges Bonus'
+                          ? l10n.dchAllBonusTitle
+                          : challenge.localizedTitle(l10n),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 13,

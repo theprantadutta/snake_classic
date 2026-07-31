@@ -23,6 +23,7 @@ import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -563,8 +564,11 @@ class _StoreScreenState extends State<StoreScreen>
     required bool highlight,
   }) {
     final l10n = AppLocalizations.of(context)!;
-    final price =
-        PurchaseService().getStorePriceOrDefault(productId, fallbackPrice);
+    final price = PurchaseService().getStorePriceOrDefault(
+      productId,
+      fallbackPrice,
+      localeTag: Localizations.localeOf(context).toLanguageTag(),
+    );
     final isPending = _pendingProductIds.contains(productId);
     // While a sibling plan card is mid-verify we disable BOTH plan cards so
     // the user can't kick off a second purchase before the first one's
@@ -967,7 +971,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   String _formatDate(DateTime d) {
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    return context.formatDate(d);
   }
 
   /// Anonymous (guest) users can't make purchases — every paid path on this
@@ -1086,7 +1090,8 @@ class _StoreScreenState extends State<StoreScreen>
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final price = PurchaseService().getStorePriceOrDefault(
-        ProductIds.withPrefix(option.id), option.price);
+        ProductIds.withPrefix(option.id), option.price,
+        localeTag: Localizations.localeOf(context).toLanguageTag());
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1225,7 +1230,8 @@ class _StoreScreenState extends State<StoreScreen>
             ),
             Text(
               PurchaseService().getStorePriceOrDefault(
-                  ProductIds.withPrefix(option.id), option.price),
+                  ProductIds.withPrefix(option.id), option.price,
+                  localeTag: Localizations.localeOf(context).toLanguageTag()),
               style: const TextStyle(
                 color: Colors.amber,
                 fontSize: 20,
@@ -1509,6 +1515,7 @@ class _StoreScreenState extends State<StoreScreen>
     final price = PurchaseService().getStorePriceOrDefault(
       ProductIds.themesBundle,
       7.99,
+      localeTag: Localizations.localeOf(context).toLanguageTag(),
     );
     return GestureDetector(
       onTap: (bundleOwned || isPending)
@@ -1647,7 +1654,8 @@ class _StoreScreenState extends State<StoreScreen>
         productId != null && _pendingProductIds.contains(productId);
     final price = productId == null
         ? AppLocalizations.of(context)!.storePillFree
-        : PurchaseService().getStorePriceOrDefault(productId, 1.99);
+        : PurchaseService().getStorePriceOrDefault(productId, 1.99,
+            localeTag: Localizations.localeOf(context).toLanguageTag());
     return GestureDetector(
       onTap: isPending
           ? null
@@ -1862,7 +1870,8 @@ class _StoreScreenState extends State<StoreScreen>
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final theme = context.read<ThemeCubit>().state.currentTheme;
-    final price = PurchaseService().getStorePriceOrDefault(productId, 1.99);
+    final price = PurchaseService().getStorePriceOrDefault(productId, 1.99,
+        localeTag: Localizations.localeOf(context).toLanguageTag());
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1976,8 +1985,9 @@ class _StoreScreenState extends State<StoreScreen>
           isSelected: isSelected,
           isPending: _pendingProductIds.contains(productId),
           price: skin.isPremium
-              ? PurchaseService()
-                  .getStorePriceOrDefault(productId, skin.price)
+              ? PurchaseService().getStorePriceOrDefault(
+                  productId, skin.price,
+                  localeTag: Localizations.localeOf(context).toLanguageTag())
               : l10n.storePillFree,
           theme: theme,
           onTap: () {
@@ -2217,8 +2227,9 @@ class _StoreScreenState extends State<StoreScreen>
           isSelected: isSelected,
           isPending: _pendingProductIds.contains(productId),
           price: trail.isPremium
-              ? PurchaseService()
-                  .getStorePriceOrDefault(productId, trail.price)
+              ? PurchaseService().getStorePriceOrDefault(
+                  productId, trail.price,
+                  localeTag: Localizations.localeOf(context).toLanguageTag())
               : l10n.storePillFree,
           theme: theme,
           onTap: () {
@@ -2503,8 +2514,11 @@ class _StoreScreenState extends State<StoreScreen>
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final theme = context.read<ThemeCubit>().state.currentTheme;
-    final price =
-        PurchaseService().getStorePriceOrDefault(productId, fallbackPrice);
+    final price = PurchaseService().getStorePriceOrDefault(
+      productId,
+      fallbackPrice,
+      localeTag: Localizations.localeOf(context).toLanguageTag(),
+    );
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(

@@ -12,6 +12,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
@@ -224,7 +225,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 Expanded(
                   child: _buildStatCard(
                     l10n.pfAverageScore,
-                    '${_displayStats['averageScore'] ?? 0}',
+                    context.formatInt(
+                      (_displayStats['averageScore'] as num?) ?? 0,
+                    ),
                     Icons.trending_up,
                     Colors.green,
                     theme,
@@ -261,7 +264,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Expanded(
                 child: _buildStatCard(
                   l10n.pfPlayTime,
-                  '${_displayStats['totalPlayTime'] ?? '0s'}',
+                  _formatDuration(
+                    l10n,
+                    (_displayStats['totalPlayTime'] as num?)?.toInt() ?? 0,
+                  ),
                   Icons.access_time,
                   Colors.blue,
                   theme,
@@ -271,7 +277,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Expanded(
                 child: _buildStatCard(
                   l10n.stLongestGame,
-                  '${_displayStats['longestSurvival'] ?? '0s'}',
+                  _formatDuration(
+                    l10n,
+                    (_displayStats['longestSurvival'] as num?)?.toInt() ?? 0,
+                  ),
                   Icons.timer,
                   Colors.purple,
                   theme,
@@ -552,7 +561,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Expanded(
                 child: _buildStatCard(
                   l10n.stWeeklyTime,
-                  _formatPlayTime(_playPatterns['totalWeeklyTime'] ?? 0),
+                  _formatDuration(
+                    l10n,
+                    (_playPatterns['totalWeeklyTime'] as num?)?.toInt() ?? 0,
+                  ),
                   Icons.schedule,
                   Colors.green,
                   theme,
@@ -562,7 +574,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Expanded(
                 child: _buildStatCard(
                   l10n.stMostActiveDay,
-                  '${_playPatterns['mostActiveDay'] ?? l10n.stNone}',
+                  _localizedMostActiveDay(l10n),
                   Icons.star,
                   Colors.orange,
                   theme,
@@ -640,22 +652,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 children: [
                   Center(
                     child: CircularProgressIndicator(
-                      // The display value comes through as 'X%' (a string).
-                      // Strip the percent sign, parse, default to 0, THEN
-                      // divide by 100 so the indicator (which expects 0.0–1.0)
-                      // shows the right fill. The previous expression
-                      // missed parentheses and ended up passing the raw
-                      // 0–100 number, which the indicator clamps to 1.0 —
-                      // a full ring at any non-zero progress.
+                      // achievementProgress arrives as a RAW 0..1 fraction
+                      // (double) from getDisplayStatistics — exactly what
+                      // the indicator expects.
                       value:
-                          ((double.tryParse(
-                                    _displayStats['achievementProgress']
-                                            ?.toString()
-                                            .replaceAll('%', '') ??
-                                        '0',
-                                  ) ??
-                                  0) /
-                              100)
+                          ((_displayStats['achievementProgress'] as num?)
+                                      ?.toDouble() ??
+                                  0.0)
                               .clamp(0.0, 1.0),
                       strokeWidth: 4,
                       backgroundColor: Colors.amber.withValues(alpha: 0.3),
@@ -694,7 +697,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                   Text(
                     l10n.stPercentComplete(
-                      _displayStats['achievementProgress'] ?? '0%',
+                      context.formatPercent(
+                        (_displayStats['achievementProgress'] as num?)
+                                ?.toDouble() ??
+                            0,
+                      ),
                     ),
                     style: TextStyle(
                       fontSize: 14,
@@ -1050,7 +1057,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              day,
+              AppFormats.weekdayShortFromEn(day, Localizations.localeOf(context)),
               style: TextStyle(
                 fontSize: 10,
                 color: theme.accentColor.withValues(alpha: 0.6),
@@ -1084,14 +1091,28 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
-  String _formatPlayTime(int seconds) {
+  /// Localized duration for the stats cards. The service returns raw
+  /// seconds; the stDur* ARB keys carry the per-locale unit letters.
+  String _formatDuration(AppLocalizations l10n, int seconds) {
     if (seconds < 60) {
-      return '${seconds}s';
+      return l10n.stDurSeconds(seconds);
     } else if (seconds < 3600) {
-      return '${(seconds / 60).round()}m';
+      final m = seconds ~/ 60;
+      final s = seconds % 60;
+      return s == 0 ? l10n.stDurMinutes(m) : l10n.stDurMinSec(m, s);
     } else {
-      return '${(seconds / 3600).round()}h';
+      final h = seconds ~/ 3600;
+      final m = (seconds % 3600) ~/ 60;
+      return m == 0 ? l10n.stDurHours(h) : l10n.stDurHourMin(h, m);
     }
+  }
+
+  /// The service keys mostActiveDay by English 'Sun'..'Sat' (or the literal
+  /// 'None' when empty) — map to the locale's weekday abbreviation here.
+  String _localizedMostActiveDay(AppLocalizations l10n) {
+    final day = _playPatterns['mostActiveDay'] as String?;
+    if (day == null || day == 'None') return l10n.stNone;
+    return AppFormats.weekdayShortFromEn(day, Localizations.localeOf(context));
   }
 
   Future<void> _refreshStatistics() async {

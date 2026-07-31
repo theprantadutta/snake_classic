@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/server_text_l10n.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -125,7 +126,8 @@ class DailyChallengesWidget extends ConsumerWidget {
                 else
                   ...challenges
                       .take(3)
-                      .map((challenge) => _buildChallengeItem(challenge, ref)),
+                      .map((challenge) =>
+                          _buildChallengeItem(challenge, ref, l10n)),
 
                 // Bonus indicator
                 if (state.allCompleted && state.bonusCoins > 0)
@@ -186,7 +188,8 @@ class DailyChallengesWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildChallengeItem(DailyChallenge challenge, WidgetRef ref) {
+  Widget _buildChallengeItem(
+      DailyChallenge challenge, WidgetRef ref, AppLocalizations l10n) {
     final isCompleted = challenge.isCompleted;
     final canClaim = challenge.canClaim;
 
@@ -220,7 +223,9 @@ class DailyChallengesWidget extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  challenge.title,
+                  challenge.title == 'All Challenges Bonus'
+                      ? l10n.dchAllBonusTitle
+                      : challenge.localizedTitle(l10n),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,

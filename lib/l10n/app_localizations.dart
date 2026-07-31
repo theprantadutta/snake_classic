@@ -9741,6 +9741,378 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again'**
   String get mpErrGeneric;
+
+  /// No description provided for @stDurSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{s}s'**
+  String stDurSeconds(Object s);
+
+  /// No description provided for @stDurMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{m}m'**
+  String stDurMinutes(Object m);
+
+  /// No description provided for @stDurHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{h}h'**
+  String stDurHours(Object h);
+
+  /// No description provided for @stDurMinSec.
+  ///
+  /// In en, this message translates to:
+  /// **'{m}m {s}s'**
+  String stDurMinSec(Object m, Object s);
+
+  /// No description provided for @stDurHourMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{h}h {m}m'**
+  String stDurHourMin(Object h, Object m);
+
+  /// No description provided for @dchProgressSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} challenges completed'**
+  String dchProgressSummary(Object completed, Object total);
+
+  /// No description provided for @wqProgressSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} / {total} complete'**
+  String wqProgressSummary(Object completed, Object total);
+
+  /// No description provided for @wqClaimable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} claimable'**
+  String wqClaimable(Object count);
+
+  /// No description provided for @wqClaimToast.
+  ///
+  /// In en, this message translates to:
+  /// **'+{coins} coins, +{xp} BP XP'**
+  String wqClaimToast(Object coins, Object xp);
+
+  /// No description provided for @insPoints10.
+  ///
+  /// In en, this message translates to:
+  /// **'10 points'**
+  String get insPoints10;
+
+  /// No description provided for @insPoints25.
+  ///
+  /// In en, this message translates to:
+  /// **'25 points'**
+  String get insPoints25;
+
+  /// No description provided for @insPoints50.
+  ///
+  /// In en, this message translates to:
+  /// **'50 points + Level Up'**
+  String get insPoints50;
+
+  /// No description provided for @unRules.
+  ///
+  /// In en, this message translates to:
+  /// **'• 3-20 characters\n• Must start with a letter\n• Letters, numbers, and underscores only'**
+  String get unRules;
+
+  /// No description provided for @dcTitleScoreEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner Score'**
+  String get dcTitleScoreEasy;
+
+  /// No description provided for @dcTitleScoreMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Skilled Player'**
+  String get dcTitleScoreMedium;
+
+  /// No description provided for @dcTitleScoreHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Score Master'**
+  String get dcTitleScoreHard;
+
+  /// No description provided for @dcTitleFoodEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Hungry Snake'**
+  String get dcTitleFoodEasy;
+
+  /// No description provided for @dcTitleFoodMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Feast Mode'**
+  String get dcTitleFoodMedium;
+
+  /// No description provided for @dcTitleFoodHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Insatiable'**
+  String get dcTitleFoodHard;
+
+  /// No description provided for @dcTitleSurvivalEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Survivor'**
+  String get dcTitleSurvivalEasy;
+
+  /// No description provided for @dcTitleSurvivalMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance'**
+  String get dcTitleSurvivalMedium;
+
+  /// No description provided for @dcTitleSurvivalHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Immortal'**
+  String get dcTitleSurvivalHard;
+
+  /// No description provided for @dcTitleGamesEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Casual Player'**
+  String get dcTitleGamesEasy;
+
+  /// No description provided for @dcTitleGamesMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Dedicated'**
+  String get dcTitleGamesMedium;
+
+  /// No description provided for @dcTitleGamesHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Addict'**
+  String get dcTitleGamesHard;
+
+  /// No description provided for @dcTitleModeEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic Lover'**
+  String get dcTitleModeEasy;
+
+  /// No description provided for @dcTitleModeMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Zen Master'**
+  String get dcTitleModeMedium;
+
+  /// No description provided for @dcTitleModeHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Demon'**
+  String get dcTitleModeHard;
+
+  /// No description provided for @dcDescScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score at least {target} points in a single game'**
+  String dcDescScore(Object target);
+
+  /// No description provided for @dcDescFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat {target} foods today'**
+  String dcDescFood(Object target);
+
+  /// No description provided for @dcDescSurvival.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive for {target} seconds in a single game'**
+  String dcDescSurvival(Object target);
+
+  /// No description provided for @dcDescGames.
+  ///
+  /// In en, this message translates to:
+  /// **'{target, plural, one{Play 1 game today} other{Play {target} games today}}'**
+  String dcDescGames(num target);
+
+  /// No description provided for @dcDescMode.
+  ///
+  /// In en, this message translates to:
+  /// **'{target, plural, one{Play 1 game in {mode} mode} other{Play {target} games in {mode} mode}}'**
+  String dcDescMode(num target, Object mode);
+
+  /// No description provided for @wqTitleScoreEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Warmup'**
+  String get wqTitleScoreEasy;
+
+  /// No description provided for @wqTitleScoreMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharper Reflexes'**
+  String get wqTitleScoreMedium;
+
+  /// No description provided for @wqTitleScoreHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Score Champion'**
+  String get wqTitleScoreHard;
+
+  /// No description provided for @wqTitleFoodEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Snacker'**
+  String get wqTitleFoodEasy;
+
+  /// No description provided for @wqTitleFoodMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Voracious'**
+  String get wqTitleFoodMedium;
+
+  /// No description provided for @wqTitleFoodHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottomless'**
+  String get wqTitleFoodHard;
+
+  /// No description provided for @wqTitleGamesEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Five-a-Week'**
+  String get wqTitleGamesEasy;
+
+  /// No description provided for @wqTitleGamesMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Routine Hatched'**
+  String get wqTitleGamesMedium;
+
+  /// No description provided for @wqTitleGamesHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Marathon Hatcher'**
+  String get wqTitleGamesHard;
+
+  /// No description provided for @wqTitleSurvivalEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-Minute Slither'**
+  String get wqTitleSurvivalEasy;
+
+  /// No description provided for @wqTitleSurvivalMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Five-Minute Slither'**
+  String get wqTitleSurvivalMedium;
+
+  /// No description provided for @wqTitleSurvivalHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Ten-Minute Slither'**
+  String get wqTitleSurvivalHard;
+
+  /// No description provided for @wqTitleTournament.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournament Regular'**
+  String get wqTitleTournament;
+
+  /// No description provided for @wqTitleDailyEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Doer'**
+  String get wqTitleDailyEasy;
+
+  /// No description provided for @wqTitleDailyMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Adept'**
+  String get wqTitleDailyMedium;
+
+  /// No description provided for @wqDescScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score {target} in a single game'**
+  String wqDescScore(Object target);
+
+  /// No description provided for @wqDescFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat {target} foods this week'**
+  String wqDescFood(Object target);
+
+  /// No description provided for @wqDescGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Play {target} games this week'**
+  String wqDescGames(Object target);
+
+  /// No description provided for @wqDescSurvival.
+  ///
+  /// In en, this message translates to:
+  /// **'Survive {target}s in a single game'**
+  String wqDescSurvival(Object target);
+
+  /// No description provided for @wqDescTournament.
+  ///
+  /// In en, this message translates to:
+  /// **'{target, plural, one{Play 1 tournament game} other{Play {target} tournament games}}'**
+  String wqDescTournament(num target);
+
+  /// No description provided for @wqDescDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete {target} daily challenges this week'**
+  String wqDescDaily(Object target);
+
+  /// No description provided for @tnNameDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Challenge - {date}'**
+  String tnNameDaily(Object date);
+
+  /// No description provided for @tnNameWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Championship - Week {week}'**
+  String tnNameWeekly(Object week);
+
+  /// No description provided for @tnNameMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Grand Prix - {monthYear}'**
+  String tnNameMonthly(Object monthYear);
+
+  /// No description provided for @tnDescDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Compete for the highest score in today\'s 24-hour challenge! Top players win coins and glory.'**
+  String get tnDescDaily;
+
+  /// No description provided for @tnDescWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'The ultimate weekly showdown! Compete against the best players for massive rewards.'**
+  String get tnDescWeekly;
+
+  /// No description provided for @tnDescMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'The biggest tournament of the month! Prove you\'re the ultimate Snake master.'**
+  String get tnDescMonthly;
+
+  /// No description provided for @tnRewardRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Rank {rank}'**
+  String tnRewardRank(Object rank);
+
+  /// No description provided for @tnRewardCoinDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Coin reward for rank {rank}'**
+  String tnRewardCoinDesc(Object rank);
 }
 
 class _AppLocalizationsDelegate

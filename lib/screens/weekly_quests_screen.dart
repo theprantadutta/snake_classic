@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
+import 'package:snake_classic/l10n/server_text_l10n.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,6 +37,8 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
   }
 
   Future<void> _claimReward(WeeklyQuest quest) async {
+    // Capture before the await — reading context across the async gap is unsafe.
+    final l10n = AppLocalizations.of(context)!;
     final success = await _service.claimReward(quest.id);
     if (!success || !mounted) return;
 
@@ -62,7 +65,7 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
           children: [
             const Icon(Icons.monetization_on, color: Colors.amber),
             const SizedBox(width: 8),
-            Text('+${quest.coinReward} coins, +${quest.battlePassXpReward} BP XP'),
+            Text(l10n.wqClaimToast(quest.coinReward, quest.battlePassXpReward)),
           ],
         ),
       ),
@@ -170,6 +173,7 @@ class _SummaryStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final claimable = service.claimableCount;
     final completed = service.completedCount;
     final total = service.quests.length;
@@ -188,8 +192,8 @@ class _SummaryStrip extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$completed / $total complete'
-              '${claimable > 0 ? '   •   $claimable claimable' : ''}',
+              l10n.wqProgressSummary(completed, total) +
+                  (claimable > 0 ? '   •   ${l10n.wqClaimable(claimable)}' : ''),
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 13,
@@ -257,7 +261,7 @@ class _QuestCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  quest.title,
+                  quest.localizedTitle(AppLocalizations.of(context)!),
                   style: TextStyle(
                     color: theme.accentColor,
                     fontSize: 14,
@@ -269,7 +273,7 @@ class _QuestCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            quest.description,
+            quest.localizedDescription(AppLocalizations.of(context)!),
             style: TextStyle(
               color: theme.accentColor.withValues(alpha: 0.75),
               fontSize: 12,

@@ -54,6 +54,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Data is already loaded - no loading state needed
   bool get _isLoading => !_appCache.isFullyLoaded;
 
+  /// Localized duration for the play-time stat. getDisplayStatistics()
+  /// returns RAW seconds; the stDur* ARB keys carry per-locale unit letters.
+  String _formatDuration(AppLocalizations l10n, int seconds) {
+    if (seconds < 60) {
+      return l10n.stDurSeconds(seconds);
+    } else if (seconds < 3600) {
+      final m = seconds ~/ 60;
+      final s = seconds % 60;
+      return s == 0 ? l10n.stDurMinutes(m) : l10n.stDurMinSec(m, s);
+    } else {
+      final h = seconds ~/ 3600;
+      final m = (seconds % 3600) ~/ 60;
+      return m == 0 ? l10n.stDurHours(h) : l10n.stDurHourMin(h, m);
+    }
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -517,7 +533,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Expanded(
                         child: _buildStatItem(
                           l10n.pfPlayTime,
-                          '${_displayStats['totalPlayTime'] ?? '0s'}',
+                          _formatDuration(
+                            l10n,
+                            (_displayStats['totalPlayTime'] as num?)
+                                    ?.toInt() ??
+                                0,
+                          ),
                           Icons.access_time,
                           themeState,
                           isCompact: true,

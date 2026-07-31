@@ -5436,4 +5436,262 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mpErrGeneric => 'Un problème est survenu. Veuillez réessayer';
+
+  @override
+  String stDurSeconds(Object s) {
+    return '$s s';
+  }
+
+  @override
+  String stDurMinutes(Object m) {
+    return '$m min';
+  }
+
+  @override
+  String stDurHours(Object h) {
+    return '$h h';
+  }
+
+  @override
+  String stDurMinSec(Object m, Object s) {
+    return '$m min $s s';
+  }
+
+  @override
+  String stDurHourMin(Object h, Object m) {
+    return '$h h $m min';
+  }
+
+  @override
+  String dchProgressSummary(Object completed, Object total) {
+    return '$completed défis terminés sur $total';
+  }
+
+  @override
+  String wqProgressSummary(Object completed, Object total) {
+    return '$completed / $total terminées';
+  }
+
+  @override
+  String wqClaimable(Object count) {
+    return '$count à récupérer';
+  }
+
+  @override
+  String wqClaimToast(Object coins, Object xp) {
+    return '+$coins pièces, +$xp XP de passe';
+  }
+
+  @override
+  String get insPoints10 => '10 points';
+
+  @override
+  String get insPoints25 => '25 points';
+
+  @override
+  String get insPoints50 => '50 points + Niveau Supérieur';
+
+  @override
+  String get unRules =>
+      '• 3 à 20 caractères\n• Doit commencer par une lettre\n• Lettres, chiffres et tirets bas uniquement';
+
+  @override
+  String get dcTitleScoreEasy => 'Score de Débutant';
+
+  @override
+  String get dcTitleScoreMedium => 'Joueur Habile';
+
+  @override
+  String get dcTitleScoreHard => 'Maître du Score';
+
+  @override
+  String get dcTitleFoodEasy => 'Serpent Affamé';
+
+  @override
+  String get dcTitleFoodMedium => 'Mode Festin';
+
+  @override
+  String get dcTitleFoodHard => 'Insatiable';
+
+  @override
+  String get dcTitleSurvivalEasy => 'Survivant';
+
+  @override
+  String get dcTitleSurvivalMedium => 'Endurance';
+
+  @override
+  String get dcTitleSurvivalHard => 'Immortel';
+
+  @override
+  String get dcTitleGamesEasy => 'Joueur Occasionnel';
+
+  @override
+  String get dcTitleGamesMedium => 'Dévoué';
+
+  @override
+  String get dcTitleGamesHard => 'Accro du Serpent';
+
+  @override
+  String get dcTitleModeEasy => 'Amoureux du Classique';
+
+  @override
+  String get dcTitleModeMedium => 'Maître Zen';
+
+  @override
+  String get dcTitleModeHard => 'Démon de la Vitesse';
+
+  @override
+  String dcDescScore(Object target) {
+    return 'Marquez au moins $target points en une seule partie';
+  }
+
+  @override
+  String dcDescFood(Object target) {
+    return 'Mangez $target aliments aujourd\'hui';
+  }
+
+  @override
+  String dcDescSurvival(Object target) {
+    return 'Survivez $target secondes en une seule partie';
+  }
+
+  @override
+  String dcDescGames(num target) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Jouez $target parties aujourd\'hui',
+      one: 'Jouez 1 partie aujourd\'hui',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dcDescMode(num target, Object mode) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Jouez $target parties en mode $mode',
+      one: 'Jouez 1 partie en mode $mode',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wqTitleScoreEasy => 'Échauffement Hebdo';
+
+  @override
+  String get wqTitleScoreMedium => 'Réflexes Aiguisés';
+
+  @override
+  String get wqTitleScoreHard => 'Champion du Score';
+
+  @override
+  String get wqTitleFoodEasy => 'En-cas Hebdo';
+
+  @override
+  String get wqTitleFoodMedium => 'Vorace';
+
+  @override
+  String get wqTitleFoodHard => 'Sans Fond';
+
+  @override
+  String get wqTitleGamesEasy => 'Cinq par Semaine';
+
+  @override
+  String get wqTitleGamesMedium => 'Routine Installée';
+
+  @override
+  String get wqTitleGamesHard => 'Marathonien';
+
+  @override
+  String get wqTitleSurvivalEasy => 'Reptation de Deux Minutes';
+
+  @override
+  String get wqTitleSurvivalMedium => 'Reptation de Cinq Minutes';
+
+  @override
+  String get wqTitleSurvivalHard => 'Reptation de Dix Minutes';
+
+  @override
+  String get wqTitleTournament => 'Habitué des Tournois';
+
+  @override
+  String get wqTitleDailyEasy => 'Assidu du Quotidien';
+
+  @override
+  String get wqTitleDailyMedium => 'Expert du Quotidien';
+
+  @override
+  String wqDescScore(Object target) {
+    return 'Marquez $target en une seule partie';
+  }
+
+  @override
+  String wqDescFood(Object target) {
+    return 'Mangez $target aliments cette semaine';
+  }
+
+  @override
+  String wqDescGames(Object target) {
+    return 'Jouez $target parties cette semaine';
+  }
+
+  @override
+  String wqDescSurvival(Object target) {
+    return 'Survivez $target s en une seule partie';
+  }
+
+  @override
+  String wqDescTournament(num target) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'Jouez $target parties de tournoi',
+      one: 'Jouez 1 partie de tournoi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wqDescDaily(Object target) {
+    return 'Terminez $target défis quotidiens cette semaine';
+  }
+
+  @override
+  String tnNameDaily(Object date) {
+    return 'Défi Quotidien - $date';
+  }
+
+  @override
+  String tnNameWeekly(Object week) {
+    return 'Championnat Hebdomadaire - Semaine $week';
+  }
+
+  @override
+  String tnNameMonthly(Object monthYear) {
+    return 'Grand Prix Mensuel - $monthYear';
+  }
+
+  @override
+  String get tnDescDaily =>
+      'Visez le meilleur score du défi de 24 heures du jour ! Les meilleurs gagnent pièces et gloire.';
+
+  @override
+  String get tnDescWeekly =>
+      'L\'affrontement hebdomadaire ultime ! Défiez les meilleurs joueurs pour des récompenses massives.';
+
+  @override
+  String get tnDescMonthly =>
+      'Le plus grand tournoi du mois ! Prouvez que vous êtes le vrai maître de Snake.';
+
+  @override
+  String tnRewardRank(Object rank) {
+    return 'Rang $rank';
+  }
+
+  @override
+  String tnRewardCoinDesc(Object rank) {
+    return 'Récompense en pièces pour le rang $rank';
+  }
 }

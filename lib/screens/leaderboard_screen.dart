@@ -9,6 +9,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
@@ -892,7 +893,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     bool isCurrentUser,
     GameTheme theme,
   ) {
-    final formatted = _formatThousands(score);
+    final formatted = context.formatInt(score);
     if (podium != null && !isCurrentUser) {
       return ShaderMask(
         shaderCallback: (bounds) => LinearGradient(
@@ -921,20 +922,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   }
 
   /// "1 game played" / "12 games played" via the localized ICU plural.
-  /// Note: the count is no longer thousand-separated (intl formatting later).
+  /// The count is intentionally passed raw (no thousands separator): the
+  /// ICU plural needs the num to pick the right form per locale.
   String _formatGamesPlayed(AppLocalizations l10n, int count) {
     return l10n.lbGamesPlayed(count);
-  }
-
-  String _formatThousands(int n) {
-    // Manual thousand-separator — saves pulling in `intl` just for this.
-    final s = n.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(s[i]);
-    }
-    return buffer.toString();
   }
 }
 

@@ -12,6 +12,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
 
@@ -450,7 +451,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
     } else if (diff.inDays < 7) {
       return l10n.frDaysAgo(diff.inDays);
     } else {
-      return '${date.month}/${date.day}/${date.year}';
+      return context.formatDate(date);
     }
   }
 

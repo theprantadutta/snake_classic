@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
+import 'package:snake_classic/l10n/server_text_l10n.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/providers/tournaments_provider.dart';
@@ -377,7 +378,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          tournament.name,
+                          tournament.localizedName(
+                            l10n,
+                            Localizations.localeOf(context),
+                          ),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -423,7 +427,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
 
               // Description
               Text(
-                tournament.description,
+                tournament.localizedDescription(l10n),
                 style: TextStyle(
                   fontSize: 14,
                   color: theme.accentColor.withValues(alpha: 0.8),
@@ -560,7 +564,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                             Text(
                               l10n.tnRankReward(
                                 tournament.userRank,
-                                tournament.userReward!.name,
+                                localizedTournamentRewardName(
+                                  tournament.userReward!.name,
+                                  l10n,
+                                ),
                               ),
                               style: const TextStyle(
                                 fontSize: 14,

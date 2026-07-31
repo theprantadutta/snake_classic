@@ -5353,4 +5353,262 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get mpErrGeneric => 'कुछ गड़बड़ हो गई। कृपया फिर कोशिश करें';
+
+  @override
+  String stDurSeconds(Object s) {
+    return '$s से.';
+  }
+
+  @override
+  String stDurMinutes(Object m) {
+    return '$m मि.';
+  }
+
+  @override
+  String stDurHours(Object h) {
+    return '$h घं.';
+  }
+
+  @override
+  String stDurMinSec(Object m, Object s) {
+    return '$m मि. $s से.';
+  }
+
+  @override
+  String stDurHourMin(Object h, Object m) {
+    return '$h घं. $m मि.';
+  }
+
+  @override
+  String dchProgressSummary(Object completed, Object total) {
+    return '$total में से $completed चुनौतियाँ पूरी';
+  }
+
+  @override
+  String wqProgressSummary(Object completed, Object total) {
+    return '$completed / $total पूरे';
+  }
+
+  @override
+  String wqClaimable(Object count) {
+    return '$count लेने बाकी';
+  }
+
+  @override
+  String wqClaimToast(Object coins, Object xp) {
+    return '+$coins सिक्के, +$xp BP XP';
+  }
+
+  @override
+  String get insPoints10 => '10 अंक';
+
+  @override
+  String get insPoints25 => '25 अंक';
+
+  @override
+  String get insPoints50 => '50 अंक + लेवल अप';
+
+  @override
+  String get unRules =>
+      '• 3-20 अक्षर\n• अक्षर से शुरू होना चाहिए\n• सिर्फ़ अक्षर, अंक और अंडरस्कोर';
+
+  @override
+  String get dcTitleScoreEasy => 'शुरुआती स्कोर';
+
+  @override
+  String get dcTitleScoreMedium => 'कुशल खिलाड़ी';
+
+  @override
+  String get dcTitleScoreHard => 'स्कोर मास्टर';
+
+  @override
+  String get dcTitleFoodEasy => 'भूखा साँप';
+
+  @override
+  String get dcTitleFoodMedium => 'दावत मोड';
+
+  @override
+  String get dcTitleFoodHard => 'कभी न भरने वाला';
+
+  @override
+  String get dcTitleSurvivalEasy => 'उत्तरजीवी';
+
+  @override
+  String get dcTitleSurvivalMedium => 'सहनशक्ति';
+
+  @override
+  String get dcTitleSurvivalHard => 'अमर';
+
+  @override
+  String get dcTitleGamesEasy => 'आरामपसंद खिलाड़ी';
+
+  @override
+  String get dcTitleGamesMedium => 'समर्पित';
+
+  @override
+  String get dcTitleGamesHard => 'साँप का दीवाना';
+
+  @override
+  String get dcTitleModeEasy => 'क्लासिक प्रेमी';
+
+  @override
+  String get dcTitleModeMedium => 'ज़ेन मास्टर';
+
+  @override
+  String get dcTitleModeHard => 'रफ़्तार का दानव';
+
+  @override
+  String dcDescScore(Object target) {
+    return 'एक ही गेम में कम से कम $target अंक बनाएँ';
+  }
+
+  @override
+  String dcDescFood(Object target) {
+    return 'आज $target खाने खाएँ';
+  }
+
+  @override
+  String dcDescSurvival(Object target) {
+    return 'एक ही गेम में $target सेकंड टिकें';
+  }
+
+  @override
+  String dcDescGames(num target) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: 'आज $target गेम खेलें',
+      one: 'आज 1 गेम खेलें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dcDescMode(num target, Object mode) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: '$mode मोड में $target गेम खेलें',
+      one: '$mode मोड में 1 गेम खेलें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get wqTitleScoreEasy => 'हफ़्ते की शुरुआत';
+
+  @override
+  String get wqTitleScoreMedium => 'तेज़ होते रिफ़्लेक्स';
+
+  @override
+  String get wqTitleScoreHard => 'स्कोर चैंपियन';
+
+  @override
+  String get wqTitleFoodEasy => 'हफ़्ते का नाश्ता';
+
+  @override
+  String get wqTitleFoodMedium => 'पेटू';
+
+  @override
+  String get wqTitleFoodHard => 'अथाह पेट';
+
+  @override
+  String get wqTitleGamesEasy => 'हफ़्ते में पाँच';
+
+  @override
+  String get wqTitleGamesMedium => 'आदत बन गई';
+
+  @override
+  String get wqTitleGamesHard => 'मैराथन खिलाड़ी';
+
+  @override
+  String get wqTitleSurvivalEasy => 'दो मिनट की रेंगन';
+
+  @override
+  String get wqTitleSurvivalMedium => 'पाँच मिनट की रेंगन';
+
+  @override
+  String get wqTitleSurvivalHard => 'दस मिनट की रेंगन';
+
+  @override
+  String get wqTitleTournament => 'टूर्नामेंट का नियमित';
+
+  @override
+  String get wqTitleDailyEasy => 'रोज़ का काम';
+
+  @override
+  String get wqTitleDailyMedium => 'रोज़ का माहिर';
+
+  @override
+  String wqDescScore(Object target) {
+    return 'एक ही गेम में $target अंक बनाएँ';
+  }
+
+  @override
+  String wqDescFood(Object target) {
+    return 'इस हफ़्ते $target खाने खाएँ';
+  }
+
+  @override
+  String wqDescGames(Object target) {
+    return 'इस हफ़्ते $target गेम खेलें';
+  }
+
+  @override
+  String wqDescSurvival(Object target) {
+    return 'एक ही गेम में $target सेकंड टिकें';
+  }
+
+  @override
+  String wqDescTournament(num target) {
+    String _temp0 = intl.Intl.pluralLogic(
+      target,
+      locale: localeName,
+      other: '$target टूर्नामेंट गेम खेलें',
+      one: '1 टूर्नामेंट गेम खेलें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String wqDescDaily(Object target) {
+    return 'इस हफ़्ते $target दैनिक चुनौतियाँ पूरी करें';
+  }
+
+  @override
+  String tnNameDaily(Object date) {
+    return 'दैनिक चुनौती - $date';
+  }
+
+  @override
+  String tnNameWeekly(Object week) {
+    return 'साप्ताहिक चैंपियनशिप - सप्ताह $week';
+  }
+
+  @override
+  String tnNameMonthly(Object monthYear) {
+    return 'मासिक ग्रैंड प्रिक्स - $monthYear';
+  }
+
+  @override
+  String get tnDescDaily =>
+      'आज की 24 घंटे की चुनौती में सबसे ऊँचे स्कोर के लिए भिड़ें! शीर्ष खिलाड़ी सिक्के और शोहरत जीतते हैं।';
+
+  @override
+  String get tnDescWeekly =>
+      'हफ़्ते का सबसे बड़ा मुक़ाबला! बड़े इनामों के लिए बेहतरीन खिलाड़ियों से टकराएँ।';
+
+  @override
+  String get tnDescMonthly =>
+      'महीने का सबसे बड़ा टूर्नामेंट! साबित करें कि आप ही असली स्नेक मास्टर हैं।';
+
+  @override
+  String tnRewardRank(Object rank) {
+    return 'रैंक $rank';
+  }
+
+  @override
+  String tnRewardCoinDesc(Object rank) {
+    return 'रैंक $rank के लिए सिक्कों का इनाम';
+  }
 }

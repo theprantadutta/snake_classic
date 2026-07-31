@@ -14,6 +14,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -611,7 +612,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
             child: _statTile(
               theme,
               Icons.emoji_events_rounded,
-              _compactNumber(highScore),
+              context.formatCompact(highScore),
               l10n.pgBest,
             ),
           ),
@@ -620,7 +621,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
             child: _statTile(
               theme,
               Icons.sports_esports_rounded,
-              _compactNumber(games),
+              context.formatCompact(games),
               l10n.pgGames,
             ),
           ),
@@ -669,18 +670,6 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
         ),
       ],
     );
-  }
-
-  /// 1234 -> "1.2K", 1500000 -> "1.5M". Keeps the tiles from overflowing on
-  /// big lifetime numbers.
-  String _compactNumber(int n) {
-    if (n < 1000) return '$n';
-    if (n < 1000000) {
-      final v = (n / 1000);
-      return '${v.toStringAsFixed(v >= 100 ? 0 : 1)}K';
-    }
-    final v = (n / 1000000);
-    return '${v.toStringAsFixed(v >= 100 ? 0 : 1)}M';
   }
 
   Widget _buildTipCard(GameTheme theme) {
@@ -806,7 +795,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                       ),
                     ),
                     child: Text(
-                      '${(progress * 100).round()}%',
+                      context.formatPercent(progress),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,

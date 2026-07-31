@@ -11,6 +11,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
@@ -52,6 +53,13 @@ void main() async {
   // Ensure Flutter is initialized and preserve splash screen
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Date symbols for every supported locale, so DateFormat/NumberFormat in
+  // lib/utils/formatting.dart work regardless of the user's language.
+  await Future.wait(
+    SupportedLocales.locales
+        .map((l) => initializeDateFormatting(l.languageCode)),
+  );
 
   // Orbitron + Rajdhani are bundled as assets (see assets/fonts/ and
   // pubspec.yaml). Disable runtime fetching so google_fonts NEVER reaches out
