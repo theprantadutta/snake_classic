@@ -5666,4 +5666,255 @@ class AppLocalizationsPt extends AppLocalizations {
   String tnRewardCoinDesc(Object rank) {
     return 'Recompensa em moedas para a posição $rank';
   }
+
+  @override
+  String get achTitleScore1500 => 'Embalo';
+
+  @override
+  String get achDescScore1500 => 'Marque 1.500 pontos em uma única partida';
+
+  @override
+  String get achTitleScore3000 => 'Em Chamas';
+
+  @override
+  String get achDescScore3000 => 'Marque 3.000 pontos em uma única partida';
+
+  @override
+  String get achTitleScore7500 => 'Implacável';
+
+  @override
+  String get achDescScore7500 => 'Marque 7.500 pontos em uma única partida';
+
+  @override
+  String get achTitleScore15000 => 'Caçador Supremo';
+
+  @override
+  String get achDescScore15000 => 'Marque 15.000 pontos em uma única partida';
+
+  @override
+  String get achTitleScore35000 => 'Mente de Máquina';
+
+  @override
+  String get achDescScore35000 => 'Marque 35.000 pontos em uma única partida';
+
+  @override
+  String get achTitleScore75000 => 'Além do Mortal';
+
+  @override
+  String get achDescScore75000 => 'Marque 75.000 pontos em uma única partida';
+
+  @override
+  String get achTitleScore250000 => 'Um Quarto de Milhão';
+
+  @override
+  String get achDescScore250000 => 'Marque 250.000 pontos em uma única partida';
+
+  @override
+  String get achTitleBeyondTime => 'Além do Tempo';
+
+  @override
+  String get achDescBeyondTime => 'Sobreviva 45 minutos em uma única partida';
+
+  @override
+  String get achTitleHourbound => 'Hora Cheia';
+
+  @override
+  String get achDescHourbound =>
+      'Sobreviva uma hora inteira em uma única partida';
+
+  @override
+  String get achTitleSnakeDevotee => 'Devoto da Cobra';
+
+  @override
+  String get achDescSnakeDevotee => 'Jogue 2.500 partidas';
+
+  @override
+  String get achTitleTenThousandClub => 'Clube dos Dez Mil';
+
+  @override
+  String get achDescTenThousandClub => 'Jogue 10.000 partidas';
+
+  @override
+  String get achTitleZenVeteran => 'Veterano Zen';
+
+  @override
+  String get achDescZenVeteran => 'Termine 100 partidas Zen';
+
+  @override
+  String get achTitleSpeedVeteran => 'Veterano da Velocidade';
+
+  @override
+  String get achDescSpeedVeteran =>
+      'Termine 100 partidas de Desafio de Velocidade';
+
+  @override
+  String get achTitleMultifoodVeteran => 'Veterano do MultiComida';
+
+  @override
+  String get achDescMultifoodVeteran => 'Termine 100 partidas de MultiComida';
+
+  @override
+  String get achTitleTimeattackVeteran => 'Veterano do Contra o Tempo';
+
+  @override
+  String get achDescTimeattackVeteran =>
+      'Termine 100 partidas de Contra o Tempo';
+
+  @override
+  String get achTitleSurvivalVeteran => 'Veterano da Sobrevivência';
+
+  @override
+  String get achDescSurvivalVeteran => 'Termine 100 partidas de Sobrevivência';
+
+  @override
+  String get achTitlePumInitiate => 'Iniciado na Loucura';
+
+  @override
+  String get achDescPumInitiate =>
+      'Termine 10 partidas de Loucura de Power-ups';
+
+  @override
+  String get achTitlePumVeteran => 'Veterano da Loucura';
+
+  @override
+  String get achDescPumVeteran =>
+      'Termine 100 partidas de Loucura de Power-ups';
+
+  @override
+  String get achTitlePerfectInitiate => 'Purista';
+
+  @override
+  String get achDescPerfectInitiate =>
+      'Termine 10 partidas de Partida Perfeita';
+
+  @override
+  String get achTitlePerfectVeteran => 'Disciplina';
+
+  @override
+  String get achDescPerfectVeteran =>
+      'Termine 100 partidas de Partida Perfeita';
+
+  @override
+  String get achTitleZen10000 => 'Transbordo Zen';
+
+  @override
+  String get achDescZen10000 => 'Marque 10.000 no modo Zen';
+
+  @override
+  String get achTitleSpeed5000 => 'Borrão';
+
+  @override
+  String get achDescSpeed5000 => 'Marque 5.000 no Desafio de Velocidade';
+
+  @override
+  String get achTitleMultifood10000 => 'Bufê Sem Fim';
+
+  @override
+  String get achDescMultifood10000 => 'Marque 10.000 no MultiComida';
+
+  @override
+  String get achTitleTimeattack5000 => 'Corrida Contra o Relógio';
+
+  @override
+  String get achDescTimeattack5000 => 'Marque 5.000 no Contra o Tempo';
+
+  @override
+  String get achTitlePum2000 => 'Energizado';
+
+  @override
+  String get achDescPum2000 => 'Marque 2.000 na Loucura de Power-ups';
+
+  @override
+  String get achTitlePerfect1000 => 'Corrida Impecável';
+
+  @override
+  String get achDescPerfect1000 => 'Marque 1.000 no modo Partida Perfeita';
+
+  @override
+  String get achTitleComboSingularity => 'Singularidade de Combos';
+
+  @override
+  String get achDescComboSingularity =>
+      'Faça um combo de 200x em uma única partida';
+
+  @override
+  String get achTitleWorldSerpent => 'Serpente do Mundo';
+
+  @override
+  String get achDescWorldSerpent => 'Cresça a cobra até o comprimento 750';
+
+  @override
+  String get achTitleLightspeed => 'Velocidade da Luz';
+
+  @override
+  String get achDescLightspeed =>
+      'Alcance o nível 30 da partida em um único jogo';
+
+  @override
+  String get achTitlePowerOverwhelming => 'Poder Avassalador';
+
+  @override
+  String get achDescPowerOverwhelming => 'Colete 5.000 power-ups no total';
+
+  @override
+  String get achTitleGreedIsGood => 'A Ganância É Boa';
+
+  @override
+  String get achDescGreedIsGood =>
+      'Colete 25 power-ups de Multiplicador de Pontos';
+
+  @override
+  String get achTitleTimeBender => 'Dobrador do Tempo';
+
+  @override
+  String get achDescTimeBender => 'Colete 25 power-ups de Câmera Lenta';
+
+  @override
+  String get achTitleGastronome => 'Gastrônomo';
+
+  @override
+  String get achDescGastronome => 'Coma 100.000 comidas no total';
+
+  @override
+  String get achTitleLivingLegend => 'Lenda Viva';
+
+  @override
+  String get achDescLivingLegend => 'Acumule 50.000.000 de pontos no total';
+
+  @override
+  String get achTitlePerpetualMotion => 'Movimento Perpétuo';
+
+  @override
+  String get achDescPerpetualMotion => 'Sequência de 50 partidas (30s+ cada)';
+
+  @override
+  String get achTitleImmaculate => 'Imaculado';
+
+  @override
+  String get achDescImmaculate => 'Complete 100 partidas perfeitas';
+
+  @override
+  String get achTitleFortnightFaithful => 'Fiel por Quinze Dias';
+
+  @override
+  String get achDescFortnightFaithful => 'Jogue em 14 dias consecutivos';
+
+  @override
+  String get achTitleSteadySnake => 'Cobra Constante';
+
+  @override
+  String get achDescSteadySnake => 'Sobreviva 30+ segundos em 100 partidas';
+
+  @override
+  String get achTitleMarathonMonth => 'Espírito de Maratona';
+
+  @override
+  String get achDescMarathonMonth => 'Sobreviva 30+ segundos em 1.000 partidas';
+
+  @override
+  String get achTitleLunchtimeLegend => 'Lenda do Almoço';
+
+  @override
+  String get achDescLunchtimeLegend =>
+      'Termine uma partida entre meio-dia e 14h';
 }

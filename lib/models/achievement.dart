@@ -418,11 +418,15 @@ class Achievement {
       // ============================================================
       // B. Lifetime Total Score (5 NEW)
       // ============================================================
-      const Achievement(id: 'point_collector', title: 'Point Collector', description: 'Accumulate 10,000 points lifetime', icon: Icons.savings, type: AchievementType.score, rarity: AchievementRarity.common, targetValue: 10000, points: 25, xpReward: 25, coinReward: 10),
-      const Achievement(id: 'point_hoarder', title: 'Point Hoarder', description: 'Accumulate 100,000 points lifetime', icon: Icons.account_balance, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 100000, points: 75, xpReward: 75, coinReward: 40),
-      const Achievement(id: 'half_million_club', title: 'Half Million Club', description: 'Accumulate 500,000 points lifetime', icon: Icons.paid, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 500000, points: 150, xpReward: 150, coinReward: 75),
-      const Achievement(id: 'point_millionaire', title: 'Point Millionaire', description: 'Accumulate 1,000,000 points lifetime', icon: Icons.monetization_on, type: AchievementType.score, rarity: AchievementRarity.legendary, targetValue: 1000000, points: 300, xpReward: 300, coinReward: 150),
-      const Achievement(id: 'decamillionaire', title: 'Decamillionaire', description: 'Accumulate 10,000,000 points lifetime', icon: Icons.diamond, type: AchievementType.score, rarity: AchievementRarity.diamond, targetValue: 10000000, points: 500, xpReward: 500, coinReward: 250),
+      // NOTE: these are `general` (NOT `score`) on purpose — the generic
+      // score evaluator compares SINGLE-game score, which would mismeasure
+      // these lifetime totals. They unlock from stats.totalScore in
+      // checkLifetimeAchievements instead.
+      const Achievement(id: 'point_collector', title: 'Point Collector', description: 'Accumulate 10,000 points lifetime', icon: Icons.savings, type: AchievementType.general, rarity: AchievementRarity.common, targetValue: 10000, points: 25, xpReward: 25, coinReward: 10),
+      const Achievement(id: 'point_hoarder', title: 'Point Hoarder', description: 'Accumulate 100,000 points lifetime', icon: Icons.account_balance, type: AchievementType.general, rarity: AchievementRarity.rare, targetValue: 100000, points: 75, xpReward: 75, coinReward: 40),
+      const Achievement(id: 'half_million_club', title: 'Half Million Club', description: 'Accumulate 500,000 points lifetime', icon: Icons.paid, type: AchievementType.general, rarity: AchievementRarity.epic, targetValue: 500000, points: 150, xpReward: 150, coinReward: 75),
+      const Achievement(id: 'point_millionaire', title: 'Point Millionaire', description: 'Accumulate 1,000,000 points lifetime', icon: Icons.monetization_on, type: AchievementType.general, rarity: AchievementRarity.legendary, targetValue: 1000000, points: 300, xpReward: 300, coinReward: 150),
+      const Achievement(id: 'decamillionaire', title: 'Decamillionaire', description: 'Accumulate 10,000,000 points lifetime', icon: Icons.diamond, type: AchievementType.general, rarity: AchievementRarity.diamond, targetValue: 10000000, points: 500, xpReward: 500, coinReward: 250),
 
       // ============================================================
       // C. Games Played (2 NEW)
@@ -595,6 +599,82 @@ class Achievement {
       const Achievement(id: 'night_owl', title: 'Night Owl', description: 'Finish a game between midnight and 5 AM', icon: Icons.nightlight, type: AchievementType.special, rarity: AchievementRarity.common, targetValue: 1, points: 25, xpReward: 25, coinReward: 12),
       const Achievement(id: 'early_bird', title: 'Early Bird', description: 'Finish a game between 5 and 8 AM', icon: Icons.wb_twilight, type: AchievementType.special, rarity: AchievementRarity.common, targetValue: 1, points: 25, xpReward: 25, coinReward: 12),
       const Achievement(id: 'weekend_warrior', title: 'Weekend Warrior', description: 'Finish 10 games on weekends', icon: Icons.weekend, type: AchievementType.special, rarity: AchievementRarity.rare, targetValue: 10, points: 50, xpReward: 50, coinReward: 25),
+
+      // ============================================================
+      // Y. Single-Game Score — ladder extension (7 NEW)
+      // ============================================================
+      const Achievement(id: 'score_1500', title: 'Momentum', description: 'Score 1,500 points in a single game', icon: Icons.trending_up, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 1500, points: 60, xpReward: 60, coinReward: 30),
+      const Achievement(id: 'score_3000', title: 'On a Tear', description: 'Score 3,000 points in a single game', icon: Icons.show_chart, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 3000, points: 90, xpReward: 90, coinReward: 45),
+      const Achievement(id: 'score_7500', title: 'Unrelenting', description: 'Score 7,500 points in a single game', icon: Icons.moving, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 7500, points: 120, xpReward: 120, coinReward: 60),
+      const Achievement(id: 'score_15000', title: 'Apex Hunter', description: 'Score 15,000 points in a single game', icon: Icons.gps_fixed, type: AchievementType.score, rarity: AchievementRarity.legendary, targetValue: 15000, points: 200, xpReward: 200, coinReward: 100),
+      const Achievement(id: 'score_35000', title: 'Machine Mind', description: 'Score 35,000 points in a single game', icon: Icons.memory, type: AchievementType.score, rarity: AchievementRarity.legendary, targetValue: 35000, points: 250, xpReward: 250, coinReward: 125),
+      const Achievement(id: 'score_75000', title: 'Beyond Mortal', description: 'Score 75,000 points in a single game', icon: Icons.auto_awesome, type: AchievementType.score, rarity: AchievementRarity.diamond, targetValue: 75000, points: 300, xpReward: 300, coinReward: 150),
+      const Achievement(id: 'score_250000', title: 'Quarter Million', description: 'Score 250,000 points in a single game', icon: Icons.stacked_line_chart, type: AchievementType.score, rarity: AchievementRarity.diamond, targetValue: 250000, points: 400, xpReward: 400, coinReward: 200),
+
+      // ============================================================
+      // Z. Single-Game Survival — ladder extension (2 NEW)
+      // ============================================================
+      const Achievement(id: 'beyond_time', title: 'Beyond Time', description: 'Survive 45 minutes in a single game', icon: Icons.hourglass_bottom, type: AchievementType.survival, rarity: AchievementRarity.diamond, targetValue: 2700, points: 350, xpReward: 350, coinReward: 175),
+      const Achievement(id: 'hourbound', title: 'Hourbound', description: 'Survive a full hour in a single game', icon: Icons.schedule, type: AchievementType.survival, rarity: AchievementRarity.diamond, targetValue: 3600, points: 500, xpReward: 500, coinReward: 250),
+
+      // ============================================================
+      // AA. Games Played — ladder extension (2 NEW)
+      // ============================================================
+      const Achievement(id: 'snake_devotee', title: 'Snake Devotee', description: 'Play 2,500 games', icon: Icons.loyalty, type: AchievementType.games, rarity: AchievementRarity.legendary, targetValue: 2500, points: 250, xpReward: 250, coinReward: 125),
+      const Achievement(id: 'ten_thousand_club', title: 'Ten Thousand Club', description: 'Play 10,000 games', icon: Icons.workspace_premium, type: AchievementType.games, rarity: AchievementRarity.diamond, targetValue: 10000, points: 450, xpReward: 450, coinReward: 225),
+
+      // ============================================================
+      // AB. Per-Mode Veterans + Power-Up Madness / Perfect Game (9 NEW)
+      // ============================================================
+      const Achievement(id: 'zen_veteran', title: 'Zen Veteran', description: 'Finish 100 Zen games', icon: Icons.spa, type: AchievementType.games, rarity: AchievementRarity.rare, targetValue: 100, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'zen'),
+      const Achievement(id: 'speed_veteran', title: 'Speed Veteran', description: 'Finish 100 Speed Challenge games', icon: Icons.speed, type: AchievementType.games, rarity: AchievementRarity.rare, targetValue: 100, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'speedChallenge'),
+      const Achievement(id: 'multifood_veteran', title: 'MultiFood Veteran', description: 'Finish 100 MultiFood games', icon: Icons.rice_bowl, type: AchievementType.games, rarity: AchievementRarity.rare, targetValue: 100, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'multiFood'),
+      const Achievement(id: 'timeattack_veteran', title: 'TimeAttack Veteran', description: 'Finish 100 TimeAttack games', icon: Icons.timer, type: AchievementType.games, rarity: AchievementRarity.rare, targetValue: 100, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'timeAttack'),
+      const Achievement(id: 'survival_veteran', title: 'Survival Veteran', description: 'Finish 100 Survival games', icon: Icons.favorite, type: AchievementType.games, rarity: AchievementRarity.rare, targetValue: 100, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'survival'),
+      const Achievement(id: 'pum_initiate', title: 'Madness Initiate', description: 'Finish 10 Power-Up Madness games', icon: Icons.bolt, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12, gameModeFilter: 'powerUpMadness'),
+      const Achievement(id: 'pum_veteran', title: 'Madness Veteran', description: 'Finish 100 Power-Up Madness games', icon: Icons.electric_bolt, type: AchievementType.games, rarity: AchievementRarity.rare, targetValue: 100, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'powerUpMadness'),
+      const Achievement(id: 'perfect_initiate', title: 'Purist', description: 'Finish 10 Perfect Game runs', icon: Icons.verified, type: AchievementType.games, rarity: AchievementRarity.common, targetValue: 10, points: 25, xpReward: 25, coinReward: 12, gameModeFilter: 'perfectGame'),
+      const Achievement(id: 'perfect_veteran', title: 'Discipline', description: 'Finish 100 Perfect Game runs', icon: Icons.verified_user, type: AchievementType.games, rarity: AchievementRarity.rare, targetValue: 100, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'perfectGame'),
+
+      // ============================================================
+      // AC. Per-Mode High Scores (6 NEW)
+      // ============================================================
+      const Achievement(id: 'zen_10000', title: 'Zen Overflow', description: 'Score 10,000 in Zen mode', icon: Icons.self_improvement, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 10000, points: 100, xpReward: 100, coinReward: 50, gameModeFilter: 'zen'),
+      const Achievement(id: 'speed_5000', title: 'Blur', description: 'Score 5,000 in Speed Challenge', icon: Icons.blur_linear, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 5000, points: 100, xpReward: 100, coinReward: 50, gameModeFilter: 'speedChallenge'),
+      const Achievement(id: 'multifood_10000', title: 'Endless Buffet', description: 'Score 10,000 in MultiFood', icon: Icons.tapas, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 10000, points: 100, xpReward: 100, coinReward: 50, gameModeFilter: 'multiFood'),
+      const Achievement(id: 'timeattack_5000', title: 'Race the Clock', description: 'Score 5,000 in TimeAttack', icon: Icons.alarm, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 5000, points: 100, xpReward: 100, coinReward: 50, gameModeFilter: 'timeAttack'),
+      const Achievement(id: 'pum_2000', title: 'Charged Up', description: 'Score 2,000 in Power-Up Madness', icon: Icons.battery_charging_full, type: AchievementType.score, rarity: AchievementRarity.rare, targetValue: 2000, points: 60, xpReward: 60, coinReward: 30, gameModeFilter: 'powerUpMadness'),
+      const Achievement(id: 'perfect_1000', title: 'Flawless Run', description: 'Score 1,000 in Perfect Game mode', icon: Icons.diamond, type: AchievementType.score, rarity: AchievementRarity.epic, targetValue: 1000, points: 110, xpReward: 110, coinReward: 55, gameModeFilter: 'perfectGame'),
+
+      // ============================================================
+      // AD. Apex Single-Game Specials (3 NEW)
+      // ============================================================
+      const Achievement(id: 'combo_singularity', title: 'Combo Singularity', description: 'Hit a 200x combo in a single game', icon: Icons.cyclone, type: AchievementType.special, rarity: AchievementRarity.diamond, targetValue: 200, points: 400, xpReward: 400, coinReward: 200),
+      const Achievement(id: 'world_serpent', title: 'World Serpent', description: 'Grow snake to length 750', icon: Icons.public, type: AchievementType.special, rarity: AchievementRarity.diamond, targetValue: 750, points: 400, xpReward: 400, coinReward: 200),
+      const Achievement(id: 'lightspeed', title: 'Lightspeed', description: 'Reach in-game level 30 in one game', icon: Icons.rocket_launch, type: AchievementType.special, rarity: AchievementRarity.diamond, targetValue: 30, points: 350, xpReward: 350, coinReward: 175),
+
+      // ============================================================
+      // AE. Lifetime Power-Ups / Foods / Score (6 NEW)
+      // ============================================================
+      const Achievement(id: 'power_overwhelming', title: 'Power Overwhelming', description: 'Collect 5,000 power-ups lifetime', icon: Icons.power, type: AchievementType.special, rarity: AchievementRarity.diamond, targetValue: 5000, points: 400, xpReward: 400, coinReward: 200),
+      const Achievement(id: 'greed_is_good', title: 'Greed Is Good', description: 'Collect 25 Score Multiplier power-ups', icon: Icons.attach_money, type: AchievementType.special, rarity: AchievementRarity.rare, targetValue: 25, points: 50, xpReward: 50, coinReward: 25),
+      const Achievement(id: 'time_bender', title: 'Time Bender', description: 'Collect 25 Slow Motion power-ups', icon: Icons.slow_motion_video, type: AchievementType.special, rarity: AchievementRarity.rare, targetValue: 25, points: 50, xpReward: 50, coinReward: 25),
+      const Achievement(id: 'gastronome', title: 'Gastronome', description: 'Eat 100,000 foods lifetime', icon: Icons.restaurant, type: AchievementType.special, rarity: AchievementRarity.diamond, targetValue: 100000, points: 400, xpReward: 400, coinReward: 200),
+      const Achievement(id: 'living_legend', title: 'Living Legend', description: 'Accumulate 50,000,000 points lifetime', icon: Icons.emoji_events, type: AchievementType.general, rarity: AchievementRarity.diamond, targetValue: 50000000, points: 500, xpReward: 500, coinReward: 250),
+      const Achievement(id: 'immaculate', title: 'Immaculate', description: 'Complete 100 perfect games', icon: Icons.workspace_premium, type: AchievementType.special, rarity: AchievementRarity.diamond, targetValue: 100, points: 400, xpReward: 400, coinReward: 200),
+
+      // ============================================================
+      // AF. Streaks / Consistency (4 NEW)
+      // ============================================================
+      const Achievement(id: 'perpetual_motion', title: 'Perpetual Motion', description: '50-game streak (30s+ each)', icon: Icons.all_inclusive, type: AchievementType.streak, rarity: AchievementRarity.legendary, targetValue: 50, points: 300, xpReward: 300, coinReward: 150),
+      const Achievement(id: 'fortnight_faithful', title: 'Fortnight Faithful', description: 'Play on 14 consecutive days', icon: Icons.date_range, type: AchievementType.streak, rarity: AchievementRarity.epic, targetValue: 14, points: 150, xpReward: 150, coinReward: 75),
+      const Achievement(id: 'steady_snake', title: 'Steady Snake', description: 'Survive 30+ seconds in 100 games', icon: Icons.health_and_safety, type: AchievementType.special, rarity: AchievementRarity.rare, targetValue: 100, points: 60, xpReward: 60, coinReward: 30),
+      const Achievement(id: 'marathon_month', title: 'Marathon Spirit', description: 'Survive 30+ seconds in 1,000 games', icon: Icons.directions_walk, type: AchievementType.special, rarity: AchievementRarity.epic, targetValue: 1000, points: 140, xpReward: 140, coinReward: 70),
+
+      // ============================================================
+      // AG. Time-of-Day (1 NEW)
+      // ============================================================
+      const Achievement(id: 'lunchtime_legend', title: 'Lunchtime Legend', description: 'Finish a game between noon and 2 PM', icon: Icons.lunch_dining, type: AchievementType.special, rarity: AchievementRarity.common, targetValue: 1, points: 20, xpReward: 20, coinReward: 10),
     ];
   }
 }

@@ -469,12 +469,34 @@ class AchievementService extends ChangeNotifier {
     await _saveProgress();
   }
 
+  /// GameRunSummary.gameMode and GameStatistics.gameModeCount carry the
+  /// DISPLAY name (GameMode overrides `name`: 'Classic', 'Zen Mode',
+  /// 'Speed Challenge', ...), while catalog gameModeFilter values are the
+  /// camelCase enum identifiers ('classic', 'zen', 'speedChallenge', ...).
+  /// Canonicalize display names to filter identifiers before comparing —
+  /// without this, every mode-filtered row silently never matched.
+  /// Unknown keys (e.g. 'multiplayer') pass through unchanged.
+  static const Map<String, String> _displayModeToFilter = {
+    'classic': 'classic',
+    'zen mode': 'zen',
+    'speed challenge': 'speedChallenge',
+    'multi-food': 'multiFood',
+    'survival': 'survival',
+    'time attack': 'timeAttack',
+    'power-up madness': 'powerUpMadness',
+    'perfect game': 'perfectGame',
+  };
+
+  static String _canonicalGameMode(String gameMode) =>
+      _displayModeToFilter[gameMode.toLowerCase()] ?? gameMode;
+
   /// Returns true when the achievement's mode/difficulty filters (if any)
   /// match the current game's mode + difficulty. Mirrors the SQL guards in
   /// AchievementAutoEvaluator: `(filter IS NULL OR filter = current)`.
   bool _filterMatches(Achievement a, String gameMode, String difficulty) {
     final mode = a.gameModeFilter;
-    if (mode != null && mode.toLowerCase() != gameMode.toLowerCase()) {
+    if (mode != null &&
+        mode.toLowerCase() != _canonicalGameMode(gameMode).toLowerCase()) {
       return false;
     }
     final diff = a.difficultyFilter;
@@ -568,11 +590,16 @@ class AchievementService extends ChangeNotifier {
   }) {
     final newUnlocks = <Achievement>[];
 
-    // Filters may arrive lowercased from a server catalog overlay while
-    // GameMode.name is camelCase — compare case-insensitively.
-    final modeCountLower = <String, int>{
-      for (final e in gameModeCount.entries) e.key.toLowerCase(): e.value,
-    };
+    // gameModeCount is keyed by GameMode display names ('Zen Mode', ...)
+    // while gameModeFilter holds camelCase identifiers ('zen', ...).
+    // Canonicalize the stat keys and sum counts that collapse to the same
+    // identifier, then compare case-insensitively (filters may arrive
+    // lowercased from a server catalog overlay).
+    final modeCountLower = <String, int>{};
+    for (final e in gameModeCount.entries) {
+      final key = _canonicalGameMode(e.key).toLowerCase();
+      modeCountLower[key] = (modeCountLower[key] ?? 0) + e.value;
+    }
 
     for (int i = 0; i < _achievements.length; i++) {
       final achievement = _achievements[i];
@@ -689,6 +716,7 @@ class AchievementService extends ChangeNotifier {
     int? noWallGames,
     int? maxCombo,
     int? snakeLength,
+    int? foodsEatenThisGame,
     DateTime? gameEndTime,
   }) {
     final newUnlocks = <Achievement>[];
@@ -736,12 +764,30 @@ class AchievementService extends ChangeNotifier {
             }
             break;
 
+          // -------- foods eaten this game --------
+          case 'first_bite_snack':
+          case 'hungry_snake':
+          case 'famished':
+          case 'ravenous':
+          case 'insatiable':
+          case 'black_hole_stomach':
+            if (foodsEatenThisGame != null &&
+                foodsEatenThisGame >= achievement.targetValue) {
+              shouldUnlock = true;
+              newProgress = achievement.targetValue;
+            } else if (foodsEatenThisGame != null &&
+                foodsEatenThisGame > achievement.currentProgress) {
+              newProgress = foodsEatenThisGame;
+            }
+            break;
+
           // -------- combo (max combo this game) --------
           case 'combo_starter':
           case 'combo_master':
           case 'combo_pro':
           case 'combo_god':
           case 'combo_legend':
+          case 'combo_singularity':
             if (maxCombo != null && maxCombo >= achievement.targetValue) {
               shouldUnlock = true;
               newProgress = achievement.targetValue;
@@ -756,6 +802,7 @@ class AchievementService extends ChangeNotifier {
           case 'huge_snake':
           case 'massive_snake':
           case 'anaconda':
+          case 'world_serpent':
             if (snakeLength != null && snakeLength >= achievement.targetValue) {
               shouldUnlock = true;
               newProgress = achievement.targetValue;
@@ -765,10 +812,11 @@ class AchievementService extends ChangeNotifier {
             break;
 
           // -------- in-game level (peak level this game) --------
-          // velocity=15, mach_speed=20, cosmic_snake=25
+          // velocity=15, mach_speed=20, cosmic_snake=25, lightspeed=30
           case 'velocity':
           case 'mach_speed':
           case 'cosmic_snake':
+          case 'lightspeed':
             if (level != null && level >= achievement.targetValue) {
               shouldUnlock = true;
               newProgress = achievement.targetValue;
@@ -787,6 +835,13 @@ class AchievementService extends ChangeNotifier {
 
           case 'early_bird':
             if (hourOfDay != null && hourOfDay >= 5 && hourOfDay < 8) {
+              shouldUnlock = true;
+              newProgress = 1;
+            }
+            break;
+
+          case 'lunchtime_legend':
+            if (hourOfDay != null && hourOfDay >= 12 && hourOfDay < 14) {
               shouldUnlock = true;
               newProgress = 1;
             }
@@ -831,14 +886,22 @@ class AchievementService extends ChangeNotifier {
     required int perfectGames,
     required int currentWinStreak,
     required Map<String, int> dailyPlayTime,
+    required int totalFoodConsumed,
+    required int totalScore,
+    required int gamesSurvived30s,
   }) {
     final newUnlocks = <Achievement>[];
 
     final distinctPowerUpTypes = powerUpTypeCount.keys
         .where((k) => (powerUpTypeCount[k] ?? 0) > 0)
         .length;
-    final speedBoostCount = powerUpTypeCount['speedBoost'] ?? 0;
-    final invincibilityCount = powerUpTypeCount['invincibility'] ?? 0;
+    // powerUpTypeCount is keyed by PowerUpType DISPLAY names ('Speed
+    // Boost', 'Invincibility', ...) — the old camelCase lookups
+    // ('speedBoost'/'invincibility') always read 0.
+    final speedBoostCount = powerUpTypeCount['Speed Boost'] ?? 0;
+    final invincibilityCount = powerUpTypeCount['Invincibility'] ?? 0;
+    final scoreMultiplierCount = powerUpTypeCount['Score Multiplier'] ?? 0;
+    final slowMotionCount = powerUpTypeCount['Slow Motion'] ?? 0;
     final totalSpecialFoods = foodTypeCount['special'] ?? 0;
     final totalBonusFoods = foodTypeCount['bonus'] ?? 0;
     final consecutiveDays = _consecutiveDayStreak(dailyPlayTime);
@@ -858,6 +921,7 @@ class AchievementService extends ChangeNotifier {
         case 'power_hungry':
         case 'power_addict':
         case 'power_master':
+        case 'power_overwhelming':
           if (totalPowerUps >= achievement.targetValue) {
             shouldUnlock = true;
             newProgress = achievement.targetValue;
@@ -893,6 +957,65 @@ class AchievementService extends ChangeNotifier {
           }
           break;
 
+        case 'greed_is_good':
+          if (scoreMultiplierCount >= achievement.targetValue) {
+            shouldUnlock = true;
+            newProgress = achievement.targetValue;
+          } else if (scoreMultiplierCount > achievement.currentProgress) {
+            newProgress = scoreMultiplierCount;
+          }
+          break;
+
+        case 'time_bender':
+          if (slowMotionCount >= achievement.targetValue) {
+            shouldUnlock = true;
+            newProgress = achievement.targetValue;
+          } else if (slowMotionCount > achievement.currentProgress) {
+            newProgress = slowMotionCount;
+          }
+          break;
+
+        // Lifetime foods eaten (total across all games)
+        case 'foodie_apprentice':
+        case 'foodie_pro':
+        case 'foodie_master':
+        case 'foodie_god':
+        case 'gastronome':
+          if (totalFoodConsumed >= achievement.targetValue) {
+            shouldUnlock = true;
+            newProgress = achievement.targetValue;
+          } else if (totalFoodConsumed > achievement.currentProgress) {
+            newProgress = totalFoodConsumed;
+          }
+          break;
+
+        // Lifetime total score (these rows are AchievementType.general so
+        // the single-game score evaluator skips them)
+        case 'point_collector':
+        case 'point_hoarder':
+        case 'half_million_club':
+        case 'point_millionaire':
+        case 'decamillionaire':
+        case 'living_legend':
+          if (totalScore >= achievement.targetValue) {
+            shouldUnlock = true;
+            newProgress = achievement.targetValue;
+          } else if (totalScore > achievement.currentProgress) {
+            newProgress = totalScore;
+          }
+          break;
+
+        // Lifetime count of games survived 30s+
+        case 'steady_snake':
+        case 'marathon_month':
+          if (gamesSurvived30s >= achievement.targetValue) {
+            shouldUnlock = true;
+            newProgress = achievement.targetValue;
+          } else if (gamesSurvived30s > achievement.currentProgress) {
+            newProgress = gamesSurvived30s;
+          }
+          break;
+
         // Food type variety lifetime
         case 'special_diet':
           if (totalSpecialFoods >= achievement.targetValue) {
@@ -916,6 +1039,7 @@ class AchievementService extends ChangeNotifier {
         case 'untouchable_5':
         case 'untouchable_20':
         case 'untouchable_50':
+        case 'immaculate':
           if (perfectGames >= achievement.targetValue) {
             shouldUnlock = true;
             newProgress = achievement.targetValue;
@@ -928,6 +1052,7 @@ class AchievementService extends ChangeNotifier {
         case 'hot_streak':
         case 'on_fire':
         case 'unstoppable':
+        case 'perpetual_motion':
           if (currentWinStreak >= achievement.targetValue) {
             shouldUnlock = true;
             newProgress = achievement.targetValue;
@@ -939,6 +1064,7 @@ class AchievementService extends ChangeNotifier {
         // Daily streaks
         case 'daily_three':
         case 'week_warrior':
+        case 'fortnight_faithful':
           if (consecutiveDays >= achievement.targetValue) {
             shouldUnlock = true;
             newProgress = achievement.targetValue;

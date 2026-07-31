@@ -5611,4 +5611,245 @@ class AppLocalizationsHi extends AppLocalizations {
   String tnRewardCoinDesc(Object rank) {
     return 'रैंक $rank के लिए सिक्कों का इनाम';
   }
+
+  @override
+  String get achTitleScore1500 => 'रफ़्तार पकड़ी';
+
+  @override
+  String get achDescScore1500 => 'एक ही गेम में 1,500 अंक बनाएँ';
+
+  @override
+  String get achTitleScore3000 => 'जोश में';
+
+  @override
+  String get achDescScore3000 => 'एक ही गेम में 3,000 अंक बनाएँ';
+
+  @override
+  String get achTitleScore7500 => 'अथक';
+
+  @override
+  String get achDescScore7500 => 'एक ही गेम में 7,500 अंक बनाएँ';
+
+  @override
+  String get achTitleScore15000 => 'शिखर शिकारी';
+
+  @override
+  String get achDescScore15000 => 'एक ही गेम में 15,000 अंक बनाएँ';
+
+  @override
+  String get achTitleScore35000 => 'मशीनी दिमाग़';
+
+  @override
+  String get achDescScore35000 => 'एक ही गेम में 35,000 अंक बनाएँ';
+
+  @override
+  String get achTitleScore75000 => 'इंसानी हद से परे';
+
+  @override
+  String get achDescScore75000 => 'एक ही गेम में 75,000 अंक बनाएँ';
+
+  @override
+  String get achTitleScore250000 => 'चौथाई मिलियन';
+
+  @override
+  String get achDescScore250000 => 'एक ही गेम में 250,000 अंक बनाएँ';
+
+  @override
+  String get achTitleBeyondTime => 'समय से परे';
+
+  @override
+  String get achDescBeyondTime => 'एक ही गेम में 45 मिनट टिकें';
+
+  @override
+  String get achTitleHourbound => 'पूरा घंटा';
+
+  @override
+  String get achDescHourbound => 'एक ही गेम में पूरा एक घंटा टिकें';
+
+  @override
+  String get achTitleSnakeDevotee => 'साँप का भक्त';
+
+  @override
+  String get achDescSnakeDevotee => '2,500 गेम खेलें';
+
+  @override
+  String get achTitleTenThousandClub => 'दस हज़ार क्लब';
+
+  @override
+  String get achDescTenThousandClub => '10,000 गेम खेलें';
+
+  @override
+  String get achTitleZenVeteran => 'ज़ेन अनुभवी';
+
+  @override
+  String get achDescZenVeteran => '100 ज़ेन गेम पूरे करें';
+
+  @override
+  String get achTitleSpeedVeteran => 'स्पीड अनुभवी';
+
+  @override
+  String get achDescSpeedVeteran => '100 स्पीड चैलेंज गेम पूरे करें';
+
+  @override
+  String get achTitleMultifoodVeteran => 'मल्टीफ़ूड अनुभवी';
+
+  @override
+  String get achDescMultifoodVeteran => '100 मल्टीफ़ूड गेम पूरे करें';
+
+  @override
+  String get achTitleTimeattackVeteran => 'टाइमअटैक अनुभवी';
+
+  @override
+  String get achDescTimeattackVeteran => '100 टाइमअटैक गेम पूरे करें';
+
+  @override
+  String get achTitleSurvivalVeteran => 'सर्वाइवल अनुभवी';
+
+  @override
+  String get achDescSurvivalVeteran => '100 सर्वाइवल गेम पूरे करें';
+
+  @override
+  String get achTitlePumInitiate => 'धमाल शुरुआती';
+
+  @override
+  String get achDescPumInitiate => '10 पावर-अप धमाल गेम पूरे करें';
+
+  @override
+  String get achTitlePumVeteran => 'धमाल अनुभवी';
+
+  @override
+  String get achDescPumVeteran => '100 पावर-अप धमाल गेम पूरे करें';
+
+  @override
+  String get achTitlePerfectInitiate => 'शुद्धतावादी';
+
+  @override
+  String get achDescPerfectInitiate => '10 परफ़ेक्ट गेम रन पूरे करें';
+
+  @override
+  String get achTitlePerfectVeteran => 'अनुशासन';
+
+  @override
+  String get achDescPerfectVeteran => '100 परफ़ेक्ट गेम रन पूरे करें';
+
+  @override
+  String get achTitleZen10000 => 'ज़ेन उफान';
+
+  @override
+  String get achDescZen10000 => 'ज़ेन मोड में 10,000 अंक बनाएँ';
+
+  @override
+  String get achTitleSpeed5000 => 'धुंधली रफ़्तार';
+
+  @override
+  String get achDescSpeed5000 => 'स्पीड चैलेंज में 5,000 अंक बनाएँ';
+
+  @override
+  String get achTitleMultifood10000 => 'अनंत बुफ़े';
+
+  @override
+  String get achDescMultifood10000 => 'मल्टीफ़ूड में 10,000 अंक बनाएँ';
+
+  @override
+  String get achTitleTimeattack5000 => 'घड़ी से रेस';
+
+  @override
+  String get achDescTimeattack5000 => 'टाइमअटैक में 5,000 अंक बनाएँ';
+
+  @override
+  String get achTitlePum2000 => 'चार्ज्ड अप';
+
+  @override
+  String get achDescPum2000 => 'पावर-अप धमाल में 2,000 अंक बनाएँ';
+
+  @override
+  String get achTitlePerfect1000 => 'बेदाग़ दौड़';
+
+  @override
+  String get achDescPerfect1000 => 'परफ़ेक्ट गेम मोड में 1,000 अंक बनाएँ';
+
+  @override
+  String get achTitleComboSingularity => 'कॉम्बो सिंगुलैरिटी';
+
+  @override
+  String get achDescComboSingularity => 'एक ही गेम में 200x कॉम्बो लगाएँ';
+
+  @override
+  String get achTitleWorldSerpent => 'विश्व सर्प';
+
+  @override
+  String get achDescWorldSerpent => 'साँप को 750 लंबाई तक बढ़ाएँ';
+
+  @override
+  String get achTitleLightspeed => 'प्रकाश गति';
+
+  @override
+  String get achDescLightspeed => 'एक गेम में इन-गेम लेवल 30 तक पहुँचें';
+
+  @override
+  String get achTitlePowerOverwhelming => 'अपार शक्ति';
+
+  @override
+  String get achDescPowerOverwhelming => 'कुल 5,000 पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitleGreedIsGood => 'लालच अच्छा है';
+
+  @override
+  String get achDescGreedIsGood => '25 स्कोर गुणक पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitleTimeBender => 'समय को मोड़ने वाला';
+
+  @override
+  String get achDescTimeBender => '25 स्लो मोशन पावर-अप इकट्ठा करें';
+
+  @override
+  String get achTitleGastronome => 'महाभोजी';
+
+  @override
+  String get achDescGastronome => 'कुल 100,000 खाने खाएँ';
+
+  @override
+  String get achTitleLivingLegend => 'जीवित किंवदंती';
+
+  @override
+  String get achDescLivingLegend => 'कुल 50,000,000 अंक जमा करें';
+
+  @override
+  String get achTitlePerpetualMotion => 'अनवरत गति';
+
+  @override
+  String get achDescPerpetualMotion => '50 गेम की लड़ी (हर गेम 30 सेकंड+)';
+
+  @override
+  String get achTitleImmaculate => 'निष्कलंक';
+
+  @override
+  String get achDescImmaculate => '100 परफ़ेक्ट गेम पूरे करें';
+
+  @override
+  String get achTitleFortnightFaithful => 'पखवाड़े का पक्का';
+
+  @override
+  String get achDescFortnightFaithful => 'लगातार 14 दिन खेलें';
+
+  @override
+  String get achTitleSteadySnake => 'स्थिर साँप';
+
+  @override
+  String get achDescSteadySnake => '100 गेम में 30+ सेकंड टिकें';
+
+  @override
+  String get achTitleMarathonMonth => 'मैराथन जज़्बा';
+
+  @override
+  String get achDescMarathonMonth => '1,000 गेम में 30+ सेकंड टिकें';
+
+  @override
+  String get achTitleLunchtimeLegend => 'दोपहर का उस्ताद';
+
+  @override
+  String get achDescLunchtimeLegend =>
+      'दोपहर 12 से 2 बजे के बीच एक गेम पूरा करें';
 }

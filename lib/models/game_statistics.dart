@@ -5,7 +5,7 @@ class GameStatistics {
   /// Keep in sync with Achievement.getDefaultAchievements() in
   /// `lib/models/achievement.dart`. Used as both the default and the
   /// fallback when reading legacy JSON.
-  static const int kTotalAchievements = 90;
+  static const int kTotalAchievements = 147;
 
   // Basic game metrics
   final int totalGamesPlayed;

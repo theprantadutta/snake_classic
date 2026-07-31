@@ -5660,4 +5660,245 @@ class AppLocalizationsRu extends AppLocalizations {
   String tnRewardCoinDesc(Object rank) {
     return 'Награда монетами за место $rank';
   }
+
+  @override
+  String get achTitleScore1500 => 'Разгон';
+
+  @override
+  String get achDescScore1500 => 'Наберите 1 500 очков за одну игру';
+
+  @override
+  String get achTitleScore3000 => 'В ударе';
+
+  @override
+  String get achDescScore3000 => 'Наберите 3 000 очков за одну игру';
+
+  @override
+  String get achTitleScore7500 => 'Неумолимый';
+
+  @override
+  String get achDescScore7500 => 'Наберите 7 500 очков за одну игру';
+
+  @override
+  String get achTitleScore15000 => 'Верховный охотник';
+
+  @override
+  String get achDescScore15000 => 'Наберите 15 000 очков за одну игру';
+
+  @override
+  String get achTitleScore35000 => 'Машинный разум';
+
+  @override
+  String get achDescScore35000 => 'Наберите 35 000 очков за одну игру';
+
+  @override
+  String get achTitleScore75000 => 'За гранью смертного';
+
+  @override
+  String get achDescScore75000 => 'Наберите 75 000 очков за одну игру';
+
+  @override
+  String get achTitleScore250000 => 'Четверть миллиона';
+
+  @override
+  String get achDescScore250000 => 'Наберите 250 000 очков за одну игру';
+
+  @override
+  String get achTitleBeyondTime => 'Вне времени';
+
+  @override
+  String get achDescBeyondTime => 'Продержитесь 45 минут за одну игру';
+
+  @override
+  String get achTitleHourbound => 'Целый час';
+
+  @override
+  String get achDescHourbound => 'Продержитесь целый час за одну игру';
+
+  @override
+  String get achTitleSnakeDevotee => 'Преданный змейке';
+
+  @override
+  String get achDescSnakeDevotee => 'Сыграйте 2 500 игр';
+
+  @override
+  String get achTitleTenThousandClub => 'Клуб десяти тысяч';
+
+  @override
+  String get achDescTenThousandClub => 'Сыграйте 10 000 игр';
+
+  @override
+  String get achTitleZenVeteran => 'Ветеран дзена';
+
+  @override
+  String get achDescZenVeteran => 'Завершите 100 игр в режиме «Дзен»';
+
+  @override
+  String get achTitleSpeedVeteran => 'Ветеран скорости';
+
+  @override
+  String get achDescSpeedVeteran => 'Завершите 100 игр «Скоростного вызова»';
+
+  @override
+  String get achTitleMultifoodVeteran => 'Ветеран «Мультиеды»';
+
+  @override
+  String get achDescMultifoodVeteran => 'Завершите 100 игр «Мультиеды»';
+
+  @override
+  String get achTitleTimeattackVeteran => 'Ветеран режима «На время»';
+
+  @override
+  String get achDescTimeattackVeteran => 'Завершите 100 игр «На время»';
+
+  @override
+  String get achTitleSurvivalVeteran => 'Ветеран выживания';
+
+  @override
+  String get achDescSurvivalVeteran => 'Завершите 100 игр «Выживания»';
+
+  @override
+  String get achTitlePumInitiate => 'Новичок безумия';
+
+  @override
+  String get achDescPumInitiate => 'Завершите 10 игр «Безумия усилений»';
+
+  @override
+  String get achTitlePumVeteran => 'Ветеран безумия';
+
+  @override
+  String get achDescPumVeteran => 'Завершите 100 игр «Безумия усилений»';
+
+  @override
+  String get achTitlePerfectInitiate => 'Пурист';
+
+  @override
+  String get achDescPerfectInitiate => 'Завершите 10 «Идеальных игр»';
+
+  @override
+  String get achTitlePerfectVeteran => 'Дисциплина';
+
+  @override
+  String get achDescPerfectVeteran => 'Завершите 100 «Идеальных игр»';
+
+  @override
+  String get achTitleZen10000 => 'Дзен через край';
+
+  @override
+  String get achDescZen10000 => 'Наберите 10 000 в режиме «Дзен»';
+
+  @override
+  String get achTitleSpeed5000 => 'Размытие';
+
+  @override
+  String get achDescSpeed5000 => 'Наберите 5 000 в «Скоростном вызове»';
+
+  @override
+  String get achTitleMultifood10000 => 'Бесконечный буфет';
+
+  @override
+  String get achDescMultifood10000 => 'Наберите 10 000 в «Мультиеде»';
+
+  @override
+  String get achTitleTimeattack5000 => 'Гонка с часами';
+
+  @override
+  String get achDescTimeattack5000 => 'Наберите 5 000 в режиме «На время»';
+
+  @override
+  String get achTitlePum2000 => 'Полный заряд';
+
+  @override
+  String get achDescPum2000 => 'Наберите 2 000 в «Безумии усилений»';
+
+  @override
+  String get achTitlePerfect1000 => 'Безупречный забег';
+
+  @override
+  String get achDescPerfect1000 => 'Наберите 1 000 в «Идеальной игре»';
+
+  @override
+  String get achTitleComboSingularity => 'Сингулярность комбо';
+
+  @override
+  String get achDescComboSingularity => 'Сделайте комбо 200x за одну игру';
+
+  @override
+  String get achTitleWorldSerpent => 'Мировой змей';
+
+  @override
+  String get achDescWorldSerpent => 'Вырастите змейку до длины 750';
+
+  @override
+  String get achTitleLightspeed => 'Скорость света';
+
+  @override
+  String get achDescLightspeed =>
+      'Достигните 30-го игрового уровня за одну игру';
+
+  @override
+  String get achTitlePowerOverwhelming => 'Сокрушительная мощь';
+
+  @override
+  String get achDescPowerOverwhelming => 'Соберите 5 000 усилений за всё время';
+
+  @override
+  String get achTitleGreedIsGood => 'Жадность — это хорошо';
+
+  @override
+  String get achDescGreedIsGood => 'Соберите 25 усилений «Множитель очков»';
+
+  @override
+  String get achTitleTimeBender => 'Повелитель замедления';
+
+  @override
+  String get achDescTimeBender => 'Соберите 25 усилений «Замедление»';
+
+  @override
+  String get achTitleGastronome => 'Гастроном';
+
+  @override
+  String get achDescGastronome => 'Съешьте 100 000 единиц еды за всё время';
+
+  @override
+  String get achTitleLivingLegend => 'Живая легенда';
+
+  @override
+  String get achDescLivingLegend => 'Накопите 50 000 000 очков за всё время';
+
+  @override
+  String get achTitlePerpetualMotion => 'Вечный двигатель';
+
+  @override
+  String get achDescPerpetualMotion => 'Серия из 50 игр (каждая 30 с+)';
+
+  @override
+  String get achTitleImmaculate => 'Безукоризненный';
+
+  @override
+  String get achDescImmaculate => 'Завершите 100 идеальных игр';
+
+  @override
+  String get achTitleFortnightFaithful => 'Верный две недели';
+
+  @override
+  String get achDescFortnightFaithful => 'Играйте 14 дней подряд';
+
+  @override
+  String get achTitleSteadySnake => 'Стойкая змейка';
+
+  @override
+  String get achDescSteadySnake => 'Продержитесь 30+ секунд в 100 играх';
+
+  @override
+  String get achTitleMarathonMonth => 'Дух марафона';
+
+  @override
+  String get achDescMarathonMonth => 'Продержитесь 30+ секунд в 1 000 играх';
+
+  @override
+  String get achTitleLunchtimeLegend => 'Легенда обеда';
+
+  @override
+  String get achDescLunchtimeLegend => 'Завершите игру между полуднем и 14:00';
 }

@@ -5621,4 +5621,244 @@ class AppLocalizationsEn extends AppLocalizations {
   String tnRewardCoinDesc(Object rank) {
     return 'Coin reward for rank $rank';
   }
+
+  @override
+  String get achTitleScore1500 => 'Momentum';
+
+  @override
+  String get achDescScore1500 => 'Score 1,500 points in a single game';
+
+  @override
+  String get achTitleScore3000 => 'On a Tear';
+
+  @override
+  String get achDescScore3000 => 'Score 3,000 points in a single game';
+
+  @override
+  String get achTitleScore7500 => 'Unrelenting';
+
+  @override
+  String get achDescScore7500 => 'Score 7,500 points in a single game';
+
+  @override
+  String get achTitleScore15000 => 'Apex Hunter';
+
+  @override
+  String get achDescScore15000 => 'Score 15,000 points in a single game';
+
+  @override
+  String get achTitleScore35000 => 'Machine Mind';
+
+  @override
+  String get achDescScore35000 => 'Score 35,000 points in a single game';
+
+  @override
+  String get achTitleScore75000 => 'Beyond Mortal';
+
+  @override
+  String get achDescScore75000 => 'Score 75,000 points in a single game';
+
+  @override
+  String get achTitleScore250000 => 'Quarter Million';
+
+  @override
+  String get achDescScore250000 => 'Score 250,000 points in a single game';
+
+  @override
+  String get achTitleBeyondTime => 'Beyond Time';
+
+  @override
+  String get achDescBeyondTime => 'Survive 45 minutes in a single game';
+
+  @override
+  String get achTitleHourbound => 'Hourbound';
+
+  @override
+  String get achDescHourbound => 'Survive a full hour in a single game';
+
+  @override
+  String get achTitleSnakeDevotee => 'Snake Devotee';
+
+  @override
+  String get achDescSnakeDevotee => 'Play 2,500 games';
+
+  @override
+  String get achTitleTenThousandClub => 'Ten Thousand Club';
+
+  @override
+  String get achDescTenThousandClub => 'Play 10,000 games';
+
+  @override
+  String get achTitleZenVeteran => 'Zen Veteran';
+
+  @override
+  String get achDescZenVeteran => 'Finish 100 Zen games';
+
+  @override
+  String get achTitleSpeedVeteran => 'Speed Veteran';
+
+  @override
+  String get achDescSpeedVeteran => 'Finish 100 Speed Challenge games';
+
+  @override
+  String get achTitleMultifoodVeteran => 'MultiFood Veteran';
+
+  @override
+  String get achDescMultifoodVeteran => 'Finish 100 MultiFood games';
+
+  @override
+  String get achTitleTimeattackVeteran => 'TimeAttack Veteran';
+
+  @override
+  String get achDescTimeattackVeteran => 'Finish 100 TimeAttack games';
+
+  @override
+  String get achTitleSurvivalVeteran => 'Survival Veteran';
+
+  @override
+  String get achDescSurvivalVeteran => 'Finish 100 Survival games';
+
+  @override
+  String get achTitlePumInitiate => 'Madness Initiate';
+
+  @override
+  String get achDescPumInitiate => 'Finish 10 Power-Up Madness games';
+
+  @override
+  String get achTitlePumVeteran => 'Madness Veteran';
+
+  @override
+  String get achDescPumVeteran => 'Finish 100 Power-Up Madness games';
+
+  @override
+  String get achTitlePerfectInitiate => 'Purist';
+
+  @override
+  String get achDescPerfectInitiate => 'Finish 10 Perfect Game runs';
+
+  @override
+  String get achTitlePerfectVeteran => 'Discipline';
+
+  @override
+  String get achDescPerfectVeteran => 'Finish 100 Perfect Game runs';
+
+  @override
+  String get achTitleZen10000 => 'Zen Overflow';
+
+  @override
+  String get achDescZen10000 => 'Score 10,000 in Zen mode';
+
+  @override
+  String get achTitleSpeed5000 => 'Blur';
+
+  @override
+  String get achDescSpeed5000 => 'Score 5,000 in Speed Challenge';
+
+  @override
+  String get achTitleMultifood10000 => 'Endless Buffet';
+
+  @override
+  String get achDescMultifood10000 => 'Score 10,000 in MultiFood';
+
+  @override
+  String get achTitleTimeattack5000 => 'Race the Clock';
+
+  @override
+  String get achDescTimeattack5000 => 'Score 5,000 in TimeAttack';
+
+  @override
+  String get achTitlePum2000 => 'Charged Up';
+
+  @override
+  String get achDescPum2000 => 'Score 2,000 in Power-Up Madness';
+
+  @override
+  String get achTitlePerfect1000 => 'Flawless Run';
+
+  @override
+  String get achDescPerfect1000 => 'Score 1,000 in Perfect Game mode';
+
+  @override
+  String get achTitleComboSingularity => 'Combo Singularity';
+
+  @override
+  String get achDescComboSingularity => 'Hit a 200x combo in a single game';
+
+  @override
+  String get achTitleWorldSerpent => 'World Serpent';
+
+  @override
+  String get achDescWorldSerpent => 'Grow snake to length 750';
+
+  @override
+  String get achTitleLightspeed => 'Lightspeed';
+
+  @override
+  String get achDescLightspeed => 'Reach in-game level 30 in one game';
+
+  @override
+  String get achTitlePowerOverwhelming => 'Power Overwhelming';
+
+  @override
+  String get achDescPowerOverwhelming => 'Collect 5,000 power-ups lifetime';
+
+  @override
+  String get achTitleGreedIsGood => 'Greed Is Good';
+
+  @override
+  String get achDescGreedIsGood => 'Collect 25 Score Multiplier power-ups';
+
+  @override
+  String get achTitleTimeBender => 'Time Bender';
+
+  @override
+  String get achDescTimeBender => 'Collect 25 Slow Motion power-ups';
+
+  @override
+  String get achTitleGastronome => 'Gastronome';
+
+  @override
+  String get achDescGastronome => 'Eat 100,000 foods lifetime';
+
+  @override
+  String get achTitleLivingLegend => 'Living Legend';
+
+  @override
+  String get achDescLivingLegend => 'Accumulate 50,000,000 points lifetime';
+
+  @override
+  String get achTitlePerpetualMotion => 'Perpetual Motion';
+
+  @override
+  String get achDescPerpetualMotion => '50-game streak (30s+ each)';
+
+  @override
+  String get achTitleImmaculate => 'Immaculate';
+
+  @override
+  String get achDescImmaculate => 'Complete 100 perfect games';
+
+  @override
+  String get achTitleFortnightFaithful => 'Fortnight Faithful';
+
+  @override
+  String get achDescFortnightFaithful => 'Play on 14 consecutive days';
+
+  @override
+  String get achTitleSteadySnake => 'Steady Snake';
+
+  @override
+  String get achDescSteadySnake => 'Survive 30+ seconds in 100 games';
+
+  @override
+  String get achTitleMarathonMonth => 'Marathon Spirit';
+
+  @override
+  String get achDescMarathonMonth => 'Survive 30+ seconds in 1,000 games';
+
+  @override
+  String get achTitleLunchtimeLegend => 'Lunchtime Legend';
+
+  @override
+  String get achDescLunchtimeLegend => 'Finish a game between noon and 2 PM';
 }

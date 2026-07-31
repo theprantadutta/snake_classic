@@ -92,6 +92,7 @@ class GameEndPipeline {
       noWallGames: summary.consecutiveGamesWithoutWallHits,
       maxCombo: summary.maxCombo,
       snakeLength: summary.snakeLength,
+      foodsEatenThisGame: summary.foodEaten,
       gameEndTime: DateTime.now(),
     );
 
@@ -310,6 +311,9 @@ class GameEndPipeline {
         perfectGames: stats.perfectGames,
         currentWinStreak: stats.currentWinStreak,
         dailyPlayTime: stats.dailyPlayTime,
+        totalFoodConsumed: stats.totalFoodConsumed,
+        totalScore: stats.totalScore,
+        gamesSurvived30s: stats.gamesSurvived30s,
       );
 
       // General-category achievements: lifetime player level, total

@@ -245,7 +245,17 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     }
   }
 
-  /// Flush all buffered XP in a single API call, then clear the buffer.
+  /// Max XP per flush request. Mirrors the backend's
+  /// `BattlePassXpSources.AbsolutePerRequestCap` — any single AddBattlePassXp
+  /// request above 500 is rejected outright. A mass-unlock game (e.g. dozens
+  /// of achievement rows firing at once after an evaluator fix) can buffer
+  /// far more than that, so the flush chunks instead of sending one total.
+  static const int _maxXpPerFlushRequest = 500;
+
+  /// Flush all buffered XP, chunked so no single grant exceeds
+  /// [_maxXpPerFlushRequest], then clear the buffer. Chunks are applied in
+  /// order; if one fails, the unflushed remainder (including the failed
+  /// chunk) is re-buffered so the next flush retries instead of dropping XP.
   Future<void> flushXP() async {
     // Always flush lifetime progression, even when there's no battle-pass XP
     // to flush (e.g. the season is maxed out).
@@ -253,14 +263,38 @@ class BattlePassCubit extends Cubit<BattlePassState> {
 
     if (_bufferedXP <= 0) return;
 
-    final totalXP = _bufferedXP;
+    var remaining = _bufferedXP;
     final combinedSource = _bufferedSources.join(',');
+    final sources = List<String>.from(_bufferedSources);
 
     // Clear buffer immediately to avoid double-flush
     _bufferedXP = 0;
     _bufferedSources.clear();
 
-    await addXP(totalXP, source: combinedSource);
+    while (remaining > 0) {
+      final chunk =
+          remaining > _maxXpPerFlushRequest ? _maxXpPerFlushRequest : remaining;
+      try {
+        await addXP(chunk, source: combinedSource);
+      } catch (e) {
+        // Re-buffer everything not yet applied (including this chunk).
+        // Written directly to _bufferedXP — NOT via bufferXP — so the
+        // lifetime progression (already fed at buffer time) isn't
+        // double-counted.
+        _bufferedXP += remaining;
+        for (final s in sources) {
+          if (!_bufferedSources.contains(s)) {
+            _bufferedSources.add(s);
+          }
+        }
+        AppLogger.error(
+          'Battle-pass XP flush chunk failed — re-buffered $remaining XP',
+          e,
+        );
+        return;
+      }
+      remaining -= chunk;
+    }
   }
 
   /// Add XP to the battle pass. Local-only in the offline-first build —
