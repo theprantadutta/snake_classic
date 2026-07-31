@@ -77,6 +77,10 @@ class NotificationService {
   // first-sign-in snapshot restore, settings synced from another device.
   StreamSubscription<GameSetting?>? _settingsWatchSubscription;
 
+  // Last locale seen by the settings watcher; a change re-syncs the
+  // per-language FCM topic subscriptions.
+  String? _lastSeenLocaleCode;
+
   String? get fcmToken => _fcmToken;
   bool get initialized => _initialized;
 
@@ -699,16 +703,36 @@ class NotificationService {
   /// Subscribe/unsubscribe the broadcast topics to match the user's category
   /// preferences. Idempotent and safe to call repeatedly (FCM dedupes). No-op
   /// until an FCM token exists, since topic ops require one. Re-run on token
-  /// arrival/refresh (subscriptions are bound to the token) and on preference
-  /// changes.
+  /// arrival/refresh (subscriptions are bound to the token), on preference
+  /// changes, and on app-language changes.
+  ///
+  /// Topics are per-language ("tournaments_fr") so the backend can broadcast
+  /// localized text. The previous language's topics — and the legacy
+  /// unsuffixed ones from pre-i18n builds — are unsubscribed on switch.
   Future<void> _syncBroadcastTopicSubscriptions() async {
     if (_fcmToken == null) return;
+    final lang = await _resolveLang();
+
+    // Device-only bookkeeping (SharedPreferences by design): which language
+    // suffix this token last subscribed to, so a language switch cleans up
+    // exactly one stale pair instead of blind-unsubscribing all nine.
+    final prefs = await SharedPreferences.getInstance();
+    final lastLang = prefs.getString('fcmTopicLang');
+    if (lastLang != lang) {
+      for (final base in [_tournamentsTopic, _leaderboardTopic]) {
+        // Legacy unsuffixed topic from pre-i18n builds.
+        await unsubscribeFromTopic(base);
+        if (lastLang != null) await unsubscribeFromTopic('${base}_$lastLang');
+      }
+      await prefs.setString('fcmTopicLang', lang);
+    }
+
     await _applyTopicSubscription(
-      _tournamentsTopic,
+      '${_tournamentsTopic}_$lang',
       _notificationPreferences[NotificationType.tournament] ?? true,
     );
     await _applyTopicSubscription(
-      _leaderboardTopic,
+      '${_leaderboardTopic}_$lang',
       _notificationPreferences[NotificationType.specialEvent] ?? true,
     );
   }
@@ -759,25 +783,30 @@ class NotificationService {
   Map<NotificationType, bool> get notificationPreferences =>
       Map.from(_notificationPreferences);
 
-  /// Context-free AppLocalizations for service-built notification text.
-  /// Resolves the user's Settings language (null = follow device), guarded
-  /// to the supported set — lookupAppLocalizations throws on unknowns.
-  Future<AppLocalizations> _resolveL10n() async {
+  static const Set<String> _supportedLangs = {
+    'en', 'hi', 'pt', 'es', 'fr', 'ru', 'pl', 'ar', 'it',
+  };
+
+  /// The user's effective language code (Settings pick, else device locale),
+  /// collapsed to the supported set with an English fallback. Drives both
+  /// service-built notification text and the localized FCM topic names.
+  Future<String> _resolveLang() async {
     String? code;
     try {
       code = await StorageService().getLocaleCode();
     } catch (_) {
       // Drift unavailable this early — fall through to the device locale.
     }
-    const supported = {'en', 'hi', 'pt', 'es', 'fr', 'ru', 'pl', 'ar', 'it'};
     final lang = (code ?? PlatformDispatcher.instance.locale.languageCode)
         .split(RegExp('[-_]'))
         .first
         .toLowerCase();
-    return lookupAppLocalizations(
-      Locale(supported.contains(lang) ? lang : 'en'),
-    );
+    return _supportedLangs.contains(lang) ? lang : 'en';
   }
+
+  /// Context-free AppLocalizations for service-built notification text.
+  Future<AppLocalizations> _resolveL10n() async =>
+      lookupAppLocalizations(Locale(await _resolveLang()));
 
   // Game-specific notification methods
   Future<void> showAchievementNotification(String achievementName) async {
@@ -1182,6 +1211,15 @@ class NotificationService {
       _settingsWatchSubscription ??=
           StorageService().watchSettings().listen((row) {
         if (row == null) return;
+
+        // A language switch must move the localized topic subscriptions
+        // ("tournaments_fr" → "tournaments_ru") even when the notification
+        // prefs themselves are unchanged.
+        if (row.localeCode != _lastSeenLocaleCode) {
+          _lastSeenLocaleCode = row.localeCode;
+          unawaited(_syncBroadcastTopicSubscriptions());
+        }
+
         final incoming = {
           'daily_reminder': row.notifyDailyReminder,
           'tournament': row.notifyTournament,

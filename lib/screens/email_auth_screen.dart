@@ -461,9 +461,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
         return l10n.eaErrRecentLogin;
       case null:
       case '':
-        return l10n.eaErrGeneric;
       default:
-        return code;
+        // Unknown codes used to render raw ("sign-in failed", a Firebase
+        // slug, or exception text) — always show the localized generic.
+        return l10n.eaErrGeneric;
     }
   }
 
