@@ -1021,7 +1021,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                   Container(
                     width: 4,
                     height: 4,
-                    margin: const EdgeInsets.only(top: 8, right: 8),
+                    // Directional: in Arabic the Row reverses, so the gap
+                    // between the bullet and its rule text has to follow.
+                    margin: const EdgeInsetsDirectional.only(top: 8, end: 8),
                     decoration: BoxDecoration(
                       color: theme.accentColor.withValues(alpha: 0.6),
                       shape: BoxShape.circle,

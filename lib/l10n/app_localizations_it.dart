@@ -534,6 +534,17 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settingsTermsButton => 'TERMINI DI UTILIZZO';
 
   @override
+  String get legalAutoRenewDisclosureAppStore =>
+      'Il pagamento viene addebitato sul tuo account App Store al momento della conferma dell\'acquisto. L\'abbonamento si rinnova automaticamente allo stesso prezzo e per la stessa durata, salvo disdetta almeno 24 ore prima del termine del periodo in corso. Dopo l\'acquisto puoi gestirlo o disdirlo in qualsiasi momento nelle impostazioni del tuo account.';
+
+  @override
+  String get legalAutoRenewDisclosureGooglePlay =>
+      'Il pagamento viene addebitato sul tuo account Google Play al momento della conferma dell\'acquisto. L\'abbonamento si rinnova automaticamente allo stesso prezzo e per la stessa durata, salvo disdetta almeno 24 ore prima del termine del periodo in corso. Dopo l\'acquisto puoi gestirlo o disdirlo in qualsiasi momento nelle impostazioni degli abbonamenti di Google Play.';
+
+  @override
+  String get legalTermsEulaLink => 'Termini di utilizzo (EULA)';
+
+  @override
   String get settingsChangeUsernameTitle => 'Cambia nome utente';
 
   @override
@@ -2550,6 +2561,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get bpPremiumBadge => 'PREMIUM';
+
+  @override
+  String get bpSeasonCosmicSerpent => 'Stagione del Serpente Cosmico';
 
   @override
   String get bpUnlockedEverything =>

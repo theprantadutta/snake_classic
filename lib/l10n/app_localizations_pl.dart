@@ -530,6 +530,17 @@ class AppLocalizationsPl extends AppLocalizations {
   String get settingsTermsButton => 'WARUNKI UŻYTKOWANIA';
 
   @override
+  String get legalAutoRenewDisclosureAppStore =>
+      'Płatność zostanie pobrana z Twojego konta App Store w chwili potwierdzenia zakupu. Subskrypcja odnawia się automatycznie w tej samej cenie i na ten sam okres, o ile nie zostanie anulowana co najmniej 24 godziny przed końcem bieżącego okresu. Po zakupie możesz nią zarządzać lub anulować ją w dowolnym momencie w ustawieniach konta.';
+
+  @override
+  String get legalAutoRenewDisclosureGooglePlay =>
+      'Płatność zostanie pobrana z Twojego konta Google Play w chwili potwierdzenia zakupu. Subskrypcja odnawia się automatycznie w tej samej cenie i na ten sam okres, o ile nie zostanie anulowana co najmniej 24 godziny przed końcem bieżącego okresu. Po zakupie możesz nią zarządzać lub anulować ją w dowolnym momencie w ustawieniach subskrypcji Google Play.';
+
+  @override
+  String get legalTermsEulaLink => 'Warunki użytkowania (EULA)';
+
+  @override
   String get settingsChangeUsernameTitle => 'Zmień nazwę użytkownika';
 
   @override
@@ -2550,6 +2561,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get bpPremiumBadge => 'PREMIUM';
+
+  @override
+  String get bpSeasonCosmicSerpent => 'Sezon Kosmicznego Węża';
 
   @override
   String get bpUnlockedEverything => 'Odblokowano każdy poziom tego sezonu.';

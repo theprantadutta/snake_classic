@@ -527,6 +527,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsTermsButton => 'उपयोग की शर्तें';
 
   @override
+  String get legalAutoRenewDisclosureAppStore =>
+      'खरीद की पुष्टि पर आपके App Store खाते से भुगतान लिया जाएगा। जब तक मौजूदा अवधि समाप्त होने से कम से कम 24 घंटे पहले सदस्यता रद्द नहीं की जाती, यह उसी कीमत और उसी अवधि के लिए अपने आप नवीनीकृत होती रहती है। खरीद के बाद आप अपनी खाता सेटिंग में कभी भी इसे प्रबंधित या रद्द कर सकते हैं।';
+
+  @override
+  String get legalAutoRenewDisclosureGooglePlay =>
+      'खरीद की पुष्टि पर आपके Google Play खाते से भुगतान लिया जाएगा। जब तक मौजूदा अवधि समाप्त होने से कम से कम 24 घंटे पहले सदस्यता रद्द नहीं की जाती, यह उसी कीमत और उसी अवधि के लिए अपने आप नवीनीकृत होती रहती है। खरीद के बाद आप Google Play की सदस्यता सेटिंग में कभी भी इसे प्रबंधित या रद्द कर सकते हैं।';
+
+  @override
+  String get legalTermsEulaLink => 'उपयोग की शर्तें (EULA)';
+
+  @override
   String get settingsChangeUsernameTitle => 'उपयोगकर्ता नाम बदलें';
 
   @override
@@ -2528,6 +2539,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get bpPremiumBadge => 'प्रीमियम';
+
+  @override
+  String get bpSeasonCosmicSerpent => 'कॉस्मिक सर्पेंट सीज़न';
 
   @override
   String get bpUnlockedEverything =>

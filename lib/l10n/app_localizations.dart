@@ -1066,6 +1066,24 @@ abstract class AppLocalizations {
   /// **'TERMS OF USE'**
   String get settingsTermsButton;
 
+  /// Auto-renewable subscription disclosure shown on the purchase surfaces when running on iOS/macOS. Required by Apple guideline 3.1.2(c). Keep the 24-hour cancellation window and the 'same price and duration' wording — they are the legally load-bearing parts. 'App Store' is a brand name: do not translate it. See the GooglePlay variant for the Android copy; the two must stay in sync apart from the store name and where the user manages the subscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is charged to your App Store account at confirmation of purchase. The subscription automatically renews for the same price and duration unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your account settings after purchase.'**
+  String get legalAutoRenewDisclosureAppStore;
+
+  /// Android counterpart of legalAutoRenewDisclosureAppStore, shown when running on Android. Same legal content; differs only in the store name and the fact that subscriptions are managed in Google Play rather than the account settings. 'Google Play' is a brand name: do not translate it.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is charged to your Google Play account at confirmation of purchase. The subscription automatically renews for the same price and duration unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your Google Play subscription settings after purchase.'**
+  String get legalAutoRenewDisclosureGooglePlay;
+
+  /// Label for the Terms of Use link in the subscription legal footer. Distinct from settingsTermsTitle because Apple expects the EULA to be identified as such on the purchase surface. Leave '(EULA)' untranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Use (EULA)'**
+  String get legalTermsEulaLink;
+
   /// No description provided for @settingsChangeUsernameTitle.
   ///
   /// In en, this message translates to:
@@ -4485,6 +4503,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'PREMIUM'**
   String get bpPremiumBadge;
+
+  /// Name of the launch battle-pass season, shown as the screen's page title (uppercased at render). Keyed on the exact English season name because seasons can also arrive from the backend — an unrecognised server season falls through untranslated. Flavour text: translate for feel, not literally.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmic Serpent Season'**
+  String get bpSeasonCosmicSerpent;
 
   /// No description provided for @bpUnlockedEverything.
   ///

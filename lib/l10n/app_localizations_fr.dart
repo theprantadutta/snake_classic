@@ -535,6 +535,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsTermsButton => 'CONDITIONS D\'UTILISATION';
 
   @override
+  String get legalAutoRenewDisclosureAppStore =>
+      'Le paiement est débité de votre compte App Store à la confirmation de l\'achat. L\'abonnement est renouvelé automatiquement au même tarif et pour la même durée, sauf s\'il est résilié au moins 24 heures avant la fin de la période en cours. Gérez-le ou résiliez-le à tout moment dans les réglages de votre compte après l\'achat.';
+
+  @override
+  String get legalAutoRenewDisclosureGooglePlay =>
+      'Le paiement est débité de votre compte Google Play à la confirmation de l\'achat. L\'abonnement est renouvelé automatiquement au même tarif et pour la même durée, sauf s\'il est résilié au moins 24 heures avant la fin de la période en cours. Gérez-le ou résiliez-le à tout moment dans les paramètres d\'abonnement Google Play après l\'achat.';
+
+  @override
+  String get legalTermsEulaLink => 'Conditions d\'utilisation (EULA)';
+
+  @override
   String get settingsChangeUsernameTitle => 'Changer de nom d\'utilisateur';
 
   @override
@@ -2556,6 +2567,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get bpPremiumBadge => 'PREMIUM';
+
+  @override
+  String get bpSeasonCosmicSerpent => 'Saison Serpent Cosmique';
 
   @override
   String get bpUnlockedEverything =>

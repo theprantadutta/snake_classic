@@ -8,6 +8,7 @@ import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/pickup_icon.dart';
 
 class GameHUD extends StatefulWidget {
@@ -320,7 +321,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                   color: theme.accentColor.withValues(alpha: 0.6),
                   fontSize: isSmallScreen ? 9 : 10,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 1.5,
+                  letterSpacing: context.letterSpacing(1.5),
                 ),
               ),
               const SizedBox(height: 2),
@@ -444,7 +445,10 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         children: List.generate(gameState.initialLives, (i) {
           final isAlive = i < gameState.livesRemaining;
           return Padding(
-            padding: EdgeInsets.only(right: i < gameState.initialLives - 1 ? 2 : 0),
+            // Directional so the inter-heart gap stays *between* the hearts
+            // when the HUD row reverses in Arabic.
+            padding: EdgeInsetsDirectional.only(
+                end: i < gameState.initialLives - 1 ? 2 : 0),
             child: Icon(
               isAlive ? Icons.favorite : Icons.favorite_border,
               size: _s(isSmallScreen ? 14 : 16),
@@ -849,7 +853,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
               color: Colors.purple,
               fontSize: isSmallScreen ? 11 : 12,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
+              letterSpacing: context.letterSpacing(0.5),
             ),
           ),
           const SizedBox(width: 6),

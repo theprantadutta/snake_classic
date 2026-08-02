@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/legal_urls.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -32,18 +35,22 @@ class SubscriptionLegalFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final mutedColor = theme.accentColor.withValues(alpha: 0.6);
     final disclosureStyle = TextStyle(color: mutedColor, fontSize: 11, height: 1.35);
+
+    // The disclosure has to name the store that actually takes the money and
+    // where the user cancels — an Android buyer has no App Store account.
+    // defaultTargetPlatform (not dart:io Platform) so this stays safe on web.
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Payment is charged to your App Store account at confirmation of '
-          'purchase. The subscription automatically renews for the same price '
-          'and duration unless it is cancelled at least 24 hours before the end '
-          'of the current period. Manage or cancel anytime in your account '
-          'settings after purchase.',
+          isAndroid
+              ? l10n.legalAutoRenewDisclosureGooglePlay
+              : l10n.legalAutoRenewDisclosureAppStore,
           textAlign: TextAlign.center,
           style: disclosureStyle,
         ),
@@ -53,13 +60,19 @@ class SubscriptionLegalFooter extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _LegalLink(
-              label: 'Privacy Policy',
+              label: l10n.settingsPrivacyPolicyTitle,
               color: theme.accentColor,
               onTap: () => _open(LegalUrls.privacyPolicy),
             ),
             Text('  •  ', style: TextStyle(color: mutedColor, fontSize: 11)),
             _LegalLink(
-              label: 'Terms of Use (EULA)',
+              // "(EULA)" is Apple's terminology — guideline 3.1.2(c) expects
+              // the licence agreement identified as such on the purchase
+              // surface. Play has no such expectation, so Android gets the
+              // plain label rather than an acronym that means nothing there.
+              label: isAndroid
+                  ? l10n.settingsTermsTitle
+                  : l10n.legalTermsEulaLink,
               color: theme.accentColor,
               onTap: () => _open(LegalUrls.termsOfUse),
             ),

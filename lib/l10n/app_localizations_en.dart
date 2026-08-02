@@ -529,6 +529,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTermsButton => 'TERMS OF USE';
 
   @override
+  String get legalAutoRenewDisclosureAppStore =>
+      'Payment is charged to your App Store account at confirmation of purchase. The subscription automatically renews for the same price and duration unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your account settings after purchase.';
+
+  @override
+  String get legalAutoRenewDisclosureGooglePlay =>
+      'Payment is charged to your Google Play account at confirmation of purchase. The subscription automatically renews for the same price and duration unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your Google Play subscription settings after purchase.';
+
+  @override
+  String get legalTermsEulaLink => 'Terms of Use (EULA)';
+
+  @override
   String get settingsChangeUsernameTitle => 'Change Username';
 
   @override
@@ -2529,6 +2540,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bpPremiumBadge => 'PREMIUM';
+
+  @override
+  String get bpSeasonCosmicSerpent => 'Cosmic Serpent Season';
 
   @override
   String get bpUnlockedEverything =>

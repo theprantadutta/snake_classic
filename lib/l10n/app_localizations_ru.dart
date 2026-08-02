@@ -529,6 +529,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsTermsButton => 'УСЛОВИЯ ИСПОЛЬЗОВАНИЯ';
 
   @override
+  String get legalAutoRenewDisclosureAppStore =>
+      'Оплата списывается с вашего аккаунта App Store при подтверждении покупки. Подписка автоматически продлевается по той же цене и на тот же срок, если она не отменена не позднее чем за 24 часа до окончания текущего периода. Управлять подпиской или отменить её можно в любое время в настройках аккаунта после покупки.';
+
+  @override
+  String get legalAutoRenewDisclosureGooglePlay =>
+      'Оплата списывается с вашего аккаунта Google Play при подтверждении покупки. Подписка автоматически продлевается по той же цене и на тот же срок, если она не отменена не позднее чем за 24 часа до окончания текущего периода. Управлять подпиской или отменить её можно в любое время в настройках подписок Google Play после покупки.';
+
+  @override
+  String get legalTermsEulaLink => 'Условия использования (EULA)';
+
+  @override
   String get settingsChangeUsernameTitle => 'Сменить имя пользователя';
 
   @override
@@ -2543,6 +2554,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bpPremiumBadge => 'ПРЕМИУМ';
+
+  @override
+  String get bpSeasonCosmicSerpent => 'Сезон «Космический змей»';
 
   @override
   String get bpUnlockedEverything => 'Вы открыли все уровни этого сезона.';

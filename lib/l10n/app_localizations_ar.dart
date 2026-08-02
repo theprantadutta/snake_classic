@@ -522,6 +522,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsTermsButton => 'شروط الاستخدام';
 
   @override
+  String get legalAutoRenewDisclosureAppStore =>
+      'يُخصم المبلغ من حساب App Store الخاص بك عند تأكيد الشراء. يتجدد الاشتراك تلقائيًا بالسعر نفسه وللمدة نفسها ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية. يمكنك إدارة الاشتراك أو إلغاؤه في أي وقت من إعدادات حسابك بعد الشراء.';
+
+  @override
+  String get legalAutoRenewDisclosureGooglePlay =>
+      'يُخصم المبلغ من حساب Google Play الخاص بك عند تأكيد الشراء. يتجدد الاشتراك تلقائيًا بالسعر نفسه وللمدة نفسها ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية. يمكنك إدارة الاشتراك أو إلغاؤه في أي وقت من إعدادات اشتراكات Google Play بعد الشراء.';
+
+  @override
+  String get legalTermsEulaLink => 'شروط الاستخدام (EULA)';
+
+  @override
   String get settingsChangeUsernameTitle => 'تغيير اسم المستخدم';
 
   @override
@@ -2526,6 +2537,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bpPremiumBadge => 'مميز';
 
   @override
+  String get bpSeasonCosmicSerpent => 'موسم الأفعى الكونية';
+
+  @override
   String get bpUnlockedEverything => 'فتحت كل مستويات هذا الموسم.';
 
   @override
@@ -3313,7 +3327,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String hudLevelBadge(Object level) {
-    return 'مس$level';
+    return 'مستوى $level';
   }
 
   @override
@@ -5211,12 +5225,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String ppgLvShort(Object level) {
-    return 'مس $level';
+    return 'مستوى $level';
   }
 
   @override
   String ppgLvUpper(Object level) {
-    return 'مس $level';
+    return 'مستوى $level';
   }
 
   @override

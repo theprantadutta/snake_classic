@@ -234,6 +234,18 @@
   "settingsPrivacyPolicyButton": "PRIVACY POLICY",
   "settingsTermsTitle": "Terms of Use",
   "settingsTermsButton": "TERMS OF USE",
+  "legalAutoRenewDisclosureAppStore": "Payment is charged to your App Store account at confirmation of purchase. The subscription automatically renews for the same price and duration unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your account settings after purchase.",
+  "@legalAutoRenewDisclosureAppStore": {
+    "description": "Auto-renewable subscription disclosure shown on the purchase surfaces when running on iOS/macOS. Required by Apple guideline 3.1.2(c). Keep the 24-hour cancellation window and the 'same price and duration' wording — they are the legally load-bearing parts. 'App Store' is a brand name: do not translate it. See the GooglePlay variant for the Android copy; the two must stay in sync apart from the store name and where the user manages the subscription."
+  },
+  "legalAutoRenewDisclosureGooglePlay": "Payment is charged to your Google Play account at confirmation of purchase. The subscription automatically renews for the same price and duration unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your Google Play subscription settings after purchase.",
+  "@legalAutoRenewDisclosureGooglePlay": {
+    "description": "Android counterpart of legalAutoRenewDisclosureAppStore, shown when running on Android. Same legal content; differs only in the store name and the fact that subscriptions are managed in Google Play rather than the account settings. 'Google Play' is a brand name: do not translate it."
+  },
+  "legalTermsEulaLink": "Terms of Use (EULA)",
+  "@legalTermsEulaLink": {
+    "description": "Label for the Terms of Use link in the subscription legal footer. Distinct from settingsTermsTitle because Apple expects the EULA to be identified as such on the purchase surface. Leave '(EULA)' untranslated."
+  },
   "settingsChangeUsernameTitle": "Change Username",
   "settingsCurrentLabel": "Current:",
   "settingsUsernameDialogBody": "Choose a unique username that represents you in the game.",
@@ -846,6 +858,10 @@
   "bpSeasonCompleteUpper": "SEASON COMPLETE",
   "bpXpProgress": "{xp} / {next} XP to Tier {tier}",
   "bpPremiumBadge": "PREMIUM",
+  "bpSeasonCosmicSerpent": "Cosmic Serpent Season",
+  "@bpSeasonCosmicSerpent": {
+    "description": "Name of the launch battle-pass season, shown as the screen's page title (uppercased at render). Keyed on the exact English season name because seasons can also arrive from the backend — an unrecognised server season falls through untranslated. Flavour text: translate for feel, not literally."
+  },
   "bpUnlockedEverything": "You've unlocked every tier in this season.",
   "bpComingNext": "COMING NEXT",
   "bpTierN": "Tier {tier}",
@@ -1696,7 +1712,6 @@
     }
   },
   "lgUnavailable": "This document is currently unavailable. Please try again later.",
-  "commonClose": "Close",
   "auTitle": "Sign up to make purchases",
   "auBody": "Guest accounts can play and save progress locally, but cannot buy items or subscribe. Link a Google or email account to unlock purchases — your existing coins, cosmetics, and high scores stay attached.",
   "auGoogle": "Continue with Google",
@@ -1851,7 +1866,6 @@
   },
   "rcNoAd": "No ad available right now",
   "raOptIn": "Opt-in — watch to earn",
-  "mpYou": "You",
   "compassSemantics": "Swipe direction indicator",
   "homeBonusDoubled": "🎉 Daily bonus doubled — +{coins} bonus coins!",
   "@homeBonusDoubled": {

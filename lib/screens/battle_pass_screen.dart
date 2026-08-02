@@ -3,6 +3,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
 import 'package:snake_classic/services/haptic_service.dart';
@@ -175,7 +176,10 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                       SliverToBoxAdapter(
                         child: _TopBar(
                           theme: theme,
-                          title: season.name.toUpperCase(),
+                          title: localizedBattlePassSeasonName(
+                            season.name,
+                            l10n,
+                          ).toUpperCase(),
                           subtitle: _daysRemainingText(l10n, season),
                         ),
                       ),
@@ -348,7 +352,7 @@ class _TopBar extends StatelessWidget {
                     color: theme.accentColor,
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
+                    letterSpacing: context.letterSpacing(1.5),
                     height: 1.0,
                   ),
                   maxLines: 1,
@@ -362,7 +366,7 @@ class _TopBar extends StatelessWidget {
                       color: theme.accentColor.withValues(alpha: 0.65),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8,
+                      letterSpacing: context.letterSpacing(0.8),
                     ),
                   ),
                 ],
@@ -428,7 +432,7 @@ class _StateStrip extends StatelessWidget {
                     color: theme.accentColor.withValues(alpha: 0.65),
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 1.5,
+                    letterSpacing: context.letterSpacing(1.5),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -439,7 +443,7 @@ class _StateStrip extends StatelessWidget {
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                     height: 1.0,
-                    letterSpacing: 0.5,
+                    letterSpacing: context.letterSpacing(0.5),
                   ),
                 ),
                 Text(
@@ -538,7 +542,7 @@ class _PremiumStatusPill extends StatelessWidget {
               color: color,
               fontSize: 10,
               fontWeight: FontWeight.w900,
-              letterSpacing: 1.0,
+              letterSpacing: context.letterSpacing(1.0),
             ),
           ),
         ],
@@ -620,7 +624,7 @@ class _ComingNextSection extends StatelessWidget {
                   color: Colors.amber.shade300,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 2.0,
+                  letterSpacing: context.letterSpacing(2.0),
                 ),
               ),
               const SizedBox(height: 4),
@@ -684,7 +688,7 @@ class _ComingNextSection extends StatelessWidget {
                       color: accent,
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 2.0,
+                      letterSpacing: context.letterSpacing(2.0),
                     ),
                   ),
                   const Spacer(),
@@ -701,7 +705,7 @@ class _ComingNextSection extends StatelessWidget {
                         color: accent,
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
+                        letterSpacing: context.letterSpacing(1.2),
                       ),
                     ),
                   ),
@@ -736,13 +740,13 @@ class _ComingNextSection extends StatelessWidget {
               ).gamePop().gameBreathe(intensity: 1.04),
               const SizedBox(height: 12),
               Text(
-                r.name,
+                localizedBattlePassRewardName(r.name, l10n),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 0.3,
+                  letterSpacing: context.letterSpacing(0.3),
                 ),
               ),
               const SizedBox(height: 4),
@@ -752,7 +756,7 @@ class _ComingNextSection extends StatelessWidget {
                   color: accent,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
+                  letterSpacing: context.letterSpacing(1.2),
                 ),
               ),
               const SizedBox(height: 10),
@@ -771,11 +775,11 @@ class _ComingNextSection extends StatelessWidget {
                   ),
                   child: Text(
                     l10n.bpTiersAway(distance),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 0.4,
+                      letterSpacing: context.letterSpacing(0.4),
                     ),
                   ),
                 ),
@@ -821,11 +825,11 @@ class _UnlockProInline extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               AppLocalizations.of(context)!.bpUnlockWithPro,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 1.0,
+                letterSpacing: context.letterSpacing(1.0),
               ),
             ),
             const SizedBox(width: 4),
@@ -913,7 +917,7 @@ class _AvailableNowSection extends StatelessWidget {
                   color: theme.accentColor,
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 1.8,
+                  letterSpacing: context.letterSpacing(1.8),
                 ),
               ),
               if (available.isNotEmpty) ...[
@@ -1038,7 +1042,7 @@ class _ClaimChip extends StatelessWidget {
                     color: accent,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
+                    letterSpacing: context.letterSpacing(0.8),
                   ),
                 ),
                 const Spacer(),
@@ -1094,7 +1098,7 @@ class _ClaimChip extends StatelessWidget {
                             : Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
+                        letterSpacing: context.letterSpacing(1.2),
                       ),
                     ),
             ),
@@ -1218,7 +1222,7 @@ class _AllTiersToggle extends StatelessWidget {
                   color: theme.accentColor,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 0.4,
+                  letterSpacing: context.letterSpacing(0.4),
                 ),
               ),
               const Spacer(),
@@ -1228,7 +1232,7 @@ class _AllTiersToggle extends StatelessWidget {
                   color: theme.accentColor.withValues(alpha: 0.65),
                   fontSize: 9,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
+                  letterSpacing: context.letterSpacing(1.5),
                 ),
               ),
             ],
@@ -1307,7 +1311,7 @@ class _TierRow extends StatelessWidget {
                         color: theme.accentColor,
                         fontSize: 8,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 1.0,
+                        letterSpacing: context.letterSpacing(1.0),
                       ),
                     ),
                   ),
@@ -1387,6 +1391,7 @@ class _TierRewardSlot extends StatelessWidget {
       );
     }
 
+    final l10n = AppLocalizations.of(context)!;
     final accent = isPremium ? Colors.amber : theme.accentColor;
     final isLockedByPremium = isPremium && !hasPremium;
     final locked = !tierUnlocked || isLockedByPremium;
@@ -1421,7 +1426,7 @@ class _TierRewardSlot extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                reward!.name,
+                localizedBattlePassRewardName(reward!.name, l10n),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -1556,7 +1561,7 @@ class _RewardDetailSheet extends StatelessWidget {
                     color: accent,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                    letterSpacing: context.letterSpacing(1.2),
                   ),
                 ),
               ),
@@ -1570,11 +1575,11 @@ class _RewardDetailSheet extends StatelessWidget {
                 ),
                 child: Text(
                   l10n.bpTierUpperN(tier),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white70,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                    letterSpacing: context.letterSpacing(1.2),
                   ),
                 ),
               ),
@@ -1627,7 +1632,7 @@ class _RewardDetailSheet extends StatelessWidget {
                         : Colors.white.withValues(alpha: 0.75),
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
+                    letterSpacing: context.letterSpacing(0.5),
                   ),
                 ),
               ],
@@ -1699,7 +1704,7 @@ class _NoActiveSeasonScreen extends StatelessWidget {
                           color: theme.accentColor,
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
+                          letterSpacing: context.letterSpacing(0.5),
                         ),
                       ),
                       const SizedBox(height: 8),

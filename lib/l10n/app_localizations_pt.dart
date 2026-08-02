@@ -531,6 +531,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsTermsButton => 'TERMOS DE USO';
 
   @override
+  String get legalAutoRenewDisclosureAppStore =>
+      'O pagamento é cobrado na sua conta da App Store no momento da confirmação da compra. A assinatura é renovada automaticamente pelo mesmo preço e pelo mesmo período, a menos que seja cancelada pelo menos 24 horas antes do fim do período atual. Gerencie ou cancele quando quiser nas configurações da sua conta após a compra.';
+
+  @override
+  String get legalAutoRenewDisclosureGooglePlay =>
+      'O pagamento é cobrado na sua conta do Google Play no momento da confirmação da compra. A assinatura é renovada automaticamente pelo mesmo preço e pelo mesmo período, a menos que seja cancelada pelo menos 24 horas antes do fim do período atual. Gerencie ou cancele quando quiser nas configurações de assinaturas do Google Play após a compra.';
+
+  @override
+  String get legalTermsEulaLink => 'Termos de Uso (EULA)';
+
+  @override
   String get settingsChangeUsernameTitle => 'Mudar nome de usuário';
 
   @override
@@ -2548,6 +2559,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get bpPremiumBadge => 'PREMIUM';
+
+  @override
+  String get bpSeasonCosmicSerpent => 'Temporada Serpente Cósmica';
 
   @override
   String get bpUnlockedEverything =>

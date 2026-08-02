@@ -340,3 +340,16 @@ String localizedBattlePassRewardName(String name, AppLocalizations l10n) {
   }
   return name;
 }
+
+/// Localized battle-pass season name, keyed on the English name.
+///
+/// Seasons come from two places: the bundled launch season in
+/// [BattlePassSeason] and, once the backend starts serving them,
+/// `BattlePassSeason.fromJson`. Same contract as the reward names above —
+/// translate what we ship, pass anything unrecognized through verbatim so a
+/// server-added season degrades to English instead of a blank title.
+String localizedBattlePassSeasonName(String name, AppLocalizations l10n) =>
+    switch (name) {
+      'Cosmic Serpent Season' => l10n.bpSeasonCosmicSerpent,
+      _ => name,
+    };
