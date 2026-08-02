@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Languages the app ships. Must mirror SupportedLocales.locales (guarded by
+  test/l10n/locale_wiring_test.dart).
+
+  On Android 13+ this powers the per-app language entry in
+  Settings > System > Languages, so the OS picker and the in-app picker in
+  Settings agree. It also stops Play from advertising the app as English-only.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="hi" />
+    <locale android:name="pt" />
+    <locale android:name="es" />
+    <locale android:name="fr" />
+    <locale android:name="ru" />
+    <locale android:name="pl" />
+    <locale android:name="ar" />
+    <locale android:name="it" />
+</locale-config>

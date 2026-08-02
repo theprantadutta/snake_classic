@@ -31,12 +31,21 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
         tools:node="remove" />
 
+    <!--
+      supportsRtl: Arabic ships, so native surfaces (permission dialogs, the
+      AdMob/UMP consent form) mirror too. Flutter draws its own UI and flips
+      it via Directionality regardless.
+      localeConfig: Android 13+ per-app language picker. See
+      res/xml/locales_config.xml — it mirrors SupportedLocales.locales.
+    -->
     <application
         android:label="Snake Classic"
         android:name="${applicationName}"
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:supportsRtl="true"
+        android:localeConfig="@xml/locales_config"
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"

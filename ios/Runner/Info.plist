@@ -4,6 +4,23 @@
 	<dict>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<!-- Languages the app ships (must mirror SupportedLocales.locales).
+		     Without this iOS treats the bundle as English-only: the App Store
+		     listing shows one language, and -[NSBundle preferredLocalizations]
+		     hands Flutter "en" no matter what the device is set to, so the
+		     ARB translations would never be reached on iOS. -->
+		<key>CFBundleLocalizations</key>
+		<array>
+			<string>en</string>
+			<string>hi</string>
+			<string>pt</string>
+			<string>es</string>
+			<string>fr</string>
+			<string>ru</string>
+			<string>pl</string>
+			<string>ar</string>
+			<string>it</string>
+		</array>
 		<key>CFBundleDisplayName</key>
 		<string>Snake Classic</string>
 		<key>CFBundleExecutable</key>
