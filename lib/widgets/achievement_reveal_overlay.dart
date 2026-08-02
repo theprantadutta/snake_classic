@@ -8,6 +8,7 @@ import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/utils/typography.dart';
 
 /// Full-screen cinematic achievement reveal — replaces the old top-banner
 /// toast (`AchievementNotification`) with a real "you earned a trophy"
@@ -320,7 +321,7 @@ class _RevealCardState extends State<_RevealCard>
                         color: rarityColor,
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 4.0,
+                        letterSpacing: context.letterSpacing(4.0),
                         shadows: [
                           Shadow(
                             color: rarityColor.withValues(alpha: 0.7),
@@ -342,11 +343,11 @@ class _RevealCardState extends State<_RevealCard>
                     Text(
                       achievement.localizedTitle(AppLocalizations.of(context)!),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
+                        letterSpacing: context.letterSpacing(0.5),
                         height: 1.1,
                         shadows: [
                           Shadow(
@@ -407,7 +408,7 @@ class _RevealCardState extends State<_RevealCard>
                         color: Colors.white.withValues(alpha: 0.45),
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        letterSpacing: 2.0,
+                        letterSpacing: context.letterSpacing(2.0),
                       ),
                     )
                         .animate(
@@ -612,11 +613,11 @@ class _RaysAndMedallion extends StatelessWidget {
                 achievement
                     .localizedRarityName(AppLocalizations.of(context)!)
                     .toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 2.0,
+                  letterSpacing: context.letterSpacing(2.0),
                 ),
               ),
             )
@@ -650,6 +651,7 @@ class _RewardChips extends StatelessWidget {
     final chips = <Widget>[];
     if (achievement.xpReward > 0) {
       chips.add(_chip(
+        context: context,
         icon: Icons.auto_awesome,
         label: '+${achievement.xpReward} XP',
         color: Colors.purpleAccent,
@@ -657,6 +659,7 @@ class _RewardChips extends StatelessWidget {
     }
     if (achievement.coinReward > 0) {
       chips.add(_chip(
+        context: context,
         icon: Icons.monetization_on,
         label: '+${achievement.coinReward}',
         color: Colors.amber,
@@ -664,6 +667,7 @@ class _RewardChips extends StatelessWidget {
     }
     if (achievement.points > 0) {
       chips.add(_chip(
+        context: context,
         icon: Icons.star,
         label: '${achievement.points} pts',
         color: rarityColor,
@@ -679,6 +683,7 @@ class _RewardChips extends StatelessWidget {
   }
 
   Widget _chip({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required Color color,
@@ -704,11 +709,11 @@ class _RewardChips extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.3,
+              letterSpacing: context.letterSpacing(0.3),
             ),
           ),
         ],
@@ -903,7 +908,7 @@ class _SkipButton extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 1.4,
+                  letterSpacing: context.letterSpacing(1.4),
                 ),
               ),
               const SizedBox(width: 6),

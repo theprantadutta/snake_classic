@@ -15,6 +15,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/pickup_icon.dart';
 
@@ -113,7 +114,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                   color: theme.accentColor,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
+                  letterSpacing: context.letterSpacing(2),
                 ),
               ).gameEntrance(delay: 100.ms),
 
@@ -351,7 +352,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 color: color.withValues(alpha: value ? 0.9 : 0.45),
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 0.8,
+                letterSpacing: context.letterSpacing(0.8),
               ),
             ),
           ],
@@ -400,7 +401,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                   color: theme.accentColor.withValues(alpha: 0.9),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+                  letterSpacing: context.letterSpacing(1),
                 ),
               ),
             ],
@@ -511,7 +512,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
         color: theme.accentColor.withValues(alpha: 0.65),
         fontSize: 10,
         fontWeight: FontWeight.bold,
-        letterSpacing: 1.4,
+        letterSpacing: context.letterSpacing(1.4),
       ),
     );
   }

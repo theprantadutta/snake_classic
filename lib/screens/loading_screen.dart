@@ -25,6 +25,7 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/animated_snake_logo.dart';
 
 class LoadingScreen extends StatefulWidget {
@@ -656,7 +657,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             fontSize: isSmallScreen ? 10 : 12,
             fontWeight: FontWeight.w600,
             color: theme.accentColor.withValues(alpha: 0.7),
-            letterSpacing: 1.5,
+            letterSpacing: context.letterSpacing(1.5),
           ),
         ).gameEntrance(delay: 200.ms),
       ],
@@ -882,7 +883,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: theme.accentColor.withValues(alpha: 0.6),
-                  letterSpacing: 1,
+                  letterSpacing: context.letterSpacing(1),
                 ),
               ),
 
@@ -967,7 +968,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   fontSize: isSmallScreen ? 10 : 11,
                   fontWeight: FontWeight.w700,
                   color: theme.accentColor.withValues(alpha: 0.8),
-                  letterSpacing: 1.5,
+                  letterSpacing: context.letterSpacing(1.5),
                 ),
               ),
             ],
@@ -1026,7 +1027,7 @@ class _LoadingScreenState extends State<LoadingScreen>
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: theme.accentColor.withValues(alpha: 0.8),
-              letterSpacing: 2,
+              letterSpacing: context.letterSpacing(2),
             ),
           ).gameEntrance(delay: 350.ms),
 
@@ -1127,7 +1128,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: theme.primaryColor,
-                letterSpacing: 0.5,
+                letterSpacing: context.letterSpacing(0.5),
               ),
               textAlign: TextAlign.center,
             ),
@@ -1180,7 +1181,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   fontSize: isSmallScreen ? 8 : 10,
                   fontWeight: FontWeight.w600,
                   color: theme.accentColor.withValues(alpha: 0.6),
-                  letterSpacing: 1.5,
+                  letterSpacing: context.letterSpacing(1.5),
                 ),
               ).gameEntrance(delay: 750.ms),
 
@@ -1219,7 +1220,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                             fontSize: isSmallScreen ? 14 : 16,
                             fontWeight: FontWeight.w700,
                             color: theme.primaryColor,
-                            letterSpacing: 0.5,
+                            letterSpacing: context.letterSpacing(0.5),
                           ),
                         ),
                       ],
@@ -1273,7 +1274,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: theme.primaryColor,
-            letterSpacing: 1,
+            letterSpacing: context.letterSpacing(1),
           ),
         ),
 

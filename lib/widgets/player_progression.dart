@@ -3,6 +3,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 
 /// Compact lifetime-level chip for the home header: "Lv N" + a thin XP bar.
 /// Rebuilds reactively off [ProgressionService].
@@ -188,13 +189,23 @@ class PlayerIdentityBadge extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Text(
-                        AppLocalizations.of(context)!.ppgLvUpper(level),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: isSmallScreen ? 8.5 : 9.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.3,
+                      // The badge is capped at the avatar's width, and "LV"
+                      // is the shortest this label gets — ru "УР.", pl "POZ."
+                      // and ar "مستوى" are all longer and used to wrap onto a
+                      // second line, pushing the pill over the avatar. Scale
+                      // down instead of wrapping.
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          AppLocalizations.of(context)!.ppgLvUpper(level),
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isSmallScreen ? 8.5 : 9.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: context.letterSpacing(0.3),
+                          ),
                         ),
                       ),
                     ),

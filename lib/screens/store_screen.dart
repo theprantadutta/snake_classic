@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -865,11 +866,11 @@ class _StoreScreenState extends State<StoreScreen>
       ),
       child: Text(
         AppLocalizations.of(context)!.storePromoBadge,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
           fontSize: 10,
           fontWeight: FontWeight.w900,
-          letterSpacing: 1.0,
+          letterSpacing: context.letterSpacing(1.0),
         ),
       ),
     );
@@ -2123,11 +2124,11 @@ class _StoreScreenState extends State<StoreScreen>
                               const SizedBox(width: 4),
                               Text(
                                 AppLocalizations.of(context)!.settingsProBadge,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
+                                  letterSpacing: context.letterSpacing(0.8),
                                 ),
                               ),
                             ],
@@ -2150,7 +2151,7 @@ class _StoreScreenState extends State<StoreScreen>
                       color: theme.accentColor,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.2,
+                      letterSpacing: context.letterSpacing(0.2),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -2375,11 +2376,11 @@ class _StoreScreenState extends State<StoreScreen>
                               const SizedBox(width: 4),
                               Text(
                                 AppLocalizations.of(context)!.settingsProBadge,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
+                                  letterSpacing: context.letterSpacing(0.8),
                                 ),
                               ),
                             ],
@@ -2403,7 +2404,7 @@ class _StoreScreenState extends State<StoreScreen>
                       color: theme.accentColor,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.2,
+                      letterSpacing: context.letterSpacing(0.2),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

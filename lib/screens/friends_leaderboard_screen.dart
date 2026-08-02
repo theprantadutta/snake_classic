@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -653,7 +654,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                         color: theme.accentColor,
-                        letterSpacing: -0.3,
+                        letterSpacing: context.letterSpacing(-0.3),
                       ),
                     ),
                   ],
@@ -713,7 +714,7 @@ class _FriendsLeaderboardScreenState extends State<FriendsLeaderboardScreen>
               color: theme.backgroundColor,
               fontSize: 10,
               fontWeight: FontWeight.w900,
-              letterSpacing: 0.8,
+              letterSpacing: context.letterSpacing(0.8),
             ),
           ),
         ],

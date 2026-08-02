@@ -15,6 +15,7 @@ import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/dpad_controls.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
@@ -657,7 +658,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 color: theme.accentColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 2,
+                letterSpacing: context.letterSpacing(2),
               ),
             ),
             const SizedBox(height: 8),
@@ -729,7 +730,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                       color: theme.backgroundColor,
                       fontSize: 30,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
+                      letterSpacing: context.letterSpacing(2),
                     ),
                   ),
                 ),
@@ -741,7 +742,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   color: theme.accentColor,
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 4,
+                  letterSpacing: context.letterSpacing(4),
                 ),
               ),
               const SizedBox(height: 8),
@@ -972,7 +973,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             color: theme.backgroundColor,
             fontSize: 15,
             fontWeight: FontWeight.w900,
-            letterSpacing: 1,
+            letterSpacing: context.letterSpacing(1),
           ),
         ),
       ),
@@ -1056,7 +1057,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               color: Colors.red.shade400,
               fontSize: 10,
               fontWeight: FontWeight.w800,
-              letterSpacing: 1,
+              letterSpacing: context.letterSpacing(1),
             ),
           )
         else if (!connected)
@@ -1351,7 +1352,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                   color: theme.accentColor.withValues(alpha: 0.55),
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
+                  letterSpacing: context.letterSpacing(0.8),
                 ),
               ),
               Text(

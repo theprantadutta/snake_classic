@@ -6,6 +6,7 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 
 /// Modal overlay shown during the first-sign-in flow. Subscribes to
 /// [SyncEngine.firstSignInStateStream] and renders a full-screen
@@ -189,7 +190,7 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
                         color: theme.accentColor,
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                        letterSpacing: context.letterSpacing(0.5),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -258,10 +259,10 @@ class _PrimaryButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-          textStyle: const TextStyle(
+          textStyle: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
+            letterSpacing: context.letterSpacing(0.5),
           ),
         ),
       ),

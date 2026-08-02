@@ -11,6 +11,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
@@ -770,7 +771,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                                 color: theme.backgroundColor,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w900,
-                                letterSpacing: 0.8,
+                                letterSpacing: context.letterSpacing(0.8),
                               ),
                             ),
                           ],
@@ -804,7 +805,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   color: Colors.white.withValues(alpha: 0.5),
-                  letterSpacing: 1.0,
+                  letterSpacing: context.letterSpacing(1.0),
                 ),
               ),
             ],
@@ -901,11 +902,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         ).createShader(bounds),
         child: Text(
           formatted,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w900,
             color: Colors.white,
-            letterSpacing: -0.5,
+            letterSpacing: context.letterSpacing(-0.5),
           ),
         ),
       );
@@ -916,7 +917,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         fontSize: 20,
         fontWeight: FontWeight.w900,
         color: isCurrentUser ? theme.accentColor : Colors.white,
-        letterSpacing: -0.5,
+        letterSpacing: context.letterSpacing(-0.5),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 
 /// Data class for daily bonus reward
 class DailyBonusReward {
@@ -331,7 +332,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
               color: widget.theme.accentColor,
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              letterSpacing: 1,
+              letterSpacing: context.letterSpacing(1),
             ),
           ),
 
@@ -651,11 +652,11 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
                   const SizedBox(width: 8),
                   Text(
                     AppLocalizations.of(context)!.dbClaim,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
+                      letterSpacing: context.letterSpacing(1),
                     ),
                   ),
                 ],
@@ -703,7 +704,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
                       color: widget.theme.accentColor,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+                      letterSpacing: context.letterSpacing(0.5),
                     ),
                   ),
                 ],

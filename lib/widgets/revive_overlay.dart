@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 
 /// Post-crash "Continue?" offer shown over the frozen board. Counts down, then
 /// auto-declines. The player can revive by watching a rewarded ad or paying
@@ -153,7 +154,7 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
                   color: theme.accentColor,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 2,
+                  letterSpacing: context.letterSpacing(2),
                 ),
               ),
               const SizedBox(height: 4),

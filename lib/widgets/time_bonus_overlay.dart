@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 
 /// Time-Attack "out of time" offer shown over the frozen board when the clock
 /// hits zero with a rewarded extension still available. Counts down, then
@@ -139,7 +140,7 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
                   color: theme.accentColor,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 2,
+                  letterSpacing: context.letterSpacing(2),
                 ),
               ),
               const SizedBox(height: 4),

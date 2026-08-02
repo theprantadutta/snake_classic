@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/haptic_service.dart';
@@ -603,7 +604,7 @@ class _HeroHeader extends StatelessWidget {
             fontSize: compact ? 34 : 44,
             fontWeight: FontWeight.w900,
             color: color,
-            letterSpacing: 4,
+            letterSpacing: context.letterSpacing(4),
             height: 1.0,
             shadows: [
               Shadow(
@@ -681,7 +682,7 @@ class _OutcomeRibbon extends StatelessWidget {
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: compact ? 11 : 13,
-                    letterSpacing: 0.8,
+                    letterSpacing: context.letterSpacing(0.8),
                   ),
                 ),
               ],
@@ -755,7 +756,7 @@ class _ScoreCard extends StatelessWidget {
                   color: theme.accentColor.withValues(alpha: 0.75),
                   fontSize: compact ? 12 : 13,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
+                  letterSpacing: context.letterSpacing(1.4),
                 ),
               ),
               AnimatedBuilder(
@@ -893,7 +894,7 @@ class _StatTile extends StatelessWidget {
                   color: theme.accentColor.withValues(alpha: 0.6),
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
+                  letterSpacing: context.letterSpacing(1.0),
                 ),
               ),
             ],
@@ -1039,7 +1040,7 @@ class _DailyRewardsCard extends StatelessWidget {
                         color: Colors.amber.shade300,
                         fontSize: compact ? 12 : 13,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
+                        letterSpacing: context.letterSpacing(1.2),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1132,11 +1133,11 @@ class _ClaimAllPill extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     AppLocalizations.of(context)!.goClaimAll,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
+                      letterSpacing: context.letterSpacing(0.8),
                     ),
                   ),
                 ],
@@ -1389,7 +1390,7 @@ class _AchievementSection extends StatelessWidget {
                         color: theme.accentColor,
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
+                        letterSpacing: context.letterSpacing(1.2),
                       ),
                     ),
                   ],
@@ -1456,7 +1457,7 @@ class _SubsectionLabel extends StatelessWidget {
         color: color,
         fontSize: compact ? 10 : 11,
         fontWeight: FontWeight.w800,
-        letterSpacing: 1.0,
+        letterSpacing: context.letterSpacing(1.0),
       ),
     );
   }

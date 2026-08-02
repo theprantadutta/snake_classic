@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
 
 /// Controller for the interactive game tutorial
@@ -409,7 +410,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
                 // Floating instruction card at top
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _buildInteractiveCard(l10n),
+                  child: _buildInteractiveCard(context, l10n),
                 ),
                 const Spacer(),
                 // Bottom hint
@@ -425,7 +426,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildInteractiveCard(AppLocalizations l10n) {
+  Widget _buildInteractiveCard(BuildContext context, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -468,7 +469,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           // Direction arrow
-          if (expectedDirection != null) _buildLargeDirectionArrow(l10n),
+          if (expectedDirection != null) _buildLargeDirectionArrow(context, l10n),
           const SizedBox(height: 12),
           // Skip button
           TextButton(
@@ -486,7 +487,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildLargeDirectionArrow(AppLocalizations l10n) {
+  Widget _buildLargeDirectionArrow(BuildContext context, AppLocalizations l10n) {
     IconData icon;
     String text;
 
@@ -526,11 +527,11 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              letterSpacing: 1,
+              letterSpacing: context.letterSpacing(1),
             ),
           ),
         ],
@@ -618,7 +619,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
 
           // Direction hint for interactive steps
           if (isAwaitingInput && expectedDirection != null)
-            _buildDirectionHint(l10n),
+            _buildDirectionHint(context, l10n),
 
           // Progress dots
           _buildProgressDots(),
@@ -676,7 +677,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDirectionHint(AppLocalizations l10n) {
+  Widget _buildDirectionHint(BuildContext context, AppLocalizations l10n) {
     final IconData directionIcon;
     final String directionText;
 
@@ -721,7 +722,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
                 color: theme.foodColor,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1,
+                letterSpacing: context.letterSpacing(1),
               ),
             ),
           ],

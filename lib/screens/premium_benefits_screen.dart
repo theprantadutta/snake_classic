@@ -6,6 +6,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/subscription_legal_footer.dart';
 
@@ -585,11 +586,11 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                         ),
                         child: Text(
                           AppLocalizations.of(context)!.pbProPerk,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                            letterSpacing: context.letterSpacing(0.5),
                           ),
                         ),
                       ),

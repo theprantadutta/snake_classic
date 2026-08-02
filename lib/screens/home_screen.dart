@@ -27,6 +27,7 @@ import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
@@ -807,7 +808,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   fontSize: titleSize,
                   fontWeight: FontWeight.w900,
                   color: Colors.white, // base for ShaderMask
-                  letterSpacing: 1.5,
+                  letterSpacing: context.letterSpacing(1.5),
                   shadows: [
                     Shadow(
                       color: theme.accentColor.withValues(alpha: 0.4),
@@ -1096,7 +1097,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 : 26,
                             fontWeight: FontWeight.w900,
                             color: Colors.white,
-                            letterSpacing: 2,
+                            letterSpacing: context.letterSpacing(2),
                             height: 1.0,
                             shadows: [
                               Shadow(
@@ -1301,7 +1302,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             fontSize: isSmallScreen ? 10 : 12,
                             fontWeight: FontWeight.w600,
                             color: theme.accentColor.withValues(alpha: 0.7),
-                            letterSpacing: 1.5,
+                            letterSpacing: context.letterSpacing(1.5),
                           ),
                         ),
                         if (hasSync) ...[
@@ -1612,7 +1613,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         fontSize: labelSize,
                         fontWeight: FontWeight.w800,
                         color: gradient[0],
-                        letterSpacing: 0.9,
+                        letterSpacing: context.letterSpacing(0.9),
                       ),
                     ),
                   ),
@@ -1817,7 +1818,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               fontSize: isSmallScreen ? 8 : 9,
               fontWeight: FontWeight.w600,
               color: theme.accentColor.withValues(alpha: 0.8),
-              letterSpacing: 0.5,
+              letterSpacing: context.letterSpacing(0.5),
             ),
           ),
         ],
@@ -2051,7 +2052,7 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
                 color: theme.accentColor,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
+                letterSpacing: context.letterSpacing(1.5),
               ),
             ),
             const SizedBox(height: 4),
@@ -2137,8 +2138,8 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
                 onPressed: () => Navigator.of(context).pop(_selected),
                 child: Text(
                   l10n.homeStartPlaying,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, letterSpacing: context.letterSpacing(1.5)),
                 ),
               ),
             ),
@@ -2372,9 +2373,9 @@ class _LoadoutBottomSheet extends StatelessWidget {
                     ),
                     child: Text(
                       l10n.homeDone,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+                        letterSpacing: context.letterSpacing(1.5),
                       ),
                     ),
                   ),

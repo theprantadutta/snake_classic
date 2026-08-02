@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,7 +32,7 @@ class InstructionsScreen extends StatelessWidget {
                 color: theme.accentColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 24,
-                letterSpacing: 2,
+                letterSpacing: context.letterSpacing(2),
                 shadows: [
                   Shadow(
                     offset: const Offset(0, 2),
@@ -63,6 +64,7 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Game Objective
                       _buildSection(
+                        context,
                         l10n.insObjective,
                         l10n.insObjectiveBody,
                         Icons.flag,
@@ -74,6 +76,7 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Controls Section
                       _buildSection(
+                        context,
                         l10n.insControls,
                         '',
                         Icons.touch_app,
@@ -128,6 +131,7 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Food Types
                       _buildSection(
+                        context,
                         l10n.insFoodTypes,
                         '',
                         Icons.apple,
@@ -159,6 +163,7 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Rules
                       _buildSection(
+                        context,
                         l10n.insRules,
                         '',
                         Icons.rule,
@@ -177,6 +182,7 @@ class InstructionsScreen extends StatelessWidget {
 
                       // Tips
                       _buildSection(
+                        context,
                         l10n.insProTips,
                         '',
                         Icons.lightbulb,
@@ -218,6 +224,7 @@ class InstructionsScreen extends StatelessWidget {
   }
 
   Widget _buildSection(
+    BuildContext context,
     String title,
     String description,
     IconData icon,
@@ -264,7 +271,7 @@ class InstructionsScreen extends StatelessWidget {
                   color: theme.accentColor,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+                  letterSpacing: context.letterSpacing(1),
                 ),
               ),
             ],

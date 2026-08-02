@@ -9,6 +9,7 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
@@ -548,7 +549,7 @@ class _StatTile extends StatelessWidget {
               color: accent,
               fontSize: 9,
               fontWeight: FontWeight.w800,
-              letterSpacing: 1.0,
+              letterSpacing: context.letterSpacing(1.0),
             ),
           ),
           const SizedBox(height: 4),

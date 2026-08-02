@@ -423,6 +423,18 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
     );
   }
 
+  /// The locale MaterialApp will settle on, computed before it exists.
+  ///
+  /// An explicit pick from settings wins; otherwise this runs the same
+  /// device-language matching MaterialApp uses, so the theme's typography is
+  /// built for the language the user is actually about to see.
+  static Locale _resolvedLocale(String? localeCode) =>
+      SupportedLocales.fromCode(localeCode) ??
+      basicLocaleListResolution(
+        WidgetsBinding.instance.platformDispatcher.locales,
+        SupportedLocales.locales,
+      );
+
   Widget _buildApp(
     BuildContext context,
     ThemeState themeState,
@@ -469,6 +481,13 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
                 useMaterial3: false,
                 textTheme: GameTypography.createTextTheme(
                   color: themeState.currentTheme.accentColor,
+                  // Devanagari and Arabic can't take the display letter
+                  // spacing the Latin styles use — see letterSpacingFor.
+                  // This builds the theme ABOVE MaterialApp, so there is no
+                  // Localizations to read yet; mirror the same resolution
+                  // MaterialApp is about to do so the theme and the widget
+                  // tree agree on the language.
+                  locale: _resolvedLocale(settingsState.localeCode),
                 ),
               ),
               // The first-sign-in cloud-restore overlay is mounted on the

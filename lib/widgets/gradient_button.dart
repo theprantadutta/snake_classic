@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/utils/typography.dart';
 
 class GradientButton extends StatefulWidget {
   final VoidCallback? onPressed;
@@ -144,7 +145,7 @@ class _GradientButtonState extends State<GradientButton>
                                 : Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
+                            letterSpacing: context.letterSpacing(1),
                           ),
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,

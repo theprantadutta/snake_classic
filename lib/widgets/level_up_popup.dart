@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 
 /// Celebratory dialog shown when the player crosses a level threshold.
 /// Shows the coin reward that ProgressionService credited for the level.
@@ -92,7 +93,7 @@ class LevelUpPopup extends StatelessWidget {
                 color: theme.accentColor,
                 fontSize: 26,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 2,
+                letterSpacing: context.letterSpacing(2),
               ),
             ),
             const SizedBox(height: 8),
@@ -148,11 +149,11 @@ class LevelUpPopup extends StatelessWidget {
                 ),
                 child: Text(
                   AppLocalizations.of(context)!.luNice,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
+                    letterSpacing: context.letterSpacing(1),
                   ),
                 ),
               ),

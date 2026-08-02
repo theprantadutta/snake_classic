@@ -372,7 +372,7 @@ class PremiumTextBadge extends StatelessWidget {
             .copyWith(
           color: Colors.black87,
           fontWeight: FontWeight.w700,
-          letterSpacing: 1,
+          letterSpacing: context.letterSpacing(1),
         ),
       ),
     );

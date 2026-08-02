@@ -16,6 +16,7 @@ import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 /// Pre-game loading screen shown between the Home Play tap and the Game screen.
@@ -343,7 +344,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
               fontSize: isSmallScreen ? 11 : 13,
               fontWeight: FontWeight.w800,
               color: theme.accentColor.withValues(alpha: 0.85),
-              letterSpacing: 2.2,
+              letterSpacing: context.letterSpacing(2.2),
             ),
           ).gameEntrance(),
           const Spacer(),
@@ -363,7 +364,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                 color: theme.accentColor,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 1.4,
+                letterSpacing: context.letterSpacing(1.4),
               ),
             ),
           ).gameEntrance(delay: 120.ms),
@@ -494,7 +495,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: theme.accentColor.withValues(alpha: 0.75),
-                        letterSpacing: 1.6,
+                        letterSpacing: context.letterSpacing(1.6),
                       ),
                     ),
                     if (isOverride) ...[
@@ -514,7 +515,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                     color: theme.primaryColor,
-                    letterSpacing: 0.3,
+                    letterSpacing: context.letterSpacing(0.3),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -563,7 +564,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: theme.accentColor,
-              letterSpacing: 0.5,
+              letterSpacing: context.letterSpacing(0.5),
             ),
           ),
         ],
@@ -665,7 +666,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
             fontSize: 9,
             fontWeight: FontWeight.w700,
             color: theme.accentColor.withValues(alpha: 0.7),
-            letterSpacing: 1.4,
+            letterSpacing: context.letterSpacing(1.4),
           ),
         ),
       ],
@@ -732,7 +733,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     color: Colors.amber.withValues(alpha: 0.9),
-                    letterSpacing: 1.8,
+                    letterSpacing: context.letterSpacing(1.8),
                   ),
                 ),
               ],
@@ -775,7 +776,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: theme.primaryColor.withValues(alpha: 0.92),
-                        letterSpacing: 0.4,
+                        letterSpacing: context.letterSpacing(0.4),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -892,7 +893,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: theme.accentColor,
-                        letterSpacing: 1.8,
+                        letterSpacing: context.letterSpacing(1.8),
                       ),
                     ),
                   );

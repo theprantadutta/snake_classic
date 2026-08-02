@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -499,7 +500,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                   color: theme.accentColor,
-                  letterSpacing: 2,
+                  letterSpacing: context.letterSpacing(2),
                 ),
               ).gameEntrance(),
 
@@ -652,7 +653,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: theme.accentColor,
-              letterSpacing: 1,
+              letterSpacing: context.letterSpacing(1),
             ),
           ),
 
@@ -774,7 +775,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: theme.accentColor,
-                      letterSpacing: 1,
+                      letterSpacing: context.letterSpacing(1),
                     ),
                   ),
 
@@ -880,7 +881,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: theme.accentColor,
-                      letterSpacing: 1,
+                      letterSpacing: context.letterSpacing(1),
                     ),
                   ),
 
@@ -1035,7 +1036,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: theme.accentColor,
-              letterSpacing: 1,
+              letterSpacing: context.letterSpacing(1),
             ),
           ),
 
@@ -1134,7 +1135,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: theme.accentColor,
-              letterSpacing: 1,
+              letterSpacing: context.letterSpacing(1),
             ),
           ),
 
@@ -1255,7 +1256,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: theme.accentColor.withValues(alpha: 0.8),
-              letterSpacing: 1,
+              letterSpacing: context.letterSpacing(1),
             ),
           ),
 

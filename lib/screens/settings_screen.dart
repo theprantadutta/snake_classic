@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -228,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(
                             color: theme.accentColor,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
+                            letterSpacing: context.letterSpacing(2),
                             shadows: [
                               Shadow(
                                 offset: const Offset(0, 2),
@@ -717,7 +718,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             color: theme.accentColor,
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1,
+            letterSpacing: context.letterSpacing(1),
           ),
         ),
         const SizedBox(height: 16),
@@ -949,7 +950,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: theme.accentColor,
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
+              letterSpacing: context.letterSpacing(0.5),
             ),
           ),
           const SizedBox(height: 12),
@@ -985,7 +986,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: theme.accentColor,
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
+              letterSpacing: context.letterSpacing(0.5),
             ),
           ),
           const SizedBox(height: 12),
@@ -1582,7 +1583,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
-                      letterSpacing: 0.5,
+                      letterSpacing: context.letterSpacing(0.5),
                     ),
                   ),
                   const SizedBox(height: 6),

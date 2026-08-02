@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
 
 /// Styled tooltip widget for walkthrough steps
@@ -77,7 +78,7 @@ class WalkthroughTooltip extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header with icon and title
-          _buildHeader(),
+          _buildHeader(context),
 
           // Message content
           Padding(
@@ -98,7 +99,7 @@ class WalkthroughTooltip extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Action buttons
-          _buildButtons(l10n),
+          _buildButtons(context, l10n),
 
           const SizedBox(height: 16),
         ],
@@ -106,7 +107,7 @@ class WalkthroughTooltip extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -144,7 +145,7 @@ class WalkthroughTooltip extends StatelessWidget {
                 color: theme.accentColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+                letterSpacing: context.letterSpacing(0.5),
               ),
             ),
           ),
@@ -180,7 +181,7 @@ class WalkthroughTooltip extends StatelessWidget {
     );
   }
 
-  Widget _buildButtons(AppLocalizations l10n) {
+  Widget _buildButtons(BuildContext context, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -208,13 +209,13 @@ class WalkthroughTooltip extends StatelessWidget {
           const Spacer(),
 
           // Next/Done/Wait button
-          _buildPrimaryButton(l10n),
+          _buildPrimaryButton(context, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildPrimaryButton(AppLocalizations l10n) {
+  Widget _buildPrimaryButton(BuildContext context, AppLocalizations l10n) {
     // If awaiting input, show a "waiting" state
     if (isAwaitingInput) {
       return Container(
@@ -280,11 +281,11 @@ class WalkthroughTooltip extends StatelessWidget {
           children: [
             Text(
               buttonText,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+                letterSpacing: context.letterSpacing(0.5),
               ),
             ),
             if (!isLastStep) ...[

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// "About / Credits" dialog for Snake Classic. Reached from the Settings
@@ -90,13 +91,13 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                                 theme.accentColor,
                               ],
                             ).createShader(bounds),
-                            child: const Text(
+                            child: Text(
                               'Snake Classic',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
                                 fontSize: 22,
-                                letterSpacing: 0.5,
+                                letterSpacing: context.letterSpacing(0.5),
                               ),
                             ),
                           ),
@@ -201,7 +202,7 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                               style: TextStyle(
                                 color: theme.accentColor.withValues(alpha: 0.55),
                                 fontSize: 10,
-                                letterSpacing: 0.5,
+                                letterSpacing: context.letterSpacing(0.5),
                               ),
                             ),
                             Text(
@@ -270,7 +271,7 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                   style: TextStyle(
                     color: theme.accentColor.withValues(alpha: 0.45),
                     fontSize: 10,
-                    letterSpacing: 0.3,
+                    letterSpacing: context.letterSpacing(0.3),
                   ),
                   textAlign: TextAlign.center,
                 ),
