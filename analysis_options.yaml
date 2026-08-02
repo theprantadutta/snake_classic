@@ -9,6 +9,21 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  # `build/` holds SwiftPM/CocoaPods checkouts of plugin sources (e.g.
+  # build/macos/SourcePackages/**). Those are third-party files pinned to
+  # other SDK versions, and analyzing them produced ~2,600 phantom errors
+  # that buried real ones in `lib/` — a genuine compile break sat unnoticed
+  # at the bottom of that list. Exclude generated/vendored trees so
+  # `flutter analyze` reports only code we own.
+  #
+  # The l10n output (lib/l10n/app_localizations*.dart) is deliberately NOT
+  # excluded — it is committed, it ships, and a bad ARB should surface here.
+  exclude:
+    - build/**
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
