@@ -57,6 +57,20 @@ class GameState {
   final GameMode gameMode;
   final Difficulty difficulty;
 
+  /// Overrides the base tick duration for this run, in milliseconds. Null (the
+  /// normal case) means use [difficulty]'s own `baseSpeed`.
+  ///
+  /// Exists so a player's opening games can run at a gentler pace WITHOUT
+  /// being recorded as Easy. Simply forcing `Difficulty.easy` would have been
+  /// the obvious shortcut and is wrong: `Difficulty.postsToLeaderboard` is
+  /// false for Easy, and that flag feeds `countsForHighScore` — so a brand-new
+  /// player's first runs would not even become their own personal best, which
+  /// is both baffling and would suppress the new-high-score moment the
+  /// deferred sign-in prompt keys off. This changes the starting speed and
+  /// nothing else; difficulty, leaderboard eligibility and high-score
+  /// recording all stay exactly as the player configured them.
+  final int? startingSpeedMs;
+
   // Combo system. The combo is a real streak: it BREAKS (resets to 0)
   // after [GameConstants.comboDecayMs] of accumulated game-time without
   // eating — see SnakeSimulation.step. Game-time (ticks × tick duration)
@@ -104,6 +118,7 @@ class GameState {
     this.lastMoveTime,
     this.gameMode = GameMode.classic,
     this.difficulty = Difficulty.normal,
+    this.startingSpeedMs,
     this.currentCombo = 0,
     this.maxCombo = 0,
     this.comboMultiplier = 1.0,
@@ -150,8 +165,10 @@ class GameState {
   int get gameSpeed {
     // Speed increases with level (lower milliseconds = faster).
     // Base tick comes from the player's difficulty preset (Normal is the
-    // historical 300ms); the per-level ramp stays mode-owned.
-    final baseSpeed = difficulty.baseSpeed;
+    // historical 300ms), unless this run carries an explicit override — see
+    // [startingSpeedMs]. The per-level ramp stays mode-owned either way, so an
+    // overridden run still accelerates on exactly the same curve.
+    final baseSpeed = startingSpeedMs ?? difficulty.baseSpeed;
     final speedDecrease = (level - 1) * gameMode.speedIncreaseRate;
     // Upper bound is baseSpeed, NOT a literal 300 — the snake must never
     // start slower than its own base, and a hard-coded 300 would have
@@ -296,6 +313,7 @@ class GameState {
     DateTime? lastMoveTime,
     GameMode? gameMode,
     Difficulty? difficulty,
+    int? startingSpeedMs,
     int? currentCombo,
     int? maxCombo,
     double? comboMultiplier,
@@ -330,6 +348,7 @@ class GameState {
       lastMoveTime: lastMoveTime ?? this.lastMoveTime,
       gameMode: gameMode ?? this.gameMode,
       difficulty: difficulty ?? this.difficulty,
+      startingSpeedMs: startingSpeedMs ?? this.startingSpeedMs,
       currentCombo: currentCombo ?? this.currentCombo,
       maxCombo: maxCombo ?? this.maxCombo,
       comboMultiplier: comboMultiplier ?? this.comboMultiplier,

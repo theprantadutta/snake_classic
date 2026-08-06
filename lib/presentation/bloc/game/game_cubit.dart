@@ -24,6 +24,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/review_service.dart';
@@ -273,6 +274,28 @@ class GameCubit extends Cubit<GameCubitState> {
     // same reason Easy runs don't reach the leaderboards.
     final effectiveDifficulty =
         state.tournamentMode != null ? Difficulty.normal : settings.difficulty;
+
+    // Gentler pace for a player's opening games. Normal starts the snake at
+    // 300ms/tick, which gives someone who has never played Snake — and who may
+    // not yet realise they steer by swiping — only a few seconds before the
+    // first wall. Easy's 380ms start is described in its own docs as "a
+    // gentler on-ramp rather than a permanently slower game": the per-level
+    // ramp is untouched, so it converges back on Normal's pace by about level
+    // 9 and costs an experienced player nothing.
+    //
+    // Deliberately narrow:
+    //   * speed only — see GameState.startingSpeedMs for why hijacking
+    //     Difficulty would have broken high-score recording;
+    //   * never in tournaments, which are ranked against everyone else's runs;
+    //   * only when the player is still on the default difficulty. Anyone who
+    //     went to Settings and chose Easy or Hard before their third game has
+    //     made an explicit statement about how they want to play, and this
+    //     does not second-guess it.
+    final useOnboardingPace = state.tournamentMode == null &&
+        settings.difficulty == Difficulty.normal &&
+        FirstRunService().isInOnboarding;
+    final startingSpeedMs =
+        useOnboardingPace ? Difficulty.easy.baseSpeed : null;
     debugPrint(
       '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, gameMode=${effectiveGameMode.name}, highScore=${settings.highScore}',
     );
@@ -285,6 +308,7 @@ class GameCubit extends Cubit<GameCubitState> {
       boardHeight: settings.boardSize.height,
       gameMode: effectiveGameMode,
       difficulty: effectiveDifficulty,
+      startingSpeedMs: startingSpeedMs,
       status: model.GameStatus.playing,
       currentCombo: 0,
       maxCombo: 0,
@@ -398,6 +422,11 @@ class GameCubit extends Cubit<GameCubitState> {
       boardHeight: gameState.boardHeight,
       gameMode: state.isTournamentMode ? 'tournament' : gameState.gameMode.name,
     );
+
+    // Advances the first-run counter that every onboarding gate reads, and
+    // emits `first_game_started` (with install→play latency) exactly once.
+    // Fire-and-forget: a prefs write must never delay the first tick.
+    unawaited(FirstRunService().recordGameStarted());
 
     debugPrint('🎮 [GameCubit] startGame() completed');
   }
