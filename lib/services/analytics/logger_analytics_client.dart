@@ -279,6 +279,25 @@ class LoggerAnalyticsClient implements AnalyticsClient {
     AppLogger.info('$_tag walkthrough_completed');
   }
 
+  // ==================== First-run funnel ====================
+
+  @override
+  Future<void> trackOnboardingStepShown(String step) async {
+    AppLogger.info('$_tag onboarding_step_shown: step=$step');
+  }
+
+  @override
+  Future<void> trackOnboardingStepCompleted(String step) async {
+    AppLogger.info('$_tag onboarding_step_completed: step=$step');
+  }
+
+  @override
+  Future<void> trackFirstGameStarted({required int secondsSinceInstall}) async {
+    AppLogger.info(
+      '$_tag first_game_started: seconds_since_install=$secondsSinceInstall',
+    );
+  }
+
   @override
   Future<void> trackReviewRequested(String trigger) async {
     AppLogger.info('$_tag review_requested: trigger=$trigger');

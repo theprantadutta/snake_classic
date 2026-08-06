@@ -305,6 +305,22 @@ class AnalyticsFacade implements AnalyticsClient {
   Future<void> trackWalkthroughCompleted() async =>
       _fire((c) => c.trackWalkthroughCompleted());
 
+  // ==================== First-run funnel ====================
+
+  @override
+  Future<void> trackOnboardingStepShown(String step) async =>
+      _fire((c) => c.trackOnboardingStepShown(step));
+
+  @override
+  Future<void> trackOnboardingStepCompleted(String step) async =>
+      _fire((c) => c.trackOnboardingStepCompleted(step));
+
+  @override
+  Future<void> trackFirstGameStarted({required int secondsSinceInstall}) async =>
+      _fire((c) => c.trackFirstGameStarted(
+            secondsSinceInstall: secondsSinceInstall,
+          ));
+
   @override
   Future<void> trackReviewRequested(String trigger) async =>
       _fire((c) => c.trackReviewRequested(trigger));

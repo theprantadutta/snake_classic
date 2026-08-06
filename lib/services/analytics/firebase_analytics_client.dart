@@ -345,6 +345,32 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
     return _analytics.logTutorialComplete();
   }
 
+  // ==================== First-run funnel ====================
+
+  @override
+  Future<void> trackOnboardingStepShown(String step) {
+    return _analytics.logEvent(
+      name: 'onboarding_step_shown',
+      parameters: {'step': step},
+    );
+  }
+
+  @override
+  Future<void> trackOnboardingStepCompleted(String step) {
+    return _analytics.logEvent(
+      name: 'onboarding_step_completed',
+      parameters: {'step': step},
+    );
+  }
+
+  @override
+  Future<void> trackFirstGameStarted({required int secondsSinceInstall}) {
+    return _analytics.logEvent(
+      name: 'first_game_started',
+      parameters: {'seconds_since_install': secondsSinceInstall},
+    );
+  }
+
   @override
   Future<void> trackReviewRequested(String trigger) {
     return _analytics.logEvent(

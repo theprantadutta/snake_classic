@@ -128,6 +128,26 @@ abstract class AnalyticsClient {
   Future<void> trackWalkthroughStarted();
   Future<void> trackWalkthroughCompleted();
 
+  // ==================== First-run funnel ====================
+  //
+  // The onboarding funnel is the single biggest lever on D1 retention, and
+  // until these events existed we could only see its endpoints (`first_open`
+  // and `game_started`) — never WHERE inside it people left. [step] is a
+  // stable snake_case id (`legal`, `auth`, `username`, `home`), so a GA4
+  // funnel over `onboarding_step_shown` → `onboarding_step_completed` shows
+  // the drop between any two gates.
+
+  /// A first-run gate was presented to the user.
+  Future<void> trackOnboardingStepShown(String step);
+
+  /// A first-run gate was cleared (accepted / signed in / dismissed).
+  Future<void> trackOnboardingStepCompleted(String step);
+
+  /// The player started their very first game on this install. [secondsSinceInstall]
+  /// is wall-clock time from first launch to the first tick of gameplay — the
+  /// metric to drive down. Fires at most once per install.
+  Future<void> trackFirstGameStarted({required int secondsSinceInstall});
+
   /// Fires when ReviewService dispatches a `requestReview()` to the native
   /// platform. [trigger] is the human-readable name of the moment that
   /// caused the request (e.g. `newHighScore`). The platform does not report
