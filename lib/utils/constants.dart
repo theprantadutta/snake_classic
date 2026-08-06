@@ -46,6 +46,17 @@ class BoardSize {
     this.icon = '📐',
   });
 
+  /// Stable identifier written to storage: width and height packed as
+  /// `w * 1000 + h`. Width alone used to be the key, which was unambiguous
+  /// only while every board was square — 20x20 and 20x36 share a width.
+  /// See StorageService.saveBoardSize for the full format history.
+  int get storageKey => width * 1000 + height;
+
+  /// True when the board is taller than it is wide. These fill a phone's
+  /// screen the way a square never can, at the cost of scores that are not
+  /// comparable with square-board runs.
+  bool get isTall => height > width;
+
   // Static getters for common board sizes
   static const BoardSize small = BoardSize(
     15,
@@ -122,6 +133,32 @@ class GameConstants {
       'Massive',
       'Enormous board for epic games',
       icon: '🏆',
+    ),
+    // ---- Tall boards ----
+    //
+    // Every board above is square, so on a phone the playfield is capped by
+    // WIDTH and leaves most of the screen height unused — the board simply
+    // cannot grow into it. These match a phone's aspect instead, so the arena
+    // fills the screen.
+    //
+    // Added ALONGSIDE the square sizes rather than replacing them, and never
+    // as the default. A taller arena changes how much room you have to
+    // manoeuvre, which changes achievable scores — making square and tall runs
+    // not meaningfully comparable. Existing high scores and leaderboard
+    // entries stay exactly as earned, and a player opts in knowingly.
+    BoardSize(
+      18,
+      32,
+      'Tall',
+      'Fills a phone screen — more room to run',
+      icon: '📱',
+    ),
+    BoardSize(
+      24,
+      42,
+      'Tall Plus',
+      'A bigger phone-shaped arena',
+      icon: '🌆',
     ),
     BoardSize(
       50,

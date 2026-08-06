@@ -5953,4 +5953,17 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get rvCollectedPowerUpUnknown => '⚡ Zebrał ulepszenie';
+
+  @override
+  String get boardTall => 'Wysoka';
+
+  @override
+  String get boardTallDesc =>
+      'Wypełnia ekran telefonu — więcej miejsca na ruch';
+
+  @override
+  String get boardTallPlus => 'Wysoka plus';
+
+  @override
+  String get boardTallPlusDesc => 'Większa arena w formacie telefonu';
 }

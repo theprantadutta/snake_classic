@@ -5947,4 +5947,17 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get rvCollectedPowerUpUnknown => '⚡ Подобрал усиление';
+
+  @override
+  String get boardTall => 'Высокое';
+
+  @override
+  String get boardTallDesc =>
+      'Заполняет экран телефона — больше места для манёвра';
+
+  @override
+  String get boardTallPlus => 'Высокое плюс';
+
+  @override
+  String get boardTallPlusDesc => 'Арена побольше в формате телефона';
 }

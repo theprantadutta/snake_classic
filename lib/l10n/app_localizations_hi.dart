@@ -5898,4 +5898,16 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get rvCollectedPowerUpUnknown => '⚡ पावर-अप उठाया';
+
+  @override
+  String get boardTall => 'लंबा';
+
+  @override
+  String get boardTallDesc => 'फ़ोन स्क्रीन भर देता है — दौड़ने को ज़्यादा जगह';
+
+  @override
+  String get boardTallPlus => 'लंबा प्लस';
+
+  @override
+  String get boardTallPlusDesc => 'और बड़ा फ़ोन-आकार का मैदान';
 }

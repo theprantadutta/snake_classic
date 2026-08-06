@@ -164,6 +164,8 @@ extension BoardSizeL10n on BoardSize {
         'Epic' => l10n.boardEpic,
         'Massive' => l10n.boardMassive,
         'Ultimate' => l10n.boardUltimate,
+        'Tall' => l10n.boardTall,
+        'Tall Plus' => l10n.boardTallPlus,
         _ => name,
       };
 
@@ -175,6 +177,8 @@ extension BoardSizeL10n on BoardSize {
         'Epic' => l10n.boardEpicDesc,
         'Massive' => l10n.boardMassiveDesc,
         'Ultimate' => l10n.boardUltimateDesc,
+        'Tall' => l10n.boardTallDesc,
+        'Tall Plus' => l10n.boardTallPlusDesc,
         _ => description,
       };
 }

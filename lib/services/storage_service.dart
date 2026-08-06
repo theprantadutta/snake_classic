@@ -157,12 +157,17 @@ class StorageService {
   }
 
   Future<void> saveBoardSize(BoardSize boardSize) async {
-    // Persist the board's WIDTH (a stable identifier), not its position in
-    // availableBoardSizes. Index-based storage silently remapped everyone's
-    // saved board whenever that list was reordered/trimmed. Widths are >= 15
-    // and legacy index values are 0..6, so the ranges never overlap and old
-    // saves still resolve correctly (see [_resolveBoardSize]).
-    await _settingsDao?.updateBoardSize(boardSize.width);
+    // Persist width AND height, packed as w * 1000 + h.
+    //
+    // Storage has been through three formats, and all three still resolve —
+    // see [_resolveBoardSize]:
+    //   0..14      legacy list INDEX. Broke whenever the list was reordered,
+    //              which is why it was replaced.
+    //   15..999    a board WIDTH. Correct only while every board was square,
+    //              because width alone identified the board.
+    //   >= 1000    packed width + height. Required once tall boards arrived:
+    //              20x20 and 20x36 share a width, so width alone is ambiguous.
+    await _settingsDao?.updateBoardSize(boardSize.storageKey);
   }
 
   // ==================== Difficulty ====================
@@ -176,17 +181,34 @@ class StorageService {
     await _settingsDao?.updateDifficulty(difficulty.index);
   }
 
-  /// Resolve a stored board-size value to a [BoardSize]. Values >= 15 are a
-  /// board WIDTH (the stable format written by [saveBoardSize]); smaller values
-  /// are a legacy list index. Unknown values fall back to Classic.
+  /// Resolve a stored board-size value to a [BoardSize], across all three
+  /// historical encodings (see [saveBoardSize]). Unknown values fall back to
+  /// Classic rather than throwing — a board we cannot identify must never stop
+  /// someone from playing.
   BoardSize _resolveBoardSize(int stored) {
     final sizes = GameConstants.availableBoardSizes;
-    if (stored >= 15) {
+
+    // Packed width + height.
+    if (stored >= 1000) {
+      final w = stored ~/ 1000;
+      final h = stored % 1000;
       return sizes.firstWhere(
-        (s) => s.width == stored,
+        (s) => s.width == w && s.height == h,
         orElse: () => BoardSize.classic,
       );
     }
+
+    // Legacy width-only. Matches the SQUARE board of that width, so an
+    // existing save keeps resolving to exactly the board it always meant even
+    // now that a tall board can share its width.
+    if (stored >= 15) {
+      return sizes.firstWhere(
+        (s) => s.width == stored && s.width == s.height,
+        orElse: () => BoardSize.classic,
+      );
+    }
+
+    // Legacy list index.
     return sizes[stored.clamp(0, sizes.length - 1)];
   }
 

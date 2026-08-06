@@ -10671,6 +10671,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'⚡ Collected a power-up'**
   String get rvCollectedPowerUpUnknown;
+
+  /// Name of the tall (non-square) board size, 18x32.
+  ///
+  /// In en, this message translates to:
+  /// **'Tall'**
+  String get boardTall;
+
+  /// Description of the 18x32 tall board.
+  ///
+  /// In en, this message translates to:
+  /// **'Fills a phone screen — more room to run'**
+  String get boardTallDesc;
+
+  /// Name of the larger tall board size, 24x42.
+  ///
+  /// In en, this message translates to:
+  /// **'Tall Plus'**
+  String get boardTallPlus;
+
+  /// Description of the 24x42 tall board.
+  ///
+  /// In en, this message translates to:
+  /// **'A bigger phone-shaped arena'**
+  String get boardTallPlusDesc;
 }
 
 class _AppLocalizationsDelegate

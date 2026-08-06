@@ -1759,5 +1759,9 @@
   "goTomorrowLabel": "WRÓĆ JUTRO",
   "goTomorrowReward": "Odbierz {coins} monet w dniu {day} swojej serii",
   "rvAteFoodUnknown": "🍎 Zjadł jedzenie",
-  "rvCollectedPowerUpUnknown": "⚡ Zebrał ulepszenie"
+  "rvCollectedPowerUpUnknown": "⚡ Zebrał ulepszenie",
+  "boardTall": "Wysoka",
+  "boardTallDesc": "Wypełnia ekran telefonu — więcej miejsca na ruch",
+  "boardTallPlus": "Wysoka plus",
+  "boardTallPlusDesc": "Większa arena w formacie telefonu"
 }

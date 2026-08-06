@@ -1759,5 +1759,9 @@
   "goTomorrowLabel": "عُد غدًا",
   "goTomorrowReward": "احصل على {coins} عملة في اليوم {day} من سلسلتك",
   "rvAteFoodUnknown": "🍎 أكل طعامًا",
-  "rvCollectedPowerUpUnknown": "⚡ التقط تعزيزًا"
+  "rvCollectedPowerUpUnknown": "⚡ التقط تعزيزًا",
+  "boardTall": "طويلة",
+  "boardTallDesc": "تملأ شاشة الهاتف — مساحة أكبر للحركة",
+  "boardTallPlus": "طويلة بلس",
+  "boardTallPlusDesc": "ساحة أكبر بشكل الهاتف"
 }

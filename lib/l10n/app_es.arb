@@ -1759,5 +1759,9 @@
   "goTomorrowLabel": "VUELVE MAÑANA",
   "goTomorrowReward": "Reclama {coins} monedas el día {day} de tu racha",
   "rvAteFoodUnknown": "🍎 Comió comida",
-  "rvCollectedPowerUpUnknown": "⚡ Recogió un potenciador"
+  "rvCollectedPowerUpUnknown": "⚡ Recogió un potenciador",
+  "boardTall": "Alto",
+  "boardTallDesc": "Llena la pantalla del móvil: más espacio para correr",
+  "boardTallPlus": "Alto Plus",
+  "boardTallPlusDesc": "Una arena más grande con forma de móvil"
 }

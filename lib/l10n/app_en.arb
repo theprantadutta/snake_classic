@@ -2220,5 +2220,21 @@
   },
   "@rvCollectedPowerUpUnknown": {
     "description": "Replay event caption when the recorded power-up type is missing (older recordings stored null). Deliberately omits the type."
+  },
+  "boardTall": "Tall",
+  "boardTallDesc": "Fills a phone screen — more room to run",
+  "boardTallPlus": "Tall Plus",
+  "boardTallPlusDesc": "A bigger phone-shaped arena",
+  "@boardTall": {
+    "description": "Name of the tall (non-square) board size, 18x32."
+  },
+  "@boardTallDesc": {
+    "description": "Description of the 18x32 tall board."
+  },
+  "@boardTallPlus": {
+    "description": "Name of the larger tall board size, 24x42."
+  },
+  "@boardTallPlusDesc": {
+    "description": "Description of the 24x42 tall board."
   }
 }

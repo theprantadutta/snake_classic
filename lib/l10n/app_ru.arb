@@ -1759,5 +1759,9 @@
   "goTomorrowLabel": "ВОЗВРАЩАЙСЯ ЗАВТРА",
   "goTomorrowReward": "Забери {coins} монет в день {day} твоей серии",
   "rvAteFoodUnknown": "🍎 Съел еду",
-  "rvCollectedPowerUpUnknown": "⚡ Подобрал усиление"
+  "rvCollectedPowerUpUnknown": "⚡ Подобрал усиление",
+  "boardTall": "Высокое",
+  "boardTallDesc": "Заполняет экран телефона — больше места для манёвра",
+  "boardTallPlus": "Высокое плюс",
+  "boardTallPlusDesc": "Арена побольше в формате телефона"
 }

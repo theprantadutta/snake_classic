@@ -1759,5 +1759,9 @@
   "goTomorrowLabel": "कल फिर आएँ",
   "goTomorrowReward": "अपनी स्ट्रीक के दिन {day} पर {coins} सिक्के पाएँ",
   "rvAteFoodUnknown": "🍎 भोजन खाया",
-  "rvCollectedPowerUpUnknown": "⚡ पावर-अप उठाया"
+  "rvCollectedPowerUpUnknown": "⚡ पावर-अप उठाया",
+  "boardTall": "लंबा",
+  "boardTallDesc": "फ़ोन स्क्रीन भर देता है — दौड़ने को ज़्यादा जगह",
+  "boardTallPlus": "लंबा प्लस",
+  "boardTallPlusDesc": "और बड़ा फ़ोन-आकार का मैदान"
 }

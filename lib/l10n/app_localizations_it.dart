@@ -5967,4 +5967,17 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get rvCollectedPowerUpUnknown => '⚡ Ha raccolto un potenziamento';
+
+  @override
+  String get boardTall => 'Alto';
+
+  @override
+  String get boardTallDesc =>
+      'Riempie lo schermo del telefono — più spazio per correre';
+
+  @override
+  String get boardTallPlus => 'Alto Plus';
+
+  @override
+  String get boardTallPlusDesc => 'Un\'arena più grande a forma di telefono';
 }

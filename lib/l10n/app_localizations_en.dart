@@ -5907,4 +5907,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rvCollectedPowerUpUnknown => '⚡ Collected a power-up';
+
+  @override
+  String get boardTall => 'Tall';
+
+  @override
+  String get boardTallDesc => 'Fills a phone screen — more room to run';
+
+  @override
+  String get boardTallPlus => 'Tall Plus';
+
+  @override
+  String get boardTallPlusDesc => 'A bigger phone-shaped arena';
 }

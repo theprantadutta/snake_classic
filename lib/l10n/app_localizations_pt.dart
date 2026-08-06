@@ -5963,4 +5963,17 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get rvCollectedPowerUpUnknown => '⚡ Pegou um power-up';
+
+  @override
+  String get boardTall => 'Alto';
+
+  @override
+  String get boardTallDesc =>
+      'Preenche a tela do celular — mais espaço para correr';
+
+  @override
+  String get boardTallPlus => 'Alto Plus';
+
+  @override
+  String get boardTallPlusDesc => 'Uma arena maior no formato do celular';
 }

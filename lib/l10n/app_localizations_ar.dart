@@ -5902,4 +5902,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get rvCollectedPowerUpUnknown => '⚡ التقط تعزيزًا';
+
+  @override
+  String get boardTall => 'طويلة';
+
+  @override
+  String get boardTallDesc => 'تملأ شاشة الهاتف — مساحة أكبر للحركة';
+
+  @override
+  String get boardTallPlus => 'طويلة بلس';
+
+  @override
+  String get boardTallPlusDesc => 'ساحة أكبر بشكل الهاتف';
 }

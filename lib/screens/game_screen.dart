@@ -614,32 +614,56 @@ class _GameScreenState extends State<GameScreen>
                                               ),
                                               child: LayoutBuilder(
                                                 builder: (context, boardConstraints) {
-                                                  // Calculate optimal board size.
-                                                  // On phones this is min(w,h) as
-                                                  // before (cap is infinity → no-op).
+                                                  // Fit the board to ITS OWN aspect
+                                                  // ratio, largest that still fits.
+                                                  //
+                                                  // This used to force a square box.
+                                                  // That was fine while every board
+                                                  // was square, but the painter derives
+                                                  // cells as width/boardWidth and
+                                                  // height/boardHeight independently —
+                                                  // so a non-square board in a square
+                                                  // box renders stretched cells and a
+                                                  // visibly distorted snake. A square
+                                                  // board still resolves to exactly
+                                                  // min(w,h), so nothing changes for
+                                                  // the existing sizes.
+                                                  //
                                                   // On tablets the board is capped so
                                                   // it doesn't swell edge-to-edge and
-                                                  // dwarf the uiScale-sized HUD/controls
-                                                  // — it stays a centered square with
-                                                  // breathing room instead.
+                                                  // dwarf the uiScale-sized HUD and
+                                                  // controls.
                                                   final boardCap =
                                                       context.responsive<double>(
                                                     phone: double.infinity,
                                                     tablet: 640,
                                                     largeTablet: 820,
                                                   );
-                                                  final availableSize = math.min(
-                                                    math.min(
-                                                      boardConstraints.maxWidth,
-                                                      boardConstraints.maxHeight,
-                                                    ),
+                                                  final aspect =
+                                                      gameState.boardWidth /
+                                                          gameState.boardHeight;
+                                                  final maxW = math.min(
+                                                    boardConstraints.maxWidth,
                                                     boardCap,
                                                   );
+                                                  final maxH = math.min(
+                                                    boardConstraints.maxHeight,
+                                                    boardCap,
+                                                  );
+                                                  // Start from the full width, fall
+                                                  // back to height-driven when that
+                                                  // would overflow vertically.
+                                                  var boardW = maxW;
+                                                  var boardH = boardW / aspect;
+                                                  if (boardH > maxH) {
+                                                    boardH = maxH;
+                                                    boardW = boardH * aspect;
+                                                  }
 
                                                   return Center(
                                                     child: SizedBox(
-                                                      width: availableSize,
-                                                      height: availableSize,
+                                                      width: boardW,
+                                                      height: boardH,
                                                       child: FlameGameBoard(
                                                         gameState: gameState,
                                                         isTournamentMode:

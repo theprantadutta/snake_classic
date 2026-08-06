@@ -1759,5 +1759,9 @@
   "goTomorrowLabel": "REVIENS DEMAIN",
   "goTomorrowReward": "Récupère {coins} pièces au jour {day} de ta série",
   "rvAteFoodUnknown": "🍎 A mangé de la nourriture",
-  "rvCollectedPowerUpUnknown": "⚡ A ramassé un bonus"
+  "rvCollectedPowerUpUnknown": "⚡ A ramassé un bonus",
+  "boardTall": "Haut",
+  "boardTallDesc": "Remplit l'écran du téléphone — plus de place pour courir",
+  "boardTallPlus": "Haut Plus",
+  "boardTallPlusDesc": "Une arène plus grande au format téléphone"
 }
