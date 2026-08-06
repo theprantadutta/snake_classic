@@ -11,6 +11,7 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -151,6 +152,18 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
     // animations get a clean start.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+
+      // A player's VERY FIRST game skips this screen outright. The wait does
+      // no real work (see the class docstring — it is theater), the stats
+      // strip it exists to show reads 0 / 0 / 0 for someone who has never
+      // played, and the tips reference mechanics they have not met yet. It is
+      // three seconds of nothing at the single most churn-prone moment of the
+      // install. Every later play keeps the loader.
+      if (FirstRunService().isFirstGame) {
+        _goToGame();
+        return;
+      }
+
       _progressController.forward();
     });
   }

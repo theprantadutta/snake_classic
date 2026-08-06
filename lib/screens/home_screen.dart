@@ -31,9 +31,12 @@ import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
+import 'package:snake_classic/services/first_run_service.dart';
+import 'package:snake_classic/utils/legal_acceptance.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
+import 'package:snake_classic/widgets/first_run_legal_notice.dart';
 import 'package:snake_classic/widgets/notification_permission_primer.dart';
 import 'package:snake_classic/widgets/notification_permission_softask.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
@@ -58,6 +61,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late Animation<double> _playButtonPulseAnimation;
   bool _dailyBonusChecked = false;
   bool _walkthroughChecked = false;
+
+  /// One-shot guard for the onboarding prompt queue. The queue is attempted
+  /// from initState and re-attempted from build (see
+  /// [_maybeRunOnboardingPromptQueue]); this keeps it to a single dispatch per
+  /// Home instance rather than one per frame.
+  bool _promptQueueDispatched = false;
 
   @override
   void initState() {
@@ -95,8 +104,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // stack on top of each other on a cold first launch. Run them
     // through a sequential queue instead — each step still self-gates
     // on whether to show at all, the queue only enforces order and
-    // one-prompt-at-a-time.
-    _runOnboardingPromptQueue();
+    // one-prompt-at-a-time. No-ops until the player's first game is done.
+    _maybeRunOnboardingPromptQueue();
 
     // Home is mounted and the router is on a real route — flush any deep
     // link captured during the cold-start window (terminated-state
@@ -113,6 +122,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// Each step awaits the previous prompt's dismissal before it is even
   /// considered; every step keeps its own has-shown / cadence gating, so
   /// the queue only decides ORDER, not WHETHER anything shows.
+  /// Gate + one-shot dispatcher for [_runOnboardingPromptQueue].
+  ///
+  /// NOTHING in that queue may precede the player's first game. On a fresh
+  /// install all three prompts used to fire before the snake had ever moved:
+  /// a seven-step coach-mark tour of Coins / Store / Cosmetics / Battle Pass /
+  /// Profile / Settings, then a daily-bonus popup, then a notification
+  /// permission ask. Every one describes a metagame the player has no stake in
+  /// yet, and asking for the notification permission before delivering any
+  /// value is both the lowest-converting moment to ask and a bad signal to
+  /// someone still deciding whether to keep the app.
+  ///
+  /// Called from [initState] AND from a post-frame hook in [build], because
+  /// the two ways back from a game differ: "Home" on the game-over screen does
+  /// a `go` (fresh Home, initState runs), while Android back pops to the
+  /// existing Home instance (no initState). The build-side re-entry is what
+  /// stops the back path from stranding the queue until the next cold start.
+  void _maybeRunOnboardingPromptQueue() {
+    if (_promptQueueDispatched) return;
+    if (FirstRunService().isFirstGame) return;
+    _promptQueueDispatched = true;
+    unawaited(_runOnboardingPromptQueue());
+  }
+
   Future<void> _runOnboardingPromptQueue() async {
     // Let the home screen settle (first frame + entrance animations)
     // before anything pops over it.
@@ -215,8 +247,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     final selected = await showModalBottomSheet<GameMode>(
       context: context,
-      isDismissible: false,
-      enableDrag: false,
+      // Dismissible: a player who taps Play wants to play, and trapping them
+      // in a modal until they commit to a mode they have not tried yet is
+      // friction with no upside. Dismissing keeps their current mode (the
+      // `selected == null` path below) and still marks the picker as shown,
+      // so it asks once and never nags.
+      isDismissible: true,
+      enableDrag: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       // Cap width so the sheet centers on tablets instead of spanning the
@@ -239,6 +276,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// need to run), so later onboarding prompts can queue behind it.
   Future<void> _checkWalkthrough() async {
     if (_walkthroughChecked) return;
+
+    // Waits for the END of the first-run window, not merely the first game.
+    // Progressive disclosure hides the Store, Cosmetics, Battle Pass and
+    // Friends tiles while onboarding is active, and four of the seven
+    // walkthrough steps point at exactly those widgets — running early would
+    // spotlight nothing (WalkthroughOverlay falls back to a null targetRect
+    // for an unmounted key) and narrate a UI the player cannot see.
+    //
+    // Note this does NOT set _walkthroughChecked: the queue must be able to
+    // reach this again on a later visit, once the grid is complete.
+    if (FirstRunService().isInOnboarding) return;
+
     _walkthroughChecked = true;
 
     final walkthroughNotifier = ref.read(walkthroughProvider.notifier);
@@ -253,7 +302,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         walkthroughId: WalkthroughService.homeWalkthroughId,
         steps: HomeWalkthrough.getSteps(AppLocalizations.of(context)!),
         onComplete: () {
-          if (!done.isCompleted) done.complete();
+          // `tutorial_complete` had never fired in production: the facade
+          // method existed but nothing called it, so GA4 showed 3.5k
+          // tutorial_begin against zero completions and we could not tell
+          // abandonment from a missing event. Fires on both the finished and
+          // skipped paths — walkthroughNotifier resolves onComplete for
+          // either, which is the honest signal ("the walkthrough is no longer
+          // in the player's way"), and the two are separable by whether the
+          // user reached the last step in the walkthrough state.
+          if (!done.isCompleted) {
+            getIt<AnalyticsFacade>().trackWalkthroughCompleted();
+            done.complete();
+          }
         },
       );
       if (!mounted) return;
@@ -372,6 +432,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget build(BuildContext context) {
     final walkthroughState = ref.watch(walkthroughProvider);
 
+    // Re-entry for the deferred onboarding prompts: this Home instance may
+    // have been created before the player's first game, in which case
+    // initState's attempt no-opped. Returning here by Android back reuses that
+    // instance, so build is the only hook left. Self-guarded — after the first
+    // successful dispatch this is a single bool read per frame.
+    if (!_promptQueueDispatched) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _maybeRunOnboardingPromptQueue();
+      });
+    }
+
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
@@ -386,7 +457,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       controller: ThemeTransitionController(vsync: this),
                       currentTheme: theme,
                       child: Scaffold(
-                        bottomNavigationBar: const SnakeBannerAd(),
+                        // The legal strip rides above the banner ad rather
+                        // than inside the scrolling body: it must stay visible
+                        // without the user hunting for it, and anchoring it
+                        // here keeps it out of the height math the play area
+                        // and nav grid do against `constraints`. Renders
+                        // nothing once acceptance is on file.
+                        bottomNavigationBar: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FirstRunLegalNotice(theme: theme),
+                            const SnakeBannerAd(),
+                          ],
+                        ),
                         body: AppBackground(
                           theme: theme,
                           child: SafeArea(
@@ -977,10 +1060,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
         return GestureDetector(
           onTap: () async {
-            // Show the one-time game-mode picker before launching the
-            // first game; no-op for users who've already picked.
-            await _maybeShowGameModePrompt();
-            if (!context.mounted) return;
+            // Tapping Play is the affirmative act that records acceptance of
+            // the legal notice rendered at the bottom of this screen (see
+            // FirstRunLegalNotice). Idempotent and fire-and-forget — a prefs
+            // write must never sit between the tap and the game.
+            unawaited(LegalAcceptance.recordAccepted());
+
+            // The one-time game-mode picker is skipped on the very first
+            // play. A player who has never seen the board cannot make a
+            // meaningful choice between Classic, Zen, Survival and Time
+            // Attack, and a non-dismissible sheet at that moment is pure
+            // friction — they get Classic (the default) and the picker on
+            // their second tap, once the choice means something.
+            if (!FirstRunService().isFirstGame) {
+              await _maybeShowGameModePrompt();
+              if (!context.mounted) return;
+            }
             // Detour through the themed pre-game loader. It self-advances
             // to /game on completion via pushReplacement so back from the
             // game lands on Home rather than the loader.
@@ -1640,7 +1735,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // 8 items split 4+4 across two rows. STATS lives ONLY in the compact
     // stats row above the nav (left of the high score).
     final l10n = AppLocalizations.of(context)!;
-    final navigationItems = [
+    final allNavigationItems = [
       _NavItem(
         Icons.calendar_today,
         l10n.homeTileDaily,
@@ -1650,6 +1745,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         },
         badge: _getDailyChallengesBadge(),
         widgetKey: HomeWalkthrough.dailyChallengesKey,
+        // A concrete reason to come back tomorrow — the one metagame surface
+        // that directly serves Day-1 retention, so it survives onboarding.
+        showDuringOnboarding: true,
       ),
       _NavItem(Icons.timeline, l10n.homeTileBattle, Colors.deepPurple, () {
         context.push(AppRoutes.battlePass);
@@ -1657,9 +1755,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _NavItem(Icons.emoji_events, l10n.homeTileEvents, Colors.deepOrange, () {
         context.push(AppRoutes.tournaments);
       }),
-      _NavItem(Icons.leaderboard, l10n.homeTileBoard, Colors.lightBlue, () {
-        context.push(AppRoutes.leaderboard);
-      }),
+      _NavItem(
+        Icons.leaderboard,
+        l10n.homeTileBoard,
+        Colors.lightBlue,
+        () {
+          context.push(AppRoutes.leaderboard);
+        },
+        // Shows a newcomer what they are playing toward, and reads fine with
+        // a score of zero.
+        showDuringOnboarding: true,
+      ),
       _NavItem(Icons.people, l10n.homeTileFriends, Colors.pinkAccent, () {
         context.push(AppRoutes.friends);
       }),
@@ -1680,10 +1786,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       }),
     ];
 
+    // Progressive disclosure. Eight tiles — Daily Challenges, Battle Pass,
+    // Tournaments, Leaderboard, Friends, Cosmetics, Achievements, Multiplayer
+    // — is a live-service hub aimed at an invested player. To someone who has
+    // not eaten a single piece of food it is eight unreadable promises
+    // competing with the one button that matters, and it pushes PLAY into a
+    // crowd rather than leaving it alone on the screen.
+    //
+    // During the first-run window only the tiles flagged
+    // `showDuringOnboarding` survive. The full grid returns once the player
+    // has finished onboarding, by which point every tile means something.
+    // Nothing is unreachable in the meantime — these are shortcuts, and the
+    // same destinations remain available from the walkthrough and elsewhere.
+    final navigationItems = FirstRunService().isInOnboarding
+        ? allNavigationItems.where((i) => i.showDuringOnboarding).toList()
+        : allNavigationItems;
+
     // Two-row layout, balanced. Ceiling-divide so 7 items become 4+3,
     // 6 stays 3+3, 8 becomes 4+4, etc. — keeps the larger row on top
-    // visually anchoring the grid.
-    final firstRowCount = (navigationItems.length + 1) ~/ 2;
+    // visually anchoring the grid. Four or fewer (the onboarding set) stay on
+    // ONE row: splitting two tiles into 1+1 would stack them vertically down
+    // the middle of the screen, which reads as a broken grid rather than a
+    // deliberately small one.
+    final singleRow = navigationItems.length <= 4;
+    final firstRowCount =
+        singleRow ? navigationItems.length : (navigationItems.length + 1) ~/ 2;
     final firstRow = navigationItems.take(firstRowCount).toList();
     final secondRow = navigationItems.skip(firstRowCount).toList();
 
@@ -1710,14 +1837,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return Column(
       children: [
         buildRow(firstRow, 0),
-        SizedBox(
-          height: isVerySmallScreen
-              ? 8
-              : isSmallScreen
-              ? 12
-              : 16,
-        ),
-        buildRow(secondRow, firstRowCount),
+        // Only reserve the gap + second row when there IS a second row —
+        // otherwise the single-row onboarding grid would carry a phantom
+        // spacer under it.
+        if (secondRow.isNotEmpty) ...[
+          SizedBox(
+            height: isVerySmallScreen
+                ? 8
+                : isSmallScreen
+                ? 12
+                : 16,
+          ),
+          buildRow(secondRow, firstRowCount),
+        ],
       ],
     );
   }
@@ -1989,6 +2121,13 @@ class _NavItem {
   final int? badge;
   final GlobalKey? widgetKey;
 
+  /// Whether this tile is shown during the first-run window. Set on the few
+  /// destinations that mean something to a player with no history; everything
+  /// that only makes sense once you have scores, coins, friends or a battle
+  /// pass stays hidden until onboarding completes. See the progressive-
+  /// disclosure note in `_buildBottomNavigation`.
+  final bool showDuringOnboarding;
+
   _NavItem(
     this.icon,
     this.label,
@@ -1996,6 +2135,7 @@ class _NavItem {
     this.onTap, {
     this.badge,
     this.widgetKey,
+    this.showDuringOnboarding = false,
   });
 }
 
