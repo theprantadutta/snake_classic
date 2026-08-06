@@ -5866,4 +5866,30 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get achDescLunchtimeLegend =>
       'दोपहर 12 से 2 बजे के बीच एक गेम पूरा करें';
+
+  @override
+  String get legalNoticePrefix => 'खेलकर, आप हमारी ';
+
+  @override
+  String get legalNoticeAnd => ' और ';
+
+  @override
+  String get dayOneReminderTitle => 'आपका साँप आपको याद कर रहा है 🐍';
+
+  @override
+  String dayOneReminderBodyScore(int score) {
+    return 'आपका सर्वश्रेष्ठ $score है। क्या आप इसे हरा सकते हैं?';
+  }
+
+  @override
+  String get dayOneReminderBodyNoScore =>
+      'एक तेज़ गेम? आपका पहला हाई स्कोर इंतज़ार कर रहा है।';
+
+  @override
+  String get goTomorrowLabel => 'कल फिर आएँ';
+
+  @override
+  String goTomorrowReward(int coins, int day) {
+    return 'अपनी स्ट्रीक के दिन $day पर $coins सिक्के पाएँ';
+  }
 }

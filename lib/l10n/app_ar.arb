@@ -1750,5 +1750,12 @@
   "achTitleMarathonMonth": "روح الماراثون",
   "achDescMarathonMonth": "اصمد 30+ ثانية في 1,000 لعبة",
   "achTitleLunchtimeLegend": "أسطورة الغداء",
-  "achDescLunchtimeLegend": "أنهِ لعبة بين الظهر والثانية ظهرًا"
+  "achDescLunchtimeLegend": "أنهِ لعبة بين الظهر والثانية ظهرًا",
+  "legalNoticePrefix": "باللعب، فإنك توافق على ",
+  "legalNoticeAnd": " و ",
+  "dayOneReminderTitle": "ثعبانك يفتقدك 🐍",
+  "dayOneReminderBodyScore": "أفضل نتيجة لك {score}. هل يمكنك تجاوزها؟",
+  "dayOneReminderBodyNoScore": "جولة سريعة؟ أول نتيجة قياسية بانتظارك.",
+  "goTomorrowLabel": "عُد غدًا",
+  "goTomorrowReward": "احصل على {coins} عملة في اليوم {day} من سلسلتك"
 }

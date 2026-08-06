@@ -5931,4 +5931,30 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get achDescLunchtimeLegend =>
       'Termine uma partida entre meio-dia e 14h';
+
+  @override
+  String get legalNoticePrefix => 'Ao jogar, você concorda com nossos ';
+
+  @override
+  String get legalNoticeAnd => ' e ';
+
+  @override
+  String get dayOneReminderTitle => 'Sua cobra sente sua falta 🐍';
+
+  @override
+  String dayOneReminderBodyScore(int score) {
+    return 'Seu recorde é $score. Acha que consegue superar?';
+  }
+
+  @override
+  String get dayOneReminderBodyNoScore =>
+      'Uma partida rápida? Seu primeiro recorde te espera.';
+
+  @override
+  String get goTomorrowLabel => 'VOLTE AMANHÃ';
+
+  @override
+  String goTomorrowReward(int coins, int day) {
+    return 'Resgate $coins moedas no dia $day da sua sequência';
+  }
 }

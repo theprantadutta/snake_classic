@@ -5875,4 +5875,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get achDescLunchtimeLegend => 'Finish a game between noon and 2 PM';
+
+  @override
+  String get legalNoticePrefix => 'By playing, you agree to our ';
+
+  @override
+  String get legalNoticeAnd => ' and ';
+
+  @override
+  String get dayOneReminderTitle => 'Your snake misses you 🐍';
+
+  @override
+  String dayOneReminderBodyScore(int score) {
+    return 'Your best is $score. Think you can beat it?';
+  }
+
+  @override
+  String get dayOneReminderBodyNoScore =>
+      'One quick run? Your first high score is waiting.';
+
+  @override
+  String get goTomorrowLabel => 'COME BACK TOMORROW';
+
+  @override
+  String goTomorrowReward(int coins, int day) {
+    return 'Claim $coins coins on day $day of your streak';
+  }
 }

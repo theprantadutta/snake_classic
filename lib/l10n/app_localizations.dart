@@ -10617,6 +10617,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish a game between noon and 2 PM'**
   String get achDescLunchtimeLegend;
+
+  /// Leading text of the non-blocking first-run legal strip on Home. Followed immediately by the Terms of Use link, so keep any trailing space.
+  ///
+  /// In en, this message translates to:
+  /// **'By playing, you agree to our '**
+  String get legalNoticePrefix;
+
+  /// Conjunction between the Terms of Use and Privacy Policy links in the first-run legal strip. Keep surrounding spaces.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get legalNoticeAnd;
+
+  /// Title of the one-shot local Day-1 comeback notification.
+  ///
+  /// In en, this message translates to:
+  /// **'Your snake misses you 🐍'**
+  String get dayOneReminderTitle;
+
+  /// Body of the Day-1 comeback notification for a player who has a high score.
+  ///
+  /// In en, this message translates to:
+  /// **'Your best is {score}. Think you can beat it?'**
+  String dayOneReminderBodyScore(int score);
+
+  /// Body of the Day-1 comeback notification for a player with no score yet.
+  ///
+  /// In en, this message translates to:
+  /// **'One quick run? Your first high score is waiting.'**
+  String get dayOneReminderBodyNoScore;
+
+  /// Small uppercase label on the game-over card announcing tomorrow daily bonus.
+  ///
+  /// In en, this message translates to:
+  /// **'COME BACK TOMORROW'**
+  String get goTomorrowLabel;
+
+  /// Body of the game-over card announcing the next daily login bonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim {coins} coins on day {day} of your streak'**
+  String goTomorrowReward(int coins, int day);
 }
 
 class _AppLocalizationsDelegate

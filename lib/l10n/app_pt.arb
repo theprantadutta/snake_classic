@@ -1750,5 +1750,12 @@
   "achTitleMarathonMonth": "Espírito de Maratona",
   "achDescMarathonMonth": "Sobreviva 30+ segundos em 1.000 partidas",
   "achTitleLunchtimeLegend": "Lenda do Almoço",
-  "achDescLunchtimeLegend": "Termine uma partida entre meio-dia e 14h"
+  "achDescLunchtimeLegend": "Termine uma partida entre meio-dia e 14h",
+  "legalNoticePrefix": "Ao jogar, você concorda com nossos ",
+  "legalNoticeAnd": " e ",
+  "dayOneReminderTitle": "Sua cobra sente sua falta 🐍",
+  "dayOneReminderBodyScore": "Seu recorde é {score}. Acha que consegue superar?",
+  "dayOneReminderBodyNoScore": "Uma partida rápida? Seu primeiro recorde te espera.",
+  "goTomorrowLabel": "VOLTE AMANHÃ",
+  "goTomorrowReward": "Resgate {coins} moedas no dia {day} da sua sequência"
 }

@@ -1750,5 +1750,12 @@
   "achTitleMarathonMonth": "Esprit Marathon",
   "achDescMarathonMonth": "Survivez 30 s+ dans 1 000 parties",
   "achTitleLunchtimeLegend": "Légende du Déjeuner",
-  "achDescLunchtimeLegend": "Terminez une partie entre midi et 14 h"
+  "achDescLunchtimeLegend": "Terminez une partie entre midi et 14 h",
+  "legalNoticePrefix": "En jouant, vous acceptez nos ",
+  "legalNoticeAnd": " et ",
+  "dayOneReminderTitle": "Ton serpent te réclame 🐍",
+  "dayOneReminderBodyScore": "Ton record est {score}. Tu penses pouvoir le battre ?",
+  "dayOneReminderBodyNoScore": "Une partie rapide ? Ton premier record t'attend.",
+  "goTomorrowLabel": "REVIENS DEMAIN",
+  "goTomorrowReward": "Récupère {coins} pièces au jour {day} de ta série"
 }

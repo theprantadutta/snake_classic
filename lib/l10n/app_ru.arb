@@ -1750,5 +1750,12 @@
   "achTitleMarathonMonth": "Дух марафона",
   "achDescMarathonMonth": "Продержитесь 30+ секунд в 1 000 играх",
   "achTitleLunchtimeLegend": "Легенда обеда",
-  "achDescLunchtimeLegend": "Завершите игру между полуднем и 14:00"
+  "achDescLunchtimeLegend": "Завершите игру между полуднем и 14:00",
+  "legalNoticePrefix": "Играя, вы принимаете наши ",
+  "legalNoticeAnd": " и ",
+  "dayOneReminderTitle": "Змейка скучает по тебе 🐍",
+  "dayOneReminderBodyScore": "Твой рекорд — {score}. Сможешь побить?",
+  "dayOneReminderBodyNoScore": "Быстрая партия? Твой первый рекорд ждёт.",
+  "goTomorrowLabel": "ВОЗВРАЩАЙСЯ ЗАВТРА",
+  "goTomorrowReward": "Забери {coins} монет в день {day} твоей серии"
 }

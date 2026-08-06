@@ -1750,5 +1750,12 @@
   "achTitleMarathonMonth": "Duch Maratonu",
   "achDescMarathonMonth": "Przetrwaj 30+ sekund w 1 000 gier",
   "achTitleLunchtimeLegend": "Legenda Pory Obiadu",
-  "achDescLunchtimeLegend": "Ukończ grę między 12:00 a 14:00"
+  "achDescLunchtimeLegend": "Ukończ grę między 12:00 a 14:00",
+  "legalNoticePrefix": "Grając, akceptujesz nasze ",
+  "legalNoticeAnd": " i ",
+  "dayOneReminderTitle": "Twój wąż tęskni 🐍",
+  "dayOneReminderBodyScore": "Twój rekord to {score}. Pobijesz go?",
+  "dayOneReminderBodyNoScore": "Szybka gra? Twój pierwszy rekord czeka.",
+  "goTomorrowLabel": "WRÓĆ JUTRO",
+  "goTomorrowReward": "Odbierz {coins} monet w dniu {day} swojej serii"
 }

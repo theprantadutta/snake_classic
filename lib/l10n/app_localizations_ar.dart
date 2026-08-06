@@ -5870,4 +5870,30 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get achDescLunchtimeLegend => 'أنهِ لعبة بين الظهر والثانية ظهرًا';
+
+  @override
+  String get legalNoticePrefix => 'باللعب، فإنك توافق على ';
+
+  @override
+  String get legalNoticeAnd => ' و ';
+
+  @override
+  String get dayOneReminderTitle => 'ثعبانك يفتقدك 🐍';
+
+  @override
+  String dayOneReminderBodyScore(int score) {
+    return 'أفضل نتيجة لك $score. هل يمكنك تجاوزها؟';
+  }
+
+  @override
+  String get dayOneReminderBodyNoScore =>
+      'جولة سريعة؟ أول نتيجة قياسية بانتظارك.';
+
+  @override
+  String get goTomorrowLabel => 'عُد غدًا';
+
+  @override
+  String goTomorrowReward(int coins, int day) {
+    return 'احصل على $coins عملة في اليوم $day من سلسلتك';
+  }
 }

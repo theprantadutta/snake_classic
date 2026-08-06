@@ -1750,5 +1750,12 @@
   "achTitleMarathonMonth": "Spirito da Maratona",
   "achDescMarathonMonth": "Sopravvivi 30+ secondi in 1.000 partite",
   "achTitleLunchtimeLegend": "Leggenda del Pranzo",
-  "achDescLunchtimeLegend": "Completa una partita tra mezzogiorno e le 14"
+  "achDescLunchtimeLegend": "Completa una partita tra mezzogiorno e le 14",
+  "legalNoticePrefix": "Giocando, accetti i nostri ",
+  "legalNoticeAnd": " e ",
+  "dayOneReminderTitle": "Il tuo serpente ti aspetta 🐍",
+  "dayOneReminderBodyScore": "Il tuo record è {score}. Pensi di poterlo battere?",
+  "dayOneReminderBodyNoScore": "Una partita veloce? Il tuo primo record ti aspetta.",
+  "goTomorrowLabel": "TORNA DOMANI",
+  "goTomorrowReward": "Ritira {coins} monete al giorno {day} della tua serie"
 }

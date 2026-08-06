@@ -2168,5 +2168,49 @@
   "achTitleMarathonMonth": "Marathon Spirit",
   "achDescMarathonMonth": "Survive 30+ seconds in 1,000 games",
   "achTitleLunchtimeLegend": "Lunchtime Legend",
-  "achDescLunchtimeLegend": "Finish a game between noon and 2 PM"
+  "achDescLunchtimeLegend": "Finish a game between noon and 2 PM",
+  "legalNoticePrefix": "By playing, you agree to our ",
+  "legalNoticeAnd": " and ",
+  "@legalNoticePrefix": {
+    "description": "Leading text of the non-blocking first-run legal strip on Home. Followed immediately by the Terms of Use link, so keep any trailing space."
+  },
+  "@legalNoticeAnd": {
+    "description": "Conjunction between the Terms of Use and Privacy Policy links in the first-run legal strip. Keep surrounding spaces."
+  },
+  "dayOneReminderTitle": "Your snake misses you 🐍",
+  "dayOneReminderBodyScore": "Your best is {score}. Think you can beat it?",
+  "dayOneReminderBodyNoScore": "One quick run? Your first high score is waiting.",
+  "@dayOneReminderTitle": {
+    "description": "Title of the one-shot local Day-1 comeback notification."
+  },
+  "@dayOneReminderBodyScore": {
+    "description": "Body of the Day-1 comeback notification for a player who has a high score.",
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "47"
+      }
+    }
+  },
+  "@dayOneReminderBodyNoScore": {
+    "description": "Body of the Day-1 comeback notification for a player with no score yet."
+  },
+  "goTomorrowLabel": "COME BACK TOMORROW",
+  "goTomorrowReward": "Claim {coins} coins on day {day} of your streak",
+  "@goTomorrowLabel": {
+    "description": "Small uppercase label on the game-over card announcing tomorrow daily bonus."
+  },
+  "@goTomorrowReward": {
+    "description": "Body of the game-over card announcing the next daily login bonus.",
+    "placeholders": {
+      "coins": {
+        "type": "int",
+        "example": "50"
+      },
+      "day": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  }
 }

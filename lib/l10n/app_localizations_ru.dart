@@ -5915,4 +5915,30 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get achDescLunchtimeLegend => 'Завершите игру между полуднем и 14:00';
+
+  @override
+  String get legalNoticePrefix => 'Играя, вы принимаете наши ';
+
+  @override
+  String get legalNoticeAnd => ' и ';
+
+  @override
+  String get dayOneReminderTitle => 'Змейка скучает по тебе 🐍';
+
+  @override
+  String dayOneReminderBodyScore(int score) {
+    return 'Твой рекорд — $score. Сможешь побить?';
+  }
+
+  @override
+  String get dayOneReminderBodyNoScore =>
+      'Быстрая партия? Твой первый рекорд ждёт.';
+
+  @override
+  String get goTomorrowLabel => 'ВОЗВРАЩАЙСЯ ЗАВТРА';
+
+  @override
+  String goTomorrowReward(int coins, int day) {
+    return 'Забери $coins монет в день $day твоей серии';
+  }
 }
