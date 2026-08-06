@@ -1072,7 +1072,13 @@ class NotificationService {
         // restricts them to Calendar/Alarm/Health apps), so inexact is the
         // only option — and entirely adequate here, see the note above.
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: jsonEncode({'type': 'day_one_reminder'}),
+        // `route` is REQUIRED, not decoration: _routeFromData bails out early
+        // when it is missing, so a payload without one produces a notification
+        // that opens the app and then goes nowhere.
+        payload: jsonEncode({
+          'type': 'day_one_reminder',
+          'route': 'game',
+        }),
       );
 
       AppLogger.success('⏰ Day-1 reminder scheduled for $fireAt');
