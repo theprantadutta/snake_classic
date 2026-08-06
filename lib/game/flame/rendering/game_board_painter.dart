@@ -674,6 +674,22 @@ class OptimizedGameBoardPainter extends CustomPainter {
     canvas.drawLine(tip, lipB, lipPaint);
   }
 
+  /// Lightens a colour toward white so the head reads as a distinct value
+  /// against the body, not merely a more opaque version of it.
+  ///
+  /// The head used to be the SAME hue at alpha 1.0/0.8/0.6 while the body ran
+  /// 0.5–1.0 of that identical colour. Over a dark board the two overlapped
+  /// almost completely, so on a moving snake the only thing marking the head
+  /// was a pair of ~2px eye dots. In a game whose entire failure condition is
+  /// running into your own body, "which end am I steering?" has to be readable
+  /// at a glance and at speed.
+  ///
+  /// Lightening rather than recolouring keeps every theme's and skin's own
+  /// identity intact — a Fire skin head is still fire-coloured, just brighter
+  /// than its own body.
+  static Color _headTint(Color base) =>
+      Color.lerp(base, Colors.white, 0.34) ?? base;
+
   List<Color> _getHeadGradientColors() {
     // Use selected skin colors if available, otherwise fall back to theme colors
     final skinColors = _getSelectedSkinColors();
@@ -682,14 +698,18 @@ class OptimizedGameBoardPainter extends CustomPainter {
         premiumState.isSkinOwned(premiumState.selectedSkinId)) {
       // Use skin colors for premium skins
       if (skinColors.length == 1) {
+        final tinted = _headTint(skinColors[0]);
         return [
-          skinColors[0].withValues(alpha: 1.0),
-          skinColors[0].withValues(alpha: 0.8),
-          skinColors[0].withValues(alpha: 0.6),
+          tinted,
+          tinted.withValues(alpha: 0.92),
+          skinColors[0],
         ];
       } else {
-        // For multi-color skins, use the colors directly with varying alpha
-        return skinColors.take(3).toList();
+        // For multi-color skins, use the colors directly — but lift the
+        // leading stop so the head still out-values the body it sits on.
+        final base = skinColors.take(3).toList();
+        base[0] = _headTint(base[0]);
+        return base;
       }
     }
 
@@ -697,25 +717,25 @@ class OptimizedGameBoardPainter extends CustomPainter {
     switch (theme) {
       case GameTheme.classic:
         return [
-          theme.snakeColor.withValues(alpha: 1.0),
+          _headTint(theme.snakeColor),
           theme.snakeColor.withValues(alpha: 0.8),
           theme.snakeColor.withValues(alpha: 0.6),
         ];
       case GameTheme.modern:
         return [
-          theme.snakeColor.withValues(alpha: 1.0),
+          _headTint(theme.snakeColor),
           theme.snakeColor.withValues(alpha: 0.9),
           theme.snakeColor.withValues(alpha: 0.7),
         ];
       case GameTheme.neon:
         return [
-          theme.snakeColor.withValues(alpha: 1.0),
+          _headTint(theme.snakeColor),
           theme.snakeColor.withValues(alpha: 0.9),
           theme.accentColor.withValues(alpha: 0.8),
         ];
       case GameTheme.retro:
         return [
-          theme.snakeColor.withValues(alpha: 1.0),
+          _headTint(theme.snakeColor),
           theme.snakeColor.withValues(alpha: 0.8),
           theme.foodColor.withValues(alpha: 0.6),
         ];

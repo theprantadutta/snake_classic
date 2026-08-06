@@ -14,7 +14,6 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/revive_overlay.dart';
 import 'package:snake_classic/widgets/time_bonus_overlay.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
@@ -25,10 +24,10 @@ import 'package:snake_classic/widgets/flame_game_board.dart';
 import 'package:snake_classic/widgets/game_hud.dart';
 import 'package:snake_classic/widgets/pause_overlay.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
+import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
 import 'package:snake_classic/widgets/debug_perf_overlay.dart';
-import 'package:snake_classic/widgets/dialogs/control_choice_dialog.dart';
 import 'package:snake_classic/widgets/dialogs/exit_game_dialog.dart';
 import 'package:snake_classic/widgets/game_background_painter.dart';
 import 'package:snake_classic/widgets/game_bottom_bar.dart';
@@ -103,35 +102,33 @@ class _GameScreenState extends State<GameScreen>
     // Start the game when screen loads (only if not already playing)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _keyboardFocusNode.requestFocus();
-      // Drives the full pre-game sequence: control-choice (if first time)
-      // → startGame → tutorial (if first time). Sequenced so the game
-      // never starts behind a blocking modal.
       _bootstrapGame();
     });
   }
 
-  /// Pre-game onboarding + start. Runs once per GameScreen mount.
-  ///   1. If the player has never picked a control scheme, show the
-  ///      d-pad / swipe modal FIRST and wait for their answer.
-  ///   2. Then call `startGame()` so the snake doesn't start moving
-  ///      behind a blocking dialog.
-  ///   3. After the game is running, kick off the gameplay tutorial if
-  ///      they haven't seen it (the tutorial itself handles pausing).
+  /// Starts the game. Runs once per GameScreen mount.
+  ///
+  /// This used to be a three-stage gauntlet: a blocking control-scheme modal,
+  /// THEN the game start, THEN a twelve-step tutorial that immediately paused
+  /// the game it had just started. Tapping PLAY did not play. On a fresh
+  /// install that was two more walls stacked behind the ones already removed
+  /// from the launch path — and the worst-placed ones, because the player had
+  /// already committed by pressing the button.
+  ///
+  /// Both are gone as forced steps, not deleted as features:
+  ///   * Controls default to swipe (the setting's own default) and remain
+  ///     fully editable under Settings → Controls, which is exactly what the
+  ///     modal's own subtitle told people to do anyway.
+  ///   * How-to-play lives on the Instructions screen, already one tap from
+  ///     the home screen's "?" button, where someone who wants it can find it.
+  ///
+  /// Snake does not need a twelve-step tutorial before the first move. Anyone
+  /// who does want one can reach it; nobody has to sit through it.
   Future<void> _bootstrapGame() async {
     if (_tutorialChecked) return;
     _tutorialChecked = true;
 
-    final walkthroughService = WalkthroughService();
-    await walkthroughService.initialize();
-
     if (!mounted) return;
-
-    if (!walkthroughService.isComplete(WalkthroughService.controlChoiceId)) {
-      await showControlChoiceDialog(context);
-      if (!mounted) return;
-      await walkthroughService.markComplete(WalkthroughService.controlChoiceId);
-      if (!mounted) return;
-    }
 
     final gameCubit = context.read<GameCubit>();
     debugPrint(
@@ -148,10 +145,6 @@ class _GameScreenState extends State<GameScreen>
       debugPrint(
         '[GameScreen] Game already in status: ${gameCubit.state.status}, not starting',
       );
-    }
-
-    if (!walkthroughService.isComplete(WalkthroughService.gameTutorialId)) {
-      _startTutorial();
     }
   }
 
@@ -488,13 +481,8 @@ class _GameScreenState extends State<GameScreen>
                       body: SafeArea(
                         child: Column(
                           children: [
-                            // Aggressive monetization: a banner anchored at the
-                            // very top — above the HUD and OUTSIDE the
-                            // SwipeDetector — so it's far from the board/d-pad
-                            // (no accidental clicks) and never intercepts a
-                            // swipe. Pro users get a zero-height widget, so the
-                            // board stays full size for them.
-                            const SnakeBannerAd(),
+                            // The banner lives at the BOTTOM of this screen —
+                            // see the note next to it below the play area.
                             Expanded(
                               // Shake scoped to the play area (HUD + board +
                               // controls) — wrapping the whole Scaffold
@@ -839,6 +827,25 @@ class _GameScreenState extends State<GameScreen>
                               ),
                               ),
                             ),
+
+                            // Revenue-bearing banner, kept by explicit
+                            // product decision — moved, not removed.
+                            //
+                            // It used to sit at the very TOP, above the HUD.
+                            // That put the loudest thing on screen (a white
+                            // box with blue text over a dark playfield) at the
+                            // start of the reading order, ahead of the game
+                            // itself. At the bottom it costs the same height
+                            // but sits below the board, out of the sightline
+                            // the player actually holds while steering.
+                            //
+                            // Still OUTSIDE the SwipeDetector — which wraps
+                            // only the play area above — so it can never eat a
+                            // swipe or take a stray tap meant for the board.
+                            // The spacer keeps it clear of the d-pad's bottom
+                            // row for players using on-screen controls.
+                            const SizedBox(height: 6),
+                            const SnakeBannerAd(),
                           ],
                         ),
                       ),

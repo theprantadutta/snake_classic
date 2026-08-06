@@ -42,6 +42,13 @@ class _StoreScreenState extends State<StoreScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  /// Index of the visible tab. Drives the banner suppression below.
+  int _tabIndex = 0;
+
+  /// The Pro tab. Order is fixed by CLAUDE.md: Pro / Coins / Themes / Skins /
+  /// Trails / Power-Ups.
+  static const int _proTabIndex = 0;
+
   // Tracks productIds whose purchase was just initiated but whose ownership
   // hasn't reflected back from the backend yet. The card switches from
   // "BUY" to a "Verifying..." spinner during this window (typically 2-15s
@@ -77,6 +84,7 @@ class _StoreScreenState extends State<StoreScreen>
       vsync: this,
       initialIndex: widget.initialTab.clamp(0, _tabNames.length - 1),
     );
+    _tabIndex = _tabController.index;
     _tabController.addListener(_onTabChanged);
     _purchaseStatusSub =
         PurchaseService().purchaseStatusStream.listen(_onPurchaseStatus);
@@ -114,8 +122,17 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   void _onTabChanged() {
-    if (!_tabController.indexIsChanging) return;
-    getIt<AnalyticsFacade>().trackStoreTabViewed(_tabNames[_tabController.index]);
+    if (_tabController.indexIsChanging) {
+      getIt<AnalyticsFacade>()
+          .trackStoreTabViewed(_tabNames[_tabController.index]);
+    }
+    // Tracked separately from the analytics guard above, which deliberately
+    // fires once at the START of a transition. The banner needs the SETTLED
+    // index, so this runs on every listener tick and rebuilds only on a real
+    // change.
+    if (_tabIndex != _tabController.index) {
+      setState(() => _tabIndex = _tabController.index);
+    }
   }
 
   @override
@@ -137,7 +154,13 @@ class _StoreScreenState extends State<StoreScreen>
               builder: (context, coinsState) {
                 final theme = themeState.currentTheme;
                 return Scaffold(
-                  bottomNavigationBar: const SnakeBannerAd(),
+                  // No banner on the Pro tab. Running an ad on the screen
+                  // that sells ad removal undercuts the pitch on the very
+                  // surface where it has to land, and it is the one place in
+                  // the app where the ad and the product are in direct
+                  // conflict. Every other tab keeps it.
+                  bottomNavigationBar:
+                      _tabIndex == _proTabIndex ? null : const SnakeBannerAd(),
                   extendBodyBehindAppBar: true,
                   appBar: AppBar(
                     title: Text(

@@ -6,23 +6,21 @@ import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/dpad_controls.dart';
 
-/// The D-Pad control bar with stats on either side
-/// Layout: [Length] [D-Pad] [Speed]
-/// The bottom bar reserves a fixed footprint regardless of whether the
-/// D-Pad is enabled or the current game status. Previous build had two
-/// completely separate widgets here (a tall D-Pad bar vs a short compact-
-/// stats footer) and switched between them based on
-/// `dPadEnabled && status == playing`, which caused:
-///   - The board to shift up/down whenever the D-Pad setting toggled.
-///   - The D-Pad to vanish entirely the moment the snake crashed,
-///     because status went from playing → crashed.
+/// The bar under the board. Two shapes, one per control mode:
 ///
-/// Now we always render the same Row skeleton (left stat / center / right
-/// stat) at a fixed height. The center swaps:
-///   - dPadEnabled = true  → DPadControls, interactive while playing,
-///     dimmed + non-interactive otherwise.
-///   - dPadEnabled = false → a single Level stat card centered in the
-///     same footprint.
+///   - dPadEnabled = true  → [Length] [D-Pad] [Speed] at the full d-pad
+///     footprint. The d-pad is interactive while playing and dimmed +
+///     non-interactive otherwise, rather than being swapped out — an earlier
+///     build rendered a completely different widget once status went
+///     playing → crashed, which made the d-pad vanish and the board jump at
+///     the worst possible moment.
+///   - dPadEnabled = false → a slim inline strip of length + speed, sized to
+///     its own content so the board keeps the height a d-pad would have
+///     needed. Level is not repeated here; the HUD above already carries it.
+///
+/// The height is constant for the duration of a run in both modes (the mode
+/// is a settings toggle and cannot change mid-game), so the board never
+/// reflows while the player is steering — which is the property that matters.
 class GameBottomBar extends StatelessWidget {
   const GameBottomBar({
     super.key,
@@ -65,9 +63,24 @@ class GameBottomBar extends StatelessWidget {
     // across all states, so the no-reflow contract holds.
     final dpadSize = (isSmallScreen ? 120.0 : 135.0) * scale;
     final verticalPadding = (isSmallScreen ? 8.0 : 12.0) * scale;
-    // Total reserved height = dpad footprint + the row's own padding so the
-    // box is the SAME pixel height in every branch and every status.
-    final barHeight = dpadSize + verticalPadding * 2;
+
+    // Height is sized to what the bar actually contains.
+    //
+    // It used to reserve the full d-pad footprint in BOTH modes, so a swipe
+    // player gave up ~150dp — a fifth of the screen on a tall phone — to three
+    // read-only stat cards, two of which (level, and the length that is
+    // visible on the board anyway) are already shown in the HUD above. That
+    // space belongs to the board: this is a game whose entire content is the
+    // playfield, and it was rendering at roughly 40% of the screen.
+    //
+    // The no-reflow contract that motivated the fixed height still holds. What
+    // it protects against is the board jumping DURING a run — when the status
+    // goes playing → crashed, or the d-pad dims. `dPadEnabled` is a settings
+    // toggle that cannot change mid-game, so branching the height on it is
+    // constant for the whole run in either mode.
+    final statsBarHeight = (isSmallScreen ? 40.0 : 46.0) * scale;
+    final barHeight =
+        dPadEnabled ? dpadSize + verticalPadding * 2 : statsBarHeight;
     final isInteractive = gameState.status == GameStatus.playing;
 
     return SizedBox(
@@ -75,7 +88,7 @@ class GameBottomBar extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: 12 * scale,
-          vertical: verticalPadding,
+          vertical: dPadEnabled ? verticalPadding : 4 * scale,
         ),
         child: dPadEnabled
             // D-Pad on: center reserves the dpadSize square, side stats
@@ -126,41 +139,31 @@ class GameBottomBar extends StatelessWidget {
                   ),
                 ],
               )
-            // D-Pad off: no center widget eats the middle, so the three
-            // stats spread across the full row in even thirds. Each card
-            // is normal-size — wider, not taller — and vertically
-            // centered in the same-height bar.
+            // D-Pad off: one slim inline strip instead of three stacked
+            // cards.
+            //
+            // Level is deliberately NOT here. It is already the LV pill and
+            // the progress bar in the HUD directly above, so showing it a
+            // third time cost a fifth of the screen to repeat something the
+            // player had just read. Length and speed stay because neither is
+            // stated elsewhere — but as quiet inline chips, not as headline
+            // cards competing with the board.
             : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: _buildWideStat(
-                      l10n.gbLength,
-                      '${gameState.snake.length}',
-                      Icons.straighten,
-                      theme,
-                      isSmallScreen,
-                    ),
+                  _buildInlineStat(
+                    '${gameState.snake.length}',
+                    Icons.straighten,
+                    theme,
+                    isSmallScreen,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildWideStat(
-                      l10n.gbLevel,
-                      '${gameState.level}',
-                      Icons.trending_up,
-                      theme,
-                      isSmallScreen,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildWideStat(
-                      l10n.gbSpeed,
-                      _getSpeedLabel(l10n, gameState.gameSpeed),
-                      _getSpeedIcon(gameState.gameSpeed),
-                      theme,
-                      isSmallScreen,
-                    ),
+                  SizedBox(width: 20 * scale),
+                  _buildInlineStat(
+                    _getSpeedLabel(l10n, gameState.gameSpeed),
+                    _getSpeedIcon(gameState.gameSpeed),
+                    theme,
+                    isSmallScreen,
                   ),
                 ],
               ),
@@ -168,56 +171,35 @@ class GameBottomBar extends StatelessWidget {
     );
   }
 
-  /// Stat card used when the D-Pad is disabled — fills its 1/3 of the
-  /// bottom bar's width but only takes the height it needs. Normal text
-  /// sizes; the extra space we won is horizontal, not vertical.
-  Widget _buildWideStat(
-    String label,
+  /// Single-line stat for the swipe-mode strip: icon and value side by side,
+  /// no stacked label. Sized to sit in a ~44dp bar rather than an ~80dp card,
+  /// which is where the board's reclaimed height comes from.
+  Widget _buildInlineStat(
     String value,
     IconData icon,
     GameTheme theme,
     bool isSmallScreen,
   ) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 10 : 12,
-        vertical: isSmallScreen ? 8 : 10,
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.6),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.25),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          color: theme.accentColor.withValues(alpha: 0.55),
+          size: isSmallScreen ? 14 : 16,
         ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: theme.accentColor.withValues(alpha: 0.7),
-            size: isSmallScreen ? 16 : 20,
+        const SizedBox(width: 6),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.75),
+            fontWeight: FontWeight.w600,
+            fontSize: isSmallScreen ? 12 : 13,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontWeight: FontWeight.bold,
-              fontSize: isSmallScreen ? 14 : 16,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.5),
-              fontSize: isSmallScreen ? 9 : 10,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

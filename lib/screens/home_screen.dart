@@ -273,17 +273,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Future<void> _checkWalkthrough() async {
     if (_walkthroughChecked) return;
 
-    // Waits for the END of the first-run window, not merely the first game.
-    // Progressive disclosure hides the Store, Cosmetics, Battle Pass and
-    // Friends tiles while onboarding is active, and four of the seven
-    // walkthrough steps point at exactly those widgets — running early would
-    // spotlight nothing (WalkthroughOverlay falls back to a null targetRect
-    // for an unmounted key) and narrate a UI the player cannot see.
-    //
-    // Note this does NOT set _walkthroughChecked: the queue must be able to
-    // reach this again on a later visit, once the grid is complete.
-    if (FirstRunService().isInOnboarding) return;
-
     _walkthroughChecked = true;
 
     final walkthroughNotifier = ref.read(walkthroughProvider.notifier);
@@ -1731,7 +1720,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // 8 items split 4+4 across two rows. STATS lives ONLY in the compact
     // stats row above the nav (left of the high score).
     final l10n = AppLocalizations.of(context)!;
-    final allNavigationItems = [
+    final navigationItems = [
       _NavItem(
         Icons.calendar_today,
         l10n.homeTileDaily,
@@ -1741,9 +1730,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         },
         badge: _getDailyChallengesBadge(),
         widgetKey: HomeWalkthrough.dailyChallengesKey,
-        // A concrete reason to come back tomorrow — the one metagame surface
-        // that directly serves Day-1 retention, so it survives onboarding.
-        showDuringOnboarding: true,
       ),
       _NavItem(Icons.timeline, l10n.homeTileBattle, Colors.deepPurple, () {
         context.push(AppRoutes.battlePass);
@@ -1751,17 +1737,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _NavItem(Icons.emoji_events, l10n.homeTileEvents, Colors.deepOrange, () {
         context.push(AppRoutes.tournaments);
       }),
-      _NavItem(
-        Icons.leaderboard,
-        l10n.homeTileBoard,
-        Colors.lightBlue,
-        () {
-          context.push(AppRoutes.leaderboard);
-        },
-        // Shows a newcomer what they are playing toward, and reads fine with
-        // a score of zero.
-        showDuringOnboarding: true,
-      ),
+      _NavItem(Icons.leaderboard, l10n.homeTileBoard, Colors.lightBlue, () {
+        context.push(AppRoutes.leaderboard);
+      }),
       _NavItem(Icons.people, l10n.homeTileFriends, Colors.pinkAccent, () {
         context.push(AppRoutes.friends);
       }),
@@ -1782,31 +1760,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       }),
     ];
 
-    // Progressive disclosure. Eight tiles — Daily Challenges, Battle Pass,
-    // Tournaments, Leaderboard, Friends, Cosmetics, Achievements, Multiplayer
-    // — is a live-service hub aimed at an invested player. To someone who has
-    // not eaten a single piece of food it is eight unreadable promises
-    // competing with the one button that matters, and it pushes PLAY into a
-    // crowd rather than leaving it alone on the screen.
+    // The full grid, always.
     //
-    // During the first-run window only the tiles flagged
-    // `showDuringOnboarding` survive. The full grid returns once the player
-    // has finished onboarding, by which point every tile means something.
-    // Nothing is unreachable in the meantime — these are shortcuts, and the
-    // same destinations remain available from the walkthrough and elsewhere.
-    final navigationItems = FirstRunService().isInOnboarding
-        ? allNavigationItems.where((i) => i.showDuringOnboarding).toList()
-        : allNavigationItems;
+    // A previous revision hid all but two tiles until the player had a few
+    // games in, on the theory that a live-service hub means nothing to someone
+    // who has not eaten a piece of food yet. On the device that was plainly
+    // wrong: two lonely tiles under a large empty area reads as a broken or
+    // half-loaded screen, not a focused one. Whatever the tiles cost a new
+    // player in comprehension, they cost less than the app looking unfinished.
+    //
+    // Kept as a single list — if this ever gets staged again, stage it by
+    // something the player can see the logic of (an unlock, a badge), not by
+    // silently removing UI.
 
     // Two-row layout, balanced. Ceiling-divide so 7 items become 4+3,
     // 6 stays 3+3, 8 becomes 4+4, etc. — keeps the larger row on top
-    // visually anchoring the grid. Four or fewer (the onboarding set) stay on
-    // ONE row: splitting two tiles into 1+1 would stack them vertically down
-    // the middle of the screen, which reads as a broken grid rather than a
-    // deliberately small one.
-    final singleRow = navigationItems.length <= 4;
-    final firstRowCount =
-        singleRow ? navigationItems.length : (navigationItems.length + 1) ~/ 2;
+    // visually anchoring the grid.
+    final firstRowCount = (navigationItems.length + 1) ~/ 2;
     final firstRow = navigationItems.take(firstRowCount).toList();
     final secondRow = navigationItems.skip(firstRowCount).toList();
 
@@ -2117,13 +2087,6 @@ class _NavItem {
   final int? badge;
   final GlobalKey? widgetKey;
 
-  /// Whether this tile is shown during the first-run window. Set on the few
-  /// destinations that mean something to a player with no history; everything
-  /// that only makes sense once you have scores, coins, friends or a battle
-  /// pass stays hidden until onboarding completes. See the progressive-
-  /// disclosure note in `_buildBottomNavigation`.
-  final bool showDuringOnboarding;
-
   _NavItem(
     this.icon,
     this.label,
@@ -2131,7 +2094,6 @@ class _NavItem {
     this.onTap, {
     this.badge,
     this.widgetKey,
-    this.showDuringOnboarding = false,
   });
 }
 
