@@ -342,16 +342,78 @@ Future<void> _bootstrap() async {
 ///
 /// Installed on every path, including a failed bootstrap — a build that could
 /// not start is exactly the one whose errors we most want reported.
+/// Whether an error is something the app recovers from, and therefore must not
+/// be filed as a CRASH.
+///
+/// Crashlytics showed "Fatal Exception … HttpException: Connection closed
+/// before full header was received, uri = https://lh3.googleusercontent.com/…"
+/// — a user's Google profile picture failing to download. The app does not die
+/// from that; the avatar just falls back. But the error surfaces through
+/// FlutterError.reportError, the handler above filed EVERYTHING as fatal, and
+/// so a flaky connection while a leaderboard scrolled registered as a crash.
+///
+/// It is not merely cosmetic. Those reports suppress the crash-free rate that
+/// Play Console ranks on, and they bury real crashes in the issue list — the
+/// replay-viewer fatal was sitting underneath exactly this kind of noise.
+///
+/// Note that every avatar in the app ALREADY passes onBackgroundImageError or
+/// errorBuilder. Flutter routes an image failure to those listeners only if a
+/// listener is still attached when it lands; if the widget was disposed first
+/// (scrolled away, navigated off — precisely when slow images fail) the error
+/// falls through to FlutterError instead. Handling it at the widget is
+/// necessary but cannot be sufficient, which is why this classifier exists.
+///
+/// Deliberately string-based rather than `is SocketException` etc.: `dart:io`
+/// is not web-safe and this file is shared with the web build. Deliberately
+/// narrow, too — anything not positively identified stays fatal, because a
+/// misfiled crash is far worse than a misfiled non-crash.
+bool _isRecoverableError(Object error, {bool silent = false}) {
+  // The framework's own verdict. `silent` marks errors it considers expected
+  // and does not even print in debug — image decode/resolve failures set it.
+  if (silent) return true;
+
+  final type = error.runtimeType.toString();
+  const recoverableTypes = {
+    'NetworkImageLoadException', // HTTP status != 200 for an image
+    'SocketException', // connection reset / no route / abort
+    'HttpException', // truncated response, bad headers
+    'HandshakeException', // TLS negotiation failed
+    'ClientException', // package:http transport failure
+    'TimeoutException', // a bounded wait elapsed
+  };
+  if (recoverableTypes.contains(type)) return true;
+
+  // Fallback for wrapped/renamed transport errors that still name the host or
+  // the failure in their message.
+  final message = error.toString();
+  return message.contains('lh3.googleusercontent.com') ||
+      message.contains('Connection closed before full header was received');
+}
+
 void _installGlobalErrorHandlers() {
   if (kReleaseMode) {
-    // Fatal Flutter framework errors → Crashlytics.
+    // Flutter framework errors → Crashlytics, classified.
     FlutterError.onError = (details) {
       AppLogger.error('Flutter Error', details.exception, details.stack);
-      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      if (_isRecoverableError(details.exception, silent: details.silent)) {
+        // Still reported, so the volume stays visible — just not as a crash.
+        FirebaseCrashlytics.instance.recordError(
+          details.exception,
+          details.stack,
+          reason: 'recoverable: ${details.library ?? 'flutter'}',
+          fatal: false,
+        );
+      } else {
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      }
     };
     // Async errors thrown outside the Flutter framework (PlatformDispatcher).
     PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      FirebaseCrashlytics.instance.recordError(
+        error,
+        stack,
+        fatal: !_isRecoverableError(error),
+      );
       return true;
     };
   } else {
