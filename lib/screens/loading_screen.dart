@@ -59,6 +59,30 @@ class _LoadingScreenState extends State<LoadingScreen>
   int _tipIndex = 0;
   static const int _tipCount = 10;
 
+  /// Backstop for a stalled init.
+  ///
+  /// Every step of [_initializeApp] is individually try/caught and treated as
+  /// non-fatal — a failure logs a warning and the app carries on. What none of
+  /// them survive is a call that neither completes nor throws, which leaves
+  /// this screen showing a frozen progress bar with no error and no retry.
+  /// Rather than trust that every current and future await is bounded, this
+  /// timer guarantees the user reaches the game.
+  Timer? _watchdogTimer;
+  static const Duration _initWatchdog = Duration(seconds: 18);
+
+  /// Guards against a double navigation when the watchdog fires at the same
+  /// moment init finishes.
+  bool _navigated = false;
+
+  /// Single exit point from this screen. First caller wins.
+  void _leaveLoadingScreen(String route, {required String reason}) {
+    if (_navigated || !mounted) return;
+    _navigated = true;
+    _watchdogTimer?.cancel();
+    AppLogger.lifecycle('Leaving loading screen → $route ($reason)');
+    context.go(route);
+  }
+
   // Resolved at render time so the tips follow the ambient locale.
   List<String> _tips(AppLocalizations l10n) => [
         l10n.ldTip1,
@@ -116,6 +140,19 @@ class _LoadingScreenState extends State<LoadingScreen>
       setState(() => _tipIndex = (_tipIndex + 1) % _tipCount);
     });
 
+    // Arm the watchdog BEFORE init starts, so a step that hangs on its very
+    // first await is still covered. Home is the right universal fallback:
+    // under play-first it is where both new and returning users are headed
+    // anyway. The one thing it can skip is the legal re-consent gate for an
+    // existing user on a bumped policy version — they will simply be gated on
+    // the next launch, which is a far better outcome than a frozen screen.
+    _watchdogTimer = Timer(_initWatchdog, () {
+      _leaveLoadingScreen(
+        AppRoutes.home,
+        reason: 'watchdog — init exceeded ${_initWatchdog.inSeconds}s',
+      );
+    });
+
     // Start the initialization process
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeApp();
@@ -125,6 +162,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   void dispose() {
     _tipTimer?.cancel();
+    _watchdogTimer?.cancel();
     _logoController.dispose();
     _progressController.dispose();
     _particleController.dispose();
@@ -251,7 +289,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             return;
           }
           getIt<AnalyticsFacade>().trackOnboardingStepCompleted('play_first');
-          context.go(AppRoutes.home);
+          _leaveLoadingScreen(AppRoutes.home, reason: 'first launch');
           return;
         }
       }
@@ -264,7 +302,10 @@ class _LoadingScreenState extends State<LoadingScreen>
       final policyAccepted = await LegalAcceptance.isCurrentVersionAccepted();
       if (!policyAccepted) {
         if (!mounted) return;
-        context.go(AppRoutes.privacyConsent);
+        _leaveLoadingScreen(
+          AppRoutes.privacyConsent,
+          reason: 'legal version bumped',
+        );
         return;
       }
 
@@ -275,9 +316,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       ); // Reduced from 100ms
 
       // Navigation to Home Screen with smooth transition (returning users)
-      if (mounted) {
-        context.go(AppRoutes.home);
-      }
+      _leaveLoadingScreen(AppRoutes.home, reason: 'init complete');
     } catch (error) {
       // Store the raw error; the localized "Initialization failed: {error}"
       // string is resolved at render time in _buildErrorView.
@@ -291,7 +330,12 @@ class _LoadingScreenState extends State<LoadingScreen>
 
       // Initialize connectivity service early so sync indicator works
       final connectivityService = ConnectivityService();
-      await connectivityService.initialize();
+      await connectivityService.initialize().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => AppLogger.warning(
+          'ConnectivityService init timed out — assuming online',
+        ),
+      );
       AppLogger.success('ConnectivityService initialized');
 
       // Core services (Firebase, Audio, etc.) already initialized in main()
@@ -310,7 +354,17 @@ class _LoadingScreenState extends State<LoadingScreen>
         listen: false,
       );
 
-      await unifiedUserService.initialize();
+      // Bounded: this reaches the network via ApiService.initialize and the
+      // backend user handoff. A stalled socket here used to hold the whole
+      // loading screen. On timeout the service is left with whatever identity
+      // it managed to establish (cached session or offline guest), which is
+      // enough to play.
+      await unifiedUserService.initialize().timeout(
+        const Duration(seconds: 8),
+        onTimeout: () => AppLogger.warning(
+          'UnifiedUserService init timed out — continuing with local identity',
+        ),
+      );
       AppLogger.success('UnifiedUserService initialized');
 
       // AuthCubit is already initialized via MultiBlocProvider in main.dart
@@ -417,7 +471,11 @@ class _LoadingScreenState extends State<LoadingScreen>
         listen: false,
       );
 
-      await syncService.initialize(userId);
+      await syncService.initialize(userId).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () =>
+            AppLogger.warning('DataSyncService init timed out — continuing'),
+      );
       AppLogger.success('DataSyncService initialized with userId: $userId');
     } catch (e) {
       AppLogger.sync('DataSyncService init warning', e);
@@ -450,7 +508,14 @@ class _LoadingScreenState extends State<LoadingScreen>
         context,
         listen: false,
       );
-      await syncService.forceSyncNow();
+      // Pushing queued writes is never worth blocking launch for — the outbox
+      // survives and the SyncEngine drains it in the background.
+      await syncService.forceSyncNow().timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => AppLogger.warning(
+          'Force sync timed out — outbox will drain in the background',
+        ),
+      );
       AppLogger.success('Force sync completed');
     } catch (e) {
       AppLogger.sync('Force sync warning', e);
@@ -475,14 +540,40 @@ class _LoadingScreenState extends State<LoadingScreen>
   void _handleError(String error) {
     if (!mounted) return;
 
+    AppLogger.error('Loading screen init failed', error);
+
     setState(() {
       _hasError = true;
       _errorMessage = error;
       _showRetryButton = true;
     });
+
+    // The error view must not be a dead end. Every step of _initializeApp is
+    // already individually try/caught, so reaching here means something
+    // unexpected went wrong AFTER main()'s bootstrap succeeded — which means
+    // the app itself is up and home will work fine. Show the user what
+    // happened, leave Retry available, but carry them into the game shortly
+    // either way rather than parking them on a screen whose only other option
+    // is to kill the app.
+    _watchdogTimer?.cancel();
+    _watchdogTimer = Timer(
+      const Duration(seconds: 5),
+      () => _leaveLoadingScreen(AppRoutes.home, reason: 'error fallback'),
+    );
   }
 
   Future<void> _retryInitialization() async {
+    // Retry replaces the error fallback with a fresh full-length watchdog, so
+    // a retry that also stalls is still bounded.
+    _watchdogTimer?.cancel();
+    _watchdogTimer = Timer(
+      _initWatchdog,
+      () => _leaveLoadingScreen(
+        AppRoutes.home,
+        reason: 'watchdog — retry exceeded ${_initWatchdog.inSeconds}s',
+      ),
+    );
+
     setState(() {
       _hasError = false;
       _errorMessage = '';

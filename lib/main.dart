@@ -47,14 +47,92 @@ import 'package:snake_classic/utils/typography.dart';
 
 import 'firebase_options.dart';
 
-/// Whether critical init succeeded. If false, show an error screen.
+/// Whether critical init succeeded. If false, show the recovery screen.
 bool _initSucceeded = false;
+
+/// Whether [appRouter] has been assigned. It is `late final`, so the real app
+/// cannot be started before this is true without throwing
+/// LateInitializationError on the very first build.
+bool _routerReady = false;
+
+/// Whether DI has been configured. get_it throws on re-registering an existing
+/// singleton, so the retry path must not run [configureDependencies] twice.
+bool _dependenciesReady = false;
+
+/// Hard ceiling on startup.
+///
+/// Individual steps have their own timeouts, but a step that hangs WITHOUT
+/// throwing — a socket that neither completes nor resets, a plugin that never
+/// calls back, a platform channel that stalls — would otherwise block runApp
+/// forever. This bounds the whole sequence so we always reach a rendered
+/// frame. Generous on purpose: a slow cold start on a cheap device over 2G is
+/// normal and should still complete properly. This is a backstop for
+/// genuinely stuck, not merely slow.
+const Duration _bootstrapBudget = Duration(seconds: 25);
 
 void main() async {
   // Ensure Flutter is initialized and preserve splash screen
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
+  // EVERY path out of main() must reach runApp().
+  //
+  // FlutterNativeSplash.preserve() above holds the NATIVE launch image on
+  // screen until something explicitly removes it, and the only remove() call
+  // is in LoadingScreen.initState. So if Dart-side startup throws or hangs
+  // before that screen mounts, the launch image simply stays: no error, no
+  // retry, no way out but a force stop — and no code running to report it.
+  // That is the "stuck on the splash screen" report.
+  //
+  // Hence: the bootstrap is bounded by a timeout, every failure is caught,
+  // and the app starts regardless of which of those happened.
+  try {
+    await _bootstrap().timeout(_bootstrapBudget);
+    _initSucceeded = true;
+    AppLogger.success('Snake Classic ready to launch!');
+  } on TimeoutException catch (error, stackTrace) {
+    // Deliberately NOT fatal. Most of what the bootstrap does is optional at
+    // launch (ad SDK, update check, sync engine, token registration), and the
+    // parts that are not have already thrown by now if they were going to.
+    // A degraded app the user can play beats a frozen launch image.
+    AppLogger.error(
+      'Startup exceeded ${_bootstrapBudget.inSeconds}s — launching anyway',
+      error,
+      stackTrace,
+    );
+    // Only if the router exists. A timeout during dependency injection —
+    // before appRouter was assigned — would otherwise trade a frozen splash
+    // for a LateInitializationError on the first build, which is not an
+    // improvement. In that case fall through to the recovery screen, which
+    // depends on nothing and offers a retry.
+    _initSucceeded = _routerReady;
+  } catch (error, stackTrace) {
+    AppLogger.error('Failed to initialize Snake Classic', error, stackTrace);
+  }
+
+  _installGlobalErrorHandlers();
+
+  if (_initSucceeded) {
+    runApp(
+      const riverpod.ProviderScope(
+        child: SnakeClassicApp(),
+      ),
+    );
+  } else {
+    // Drop the native splash FIRST — otherwise the recovery screen renders
+    // underneath it and the user still just sees a frozen launch image.
+    FlutterNativeSplash.remove();
+    runApp(const _StartupFailureApp());
+  }
+}
+
+/// Everything that must happen before the app can render.
+///
+/// Extracted from main() so the whole sequence can carry one timeout. The
+/// locale date symbols now load in here too: they used to run OUTSIDE main()'s
+/// try/catch, so a failure there killed startup before any handler could see
+/// it — the frozen-splash case exactly.
+Future<void> _bootstrap() async {
   // Date symbols for every supported locale, so DateFormat/NumberFormat in
   // lib/utils/formatting.dart work regardless of the user's language.
   await Future.wait(
@@ -70,7 +148,7 @@ void main() async {
 
   AppLogger.lifecycle('Snake Classic starting up...');
 
-  try {
+  {
     // Edge-to-edge mode for Android 15+ compliance. Content draws under the
     // (translucent) status + nav bars; SafeArea widgets on each screen handle
     // the inset padding. SystemUiMode.manual previously used here routed
@@ -92,12 +170,19 @@ void main() async {
     await dotenv.load(fileName: '.env');
     AppLogger.success('Environment variables loaded');
 
-    // Initialize Firebase
+    // Initialize Firebase. Guarded on Firebase.apps because _bootstrap can run
+    // a SECOND time from the recovery screen's Try again — a repeat
+    // initializeApp throws [core/duplicate-app], which would make the retry
+    // button permanently useless for anyone whose first attempt got this far.
     AppLogger.firebase('Initializing Firebase...');
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    AppLogger.success('Firebase initialized successfully');
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      AppLogger.success('Firebase initialized successfully');
+    } else {
+      AppLogger.info('Firebase already initialized — reusing existing app');
+    }
 
     // Crashlytics: collect and upload crash reports in production builds only.
     // Gated on kReleaseMode so debug AND profile builds never send data to the
@@ -125,10 +210,16 @@ void main() async {
       }
     });
 
-    // Initialize dependency injection
-    AppLogger.info('Configuring dependencies...');
-    await configureDependencies();
-    AppLogger.success('Dependencies configured');
+    // Initialize dependency injection. Also guarded for the retry path —
+    // get_it throws on re-registering an existing singleton.
+    if (!_dependenciesReady) {
+      AppLogger.info('Configuring dependencies...');
+      await configureDependencies();
+      _dependenciesReady = true;
+      AppLogger.success('Dependencies configured');
+    } else {
+      AppLogger.info('Dependencies already configured — skipping');
+    }
 
     // One-time SharedPrefs→Drift settings import (theme/trail/notification
     // opt-ins). Must run after the DB is up but before anything reads
@@ -143,10 +234,16 @@ void main() async {
     // silently show veteran UI to a brand-new player. Cheap: one prefs read.
     await FirstRunService().initialize();
 
-    // Initialize router with analytics observer
-    appRouter = createAppRouter(
-      observers: [AnalyticsRouteObserver(getIt<AnalyticsFacade>())],
-    );
+    // Initialize router with analytics observer. `appRouter` is `late final`,
+    // so this must run exactly once: SnakeClassicApp throws
+    // LateInitializationError if it builds before the assignment, and the
+    // assignment itself throws if repeated on a retry.
+    if (!_routerReady) {
+      appRouter = createAppRouter(
+        observers: [AnalyticsRouteObserver(getIt<AnalyticsFacade>())],
+      );
+      _routerReady = true;
+    }
 
     // Track app open (fire-and-forget)
     unawaited(getIt<AnalyticsFacade>().trackAppOpened());
@@ -218,16 +315,16 @@ void main() async {
 
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-    _initSucceeded = true;
-    AppLogger.success('Snake Classic ready to launch!');
-  } catch (error, stackTrace) {
-    AppLogger.error('Failed to initialize Snake Classic', error, stackTrace);
   }
+}
 
-  // Setup global error handling. In production (release) builds, fatal errors
-  // are forwarded to Crashlytics; in debug/profile they only get logged (and
-  // presented on the red screen) so nothing pollutes the production dashboard.
+/// Global error handling. In production (release) builds, fatal errors are
+/// forwarded to Crashlytics; in debug/profile they only get logged (and
+/// presented on the red screen) so nothing pollutes the production dashboard.
+///
+/// Installed on every path, including a failed bootstrap — a build that could
+/// not start is exactly the one whose errors we most want reported.
+void _installGlobalErrorHandlers() {
   if (kReleaseMode) {
     // Fatal Flutter framework errors → Crashlytics.
     FlutterError.onError = (details) {
@@ -246,39 +343,99 @@ void main() async {
     };
   }
 
-  if (_initSucceeded) {
-    runApp(
-      const riverpod.ProviderScope(
-        child: SnakeClassicApp(),
-      ),
-    );
-  } else {
-    // Critical init failed — show a minimal error screen instead of crashing
-    runApp(
-      MaterialApp(
-        home: Scaffold(
-          backgroundColor: Colors.black,
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 64),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Failed to start Snake Classic',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Please restart the app. If this persists, try reinstalling.',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+}
+
+/// Last-resort UI when [_bootstrap] failed outright.
+///
+/// Deliberately depends on NOTHING the bootstrap sets up — no DI, no router,
+/// no theme, no localisations. If any of those were available the real app
+/// would be running instead, and a fallback that needs the thing which just
+/// broke is not a fallback.
+///
+/// It also offers a real way forward instead of telling the user to reinstall.
+/// Most startup failures are transient (a cold database file, a Firebase
+/// handshake over a flaky connection), so retrying in-process usually works —
+/// and costs one tap rather than a reinstall and their entire local save.
+class _StartupFailureApp extends StatefulWidget {
+  const _StartupFailureApp();
+
+  @override
+  State<_StartupFailureApp> createState() => _StartupFailureAppState();
+}
+
+class _StartupFailureAppState extends State<_StartupFailureApp> {
+  bool _retrying = false;
+
+  Future<void> _retry() async {
+    setState(() => _retrying = true);
+    try {
+      await _bootstrap().timeout(_bootstrapBudget);
+      _initSucceeded = true;
+      AppLogger.success('Startup retry succeeded — starting the app');
+      // Swap the whole tree for the real app. runApp on an already-running
+      // binding replaces the root widget, so this is a live recovery rather
+      // than a restart and nothing stored locally is lost.
+      runApp(
+        const riverpod.ProviderScope(
+          child: SnakeClassicApp(),
+        ),
+      );
+      return;
+    } catch (error, stackTrace) {
+      AppLogger.error('Startup retry failed', error, stackTrace);
+    }
+    if (mounted) setState(() => _retrying = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                const SizedBox(height: 16),
+                const Text(
+                  "Snake Classic couldn't start",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This is usually temporary. Your saved games are safe.',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  height: 48,
+                  child: _retrying
+                      ? const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          ),
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: _retry,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Try again'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                ),
+              ],
             ),
           ),
         ),
