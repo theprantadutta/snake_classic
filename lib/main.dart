@@ -34,6 +34,7 @@ import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -134,6 +135,13 @@ void main() async {
     // settings — AudioService, ThemeCubit, and NotificationService all
     // hydrate from the Drift row this writes.
     await runLegacyPrefsImport(getIt<AppDatabase>());
+
+    // First-run state (install stamp + games-started count). Must be awaited
+    // BEFORE the router is built: LoadingScreen's routing decision and every
+    // first-run gate downstream read its synchronous getters, and those fail
+    // safe to "fully onboarded" when uninitialized — so a late init would
+    // silently show veteran UI to a brand-new player. Cheap: one prefs read.
+    await FirstRunService().initialize();
 
     // Initialize router with analytics observer
     appRouter = createAppRouter(
@@ -317,6 +325,10 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       // skips cold start, active gameplay, purchase/consent returns, Pro, and
       // when another full-screen ad is up.
       unawaited(getIt<AdService>().maybeShowAppOpenOnResume());
+      // The player came back on their own, so the pending Day-1 comeback nudge
+      // has nothing left to do — firing it later would just be nagging someone
+      // who already returned. Re-armed on the next game over.
+      unawaited(NotificationService().cancelDayOneReminder());
     }
 
     // When app goes to background, attempt to sync pending data

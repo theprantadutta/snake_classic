@@ -9,6 +9,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 import '../utils/logger.dart';
 import 'api_service.dart';
 import 'data_sync_service.dart';
@@ -99,6 +101,13 @@ class NotificationService {
 
       _firebaseMessaging = FirebaseMessaging.instance;
       _localNotifications = FlutterLocalNotificationsPlugin();
+
+      // Required before any zonedSchedule call (see scheduleDayOneReminder).
+      // We deliberately do NOT resolve the device's IANA zone name — that
+      // needs an extra plugin, and the only thing scheduled locally is a
+      // relative one-shot whose absolute instant tz.TZDateTime.from preserves
+      // regardless of which location tz.local happens to be.
+      tzdata.initializeTimeZones();
 
       await _initializeLocalNotifications(requestPermission: requestPermission);
       await _initializeFirebaseMessaging(requestPermission: requestPermission)
@@ -969,6 +978,147 @@ class NotificationService {
 
   Future<void> cancelAllScheduledNotifications() async {
     await _localNotifications.cancelAll();
+  }
+
+  // ---------------------------------------------------------------------
+  // DAY-1 COMEBACK REMINDER  (local, one-shot)
+  //
+  // The block above explains why the RECURRING daily ping lives in the
+  // backend's Hangfire job rather than in flutter_local_notifications, and
+  // that reasoning still stands. This is the one case its objections do not
+  // cover, for two reasons:
+  //
+  //   1. REACH. The backend job requires `u.FcmTokens.Any()`, and a token
+  //      registration requires a JWT. Under play-first onboarding the typical
+  //      new player is an offline guest with no Firebase user and no backend
+  //      account at all, so the server literally cannot address them. A local
+  //      notification is the ONLY channel that reaches the exact population
+  //      most at risk of never coming back.
+  //
+  //   2. TOLERANCE. The objections — Doze drift of ~15 min, inexact alarms,
+  //      pending-alarm caps — matter for a ping anchored to 20:00 sharp. They
+  //      are irrelevant for a single "come back and beat your score" nudge
+  //      roughly a day out, and we schedule exactly ONE, so no cap is neared.
+  //
+  // Deliberately narrow so it never competes with the server job: scheduled
+  // only for devices with NO authenticated backend session (precisely the
+  // users `send-daily-reminder` skips), only after the player's first game,
+  // and cancelled the moment they come back on their own.
+  // ---------------------------------------------------------------------
+
+  /// Fixed id so scheduling is idempotent and cancellation is exact.
+  static const int _dayOneReminderId = 90001;
+
+  /// Hours after the first game at which the nudge fires. Lands the reminder
+  /// inside the Day-1 retention window (which is measured from install), with
+  /// enough distance that it reads as "come back tomorrow" rather than
+  /// "you just put me down".
+  static const int _dayOneDelayHours = 20;
+
+  /// Schedules the one-shot Day-1 comeback reminder.
+  ///
+  /// [highScore] personalises the copy — a specific number to beat converts
+  /// far better than a generic "come play". Callers should pass the score the
+  /// player actually just set.
+  ///
+  /// Safe to call repeatedly: the fixed notification id means a later call
+  /// replaces the pending one rather than stacking.
+  Future<void> scheduleDayOneReminder({
+    required int highScore,
+    required AppLocalizations l10n,
+  }) async {
+    if (!_initialized) return;
+
+    // Users with a real backend session are already covered by the server's
+    // send-daily-reminder job. Scheduling here too would double-notify them.
+    if (ApiService().isAuthenticated) {
+      AppLogger.info(
+        '⏭️ Day-1 local reminder skipped — backend session exists, '
+        'server daily reminder covers this user',
+      );
+      return;
+    }
+
+    if (!(_notificationPreferences[NotificationType.dailyReminder] ?? true)) {
+      AppLogger.info('🔕 Day-1 reminder blocked by user preferences');
+      return;
+    }
+
+    try {
+      final fireAt = _dayOneFireTime();
+
+      const androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+      );
+      const details = NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(),
+      );
+
+      await _localNotifications.zonedSchedule(
+        id: _dayOneReminderId,
+        title: l10n.dayOneReminderTitle,
+        body: highScore > 0
+            ? l10n.dayOneReminderBodyScore(highScore)
+            : l10n.dayOneReminderBodyNoScore,
+        scheduledDate: fireAt,
+        notificationDetails: details,
+        // Exact alarms are stripped from the manifest on purpose (Play
+        // restricts them to Calendar/Alarm/Health apps), so inexact is the
+        // only option — and entirely adequate here, see the note above.
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: jsonEncode({'type': 'day_one_reminder'}),
+      );
+
+      AppLogger.success('⏰ Day-1 reminder scheduled for $fireAt');
+    } catch (e, st) {
+      // Never let a scheduling failure surface to the player — this runs off
+      // the game-over screen.
+      AppLogger.error('Failed to schedule Day-1 reminder', e, st);
+    }
+  }
+
+  /// Resolves when the Day-1 nudge should fire, shifted out of sleeping hours.
+  ///
+  /// Plain [DateTime] arithmetic first because Dart's DateTime is already
+  /// device-local, which is what the quiet-hours clamp needs to reason about.
+  /// The result is then converted with [tz.TZDateTime.from], which preserves
+  /// the absolute instant — so the schedule is correct even though we never
+  /// resolve the device's IANA zone name (that would need another dependency,
+  /// and a relative one-shot does not require it).
+  tz.TZDateTime _dayOneFireTime() {
+    var target = DateTime.now().add(
+      const Duration(hours: _dayOneDelayHours),
+    );
+
+    // A notification that wakes someone at 04:00 is worse than none at all.
+    // Push anything landing in the quiet window forward to mid-morning.
+    const quietStartHour = 22;
+    const quietEndHour = 9;
+    if (target.hour >= quietStartHour) {
+      target = DateTime(target.year, target.month, target.day + 1, 10);
+    } else if (target.hour < quietEndHour) {
+      target = DateTime(target.year, target.month, target.day, 10);
+    }
+
+    return tz.TZDateTime.from(target, tz.local);
+  }
+
+  /// Cancels a pending Day-1 reminder. Called when the player returns on their
+  /// own — they retained themselves, so the nudge has no job left to do and
+  /// firing it anyway would read as nagging.
+  Future<void> cancelDayOneReminder() async {
+    if (!_initialized) return;
+    try {
+      await _localNotifications.cancel(id: _dayOneReminderId);
+    } catch (e) {
+      AppLogger.error('Failed to cancel Day-1 reminder', e);
+    }
   }
 
   // Backend integration methods

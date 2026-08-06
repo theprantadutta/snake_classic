@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
@@ -34,7 +36,9 @@ import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/achievement_reveal_overlay.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/deferred_sign_in_prompt.dart';
 import 'package:snake_classic/widgets/level_up_popup.dart';
+import 'package:snake_classic/widgets/tomorrow_reward_card.dart';
 import 'package:snake_classic/widgets/particle_effect.dart';
 
 class GameOverScreen extends ConsumerStatefulWidget {
@@ -63,6 +67,16 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
   // disabling the rest of the section.
   final Set<String> _claimingIds = <String>{};
   bool _claimingAll = false;
+
+  /// One-shot guard for the deferred sign-in ask. build() runs on every cubit
+  /// emission (achievements and XP land asynchronously after this screen
+  /// mounts), so without this the prompt would be scheduled several times per
+  /// game over.
+  bool _signInPromptChecked = false;
+
+  /// One-shot guard for the Day-1 reminder, for the same reason as
+  /// [_signInPromptChecked] — build() runs repeatedly per game over.
+  bool _dayOneReminderArmed = false;
 
   @override
   void initState() {
@@ -103,6 +117,53 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
 
   void _onAchievementsChanged() {
     if (mounted) _loadAchievements();
+  }
+
+  /// Arms the one-shot Day-1 comeback notification, once per game-over screen.
+  ///
+  /// Re-armed on every game over rather than only the first, so the reminder
+  /// always points ~20h past the player's most recent session instead of
+  /// ~20h past a first game they may have followed with ten more. The fixed
+  /// notification id in NotificationService makes re-arming a replace, never
+  /// a stack.
+  void _armDayOneReminder(int highScore, AppLocalizations l10n) {
+    if (_dayOneReminderArmed) return;
+    _dayOneReminderArmed = true;
+    unawaited(
+      NotificationService().scheduleDayOneReminder(
+        highScore: highScore,
+        l10n: l10n,
+      ),
+    );
+  }
+
+  /// Schedules the "save your progress" ask for a guest who just set a
+  /// personal best. Every other gate (guest status, first-run window, ask
+  /// budget, cooldown) lives in [DeferredSignInPrompt.maybeShow]; this only
+  /// decides WHEN to offer it the chance.
+  ///
+  /// The delay puts it after the score reveal (500ms) and the level-up popup
+  /// (1400ms) so the three never stack — the stacking of first-launch prompts
+  /// on top of each other is exactly the pattern this whole effort is undoing.
+  void _scheduleDeferredSignIn({
+    required bool isHighScore,
+    required bool isSignedIn,
+    required GameTheme theme,
+  }) {
+    if (_signInPromptChecked) return;
+    _signInPromptChecked = true;
+
+    if (!isHighScore || isSignedIn) return;
+
+    Future.delayed(const Duration(milliseconds: 2200), () {
+      if (!mounted) return;
+      DeferredSignInPrompt.maybeShow(
+        context,
+        isSignedIn: isSignedIn,
+        isNewHighScore: isHighScore,
+        theme: theme,
+      );
+    });
   }
 
   /// Show the level-up celebration if the latest game crossed a threshold.
@@ -376,6 +437,21 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
             final isHighScore =
                 gameState.score == displayHighScore && gameState.score > 0;
 
+            // Guests who just beat their own record get the sign-in offer here
+            // — the moment their progress is demonstrably worth keeping. This
+            // replaces the pre-gameplay auth wall, not supplements it.
+            _scheduleDeferredSignIn(
+              isHighScore: isHighScore,
+              isSignedIn: authState.isSignedIn && !authState.isGuestUser,
+              theme: theme,
+            );
+
+            // Arm the Day-1 comeback nudge with the score they just posted.
+            // Idempotent (fixed notification id), self-gating on backend
+            // session + notification preferences, and cancelled if the player
+            // returns before it fires.
+            _armDayOneReminder(displayHighScore, l10n);
+
             // Daily challenges — only show the section when there's something
             // claimable. Watched here so the section reactively hides after
             // the last claim succeeds.
@@ -518,6 +594,13 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                           compact: compact,
                                         ),
                                       ],
+                                      // Last thing in the scroll body, so it
+                                      // sits directly above the Play Again /
+                                      // Menu decision it is meant to inform.
+                                      TomorrowRewardCard(
+                                        theme: theme,
+                                        compact: compact,
+                                      ),
                                       SizedBox(height: compact ? 8 : 12),
                                     ],
                                   ),
