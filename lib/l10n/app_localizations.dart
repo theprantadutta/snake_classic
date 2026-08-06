@@ -10659,6 +10659,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Claim {coins} coins on day {day} of your streak'**
   String goTomorrowReward(int coins, int day);
+
+  /// Replay event caption when the recorded food type is missing (older recordings stored null). Deliberately omits the type.
+  ///
+  /// In en, this message translates to:
+  /// **'🍎 Ate food'**
+  String get rvAteFoodUnknown;
+
+  /// Replay event caption when the recorded power-up type is missing (older recordings stored null). Deliberately omits the type.
+  ///
+  /// In en, this message translates to:
+  /// **'⚡ Collected a power-up'**
+  String get rvCollectedPowerUpUnknown;
 }
 
 class _AppLocalizationsDelegate

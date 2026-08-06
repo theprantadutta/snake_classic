@@ -818,8 +818,14 @@ class GameCubit extends Cubit<GameCubitState> {
     }
 
     final newGameState = result.nextState!;
-    var ateFood = false;
-    var collectedPowerUp = false;
+    // The type names are captured from the EVENTS, not re-derived from the
+    // post-tick state, because by then the information is gone: the simulation
+    // nulls out a collected power-up and regenerates eaten food in the same
+    // tick. Reading `newGameState.powerUp` therefore always yielded null on the
+    // very frame a power-up was collected, and `newGameState.food` yielded the
+    // REPLACEMENT food rather than the one eaten. See _recordFrame.
+    String? eatenFoodType;
+    String? collectedPowerUpType;
 
     // Bookkeeping per event (trackers / analytics / XP / coin buffering).
     // Audio + haptics for the same events are handled by _feedback below —
@@ -827,7 +833,7 @@ class GameCubit extends Cubit<GameCubitState> {
     for (final event in result.events) {
       switch (event) {
         case FoodEatenEvent():
-          ateFood = true;
+          eatenFoodType = event.food.type.name;
           _foodTypesEatenThisGame.add(event.food.type.name);
           _currentGameFoodTypes[event.food.type.name] =
               (_currentGameFoodTypes[event.food.type.name] ?? 0) + 1;
@@ -853,7 +859,7 @@ class GameCubit extends Cubit<GameCubitState> {
             _pendingLevelUpCoinLevels.add(lvl);
           }
         case PowerUpCollectedEvent():
-          collectedPowerUp = true;
+          collectedPowerUpType = event.powerUp.type.name;
           debugPrint('🎁 Collecting power-up: ${event.powerUp.type.name}');
           _powerUpsCollectedThisGame++;
           _analytics.trackPowerUpUsed(event.powerUp.type.name);
@@ -911,24 +917,41 @@ class GameCubit extends Cubit<GameCubitState> {
       newGameState.food,
       newGameState.powerUp,
       newGameState,
-      ateFood,
-      collectedPowerUp,
+      eatenFoodType,
+      collectedPowerUpType,
     );
   }
 
+  /// Records one replay frame.
+  ///
+  /// [eatenFoodType] / [collectedPowerUpType] are non-null only on the tick
+  /// where that thing happened, and carry the type name taken straight off the
+  /// tick event. They are passed in rather than read off [gameState] because
+  /// the post-tick state no longer describes what happened:
+  ///
+  ///   * a collected power-up has already been cleared, so `gameState.powerUp`
+  ///     is null on exactly the frame we want to label — which produced
+  ///     `{'powerUpType': null}` for EVERY power-up pickup, and a fatal
+  ///     "type 'Null' is not a subtype of type 'Object'" in the replay viewer
+  ///     the moment that frame was scrubbed to;
+  ///   * eaten food has already been regenerated, so `gameState.food` is the
+  ///     replacement, and the frame was silently labelled with the wrong type.
+  ///
+  /// This is the rule ARCHITECTURE.md already states — tickEvents are the only
+  /// event source, never diff the states.
   void _recordFrame(
     Snake snake,
     Food? food,
     PowerUp? powerUp,
     model.GameState gameState,
-    bool ateFood,
-    bool collectedPowerUp,
+    String? eatenFoodType,
+    String? collectedPowerUpType,
   ) {
     Map<String, dynamic>? event;
-    if (ateFood) {
-      event = {'type': 'food_consumed', 'foodType': food?.type.name};
-    } else if (collectedPowerUp) {
-      event = {'type': 'power_up_collected', 'powerUpType': powerUp?.type.name};
+    if (eatenFoodType != null) {
+      event = {'type': 'food_consumed', 'foodType': eatenFoodType};
+    } else if (collectedPowerUpType != null) {
+      event = {'type': 'power_up_collected', 'powerUpType': collectedPowerUpType};
     }
 
     final snakePositions = <List<int>>[];

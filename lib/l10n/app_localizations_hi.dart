@@ -5892,4 +5892,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String goTomorrowReward(int coins, int day) {
     return 'अपनी स्ट्रीक के दिन $day पर $coins सिक्के पाएँ';
   }
+
+  @override
+  String get rvAteFoodUnknown => '🍎 भोजन खाया';
+
+  @override
+  String get rvCollectedPowerUpUnknown => '⚡ पावर-अप उठाया';
 }

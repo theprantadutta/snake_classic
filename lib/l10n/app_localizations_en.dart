@@ -5901,4 +5901,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String goTomorrowReward(int coins, int day) {
     return 'Claim $coins coins on day $day of your streak';
   }
+
+  @override
+  String get rvAteFoodUnknown => '🍎 Ate food';
+
+  @override
+  String get rvCollectedPowerUpUnknown => '⚡ Collected a power-up';
 }

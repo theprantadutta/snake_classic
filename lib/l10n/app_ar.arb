@@ -1757,5 +1757,7 @@
   "dayOneReminderBodyScore": "أفضل نتيجة لك {score}. هل يمكنك تجاوزها؟",
   "dayOneReminderBodyNoScore": "جولة سريعة؟ أول نتيجة قياسية بانتظارك.",
   "goTomorrowLabel": "عُد غدًا",
-  "goTomorrowReward": "احصل على {coins} عملة في اليوم {day} من سلسلتك"
+  "goTomorrowReward": "احصل على {coins} عملة في اليوم {day} من سلسلتك",
+  "rvAteFoodUnknown": "🍎 أكل طعامًا",
+  "rvCollectedPowerUpUnknown": "⚡ التقط تعزيزًا"
 }

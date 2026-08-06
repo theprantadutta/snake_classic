@@ -1757,5 +1757,7 @@
   "dayOneReminderBodyScore": "Il tuo record è {score}. Pensi di poterlo battere?",
   "dayOneReminderBodyNoScore": "Una partita veloce? Il tuo primo record ti aspetta.",
   "goTomorrowLabel": "TORNA DOMANI",
-  "goTomorrowReward": "Ritira {coins} monete al giorno {day} della tua serie"
+  "goTomorrowReward": "Ritira {coins} monete al giorno {day} della tua serie",
+  "rvAteFoodUnknown": "🍎 Ha mangiato cibo",
+  "rvCollectedPowerUpUnknown": "⚡ Ha raccolto un potenziamento"
 }

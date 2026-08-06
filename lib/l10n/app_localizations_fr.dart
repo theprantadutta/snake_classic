@@ -5980,4 +5980,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String goTomorrowReward(int coins, int day) {
     return 'Récupère $coins pièces au jour $day de ta série';
   }
+
+  @override
+  String get rvAteFoodUnknown => '🍎 A mangé de la nourriture';
+
+  @override
+  String get rvCollectedPowerUpUnknown => '⚡ A ramassé un bonus';
 }

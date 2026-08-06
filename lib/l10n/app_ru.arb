@@ -1757,5 +1757,7 @@
   "dayOneReminderBodyScore": "Твой рекорд — {score}. Сможешь побить?",
   "dayOneReminderBodyNoScore": "Быстрая партия? Твой первый рекорд ждёт.",
   "goTomorrowLabel": "ВОЗВРАЩАЙСЯ ЗАВТРА",
-  "goTomorrowReward": "Забери {coins} монет в день {day} твоей серии"
+  "goTomorrowReward": "Забери {coins} монет в день {day} твоей серии",
+  "rvAteFoodUnknown": "🍎 Съел еду",
+  "rvCollectedPowerUpUnknown": "⚡ Подобрал усиление"
 }

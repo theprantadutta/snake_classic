@@ -1757,5 +1757,7 @@
   "dayOneReminderBodyScore": "आपका सर्वश्रेष्ठ {score} है। क्या आप इसे हरा सकते हैं?",
   "dayOneReminderBodyNoScore": "एक तेज़ गेम? आपका पहला हाई स्कोर इंतज़ार कर रहा है।",
   "goTomorrowLabel": "कल फिर आएँ",
-  "goTomorrowReward": "अपनी स्ट्रीक के दिन {day} पर {coins} सिक्के पाएँ"
+  "goTomorrowReward": "अपनी स्ट्रीक के दिन {day} पर {coins} सिक्के पाएँ",
+  "rvAteFoodUnknown": "🍎 भोजन खाया",
+  "rvCollectedPowerUpUnknown": "⚡ पावर-अप उठाया"
 }

@@ -2212,5 +2212,13 @@
         "example": "3"
       }
     }
+  },
+  "rvAteFoodUnknown": "🍎 Ate food",
+  "rvCollectedPowerUpUnknown": "⚡ Collected a power-up",
+  "@rvAteFoodUnknown": {
+    "description": "Replay event caption when the recorded food type is missing (older recordings stored null). Deliberately omits the type."
+  },
+  "@rvCollectedPowerUpUnknown": {
+    "description": "Replay event caption when the recorded power-up type is missing (older recordings stored null). Deliberately omits the type."
   }
 }

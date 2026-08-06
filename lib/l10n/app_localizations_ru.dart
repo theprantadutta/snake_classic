@@ -5941,4 +5941,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String goTomorrowReward(int coins, int day) {
     return 'Забери $coins монет в день $day твоей серии';
   }
+
+  @override
+  String get rvAteFoodUnknown => '🍎 Съел еду';
+
+  @override
+  String get rvCollectedPowerUpUnknown => '⚡ Подобрал усиление';
 }

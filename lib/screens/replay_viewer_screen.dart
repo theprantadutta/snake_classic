@@ -277,9 +277,14 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
               duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, animation) =>
                   FadeTransition(opacity: animation, child: child),
-              child: frame?.gameEvent != null
+              // Resolve the caption BEFORE deciding to render: a frame can
+              // carry a gameEvent that _formatGameEvent cannot describe (an
+              // unknown or malformed type from an older recording), and an
+              // empty chip is worse than no chip.
+              child: (frame?.gameEvent != null &&
+                      _formatGameEvent(frame!.gameEvent!).isNotEmpty)
                   ? Container(
-                      key: ValueKey('event-${frame!.frameNumber}'),
+                      key: ValueKey('event-${frame.frameNumber}'),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -602,16 +607,41 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
     });
   }
 
+  /// Builds the caption for a replay frame's game event.
+  ///
+  /// Every value out of this map is treated as untrusted. The map is decoded
+  /// from JSON persisted on the device, so it can be older than the current
+  /// build — and replays are phone-only (Drift `replays` table, never synced),
+  /// so a bad row sticks around until the user's replay list rolls over rather
+  /// than being fixed by a server correction.
+  ///
+  /// That is not hypothetical: recordings made before the fix in GameCubit
+  /// ._recordFrame stored `powerUpType: null` for EVERY power-up pickup, and
+  /// the generated l10n methods take a non-nullable `Object`. Passing that null
+  /// straight through threw "type 'Null' is not a subtype of type 'Object'"
+  /// from inside build(), which is fatal and unrecoverable — the whole screen
+  /// crashes the moment the playhead reaches such a frame.
   String _formatGameEvent(Map<String, dynamic> event) {
     final l10n = AppLocalizations.of(context)!;
-    final type = event['type'] as String;
+
+    // `as String` on a missing key would throw here just as readily.
+    final type = event['type'];
+
     switch (type) {
       case 'food_consumed':
-        return l10n.rvAteFood(event['foodType']);
+        final foodType = event['foodType'];
+        return foodType == null
+            ? l10n.rvAteFoodUnknown
+            : l10n.rvAteFood(foodType);
       case 'power_up_collected':
-        return l10n.rvCollectedPowerUp(event['powerUpType']);
+        final powerUpType = event['powerUpType'];
+        return powerUpType == null
+            ? l10n.rvCollectedPowerUpUnknown
+            : l10n.rvCollectedPowerUp(powerUpType);
       default:
-        return event.toString();
+        // Unknown or malformed event: show nothing rather than dumping a raw
+        // map over the board. The caller hides the chip on an empty string.
+        return '';
     }
   }
 }
