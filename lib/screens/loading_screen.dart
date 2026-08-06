@@ -17,9 +17,11 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/formatting.dart';
@@ -219,17 +221,46 @@ class _LoadingScreenState extends State<LoadingScreen>
             const Duration(milliseconds: 50),
           ); // Reduced from 100ms
 
-          // Navigate to first-time auth screen
+          // PLAY FIRST. A brand-new install goes straight to Home — no legal
+          // reader, no auth wall, no username picker. GA4 showed ~23% of
+          // installs never got past that gauntlet and ~40% never started a
+          // single game, while the players who DID reach gameplay averaged
+          // 9m09s per session. The wall was filtering out people who wanted
+          // to play. See RETENTION_PLAN.md.
+          //
+          // Safe because the identity already exists: UnifiedUserService
+          // .initialize() creates a purely-local offline guest whenever there
+          // is no Firebase user and no cached session, and the whole
+          // Drift-first architecture is built to run without a backend
+          // account. Nothing here is a downgrade — it is the capability that
+          // was already shipped, finally reachable.
+          //
+          // Sign-in is not gone, it is MOVED: the deferred prompt fires once
+          // the player has a score worth protecting (see
+          // DeferredSignInPrompt), and Profile keeps its permanent entry
+          // point. Progress survives the upgrade — a first sign-in that
+          // registers a NEW backend account reports is_new_user, which makes
+          // SyncEngine skip the cloud pull entirely and push local Drift up
+          // instead of overwriting it.
+          //
+          // Legal consent is carried by the non-blocking FirstRunLegalNotice
+          // strip on Home and recorded when the player taps Play.
+          await authCubit.markFirstTimeSetupComplete();
+
           if (!mounted) {
             return;
           }
-          context.go(AppRoutes.firstTimeAuth);
+          getIt<AnalyticsFacade>().trackOnboardingStepCompleted('play_first');
+          context.go(AppRoutes.home);
           return;
         }
       }
 
       // Returning user: if the privacy policy has changed version since they
       // last accepted it, gate them through the re-consent screen first.
+      // Deliberately still blocking for EXISTING users — a material change to
+      // terms someone already agreed to warrants more than a footer, and this
+      // path can only be reached by someone who has already played.
       final policyAccepted = await LegalAcceptance.isCurrentVersionAccepted();
       if (!policyAccepted) {
         if (!mounted) return;
@@ -316,7 +347,13 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<void> _preloadAppDataCache() async {
     try {
       final appCache = getIt<AppDataCache>();
-      await appCache.preloadAll();
+      // A player who has never started a game has no leaderboard standing, no
+      // tournament entries and no friends — and no JWT to fetch them with.
+      // Skipping that group removes up to three 4-second timeouts from the
+      // slowest, most churn-prone launch there is.
+      await appCache.preloadAll(
+        skipNetwork: FirstRunService().isFirstGame,
+      );
       AppLogger.success('AppDataCache preloaded successfully');
     } catch (e) {
       AppLogger.error('AppDataCache preload warning', e);

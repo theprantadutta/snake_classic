@@ -1363,9 +1363,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
     try {
       final authCubit = context.read<AuthCubit>();
-      // Link (not plain sign-in) so the guest's UID — and with it the
-      // backend progress — survives the upgrade.
-      final success = await authCubit.linkAnonymousToApple();
+      // Links when there is a Firebase anonymous UID to preserve, and falls
+      // back to a plain sign-in for offline guests (who have no Firebase user
+      // at all). Either way the player's progress survives the upgrade.
+      final success = await authCubit.connectAccountWithApple();
 
       if (success && context.mounted) {
         _showStyledSnackBar(

@@ -238,6 +238,21 @@ class UnifiedUserService extends ChangeNotifier {
   bool get isGuestUser => _currentUser?.userType == UserType.guest;
   bool get isGoogleUser => _currentUser?.userType == UserType.google;
 
+  /// Whether a credential can be *linked* to the current session, preserving
+  /// the Firebase UID (and with it the backend account and its progress).
+  ///
+  /// Only true for a Firebase ANONYMOUS user. An offline guest — the default
+  /// identity since onboarding became play-first — has no Firebase user at
+  /// all, so `linkWithCredential` has nothing to link to and the link methods
+  /// bail out returning false. Those users must take a plain sign-in instead;
+  /// their local Drift progress survives it because a first sign-in that
+  /// registers a new backend account reports `is_new_user`, which makes
+  /// SyncEngine skip the cloud pull and push local state up instead.
+  ///
+  /// Callers should branch on this rather than assuming the link path, or
+  /// guests silently get "link failed" on every upgrade surface.
+  bool get canLinkCredential => _auth.currentUser?.isAnonymous ?? false;
+
   String get displayName => _currentUser?.displayName ?? 'Player';
   String get username => _currentUser?.username ?? 'Guest';
   String? get photoURL => _currentUser?.photoURL;

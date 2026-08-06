@@ -109,8 +109,16 @@ class AppDataCache extends ChangeNotifier {
   List<UserProfile>? get friendsList => _friendsList;
   List<FriendRequest>? get friendRequests => _friendRequests;
 
-  /// Called by LoadingScreen - loads ALL data concurrently for maximum speed
-  Future<void> preloadAll() async {
+  /// Called by LoadingScreen - loads ALL data concurrently for maximum speed.
+  ///
+  /// [skipNetwork] drops the leaderboard / tournament / social group entirely.
+  /// Pass it for a brand-new install: none of that data exists for a player
+  /// with no account and no games, every one of those endpoints is JWT-authed
+  /// (so an offline guest gets nothing back regardless), and each carries a
+  /// 4-second timeout that lands squarely on the slow connections our biggest
+  /// markets are on. That is up to 12 seconds of staring at a progress bar
+  /// before the first frame of a game the user just searched the store for.
+  Future<void> preloadAll({bool skipNetwork = false}) async {
     if (_isLoading) return;
     _isLoading = true;
 
@@ -138,21 +146,33 @@ class AppDataCache extends ChangeNotifier {
         _loadDailyChallenges(),
         _loadPlayerProgress(),
 
-        // Group 2: Network data (with timeout + fallback)
-        _loadLeaderboards().timeout(const Duration(seconds: 4), onTimeout: () {
-          AppLogger.warning('AppDataCache: Leaderboards timed out');
-        }),
-        _loadTournaments().timeout(const Duration(seconds: 4), onTimeout: () {
-          AppLogger.warning('AppDataCache: Tournaments timed out');
-        }),
-        _loadSocialData().timeout(const Duration(seconds: 4), onTimeout: () {
-          AppLogger.warning('AppDataCache: Social data timed out');
-        }),
+        // Group 2: Network data (with timeout + fallback). Skipped entirely on
+        // a first run — see [skipNetwork]. The screen-level TTL refresh on
+        // each provider fetches this the moment the user actually opens
+        // Leaderboard / Tournaments / Friends, so nothing is permanently lost.
+        if (!skipNetwork)
+          _loadLeaderboards().timeout(const Duration(seconds: 4), onTimeout: () {
+            AppLogger.warning('AppDataCache: Leaderboards timed out');
+          }),
+        if (!skipNetwork)
+          _loadTournaments().timeout(const Duration(seconds: 4), onTimeout: () {
+            AppLogger.warning('AppDataCache: Tournaments timed out');
+          }),
+        if (!skipNetwork)
+          _loadSocialData().timeout(const Duration(seconds: 4), onTimeout: () {
+            AppLogger.warning('AppDataCache: Social data timed out');
+          }),
       ]);
 
-      _isFullyLoaded = true;
+      // Only a full preload counts as "fully loaded" — a network-skipped run
+      // must NOT convince the leaderboard/tournament screens their cache is
+      // warm, or they would render empty instead of fetching on open.
+      _isFullyLoaded = !skipNetwork;
       _lastRefreshTime = DateTime.now();
-      AppLogger.success('AppDataCache: All data preloaded successfully');
+      AppLogger.success(
+        'AppDataCache: preload complete'
+        '${skipNetwork ? ' (first run — network group skipped)' : ''}',
+      );
     } catch (e) {
       AppLogger.error('AppDataCache: Error during preload', e);
       // Even if some fail, mark as loaded so screens can still function

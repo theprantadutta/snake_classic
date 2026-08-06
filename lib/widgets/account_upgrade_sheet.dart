@@ -120,7 +120,10 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                   final messenger = ScaffoldMessenger.of(context);
                   final l10n = AppLocalizations.of(context)!;
                   setState(() => _busy = true);
-                  final ok = await cubit.linkAnonymousToGoogle();
+                  // Branches to link-vs-sign-in internally. Offline guests
+                  // have no Firebase user to link against and used to fail
+                  // here with a bare "link failed".
+                  final ok = await cubit.connectAccountWithGoogle();
                   if (!mounted) return;
                   setState(() => _busy = false);
                   if (ok) {

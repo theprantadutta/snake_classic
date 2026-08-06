@@ -378,6 +378,26 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Connect a real account to whatever guest session is active, picking the
+  /// right mechanism automatically.
+  ///
+  /// Every "upgrade your account" surface should call this rather than the
+  /// link methods directly. A Firebase anonymous user gets `linkWithCredential`
+  /// so the UID (and the backend account hanging off it) is preserved; an
+  /// offline guest — which has no Firebase user at all and is the default
+  /// identity under play-first onboarding — gets a plain sign-in, which
+  /// preserves local Drift progress via the `is_new_user` path in SyncEngine.
+  ///
+  /// Without this branch, offline guests hit `linkAnonymousToGoogle`'s
+  /// `!user.isAnonymous` guard and saw a bare "link failed" on every upgrade
+  /// prompt.
+  Future<bool> connectAccountWithGoogle() =>
+      _userService.canLinkCredential ? linkAnonymousToGoogle() : signInWithGoogle();
+
+  /// Apple counterpart to [connectAccountWithGoogle].
+  Future<bool> connectAccountWithApple() =>
+      _userService.canLinkCredential ? linkAnonymousToApple() : signInWithApple();
+
   /// Link the current anonymous account to an Apple sign-in.
   Future<bool> linkAnonymousToApple() async {
     emit(state.copyWith(isLoading: true, clearError: true));
