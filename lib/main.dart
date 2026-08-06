@@ -276,6 +276,24 @@ Future<void> _bootstrap() async {
     // idempotently if this loses a race.
     unawaited(NotificationService().bootstrapToken());
 
+    // Register the FCM handlers — onMessageOpenedApp, onMessage, and the local
+    // notification tap callback. `requestPermission: false` means this fires
+    // NO OS dialog; the permission soft-ask is still deferred to home, after
+    // the player's first game.
+    //
+    // This MUST NOT be gated on anything. It used to be step 3 of the home
+    // screen's onboarding prompt queue, and when that queue was deferred until
+    // after the first game the tap listener went with it — so a player who had
+    // not yet played had no onMessageOpenedApp handler at all, and tapping a
+    // notification opened the app to whatever was last on screen and did
+    // nothing else. Registering handlers and asking for permission are
+    // different concerns and are now wired separately.
+    unawaited(
+      NotificationService().initialize(requestPermission: false).catchError(
+        (Object e) => AppLogger.error('Notification handler init failed', e),
+      ),
+    );
+
     InAppUpdateService().checkForUpdate().then((_) {
       AppLogger.success('In-app update check completed');
     });

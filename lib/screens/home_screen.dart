@@ -164,30 +164,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     await _maybeInitNotifications();
   }
 
-  /// First-launch initialization of the notification service. Used to
-  /// live in main.dart but the OS permission dialog as a side effect
-  /// was firing before the user had ever seen the app — so it runs
-  /// here, once the user has actually landed on home.
-  /// NotificationService.initialize() guards itself against double-init
-  /// (the _initialized flag), so re-entering home doesn't re-prompt.
+  /// The notification PERMISSION ask. Handler registration is not done here —
+  /// it happens unconditionally in main()'s bootstrap, because gating the
+  /// onMessageOpenedApp listener behind this deferred queue silently killed
+  /// notification taps for anyone who had not yet played a game.
+  ///
+  /// The service still needs to be up before we can ask, but by this point
+  /// bootstrap has long since initialized it; the guard below only covers the
+  /// case where that init failed or is still in flight.
   Future<void> _maybeInitNotifications() async {
-    if (NotificationService().initialized) {
-      // Already initialized this session (returning to home) — still give
-      // the permission primer its periodic chance.
-      await _maybeShowNotificationPrimer();
-      return;
+    if (!NotificationService().initialized) {
+      // Bootstrap's init failed or hasn't landed. Try once more — without the
+      // OS prompt, which the soft-ask below owns.
+      try {
+        await NotificationService().initialize(requestPermission: false);
+      } catch (e) {
+        AppLogger.error('Notification service init failed', e);
+        return;
+      }
+      if (!mounted) return;
     }
-    // Initialize WITHOUT firing the OS prompt — we show a pre-permission
-    // soft-ask first (Apple's recommended priming pattern) and only trigger
-    // the real OS prompt if the user opts in.
-    try {
-      await NotificationService().initialize(requestPermission: false);
-      AppLogger.success('Notification service initialized from home');
-    } catch (e) {
-      AppLogger.error('Notification service init failed', e);
-      return;
-    }
-    if (!mounted) return;
     await _maybeShowNotificationSoftAsk();
   }
 

@@ -165,7 +165,7 @@ Ordered by impact. Tier 1 is where the 11% lives.
 - [x] **T1.2** **Non-blocking legal consent.** New `FirstRunLegalNotice` strip on Home with tappable Terms / Privacy links; acceptance recorded on the first Play tap. Existing users still get the blocking re-consent screen on a legal-version bump
 - [x] **T1.3** **Deleted the guest warning modal** and its now-dead `_GuestWarningBullet` widget
 - [x] **T1.4** **First game skips the 3s pre-game loader** entirely
-- [x] **T1.5** **Prompt queue deferred** until after the first game, with a build-side re-entry hook so the Android-back path can't strand it
+- [x] **T1.5** **Prompt queue deferred** until after the first game, with a build-side re-entry hook so the Android-back path can't strand it. ⚠️ *Caused a regression, caught on device:* `NotificationService.initialize()` was step 3 of that queue, and it is what registers the `onMessageOpenedApp` listener — so deferring the queue silently killed notification taps for anyone who had not yet played a game. Handler registration now happens unconditionally in `main()`'s bootstrap with `requestPermission: false`; only the permission soft-ask stays deferred. **Registering handlers and asking for permission are different concerns and must never share a gate.**
 - [x] **T1.6** **Game-mode sheet is dismissible** and skipped on the first play
 
 ### T2 — First-session quality
