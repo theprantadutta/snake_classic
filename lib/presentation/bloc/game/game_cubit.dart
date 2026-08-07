@@ -187,6 +187,13 @@ class GameCubit extends Cubit<GameCubitState> {
       maxCombo: gameState.maxCombo,
       snakeLength: gameState.snake.body.length,
       gameMode: gameState.gameMode.name,
+      // Both spellings of the mode travel with the run: `name` is the
+      // display label the statistics keys are built from, `wireName` is what
+      // the backend's GameMode enum can actually parse. Sending the former
+      // to the server would silently record every non-classic run as
+      // Classic — see GameMode.wireName.
+      gameModeWire: gameState.gameMode.wireName,
+      difficulty: gameState.difficulty.name,
       isTournament: state.isTournamentMode,
       durationSeconds: gameDurationSeconds,
       foodTypes: Map<String, int>.from(_currentGameFoodTypes),

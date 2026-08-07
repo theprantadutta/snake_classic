@@ -677,6 +677,40 @@ enum GameMode {
     }
   }
 
+  /// The value the BACKEND expects for this mode — its `GameMode` enum
+  /// member name (SnakeClassic.Domain.Enums.GameMode).
+  ///
+  /// This exists because [name] above is overridden to return a DISPLAY
+  /// label: 'Zen Mode', 'Multi-Food', 'Power-Up Madness'. Those are not
+  /// parseable by the server, and the failure is silent — the score
+  /// handlers do `Enum.TryParse(value, true, out var mode)` with a
+  /// `gameMode = GameMode.Classic` fallback, so every non-classic run
+  /// would have been recorded as Classic with no error anywhere.
+  ///
+  /// Overriding `name` also shadows Dart's built-in enum `.name`, so
+  /// there is no way to get the constant's identifier back at a call
+  /// site. Hence an explicit map rather than a derived one.
+  String get wireName {
+    switch (this) {
+      case GameMode.classic:
+        return 'Classic';
+      case GameMode.zen:
+        return 'Zen';
+      case GameMode.speedChallenge:
+        return 'SpeedChallenge';
+      case GameMode.multiFood:
+        return 'MultiFood';
+      case GameMode.survival:
+        return 'Survival';
+      case GameMode.timeAttack:
+        return 'TimeAttack';
+      case GameMode.powerUpMadness:
+        return 'PowerUpMadness';
+      case GameMode.perfectGame:
+        return 'PerfectGame';
+    }
+  }
+
   String get description {
     switch (this) {
       case GameMode.classic:

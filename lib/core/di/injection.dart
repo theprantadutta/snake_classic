@@ -168,6 +168,7 @@ Future<void> configureDependencies() async {
       weeklyQuestService: WeeklyQuestService(),
       progressionService: ProgressionService(),
       appDataCache: getIt<AppDataCache>(),
+      database: getIt<AppDatabase>(),
     ),
   );
 

@@ -36,6 +36,19 @@ class SyncDataType {
   static const String dailyBonusClaim = 'daily_bonus_claim';
   static const String playerProgress = 'player_progress';
   static const String powerUpInventory = 'power_up_inventory';
+
+  /// One finished game, pushed to `POST /scores/batch`.
+  ///
+  /// Event-typed, like [coinTransaction] and [unlockedItem]: the payload is
+  /// frozen into the outbox row at game-over and read back verbatim at drain
+  /// time. A finished run is immutable, so there is nothing to re-read, and
+  /// no companion Drift table is needed — the outbox row IS the durable
+  /// record until the server accepts it.
+  ///
+  /// The outbox entity key doubles as the server's `idempotency_key`, which
+  /// is what makes SyncEngine's retries safe: the same run can be pushed any
+  /// number of times and inserts once.
+  static const String score = 'score';
 }
 
 // =====================================================

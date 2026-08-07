@@ -793,6 +793,15 @@ class SyncEngine {
           final payloads = _extractPayloads(items);
           return _mapOutcome(await _api.syncUnlockedItems(payloads));
 
+        case SyncDataType.score:
+          // Event-typed: a finished run never changes, so the payload
+          // frozen at game-over is still correct however long the device
+          // stayed offline. Batched because a player can finish several
+          // runs between drains, and the endpoint is built for it.
+          final scorePayloads = _extractPayloads(items);
+          if (scorePayloads.isEmpty) return _DispatchResult.success;
+          return _mapOutcome(await _api.syncScores(scorePayloads));
+
         case SyncDataType.dailyChallengeClaim:
           // Per-row snapshot keyed by challenge id — read the current
           // Drift row to get the authoritative coin reward + claim
@@ -958,6 +967,7 @@ class SyncEngine {
       case SyncDataType.dailyBonusClaim:
       case SyncDataType.playerProgress:
       case SyncDataType.powerUpInventory:
+      case SyncDataType.score:
         return true;
       default:
         return false;

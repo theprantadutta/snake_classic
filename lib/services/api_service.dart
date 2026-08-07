@@ -508,6 +508,17 @@ class ApiService {
   Future<SyncOutcome> syncUnlockedItems(List<Map<String, dynamic>> items) =>
       _postSync('unlocked-items', {'items': items});
 
+  /// Push finished games to `POST /scores/batch`.
+  ///
+  /// Not a `/sync/*` endpoint — the scores controller predates that surface
+  /// — but it is the right target anyway: it is idempotent on
+  /// `idempotency_key`, validates each item independently so one bad row
+  /// cannot drop the batch, and updates `users.high_score`,
+  /// `total_games_played`, `total_score` and `last_active_at` atomically.
+  /// The wrapper key is `scores`, matching BatchSubmitScoresRequest.
+  Future<SyncOutcome> syncScores(List<Map<String, dynamic>> items) =>
+      _postForSync('scores/batch', {'scores': items});
+
   Future<SyncOutcome> syncBattlePass(List<Map<String, dynamic>> items) =>
       _postSync('battle-pass', {'items': items});
 
@@ -1171,7 +1182,17 @@ class ApiService {
   ///     row failed — without this split, a permanent 400 (schema
   ///     mismatch, missing validator, payload too large) would wedge
   ///     the queue forever.
-  Future<SyncOutcome> _postSync(
+  /// Sync-family POST for the `/sync/*` endpoints.
+  Future<SyncOutcome> _postSync(String path, Map<String, dynamic> body) =>
+      _postForSync('sync/$path', body);
+
+  /// Same request/outcome handling as [_postSync] but for an endpoint that
+  /// is NOT under `/sync`. Scores go to `POST /scores/batch`, which predates
+  /// the sync surface and lives on its own controller — but it is drained by
+  /// the SyncEngine like everything else, so it needs the identical
+  /// transient-vs-permanent classification. Sharing the body here is what
+  /// keeps a 500 retryable and a 400 not, for scores as for the rest.
+  Future<SyncOutcome> _postForSync(
     String path,
     Map<String, dynamic> body,
   ) async {
@@ -1179,20 +1200,20 @@ class ApiService {
     try {
       response = await http
           .post(
-            Uri.parse('$baseUrl/sync/$path'),
+            Uri.parse('$baseUrl/$path'),
             headers: _authHeaders,
             body: jsonEncode(body),
           )
           .timeout(_timeout);
     } catch (e) {
-      AppLogger.error('Error POST /sync/$path', e);
+      AppLogger.error('Error POST /$path', e);
       return SyncOutcome.transient();
     }
 
     final code = response.statusCode;
 
     if (code == 401) {
-      AppLogger.error('Unauthorized POST /sync/$path - token may be expired');
+      AppLogger.error('Unauthorized POST /$path - token may be expired');
       clearToken();
       onUnauthorized?.call();
       return SyncOutcome.transient(statusCode: code);
@@ -1207,7 +1228,7 @@ class ApiService {
         );
       } catch (e) {
         AppLogger.error(
-          'POST /sync/$path returned 2xx with undecodable body',
+          'POST /$path returned 2xx with undecodable body',
           e,
         );
         // Body is malformed but status was 2xx — treat as a permanent
@@ -1218,14 +1239,14 @@ class ApiService {
     }
 
     if (code >= 500) {
-      AppLogger.error('POST /sync/$path failed with $code (transient)', response.body);
+      AppLogger.error('POST /$path failed with $code (transient)', response.body);
       return SyncOutcome.transient(statusCode: code);
     }
 
     // Remaining 4xx — bad request, validation error, payload too large,
     // etc. Bumping retries and eventually marking failed is the right
     // call; retrying forever just spams the backend.
-    AppLogger.error('POST /sync/$path failed with $code (permanent)', response.body);
+    AppLogger.error('POST /$path failed with $code (permanent)', response.body);
     return SyncOutcome.permanent(statusCode: code);
   }
 

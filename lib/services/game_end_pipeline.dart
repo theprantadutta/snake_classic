@@ -7,6 +7,11 @@ import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/weekly_quest.dart';
+// Scoped import: app_database.dart also exports a Drift-generated
+// `Achievement` row class, which collides with the domain model of the same
+// name that this file uses throughout.
+import 'package:snake_classic/data/database/app_database.dart'
+    show AppDatabase, SyncDataType;
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/services/achievement_service.dart';
@@ -14,9 +19,11 @@ import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/services/sync/score_submission.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:uuid/uuid.dart';
 
 /// The single post-game rewards/stats/achievements pipeline.
 ///
@@ -39,6 +46,7 @@ class GameEndPipeline {
     required this._weeklyQuestService,
     required this._progressionService,
     required this._appDataCache,
+    required this._database,
   });
 
   final StatisticsService _statisticsService;
@@ -49,6 +57,9 @@ class GameEndPipeline {
   final WeeklyQuestService _weeklyQuestService;
   final ProgressionService _progressionService;
   final AppDataCache _appDataCache;
+  final AppDatabase _database;
+
+  static const _scoreIdGen = Uuid();
 
   // ---------------------------------------------------------------------
   // Local (sync, fast) — runs BEFORE the game-over screen shows
@@ -247,6 +258,54 @@ class GameEndPipeline {
   // ---------------------------------------------------------------------
   // Post-game orchestration (async, fire-and-forget from the caller)
   // ---------------------------------------------------------------------
+  /// Queue this run for `POST /scores/batch`.
+  ///
+  /// This is the row the daily, weekly and friends leaderboards rank from,
+  /// the mode/difficulty-filtered global board, and the admin console's
+  /// score distribution and games-played series. None of them can be served
+  /// from the statistics sync, which stores one aggregate blob per user.
+  ///
+  /// Enqueue-only: it writes the outbox row and returns. The SyncEngine
+  /// owns the push, the retries and the ordering, so a game that ends
+  /// offline (or with the server down) is submitted on the next drain
+  /// instead of being lost — which is the whole reason this does not call
+  /// the API directly, quite apart from the architecture rule against it.
+  ///
+  /// The outbox entity key IS the server's idempotency key, so the retries
+  /// the engine performs insert exactly one row.
+  ///
+  /// Failures here are swallowed. A score that fails to enqueue is worth a
+  /// log line, but it must not take down coin grants, achievements or XP
+  /// with it — those are what the player is watching on the game-over
+  /// screen.
+  Future<void> _enqueueScoreSubmission(GameRunSummary summary) async {
+    try {
+      final idempotencyKey = _scoreIdGen.v4();
+      final payload = ScoreSubmission.build(
+        summary,
+        idempotencyKey: idempotencyKey,
+        playedAt: DateTime.now().toUtc(),
+      );
+      // Null means the run is deliberately not submitted (Easy difficulty,
+      // a zero score, or a summary that trips one of the server's
+      // plausibility ceilings). Not an error.
+      if (payload == null) return;
+
+      await _database.enqueueSyncOutbox(
+        dataType: SyncDataType.score,
+        entityKey: idempotencyKey,
+        payload: payload,
+        // Priority 1 (high), above ordinary snapshots. A score is only
+        // interesting while it is near the top of a daily board, and the
+        // daily board resets at UTC midnight — a submission that drains a
+        // day late has missed the window it was for.
+        priority: 1,
+      );
+    } catch (e, st) {
+      AppLogger.error('Failed to enqueue score submission', e, st);
+    }
+  }
+
 
   /// Runs the full post-game choreography for a single-player run, in the
   /// same order the cubit historically used:
@@ -299,6 +358,13 @@ class GameEndPipeline {
         gameMode: summary.gameMode,
         countsForHighScore: summary.countsForHighScore,
       );
+
+      // Queue the run for the backend `scores` table. Sits here, with the
+      // other local writes, rather than in the network step below: this is
+      // a Drift outbox write, not a network call, and putting it before the
+      // `Future.wait` means a game that ends as the app is being killed has
+      // already been made durable.
+      await _enqueueScoreSubmission(summary);
 
       // Now that lifetime stats include this game, check the catalog's
       // lifetime-driven achievements (power-ups, food variety, perfect

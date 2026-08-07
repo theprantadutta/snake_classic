@@ -13,6 +13,8 @@ class GameRunSummary {
     required this.maxCombo,
     required this.snakeLength,
     required this.gameMode,
+    required this.gameModeWire,
+    required this.difficulty,
     required this.isTournament,
     required this.durationSeconds,
     required this.foodTypes,
@@ -34,8 +36,22 @@ class GameRunSummary {
   final int maxCombo;
   final int snakeLength;
 
-  /// GameMode.name of the finished run.
+  /// GameMode.name of the finished run — the DISPLAY label ('Zen Mode',
+  /// 'Multi-Food'). This is a statistics key: `GameStatistics.gameModeCount`
+  /// is keyed by it and so is every achievement that counts modes played,
+  /// so its value is load-bearing for stored data and must not be changed.
   final String gameMode;
+
+  /// The same mode as the BACKEND names it (`GameMode.wireName`), for score
+  /// submission. Separate from [gameMode] because the display label is not
+  /// parseable server-side and would be silently coerced to Classic.
+  final String gameModeWire;
+
+  /// `Difficulty.name` — the intrinsic enum identifier ('easy', 'normal',
+  /// 'hard'), which the server parses case-insensitively. Difficulty
+  /// overrides `label`, not `name`, so this one is safe to send as-is.
+  final String difficulty;
+
   final bool isTournament;
   final int durationSeconds;
 
