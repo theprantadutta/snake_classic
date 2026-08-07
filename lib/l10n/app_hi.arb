@@ -1763,5 +1763,8 @@
   "boardTall": "लंबा",
   "boardTallDesc": "फ़ोन स्क्रीन भर देता है — दौड़ने को ज़्यादा जगह",
   "boardTallPlus": "लंबा प्लस",
-  "boardTallPlusDesc": "और बड़ा फ़ोन-आकार का मैदान"
+  "boardTallPlusDesc": "और बड़ा फ़ोन-आकार का मैदान",
+  "mpErrReadyTimeout": "दोनों खिलाड़ी समय पर तैयार नहीं हुए। नया मैच खोजा जा रहा है…",
+  "mpLobbyReadyDeadline": "तैयारी · {seconds}से",
+  "mpLobbyWaitingOpponentReady": "आपके प्रतिद्वंद्वी के तैयार होने की प्रतीक्षा…"
 }

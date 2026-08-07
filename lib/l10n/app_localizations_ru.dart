@@ -5960,4 +5960,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get boardTallPlusDesc => 'Арена побольше в формате телефона';
+
+  @override
+  String get mpErrReadyTimeout =>
+      'Игроки не успели подтвердить готовность. Ищем новый матч…';
+
+  @override
+  String mpLobbyReadyDeadline(int seconds) {
+    return 'Готовность · $secondsс';
+  }
+
+  @override
+  String get mpLobbyWaitingOpponentReady => 'Ждём готовности соперника…';
 }

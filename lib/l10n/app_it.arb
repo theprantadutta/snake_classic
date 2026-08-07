@@ -1763,5 +1763,8 @@
   "boardTall": "Alto",
   "boardTallDesc": "Riempie lo schermo del telefono — più spazio per correre",
   "boardTallPlus": "Alto Plus",
-  "boardTallPlusDesc": "Un'arena più grande a forma di telefono"
+  "boardTallPlusDesc": "Un'arena più grande a forma di telefono",
+  "mpErrReadyTimeout": "I due giocatori non erano pronti in tempo. Ricerca di una nuova partita…",
+  "mpLobbyReadyDeadline": "Conferma · {seconds}s",
+  "mpLobbyWaitingOpponentReady": "In attesa che l'avversario sia pronto…"
 }

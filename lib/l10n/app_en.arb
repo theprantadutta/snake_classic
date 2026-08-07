@@ -2236,5 +2236,22 @@
   },
   "@boardTallPlusDesc": {
     "description": "Description of the 24x42 tall board."
+  },
+  "mpErrReadyTimeout": "Both players weren't ready in time. Finding you a new match…",
+  "@mpErrReadyTimeout": {
+    "description": "Shown when a matchmade lobby expires because both players did not confirm READY in time."
+  },
+  "mpLobbyReadyDeadline": "Ready check · {seconds}s",
+  "@mpLobbyReadyDeadline": {
+    "description": "Countdown chip on a matchmade lobby showing seconds left to confirm READY.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "mpLobbyWaitingOpponentReady": "Waiting for your opponent to get ready…",
+  "@mpLobbyWaitingOpponentReady": {
+    "description": "Shown to a player who has pressed READY while the opponent has not."
   }
 }

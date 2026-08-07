@@ -46,6 +46,21 @@ class MultiplayerState extends Equatable {
   /// drives the lobby countdown overlay so client and server can't drift.
   final int countdownSeconds;
 
+  /// Seconds left on the matchmade READY check, or null when no deadline
+  /// is running.
+  ///
+  /// Only matchmade lobbies arm this. A friend room can sit open as long
+  /// as its members like — they know each other and can talk. Two matched
+  /// strangers cannot, so without a deadline one of them tabbing away
+  /// leaves the other staring at a lobby that will never start. At zero
+  /// the room is abandoned and the waiting player goes back to the queue.
+  final int? readyDeadlineSeconds;
+
+  /// True while this lobby came from matchmaking rather than a room code.
+  /// The two paths differ in what the lobby is allowed to do to you: only
+  /// a matchmade one expires.
+  final bool isMatchmadeLobby;
+
   // Matchmaking state
   final bool isMatchmaking;
   final int matchmakingQueuePosition;
@@ -65,6 +80,8 @@ class MultiplayerState extends Equatable {
     this.boardSize = 20,
     this.intentDirection,
     this.countdownSeconds = 3,
+    this.readyDeadlineSeconds,
+    this.isMatchmadeLobby = false,
     this.isMatchmaking = false,
     this.matchmakingQueuePosition = 0,
     this.matchmakingEstimatedWait = 0,
@@ -91,6 +108,9 @@ class MultiplayerState extends Equatable {
     Direction? intentDirection,
     bool clearIntentDirection = false,
     int? countdownSeconds,
+    int? readyDeadlineSeconds,
+    bool clearReadyDeadline = false,
+    bool? isMatchmadeLobby,
     bool clearMatch = false,
     bool? isMatchmaking,
     int? matchmakingQueuePosition,
@@ -113,6 +133,12 @@ class MultiplayerState extends Equatable {
           ? null
           : (intentDirection ?? this.intentDirection),
       countdownSeconds: countdownSeconds ?? this.countdownSeconds,
+      readyDeadlineSeconds: (clearReadyDeadline || clearGame)
+          ? null
+          : (readyDeadlineSeconds ?? this.readyDeadlineSeconds),
+      isMatchmadeLobby: clearGame
+          ? false
+          : (isMatchmadeLobby ?? this.isMatchmadeLobby),
       isMatchmaking: clearMatchmaking
           ? false
           : (isMatchmaking ?? this.isMatchmaking),
@@ -186,6 +212,8 @@ class MultiplayerState extends Equatable {
     boardSize,
     intentDirection,
     countdownSeconds,
+    readyDeadlineSeconds,
+    isMatchmadeLobby,
     isMatchmaking,
     matchmakingQueuePosition,
     matchmakingEstimatedWait,

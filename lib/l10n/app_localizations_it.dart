@@ -5980,4 +5980,17 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get boardTallPlusDesc => 'Un\'arena più grande a forma di telefono';
+
+  @override
+  String get mpErrReadyTimeout =>
+      'I due giocatori non erano pronti in tempo. Ricerca di una nuova partita…';
+
+  @override
+  String mpLobbyReadyDeadline(int seconds) {
+    return 'Conferma · ${seconds}s';
+  }
+
+  @override
+  String get mpLobbyWaitingOpponentReady =>
+      'In attesa che l\'avversario sia pronto…';
 }

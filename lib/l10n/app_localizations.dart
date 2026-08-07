@@ -10695,6 +10695,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A bigger phone-shaped arena'**
   String get boardTallPlusDesc;
+
+  /// Shown when a matchmade lobby expires because both players did not confirm READY in time.
+  ///
+  /// In en, this message translates to:
+  /// **'Both players weren\'t ready in time. Finding you a new match…'**
+  String get mpErrReadyTimeout;
+
+  /// Countdown chip on a matchmade lobby showing seconds left to confirm READY.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready check · {seconds}s'**
+  String mpLobbyReadyDeadline(int seconds);
+
+  /// Shown to a player who has pressed READY while the opponent has not.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your opponent to get ready…'**
+  String get mpLobbyWaitingOpponentReady;
 }
 
 class _AppLocalizationsDelegate

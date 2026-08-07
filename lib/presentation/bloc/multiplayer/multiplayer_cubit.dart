@@ -54,9 +54,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   // Reconnect settle timeout (see _startReconnectTimeout)
   Timer? _reconnectTimeoutTimer;
 
-  /// Armed when matchmaking finds a match; the matchmade lobby then
-  /// auto-starts (see _maybeAutoStart). Friend rooms stay manual.
-  bool _autoStartArmed = false;
+  /// Ticks the visible READY deadline in a matchmade lobby.
+  Timer? _readyDeadlineTimer;
+
+  /// Watches the gap between GameStarting and GameStarted.
+  Timer? _countdownWatchdog;
+
+  /// How long two matched strangers get to both confirm READY.
+  static const int _readyDeadlineSeconds = 30;
 
   /// Whether the current/last session came from quick match — drives the
   /// "Play Again" re-queue action on the result screen.
@@ -105,7 +110,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         if (status.matchFound && status.gameId != null) {
           // Match found! Stop timer and transition to lobby
           _stopMatchmakingTimer();
-          _autoStartArmed = true;
+          _startReadyDeadline();
           _audioService.playSound('high_score');
           _hapticService.mediumImpact();
 
@@ -114,6 +119,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           emit(
             state.copyWith(
               status: MultiplayerStatus.inLobby,
+              isMatchmadeLobby: true,
+              readyDeadlineSeconds: _readyDeadlineSeconds,
               clearMatchmaking: true,
             ),
           );
@@ -331,6 +338,11 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Leave current game
   Future<void> leaveGame() async {
     try {
+      // Stop the lobby timers before the room goes away — otherwise the
+      // ready deadline keeps ticking against a game that no longer exists
+      // and eventually tries to abandon it a second time.
+      _stopReadyDeadline();
+      _stopCountdownWatchdog();
       await _multiplayerService.leaveGame();
       _stopListening();
       _matchActive = false;
@@ -741,10 +753,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       // Game is starting (countdown) - clear loading state
       shouldClearLoading = true;
       _startGameTimeoutTimer?.cancel();
+      _stopReadyDeadline();
+      _startCountdownWatchdog();
     } else if (game.status == MultiplayerGameStatus.playing) {
       newStatus = MultiplayerStatus.playing;
       shouldClearLoading = true;
       _startGameTimeoutTimer?.cancel();
+      _stopReadyDeadline();
+      _stopCountdownWatchdog();
     } else if (game.isFinished) {
       // Stats + rewards ride on the GameEnded payload (matchEndStream),
       // not on this status flip.
@@ -762,25 +778,107 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       ),
     );
 
-    _maybeAutoStart(game);
+    // The lobby no longer starts itself. Both players press READY and the
+    // host presses START — see _startReadyDeadline for why a matchmade
+    // lobby still cannot sit here forever.
   }
 
-  /// Matchmade lobbies auto-start: the matchmaker creates both player
-  /// rows already ready, so making two strangers find the READY/START
-  /// buttons was pure friction. Host side only — the other player gets
-  /// GameStarting from the server like always. Friend rooms (create/
-  /// join by code) never arm this.
-  void _maybeAutoStart(MultiplayerGame game) {
-    if (!_autoStartArmed) return;
-    if (game.status != MultiplayerGameStatus.waiting) {
-      _autoStartArmed = false;
-      return;
+  /// Arm the matchmade READY deadline.
+  ///
+  /// A matchmade lobby used to skip the ready check entirely: the server
+  /// created both player rows pre-ready and the host auto-started, so a
+  /// player was dropped into a live match having pressed nothing. Both
+  /// halves of that are gone, which restores consent but reintroduces the
+  /// problem auto-ready existed to dodge — two strangers, either of whom
+  /// may simply walk away, with no way to talk to each other.
+  ///
+  /// So the check is bounded. Thirty seconds, counted down visibly, and if
+  /// both sides have not confirmed by then the room is abandoned and
+  /// whoever is still here goes back to the queue to find someone else.
+  /// Nobody is stranded, and nobody is force-started into a match.
+  void _startReadyDeadline() {
+    _readyDeadlineTimer?.cancel();
+    _readyDeadlineTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final remaining = (state.readyDeadlineSeconds ?? 0) - 1;
+      if (remaining > 0) {
+        emit(state.copyWith(readyDeadlineSeconds: remaining));
+        return;
+      }
+      _stopReadyDeadline();
+      unawaited(_abandonUnreadyLobby());
+    });
+  }
+
+  void _stopReadyDeadline() {
+    _readyDeadlineTimer?.cancel();
+    _readyDeadlineTimer = null;
+  }
+
+  /// Watch the gap between GameStarting and GameStarted.
+  ///
+  /// The server runs its 3s countdown inside a fire-and-forget `Task.Run`
+  /// and only then flips the match to Playing. If that task dies — process
+  /// recycle, an unhandled throw — no GameStarted is ever broadcast and
+  /// both clients sit on the countdown overlay forever, because the
+  /// existing start timeout was already cancelled the moment GameStarting
+  /// arrived. This covers the second half of that handoff.
+  ///
+  /// Generous on purpose: the countdown the server announced, plus seven
+  /// seconds for the engine to spin the room up and the snapshot to land.
+  /// It is a last resort against a hang, not a latency budget.
+  void _startCountdownWatchdog() {
+    _countdownWatchdog?.cancel();
+    _countdownWatchdog = Timer(
+      Duration(seconds: state.countdownSeconds + 7),
+      () {
+        if (state.status == MultiplayerStatus.playing) return;
+        emit(
+          state.copyWith(
+            errorCode: MultiplayerError.startTimeout,
+            isLoading: false,
+          ),
+        );
+      },
+    );
+  }
+
+  void _stopCountdownWatchdog() {
+    _countdownWatchdog?.cancel();
+    _countdownWatchdog = null;
+  }
+
+  /// Deadline expired with someone still unready: leave the room and go
+  /// back to looking for a match.
+  ///
+  /// Requeues rather than dumping the player on the menu, because from
+  /// their side nothing went wrong — they asked for a match and are still
+  /// waiting for one. The error code is what explains the jolt of the
+  /// lobby disappearing.
+  Future<void> _abandonUnreadyLobby() async {
+    final mode = state.currentGame?.mode;
+    try {
+      await leaveGame();
+    } catch (_) {
+      // Leaving is best-effort: the room is being abandoned either way,
+      // and the server drops an unready Waiting room on disconnect.
     }
-    if (game.players.length < 2) return;
-    if (!game.players.every((p) => p.status == PlayerStatus.ready)) return;
-    _autoStartArmed = false;
-    if (!isHost) return;
-    unawaited(startGame());
+
+    // Requeue BEFORE surfacing the reason. quickMatch opens with
+    // `clearError: true` — reasonably, since starting a fresh search
+    // should not inherit an old failure — so emitting the explanation
+    // first would have it wiped a frame later and the lobby would appear
+    // to vanish for no reason.
+    if (mode != null) {
+      await quickMatch(mode);
+    }
+    emit(
+      state.copyWith(
+        status: mode != null ? state.status : MultiplayerStatus.idle,
+        errorCode: MultiplayerError.readyTimeout,
+        clearGame: mode == null,
+        clearReadyDeadline: true,
+      ),
+    );
   }
 
   /// Fold an authoritative snapshot into the state. The first snapshot
@@ -840,6 +938,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// result to the screen.
   void _handleMatchEnd(MatchEndResult result) {
     _startGameTimeoutTimer?.cancel();
+    _stopCountdownWatchdog();
+    _stopReadyDeadline();
     _cancelReconnectTimeout();
     if (_matchTimer.isRunning) _matchTimer.stop();
 
@@ -968,6 +1068,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _stopMatchmakingListener();
     _stopMatchmakingTimer();
     _startGameTimeoutTimer?.cancel();
+    _stopReadyDeadline();
+    _stopCountdownWatchdog();
     _reconnectTimeoutTimer?.cancel();
     _errorSubscription?.cancel();
     _snapshotSubscription?.cancel();

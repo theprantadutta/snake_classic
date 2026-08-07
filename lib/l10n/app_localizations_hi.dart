@@ -5910,4 +5910,17 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get boardTallPlusDesc => 'और बड़ा फ़ोन-आकार का मैदान';
+
+  @override
+  String get mpErrReadyTimeout =>
+      'दोनों खिलाड़ी समय पर तैयार नहीं हुए। नया मैच खोजा जा रहा है…';
+
+  @override
+  String mpLobbyReadyDeadline(int seconds) {
+    return 'तैयारी · $secondsसे';
+  }
+
+  @override
+  String get mpLobbyWaitingOpponentReady =>
+      'आपके प्रतिद्वंद्वी के तैयार होने की प्रतीक्षा…';
 }

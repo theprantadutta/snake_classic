@@ -5914,4 +5914,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get boardTallPlusDesc => 'ساحة أكبر بشكل الهاتف';
+
+  @override
+  String get mpErrReadyTimeout =>
+      'لم يستعدّ اللاعبان في الوقت المحدد. نبحث عن مباراة جديدة…';
+
+  @override
+  String mpLobbyReadyDeadline(int seconds) {
+    return 'تأكيد الجاهزية · $secondsث';
+  }
+
+  @override
+  String get mpLobbyWaitingOpponentReady => 'بانتظار جاهزية خصمك…';
 }

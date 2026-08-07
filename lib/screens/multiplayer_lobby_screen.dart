@@ -1426,9 +1426,96 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         game.players.every((p) => p.status == PlayerStatus.ready);
     final canStartGame = isHost && allPlayersReady && game.players.length >= 2;
 
+    // Only a matchmade lobby expires — see MultiplayerState.readyDeadlineSeconds.
+    final readyDeadline = multiplayerState.isMatchmadeLobby
+        ? multiplayerState.readyDeadlineSeconds
+        : null;
+    // The state worth calling out: you have confirmed, they have not. Without
+    // it a matchmade lobby just sits there and reads as broken.
+    final waitingOnOpponent =
+        isReady && !allPlayersReady && game.players.length >= 2;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Ready-check deadline. Present only while the check is genuinely
+        // outstanding: once everyone is ready the room is committed and a
+        // ticking clock would read as a threat to a match that is about to
+        // start anyway.
+        if (readyDeadline != null && !allPlayersReady) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              // Turns amber for the last ten seconds. Colour is not the only
+              // signal — the number itself is right there.
+              color: (readyDeadline <= 10 ? Colors.amber : theme.accentColor)
+                  .withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: (readyDeadline <= 10 ? Colors.amber : theme.accentColor)
+                    .withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.timer_outlined,
+                  size: 16,
+                  color: readyDeadline <= 10 ? Colors.amber : theme.accentColor,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.mpLobbyReadyDeadline(readyDeadline),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: readyDeadline <= 10
+                        ? Colors.amber
+                        : theme.accentColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // You are ready, they are not.
+        if (waitingOnOpponent) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    l10n.mpLobbyWaitingOpponentReady,
+                    style: const TextStyle(fontSize: 13, color: Colors.green),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
         // Show Start Game button for host when all players are ready
         if (canStartGame) ...[
           GradientButton(
