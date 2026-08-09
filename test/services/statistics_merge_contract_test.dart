@@ -6,14 +6,23 @@ import 'package:snake_classic/services/sync/statistics_merge.dart';
 
 /// Drift guard between the Dart and C# statistics merge rules.
 ///
-/// The two implementations live in separate repositories, so neither can read
-/// the other's source in CI. Instead both assert against a fixture that is
-/// byte-identical in each repo. Add a counter on one side only and that side
-/// fails here; update the fixture to fix it and the other repo starts failing
-/// until it catches up.
+/// The two implementations live in separate repositories, which is what makes
+/// this awkward. There are two layers, and they catch different things:
+///
+///   * The same-repo tests below assert this repo's field lists against this
+///     repo's fixture copy. That catches editing a list and forgetting the
+///     fixture — but NOT a change made correctly here and never mirrored to
+///     the backend, because that leaves both repos internally consistent.
+///
+///   * [_crossRepoFixtureComparison] compares this repo's fixture against the
+///     backend's own copy, and is the check that actually detects drift. It
+///     only runs when both repos are checked out as siblings; it skips when
+///     the backend isn't there rather than failing, so it guards a developer
+///     machine and not an isolated build.
 ///
 /// The C# half is
-/// `tests/SnakeClassic.Application.Tests/Sync/StatisticsMergeContractTests.cs`.
+/// `tests/SnakeClassic.Application.Tests/Sync/StatisticsMergeContractTests.cs`
+/// and carries the mirror-image check.
 void main() {
   Map<String, dynamic> loadContract() {
     final file = File('test/fixtures/statistics_merge_contract.json');
@@ -65,5 +74,84 @@ void main() {
   test('contract declares a version so a stale copy is detectable', () {
     expect(loadContract()['version'], isA<int>());
     expect(loadContract()['version'], greaterThan(0));
+  });
+
+  _crossRepoFixtureComparison(loadContract);
+}
+
+/// Compare this repo's fixture with the backend repo's copy when both are
+/// checked out side by side.
+///
+/// This is the only check that can actually see drift. The same-repo tests
+/// above pass happily when someone updates a field list AND this fixture
+/// together and never touches the backend — both repos stay internally
+/// consistent while their merge rules diverge, which is precisely the natural
+/// workflow (the test fails, the fixture is right there, you fix it locally
+/// and move on).
+///
+/// Skips rather than fails when the sibling repo is absent, so this remains a
+/// developer-machine guard. If the repos ever build somewhere that has only
+/// one of them, nothing here will catch drift and the contract needs a single
+/// shared source instead.
+void _crossRepoFixtureComparison(
+  Map<String, dynamic> Function() loadLocalContract,
+) {
+  const backendRelativePath =
+      'snake-classic-backend/tests/SnakeClassic.Application.Tests/Fixtures/'
+      'statistics_merge_contract.json';
+
+  File? locateBackendFixture() {
+    // Walk up from the package root looking for a directory that contains the
+    // backend repo. Depth is bounded so a missing sibling can't turn into a
+    // walk to the filesystem root.
+    var dir = Directory.current.absolute;
+    for (var i = 0; i < 5; i++) {
+      final candidate = File('${dir.path}/$backendRelativePath');
+      if (candidate.existsSync()) return candidate;
+      final parent = dir.parent;
+      if (parent.path == dir.path) break;
+      dir = parent;
+    }
+    return null;
+  }
+
+  final backendFixture = locateBackendFixture();
+
+  test('fixture matches the backend repo copy (cross-repo drift guard)', () {
+    if (backendFixture == null) {
+      // Deliberately not a failure — see the doc comment.
+      printOnFailure('backend repo not found alongside this one');
+      markTestSkipped(
+        'Backend repo not checked out as a sibling — cross-repo drift '
+        'cannot be verified from here.',
+      );
+      return;
+    }
+
+    final local = loadLocalContract();
+    final remote =
+        jsonDecode(backendFixture.readAsStringSync()) as Map<String, dynamic>;
+
+    // Compare the MEANING, not the bytes: the two repos have different
+    // line-ending settings (git converts LF to CRLF on checkout here), so a
+    // byte comparison would fail on formatting noise and get muted.
+    expect(
+      remote['version'],
+      local['version'],
+      reason: 'Contract version differs between repos — one side is stale. '
+          'Backend copy: ${backendFixture.path}',
+    );
+    expect(
+      (remote['monotonicLongFields'] as List).cast<String>().toList()..sort(),
+      (local['monotonicLongFields'] as List).cast<String>().toList()..sort(),
+      reason: 'monotonicLongFields differs between repos — the Dart and C# '
+          'statistics merges will silently disagree.',
+    );
+    expect(
+      (remote['monotonicMapFields'] as List).cast<String>().toList()..sort(),
+      (local['monotonicMapFields'] as List).cast<String>().toList()..sort(),
+      reason: 'monotonicMapFields differs between repos — the Dart and C# '
+          'statistics merges will silently disagree.',
+    );
   });
 }
