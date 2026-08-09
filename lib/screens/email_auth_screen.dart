@@ -349,8 +349,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     final l10n = AppLocalizations.of(context)!;
 
     setState(() => _busy = true);
+    // connectAccountWithEmailPassword picks link-vs-sign-in from the actual
+    // session state instead of from how this screen was opened, and falls
+    // back to a sign-in when the address already has an account. The
+    // linkFromAnonymous flag now only drives copy and post-success routing.
     final ok = widget.linkFromAnonymous
-        ? await cubit.linkAnonymousToEmailPassword(
+        ? await cubit.connectAccountWithEmailPassword(
             email: email,
             password: password,
           )
@@ -377,7 +381,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
 
     setState(() => _busy = true);
     final ok = widget.linkFromAnonymous
-        ? await cubit.linkAnonymousToEmailPassword(
+        ? await cubit.connectAccountCreateWithEmailPassword(
             email: email,
             password: password,
           )

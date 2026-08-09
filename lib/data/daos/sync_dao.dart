@@ -93,6 +93,30 @@ class SyncDao extends DatabaseAccessor<AppDatabase> with _$SyncDaoMixin {
     await delete(syncQueue).go();
   }
 
+  /// Delete every queued row EXCEPT those whose `dataType` is in
+  /// [keepDataTypes]. Returns how many rows were removed.
+  ///
+  /// Exists for the first-sign-in restore, which has to drop stale snapshot
+  /// pointers before applying the cloud state but must NOT drop event-typed
+  /// rows — a queued score or coin-transaction row is the only record of a
+  /// finished game or a ledger entry, and there is nothing to rebuild it
+  /// from once deleted. [clearSyncQueue] is still correct for sign-out,
+  /// where the whole identity is being torn down.
+  ///
+  /// Deleting by exclusion (rather than reading rows and deleting by id)
+  /// keeps this independent of the [getPendingSyncItems] page cap — a
+  /// backlog larger than that limit is exactly when losing rows hurts most.
+  Future<int> clearSyncQueueExcept(Set<String> keepDataTypes) async {
+    if (keepDataTypes.isEmpty) {
+      final all = await getPendingSyncCount();
+      await delete(syncQueue).go();
+      return all;
+    }
+    return (delete(syncQueue)
+          ..where((t) => t.dataType.isNotIn(keepDataTypes.toList())))
+        .go();
+  }
+
   /// Get sync queue count. Uses a COUNT(*) so the result is accurate
   /// regardless of the [getPendingSyncItems] page-limit cap.
   Future<int> getPendingSyncCount() async {

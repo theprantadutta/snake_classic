@@ -114,16 +114,42 @@ class SyncEngine {
   /// first-sign-in pull runs again to restore cloud data.
   static const String _hasEverSignedInPrefsKey = 'sync_engine_has_ever_signed_in';
 
-  /// How many consecutive launches have failed to drain the outbox
-  /// before the returning-user restore. See [_runPrePullDrain].
-  static const String _prePullDrainAttemptsKey =
-      'sync_engine_prepull_drain_attempts';
+  /// Backend user id this device last synced under.
+  ///
+  /// Distinguishes the two cases that look identical at the call site but
+  /// need opposite handling of local data:
+  ///
+  ///  * SAME account (`stored == incoming`) — an anonymous account linking a
+  ///    real credential keeps its Firebase UID, so the backend row, the
+  ///    coins and the progress are all still this player's. Local may be
+  ///    legitimately ahead (an offline earn that never drained), so the
+  ///    absorbing merges apply and anything local-ahead is re-enqueued.
+  ///  * CROSS account (`stored != incoming`, including a guest with nothing
+  ///    stored) — the player is signing into a DIFFERENT account. Their
+  ///    guest-side balance was never part of it, so the cloud value wins
+  ///    outright and the guest coin rows are dropped rather than pushed.
+  ///    MAX or addition would both let unverified guest-side coins inflate
+  ///    a real account, which is farmable by reinstalling.
+  static const String _lastSyncedUserIdKey = 'sync_engine_last_synced_user_id';
 
-  /// Give the pre-pull drain this many launches to succeed before the
-  /// restore proceeds without it. Retrying forever would strand a user
-  /// whose outbox contains a permanently-rejected row on their old data
-  /// with no way to ever see their cloud save.
-  static const int _maxPrePullDrainAttempts = 3;
+  /// Outbox types whose payload is FROZEN in the row rather than re-read
+  /// from Drift at drain time. The row is the only durable record of the
+  /// thing, so clearing one destroys it outright — and because they are
+  /// additive and idempotent server-side (scores carry an idempotency key,
+  /// coin transactions and unlocked items are append-only / union), they
+  /// are safe to push at any point in the restore. Everything NOT in this
+  /// set is a snapshot pointer and must be cleared before the apply.
+  static const Set<String> _eventDataTypes = {
+    SyncDataType.score,
+    SyncDataType.coinTransaction,
+    SyncDataType.unlockedItem,
+  };
+
+  /// The coin-carrying rows a cross-account restore must drop rather than
+  /// preserve. See [_lastSyncedUserIdKey].
+  static const Set<String> _guestCoinDataTypes = {
+    SyncDataType.coinTransaction,
+  };
 
   bool _isDraining = false;
   /// Future of the currently-running [_drain] call, or null if idle.
@@ -373,7 +399,19 @@ class SyncEngine {
   /// persistence to restore) and users where the backend never
   /// returned a user id. Without this, the engine would stay asleep
   /// and these users' offline gains would never sync.
-  void markFirstSignInSkipped() {
+  ///
+  /// Pass [userId] whenever the backend DID hand us one (the anonymous case).
+  /// Recording it is what lets a later credential link on that same account
+  /// be recognised as same-account: the Firebase UID survives
+  /// `linkWithCredential`, so the backend row and its coins are still this
+  /// player's and their local state must NOT be treated as a guest's.
+  void markFirstSignInSkipped({String? userId}) {
+    if (userId != null) {
+      unawaited(
+        SharedPreferences.getInstance()
+            .then((p) => p.setString(_lastSyncedUserIdKey, userId)),
+      );
+    }
     _armDrainLoop();
   }
 
@@ -438,6 +476,9 @@ class SyncEngine {
       // (drain loop only arms in initialize when the flag was true; if
       // a prior session set the flag AFTER initialize ran, we'd land
       // here unarmed).
+      // Backfill for installs that signed in before this key existed, so a
+      // later sign-out → different-account sign-in is classified correctly.
+      await prefs.setString(_lastSyncedUserIdKey, userId);
       _armDrainLoop();
       return FirstSignInResult.alreadyDone;
     }
@@ -466,6 +507,12 @@ class SyncEngine {
         );
       }
       await prefs.setBool(_hasEverSignedInPrefsKey, true);
+      // Seal this device's local state to the account that was just created.
+      // A guest who signs up carries their progress in (nothing is cleared
+      // and nothing is pulled), and recording the id here means a LATER
+      // credential link on the same account is recognised as same-account
+      // rather than treated as a cross-account restore.
+      await prefs.setString(_lastSyncedUserIdKey, userId);
       _armDrainLoop();
       return FirstSignInResult.brandNew;
     }
@@ -482,29 +529,37 @@ class SyncEngine {
     // itself is the source of truth — if it can't reach the backend
     // it throws, and we land in the failed branch.
     //
-    // PUSH BEFORE PULL. Everything this device accumulated while it had
-    // no backend identity (the whole play-first guest period) is sitting
-    // in the outbox, and the restore below calls clearSyncQueue() before
-    // applying the snapshot — so anything still pending at that moment is
-    // deleted outright. Draining first hands that data to the backend's
-    // per-field absorbing merges (SyncStatisticsCommandHandler et al.),
-    // which fold it into the server state; the snapshot we then pull back
-    // already contains it. Without this the guest period is lost from
-    // BOTH sides for any section whose apply is cloud-wins.
-    if (!await _runPrePullDrain(prefs)) {
-      AppLogger.warning(
-        'SyncEngine: pre-pull drain did not clear the outbox — deferring '
-        'restore to the next launch so local data is not overwritten',
+    // NOTHING IS PUSHED BEFORE THE PULL.
+    //
+    // An earlier version drained the outbox first, on the theory that the
+    // backend would absorb it. That is only true of statistics. Most sync
+    // handlers are deliberately last-write-wins — SyncCoinBalanceCommandHandler
+    // assigns `existing.Balance = payload.Balance` AND `user.Coins =
+    // payload.Balance` outright — so pushing a guest device's snapshot into an
+    // established account overwrites the server with the smaller local number,
+    // and the pull then faithfully returns it. A guest with 50 coins signing
+    // into a 500-coin account destroyed 450 of them, server-side, permanently.
+    //
+    // Snapshot-typed outbox rows (settings, coin_balance, statistics, …) are
+    // pointers: the drain re-reads Drift at send time, so pushing one asserts
+    // "my entire state is authoritative". That claim is only safe AFTER the
+    // merge, which is why the queue clearing below is selective and the apply
+    // re-enqueues whatever local legitimately won.
+    final isCrossAccount = prefs.getString(_lastSyncedUserIdKey) != userId;
+    if (isCrossAccount) {
+      AppLogger.network(
+        'SyncEngine: cross-account restore (last synced under '
+        '${prefs.getString(_lastSyncedUserIdKey) ?? "no account"}, now $userId) '
+        '— the cloud balance wins and guest coin rows are dropped',
       );
-      // Leave _hasEverSignedInPrefsKey unset so the whole flow retries on
-      // the next launch, and arm the drain so the rest of this session can
-      // still ship data normally.
-      _armDrainLoop();
-      return FirstSignInResult.pullFailed;
     }
 
     while (true) {
-      final attempt = await _runReturningUserPullAttempt(prefs, userId);
+      final attempt = await _runReturningUserPullAttempt(
+        prefs,
+        userId,
+        isCrossAccount: isCrossAccount,
+      );
       if (attempt != FirstSignInResult.pullFailed) {
         _armDrainLoop();
         return attempt;
@@ -524,72 +579,6 @@ class SyncEngine {
     }
   }
 
-  /// Ship every pending outbox row to the backend before the cloud
-  /// snapshot is allowed to overwrite local Drift.
-  ///
-  /// Returns true when it is safe to proceed with the restore — either
-  /// the outbox is empty (nothing to lose) or the attempt budget is
-  /// spent. Returns false to defer the restore to the next launch.
-  ///
-  /// The budget matters: a row the backend permanently rejects (a
-  /// validation change, a payload from a much older client) would
-  /// otherwise block the restore forever, leaving the user staring at
-  /// local-only data with their cloud save permanently out of reach.
-  /// After [_maxPrePullDrainAttempts] launches we proceed anyway and let
-  /// the per-section merges in [_applyCloudSnapshot] carry the load —
-  /// they are absorbing (MAX / OR) for every section that owns
-  /// user-earned progress, so proceeding degrades gracefully rather
-  /// than silently discarding.
-  Future<bool> _runPrePullDrain(SharedPreferences prefs) async {
-    if (_syncDao == null) return true;
-
-    final attempts = prefs.getInt(_prePullDrainAttemptsKey) ?? 0;
-    if (attempts >= _maxPrePullDrainAttempts) {
-      AppLogger.warning(
-        'SyncEngine: pre-pull drain budget exhausted after $attempts '
-        'attempts — proceeding with restore and relying on the '
-        'per-section merges',
-      );
-      await prefs.remove(_prePullDrainAttemptsKey);
-      return true;
-    }
-
-    if (await _pendingOwnedCount() == 0) {
-      await prefs.remove(_prePullDrainAttemptsKey);
-      return true;
-    }
-
-    AppLogger.network('SyncEngine: pre-pull drain — pushing local state up');
-    try {
-      await _drain(ignoreConnectivity: true);
-    } catch (e) {
-      AppLogger.error('SyncEngine: pre-pull drain threw', e);
-    }
-
-    final remaining = await _pendingOwnedCount();
-    if (remaining == 0) {
-      await prefs.remove(_prePullDrainAttemptsKey);
-      AppLogger.success('SyncEngine: pre-pull drain cleared the outbox');
-      return true;
-    }
-
-    final next = attempts + 1;
-    await prefs.setInt(_prePullDrainAttemptsKey, next);
-    AppLogger.warning(
-      'SyncEngine: pre-pull drain left $remaining row(s) pending '
-      '(attempt $next/$_maxPrePullDrainAttempts)',
-    );
-    return false;
-  }
-
-  /// Number of outbox rows this engine owns (the legacy DataSyncService
-  /// still owns `preferences` / `fcm_token_register`, and those must not
-  /// hold the restore hostage).
-  Future<int> _pendingOwnedCount() async {
-    final items = await _syncDao!.getPendingSyncItems();
-    return items.where(_isOwned).length;
-  }
-
   /// One attempt at the returning-user pull + apply. Returns
   /// [FirstSignInResult.restored] on success or
   /// [FirstSignInResult.pullFailed] on any failure (HTTP throw, null
@@ -598,8 +587,9 @@ class SyncEngine {
   /// the user-action wait.
   Future<FirstSignInResult> _runReturningUserPullAttempt(
     SharedPreferences prefs,
-    String userId,
-  ) async {
+    String userId, {
+    required bool isCrossAccount,
+  }) async {
     // Track the pulling-state start time so we can hold the modal
     // visible for a minimum duration (the actual HTTP call often
     // completes faster than the user's eye can register).
@@ -654,16 +644,36 @@ class SyncEngine {
     // offline-first build.
     _emitFirstSignInState(FirstSignInState.applying);
     try {
-      // Clear the queue FIRST. Any outbox rows that cubits enqueued
-      // during boot (settings writes, etc.) get wiped before apply so
-      // the cloud snapshot is the only thing writing to Drift. The
-      // snapshot apply below RE-ENQUEUES any fields where local is
-      // ahead of cloud (max-merge), so local-ahead deltas still ship
-      // up after the drain arms. If we cleared AFTER the apply, those
-      // re-enqueues would be wiped instantly.
-      await _syncDao!.clearSyncQueue();
-      await _applyCloudSnapshot(snapshot);
+      // Clear SNAPSHOT-typed rows first, and only those.
+      //
+      // A snapshot row is a pointer — the drain re-reads Drift at send time —
+      // so leaving one queued across the apply would push the pre-merge state
+      // back up. They have to go before the apply writes, and the apply
+      // re-enqueues whichever sections local legitimately won.
+      //
+      // EVENT-typed rows (scores, coin transactions, unlocked items) are the
+      // opposite: the payload is frozen in the row and the row IS the durable
+      // record, so clearing one destroys a finished game or a ledger entry
+      // with nothing left to reconstruct it from. Those used to be wiped here
+      // along with everything else. They are now preserved and drain normally
+      // afterwards — additively and idempotently, which is safe at any point.
+      //
+      // The exception is a cross-account restore, where the guest device's
+      // coin rows are not merely stale but MISATTRIBUTED: they belong to a
+      // throwaway identity, not to the account being restored. Pushing them
+      // would let unverified guest-side coins inflate a real account, which
+      // is farmable by reinstalling. Those are dropped deliberately.
+      final preserved = isCrossAccount
+          ? _eventDataTypes.difference(_guestCoinDataTypes)
+          : _eventDataTypes;
+      final dropped = await _syncDao!.clearSyncQueueExcept(preserved);
+      AppLogger.network(
+        'SyncEngine: cleared $dropped outbox row(s) before apply; '
+        'preserved ${preserved.join(", ")}',
+      );
+      await _applyCloudSnapshot(snapshot, isCrossAccount: isCrossAccount);
       await prefs.setBool(_hasEverSignedInPrefsKey, true);
+      await prefs.setString(_lastSyncedUserIdKey, userId);
       await _ensureMinModalTime(pullingStart);
       _emitFirstSignInState(FirstSignInState.restored);
       AppLogger.network(
@@ -722,14 +732,7 @@ class SyncEngine {
     );
   }
 
-  /// [ignoreConnectivity] skips the `isOnline` pre-flight. Used by the
-  /// pre-pull drain for the same reason the pull itself dropped its
-  /// online check: on some Android configs (LAN-only dev backends,
-  /// captive WiFi, VPN routing) connectivity reports offline while HTTP
-  /// works fine, and a spurious "offline" there would burn a retry
-  /// attempt and delay the user's restore for no reason. The HTTP call
-  /// is the source of truth.
-  Future<void> _drain({bool ignoreConnectivity = false}) async {
+  Future<void> _drain() async {
     if (_isDraining) {
       // Coalesce concurrent calls onto the in-flight future so the
       // caller still gets a meaningful completion signal (used by the
@@ -740,7 +743,7 @@ class SyncEngine {
     }
     if (_db == null || _syncDao == null) return;
     if (!_api.isAuthenticated) return;
-    if (!ignoreConnectivity && !_connectivity.isOnline) return;
+    if (!_connectivity.isOnline) return;
 
     _isDraining = true;
     final completer = Completer<void>();
@@ -1238,7 +1241,10 @@ class SyncEngine {
   /// Section keys mirror the backend SyncSnapshotDto record. Any
   /// missing / null section is skipped (the user has no cloud data
   /// of that kind yet).
-  Future<void> _applyCloudSnapshot(Map<String, dynamic> snapshot) async {
+  Future<void> _applyCloudSnapshot(
+    Map<String, dynamic> snapshot, {
+    required bool isCrossAccount,
+  }) async {
     if (_db == null) return;
 
     await _db!.transaction(() async {
@@ -1368,7 +1374,24 @@ class SyncEngine {
         final cloudBalance = balance['balance'] as int? ?? 0;
         final localRow = await _storeDao!.getCoinBalanceRow();
         final localBalance = localRow?.balance ?? 0;
-        if (cloudBalance >= localBalance) {
+
+        // Cross-account: the cloud balance wins outright, however far ahead
+        // local is. The local number belongs to the guest/anonymous identity
+        // this device was using, not to the account being restored, so MAX
+        // (or addition) would import unverified coins into a real account —
+        // farmable by playing as a guest, signing in, and reinstalling.
+        // Same-account restores fall through to the max-merge below, where a
+        // higher local value is a genuine offline earn worth keeping.
+        if (isCrossAccount) {
+          AppLogger.network(
+            'SyncEngine: cross-account coin restore — adopting cloud '
+            '($cloudBalance) and discarding this device\'s $localBalance',
+          );
+          await _storeDao!.applyCoinBalanceSnapshot(
+            balance: cloudBalance,
+            updatedAt: _parseDate(balance['updated_at']),
+          );
+        } else if (cloudBalance >= localBalance) {
           await _storeDao!.applyCoinBalanceSnapshot(
             balance: cloudBalance,
             updatedAt: _parseDate(balance['updated_at']),

@@ -518,7 +518,14 @@ class UnifiedUserService extends ChangeNotifier {
               // loop armed so any local-side syncable state (a +50
               // starting bonus enqueued during cubit init, settings
               // changes, etc.) ships to the backend.
-              GetIt.I<SyncEngine>().markFirstSignInSkipped();
+              //
+              // The backend id is recorded so that when this anonymous
+              // account later LINKS a real credential — same Firebase UID,
+              // same backend row — the restore recognises it as the same
+              // account and keeps the local balance, instead of treating
+              // this device as a guest and adopting the cloud value.
+              GetIt.I<SyncEngine>()
+                  .markFirstSignInSkipped(userId: backendUserId);
             } else if (backendUserId == null) {
               AppLogger.warning(
                 'Skipping first-sign-in pull — backend never returned '
@@ -1460,6 +1467,11 @@ class UnifiedUserService extends ChangeNotifier {
     // the welcoming / restore flow.
     if (_prefs != null) {
       await _prefs!.remove('sync_engine_has_ever_signed_in');
+      // Also forget WHICH account we last synced under. Leaving it behind
+      // would make the next sign-in to a different account look like a
+      // same-account restore, and a same-account restore keeps local data
+      // that now belongs to nobody.
+      await _prefs!.remove('sync_engine_last_synced_user_id');
     }
   }
 

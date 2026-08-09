@@ -456,7 +456,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get accountNotBackedUpBody =>
-      'تقدّمك محفوظ على هذا الجهاز فقط. سجّل الدخول ليبقى محفوظًا عند إعادة التثبيت أو تغيير الهاتف.';
+      'هذا التقدّم مرتبط بهذا التثبيت. سجّل الدخول لتتمكّن من استعادته بعد إعادة التثبيت أو على هاتف جديد.';
 
   @override
   String get settingsChangeUsername => 'تغيير اسم المستخدم';

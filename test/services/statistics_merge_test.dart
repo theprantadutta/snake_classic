@@ -174,8 +174,32 @@ void main() {
       expect(result.localAhead, isTrue);
     });
 
-    test('unparseable input degrades instead of throwing', () {
+    test('a corrupt CLOUD blob never replaces valid local statistics', () {
+      // The dangerous direction: local holds games that were never pushed, so
+      // adopting a corrupt snapshot would destroy the only good copy.
+      final result = mergeStatisticsJson(
+        jsonEncode({'totalGamesPlayed': 120, 'highScore': 800}),
+        'not json',
+      );
+
+      expect(result.parseFailed, isTrue);
+      final merged = jsonDecode(result.json) as Map<String, dynamic>;
+      expect(merged['totalGamesPlayed'], 120);
+      expect(merged['highScore'], 800);
+      // Flagged for push so the bad server document gets overwritten.
+      expect(result.localAhead, isTrue);
+    });
+
+    test('a corrupt LOCAL blob falls back to the cloud snapshot', () {
       final result = mergeStatisticsJson('not json', '{"highScore": 3}');
+
+      expect(result.parseFailed, isTrue);
+      expect(jsonDecode(result.json)['highScore'], 3);
+      expect(result.localAhead, isFalse);
+    });
+
+    test('both sides corrupt still returns decodable JSON', () {
+      final result = mergeStatisticsJson('not json', 'also not json');
 
       expect(result.parseFailed, isTrue);
       expect(() => jsonDecode(result.json), returnsNormally);

@@ -467,7 +467,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get accountNotBackedUpBody =>
-      'Ta progression n\'est enregistrée que sur cet appareil. Connecte-toi pour la conserver en cas de réinstallation ou de changement de téléphone.';
+      'Cette progression est liée à cette installation. Connecte-toi pour la récupérer après une réinstallation ou sur un nouveau téléphone.';
 
   @override
   String get settingsChangeUsername => 'CHANGER DE NOM D\'UTILISATEUR';

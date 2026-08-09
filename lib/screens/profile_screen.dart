@@ -328,8 +328,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
+                    // hasNoCredential, not isAnonymous — otherwise a purely
+                    // offline guest (the default identity under play-first,
+                    // and the one with the least recoverable data) got the
+                    // green "Verified Account" badge.
                     gradient: LinearGradient(
-                      colors: authState.isAnonymous
+                      colors: authState.hasNoCredential
                           ? [Colors.orange, Colors.deepOrange]
                           : [Colors.green, Colors.teal],
                     ),
@@ -337,7 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     boxShadow: [
                       BoxShadow(
                         color:
-                            (authState.isAnonymous
+                            (authState.hasNoCredential
                                     ? Colors.orange
                                     : Colors.green)
                                 .withValues(alpha: 0.3),
@@ -350,7 +354,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        authState.isAnonymous
+                        authState.hasNoCredential
                             ? Icons.person
                             : Icons.verified_user,
                         color: Colors.white,
@@ -358,7 +362,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        authState.isAnonymous
+                        authState.hasNoCredential
                             ? l10n.pfGuestPlayer
                             : l10n.pfVerifiedAccount,
                         style: const TextStyle(

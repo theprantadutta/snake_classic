@@ -41,8 +41,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Map<String, dynamic> get _displayStats => _appCache.statistics ?? {};
   Map<String, dynamic> get _performanceTrends => _appCache.performanceTrends ?? {};
   Map<String, dynamic> get _playPatterns => _appCache.playPatterns ?? {};
-  // Data is already loaded - no loading state needed
-  bool get _isLoading => !_appCache.isFullyLoaded;
+  // Local-group readiness only. Every stat on this screen comes from Drift;
+  // isFullyLoaded additionally requires the network group, which a first-run
+  // preload skips, so gating on it left this screen spinning for the whole
+  // session on data it already had.
+  bool get _isLoading => !_appCache.isLocalDataLoaded;
 
   @override
   Widget build(BuildContext context) {

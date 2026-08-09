@@ -949,7 +949,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountNotBackedUpBody.
   ///
   /// In en, this message translates to:
-  /// **'Your progress is saved on this device only. Sign in so it survives a reinstall or a new phone.'**
+  /// **'This progress is tied to this install. Sign in so you can get it back after reinstalling or on a new phone.'**
   String get accountNotBackedUpBody;
 
   /// No description provided for @settingsChangeUsername.

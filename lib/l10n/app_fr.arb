@@ -139,7 +139,7 @@
   "settingsGuestAccount": "Compte invité",
   "settingsAuthenticatedAccount": "Compte authentifié",
   "accountNotBackedUpTitle": "Aucune sauvegarde",
-  "accountNotBackedUpBody": "Ta progression n'est enregistrée que sur cet appareil. Connecte-toi pour la conserver en cas de réinstallation ou de changement de téléphone.",
+  "accountNotBackedUpBody": "Cette progression est liée à cette installation. Connecte-toi pour la récupérer après une réinstallation ou sur un nouveau téléphone.",
   "settingsChangeUsername": "CHANGER DE NOM D'UTILISATEUR",
   "settingsGuestSignInHint": "Connectez-vous pour garder votre progression et jouer avec des amis",
   "settingsUsernameVisibleHint": "Votre nom d'utilisateur est visible par vos amis et dans les classements",

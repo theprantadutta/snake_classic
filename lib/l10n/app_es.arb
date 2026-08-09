@@ -139,7 +139,7 @@
   "settingsGuestAccount": "Cuenta de invitado",
   "settingsAuthenticatedAccount": "Cuenta autenticada",
   "accountNotBackedUpTitle": "Sin copia de seguridad",
-  "accountNotBackedUpBody": "Tu progreso solo está guardado en este dispositivo. Inicia sesión para conservarlo si reinstalas la app o cambias de teléfono.",
+  "accountNotBackedUpBody": "Este progreso está ligado a esta instalación. Inicia sesión para recuperarlo tras reinstalar o en un teléfono nuevo.",
   "settingsChangeUsername": "CAMBIAR NOMBRE DE USUARIO",
   "settingsGuestSignInHint": "Inicia sesión para conservar tu progreso y jugar con amigos",
   "settingsUsernameVisibleHint": "Tu nombre de usuario es visible para amigos y en las clasificaciones",

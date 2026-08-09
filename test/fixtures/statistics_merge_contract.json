@@ -1,0 +1,50 @@
+{
+  "_comment": [
+    "Shared merge contract for the GameStatistics model JSON.",
+    "",
+    "This file is BYTE-IDENTICAL to the copy in the backend repository at",
+    "tests/SnakeClassic.Application.Tests/Fixtures/statistics_merge_contract.json.",
+    "Each side asserts its own field lists against its own copy, so adding a",
+    "counter on one side and forgetting the other turns into a failing test",
+    "instead of a silent data-loss bug: the repo you edited fails until you",
+    "update its fixture, and updating the fixture fails the OTHER repo until",
+    "it catches up.",
+    "",
+    "The two repos are checked out independently, so a cross-repo file read",
+    "would be unreliable in CI — duplicating the fixture is what makes the",
+    "drift detectable from either side alone.",
+    "",
+    "Dart:  lib/services/sync/statistics_merge.dart",
+    "C#:    Features/Sync/Commands/SyncStatistics/SyncStatisticsCommandHandler.cs"
+  ],
+  "version": 2,
+  "monotonicLongFields": [
+    "totalGamesPlayed",
+    "totalScore",
+    "highScore",
+    "totalGameTime",
+    "totalFoodConsumed",
+    "totalFoodPoints",
+    "totalPowerUpsCollected",
+    "totalPowerUpTime",
+    "longestSurvivalTime",
+    "highestLevel",
+    "totalLevelsGained",
+    "gamesSurvived30s",
+    "wallCollisions",
+    "selfCollisions",
+    "totalCollisions",
+    "longestWinStreak",
+    "gamesWithoutWallHit",
+    "perfectGames",
+    "totalSessions",
+    "achievementsUnlocked",
+    "totalAchievements"
+  ],
+  "monotonicMapFields": [
+    "foodTypeCount",
+    "powerUpTypeCount",
+    "dailyPlayTime",
+    "gameModeCount"
+  ]
+}

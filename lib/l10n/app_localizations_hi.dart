@@ -461,7 +461,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountNotBackedUpBody =>
-      'आपकी प्रगति केवल इसी डिवाइस पर सेव है। साइन इन करें ताकि ऐप दोबारा इंस्टॉल करने या नया फ़ोन लेने पर भी यह बनी रहे।';
+      'यह प्रगति इसी इंस्टॉल से जुड़ी है। साइन इन करें ताकि ऐप दोबारा इंस्टॉल करने या नया फ़ोन लेने पर इसे वापस पा सकें।';
 
   @override
   String get settingsChangeUsername => 'उपयोगकर्ता नाम बदलें';

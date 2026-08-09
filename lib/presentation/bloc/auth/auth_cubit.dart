@@ -438,6 +438,93 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Email counterpart to [connectAccountWithGoogle], for signing in to an
+  /// account that may or may not already exist.
+  ///
+  /// The upgrade sheet always routed email through the link-only path, which
+  /// broke both ends of the guest population: an offline guest has no Firebase
+  /// anonymous user to link ONTO, and an anonymous user entering the
+  /// credentials of an email account they already own got
+  /// `credential-already-in-use` with no way forward. Google and Apple both
+  /// picked the right mechanism automatically; email did not.
+  Future<bool> connectAccountWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    if (!_userService.canLinkCredential) {
+      return signInWithEmailPassword(email: email, password: password);
+    }
+
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.linkAnonymousToEmailPassword(
+        email: email,
+        password: password,
+      );
+      if (ok) {
+        _analytics.setUserProperties(authMethod: 'email');
+        emit(state.copyWith(user: _userService.currentUser, isLoading: false));
+        return true;
+      }
+      emit(state.copyWith(isLoading: false, errorMessage: 'link failed'));
+      return false;
+    } on FirebaseAuthException catch (e) {
+      if (_credentialOwnedElsewhere.contains(e.code)) {
+        AppLogger.info(
+          'Email link rejected (${e.code}) — that account already exists; '
+          'falling back to a plain sign-in',
+        );
+        return signInWithEmailPassword(email: email, password: password);
+      }
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
+  /// Create-account counterpart to [connectAccountWithEmailPassword]. Links
+  /// the new credential onto an anonymous UID when there is one to preserve,
+  /// and creates a standalone account otherwise.
+  Future<bool> connectAccountCreateWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    if (!_userService.canLinkCredential) {
+      return createAccountWithEmailPassword(email: email, password: password);
+    }
+
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.linkAnonymousToEmailPassword(
+        email: email,
+        password: password,
+      );
+      if (ok) {
+        _analytics.setUserProperties(authMethod: 'email');
+        emit(state.copyWith(user: _userService.currentUser, isLoading: false));
+        return true;
+      }
+      emit(state.copyWith(isLoading: false, errorMessage: 'link failed'));
+      return false;
+    } on FirebaseAuthException catch (e) {
+      // Creating with an address that already has an account is a sign-in in
+      // disguise; anything else stays an error the form should show.
+      if (_credentialOwnedElsewhere.contains(e.code)) {
+        AppLogger.info(
+          'Email create-and-link rejected (${e.code}) — signing in instead',
+        );
+        return signInWithEmailPassword(email: email, password: password);
+      }
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
+
   /// Apple counterpart to [connectAccountWithGoogle].
   Future<bool> connectAccountWithApple() async {
     if (!_userService.canLinkCredential) return signInWithApple();

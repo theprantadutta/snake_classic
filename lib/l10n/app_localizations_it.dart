@@ -467,7 +467,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get accountNotBackedUpBody =>
-      'I tuoi progressi sono salvati solo su questo dispositivo. Accedi per conservarli in caso di reinstallazione o di un nuovo telefono.';
+      'Questi progressi sono legati a questa installazione. Accedi per recuperarli dopo una reinstallazione o su un nuovo telefono.';
 
   @override
   String get settingsChangeUsername => 'CAMBIA NOME UTENTE';

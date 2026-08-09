@@ -139,7 +139,7 @@
   "settingsGuestAccount": "अतिथि खाता",
   "settingsAuthenticatedAccount": "प्रमाणित खाता",
   "accountNotBackedUpTitle": "बैकअप नहीं है",
-  "accountNotBackedUpBody": "आपकी प्रगति केवल इसी डिवाइस पर सेव है। साइन इन करें ताकि ऐप दोबारा इंस्टॉल करने या नया फ़ोन लेने पर भी यह बनी रहे।",
+  "accountNotBackedUpBody": "यह प्रगति इसी इंस्टॉल से जुड़ी है। साइन इन करें ताकि ऐप दोबारा इंस्टॉल करने या नया फ़ोन लेने पर इसे वापस पा सकें।",
   "settingsChangeUsername": "उपयोगकर्ता नाम बदलें",
   "settingsGuestSignInHint": "अपनी प्रगति सहेजने और दोस्तों के साथ खेलने के लिए साइन इन करें",
   "settingsUsernameVisibleHint": "आपका उपयोगकर्ता नाम दोस्तों और लीडरबोर्ड पर दिखता है",

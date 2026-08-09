@@ -72,30 +72,47 @@ const List<String> kStatsMonotonicMapFields = [
   'foodTypeCount',
   'powerUpTypeCount',
   'dailyPlayTime',
+  // Lifetime games finished per GameMode. It is serialised in the model JSON
+  // (GameStatistics.gameModeCount) and feeds the per-mode achievement
+  // evaluators, but was missing from BOTH merge lists — so two devices
+  // playing different modes overwrote each other's counts and the
+  // mode_explorer / all_mode_player achievements could un-earn themselves.
+  'gameModeCount',
 ];
 
 /// Fold [cloudJson] into [localJson]. Local wins ties, matching the
 /// backend's "client wins" rule for non-monotonic and derived fields.
 StatisticsMergeResult mergeStatisticsJson(String localJson, String cloudJson) {
-  Map<String, dynamic>? local;
-  Map<String, dynamic>? cloud;
-  try {
-    local = _decodeObject(localJson);
-    cloud = _decodeObject(cloudJson);
-  } catch (_) {
-    // Can't reason about either side. Prefer the cloud copy — it is at
-    // least internally consistent — and flag nothing for re-push.
+  // Parse each side INDEPENDENTLY so one corrupt document can't discard the
+  // other. Keep whichever side is still usable, and prefer local when the
+  // CLOUD is the broken one: local holds the games that haven't been pushed
+  // yet, so replacing it with a corrupt snapshot destroys the only good copy,
+  // whereas keeping it is recoverable — the next drain overwrites the bad
+  // server document. The backend applies the mirror-image rule.
+  final local = _tryDecodeObject(localJson);
+  final cloud = _tryDecodeObject(cloudJson);
+
+  if (local == null && cloud == null) {
+    // Nothing usable on either side. Hand back an empty document rather than
+    // propagating a string that throws on the next decode — the caller writes
+    // this straight into Drift.
+    return const StatisticsMergeResult(
+      json: '{}',
+      localAhead: false,
+      parseFailed: true,
+    );
+  }
+  if (local == null) {
     return StatisticsMergeResult(
       json: cloudJson,
       localAhead: false,
       parseFailed: true,
     );
   }
-
-  if (local == null || cloud == null) {
+  if (cloud == null) {
     return StatisticsMergeResult(
-      json: local == null ? cloudJson : localJson,
-      localAhead: local != null,
+      json: localJson,
+      localAhead: true,
       parseFailed: true,
     );
   }
@@ -231,10 +248,17 @@ void recomputeDerivedStats(Map<String, dynamic> obj) {
       totalSessions > 0 ? (totalGames / totalSessions).round() : totalGames;
 }
 
-Map<String, dynamic>? _decodeObject(String json) {
+/// Decode a statistics document, returning null for anything unusable —
+/// malformed JSON, or valid JSON that isn't an object. Never throws, so the
+/// caller can decide per-side which document to keep.
+Map<String, dynamic>? _tryDecodeObject(String json) {
   if (json.trim().isEmpty) return <String, dynamic>{};
-  final decoded = jsonDecode(json);
-  return decoded is Map<String, dynamic> ? decoded : null;
+  try {
+    final decoded = jsonDecode(json);
+    return decoded is Map<String, dynamic> ? decoded : null;
+  } on FormatException {
+    return null;
+  }
 }
 
 /// Tolerant numeric read — the model JSON has been written by several

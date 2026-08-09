@@ -463,7 +463,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get accountNotBackedUpBody =>
-      'Ваш прогресс сохранён только на этом устройстве. Войдите, чтобы он не пропал при переустановке или смене телефона.';
+      'Этот прогресс привязан к текущей установке. Войдите, чтобы вернуть его после переустановки или на новом телефоне.';
 
   @override
   String get settingsChangeUsername => 'СМЕНИТЬ ИМЯ';
