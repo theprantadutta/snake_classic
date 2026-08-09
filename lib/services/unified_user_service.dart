@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/auth/cached_user_session.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
@@ -200,6 +201,12 @@ class UnifiedUserService extends ChangeNotifier {
 
   SharedPreferences? _prefs;
   UnifiedUser? _currentUser;
+
+  /// Firebase UID that [_currentUser] was loaded for, or null when the current
+  /// identity is a pure local guest. Tracked separately because
+  /// `UnifiedUser.uid` is the BACKEND account GUID for any backend-loaded
+  /// profile — see [CachedUserSession].
+  String? _currentFirebaseUid;
   StreamSubscription<User?>? _authSubscription;
   bool _isInitialized = false;
   bool _isLoadingUser = false; // Prevents concurrent user loading
@@ -322,16 +329,22 @@ class UnifiedUserService extends ChangeNotifier {
         // eager anonymous sign-in outright, which stopped being true once the
         // push path landed and left the next reader with the wrong model of
         // how identity actually works here.
-        final cachedUser = await _loadCachedUserSession();
+        final cached = await _restoreOwnedCachedUser(
+          null,
+          reason: 'no Firebase auth',
+        );
+        final cachedUser = cached.user;
         if (cachedUser != null) {
           AppLogger.user('Using cached user session (no Firebase auth)');
           _currentUser = cachedUser;
+          _currentFirebaseUid = null;
           _isInitialized = true; // Mark initialized with cached user
           notifyListeners();
         } else {
           AppLogger.user('No cache found, creating offline guest user immediately');
           _currentUser = await _createOfflineGuestUser();
-          await _cacheUserSession(_currentUser!);
+          _currentFirebaseUid = null;
+          await _cacheUserSession(_currentUser!, firebaseUid: null);
           _isInitialized = true; // Mark initialized with offline guest
           notifyListeners();
         }
@@ -350,7 +363,10 @@ class UnifiedUserService extends ChangeNotifier {
 
       // Last resort: try cached user
       try {
-        final cachedUser = await _loadCachedUserSession();
+        final cachedUser = (await _restoreOwnedCachedUser(
+          _auth.currentUser,
+          reason: 'initialization failed',
+        )).user;
         if (cachedUser != null) {
           _currentUser = cachedUser;
           _isInitialized = true;
@@ -373,8 +389,13 @@ class UnifiedUserService extends ChangeNotifier {
         );
         return;
       }
-      // Skip if this user is already loaded or currently being loaded
-      if (_currentUser != null && _currentUser!.uid == firebaseUser.uid) {
+      // Skip if this user is already loaded or currently being loaded.
+      //
+      // Compare against the Firebase UID we recorded for the loaded session,
+      // NOT against `_currentUser.uid` — that field holds the backend account
+      // GUID for any profile that came from `/auth/me`, so the old check
+      // almost never matched and this dedup silently did nothing.
+      if (_currentUser != null && _currentFirebaseUid == firebaseUser.uid) {
         return;
       }
       if (_isLoadingUser && _loadingUserId == firebaseUser.uid) {
@@ -386,6 +407,8 @@ class UnifiedUserService extends ChangeNotifier {
       await _loadOrCreateUser(firebaseUser);
     } else {
       _currentUser = null;
+      _currentFirebaseUid = null;
+      _currentUserIsUnverifiedRebuild = false;
       notifyListeners();
     }
   }
@@ -452,8 +475,17 @@ class UnifiedUserService extends ChangeNotifier {
               UnifiedUser.fromJson(userProfile),
               firebaseUser,
             );
-            // Cache the session for offline use
-            await _cacheUserSession(_currentUser!);
+            _currentFirebaseUid = firebaseUser.uid;
+            _currentUserIsUnverifiedRebuild = false;
+            // Cache the session for offline use. This write is also the
+            // migration: whatever format the cache was in before, it is now a
+            // v2 envelope carrying both identifiers, so every later offline
+            // launch can attribute it without guessing.
+            await _cacheUserSession(
+              _currentUser!,
+              firebaseUid: firebaseUser.uid,
+              backendUserId: _apiService.currentUserId,
+            );
             AppLogger.success(
               'User loaded from backend: ${_currentUser?.username}',
             );
@@ -505,7 +537,11 @@ class UnifiedUserService extends ChangeNotifier {
                       UnifiedUser.fromJson(refreshed),
                       firebaseUser,
                     );
-                    await _cacheUserSession(_currentUser!);
+                    await _cacheUserSession(
+                      _currentUser!,
+                      firebaseUid: firebaseUser.uid,
+                      backendUserId: _apiService.currentUserId,
+                    );
                   }
                 }
               } catch (e) {
@@ -566,17 +602,10 @@ class UnifiedUserService extends ChangeNotifier {
         }
       } else {
         // Offline path - try to load cached session
-        final cachedUser = await _loadCachedUserSession();
-        if (cachedUser != null && cachedUser.uid == firebaseUser.uid) {
-          _currentUser = cachedUser;
-          AppLogger.success(
-            'Restored user from cache (offline): ${_currentUser?.username}',
-          );
-        } else {
-          // No matching cache, create minimal local user
-          _currentUser = await _createUserFromFirebase(firebaseUser);
-          await _cacheUserSession(_currentUser!);
-        }
+        await _restoreFromCacheOrCreate(
+          firebaseUser,
+          reason: 'no Firebase ID token (offline)',
+        );
       }
 
       notifyListeners();
@@ -586,10 +615,16 @@ class UnifiedUserService extends ChangeNotifier {
     } catch (e, stackTrace) {
       AppLogger.user('Error loading/creating user', e, stackTrace);
 
-      // Fallback: try to restore from cache
-      final cachedUser = await _loadCachedUserSession();
+      // Fallback: try to restore from cache — but only a cache this account
+      // actually owns. Handing the previous account's profile to whoever hit
+      // an error is exactly the confusion the envelope exists to prevent.
+      final cachedUser = (await _restoreOwnedCachedUser(
+        firebaseUser,
+        reason: 'load threw',
+      )).user;
       if (cachedUser != null) {
         _currentUser = cachedUser;
+        _currentFirebaseUid = firebaseUser.uid;
         AppLogger.warning('Restored user from cache after error');
         notifyListeners();
       }
@@ -601,29 +636,47 @@ class UnifiedUserService extends ChangeNotifier {
     }
   }
 
-  /// Backend-unreachable fallback inside the "online" branch of
-  /// _loadOrCreateUser. Prefers a matching cached UnifiedUser (preserves
-  /// highScore, gamesPlayed, level, etc. from the last good fetch) over a
-  /// blank rebuild via _createUserFromFirebase (which seeds from stale
-  /// guest_user_data and clobbers the cache). Falls through to the rebuild
-  /// only when there's no usable cache.
+  /// Backend-unreachable fallback. Prefers a cached UnifiedUser this account
+  /// owns (preserving highScore, gamesPlayed, level, etc. from the last good
+  /// fetch) over a blank rebuild via _createUserFromFirebase, which seeds from
+  /// the long-dead `guest_user_data` key and would otherwise clobber the
+  /// cache. Falls through to the rebuild only when there's no usable cache.
+  ///
+  /// Ownership is decided by [decideCacheRestore] — see [CachedUserSession]
+  /// for why comparing `UnifiedUser.uid` to the Firebase UID never worked.
   Future<void> _restoreFromCacheOrCreate(
     User firebaseUser, {
     required String reason,
   }) async {
-    final cachedUser = await _loadCachedUserSession();
-    if (cachedUser != null && cachedUser.uid == firebaseUser.uid) {
-      // Reconciled too: the cache stores whatever type was resolved last
-      // time, so a session cached while the backend was misreporting would
-      // keep reporting it.
-      _currentUser = _withLocalCredentialTruth(cachedUser, firebaseUser);
-      AppLogger.user(
-        'Restored cached user (reason: $reason): highScore=${_currentUser?.highScore}',
+    // Reconciled through _withLocalCredentialTruth inside the helper: the
+    // cache stores whatever type was resolved last time, so a session cached
+    // while the backend was misreporting would keep reporting it.
+    final cached = await _restoreOwnedCachedUser(
+      firebaseUser,
+      reason: reason,
+    );
+    if (cached.user != null) {
+      _currentUser = cached.user;
+      _currentFirebaseUid = firebaseUser.uid;
+      return;
+    }
+
+    _currentUser = await _createUserFromFirebase(firebaseUser);
+    _currentFirebaseUid = firebaseUser.uid;
+    _currentUserIsUnverifiedRebuild =
+        cached.decision == CacheRestoreDecision.rebuildKeepCache;
+
+    if (_currentUserIsUnverifiedRebuild) {
+      // An unattributable legacy cache is still sitting there. Do not write
+      // this reconstruction over it — see CacheRestoreDecision.rebuildKeepCache.
+      AppLogger.warning(
+        'Rebuilt a local profile (reason: $reason) but left the legacy cache '
+        'untouched; it will be migrated on the next successful backend load',
       );
       return;
     }
-    _currentUser = await _createUserFromFirebase(firebaseUser);
-    await _cacheUserSession(_currentUser!);
+
+    await _cacheUserSession(_currentUser!, firebaseUid: firebaseUser.uid);
     AppLogger.user(
       'No usable cache (reason: $reason); created fresh user from Firebase',
     );
@@ -823,19 +876,36 @@ class UnifiedUserService extends ChangeNotifier {
     await _prefs!.remove('has_initialized_guest');
   }
 
-  /// Save user session to local storage for offline access
-  Future<void> _cacheUserSession(UnifiedUser user) async {
+  /// Save the user session for offline access, recording BOTH identifiers so
+  /// the next launch can tell whose cache it is. See [CachedUserSession] for
+  /// why the backend GUID alone was never able to answer that.
+  ///
+  /// The owners default to the live session, which is correct for every call
+  /// site: the cache is always written for the account that is active at the
+  /// moment of writing. Callers that already hold the Firebase user pass it
+  /// explicitly rather than relying on `_auth.currentUser` having caught up.
+  Future<void> _cacheUserSession(
+    UnifiedUser user, {
+    String? firebaseUid,
+    String? backendUserId,
+  }) async {
     if (_prefs == null) return;
     try {
-      await _prefs!.setString(_cachedUserKey, jsonEncode(user.toJson()));
+      final envelope = CachedUserSession.envelope(
+        userJson: user.toJson(),
+        firebaseUid: firebaseUid ?? _auth.currentUser?.uid,
+        backendUserId: backendUserId ?? _apiService.currentUserId,
+      );
+      await _prefs!.setString(_cachedUserKey, jsonEncode(envelope));
       AppLogger.user('Cached user session for offline use');
     } catch (e) {
       AppLogger.error('Failed to cache user session', e);
     }
   }
 
-  /// Load cached user session from local storage.
-  /// Bumps the highScore field to max(cached, localDb) before returning so
+  /// Load the cached session envelope from local storage.
+  ///
+  /// Bumps the profile's highScore to max(cached, localDb) before returning so
   /// the offline auth state can't be stale relative to disk — the local
   /// Drift settings table is monotonic (never-decrease guard in
   /// StorageService.saveHighScore) and gets updated by both local plays
@@ -843,32 +913,100 @@ class UnifiedUserService extends ChangeNotifier {
   /// Without this, a stale cached UnifiedUser persists across app launches
   /// and the home screen's max(authState, settings) workaround can't paper
   /// over the gap when settings is also stale.
-  Future<UnifiedUser?> _loadCachedUserSession() async {
+  ///
+  /// Returns the envelope, not just the profile: callers must consult
+  /// [decideCacheRestore] before adopting it, because a cache that belongs to
+  /// a different Firebase account must never be handed to this one.
+  Future<CachedUserSession?> _loadCachedSession() async {
     if (_prefs == null) return null;
     try {
-      final cachedJson = _prefs!.getString(_cachedUserKey);
-      if (cachedJson != null) {
-        final userData = jsonDecode(cachedJson) as Map<String, dynamic>;
-        AppLogger.user('Loaded cached user session');
-        var user = UnifiedUser.fromJson(userData);
-        try {
-          final dbHighScore = await StorageService().getHighScore();
-          if (dbHighScore > user.highScore) {
-            AppLogger.user(
-              'Cached user highScore=${user.highScore} < DB highScore=$dbHighScore, bumping cached user',
-            );
-            user = user.copyWith(highScore: dbHighScore);
-          }
-        } catch (e) {
-          AppLogger.user('Failed to enrich cached user with DB highScore', e);
+      final session = CachedUserSession.parse(_prefs!.getString(_cachedUserKey));
+      if (session == null) return null;
+      AppLogger.user(
+        'Loaded cached user session (legacy=${session.isLegacy}, '
+        'firebaseUid=${session.firebaseUid ?? "none"})',
+      );
+
+      var user = UnifiedUser.fromJson(session.userJson);
+      try {
+        final dbHighScore = await StorageService().getHighScore();
+        if (dbHighScore > user.highScore) {
+          AppLogger.user(
+            'Cached user highScore=${user.highScore} < DB highScore=$dbHighScore, bumping cached user',
+          );
+          user = user.copyWith(highScore: dbHighScore);
         }
-        return user;
+      } catch (e) {
+        AppLogger.user('Failed to enrich cached user with DB highScore', e);
       }
+
+      return CachedUserSession(
+        userJson: user.toJson(),
+        firebaseUid: session.firebaseUid,
+        backendUserId: session.backendUserId,
+        isLegacy: session.isLegacy,
+      );
     } catch (e) {
       AppLogger.error('Failed to load cached user session', e);
     }
     return null;
   }
+
+  /// Apply [decideCacheRestore] for the given Firebase session.
+  ///
+  /// Returns the profile to adopt (null when the caller must rebuild one) plus
+  /// the decision, so the caller can honour
+  /// [CacheRestoreDecision.rebuildKeepCache] — which forbids overwriting the
+  /// stored cache with the rebuild.
+  Future<({UnifiedUser? user, CacheRestoreDecision decision})>
+      _restoreOwnedCachedUser(
+    User? firebaseUser, {
+    required String reason,
+  }) async {
+    final session = await _loadCachedSession();
+    final decision = decideCacheRestore(
+      session: session,
+      firebaseUid: firebaseUser?.uid,
+    );
+
+    switch (decision) {
+      case CacheRestoreDecision.restoreCached:
+        if (session == null) {
+          return (user: null, decision: CacheRestoreDecision.rebuildAndCache);
+        }
+        _currentUserIsUnverifiedRebuild = false;
+        final user = UnifiedUser.fromJson(session.userJson);
+        AppLogger.user(
+          'Restored cached user (reason: $reason): highScore=${user.highScore}',
+        );
+        return (
+          user: firebaseUser == null
+              ? user
+              : _withLocalCredentialTruth(user, firebaseUser),
+          decision: decision,
+        );
+
+      case CacheRestoreDecision.rebuildKeepCache:
+        AppLogger.warning(
+          'Cached session predates the versioned envelope and cannot be '
+          'attributed to this Firebase account (reason: $reason). A local '
+          'profile will be used for this session and the cache KEPT — the '
+          'next successful backend load migrates it.',
+        );
+        return (user: null, decision: decision);
+
+      case CacheRestoreDecision.rebuildAndCache:
+        return (user: null, decision: decision);
+    }
+  }
+
+  /// True when [_currentUser] is a local reconstruction we could not attribute
+  /// to the signed-in account (the [CacheRestoreDecision.rebuildKeepCache]
+  /// path). Its game aggregates are seeded from a stale `guest_user_data` key,
+  /// so they must not be pushed to the backend or written over the cache —
+  /// doing either would replace a real profile with a placeholder. Cleared by
+  /// the next successful backend load.
+  bool _currentUserIsUnverifiedRebuild = false;
 
   /// Clear cached user session
   Future<void> _clearCachedUserSession() async {
@@ -930,11 +1068,17 @@ class UnifiedUserService extends ChangeNotifier {
     } catch (e, stackTrace) {
       AppLogger.firebase('Error signing in anonymously', e, stackTrace);
 
-      // If we can't sign in anonymously (likely offline),
-      // try to restore a cached session or create an offline guest
-      final cachedUser = await _loadCachedUserSession();
+      // If we can't sign in anonymously (likely offline), try to restore a
+      // cached session or create an offline guest. The sign-in failed, so
+      // there is no Firebase account to attribute the cache to — pass null
+      // and let the guest rules apply.
+      final cachedUser = (await _restoreOwnedCachedUser(
+        null,
+        reason: 'anonymous sign-in failed',
+      )).user;
       if (cachedUser != null) {
         _currentUser = cachedUser;
+        _currentFirebaseUid = null;
         AppLogger.warning(
           'Restored cached user after anonymous sign-in failed',
         );
@@ -944,7 +1088,8 @@ class UnifiedUserService extends ChangeNotifier {
 
       // Create a purely offline guest user
       _currentUser = await _createOfflineGuestUser();
-      await _cacheUserSession(_currentUser!);
+      _currentFirebaseUid = null;
+      await _cacheUserSession(_currentUser!, firebaseUid: null);
       AppLogger.warning('Created offline guest user');
       notifyListeners();
       return true;
@@ -1387,7 +1532,13 @@ class UnifiedUserService extends ChangeNotifier {
     // backend's UpdateProfileCommand DTO doesn't accept it (it's mutated
     // server-side only via SubmitScoreCommandHandler's GREATEST clause),
     // so sending it was a no-op that risked confusing future maintainers.
-    if (_apiService.isAuthenticated) {
+    //
+    // These totals are cumulative and computed from _currentUser, so pushing
+    // them while _currentUser is an unattributed local reconstruction would
+    // overwrite the real account's aggregates with numbers seeded from a
+    // stale `guest_user_data` key. Hold them locally until a successful
+    // backend load establishes what the account actually has.
+    if (_apiService.isAuthenticated && !_currentUserIsUnverifiedRebuild) {
       await _apiService.updateProfile({
         'total_games_played': _currentUser!.totalGamesPlayed,
         'total_score': _currentUser!.totalScore,
@@ -1406,8 +1557,10 @@ class UnifiedUserService extends ChangeNotifier {
 
     _currentUser = _currentUser!.copyWith(preferences: updatedPrefs);
 
-    // Update via backend API
-    if (_apiService.isAuthenticated) {
+    // Update via backend API. Same reasoning as updateGameStats: an
+    // unattributed reconstruction carries default preferences, and pushing
+    // those would overwrite the account's real ones.
+    if (_apiService.isAuthenticated && !_currentUserIsUnverifiedRebuild) {
       await _apiService.updateProfile({'preferences': updatedPrefs});
     }
 
@@ -1448,6 +1601,8 @@ class UnifiedUserService extends ChangeNotifier {
       await _googleSignIn.signOut();
       await _auth.signOut();
       _currentUser = null;
+      _currentFirebaseUid = null;
+      _currentUserIsUnverifiedRebuild = false;
 
       // Clear cached session so a stale UnifiedUser doesn't get restored
       // on next launch.
@@ -1463,6 +1618,8 @@ class UnifiedUserService extends ChangeNotifier {
       // Even on failure, ensure local state reflects signed-out so the UI
       // can route to the sign-in screen instead of getting stuck.
       _currentUser = null;
+      _currentFirebaseUid = null;
+      _currentUserIsUnverifiedRebuild = false;
       notifyListeners();
     }
   }
@@ -1505,6 +1662,8 @@ class UnifiedUserService extends ChangeNotifier {
     }
 
     _currentUser = null;
+    _currentFirebaseUid = null;
+    _currentUserIsUnverifiedRebuild = false;
     await _clearCachedUserSession();
     notifyListeners();
     AppLogger.success('Account permanently deleted');

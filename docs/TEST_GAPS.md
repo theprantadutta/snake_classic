@@ -1,8 +1,40 @@
 # Known test gaps
 
-Logged rather than left implied. Both are places where the code shipped
+Logged rather than left implied. These are places where the code shipped
 without the coverage it deserves, and where the reason is a real obstacle
 rather than an oversight.
+
+---
+
+## 0. Cached-session ownership is tested as a rule, not as a flow
+
+**What is covered:** every ownership and migration rule, in
+`cached_user_session_test.dart` — backend GUID vs Firebase UID, a second
+Firebase account on the same device, guest sessions, account linking vs
+account switching, legacy caches, and the degenerate payloads.
+
+**What is not:** the same three branches as they run inside
+`UnifiedUserService` — that a successful `/auth/me` really does rewrite the
+cache into the v2 envelope, that the offline path adopts the restored profile,
+and that the unattributable-legacy path leaves the stored cache byte-identical.
+
+**Why it is not done:** `UnifiedUserService` is a singleton that constructs
+`FirebaseAuth.instance` and `GoogleSignIn.instance` in its field initialisers,
+so it cannot be instantiated in a unit test at all. Covering the flow means
+injecting both, which is a refactor of a 1,600-line service that a lot of the
+app talks to.
+
+**What was verified by hand instead:** on-device, against a real legacy cache
+whose `uid` was the backend GUID `019fe52a-…` while the Firebase UID was
+`1Ya7mdxBpJd4M2L7kIs245SSIKC3`. Two offline launches left
+`flutter.cached_unified_user` untouched (same username, same `createdAt`),
+with the expected warning in the log. The **online migration was not observed
+on device** — the dev backend was down. When it is up, one launch should log
+`Loaded cached user session (legacy=false, firebaseUid=…)` on the launch after.
+
+**Risk while it is open:** low for the rules, moderate for the wiring. A
+mistake in the wiring shows up as the wrong profile after an offline launch,
+which is visible immediately rather than silently.
 
 ---
 
