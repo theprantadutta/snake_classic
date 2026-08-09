@@ -474,6 +474,35 @@ class SyncQueue extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Scores the backend permanently refused.
+///
+/// The batch endpoint answers 2xx even when individual items fail validation.
+/// The engine used to read only the status code and delete the whole group, so
+/// a rejected run vanished with no record anywhere — no retry, no error, no
+/// count. A validator change or a client/server version skew could silently
+/// eat every score a player produced.
+///
+/// Rows land here ONLY for rejections the server marked non-retryable;
+/// transient faults stay in the outbox and retry normally. Being out of the
+/// outbox is deliberate — a dead score must never block newer valid ones from
+/// draining — and the payload is kept so a rejection can be investigated, or
+/// replayed by hand if the rejection turns out to have been our bug.
+class ScoreDeadLetters extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// The outbox entity key, which is also the server's idempotency key.
+  TextColumn get idempotencyKey => text().unique()();
+
+  /// The payload as it was sent, for diagnosis and manual replay.
+  TextColumn get payload => text()();
+
+  /// Verbatim server explanation. Not parsed — it exists to be read by a
+  /// human working out why a real player lost a real game.
+  TextColumn get reason => text()();
+
+  DateTimeColumn get rejectedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 // =====================================================
 // TABLE 11: Cache Store (Offline cache with TTL)
 // =====================================================
@@ -718,6 +747,7 @@ class PlayerProgressTable extends Table {
     PowerUpInventoryState,
     Replays,
     SyncQueue,
+    ScoreDeadLetters,
     CacheStore,
     UserProfile,
     PurchaseHistory,
@@ -745,7 +775,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -922,6 +952,12 @@ class AppDatabase extends _$AppDatabase {
         // the choice travels with the account — and so the backend can
         // localize push notifications later.
         await m.addColumn(gameSettings, gameSettings.localeCode);
+      }
+      if (from < 16) {
+        // v16: dead-letter store for scores the backend permanently refused.
+        // Nothing to backfill — anything rejected before this existed was
+        // deleted at the time and is unrecoverable.
+        await m.createTable(scoreDeadLetters);
       }
     },
   );

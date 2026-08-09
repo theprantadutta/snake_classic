@@ -322,6 +322,13 @@ class AnalyticsFacade implements AnalyticsClient {
           ));
 
   @override
+  Future<void> trackScoreRejected({
+    required int count,
+    required String topReason,
+  }) async =>
+      _fire((c) => c.trackScoreRejected(count: count, topReason: topReason));
+
+  @override
   Future<void> trackReviewRequested(String trigger) async =>
       _fire((c) => c.trackReviewRequested(trigger));
 

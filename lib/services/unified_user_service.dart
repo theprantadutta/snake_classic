@@ -448,7 +448,10 @@ class UnifiedUserService extends ChangeNotifier {
           // Load user profile from backend
           final userProfile = await _apiService.getCurrentUser();
           if (userProfile != null) {
-            _currentUser = UnifiedUser.fromJson(userProfile);
+            _currentUser = _withLocalCredentialTruth(
+              UnifiedUser.fromJson(userProfile),
+              firebaseUser,
+            );
             // Cache the session for offline use
             await _cacheUserSession(_currentUser!);
             AppLogger.success(
@@ -498,7 +501,10 @@ class UnifiedUserService extends ChangeNotifier {
                   final refreshed =
                       await _apiService.getCurrentUser(forceRefresh: true);
                   if (refreshed != null) {
-                    _currentUser = UnifiedUser.fromJson(refreshed);
+                    _currentUser = _withLocalCredentialTruth(
+                      UnifiedUser.fromJson(refreshed),
+                      firebaseUser,
+                    );
                     await _cacheUserSession(_currentUser!);
                   }
                 }
@@ -607,7 +613,10 @@ class UnifiedUserService extends ChangeNotifier {
   }) async {
     final cachedUser = await _loadCachedUserSession();
     if (cachedUser != null && cachedUser.uid == firebaseUser.uid) {
-      _currentUser = cachedUser;
+      // Reconciled too: the cache stores whatever type was resolved last
+      // time, so a session cached while the backend was misreporting would
+      // keep reporting it.
+      _currentUser = _withLocalCredentialTruth(cachedUser, firebaseUser);
       AppLogger.user(
         'Restored cached user (reason: $reason): highScore=${_currentUser?.highScore}',
       );
@@ -618,6 +627,49 @@ class UnifiedUserService extends ChangeNotifier {
     AppLogger.user(
       'No usable cache (reason: $reason); created fresh user from Firebase',
     );
+  }
+
+  /// Correct the account type against the Firebase session, which is the only
+  /// authoritative answer to "does this device hold a real credential".
+  ///
+  /// The backend's `is_anonymous` is an echo of what it recorded at signup,
+  /// and it has been wrong: `FirebaseAuthService` extracted `sign_in_provider`
+  /// by casting the `firebase` claim to `Dictionary<String, Object>`, which the
+  /// Admin SDK does not hand back, so the cast failed silently and EVERY
+  /// anonymous account was stored as non-anonymous. `/auth/me` then reported
+  /// `is_anonymous: false`, [UnifiedUser._parseUserType] read that as "must be
+  /// a Google user", and every sign-in surface in the app hid itself behind a
+  /// green "Verified Account" badge.
+  ///
+  /// The client never needed to ask: `firebaseUser.isAnonymous` is right here,
+  /// it comes from the SDK that owns the session, and it cannot be wrong about
+  /// the device it is running on. Trusting it means the UI is correct even
+  /// against a backend that is still misreporting — including for the accounts
+  /// already stored wrong, which would otherwise stay broken until they are
+  /// repaired server-side.
+  UnifiedUser _withLocalCredentialTruth(UnifiedUser user, User firebaseUser) {
+    if (firebaseUser.isAnonymous) {
+      if (user.userType == UserType.anonymous) return user;
+      AppLogger.warning(
+        'Backend reported ${user.userType.name} for an ANONYMOUS Firebase '
+        'session — trusting the local session and treating it as anonymous',
+      );
+      return user.copyWith(userType: UserType.anonymous);
+    }
+
+    // The mirror case: a credential was linked and the backend has not caught
+    // up yet. Leaving this as anonymous would nag a signed-in player to sign
+    // in.
+    if (user.userType != UserType.google &&
+        firebaseUser.providerData.isNotEmpty) {
+      AppLogger.warning(
+        'Backend reported ${user.userType.name} for a CREDENTIALED Firebase '
+        'session — trusting the local session',
+      );
+      return user.copyWith(userType: UserType.google);
+    }
+
+    return user;
   }
 
   Future<UnifiedUser> _createUserFromFirebase(User firebaseUser) async {

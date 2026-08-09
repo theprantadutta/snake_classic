@@ -409,8 +409,32 @@ class AuthCubit extends Cubit<AuthState> {
     'account-exists-with-different-credential',
   };
 
-  Future<bool> connectAccountWithGoogle() async {
-    if (!_userService.canLinkCredential) return signInWithGoogle();
+  /// [confirmAccountSwitch] is asked before any path that would leave this
+  /// device's progress behind, and a `false` answer aborts the sign-in.
+  ///
+  /// Two such paths exist, and they are not equally knowable:
+  ///
+  ///  * An offline guest has no anonymous UID to link onto, so a plain
+  ///    sign-in is the only option and the destination account MIGHT already
+  ///    exist. We cannot tell until the backend answers, which is after the
+  ///    point of no return — so we ask first.
+  ///  * An anonymous user normally LINKS, which preserves everything. Only
+  ///    when the credential turns out to belong to someone else does it
+  ///    become a switch — and there we know for certain, so the question is
+  ///    asked with the answer already in hand.
+  ///
+  /// Passing null keeps the old silent behaviour, which is only correct for
+  /// callers with no UI to ask from.
+  Future<bool> connectAccountWithGoogle({
+    Future<bool> Function()? confirmAccountSwitch,
+  }) async {
+    if (!_userService.canLinkCredential) {
+      if (confirmAccountSwitch != null && !await confirmAccountSwitch()) {
+        emit(state.copyWith(isLoading: false));
+        return false;
+      }
+      return signInWithGoogle();
+    }
 
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
@@ -428,6 +452,13 @@ class AuthCubit extends Cubit<AuthState> {
           'Link rejected (${e.code}) — that Google account already exists; '
           'falling back to a plain sign-in',
         );
+        // Now we KNOW it is a switch: Firebase just told us the credential
+        // belongs to another account. Confirm before leaving this device's
+        // progress behind.
+        if (confirmAccountSwitch != null && !await confirmAccountSwitch()) {
+          emit(state.copyWith(isLoading: false));
+          return false;
+        }
         return signInWithGoogle();
       }
       emit(state.copyWith(isLoading: false, errorMessage: e.code));
@@ -450,8 +481,13 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> connectAccountWithEmailPassword({
     required String email,
     required String password,
+    Future<bool> Function()? confirmAccountSwitch,
   }) async {
     if (!_userService.canLinkCredential) {
+      if (confirmAccountSwitch != null && !await confirmAccountSwitch()) {
+        emit(state.copyWith(isLoading: false));
+        return false;
+      }
       return signInWithEmailPassword(email: email, password: password);
     }
 
@@ -474,6 +510,10 @@ class AuthCubit extends Cubit<AuthState> {
           'Email link rejected (${e.code}) — that account already exists; '
           'falling back to a plain sign-in',
         );
+        if (confirmAccountSwitch != null && !await confirmAccountSwitch()) {
+          emit(state.copyWith(isLoading: false));
+          return false;
+        }
         return signInWithEmailPassword(email: email, password: password);
       }
       emit(state.copyWith(isLoading: false, errorMessage: e.code));
@@ -526,8 +566,16 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Apple counterpart to [connectAccountWithGoogle].
-  Future<bool> connectAccountWithApple() async {
-    if (!_userService.canLinkCredential) return signInWithApple();
+  Future<bool> connectAccountWithApple({
+    Future<bool> Function()? confirmAccountSwitch,
+  }) async {
+    if (!_userService.canLinkCredential) {
+      if (confirmAccountSwitch != null && !await confirmAccountSwitch()) {
+        emit(state.copyWith(isLoading: false));
+        return false;
+      }
+      return signInWithApple();
+    }
 
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
@@ -544,6 +592,10 @@ class AuthCubit extends Cubit<AuthState> {
         AppLogger.info(
           'Link rejected (${e.code}) — falling back to a plain Apple sign-in',
         );
+        if (confirmAccountSwitch != null && !await confirmAccountSwitch()) {
+          emit(state.copyWith(isLoading: false));
+          return false;
+        }
         return signInWithApple();
       }
       emit(state.copyWith(isLoading: false, errorMessage: e.code));

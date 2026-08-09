@@ -155,6 +155,19 @@ abstract class AnalyticsClient {
   /// have to "how often do we ask."
   Future<void> trackReviewRequested(String trigger);
 
+  /// The backend permanently refused [count] queued score(s), which have been
+  /// moved to the local dead-letter store.
+  ///
+  /// This should be rare, and a cluster of it means something systemic — a
+  /// validator change, a client/server version skew, a bad release. Without a
+  /// counter the only trace is a table on the player's own device, which
+  /// nobody will ever think to look at. [topReason] carries the most common
+  /// explanation so the event is actionable on its own.
+  Future<void> trackScoreRejected({
+    required int count,
+    required String topReason,
+  });
+
   // ==================== Ads ====================
 
   /// An ad was actually shown: a full-screen ad presented, or a banner filled.

@@ -6,6 +6,7 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/widgets/account_switch_confirmation.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
 /// Email/password sign-in, account-creation, and anonymous-account link
@@ -357,6 +358,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
         ? await cubit.connectAccountWithEmailPassword(
             email: email,
             password: password,
+            confirmAccountSwitch: () => confirmAccountSwitch(context),
           )
         : await cubit.signInWithEmailPassword(
             email: email,

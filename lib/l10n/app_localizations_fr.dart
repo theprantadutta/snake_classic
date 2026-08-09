@@ -460,6 +460,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsGuestAccount => 'Compte invité';
 
   @override
+  String get accountSwitchTitle => 'Se connecter à un compte existant ?';
+
+  @override
+  String get accountSwitchBody =>
+      'Si ce compte a déjà joué à Snake Classic, sa progression est restaurée et devient celle que tu gardes. Les pièces, scores et statistiques de cet appareil ne sont pas transférés.\n\nPour conserver la progression de cet appareil, utilise un compte avec lequel tu n\'as jamais joué.';
+
+  @override
+  String get accountSwitchConfirm => 'Se connecter quand même';
+
+  @override
   String get settingsAuthenticatedAccount => 'Compte authentifié';
 
   @override
@@ -776,6 +786,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String mpLobbyDrawsChip(Object count) {
     return '$count N';
   }
+
+  @override
+  String get mpLobbyWinsLabel => 'Victoires';
+
+  @override
+  String get mpLobbyLossesLabel => 'Défaites';
+
+  @override
+  String get mpLobbyDrawsLabel => 'Nuls';
+
+  @override
+  String get mpLobbyRatingLabel => 'Points';
 
   @override
   String get mpLobbyJoinRoom => 'REJOINDRE UN SALON';

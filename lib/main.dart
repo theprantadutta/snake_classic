@@ -91,23 +91,32 @@ void main() async {
     _initSucceeded = true;
     AppLogger.success('Snake Classic ready to launch!');
   } on TimeoutException catch (error, stackTrace) {
-    // Deliberately NOT fatal. Most of what the bootstrap does is optional at
-    // launch (ad SDK, update check, sync engine, token registration), and the
-    // parts that are not have already thrown by now if they were going to.
-    // A degraded app the user can play beats a frozen launch image.
-    AppLogger.error(
-      'Startup exceeded ${_bootstrapBudget.inSeconds}s — launching anyway',
-      error,
-      stackTrace,
-    );
     // Only if the router exists. A timeout during dependency injection —
     // before appRouter was assigned — would otherwise trade a frozen splash
     // for a LateInitializationError on the first build, which is not an
     // improvement. In that case fall through to the recovery screen, which
     // depends on nothing and offers a retry.
     _initSucceeded = _routerReady;
+
+    // Fatal only when the timeout actually cost the user the app. Most of
+    // what the bootstrap does is optional at launch (ad SDK, update check,
+    // sync engine, token registration), so a timeout that still produced a
+    // router means a degraded app the player can use — worth reporting, but
+    // not a crash.
+    await _reportStartupFailure(
+      error,
+      stackTrace,
+      reason: 'Startup exceeded ${_bootstrapBudget.inSeconds}s',
+      fatal: !_initSucceeded,
+    );
   } catch (error, stackTrace) {
-    AppLogger.error('Failed to initialize Snake Classic', error, stackTrace);
+    // The app cannot start. This IS the crash, so it is reported as one.
+    await _reportStartupFailure(
+      error,
+      stackTrace,
+      reason: 'Failed to initialize Snake Classic',
+      fatal: true,
+    );
   }
 
   _installGlobalErrorHandlers();
@@ -123,6 +132,48 @@ void main() async {
     // underneath it and the user still just sees a frozen launch image.
     FlutterNativeSplash.remove();
     runApp(const _StartupFailureApp());
+  }
+}
+
+/// Send a startup failure to Crashlytics.
+///
+/// Goes to Crashlytics DIRECTLY rather than through [AppLogger]. Every
+/// AppLogger method is wrapped in `if (kDebugMode)`, so in a release build
+/// those calls compile to nothing — which is why the "Snake Classic couldn't
+/// start" screen could be reproduced on a real device with an empty logcat
+/// AND an empty Crashlytics dashboard. A failure that stops the app from
+/// starting is the single most important thing to hear about, and it was the
+/// only class of failure reporting nothing at all.
+///
+/// [fatal] distinguishes "the player did not get an app" from "the player got
+/// a degraded one". Only the former should move the crash-free rate.
+///
+/// Deliberately carries no user identifiers or custom keys: the error and its
+/// stack are what diagnose this, and a startup path that runs before consent
+/// is the last place to be attaching anything about a person.
+Future<void> _reportStartupFailure(
+  Object error,
+  StackTrace stackTrace, {
+  required String reason,
+  required bool fatal,
+}) async {
+  // Still logged for anyone attached to a debug session.
+  AppLogger.error(reason, error, stackTrace);
+
+  try {
+    // If Firebase itself never came up, Crashlytics cannot be reached and
+    // this failure is genuinely unreportable from the device. Nothing to do
+    // but avoid throwing a second exception on top of the first.
+    if (Firebase.apps.isEmpty) return;
+
+    await FirebaseCrashlytics.instance.recordError(
+      error,
+      stackTrace,
+      reason: reason,
+      fatal: fatal,
+    );
+  } catch (_) {
+    // Reporting a startup failure must never become one.
   }
 }
 
@@ -462,7 +513,17 @@ class _StartupFailureAppState extends State<_StartupFailureApp> {
       );
       return;
     } catch (error, stackTrace) {
-      AppLogger.error('Startup retry failed', error, stackTrace);
+      // Non-fatal on purpose: the initial failure was already reported as
+      // fatal for this session, and marking every retry fatal too would let
+      // one stuck user tap the button repeatedly and bury the crash-free
+      // rate. The separate reason keeps retries visible as their own signal —
+      // "the retry never works" is a different bug from "startup failed once".
+      await _reportStartupFailure(
+        error,
+        stackTrace,
+        reason: 'Startup retry failed',
+        fatal: false,
+      );
     }
     if (mounted) setState(() => _retrying = false);
   }

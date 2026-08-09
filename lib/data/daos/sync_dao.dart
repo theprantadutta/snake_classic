@@ -5,7 +5,7 @@ import 'package:snake_classic/data/database/app_database.dart';
 
 part 'sync_dao.g.dart';
 
-@DriftAccessor(tables: [SyncQueue, CacheStore, UserProfile])
+@DriftAccessor(tables: [SyncQueue, ScoreDeadLetters, CacheStore, UserProfile])
 class SyncDao extends DatabaseAccessor<AppDatabase> with _$SyncDaoMixin {
   SyncDao(super.db);
 
@@ -91,6 +91,68 @@ class SyncDao extends DatabaseAccessor<AppDatabase> with _$SyncDaoMixin {
   /// Clear all sync queue
   Future<void> clearSyncQueue() async {
     await delete(syncQueue).go();
+  }
+
+  // ==================== Score dead letters ====================
+
+  /// How long a permanently-rejected score is kept for diagnosis.
+  ///
+  /// Bounded so a client that starts failing validation en masse (a bad
+  /// release, a server-side rule change) cannot grow this table without limit
+  /// on a player's device. Long enough that a rejection reported by a player
+  /// is still on disk when someone goes looking.
+  static const Duration deadLetterRetention = Duration(days: 60);
+
+  /// Record a score the backend permanently refused, and drop it from the
+  /// outbox in the same transaction.
+  ///
+  /// The two must move together: leaving the outbox row would retry a score
+  /// the server will never accept, and deleting it without recording anything
+  /// is the silent loss this table exists to end.
+  Future<void> deadLetterScore({
+    required String outboxId,
+    required String idempotencyKey,
+    required String payload,
+    required String reason,
+  }) async {
+    await transaction(() async {
+      await into(scoreDeadLetters).insert(
+        ScoreDeadLettersCompanion.insert(
+          idempotencyKey: idempotencyKey,
+          payload: payload,
+          reason: reason,
+        ),
+        // A repeated rejection of the same run keeps the first record rather
+        // than erroring on the unique key.
+        mode: InsertMode.insertOrIgnore,
+      );
+      await (delete(syncQueue)..where((t) => t.id.equals(outboxId))).go();
+    });
+  }
+
+  Future<List<ScoreDeadLetter>> getScoreDeadLetters({int limit = 100}) =>
+      (select(scoreDeadLetters)
+            ..orderBy([(t) => OrderingTerm.desc(t.rejectedAt)])
+            ..limit(limit))
+          .get();
+
+  /// Rejections grouped by reason — the counter worth emitting, since one
+  /// cause usually explains a whole cluster.
+  Future<Map<String, int>> getScoreDeadLetterCountsByReason() async {
+    final rows = await select(scoreDeadLetters).get();
+    final counts = <String, int>{};
+    for (final row in rows) {
+      counts[row.reason] = (counts[row.reason] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  /// Drop records past [deadLetterRetention]. Returns how many were removed.
+  Future<int> pruneScoreDeadLetters({DateTime? now}) {
+    final cutoff = (now ?? DateTime.now()).subtract(deadLetterRetention);
+    return (delete(scoreDeadLetters)
+          ..where((t) => t.rejectedAt.isSmallerThanValue(cutoff)))
+        .go();
   }
 
   /// Delete every queued row EXCEPT those whose `dataType` is in

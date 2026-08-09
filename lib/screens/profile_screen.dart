@@ -13,11 +13,13 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
+import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/account_switch_confirmation.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/not_backed_up_notice.dart';
-import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -110,12 +112,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             bottomNavigationBar: const SnakeBannerAd(),
             extendBodyBehindAppBar: true,
             appBar: AppBar(
+              // Matches SettingsScreen exactly — accent, tracked, uppercase.
+              // Every other top-level screen wears this; Profile was the one
+              // still in title case and primaryColor, which is a small part of
+              // why it read as belonging to a different app.
               title: Text(
-                AppLocalizations.of(context)!.pfTitle,
+                AppLocalizations.of(context)!.pfTitle.toUpperCase(),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                  color: theme.primaryColor,
+                  color: theme.accentColor,
+                  letterSpacing: context.letterSpacing(2),
                   shadows: [
                     Shadow(
                       offset: const Offset(0, 2),
@@ -209,6 +215,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ===========================================================================
+  // PROFILE CONTENT
+  //
+  // Rebuilt to the language the rest of the app settled on (see SettingsScreen):
+  // an uppercase accent eyebrow over a hairline-bordered translucent card, one
+  // column, everything monochrome against the active theme. The screen it
+  // replaced predated that language — multicolour gradient tiles, per-section
+  // borders in blue / amber / purple / red, and a drop shadow on every block —
+  // which is why it read as a different app.
+  //
+  // Two structural changes beyond restyling:
+  //
+  //  * The identity block absorbs the old level card. Avatar, name, account
+  //    state and level progress are one fact about the player, so they are one
+  //    element: the XP ring IS the avatar's border.
+  //  * The three quick-action tiles are gone. Each one duplicated a "View all"
+  //    link already sitting in that section's header, and they were the
+  //    loudest thing on the screen.
+  // ===========================================================================
+
   Widget _buildProfileContent(
     BuildContext context,
     AuthState authState,
@@ -216,1056 +242,406 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ) {
     final theme = themeState.currentTheme;
     final l10n = AppLocalizations.of(context)!;
+    final replayKeys = _appCache.replayKeys ?? [];
 
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // Says plainly that this save is device-only. Sits above the
-          // profile card because it qualifies everything below it — the
-          // high score, the achievements, the replays are all local.
+          // Qualifies everything below it — the high score, the achievements
+          // and the replays are all device-local until this is resolved.
           if (authState.hasNoCredential) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: NotBackedUpNotice(theme: theme),
-            ),
-            const SizedBox(height: 16),
+            NotBackedUpNotice(theme: theme),
+            const SizedBox(height: 24),
           ],
 
-          // Enhanced Profile Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.15),
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                  theme.backgroundColor.withValues(alpha: 0.9),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.4),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.2),
-                  blurRadius: 30,
-                  spreadRadius: -5,
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Enhanced avatar with glow effect
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.accentColor.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: context.scaled(60),
-                    backgroundColor: theme.primaryColor,
-                    child: CircleAvatar(
-                      radius: context.scaled(56),
-                      backgroundImage: authState.photoURL != null
-                          ? NetworkImage(authState.photoURL!)
-                          : null,
-                      onBackgroundImageError: authState.photoURL != null ? (e, s) {} : null,
-                      backgroundColor: theme.backgroundColor,
-                      child: authState.photoURL == null
-                          ? Icon(
-                              Icons.person_rounded,
-                              size: context.scaled(60),
-                              color: theme.primaryColor,
-                            )
-                          : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
+          _buildIdentity(context, authState, theme),
+          const SizedBox(height: 28),
 
-                // Enhanced name with gradient text effect.
-                // Uses publicLabel so it matches the leaderboard rendering —
-                // your profile shows the same name everyone else sees.
-                ShaderMask(
-                  shaderCallback: (bounds) => LinearGradient(
-                    colors: [theme.primaryColor, theme.accentColor],
-                  ).createShader(bounds),
-                  child: Text(
-                    authState.publicLabel,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-                // Account status badge
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    // hasNoCredential, not isAnonymous — otherwise a purely
-                    // offline guest (the default identity under play-first,
-                    // and the one with the least recoverable data) got the
-                    // green "Verified Account" badge.
-                    gradient: LinearGradient(
-                      colors: authState.hasNoCredential
-                          ? [Colors.orange, Colors.deepOrange]
-                          : [Colors.green, Colors.teal],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            (authState.hasNoCredential
-                                    ? Colors.orange
-                                    : Colors.green)
-                                .withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        authState.hasNoCredential
-                            ? Icons.person
-                            : Icons.verified_user,
-                        color: Colors.white,
-                        size: context.scaled(16),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        authState.hasNoCredential
-                            ? l10n.pfGuestPlayer
-                            : l10n.pfVerifiedAccount,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Lifetime player progression (level + XP)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: PlayerProgressionCard(theme: theme),
-          ),
-          const SizedBox(height: 24),
-
-          // Quick Actions Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    l10n.pfStatistics,
-                    Icons.analytics_rounded,
-                    theme.accentColor,
-                    () => _navigateToStatistics(context),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    l10n.pfReplays,
-                    Icons.video_library_rounded,
-                    Colors.blue,
-                    () => _navigateToReplays(context),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    l10n.pfAchievements,
-                    Icons.emoji_events_rounded,
-                    Colors.amber,
-                    () => _navigateToAchievements(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Enhanced Stats Section
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                  theme.backgroundColor.withValues(alpha: 0.6),
-                  theme.accentColor.withValues(alpha: 0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: theme.accentColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.bar_chart_rounded,
-                            color: theme.accentColor,
-                            size: context.scaled(24),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          l10n.pfStatistics,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (!_isLoading)
-                      GestureDetector(
-                        onTap: () => _navigateToStatistics(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [theme.accentColor, theme.primaryColor],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: theme.accentColor.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            l10n.commonViewAll,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 15),
-
-                if (_isLoading)
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
+          _buildSection(
+            theme: theme,
+            title: l10n.pfStatistics,
+            onViewAll: _isLoading ? null : () => _navigateToStatistics(context),
+            child: _isLoading
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: ThemedLoading(theme: theme, label: l10n.pfLoadingStats),
                   )
-                else ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatItem(
-                          l10n.pfHighScore,
-                          _displayStats['highScore']?.toString() ?? '0',
-                          Icons.emoji_events,
-                          themeState,
-                          isCompact: true,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildStatItem(
-                          l10n.pfGamesPlayed,
-                          _displayStats['totalGames']?.toString() ?? '0',
-                          Icons.games,
-                          themeState,
-                          isCompact: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatItem(
-                          l10n.pfPlayTime,
-                          _formatDuration(
-                            l10n,
-                            (_displayStats['totalPlayTime'] as num?)
-                                    ?.toInt() ??
-                                0,
-                          ),
-                          Icons.access_time,
-                          themeState,
-                          isCompact: true,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildStatItem(
-                          l10n.pfAverageScore,
-                          _displayStats['averageScore']?.toString() ?? '0',
-                          Icons.trending_up,
-                          themeState,
-                          isCompact: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatItem(
-                          l10n.pfFoodConsumed,
-                          _displayStats['totalFood']?.toString() ?? '0',
-                          Icons.fastfood,
-                          themeState,
-                          isCompact: true,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildStatItem(
-                          l10n.pfPowerUps,
-                          _displayStats['totalPowerUps']?.toString() ?? '0',
-                          Icons.flash_on,
-                          themeState,
-                          isCompact: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
+                : _buildStatGrid(l10n, theme),
           ),
-          const SizedBox(height: 24),
 
-          // Recent Achievements Section
-          if (_recentAchievements.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.backgroundColor.withValues(alpha: 0.8),
-                    theme.backgroundColor.withValues(alpha: 0.6),
-                    Colors.amber.withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.amber.withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
+          if (_recentAchievements.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            _buildSection(
+              theme: theme,
+              title: l10n.pfAchievements,
+              onViewAll: () => _navigateToAchievements(context),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.emoji_events_rounded,
-                              color: Colors.amber,
-                              size: context.scaled(24),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            l10n.pfAchievements,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () => _navigateToAchievements(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Colors.amber, Colors.orange],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.amber.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            l10n.commonViewAll,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Achievement cards
-                  ...(_recentAchievements
-                      .map(
-                        (achievement) =>
-                            _buildAchievementCard(achievement, theme),
-                      )
-                      .toList()),
+                  for (var i = 0; i < _recentAchievements.length; i++) ...[
+                    if (i > 0) _hairline(theme),
+                    _buildAchievementRow(_recentAchievements[i], theme),
+                  ],
                 ],
               ),
             ),
+          ],
 
-          if (_recentAchievements.isNotEmpty) const SizedBox(height: 24),
-
-          // Sign-in / upgrade section — shown to anyone without a real
-          // credential. Gated on hasNoCredential (guest OR anonymous), not
-          // isAnonymous: the offline guest is the default identity under
-          // play-first onboarding, and it is not UserType.anonymous, so the
-          // old predicate hid this card from most of the people it exists for.
-          if (authState.hasNoCredential)
-            Container(
-              padding: const EdgeInsets.all(24),
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue.withValues(alpha: 0.15),
-                    Colors.blue.withValues(alpha: 0.1),
-                    theme.backgroundColor.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.blue.withValues(alpha: 0.4),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
+          const SizedBox(height: 24),
+          _buildSection(
+            theme: theme,
+            title: l10n.pfReplays,
+            onViewAll:
+                replayKeys.isEmpty ? null : () => _navigateToReplays(context),
+            child: replayKeys.isEmpty
+                ? _buildEmptyLine(l10n.pfNoReplays)
+                : Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: FaIcon(
-                          FontAwesomeIcons.google,
-                          color: Colors.blue,
-                          size: context.scaled(24),
-                        ),
+                      Icon(
+                        Icons.videocam_rounded,
+                        color: theme.accentColor,
+                        size: context.scaled(20),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.pfUpgradeTitle,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              l10n.pfUpgradeSubtitle,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
+                      Text(
+                        l10n.pfReplaysSaved(replayKeys.length),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+          ),
 
-                  // Benefits list
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildUpgradeBenefit(
-                          Icons.cloud_sync,
-                          l10n.pfBenefitSync,
-                          l10n.pfBenefitSyncSub,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildUpgradeBenefit(
-                          Icons.leaderboard,
-                          l10n.pfBenefitLeaderboards,
-                          l10n.pfBenefitLeaderboardsSub,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildUpgradeBenefit(
-                          Icons.people,
-                          l10n.pfBenefitSocial,
-                          l10n.pfBenefitSocialSub,
-                        ),
-                      ),
-                    ],
+          if (authState.hasNoCredential) ...[
+            const SizedBox(height: 24),
+            _buildSection(
+              theme: theme,
+              // "Sign in" rather than pfUpgradeTitle ("Upgrade to Google
+              // Account"): as a section eyebrow that was both shouty and
+              // wrong on iOS, where Apple is offered alongside Google. The
+              // card's first line already explains what signing in buys.
+              title: l10n.eaSignIn,
+              child: _buildSignInBlock(context, l10n, theme),
+            ),
+          ],
+
+          if (!authState.isLoading) ...[
+            const SizedBox(height: 24),
+            _buildSection(
+              theme: theme,
+              title: l10n.pfAccountManagement,
+              child: Column(
+                children: [
+                  _buildAccountAction(
+                    icon: Icons.logout_rounded,
+                    label: l10n.pfSignOut,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    onTap: () => _showSignOutDialog(context, theme),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Upgrade button
-                  _buildEnhancedButton(
-                    context,
-                    l10n.pfSignInGoogle,
-                    FaIcon(
-                      FontAwesomeIcons.google,
-                      color: Colors.white,
-                      size: context.scaled(24),
-                    ),
-                    Colors.blue,
-                    Colors.blue.shade700,
-                    () => _handleGoogleUpgrade(context, theme),
+                  _hairline(theme),
+                  // App Store Guideline 5.1.1(v): deletion must be initiable
+                  // in-app wherever accounts can be created.
+                  _buildAccountAction(
+                    icon: Icons.delete_forever_rounded,
+                    label: l10n.pfDeleteAccount,
+                    color: Colors.redAccent,
+                    onTap: () => _showDeleteAccountDialog(context, theme),
                   ),
-
-                  // Guideline 4.8: wherever Google sign-in is offered on
-                  // Apple platforms, Sign in with Apple rides along.
-                  if (defaultTargetPlatform == TargetPlatform.iOS ||
-                      defaultTargetPlatform == TargetPlatform.macOS) ...[
-                    const SizedBox(height: 12),
-                    _buildEnhancedButton(
-                      context,
-                      l10n.pfSignInApple,
-                      FaIcon(
-                        FontAwesomeIcons.apple,
-                        color: Colors.white,
-                        size: context.scaled(24),
-                      ),
-                      Colors.black,
-                      Colors.grey.shade900,
-                      () => _handleAppleUpgrade(context, theme),
-                    ),
-                  ],
                 ],
               ),
             ),
+          ],
 
-          if (authState.hasNoCredential) const SizedBox(height: 24),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
 
-          // Recent Replays Section
-          Container(
-            padding: const EdgeInsets.all(24),
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                  theme.backgroundColor.withValues(alpha: 0.6),
-                  Colors.purple.withValues(alpha: 0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.purple.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
+  /// Eyebrow + hairline card. Mirrors `SettingsScreen._buildSection` so the two
+  /// screens read as the same product; [onViewAll] renders as a quiet text
+  /// affordance rather than the filled gradient pill this screen used to have,
+  /// which competed with the content it was pointing at.
+  Widget _buildSection({
+    required GameTheme theme,
+    required String title,
+    required Widget child,
+    VoidCallback? onViewAll,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, right: 4, bottom: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: context.letterSpacing(1.5),
+                  ),
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+              ),
+              if (onViewAll != null)
+                GestureDetector(
+                  onTap: onViewAll,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
+                    child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.movie_rounded,
-                            color: Colors.purple,
-                            size: context.scaled(24),
+                        Text(
+                          l10n.commonViewAll,
+                          style: TextStyle(
+                            color: theme.accentColor.withValues(alpha: 0.9),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          l10n.pfReplays,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: context.scaled(18),
+                          color: theme.accentColor.withValues(alpha: 0.9),
                         ),
                       ],
                     ),
-                    GestureDetector(
-                      onTap: () => _navigateToReplays(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Colors.purple, Colors.deepPurple],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.purple.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          l10n.commonViewAll,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                Builder(
-                  builder: (context) {
-                    final replayKeys = _appCache.replayKeys ?? [];
-                    if (replayKeys.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            l10n.pfNoReplays,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-
-                    return Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.purple.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.purple.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.video_library_rounded,
-                            color: Colors.purple.withValues(alpha: 0.8),
-                            size: context.scaled(20),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            l10n.pfReplaysSaved(replayKeys.length),
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
+            ],
           ),
-          const SizedBox(height: 32),
+        ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: theme.backgroundColor.withValues(alpha: 0.3),
+            border: Border.all(
+              color: theme.accentColor.withValues(alpha: 0.3),
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: child,
+        ),
+      ],
+    );
+  }
 
-          // Enhanced Sign Out Section
-          if (!authState.isLoading)
-            Container(
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.red.withValues(alpha: 0.1),
-                    Colors.red.withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-              ),
-              child: Column(
+  /// Avatar, name, account state and level in one block.
+  ///
+  /// The XP ring doubles as the avatar's border — the signature element of the
+  /// screen, and the reason the old standalone level card is gone. Progress
+  /// belongs to the player, so it is drawn on the player.
+  Widget _buildIdentity(
+    BuildContext context,
+    AuthState authState,
+    GameTheme theme,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final progression = getIt<ProgressionService>();
+    final isGuest = authState.hasNoCredential;
+    final stateColor = isGuest ? Colors.orange : theme.accentColor;
+
+    return ListenableBuilder(
+      listenable: progression,
+      builder: (context, _) {
+        final level = progression.level;
+        final into = progression.xpIntoLevel;
+        final needed = progression.xpForNextLevel;
+        final fraction = needed <= 0 ? 0.0 : (into / needed).clamp(0.0, 1.0);
+        final ring = context.scaled(128);
+
+        return Column(
+          children: [
+            SizedBox(
+              width: ring,
+              height: ring,
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  Text(
-                    l10n.pfAccountManagement,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  SizedBox.expand(
+                    child: CircularProgressIndicator(
+                      value: fraction,
+                      strokeWidth: 3,
+                      strokeCap: StrokeCap.round,
+                      backgroundColor:
+                          theme.accentColor.withValues(alpha: 0.15),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(theme.accentColor),
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  _buildEnhancedButton(
-                    context,
-                    l10n.pfSignOut,
-                    Icon(
-                      Icons.logout_rounded,
-                      color: Colors.white,
-                      size: context.scaled(24),
-                    ),
-                    Colors.red,
-                    Colors.red.shade700,
-                    () => _showSignOutDialog(context, theme),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Apple App Store Guideline 5.1.1(v): account deletion must
-                  // be initiable in-app for any app with account creation.
-                  _buildEnhancedButton(
-                    context,
-                    l10n.pfDeleteAccount,
-                    Icon(
-                      Icons.delete_forever_rounded,
-                      color: Colors.white,
-                      size: context.scaled(24),
-                    ),
-                    Colors.red.shade800,
-                    Colors.red.shade900,
-                    () => _showDeleteAccountDialog(context, theme),
+                  CircleAvatar(
+                    radius: ring / 2 - 10,
+                    backgroundColor: theme.backgroundColor.withValues(alpha: 0.6),
+                    backgroundImage: authState.photoURL != null
+                        ? NetworkImage(authState.photoURL!)
+                        : null,
+                    // Avatars fail to load on flaky connections constantly;
+                    // swallow it and keep the fallback icon.
+                    onBackgroundImageError:
+                        authState.photoURL != null ? (e, s) {} : null,
+                    child: authState.photoURL == null
+                        ? Icon(
+                            Icons.person_rounded,
+                            size: context.scaled(52),
+                            color: theme.accentColor,
+                          )
+                        : null,
                   ),
                 ],
               ),
             ),
-
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    String label,
-    String value,
-    IconData icon,
-    ThemeState themeState, {
-    bool isCompact = false,
-  }) {
-    if (isCompact) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-        child: Column(
-          children: [
-            Icon(icon, color: themeState.currentTheme.primaryColor, size: context.scaled(20)),
-            const SizedBox(height: 4),
+            const SizedBox(height: 16),
             Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
+              authState.publicLabel,
               textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ],
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: themeState.currentTheme.primaryColor, size: context.scaled(24)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
+            const SizedBox(height: 10),
+            // Outlined, not filled: the account state is information, not a
+            // call to action. The action lives in the sign-in section below.
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: stateColor.withValues(alpha: 0.6)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isGuest ? Icons.person_outline_rounded : Icons.verified_rounded,
+                    size: context.scaled(14),
+                    color: stateColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isGuest ? l10n.pfGuestPlayer : l10n.pfVerifiedAccount,
+                    style: TextStyle(
+                      color: stateColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: context.letterSpacing(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              '${l10n.ppgLevel(level)}  ·  $into / $needed XP',
               style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withValues(alpha: 0.8),
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 13,
+                letterSpacing: context.letterSpacing(0.3),
               ),
             ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEnhancedButton(
-    BuildContext context,
-    String text,
-    Widget icon,
-    Color primaryColor,
-    Color secondaryColor,
-    VoidCallback onPressed,
-  ) {
-    return Container(
-      width: double.infinity,
-      height: context.scaled(56),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryColor, secondaryColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: 0.4),
-            blurRadius: 15,
-            spreadRadius: 1,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onPressed,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              icon,
-              const SizedBox(width: 12),
-              Text(
-                text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton(
-    BuildContext context,
-    String label,
-    IconData icon,
-    Color color,
-    VoidCallback onPressed,
-  ) {
-    return Container(
-      height: context.scaled(80),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withValues(alpha: 0.8), color.withValues(alpha: 0.6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onPressed,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white, size: context.scaled(28)),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Color _getRarityColor(AchievementRarity rarity) {
-    switch (rarity) {
-      case AchievementRarity.common:
-        return Colors.grey;
-      case AchievementRarity.rare:
-        return Colors.blue;
-      case AchievementRarity.epic:
-        return Colors.purple;
-      case AchievementRarity.legendary:
-        return Colors.amber;
-      case AchievementRarity.diamond:
-        return Colors.cyanAccent;
-    }
-  }
-
-  Widget _buildAchievementCard(Achievement achievement, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final rarityColor = _getRarityColor(achievement.rarity);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            rarityColor.withValues(alpha: 0.2),
-            rarityColor.withValues(alpha: 0.1),
           ],
+        );
+      },
+    );
+  }
+
+  /// Six stats, label above value, two per row.
+  ///
+  /// Icons were dropped: six of them competing at the same weight made the
+  /// block read as a toolbar rather than a set of numbers, and the label
+  /// already says what each one is.
+  Widget _buildStatGrid(AppLocalizations l10n, GameTheme theme) {
+    final cells = <_Stat>[
+      _Stat(l10n.pfHighScore, _displayStats['highScore']?.toString() ?? '0'),
+      _Stat(l10n.pfGamesPlayed, _displayStats['totalGames']?.toString() ?? '0'),
+      _Stat(
+        l10n.pfPlayTime,
+        _formatDuration(
+          l10n,
+          (_displayStats['totalPlayTime'] as num?)?.toInt() ?? 0,
         ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: rarityColor.withValues(alpha: 0.4)),
       ),
+      _Stat(l10n.pfAverageScore, _displayStats['averageScore']?.toString() ?? '0'),
+      _Stat(l10n.pfFoodConsumed, _displayStats['totalFood']?.toString() ?? '0'),
+      _Stat(l10n.pfPowerUps, _displayStats['totalPowerUps']?.toString() ?? '0'),
+    ];
+
+    return Column(
+      children: [
+        for (var row = 0; row < cells.length; row += 2) ...[
+          if (row > 0) const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildStatCell(cells[row])),
+              const SizedBox(width: 16),
+              Expanded(
+                child: row + 1 < cells.length
+                    ? _buildStatCell(cells[row + 1])
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStatCell(_Stat stat) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          stat.label.toUpperCase(),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.5),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: context.letterSpacing(0.8),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          stat.value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAchievementRow(Achievement achievement, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: rarityColor.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(achievement.icon, color: Colors.white, size: context.scaled(24)),
+          Icon(
+            Icons.emoji_events_rounded,
+            color: theme.accentColor,
+            size: context.scaled(22),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1273,41 +649,230 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   achievement.localizedTitle(l10n),
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   achievement.localizedDescription(l10n),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: Colors.white.withValues(alpha: 0.6),
+                    fontSize: 12.5,
+                    height: 1.3,
                   ),
                 ),
               ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: rarityColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              achievement.localizedRarityName(l10n),
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  /// What signing in buys, then the ways to do it.
+  Widget _buildSignInBlock(
+    BuildContext context,
+    AppLocalizations l10n,
+    GameTheme theme,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.pfUpgradeSubtitle,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 13.5,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 18),
+        _buildBenefitRow(theme, Icons.cloud_done_rounded, l10n.pfBenefitSync,
+            l10n.pfBenefitSyncSub),
+        const SizedBox(height: 12),
+        _buildBenefitRow(theme, Icons.leaderboard_rounded,
+            l10n.pfBenefitLeaderboards, l10n.pfBenefitLeaderboardsSub),
+        const SizedBox(height: 12),
+        _buildBenefitRow(theme, Icons.people_alt_rounded, l10n.pfBenefitSocial,
+            l10n.pfBenefitSocialSub),
+        const SizedBox(height: 20),
+        _buildSignInButton(
+          theme: theme,
+          icon: FaIcon(
+            FontAwesomeIcons.google,
+            color: Colors.white,
+            size: context.scaled(17),
+          ),
+          label: l10n.pfSignInGoogle,
+          onTap: () => _handleGoogleUpgrade(context, theme),
+        ),
+        // Guideline 4.8: wherever Google is offered on an Apple platform,
+        // Sign in with Apple rides along.
+        if (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS) ...[
+          const SizedBox(height: 10),
+          _buildSignInButton(
+            theme: theme,
+            icon: FaIcon(
+              FontAwesomeIcons.apple,
+              color: Colors.white,
+              size: context.scaled(19),
+            ),
+            label: l10n.pfSignInApple,
+            onTap: () => _handleAppleUpgrade(context, theme),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildBenefitRow(
+    GameTheme theme,
+    IconData icon,
+    String title,
+    String subtitle,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: context.scaled(18),
+          color: theme.accentColor.withValues(alpha: 0.9),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextSpan(
+                  text: '  $subtitle',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Filled with the theme accent rather than a brand colour: a blue Google
+  /// slab and a black Apple slab were the two loudest blocks on the screen and
+  /// belonged to neither the theme nor each other.
+  Widget _buildSignInButton({
+    required GameTheme theme,
+    required Widget icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: theme.accentColor.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.55),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                icon,
+                const SizedBox(width: 10),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sign out and delete are rows, not filled red slabs. Destructive actions
+  /// should be findable and unmistakable, not the brightest thing on screen —
+  /// the confirmation dialog is where the weight belongs.
+  Widget _buildAccountAction({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: context.scaled(20)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: color.withValues(alpha: 0.5),
+              size: context.scaled(20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _hairline(GameTheme theme) => Divider(
+        height: 1,
+        thickness: 1,
+        color: theme.accentColor.withValues(alpha: 0.15),
+      );
+
+  Widget _buildEmptyLine(String message) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          message,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.55),
+            fontSize: 14,
+          ),
+        ),
+      );
 
   void _navigateToStatistics(BuildContext context) {
     context.push(AppRoutes.statistics);
@@ -1331,7 +896,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white),
+            const Icon(Icons.check_circle_rounded, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -1352,32 +917,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildUpgradeBenefit(IconData icon, String title, String subtitle) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.blue, size: context.scaled(24)),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.white.withValues(alpha: 0.7),
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
   Future<void> _handleAppleUpgrade(
     BuildContext context,
     GameTheme theme,
@@ -1388,7 +927,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Links when there is a Firebase anonymous UID to preserve, and falls
       // back to a plain sign-in for offline guests (who have no Firebase user
       // at all). Either way the player's progress survives the upgrade.
-      final success = await authCubit.connectAccountWithApple();
+      final success = await authCubit.connectAccountWithApple(
+        confirmAccountSwitch: () => confirmAccountSwitch(context),
+      );
 
       if (success && context.mounted) {
         _showStyledSnackBar(
@@ -1433,7 +974,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // store sheet has always used the connect path; this screen didn't,
       // so the same button meant two different things depending on where
       // you tapped it.
-      final success = await authCubit.connectAccountWithGoogle();
+      final success = await authCubit.connectAccountWithGoogle(
+        confirmAccountSwitch: () => confirmAccountSwitch(context),
+      );
 
       if (success && context.mounted) {
         _showStyledSnackBar(
@@ -1592,4 +1135,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+}
+
+/// One label/value pair in the statistics grid. A record would do, but a named
+/// type keeps the grid builder readable at the call site.
+class _Stat {
+  const _Stat(this.label, this.value);
+
+  final String label;
+  final String value;
 }
