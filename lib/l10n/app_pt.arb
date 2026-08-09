@@ -138,6 +138,8 @@
   "settingsUsername": "Nome de usuário",
   "settingsGuestAccount": "Conta de convidado",
   "settingsAuthenticatedAccount": "Conta autenticada",
+  "accountNotBackedUpTitle": "Sem backup",
+  "accountNotBackedUpBody": "Seu progresso está salvo apenas neste aparelho. Faça login para que ele resista a uma reinstalação ou a um celular novo.",
   "settingsChangeUsername": "MUDAR NOME DE USUÁRIO",
   "settingsGuestSignInHint": "Entre para manter seu progresso e jogar com amigos",
   "settingsUsernameVisibleHint": "Seu nome de usuário fica visível para amigos e nos rankings",

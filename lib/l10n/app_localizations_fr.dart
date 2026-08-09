@@ -463,6 +463,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsAuthenticatedAccount => 'Compte authentifié';
 
   @override
+  String get accountNotBackedUpTitle => 'Aucune sauvegarde';
+
+  @override
+  String get accountNotBackedUpBody =>
+      'Ta progression n\'est enregistrée que sur cet appareil. Connecte-toi pour la conserver en cas de réinstallation ou de changement de téléphone.';
+
+  @override
   String get settingsChangeUsername => 'CHANGER DE NOM D\'UTILISATEUR';
 
   @override

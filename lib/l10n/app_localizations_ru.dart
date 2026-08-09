@@ -459,6 +459,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsAuthenticatedAccount => 'Авторизованный аккаунт';
 
   @override
+  String get accountNotBackedUpTitle => 'Нет резервной копии';
+
+  @override
+  String get accountNotBackedUpBody =>
+      'Ваш прогресс сохранён только на этом устройстве. Войдите, чтобы он не пропал при переустановке или смене телефона.';
+
+  @override
   String get settingsChangeUsername => 'СМЕНИТЬ ИМЯ';
 
   @override

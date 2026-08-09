@@ -457,6 +457,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsAuthenticatedAccount => 'प्रमाणित खाता';
 
   @override
+  String get accountNotBackedUpTitle => 'बैकअप नहीं है';
+
+  @override
+  String get accountNotBackedUpBody =>
+      'आपकी प्रगति केवल इसी डिवाइस पर सेव है। साइन इन करें ताकि ऐप दोबारा इंस्टॉल करने या नया फ़ोन लेने पर भी यह बनी रहे।';
+
+  @override
   String get settingsChangeUsername => 'उपयोगकर्ता नाम बदलें';
 
   @override

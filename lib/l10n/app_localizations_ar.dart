@@ -452,6 +452,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsAuthenticatedAccount => 'حساب موثّق';
 
   @override
+  String get accountNotBackedUpTitle => 'لا توجد نسخة احتياطية';
+
+  @override
+  String get accountNotBackedUpBody =>
+      'تقدّمك محفوظ على هذا الجهاز فقط. سجّل الدخول ليبقى محفوظًا عند إعادة التثبيت أو تغيير الهاتف.';
+
+  @override
   String get settingsChangeUsername => 'تغيير اسم المستخدم';
 
   @override

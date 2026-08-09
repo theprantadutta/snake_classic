@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -15,6 +16,7 @@ import 'package:snake_classic/models/achievement.dart' as ach_model;
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/sync/statistics_merge.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/sync_restore_overlay.dart';
 
@@ -111,6 +113,17 @@ class SyncEngine {
   /// wipes SharedPreferences) returns the flag to false and the
   /// first-sign-in pull runs again to restore cloud data.
   static const String _hasEverSignedInPrefsKey = 'sync_engine_has_ever_signed_in';
+
+  /// How many consecutive launches have failed to drain the outbox
+  /// before the returning-user restore. See [_runPrePullDrain].
+  static const String _prePullDrainAttemptsKey =
+      'sync_engine_prepull_drain_attempts';
+
+  /// Give the pre-pull drain this many launches to succeed before the
+  /// restore proceeds without it. Retrying forever would strand a user
+  /// whose outbox contains a permanently-rejected row on their old data
+  /// with no way to ever see their cloud save.
+  static const int _maxPrePullDrainAttempts = 3;
 
   bool _isDraining = false;
   /// Future of the currently-running [_drain] call, or null if idle.
@@ -468,6 +481,28 @@ class SyncEngine {
     // routing) it reports offline even when HTTP works fine. The pull
     // itself is the source of truth — if it can't reach the backend
     // it throws, and we land in the failed branch.
+    //
+    // PUSH BEFORE PULL. Everything this device accumulated while it had
+    // no backend identity (the whole play-first guest period) is sitting
+    // in the outbox, and the restore below calls clearSyncQueue() before
+    // applying the snapshot — so anything still pending at that moment is
+    // deleted outright. Draining first hands that data to the backend's
+    // per-field absorbing merges (SyncStatisticsCommandHandler et al.),
+    // which fold it into the server state; the snapshot we then pull back
+    // already contains it. Without this the guest period is lost from
+    // BOTH sides for any section whose apply is cloud-wins.
+    if (!await _runPrePullDrain(prefs)) {
+      AppLogger.warning(
+        'SyncEngine: pre-pull drain did not clear the outbox — deferring '
+        'restore to the next launch so local data is not overwritten',
+      );
+      // Leave _hasEverSignedInPrefsKey unset so the whole flow retries on
+      // the next launch, and arm the drain so the rest of this session can
+      // still ship data normally.
+      _armDrainLoop();
+      return FirstSignInResult.pullFailed;
+    }
+
     while (true) {
       final attempt = await _runReturningUserPullAttempt(prefs, userId);
       if (attempt != FirstSignInResult.pullFailed) {
@@ -487,6 +522,72 @@ class SyncEngine {
       }
       // _ModalAction.retry — loop and run another pull attempt.
     }
+  }
+
+  /// Ship every pending outbox row to the backend before the cloud
+  /// snapshot is allowed to overwrite local Drift.
+  ///
+  /// Returns true when it is safe to proceed with the restore — either
+  /// the outbox is empty (nothing to lose) or the attempt budget is
+  /// spent. Returns false to defer the restore to the next launch.
+  ///
+  /// The budget matters: a row the backend permanently rejects (a
+  /// validation change, a payload from a much older client) would
+  /// otherwise block the restore forever, leaving the user staring at
+  /// local-only data with their cloud save permanently out of reach.
+  /// After [_maxPrePullDrainAttempts] launches we proceed anyway and let
+  /// the per-section merges in [_applyCloudSnapshot] carry the load —
+  /// they are absorbing (MAX / OR) for every section that owns
+  /// user-earned progress, so proceeding degrades gracefully rather
+  /// than silently discarding.
+  Future<bool> _runPrePullDrain(SharedPreferences prefs) async {
+    if (_syncDao == null) return true;
+
+    final attempts = prefs.getInt(_prePullDrainAttemptsKey) ?? 0;
+    if (attempts >= _maxPrePullDrainAttempts) {
+      AppLogger.warning(
+        'SyncEngine: pre-pull drain budget exhausted after $attempts '
+        'attempts — proceeding with restore and relying on the '
+        'per-section merges',
+      );
+      await prefs.remove(_prePullDrainAttemptsKey);
+      return true;
+    }
+
+    if (await _pendingOwnedCount() == 0) {
+      await prefs.remove(_prePullDrainAttemptsKey);
+      return true;
+    }
+
+    AppLogger.network('SyncEngine: pre-pull drain — pushing local state up');
+    try {
+      await _drain(ignoreConnectivity: true);
+    } catch (e) {
+      AppLogger.error('SyncEngine: pre-pull drain threw', e);
+    }
+
+    final remaining = await _pendingOwnedCount();
+    if (remaining == 0) {
+      await prefs.remove(_prePullDrainAttemptsKey);
+      AppLogger.success('SyncEngine: pre-pull drain cleared the outbox');
+      return true;
+    }
+
+    final next = attempts + 1;
+    await prefs.setInt(_prePullDrainAttemptsKey, next);
+    AppLogger.warning(
+      'SyncEngine: pre-pull drain left $remaining row(s) pending '
+      '(attempt $next/$_maxPrePullDrainAttempts)',
+    );
+    return false;
+  }
+
+  /// Number of outbox rows this engine owns (the legacy DataSyncService
+  /// still owns `preferences` / `fcm_token_register`, and those must not
+  /// hold the restore hostage).
+  Future<int> _pendingOwnedCount() async {
+    final items = await _syncDao!.getPendingSyncItems();
+    return items.where(_isOwned).length;
   }
 
   /// One attempt at the returning-user pull + apply. Returns
@@ -621,7 +722,14 @@ class SyncEngine {
     );
   }
 
-  Future<void> _drain() async {
+  /// [ignoreConnectivity] skips the `isOnline` pre-flight. Used by the
+  /// pre-pull drain for the same reason the pull itself dropped its
+  /// online check: on some Android configs (LAN-only dev backends,
+  /// captive WiFi, VPN routing) connectivity reports offline while HTTP
+  /// works fine, and a spurious "offline" there would burn a retry
+  /// attempt and delay the user's restore for no reason. The HTTP call
+  /// is the source of truth.
+  Future<void> _drain({bool ignoreConnectivity = false}) async {
     if (_isDraining) {
       // Coalesce concurrent calls onto the in-flight future so the
       // caller still gets a meaningful completion signal (used by the
@@ -632,7 +740,7 @@ class SyncEngine {
     }
     if (_db == null || _syncDao == null) return;
     if (!_api.isAuthenticated) return;
-    if (!_connectivity.isOnline) return;
+    if (!ignoreConnectivity && !_connectivity.isOnline) return;
 
     _isDraining = true;
     final completer = Completer<void>();
@@ -1203,10 +1311,47 @@ class SyncEngine {
       }
 
       // ----- statistics -----
+      //
+      // Per-field absorbing merge, NOT a blob replace. The backend already
+      // folds this correctly on the way up (SyncStatisticsCommandHandler:
+      // MAX on monotonic counters, per-key MAX on the maps, longer
+      // recentScores wins, earliest firstPlayedDate / latest
+      // lastPlayedDate, derived ratios recomputed). Overwriting local with
+      // the raw snapshot on the way DOWN threw all of that away: a device
+      // that played through the guest period and then signed into an
+      // existing account lost every game of it, because the apply runs
+      // after clearSyncQueue() and writes with enqueueSync: false — gone
+      // from both sides, permanently. This mirrors the server-side fold so
+      // the two directions agree.
       final stats = snapshot['statistics'];
       if (stats is Map<String, dynamic>) {
-        final modelJson = stats['model_json'] as String? ?? '{}';
-        await _gameDao!.updateStatisticsFromJson(modelJson, enqueueSync: false);
+        final cloudJson = stats['model_json'] as String? ?? '{}';
+        final localJson = (await _gameDao!.getStatistics())?.modelJson ?? '{}';
+        final merged = mergeStatisticsJson(localJson, cloudJson);
+        if (merged.parseFailed) {
+          AppLogger.error(
+            'SyncEngine: statistics merge fell back to a whole-document '
+            'pick — one side was unparseable',
+          );
+        }
+        await _gameDao!.updateStatisticsFromJson(
+          merged.json,
+          enqueueSync: false,
+        );
+        if (merged.localAhead) {
+          AppLogger.network(
+            'SyncEngine: statistics restore — local ahead of cloud on at '
+            'least one counter; keeping the merge and re-enqueueing for push',
+          );
+          // Re-enqueue INSIDE the apply transaction so the drain that arms
+          // after the restore ships the merged values up. The caller's
+          // clearSyncQueue() already ran, so without this the local-ahead
+          // delta would never reach the server.
+          await _db!.enqueueSyncOutbox(
+            dataType: SyncDataType.statistics,
+            entityKey: 'statistics:1',
+          );
+        }
       }
 
       // ----- coin balance -----
@@ -1452,11 +1597,35 @@ class SyncEngine {
             'free': mergedFree.toList()..sort(),
             'premium': localPremium.toList()..sort(),
           });
+          // Tier/XP compared as a PAIR, not per-field. currentXp resets on
+          // every tier-up, so an independent MAX on each would happily
+          // produce (tier: 7, xp: 940) out of a local (7, 20) and a cloud
+          // (3, 940) — a progress state that never existed. Lexicographic
+          // (tier, xp) is the real ordering; whichever side is further
+          // along the season wins, local on ties.
+          final cloudTier = raw['current_tier'] as int? ?? 0;
+          final cloudXp = raw['current_xp'] as int? ?? 0;
+          final localTier = existing?.currentTier ?? 0;
+          final localXp = existing?.currentXp ?? 0;
+          final localFurther = localTier > cloudTier ||
+              (localTier == cloudTier && localXp > cloudXp);
+          if (localFurther) {
+            AppLogger.network(
+              'SyncEngine: battle-pass restore — local ($localTier/$localXp) '
+              'ahead of cloud ($cloudTier/$cloudXp); keeping local and '
+              're-enqueueing for push',
+            );
+            await _db!.enqueueSyncOutbox(
+              dataType: SyncDataType.battlePass,
+              entityKey: 'battle_pass:$seasonId',
+            );
+          }
+
           await _storeDao!.saveBattlePass(
             BattlePassesCompanion(
               seasonId: Value(seasonId),
-              currentTier: Value(raw['current_tier'] as int? ?? 0),
-              currentXp: Value(raw['current_xp'] as int? ?? 0),
+              currentTier: Value(localFurther ? localTier : cloudTier),
+              currentXp: Value(localFurther ? localXp : cloudXp),
               xpForNextTier: Value(raw['xp_for_next_tier'] as int? ?? 100),
               isPremiumPass: Value(raw['is_premium_pass'] as bool? ?? false),
               claimedRewards: Value(claimedJson),
@@ -1501,28 +1670,70 @@ class SyncEngine {
       }
 
       // ----- daily challenge claims -----
+      //
+      // Absorbing merge, same rule as achievements: MAX on progress, OR on
+      // the completed/claimed flags. A challenge the player finished and
+      // claimed offline must never come back un-claimed just because the
+      // push hadn't landed yet — that both erases their credit and makes
+      // the reward claimable a second time.
       final claims = snapshot['daily_challenge_claims'];
-      if (claims is List) {
+      if (claims is List && claims.isNotEmpty) {
+        final existingRows = await _db!.select(_db!.dailyChallenges).get();
+        final existingById = {
+          for (final r in existingRows) r.challengeId: r,
+        };
         for (final raw in claims) {
           if (raw is! Map<String, dynamic>) continue;
           final challengeId = raw['challenge_id'] as String?;
           if (challengeId == null) continue;
+
+          final existing = existingById[challengeId];
+          final cloudProgress = raw['current_progress'] as int? ?? 0;
+          final cloudCompleted = raw['is_completed'] as bool? ?? false;
+          final cloudClaimed = raw['reward_claimed'] as bool? ?? false;
+
+          final mergedProgress =
+              math.max(existing?.currentProgress ?? 0, cloudProgress);
+          final mergedCompleted = cloudCompleted || (existing?.isCompleted ?? false);
+          final mergedClaimed = cloudClaimed || (existing?.rewardClaimed ?? false);
+
+          // Re-enqueue PER CHALLENGE: the drain resolves the row to push by
+          // parsing the id back out of the entity key (_extractIds), so a
+          // synthetic aggregate key would resolve to nothing and silently
+          // drop the push.
+          if (mergedProgress > cloudProgress ||
+              mergedCompleted != cloudCompleted ||
+              mergedClaimed != cloudClaimed) {
+            AppLogger.network(
+              'SyncEngine: daily-challenge restore — local ahead on '
+              '"$challengeId"; keeping local and re-enqueueing for push',
+            );
+            await _db!.enqueueSyncOutbox(
+              dataType: SyncDataType.dailyChallengeClaim,
+              entityKey: 'daily_challenge_claim:$challengeId',
+            );
+          }
+
           await _gameDao!.upsertDailyChallenge(
             DailyChallengesCompanion(
               challengeId: Value(challengeId),
               challengeType: Value(raw['challenge_type'] as String? ?? ''),
               title: Value(raw['title'] as String? ?? ''),
               description: Value(raw['description'] as String? ?? ''),
-              currentProgress: Value(raw['current_progress'] as int? ?? 0),
+              currentProgress: Value(mergedProgress),
               targetProgress: Value(raw['target_progress'] as int? ?? 0),
               rewardCoins: Value(raw['reward_coins'] as int? ?? 0),
-              isCompleted: Value(raw['is_completed'] as bool? ?? false),
-              rewardClaimed: Value(raw['reward_claimed'] as bool? ?? false),
+              isCompleted: Value(mergedCompleted),
+              rewardClaimed: Value(mergedClaimed),
               challengeDate:
                   Value(_parseDate(raw['challenge_date']) ?? DateTime.now()),
               expiresAt: Value(_parseDate(raw['expires_at']) ??
                   DateTime.now().add(const Duration(days: 1))),
-              completedAt: Value(_parseDate(raw['completed_at'])),
+              // Keep the local completion stamp when we have one — it's the
+              // moment the player actually finished it on this device.
+              completedAt: Value(
+                existing?.completedAt ?? _parseDate(raw['completed_at']),
+              ),
             ),
             enqueueSync: false,
           );
@@ -1535,27 +1746,57 @@ class SyncEngine {
       // [_weeklyQuestToPayload] / SyncWeeklyQuestClaimPayload. Treated as
       // authoritative client-mirror state; no-op if the snapshot omits it.
       final weeklyClaims = snapshot['weekly_quest_claims'];
-      if (weeklyClaims is List) {
+      if (weeklyClaims is List && weeklyClaims.isNotEmpty) {
+        final existingQuests = await _gameDao!.getAllWeeklyQuests();
+        final questsById = {for (final q in existingQuests) q.questId: q};
         for (final raw in weeklyClaims) {
           if (raw is! Map<String, dynamic>) continue;
           final questId = raw['quest_id'] as String?;
           if (questId == null || questId.isEmpty) continue;
+
+          final existing = questsById[questId];
+          final cloudProgress = raw['current_progress'] as int? ?? 0;
+          final cloudCompleted = raw['is_completed'] as bool? ?? false;
+          final cloudClaimed = raw['claimed_reward'] as bool? ?? false;
+
+          final mergedProgress =
+              math.max(existing?.currentProgress ?? 0, cloudProgress);
+          final mergedCompleted =
+              cloudCompleted || (existing?.isCompleted ?? false);
+          final mergedClaimed =
+              cloudClaimed || (existing?.claimedReward ?? false);
+
+          if (mergedProgress > cloudProgress ||
+              mergedCompleted != cloudCompleted ||
+              mergedClaimed != cloudClaimed) {
+            AppLogger.network(
+              'SyncEngine: weekly-quest restore — local ahead on "$questId"; '
+              'keeping local and re-enqueueing for push',
+            );
+            await _db!.enqueueSyncOutbox(
+              dataType: SyncDataType.weeklyQuestClaim,
+              entityKey: 'weekly_quest_claim:$questId',
+            );
+          }
+
           await _gameDao!.upsertWeeklyQuest(
             WeeklyQuestsCompanion(
               questId: Value(questId),
               questType: Value(raw['quest_type'] as String? ?? ''),
               title: Value(raw['title'] as String? ?? ''),
               description: Value(raw['description'] as String? ?? ''),
-              currentProgress: Value(raw['current_progress'] as int? ?? 0),
+              currentProgress: Value(mergedProgress),
               targetValue: Value(raw['target_value'] as int? ?? 0),
               coinReward: Value(raw['coin_reward'] as int? ?? 0),
               battlePassXpReward:
                   Value(raw['battle_pass_xp_reward'] as int? ?? 0),
-              isCompleted: Value(raw['is_completed'] as bool? ?? false),
-              claimedReward: Value(raw['claimed_reward'] as bool? ?? false),
+              isCompleted: Value(mergedCompleted),
+              claimedReward: Value(mergedClaimed),
               weekStartDate:
                   Value(_parseDate(raw['week_start_date']) ?? DateTime.now()),
-              completedAt: Value(_parseDate(raw['completed_at'])),
+              completedAt: Value(
+                existing?.completedAt ?? _parseDate(raw['completed_at']),
+              ),
             ),
             enqueueSync: false,
           );

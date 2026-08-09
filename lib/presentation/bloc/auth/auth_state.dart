@@ -59,6 +59,18 @@ class AuthState extends Equatable {
   /// Whether user is a guest (offline user)
   bool get isGuestUser => user?.userType == UserType.guest;
 
+  /// Whether the player has no identifiable credential — TRUE for both the
+  /// purely-local offline guest and a Firebase anonymous account.
+  ///
+  /// Every "sign in" / "save your progress" surface must gate on this, not
+  /// on [isAnonymous]. [isAnonymous] means `UserType.anonymous` only, and
+  /// under play-first onboarding the DEFAULT identity is `UserType.guest`
+  /// — so gating on [isAnonymous] hid the sign-in entry point from exactly
+  /// the users who needed it. Mirrors `UnifiedUser.isAnonymous`, which has
+  /// always had the wider meaning; the two names disagreeing is what made
+  /// the bug so easy to write.
+  bool get hasNoCredential => user?.isAnonymous ?? false;
+
   /// Whether user signed in with Google
   bool get isGoogleUser => user?.userType == UserType.google;
 

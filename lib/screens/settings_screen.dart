@@ -29,7 +29,9 @@ import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/not_backed_up_notice.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
 
@@ -1590,10 +1592,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Row(
                     children: [
                       Icon(
-                        authState.isGuestUser
+                        authState.hasNoCredential
                             ? Icons.person_outline
                             : Icons.verified_user,
-                        color: authState.isGuestUser
+                        color: authState.hasNoCredential
                             ? Colors.orange
                             : Colors.green,
                         size: 18,
@@ -1614,7 +1616,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    authState.isGuestUser
+                    // hasNoCredential, not isGuestUser: a silently-created
+                    // Firebase anonymous account is still an account nobody
+                    // chose and nobody can recover. Calling it "signed in"
+                    // is the lie that made this whole area confusing.
+                    authState.hasNoCredential
                         ? l10n.settingsGuestAccount
                         : l10n.settingsAuthenticatedAccount,
                     style: TextStyle(
@@ -1633,17 +1639,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: theme.backgroundColor,
                 border: Border.all(
-                  color: (authState.isGuestUser ? Colors.orange : Colors.green)
-                      .withValues(alpha: 0.5),
+                  color:
+                      (authState.hasNoCredential ? Colors.orange : Colors.green)
+                          .withValues(alpha: 0.5),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Icon(
-                authState.isGuestUser
+                authState.hasNoCredential
                     ? Icons.person_outline
                     : Icons.account_circle,
-                color: authState.isGuestUser ? Colors.orange : Colors.green,
+                color:
+                    authState.hasNoCredential ? Colors.orange : Colors.green,
                 size: 24,
               ),
             ),
@@ -1653,8 +1661,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 16),
 
         // Username actions
-        if (authState.isGuestUser) ...[
-          // For guest users, allow username change
+        if (authState.hasNoCredential) ...[
+          // States the consequence before offering the fix directly below it.
+          NotBackedUpNotice(theme: theme),
+          const SizedBox(height: 12),
+          // A real, tappable way to sign in. This section used to offer
+          // guests the hint text below and nothing to act on it with, so the
+          // only sign-in entry points in the whole app were the Profile card
+          // (which was itself gated on isAnonymous and so invisible to
+          // offline guests) and a deferred prompt that fires at most three
+          // times ever, only after a new personal best, only after three
+          // games. A player who simply decided they wanted an account had
+          // nowhere to go.
+          //
+          // Routes through the shared upgrade sheet rather than a bare
+          // Google button so Settings offers the same Google / Apple /
+          // email choices as every other surface — and links rather than
+          // re-signs-in when there is an anonymous UID worth preserving.
+          GradientButton(
+            onPressed: () => showAccountUpgradeSheet(context),
+            text: l10n.eaSignIn,
+            primaryColor: theme.accentColor,
+            secondaryColor: theme.primaryColor,
+            icon: Icons.login,
+            width: double.infinity,
+          ),
+          const SizedBox(height: 12),
           GradientButton(
             onPressed: () => _showUsernameDialog(authState, theme),
             text: l10n.settingsChangeUsername,

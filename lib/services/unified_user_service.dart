@@ -297,18 +297,31 @@ class UnifiedUserService extends ChangeNotifier {
         }
       } else {
         // No Firebase user — try cached session first, otherwise fall back
-        // to a purely-local offline guest so the privacy/login screen has
-        // something to render against.
+        // to a purely-local offline guest so there is always an identity to
+        // render and play against.
         //
-        // IMPORTANT: do NOT eagerly fire Firebase anonymous sign-in here.
-        // Anonymous Firebase auth is reserved for the explicit "Continue
-        // as Guest" tap on first_time_auth_screen.dart, which calls
-        // authCubit.signInAnonymously() with user intent. Auto-firing it
-        // on every cold start created an orphan backend user every time
-        // someone reinstalled and never clicked anything — exactly the
-        // pattern the prune-orphan-anonymous-users job has to clean up.
-        // The offline guest below is purely local (no Firebase, no
-        // backend) so it costs nothing to keep around.
+        // This method does not sign anyone in, but do NOT read that as "the
+        // app never creates an anonymous account on its own": it does, just
+        // not from here. [ensureBackendIdentityForPush] fires from the FCM
+        // token bootstrap on every launch (main.dart → bootstrapToken →
+        // NotificationService._registerTokenWithBackend), so an ONLINE
+        // offline-guest is silently promoted to a Firebase anonymous account
+        // — with a real backend row and JWT — within seconds of first launch.
+        //
+        // That is deliberate and load-bearing. Push, sync, and leaderboards
+        // are all JWT-authed, and under play-first onboarding almost nobody
+        // signs in explicitly, so without it the majority of players would be
+        // unreachable and unbacked-up. The cost is accepted: one orphan
+        // anonymous row per install that never converts, which the
+        // prune-orphan-anonymous-users job cleans up.
+        //
+        // What it must never be is INVISIBLE to the player. Anything that
+        // renders account state has to treat guest and anonymous as the same
+        // "not signed in" thing — see AuthState.hasNoCredential and
+        // NotBackedUpNotice. An earlier version of this comment forbade the
+        // eager anonymous sign-in outright, which stopped being true once the
+        // push path landed and left the next reader with the wrong model of
+        // how identity actually works here.
         final cachedUser = await _loadCachedUserSession();
         if (cachedUser != null) {
           AppLogger.user('Using cached user session (no Firebase auth)');
@@ -969,6 +982,12 @@ class UnifiedUserService extends ChangeNotifier {
   ///    (no overwrite) and there is NO local wipe on sign-in (the only
   ///    `clearAllData()` is in [signOut]). The guest's local Drift progress is
   ///    preserved and synced UP under the new identity.
+  ///
+  /// This is the call that makes [initialize]'s "no Firebase user" branch
+  /// temporary in practice: see the note there. It creates an account the
+  /// player never asked for and cannot recover, so every account-facing
+  /// surface must keep describing them as not signed in
+  /// (`AuthState.hasNoCredential`) until they attach a real credential.
   Future<bool> ensureBackendIdentityForPush() async {
     if (_apiService.isAuthenticated) return true;
     if (_ensuringPushIdentity) return false;
@@ -1267,9 +1286,13 @@ class UnifiedUserService extends ChangeNotifier {
   /// Update username for authenticated users (via backend)
   Future<bool> updateAuthenticatedUsername(String newUsername) async {
     if (_currentUser == null) return false;
-    if (_currentUser!.userType != UserType.google) {
-      return false;
-    }
+    // Gate on "has a backend account", not "is a Google user". A Firebase
+    // ANONYMOUS user has a real backend row and a JWT, so PUT
+    // /users/username works fine for them — but the old `!= google` check
+    // rejected them before the call was ever made, and the caller reported
+    // a generic failure. Only the offline guest (no backend identity at
+    // all) has to stay on the local-only path.
+    if (_currentUser!.userType == UserType.guest) return false;
 
     return updateUsername(newUsername);
   }

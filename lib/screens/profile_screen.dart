@@ -16,6 +16,7 @@ import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/not_backed_up_notice.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
 
@@ -51,8 +52,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Convenience getters using cached data
   Map<String, dynamic> get _displayStats => _appCache.statistics ?? {};
   List<Achievement> get _recentAchievements => _appCache.recentAchievements ?? [];
-  // Data is already loaded - no loading state needed
-  bool get _isLoading => !_appCache.isFullyLoaded;
+  // Gated on the LOCAL group only — this panel renders statistics that come
+  // straight from Drift. isFullyLoaded also requires the network group, which
+  // is skipped on a first-run preload, so using it here left the spinner up
+  // for the entire first session on data that was already in hand.
+  bool get _isLoading => !_appCache.isLocalDataLoaded;
 
   /// Localized duration for the play-time stat. getDisplayStatistics()
   /// returns RAW seconds; the stDur* ARB keys carry per-locale unit letters.
@@ -217,6 +221,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         children: [
           const SizedBox(height: 20),
+
+          // Says plainly that this save is device-only. Sits above the
+          // profile card because it qualifies everything below it — the
+          // high score, the achievements, the replays are all local.
+          if (authState.hasNoCredential) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: NotBackedUpNotice(theme: theme),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           // Enhanced Profile Header
           Container(
@@ -690,8 +705,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           if (_recentAchievements.isNotEmpty) const SizedBox(height: 24),
 
-          // Google Sign-In Upgrade Section (for guest users only)
-          if (authState.isAnonymous && !authState.isGoogleUser)
+          // Sign-in / upgrade section — shown to anyone without a real
+          // credential. Gated on hasNoCredential (guest OR anonymous), not
+          // isAnonymous: the offline guest is the default identity under
+          // play-first onboarding, and it is not UserType.anonymous, so the
+          // old predicate hid this card from most of the people it exists for.
+          if (authState.hasNoCredential)
             Container(
               padding: const EdgeInsets.all(24),
               margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -826,8 +845,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-          if (authState.isAnonymous && !authState.isGoogleUser)
-            const SizedBox(height: 24),
+          if (authState.hasNoCredential) const SizedBox(height: 24),
 
           // Recent Replays Section
           Container(
@@ -1404,7 +1422,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
     try {
       final authCubit = context.read<AuthCubit>();
-      final success = await authCubit.signInWithGoogle();
+      // connectAccountWithGoogle, NOT signInWithGoogle: for a Firebase
+      // anonymous user this LINKS the credential, preserving the UID and
+      // with it the backend account holding their coins and progress. A
+      // plain sign-in mints a different UID and strands all of it. The
+      // store sheet has always used the connect path; this screen didn't,
+      // so the same button meant two different things depending on where
+      // you tapped it.
+      final success = await authCubit.connectAccountWithGoogle();
 
       if (success && context.mounted) {
         _showStyledSnackBar(

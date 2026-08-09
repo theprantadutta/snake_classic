@@ -138,6 +138,8 @@
   "settingsUsername": "Nome utente",
   "settingsGuestAccount": "Account ospite",
   "settingsAuthenticatedAccount": "Account autenticato",
+  "accountNotBackedUpTitle": "Nessun backup",
+  "accountNotBackedUpBody": "I tuoi progressi sono salvati solo su questo dispositivo. Accedi per conservarli in caso di reinstallazione o di un nuovo telefono.",
   "settingsChangeUsername": "CAMBIA NOME UTENTE",
   "settingsGuestSignInHint": "Accedi per conservare i tuoi progressi e giocare con gli amici",
   "settingsUsernameVisibleHint": "Il tuo nome utente è visibile agli amici e nelle classifiche",

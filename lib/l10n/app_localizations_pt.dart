@@ -461,6 +461,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsAuthenticatedAccount => 'Conta autenticada';
 
   @override
+  String get accountNotBackedUpTitle => 'Sem backup';
+
+  @override
+  String get accountNotBackedUpBody =>
+      'Seu progresso está salvo apenas neste aparelho. Faça login para que ele resista a uma reinstalação ou a um celular novo.';
+
+  @override
   String get settingsChangeUsername => 'MUDAR NOME DE USUÁRIO';
 
   @override

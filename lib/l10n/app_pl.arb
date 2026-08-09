@@ -138,6 +138,8 @@
   "settingsUsername": "Nazwa użytkownika",
   "settingsGuestAccount": "Konto gościa",
   "settingsAuthenticatedAccount": "Konto uwierzytelnione",
+  "accountNotBackedUpTitle": "Brak kopii zapasowej",
+  "accountNotBackedUpBody": "Twoje postępy są zapisane tylko na tym urządzeniu. Zaloguj się, aby przetrwały ponowną instalację lub zmianę telefonu.",
   "settingsChangeUsername": "ZMIEŃ NAZWĘ",
   "settingsGuestSignInHint": "Zaloguj się, aby zachować postępy i grać ze znajomymi",
   "settingsUsernameVisibleHint": "Twoja nazwa jest widoczna dla znajomych i w rankingach",

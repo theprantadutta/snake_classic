@@ -464,6 +464,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsAuthenticatedAccount => 'Cuenta autenticada';
 
   @override
+  String get accountNotBackedUpTitle => 'Sin copia de seguridad';
+
+  @override
+  String get accountNotBackedUpBody =>
+      'Tu progreso solo está guardado en este dispositivo. Inicia sesión para conservarlo si reinstalas la app o cambias de teléfono.';
+
+  @override
   String get settingsChangeUsername => 'CAMBIAR NOMBRE DE USUARIO';
 
   @override

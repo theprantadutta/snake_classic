@@ -213,6 +213,8 @@
   "settingsUsername": "Username",
   "settingsGuestAccount": "Guest Account",
   "settingsAuthenticatedAccount": "Authenticated Account",
+  "accountNotBackedUpTitle": "Not backed up",
+  "accountNotBackedUpBody": "Your progress is saved on this device only. Sign in so it survives a reinstall or a new phone.",
   "settingsChangeUsername": "CHANGE USERNAME",
   "settingsGuestSignInHint": "Sign in to keep your progress and play with friends",
   "settingsUsernameVisibleHint": "Your username is visible to friends and on leaderboards",

@@ -391,12 +391,81 @@ class AuthCubit extends Cubit<AuthState> {
   /// Without this branch, offline guests hit `linkAnonymousToGoogle`'s
   /// `!user.isAnonymous` guard and saw a bare "link failed" on every upgrade
   /// prompt.
-  Future<bool> connectAccountWithGoogle() =>
-      _userService.canLinkCredential ? linkAnonymousToGoogle() : signInWithGoogle();
+  /// Firebase codes meaning "the credential you picked already belongs to a
+  /// different account". Linking can NEVER succeed for these, so retrying or
+  /// surfacing an error is a dead end — the only way forward is a plain
+  /// sign-in to the account that already owns the credential.
+  ///
+  /// This is the returning-user case and it is not rare: reinstall the app,
+  /// play as a guest, get silently upgraded to a Firebase anonymous account,
+  /// then tap "Sign in with Google" for the Google account you have used for
+  /// a year. `canLinkCredential` is true (we ARE anonymous), so the link path
+  /// is taken, and Firebase rejects it with `credential-already-in-use`.
+  /// Before this fallback that surfaced as a bare "link failed" and the user
+  /// simply could not get back into their own account.
+  static const Set<String> _credentialOwnedElsewhere = {
+    'credential-already-in-use',
+    'email-already-in-use',
+    'account-exists-with-different-credential',
+  };
+
+  Future<bool> connectAccountWithGoogle() async {
+    if (!_userService.canLinkCredential) return signInWithGoogle();
+
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.linkAnonymousToGoogle();
+      if (ok) {
+        _analytics.setUserProperties(authMethod: 'google');
+        emit(state.copyWith(user: _userService.currentUser, isLoading: false));
+        return true;
+      }
+      emit(state.copyWith(isLoading: false, errorMessage: 'link failed'));
+      return false;
+    } on FirebaseAuthException catch (e) {
+      if (_credentialOwnedElsewhere.contains(e.code)) {
+        AppLogger.info(
+          'Link rejected (${e.code}) — that Google account already exists; '
+          'falling back to a plain sign-in',
+        );
+        return signInWithGoogle();
+      }
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
 
   /// Apple counterpart to [connectAccountWithGoogle].
-  Future<bool> connectAccountWithApple() =>
-      _userService.canLinkCredential ? linkAnonymousToApple() : signInWithApple();
+  Future<bool> connectAccountWithApple() async {
+    if (!_userService.canLinkCredential) return signInWithApple();
+
+    emit(state.copyWith(isLoading: true, clearError: true));
+    try {
+      final ok = await _userService.linkAnonymousToApple();
+      if (ok) {
+        _analytics.setUserProperties(authMethod: 'apple');
+        emit(state.copyWith(user: _userService.currentUser, isLoading: false));
+        return true;
+      }
+      emit(state.copyWith(isLoading: false, errorMessage: 'link failed'));
+      return false;
+    } on FirebaseAuthException catch (e) {
+      if (_credentialOwnedElsewhere.contains(e.code)) {
+        AppLogger.info(
+          'Link rejected (${e.code}) — falling back to a plain Apple sign-in',
+        );
+        return signInWithApple();
+      }
+      emit(state.copyWith(isLoading: false, errorMessage: e.code));
+      return false;
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      return false;
+    }
+  }
 
   /// Link the current anonymous account to an Apple sign-in.
   Future<bool> linkAnonymousToApple() async {

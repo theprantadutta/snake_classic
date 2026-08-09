@@ -138,6 +138,8 @@
   "settingsUsername": "Имя пользователя",
   "settingsGuestAccount": "Гостевой аккаунт",
   "settingsAuthenticatedAccount": "Авторизованный аккаунт",
+  "accountNotBackedUpTitle": "Нет резервной копии",
+  "accountNotBackedUpBody": "Ваш прогресс сохранён только на этом устройстве. Войдите, чтобы он не пропал при переустановке или смене телефона.",
   "settingsChangeUsername": "СМЕНИТЬ ИМЯ",
   "settingsGuestSignInHint": "Войдите, чтобы сохранить прогресс и играть с друзьями",
   "settingsUsernameVisibleHint": "Ваше имя видно друзьям и в рейтингах",

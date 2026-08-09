@@ -78,6 +78,20 @@ class AppDataCache extends ChangeNotifier {
   List<FriendRequest>? _friendRequests;
 
   bool _isFullyLoaded = false;
+
+  /// True once the LOCAL group (statistics, achievements, settings, daily
+  /// challenges, player progress, replays) has been read from Drift —
+  /// independently of whether the network group ran.
+  ///
+  /// [_isFullyLoaded] deliberately stays false after a `skipNetwork`
+  /// preload so the leaderboard / tournament / friends screens know their
+  /// caches are cold and fetch on open. Screens that only render local
+  /// data must NOT gate their spinners on that flag: `preloadAll` runs
+  /// exactly once per launch, from LoadingScreen, so on a brand-new
+  /// install (`skipNetwork: FirstRunService().isFirstGame`) it never
+  /// flipped for the whole session and the profile statistics panel span
+  /// forever on perfectly good data that was sitting right there.
+  bool _isLocalDataLoaded = false;
   bool _isLoading = false;
   DateTime? _lastRefreshTime;
   static const Duration _refreshThrottle = Duration(seconds: 60);
@@ -85,6 +99,10 @@ class AppDataCache extends ChangeNotifier {
   // === Public Getters (instant access) ===
 
   bool get isFullyLoaded => _isFullyLoaded;
+
+  /// Use this — not [isFullyLoaded] — to gate any UI that renders only
+  /// locally-stored data (statistics, achievements, settings).
+  bool get isLocalDataLoaded => _isLocalDataLoaded;
   bool get isLoading => _isLoading;
   DateTime? get lastRefreshTime => _lastRefreshTime;
 
@@ -168,6 +186,8 @@ class AppDataCache extends ChangeNotifier {
       // must NOT convince the leaderboard/tournament screens their cache is
       // warm, or they would render empty instead of fetching on open.
       _isFullyLoaded = !skipNetwork;
+      // The local group above is unconditional, so it is loaded either way.
+      _isLocalDataLoaded = true;
       _lastRefreshTime = DateTime.now();
       AppLogger.success(
         'AppDataCache: preload complete'
@@ -177,6 +197,7 @@ class AppDataCache extends ChangeNotifier {
       AppLogger.error('AppDataCache: Error during preload', e);
       // Even if some fail, mark as loaded so screens can still function
       _isFullyLoaded = true;
+      _isLocalDataLoaded = true;
       _lastRefreshTime = DateTime.now();
     } finally {
       _isLoading = false;
@@ -435,6 +456,7 @@ class AppDataCache extends ChangeNotifier {
     _friendsList = null;
     _friendRequests = null;
     _isFullyLoaded = false;
+    _isLocalDataLoaded = false;
     notifyListeners();
   }
 }

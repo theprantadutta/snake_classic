@@ -138,6 +138,8 @@
   "settingsUsername": "اسم المستخدم",
   "settingsGuestAccount": "حساب ضيف",
   "settingsAuthenticatedAccount": "حساب موثّق",
+  "accountNotBackedUpTitle": "لا توجد نسخة احتياطية",
+  "accountNotBackedUpBody": "تقدّمك محفوظ على هذا الجهاز فقط. سجّل الدخول ليبقى محفوظًا عند إعادة التثبيت أو تغيير الهاتف.",
   "settingsChangeUsername": "تغيير اسم المستخدم",
   "settingsGuestSignInHint": "سجّل الدخول للاحتفاظ بتقدمك واللعب مع الأصدقاء",
   "settingsUsernameVisibleHint": "اسم المستخدم مرئي للأصدقاء وفي التصنيفات",

@@ -940,6 +940,18 @@ abstract class AppLocalizations {
   /// **'Authenticated Account'**
   String get settingsAuthenticatedAccount;
 
+  /// No description provided for @accountNotBackedUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not backed up'**
+  String get accountNotBackedUpTitle;
+
+  /// No description provided for @accountNotBackedUpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress is saved on this device only. Sign in so it survives a reinstall or a new phone.'**
+  String get accountNotBackedUpBody;
+
   /// No description provided for @settingsChangeUsername.
   ///
   /// In en, this message translates to:
