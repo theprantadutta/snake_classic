@@ -144,6 +144,8 @@ class ApiService {
   Future<void> clearToken() async {
     _accessToken = null;
     _userId = null;
+    // The cached profile belongs to the session being torn down.
+    invalidateCurrentUserCache();
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_tokenKey);
@@ -190,6 +192,11 @@ class ApiService {
     try {
       AppLogger.network('Authenticating with backend using Firebase token');
 
+      // Any cached /auth/me belongs to whoever was signed in before this
+      // call. A guest→account upgrade or an account switch would otherwise
+      // read the previous user's profile straight out of the cache.
+      invalidateCurrentUserCache();
+
       // Send the device's current UTC offset at signup so brand-new
       // accounts get a real local-time anchor immediately, without
       // depending on the FCM-token-register path (which never runs for
@@ -232,17 +239,74 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> getCurrentUser() async {
+  Map<String, dynamic>? _cachedCurrentUser;
+  DateTime? _cachedCurrentUserAt;
+  Future<Map<String, dynamic>?>? _currentUserInFlight;
+
+  /// How long a fetched `/auth/me` payload is reused.
+  ///
+  /// Sized for the sign-in burst, not for freshness: three independent callers
+  /// hit this endpoint within ~300ms of every launch — the profile load in
+  /// UnifiedUserService._loadOrCreateUser, plus CoinsCubit.syncWithBackend and
+  /// GameSettingsCubit.syncWithBackend from AuthCubit._firePostAuthSyncs, each
+  /// wanting a single field (`coins`, `high_score`) out of the same document
+  /// that was just downloaded. Anything that genuinely needs current data
+  /// passes `forceRefresh`.
+  static const Duration _currentUserCacheTtl = Duration(seconds: 15);
+
+  /// GET /auth/me, coalesced.
+  ///
+  /// Concurrent callers share one request and callers within
+  /// [_currentUserCacheTtl] share its result. [forceRefresh] bypasses both —
+  /// use it whenever the point of the call is to observe a change (after a
+  /// cloud restore, after a profile edit, on an explicit pull-to-refresh).
+  Future<Map<String, dynamic>?> getCurrentUser({bool forceRefresh = false}) async {
+    if (!forceRefresh) {
+      final cachedAt = _cachedCurrentUserAt;
+      if (_cachedCurrentUser != null &&
+          cachedAt != null &&
+          DateTime.now().difference(cachedAt) < _currentUserCacheTtl) {
+        return _cachedCurrentUser;
+      }
+      // Share an already-running request rather than opening a second one.
+      final inFlight = _currentUserInFlight;
+      if (inFlight != null) return inFlight;
+    }
+
+    final future = _fetchCurrentUser();
+    _currentUserInFlight = future;
+    try {
+      return await future;
+    } finally {
+      _currentUserInFlight = null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchCurrentUser() async {
     try {
       final response = await http
           .get(Uri.parse('$baseUrl/auth/me'), headers: _authHeaders)
           .timeout(_timeout);
 
-      return _handleResponse(response);
+      final data = _handleResponse(response);
+      if (data != null) {
+        _cachedCurrentUser = data;
+        _cachedCurrentUserAt = DateTime.now();
+      }
+      return data;
     } catch (e) {
       AppLogger.error('Error getting current user', e);
       return null;
     }
+  }
+
+  /// Drop the cached profile. Called wherever the server copy is known to
+  /// have changed (a write we just made) or to belong to somebody else (an
+  /// auth transition) — serving a stale document across an identity change
+  /// would be far worse than an extra request.
+  void invalidateCurrentUserCache() {
+    _cachedCurrentUser = null;
+    _cachedCurrentUserAt = null;
   }
 
   Future<bool> logout() async {
@@ -309,6 +373,8 @@ class ApiService {
           )
           .timeout(_timeout);
 
+      // We just changed the server copy — don't hand back the pre-edit one.
+      invalidateCurrentUserCache();
       return _handleResponse(response);
     } catch (e) {
       AppLogger.error('Error updating profile', e);
@@ -370,6 +436,7 @@ class ApiService {
           )
           .timeout(_timeout);
 
+      invalidateCurrentUserCache();
       return _handleResponse(response);
     } catch (e) {
       AppLogger.error('Error setting username', e);

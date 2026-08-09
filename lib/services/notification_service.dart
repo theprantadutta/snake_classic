@@ -1143,9 +1143,73 @@ class NotificationService {
   /// first-launch race with FirebaseAuth) the call is queued via
   /// DataSyncService so it retries automatically when auth + connectivity
   /// catch up. Previously this method silently dropped the call.
+  /// `token|platform|tzOffset` of the last registration this process
+  /// confirmed, and the request currently in flight for it.
+  ///
+  /// Three independent paths register the SAME token on every launch:
+  /// `bootstrapToken()` from main(), `initialize()`'s token branch, and
+  /// `initializeBackendIntegration()` from UnifiedUserService after its 1s
+  /// delay. The existing `_backendIntegrationDone` latch only guards the
+  /// third — the other two call this method directly and never set it — so
+  /// the server saw three identical POST /users/register-token per launch.
+  ///
+  /// De-duplicating HERE rather than untangling the three callers keeps the
+  /// paths that legitimately need to register (a genuine token refresh, a
+  /// timezone change, a re-register after sign-out) working unchanged: they
+  /// produce a different signature and go through.
+  String? _registeredSignature;
+  String? _inFlightSignature;
+  Future<bool>? _registrationInFlight;
+
+  /// The identity is part of the signature on purpose. The FCM token survives
+  /// an account switch, but the backend row it belongs to does not — and a
+  /// switch does NOT always route through [resetBackendIntegration] (signing
+  /// into a different Google account from Profile never signs out first). Key
+  /// on the user id and an identity change re-registers on its own.
+  String _tokenSignature(String token, int tzOffsetMinutes) =>
+      '$token|$devicePlatform|$tzOffsetMinutes|'
+      '${ApiService().currentUserId ?? "unauthenticated"}';
+
   Future<bool> _registerTokenWithBackend(String token) async {
     final tzOffsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
+    final signature = _tokenSignature(token, tzOffsetMinutes);
 
+    if (_registeredSignature == signature) {
+      AppLogger.info(
+        'FCM token already registered this session — skipping duplicate',
+      );
+      return true;
+    }
+
+    // Collapse the concurrent launch calls onto one request instead of
+    // racing three identical POSTs.
+    final inFlight = _registrationInFlight;
+    if (inFlight != null && _inFlightSignature == signature) {
+      AppLogger.info('FCM token registration already in flight — joining it');
+      return inFlight;
+    }
+
+    final future = _performTokenRegistration(token, tzOffsetMinutes);
+    _inFlightSignature = signature;
+    _registrationInFlight = future;
+    try {
+      final ok = await future;
+      // Recomputed, not reused: _performTokenRegistration may have upgraded a
+      // guest to an anonymous identity along the way, so the signature that
+      // describes what actually landed on the server is the one built AFTER
+      // the call.
+      if (ok) _registeredSignature = _tokenSignature(token, tzOffsetMinutes);
+      return ok;
+    } finally {
+      _registrationInFlight = null;
+      _inFlightSignature = null;
+    }
+  }
+
+  Future<bool> _performTokenRegistration(
+    String token,
+    int tzOffsetMinutes,
+  ) async {
     try {
       final apiService = ApiService();
 
@@ -1291,6 +1355,11 @@ class NotificationService {
   void resetBackendIntegration() {
     _backendIntegrationDone = false;
     _registrationPendingTokenArrival = false;
+    // The FCM token doesn't change on sign-out, but the USER it is registered
+    // against does. Without clearing this the de-dup would suppress the
+    // re-registration under the next identity and push would keep targeting
+    // the previous account.
+    _registeredSignature = null;
   }
 
   /// Remember the token we last *confirmed* with the backend. Device-only

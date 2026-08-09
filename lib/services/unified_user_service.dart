@@ -492,7 +492,11 @@ class UnifiedUserService extends ChangeNotifier {
                 // profile so the in-memory _currentUser reflects
                 // any restored fields (high score, coins, …).
                 if (result == FirstSignInResult.restored) {
-                  final refreshed = await _apiService.getCurrentUser();
+                  // forceRefresh: the point of this call is to observe what
+                  // the restore changed, so the copy fetched moments ago
+                  // (before the restore ran) is exactly the wrong answer.
+                  final refreshed =
+                      await _apiService.getCurrentUser(forceRefresh: true);
                   if (refreshed != null) {
                     _currentUser = UnifiedUser.fromJson(refreshed);
                     await _cacheUserSession(_currentUser!);
@@ -1253,7 +1257,10 @@ class UnifiedUserService extends ChangeNotifier {
     if (!_apiService.isAuthenticated) return false;
 
     try {
-      final fresh = await _apiService.getCurrentUser();
+      // forceRefresh: this method exists to pull data that is known to be
+      // stale (a backend backfill, an admin edit), so a cached copy defeats
+      // the entire call.
+      final fresh = await _apiService.getCurrentUser(forceRefresh: true);
       if (fresh == null) return false;
 
       // Update the in-memory user with the freshly-fetched fields. Keep
