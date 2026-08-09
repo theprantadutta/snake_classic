@@ -454,6 +454,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsGuestAccount => 'अतिथि खाता';
 
   @override
+  String get accountSwitchTitle => 'मौजूदा खाते में साइन इन करें?';
+
+  @override
+  String get accountSwitchBody =>
+      'अगर इस खाते से पहले Snake Classic खेला गया है, तो उसी की प्रगति बहाल होगी और वही आपकी प्रगति बनेगी। इस डिवाइस के सिक्के, स्कोर और आँकड़े ट्रांसफ़र नहीं होंगे।\n\nइस डिवाइस की प्रगति रखने के लिए ऐसा खाता चुनें जिससे आपने पहले न खेला हो।';
+
+  @override
+  String get accountSwitchConfirm => 'फिर भी साइन इन करें';
+
+  @override
   String get settingsAuthenticatedAccount => 'प्रमाणित खाता';
 
   @override

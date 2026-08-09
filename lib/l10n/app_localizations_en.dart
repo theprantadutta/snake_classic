@@ -457,6 +457,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGuestAccount => 'Guest Account';
 
   @override
+  String get accountSwitchTitle => 'Sign in to an existing account?';
+
+  @override
+  String get accountSwitchBody =>
+      'If this account has already played Snake Classic, its progress is restored and becomes the one you keep. Coins, scores and stats from this device do not transfer.\n\nTo keep this device\'s progress instead, use an account you haven\'t played with before.';
+
+  @override
+  String get accountSwitchConfirm => 'Sign in anyway';
+
+  @override
   String get settingsAuthenticatedAccount => 'Authenticated Account';
 
   @override

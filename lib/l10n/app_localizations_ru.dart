@@ -456,6 +456,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsGuestAccount => 'Гостевой аккаунт';
 
   @override
+  String get accountSwitchTitle => 'Войти в существующий аккаунт?';
+
+  @override
+  String get accountSwitchBody =>
+      'Если с этого аккаунта уже играли в Snake Classic, будет восстановлен его прогресс — именно он останется у вас. Монеты, рекорды и статистика с этого устройства не переносятся.\n\nЧтобы сохранить прогресс этого устройства, используйте аккаунт, с которого вы ещё не играли.';
+
+  @override
+  String get accountSwitchConfirm => 'Всё равно войти';
+
+  @override
   String get settingsAuthenticatedAccount => 'Авторизованный аккаунт';
 
   @override

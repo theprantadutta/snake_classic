@@ -5,6 +5,7 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/widgets/account_switch_confirmation.dart';
 
 /// Bottom sheet shown when an anonymous (guest) user tries to make a
 /// purchase. Offers two ways to upgrade the account in place — keeping
@@ -123,7 +124,9 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                   // Branches to link-vs-sign-in internally. Offline guests
                   // have no Firebase user to link against and used to fail
                   // here with a bare "link failed".
-                  final ok = await cubit.connectAccountWithGoogle();
+                  final ok = await cubit.connectAccountWithGoogle(
+                    confirmAccountSwitch: () => confirmAccountSwitch(context),
+                  );
                   if (!mounted) return;
                   setState(() => _busy = false);
                   if (ok) {

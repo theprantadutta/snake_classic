@@ -381,19 +381,44 @@ runs must be immutable and completely stored, including rejected ones.
 
 ### 11.1 Reconciliation tolerance
 
-Proposed, since Phase 2 cannot start without a threshold:
+Tolerance is decided **field by field, during Phase 2** — not as one global
+number agreed in advance. A single threshold would have to be loose enough for
+the loosest field, which would then silently permit divergence in the fields
+where none is acceptable.
 
-- **Monotonic counters** (`total_games_played`, `total_score`, `high_score`)
-  must match **exactly**, per user. These are sums and maxima over the same
-  events; any divergence is a derivation bug, not noise.
-- **Derived ratios** (average score, collision rate) match within
-  floating-point epsilon, since they are recomputed rather than accumulated.
-- Divergence is judged **per user, worst case** — not as a fleet average. An
-  average hides compensating errors, which is precisely the failure mode
-  worth catching: two users wrong in opposite directions net to zero and look
-  perfect.
-- A run present on one side and absent on the other is a **hard stop**,
-  regardless of its effect on any total.
+Two categories, and they are not negotiable against each other:
+
+**Zero tolerated divergence.** Any difference is a hard stop and blocks the
+Phase 4 gate:
+
+- rewards granted (coins, XP, achievements, battle-pass tier);
+- coin balance;
+- settled run count, and the presence of any individual run;
+- leaderboard eligibility for any run.
+
+These are entitlements and competitive outcomes. A player either earned a
+thing or did not, and "close enough" is not a state either of those can be in.
+A run present on one side and absent on the other is a hard stop regardless of
+its effect on any total.
+
+**Eventual-sync fields get a settling window, not a fuzzy allowance.** For
+fields that legitimately lag — aggregate counters mid-drain, statistics
+snapshots from a device that has not synced yet — the question is *"has it
+settled?"*, not *"is it close?"*. So the tolerance is expressed in **time**:
+compare only records whose last sync is older than the window, and require an
+exact match on those.
+
+A numeric allowance would be the wrong instrument here. It cannot distinguish
+"still draining" from "derivation is wrong by a small amount", and the second
+is exactly what Phase 2 exists to detect. A window separates them: outside it,
+any difference is a bug.
+
+Divergence is judged **per user, worst case** — never as a fleet average. An
+average hides compensating errors, which is precisely the failure mode worth
+catching: two users wrong in opposite directions net to zero and look perfect.
+
+The specific window per eventual field is set in Phase 2 against observed
+drain latency, once there is real data to set it from.
 
 **Tests, per the audit:**
 
@@ -417,16 +442,17 @@ Settled 2026-08-09. Recorded here so the reasoning survives the conversation.
 | 3 | Phase 4 gates on pre-GameRun clients below **5% of authenticated active users over 28 rolling days** *and* one clean season of reconciliation with drift alerting already live. Remaining legacy clients then get an update-required notice. | [§10](#10-rollout) |
 | 4 | A rejected run stays in the player's local history, marked unverified, granting nothing server-side. No silent rollback, no validator details exposed. Server counts rejections so false positives are detectable. | [§6.1](#61-runs-that-fail-validation) |
 
-### Still open
+| 5 | Reconciliation tolerance is set **per field during Phase 2**, not as one global number. Rewards, coins, settled runs and leaderboard eligibility tolerate **zero** divergence; eventual-sync fields get a **time-based settling window** rather than a fuzzy numeric allowance. | [§11.1](#111-reconciliation-tolerance) |
 
-**Reconciliation tolerance** — [§11.1](#111-reconciliation-tolerance) proposes
-exact match on monotonic counters, epsilon on derived ratios, judged per user
-rather than on a fleet average. Needs confirming before Phase 2 begins, not
-before Phase 1 is built.
+### Carried out of this design — now shipped
 
-### Carried out of this design
+The confirmation in [§9.1](#91-making-the-switch-visible-instead) was not gated
+on GameRun: the cross-account coin rule is already live, so a player signing
+into an existing account was already losing their guest coins with no warning.
 
-The confirmation dialog in [§9.1](#91-making-the-switch-visible-instead) is not
-gated on GameRun. The cross-account coin rule is already live, so a player
-signing into an existing account today already loses their guest coins with no
-warning. That is worth fixing on its own.
+Implemented in `lib/widgets/account_switch_confirmation.dart` and wired into
+the Google, Apple and email connect paths. It fires at the two moments a
+switch can happen — an offline guest signing in (destination unknowable in
+advance) and an anonymous user whose link is refused with
+`credential-already-in-use` (destination known for certain) — defaults to
+cancel, and is skipped when the player has no progress to lose.

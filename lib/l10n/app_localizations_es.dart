@@ -461,6 +461,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsGuestAccount => 'Cuenta de invitado';
 
   @override
+  String get accountSwitchTitle => '¿Iniciar sesión en una cuenta existente?';
+
+  @override
+  String get accountSwitchBody =>
+      'Si esta cuenta ya jugó a Snake Classic, se restaurará su progreso y será el que conserves. Las monedas, puntuaciones y estadísticas de este dispositivo no se transfieren.\n\nPara conservar el progreso de este dispositivo, usa una cuenta con la que no hayas jugado antes.';
+
+  @override
+  String get accountSwitchConfirm => 'Iniciar sesión igualmente';
+
+  @override
   String get settingsAuthenticatedAccount => 'Cuenta autenticada';
 
   @override

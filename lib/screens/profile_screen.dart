@@ -15,6 +15,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/widgets/account_switch_confirmation.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/not_backed_up_notice.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
@@ -1388,7 +1389,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Links when there is a Firebase anonymous UID to preserve, and falls
       // back to a plain sign-in for offline guests (who have no Firebase user
       // at all). Either way the player's progress survives the upgrade.
-      final success = await authCubit.connectAccountWithApple();
+      final success = await authCubit.connectAccountWithApple(
+        confirmAccountSwitch: () => confirmAccountSwitch(context),
+      );
 
       if (success && context.mounted) {
         _showStyledSnackBar(
@@ -1433,7 +1436,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // store sheet has always used the connect path; this screen didn't,
       // so the same button meant two different things depending on where
       // you tapped it.
-      final success = await authCubit.connectAccountWithGoogle();
+      final success = await authCubit.connectAccountWithGoogle(
+        confirmAccountSwitch: () => confirmAccountSwitch(context),
+      );
 
       if (success && context.mounted) {
         _showStyledSnackBar(

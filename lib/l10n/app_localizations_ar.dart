@@ -449,6 +449,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsGuestAccount => 'حساب ضيف';
 
   @override
+  String get accountSwitchTitle => 'تسجيل الدخول إلى حساب موجود؟';
+
+  @override
+  String get accountSwitchBody =>
+      'إذا سبق اللعب بـ Snake Classic على هذا الحساب، فسيُستعاد تقدّمه ويصبح هو تقدّمك. العملات والنتائج والإحصائيات الموجودة على هذا الجهاز لن تُنقل.\n\nللاحتفاظ بتقدّم هذا الجهاز، استخدم حسابًا لم تلعب به من قبل.';
+
+  @override
+  String get accountSwitchConfirm => 'تسجيل الدخول على أي حال';
+
+  @override
   String get settingsAuthenticatedAccount => 'حساب موثّق';
 
   @override
