@@ -777,6 +777,18 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get mpLobbyWinsLabel => 'जीत';
+
+  @override
+  String get mpLobbyLossesLabel => 'हार';
+
+  @override
+  String get mpLobbyDrawsLabel => 'बराबरी';
+
+  @override
+  String get mpLobbyRatingLabel => 'रेटिंग';
+
+  @override
   String get mpLobbyJoinRoom => 'रूम जॉइन करें';
 
   @override

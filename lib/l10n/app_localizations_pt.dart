@@ -783,6 +783,18 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get mpLobbyWinsLabel => 'Vitórias';
+
+  @override
+  String get mpLobbyLossesLabel => 'Derrotas';
+
+  @override
+  String get mpLobbyDrawsLabel => 'Empates';
+
+  @override
+  String get mpLobbyRatingLabel => 'Pontos';
+
+  @override
   String get mpLobbyJoinRoom => 'ENTRAR NA SALA';
 
   @override

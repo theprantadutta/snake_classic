@@ -1474,6 +1474,30 @@ abstract class AppLocalizations {
   /// **'{count} D'**
   String mpLobbyDrawsChip(Object count);
 
+  /// No description provided for @mpLobbyWinsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Wins'**
+  String get mpLobbyWinsLabel;
+
+  /// No description provided for @mpLobbyLossesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Losses'**
+  String get mpLobbyLossesLabel;
+
+  /// No description provided for @mpLobbyDrawsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Draws'**
+  String get mpLobbyDrawsLabel;
+
+  /// No description provided for @mpLobbyRatingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get mpLobbyRatingLabel;
+
   /// No description provided for @mpLobbyJoinRoom.
   ///
   /// In en, this message translates to:

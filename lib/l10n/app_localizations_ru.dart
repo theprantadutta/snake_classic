@@ -781,6 +781,18 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get mpLobbyWinsLabel => 'Победы';
+
+  @override
+  String get mpLobbyLossesLabel => 'Поражения';
+
+  @override
+  String get mpLobbyDrawsLabel => 'Ничьи';
+
+  @override
+  String get mpLobbyRatingLabel => 'Рейтинг';
+
+  @override
   String get mpLobbyJoinRoom => 'ВОЙТИ В КОМНАТУ';
 
   @override
