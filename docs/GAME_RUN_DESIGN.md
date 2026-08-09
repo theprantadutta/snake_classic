@@ -1,8 +1,9 @@
 # GameRun: a single durable record per completed game
 
-**Status:** design, not implemented. Nothing in this document should be built
-until the open questions in [§12](#12-open-questions--decisions-needed) are
-answered.
+**Status:** design, not implemented. The shape is settled — see
+[§12](#12-decisions) — but nothing here should be built until the
+reconciliation tolerance is confirmed and the Phase 1 observability in
+[§11](#11-rollback-and-observability) exists.
 
 **Supersedes:** the aggregate-snapshot model for gameplay history.
 
@@ -76,6 +77,9 @@ Written once, never updated. A correction is a new run, not an edit.
 | `rank_eligible` | bool | Client's *proposal*; the server re-derives it. |
 | `client_version` | string | For triaging a bad release. |
 | `schema_version` | int | Lets the server accept old clients during rollout. |
+| `source` | enum | `gameplay` or `legacy_score_backfill`. |
+| `is_synthetic` | bool | True only for backfilled rows; see [§10](#10-rollout). |
+| `verified` | bool | Server-set. False for runs that failed plausibility checks. |
 
 **`rank_eligible` is advisory.** The client computes it so it can render
 optimistically, but the server recomputes from the same rule and its answer
@@ -173,6 +177,30 @@ Exactly-once falls out of the unique key: the insert either succeeds and the
 grants apply, or conflicts and no grant runs. There is no window where a run
 counts twice.
 
+### 6.1 Runs that fail validation
+
+A run refused by the plausibility checks is recorded, not erased.
+
+* The **device keeps it** in local history and the player's own stat view. The
+  score does not vanish from under them, and an honest player caught by a
+  false-positive validator is not punished for it.
+* It is marked `verified: false` and grants **nothing**: no coins, no
+  battle-pass XP, no achievements, no streak credit, no leaderboard
+  eligibility, and no contribution to any server-derived aggregate.
+* The rollback is **not** silent and the validator detail is **not** shown.
+  Nothing about the failure surfaces to the player, and nothing is quietly
+  taken away either.
+* The server records the rejection with its reason. Since the server is the
+  one refusing, it is the natural place to count from — client-side
+  dead-lettering (already shipped for scores) reports what the device
+  believes, but only the server sees the whole population and can spot a
+  validator misfiring across many users.
+
+The consequence is deliberate: local totals and server-derived totals may
+differ, but **only** by rejected runs. That is tolerable precisely because the
+number should be near zero — and if it ever isn't, the rejection counter is
+what says so.
+
 **Coins become derived.** The balance is `SUM(ledger)` server-side, not a
 client-asserted number. `SyncCoinBalanceCommandHandler`'s last-write-wins
 overwrite of both `UserCoinBalance.Balance` and `Users.Coins` is retired.
@@ -233,11 +261,39 @@ recorded reason, exactly as guest coin rows already are.
 This makes the coin rule already shipped a special case of one general rule,
 rather than a policy that applies to coins and nothing else.
 
-**Open:** whether to offer an explicit, audited, one-time "claim my guest
-progress" migration for the third case. It is defensible for a player who
-genuinely played before remembering their account — but it is also the exact
-shape of the inflation vector, so it would need server-side transfer with a
-per-account once-ever guard. Deliberately excluded from v1.
+**There is no transfer escape hatch, and there will not be one.** A "claim my
+guest progress" migration weakens the one-owner rule to a default and reopens
+the reward and progression inflation it exists to prevent — farm as a guest,
+sign in, reinstall, repeat. A once-ever guard would then be the only thing
+standing between the rule and the exploit, which is not a position worth
+being in.
+
+### 9.1 Making the switch visible instead
+
+The rule is defensible only if the player is told before it applies. Signing
+into an existing account must therefore be an explicit, cancellable choice:
+
+> Signing into this existing account restores its progress. Guest runs,
+> rewards and stats stay on this device's guest identity.
+
+And the upgrade path should be steered, not just permitted: a guest who wants
+to keep what they have should be pushed toward **linking a credential to their
+current identity** rather than signing into a separate existing one. Linking
+preserves the Firebase UID, so nothing moves and nothing is lost — the
+migration problem simply does not arise.
+
+That framing changes what the account surfaces should offer. "Sign in" is two
+different operations wearing one label:
+
+| Intent | Mechanism | Outcome |
+|---|---|---|
+| Keep playing as me, but safely | Link credential to current UID | Nothing moves |
+| I already have an account | Sign in to that UID | This device's guest history stays behind |
+
+**This applies before GameRun ships.** The cross-account coin rule is already
+live, so a player signing into an existing account today already loses their
+guest coins — silently. The confirmation above is worth adding to the current
+`connectAccountWith*` paths independently of this design.
 
 ---
 
@@ -260,14 +316,45 @@ tolerance.
 to run-derived values. Snapshot pushes still accepted, still ignored.
 
 **Phase 4 — retire.** Stop accepting statistics and coin-balance snapshots.
-Old clients keep working: their pushes are accepted and dropped, and they
-continue to read server-returned values.
 
-**Backfill.** Historical `Scores` rows become synthetic runs
-(`schema_version: 0`, `rank_eligible` from their original acceptance). They
-cannot be reconstructed for Easy or zero-score games — those were never sent —
-so pre-cutover `all_completed_runs` is understated and must be labelled as
-such rather than silently blended with post-cutover numbers.
+The gate, both conditions required:
+
+1. Pre-GameRun clients are below **5% of authenticated active users over a
+   rolling 28-day window**, measured server-side by app version against active
+   identity, and published on the dashboard so the number is watchable rather
+   than asserted.
+2. Reconciliation between legacy snapshots and derived aggregates has been
+   **clean for one full season**, with drift alerting already in place — the
+   alert has to predate the gate, or "clean" only means nobody looked.
+
+Once the gate opens, remaining legacy clients get a clear **update-required**
+notice. Silently accepting gameplay that no longer contributes anything is
+the same class of dishonesty as the dashboards this whole effort started with.
+
+### 10.1 Backfill
+
+Every historical `Scores` row becomes an immutable synthetic run, marked
+`source: legacy_score_backfill`, `is_synthetic: true`, retaining its original
+score timestamp.
+
+**Backfill grants nothing.** No coins, no XP, no achievements, no progression.
+These runs already paid out when they were first submitted; re-deriving
+rewards from them would pay twice.
+
+After cutover, runs are the **sole** source for all-time score, leaderboard
+and aggregate reads.
+
+**The backfill is not a complete history, and must not be presented as one.**
+Easy and zero-score games were never submitted, so they do not exist to
+recover. Pre-cutover activity and game-count metrics are labelled
+*legacy score-submission-derived*, or the chart shows an explicit cutover
+boundary. They are never blended into true completed-run counts — that would
+reintroduce, in the reporting layer, exactly the two-definitions problem this
+design removes from the data layer.
+
+**Migration requirements:** idempotent (safe to re-run), batched, resumable,
+and reconciled against `Scores` row counts and checksums **before** any read
+switches over.
 
 ---
 
@@ -281,12 +368,32 @@ runs must be immutable and completely stored, including rejected ones.
 
 **Signals to have in place before Phase 1 ships:**
 
-- accepted / duplicate / rejected run counts, by reason;
+- accepted / duplicate / rejected run counts, by reason, **server-side**;
+- share of authenticated active users on pre-GameRun clients, by app version,
+  over a rolling 28-day window — this is the Phase 4 gate, so it has to exist
+  and be trusted long before the gate is considered;
+- reconciliation drift between legacy snapshots and derived aggregates, **with
+  alerting**, as a Phase 4 precondition;
 - pending-run age distribution (a rising tail means the outbox is not
   draining);
-- optimistic-vs-settled divergence rate per outcome type;
 - runs rejected for staleness or future timestamps;
 - dead-letter volume.
+
+### 11.1 Reconciliation tolerance
+
+Proposed, since Phase 2 cannot start without a threshold:
+
+- **Monotonic counters** (`total_games_played`, `total_score`, `high_score`)
+  must match **exactly**, per user. These are sums and maxima over the same
+  events; any divergence is a derivation bug, not noise.
+- **Derived ratios** (average score, collision rate) match within
+  floating-point epsilon, since they are recomputed rather than accumulated.
+- Divergence is judged **per user, worst case** — not as a fleet average. An
+  average hides compensating errors, which is precisely the failure mode
+  worth catching: two users wrong in opposite directions net to zero and look
+  perfect.
+- A run present on one side and absent on the other is a **hard stop**,
+  regardless of its effect on any total.
 
 **Tests, per the audit:**
 
@@ -299,17 +406,27 @@ runs must be immutable and completely stored, including rejected ones.
 
 ---
 
-## 12. Open questions — decisions needed
+## 12. Decisions
 
-1. **Guest migration.** Ship the one-time audited transfer described in §9, or
-   hold at "runs stay with the identity that produced them"?
-2. **Backfill depth.** Synthesise runs from all historical `Scores`, or only
-   from a cutoff date? Full history is more complete but permanently mixes two
-   definitions of "games played".
-3. **Phase 4 timing.** Is retiring snapshot writes acceptable while a
-   meaningful share of installs are on old clients, given they keep working
-   but stop contributing new data?
-4. **Reconciliation tolerance.** What divergence between old and new
-   aggregates is small enough to proceed on in Phase 2?
-5. **Rejected-run visibility.** Should a player ever see that a run was
-   refused, or does it stay operator-only?
+Settled 2026-08-09. Recorded here so the reasoning survives the conversation.
+
+| # | Decision | Where |
+|---|---|---|
+| 1 | Runs are permanently owned by the identity that produced them. **No** transfer escape hatch. The switch is made explicit and cancellable in the UI, and guests wanting to keep progress are steered toward credential linking instead. | [§9](#9-cross-account-ownership) |
+| 2 | Backfill **every** historical `Scores` row as an immutable synthetic run granting no rewards. Runs become the sole read source after cutover; pre-cutover metrics are labelled legacy-derived rather than blended. | [§10.1](#101-backfill) |
+| 3 | Phase 4 gates on pre-GameRun clients below **5% of authenticated active users over 28 rolling days** *and* one clean season of reconciliation with drift alerting already live. Remaining legacy clients then get an update-required notice. | [§10](#10-rollout) |
+| 4 | A rejected run stays in the player's local history, marked unverified, granting nothing server-side. No silent rollback, no validator details exposed. Server counts rejections so false positives are detectable. | [§6.1](#61-runs-that-fail-validation) |
+
+### Still open
+
+**Reconciliation tolerance** — [§11.1](#111-reconciliation-tolerance) proposes
+exact match on monotonic counters, epsilon on derived ratios, judged per user
+rather than on a fleet average. Needs confirming before Phase 2 begins, not
+before Phase 1 is built.
+
+### Carried out of this design
+
+The confirmation dialog in [§9.1](#91-making-the-switch-visible-instead) is not
+gated on GameRun. The cross-account coin rule is already live, so a player
+signing into an existing account today already loses their guest coins with no
+warning. That is worth fixing on its own.
