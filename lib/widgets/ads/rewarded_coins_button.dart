@@ -60,6 +60,22 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
   void initState() {
     super.initState();
     _ads?.preloadRewarded();
+    // Enable the moment an ad is ready, rather than only after some unrelated
+    // rebuild — the card used to sit greyed out with "no ad" while one was
+    // already loaded.
+    _ads?.rewardedReadyListenable.addListener(_onReadyChanged);
+    _ads?.adsEnabledListenable.addListener(_onReadyChanged);
+  }
+
+  void _onReadyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _ads?.rewardedReadyListenable.removeListener(_onReadyChanged);
+    _ads?.adsEnabledListenable.removeListener(_onReadyChanged);
+    super.dispose();
   }
 
   Future<void> _watch() async {
@@ -137,8 +153,8 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
 /// Compact "watch ad → +25" pill for tight spots (the store's balance
 /// header). Same gating + grant + toast as [RewardedCoinsButton], just a
 /// pill. Self-hides for Pro / when ads are unavailable; dims only when no ad is
-/// loaded (opt-in, uncapped). A 1s ticker re-checks readiness so the pill lights
-/// up the moment the rewarded ad finishes loading.
+/// loaded (opt-in, uncapped). Lights up the moment the rewarded ad finishes
+/// loading, via [AdService.rewardedReadyListenable] rather than a ticker.
 class RewardedCoinsPill extends StatefulWidget {
   const RewardedCoinsPill({super.key});
 
@@ -147,9 +163,6 @@ class RewardedCoinsPill extends StatefulWidget {
 }
 
 class _RewardedCoinsPillState extends State<RewardedCoinsPill> {
-  Timer? _ticker;
-  bool _lastEnabled = false;
-
   AdService? get _ads =>
       GetIt.I.isRegistered<AdService>() ? GetIt.I<AdService>() : null;
 
@@ -157,17 +170,18 @@ class _RewardedCoinsPillState extends State<RewardedCoinsPill> {
   void initState() {
     super.initState();
     _ads?.preloadRewarded();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      final enabled = _ads?.canShowFreeCoinAd ?? false;
-      if (enabled != _lastEnabled && mounted) {
-        setState(() => _lastEnabled = enabled);
-      }
-    });
+    _ads?.rewardedReadyListenable.addListener(_onReadyChanged);
+    _ads?.adsEnabledListenable.addListener(_onReadyChanged);
+  }
+
+  void _onReadyChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _ticker?.cancel();
+    _ads?.rewardedReadyListenable.removeListener(_onReadyChanged);
+    _ads?.adsEnabledListenable.removeListener(_onReadyChanged);
     super.dispose();
   }
 
@@ -183,7 +197,6 @@ class _RewardedCoinsPillState extends State<RewardedCoinsPill> {
     final ads = _ads;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
     final enabled = ads.canShowFreeCoinAd;
-    _lastEnabled = enabled;
 
     return Opacity(
       opacity: enabled ? 1 : 0.5,

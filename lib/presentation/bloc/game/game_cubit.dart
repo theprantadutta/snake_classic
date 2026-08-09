@@ -270,6 +270,16 @@ class GameCubit extends Cubit<GameCubitState> {
   void startGame() {
     debugPrint('🎮 [GameCubit] startGame() called');
 
+    // Warm the ads this run might need, using the run itself as load time.
+    // The interstitial is offered at game over and the rewarded on a crash —
+    // both minutes away — so anything that failed to load at launch has a long
+    // window to recover instead of being found empty at the moment of use.
+    final ads = _adService;
+    if (ads != null && ads.adsEnabled) {
+      ads.preloadInterstitial();
+      ads.preloadRewarded();
+    }
+
     final settings = _settingsCubit.state;
     // Tournament mode: honor the tournament's declared rules instead of the
     // user's settings mode. Previously the cubit ignored tournamentMode at

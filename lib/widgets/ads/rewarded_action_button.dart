@@ -8,9 +8,12 @@ import 'package:snake_classic/utils/constants.dart';
 
 /// Generic "watch an ad for X" card used by the rewarded placements (free
 /// power-up, bonus XP, …). Self-hides for Pro / when ads are disabled, disables
-/// itself when no ad is loaded, and re-checks readiness live (2s ticker) so it
-/// enables the moment the rewarded ad finishes loading. Rewarded ads are opt-in
-/// and uncapped — the only gate is whether an ad is loaded.
+/// itself when no ad is loaded, and enables **the instant** the rewarded ad
+/// finishes loading — it listens on [AdService.rewardedReadyListenable] rather
+/// than polling, so there is no up-to-two-seconds lag between the ad being
+/// ready and the button becoming tappable (and no periodic rebuild for the
+/// widget's whole life). Rewarded ads are opt-in and uncapped — the only gate
+/// is whether an ad is loaded.
 ///
 /// [onWatch] performs the actual ad show + grant (typically
 /// `AdService.showRewardedCapped(...)`); the button just handles gating + UI.
@@ -41,8 +44,6 @@ class RewardedActionButton extends StatefulWidget {
 }
 
 class _RewardedActionButtonState extends State<RewardedActionButton> {
-  Timer? _ticker;
-
   AdService? get _ads =>
       GetIt.I.isRegistered<AdService>() ? GetIt.I<AdService>() : null;
 
@@ -50,16 +51,19 @@ class _RewardedActionButtonState extends State<RewardedActionButton> {
   void initState() {
     super.initState();
     _ads?.preloadRewarded();
-    // Re-evaluate readiness/cap periodically so the button enables when the ad
-    // loads and the "N left today" updates after a watch.
-    _ticker = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (mounted) setState(() {});
-    });
+    _ads?.rewardedReadyListenable.addListener(_onReadyChanged);
+    // Ads may not be enabled yet (SDK still initialising on a cold start).
+    _ads?.adsEnabledListenable.addListener(_onReadyChanged);
+  }
+
+  void _onReadyChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _ticker?.cancel();
+    _ads?.rewardedReadyListenable.removeListener(_onReadyChanged);
+    _ads?.adsEnabledListenable.removeListener(_onReadyChanged);
     super.dispose();
   }
 

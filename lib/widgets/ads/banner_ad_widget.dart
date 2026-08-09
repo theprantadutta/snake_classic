@@ -21,6 +21,11 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 /// mid-session upgrade collapses the space immediately.
 ///
 /// Loading is resilient, not one-shot:
+/// - **It takes a pre-loaded banner from [AdService] when one is warm**, so the
+///   strip is filled on this widget's first frame instead of a second or two
+///   later. Only the very first banner of a session pays the load wait; every
+///   screen after it inherits one that was loaded while the user was busy
+///   elsewhere.
 /// - If the widget mounts before [AdService] finishes initializing (the
 ///   cold-start home screen always does — UMP consent takes seconds), it
 ///   listens on [AdService.adsEnabledListenable] and loads the moment ads
@@ -28,6 +33,9 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 /// - A failed load (routine no-fill) retries with capped backoff. AdMob's
 ///   auto-refresh only starts after a first successful fill, so without this
 ///   one no-fill meant a permanently empty reserved box.
+/// - When the backoff is exhausted it does not stay dead: [AdService] bumps
+///   [AdService.rearmListenable] when the device regains internet (or consent
+///   changes), and this widget starts over.
 class SnakeBannerAd extends StatefulWidget {
   const SnakeBannerAd({super.key});
 
@@ -65,6 +73,8 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     super.initState();
     // Late-init recovery: if the SDK isn't ready yet, load as soon as it is.
     _ads?.adsEnabledListenable.addListener(_onAdsEnabledChanged);
+    // Recovery after our own backoff is spent — see the class doc.
+    _ads?.rearmListenable.addListener(_onRearm);
   }
 
   @override
@@ -74,9 +84,21 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     _sizeRequested = true;
     final width = MediaQuery.sizeOf(context).width.truncate();
     unawaited(_ensureAdaptiveSize(width).then((_) {
-      if (mounted) setState(() {}); // reserve the exact height once known
+      if (!mounted) return;
+      setState(() {}); // reserve the exact height once known
+      // Tell the service what size to keep warm. On the first banner of the
+      // session this is what starts the warm-up; on every later one the ad is
+      // already sitting there.
+      _ads?.setBannerSize(_adaptiveSize ?? AdSize.banner);
       _maybeLoad();
     }));
+  }
+
+  void _onRearm() {
+    if (!mounted || _ad != null) return;
+    _failedAttempts = 0;
+    _retryTimer?.cancel();
+    _maybeLoad();
   }
 
   /// Resolve the anchored adaptive size once per session (deduped across all
@@ -108,6 +130,20 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     final ads = _ads;
     if (ads == null || !ads.adsEnabled) return;
 
+    // Warm hand-off first: if the service already has a loaded banner at this
+    // size, take ownership and show it now. This is the whole point of the
+    // warm-up — no load wait at all on any screen after the first.
+    final warm = ads.takeWarmBanner(_adaptiveSize ?? AdSize.banner);
+    if (warm != null) {
+      _trackImpression();
+      setState(() {
+        _ad = warm;
+        _loaded = true;
+        _failedAttempts = 0;
+      });
+      return;
+    }
+
     _loading = true;
     final ad = BannerAd(
       adUnitId: AdConfig.bannerUnitId,
@@ -119,9 +155,7 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
             ad.dispose();
             return;
           }
-          if (GetIt.I.isRegistered<AnalyticsFacade>()) {
-            GetIt.I<AnalyticsFacade>().trackAdImpression(format: 'banner');
-          }
+          _trackImpression();
           setState(() {
             _ad = ad as BannerAd;
             _loaded = true;
@@ -149,6 +183,15 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     ad.load();
   }
 
+  /// An impression is the ad being DISPLAYED, which for a warm hand-off is
+  /// here rather than at load time — the service loaded it long before, and
+  /// possibly for a screen the user never reached.
+  void _trackImpression() {
+    if (GetIt.I.isRegistered<AnalyticsFacade>()) {
+      GetIt.I<AnalyticsFacade>().trackAdImpression(format: 'banner');
+    }
+  }
+
   void _scheduleRetry() {
     if (!mounted || _failedAttempts >= _retryDelays.length) return;
     final delay = _retryDelays[_failedAttempts];
@@ -162,6 +205,7 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
   @override
   void dispose() {
     _ads?.adsEnabledListenable.removeListener(_onAdsEnabledChanged);
+    _ads?.rearmListenable.removeListener(_onRearm);
     _retryTimer?.cancel();
     _ad?.dispose();
     super.dispose();

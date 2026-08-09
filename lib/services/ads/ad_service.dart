@@ -39,6 +39,34 @@ class AdService {
   static const Duration _appOpenMinGap = Duration(minutes: 15);
   static const Duration _appOpenMinAway = Duration(minutes: 3);
 
+  // Backoff for a failed load. AdMob no-fill is routine — especially without
+  // mediation — and until this existed a single failure left that format empty
+  // for the rest of the session, which is the main reason an ad "wasn't ready"
+  // when the user asked for one. The tail is long on purpose: fill often
+  // recovers minutes later, and a retry costs nothing when nothing is loaded.
+  static const List<Duration> _loadRetryDelays = [
+    Duration(seconds: 2),
+    Duration(seconds: 10),
+    Duration(seconds: 45),
+    Duration(minutes: 3),
+    Duration(minutes: 10),
+  ];
+
+  // Keep two rewarded ads warm, so a second "watch for coins" straight after
+  // the first doesn't meet a disabled button while the replacement loads.
+  static const int _rewardedBufferTarget = 2;
+
+  // One banner is kept loaded and handed to the next placement that mounts, so
+  // the strip fills on its FIRST frame instead of a second or two later. Held
+  // ads go stale; a spare older than this is dropped rather than shown.
+  static const Duration _warmBannerMaxAge = Duration(minutes: 30);
+
+  // Retry bucket keys.
+  static const String _kLoadInterstitial = 'interstitial';
+  static const String _kLoadRewarded = 'rewarded';
+  static const String _kLoadAppOpen = 'app_open';
+  static const String _kLoadBanner = 'banner';
+
   // SharedPreferences keys (device-only, never synced).
   static const _kGamesSinceInterstitial = 'ads_games_since_interstitial';
   static const _kLastInterstitialMs = 'ads_last_interstitial_ms';
@@ -62,8 +90,27 @@ class AdService {
 
   InterstitialAd? _interstitial;
   bool _interstitialLoading = false;
-  RewardedAd? _rewarded;
-  bool _rewardedLoading = false;
+
+  // A small buffer rather than a single ad — see [_rewardedBufferTarget].
+  final List<RewardedAd> _rewardedPool = [];
+  int _rewardedLoading = 0;
+
+  // One banner loaded ahead of the widget that will show it. A BannerAd can
+  // only be attached to one AdWidget at a time, so this is a hand-off, not a
+  // shared instance: the widget takes ownership and a replacement is loaded.
+  BannerAd? _warmBanner;
+  int _warmBannerLoadedAtMs = 0;
+  bool _warmBannerLoading = false;
+  AdSize? _bannerSize;
+
+  // Per-format retry state for [_loadRetryDelays].
+  final Map<String, int> _loadAttempts = {};
+  final Map<String, Timer> _retryTimers = {};
+
+  ConnectivityService? _connectivity;
+  bool _lastHadInternet = true;
+  StreamSubscription<PremiumState>? _premiumSub;
+  bool _wasPro = false;
 
   AppOpenAd? _appOpenAd;
   bool _appOpenLoading = false;
@@ -99,9 +146,20 @@ class AdService {
     return GetIt.I<PremiumCubit>().state.hasPremium;
   }
 
-  bool get _isOnline {
-    if (!GetIt.I.isRegistered<ConnectivityService>()) return true;
-    return GetIt.I<ConnectivityService>().isOnline;
+  /// Whether the DEVICE can reach the internet.
+  ///
+  /// Deliberately not [ConnectivityService.isOnline], which is
+  /// `network && internet && backendReachable`. AdMob has nothing to do with
+  /// our backend, so gating ad loads on `isOnline` meant an outage or a slow
+  /// cold start on OUR server silently stopped every ad in the app from
+  /// loading — with no retry, for the rest of the session. Fail-open when the
+  /// service isn't registered yet.
+  bool get _hasInternet {
+    final service = _connectivity ??
+        (GetIt.I.isRegistered<ConnectivityService>()
+            ? GetIt.I<ConnectivityService>()
+            : null);
+    return service?.hasInternetAccess ?? true;
   }
 
   AnalyticsFacade? get _analytics =>
@@ -125,8 +183,82 @@ class AdService {
   /// Pro users and non-mobile platforms reserve nothing (zero footprint).
   bool get shouldReserveBannerSpace => _isMobile && !_isPro;
 
+  /// Bumped every time a re-arm happens (network returned, consent changed,
+  /// Pro lapsed). Widgets that own their own ad — the banner — listen and try
+  /// again instead of staying empty after they exhausted their own backoff.
+  final ValueNotifier<int> _rearmNotifier = ValueNotifier(0);
+  ValueListenable<int> get rearmListenable => _rearmNotifier;
+
   /// A rewarded ad is loaded and ready to show right now.
-  bool get isRewardedReady => adsEnabled && _rewarded != null;
+  bool get isRewardedReady => adsEnabled && _rewardedPool.isNotEmpty;
+
+  /// Push-based readiness for the "watch an ad" buttons. Without it they poll
+  /// on a 2s timer, so the button can sit disabled for up to two seconds after
+  /// the ad is genuinely ready — and burns a periodic rebuild forever.
+  final ValueNotifier<bool> _rewardedReadyNotifier = ValueNotifier(false);
+  ValueListenable<bool> get rewardedReadyListenable => _rewardedReadyNotifier;
+  void _notifyRewardedReady() =>
+      _rewardedReadyNotifier.value = isRewardedReady;
+
+  // ==================== Load retry ====================
+
+  /// Schedule a backoff retry for [key]. Gives up after the last delay; a
+  /// [_rearmAll] (network back, consent granted, Pro lapsed) resets the count.
+  void _scheduleRetry(String key, void Function() load) {
+    if (!adsEnabled) return;
+    final attempt = _loadAttempts[key] ?? 0;
+    if (attempt >= _loadRetryDelays.length) return;
+    _loadAttempts[key] = attempt + 1;
+    _retryTimers.remove(key)?.cancel();
+    _retryTimers[key] = Timer(_loadRetryDelays[attempt], load);
+  }
+
+  void _clearRetry(String key) {
+    _loadAttempts[key] = 0;
+    _retryTimers.remove(key)?.cancel();
+  }
+
+  /// Reset every backoff and kick a fresh load of everything. Called on the
+  /// three transitions that take ads from "cannot load" to "can": the device
+  /// regaining internet, consent changing, and Pro lapsing.
+  void _rearmAll() {
+    if (!adsEnabled) return;
+    _loadAttempts.clear();
+    for (final timer in _retryTimers.values) {
+      timer.cancel();
+    }
+    _retryTimers.clear();
+    _loadInterstitial();
+    _loadRewarded();
+    _loadAppOpen();
+    _loadWarmBanner();
+    _rearmNotifier.value++;
+  }
+
+  void _onConnectivityChanged() {
+    final hasInternet = _hasInternet;
+    if (hasInternet && !_lastHadInternet) {
+      AppLogger.info('Network returned — re-arming ad preloads');
+      _rearmAll();
+    }
+    _lastHadInternet = hasInternet;
+  }
+
+  /// Call when premium status changes. A lapsed subscription turns ads back
+  /// on, and nothing would otherwise start loading until the next app launch.
+  void onPremiumChanged() {
+    _notifyAdsEnabled();
+    if (adsEnabled) {
+      _rearmAll();
+    } else {
+      // Became Pro — stop paying for ads nobody will see.
+      for (final timer in _retryTimers.values) {
+        timer.cancel();
+      }
+      _retryTimers.clear();
+      _notifyRewardedReady();
+    }
+  }
 
   // ==================== Init + consent ====================
 
@@ -135,8 +267,29 @@ class AdService {
     _initialized = true;
     try {
       _prefs = await SharedPreferences.getInstance();
-      await _gatherConsentAndAtt();
-      await _refreshCanRequestAds();
+
+      // Watch connectivity so a load that failed while offline gets another
+      // chance the moment the device is back, instead of leaving the session
+      // ad-free. Registered before anything can fail below.
+      if (GetIt.I.isRegistered<ConnectivityService>()) {
+        _connectivity = GetIt.I<ConnectivityService>();
+        _lastHadInternet = _connectivity!.hasInternetAccess;
+        _connectivity!.addListener(_onConnectivityChanged);
+      }
+
+      // A lapsed subscription turns ads back on mid-session. Without this,
+      // nothing would start loading until the next app launch, so the first
+      // ad the ex-Pro user met would always be a cold one.
+      if (GetIt.I.isRegistered<PremiumCubit>()) {
+        final premium = GetIt.I<PremiumCubit>();
+        _wasPro = premium.state.hasPremium;
+        _premiumSub = premium.stream.listen((state) {
+          if (state.hasPremium == _wasPro) return;
+          _wasPro = state.hasPremium;
+          onPremiumChanged();
+        });
+      }
+
       // Brand safety for an all-ages arcade game: never serve creatives above
       // PG (blocks gambling / mature ads). Applies to all builds — debug
       // already uses Google's test ad UNIT ids, so no test-device config is
@@ -144,13 +297,24 @@ class AdService {
       await MobileAds.instance.updateRequestConfiguration(
         RequestConfiguration(maxAdContentRating: MaxAdContentRating.pg),
       );
-      await MobileAds.instance.initialize();
+
+      // Start the SDK IN PARALLEL with consent rather than after it. Consent
+      // is a network round trip that can also present a form, so awaiting it
+      // first delayed every preload by seconds on a cold start. Only the ad
+      // REQUEST has to wait for consent, and it still does — the loads below
+      // run after both futures, gated on `_canRequestAds`.
+      final sdkReady = MobileAds.instance.initialize();
+      await _gatherConsentAndAtt();
+      await _refreshCanRequestAds();
+      await sdkReady;
+
       _sdkReady = true;
       AppLogger.success('AdService initialized (ads ${adsEnabled ? 'on' : 'off'})');
       if (adsEnabled) {
         _loadInterstitial();
         _loadRewarded();
         _loadAppOpen();
+        _loadWarmBanner();
       }
     } catch (e) {
       AppLogger.error('AdService init failed', e);
@@ -237,11 +401,9 @@ class AdService {
     // ads can be requested and (re)start preloading if they just came on.
     await _refreshCanRequestAds();
     _notifyAdsEnabled();
-    if (adsEnabled) {
-      _loadInterstitial();
-      _loadRewarded();
-      _loadAppOpen();
-    }
+    // Consent may have just been granted, which is one of the transitions from
+    // "cannot load" to "can" — reset any exhausted backoff, don't just retry.
+    _rearmAll();
     return shown;
   }
 
@@ -251,7 +413,7 @@ class AdService {
 
   void _loadInterstitial() {
     if (!adsEnabled || _interstitial != null || _interstitialLoading) return;
-    if (!_isOnline) return;
+    if (!_hasInternet) return;
     _interstitialLoading = true;
     InterstitialAd.load(
       adUnitId: AdConfig.interstitialUnitId,
@@ -268,15 +430,23 @@ class AdService {
           };
           _interstitial = ad;
           _interstitialLoading = false;
+          _clearRetry(_kLoadInterstitial);
         },
         onAdFailedToLoad: (error) {
           _interstitial = null;
           _interstitialLoading = false;
           AppLogger.warning('Interstitial failed to load: ${error.message}');
+          _scheduleRetry(_kLoadInterstitial, _loadInterstitial);
         },
       ),
     );
   }
+
+  /// Warm an interstitial ahead of the moment it might show. Called when a
+  /// game STARTS: that buys a minute or two of load time before the game-over
+  /// where the ad is actually offered, so a cold or failed startup load has
+  /// recovered by then instead of being discovered empty at show time.
+  void preloadInterstitial() => _loadInterstitial();
 
   /// Show an interstitial if the frequency cap allows. Call this on game-over.
   /// Returns true if an ad was shown. Counts the game regardless.
@@ -335,33 +505,39 @@ class AdService {
 
   // ==================== Rewarded ====================
 
+  /// Top the rewarded buffer back up to [_rewardedBufferTarget]. The counter is
+  /// incremented synchronously before each async load, so the loop terminates
+  /// and concurrent calls can't over-request.
   void _loadRewarded() {
-    if (!adsEnabled || _rewarded != null || _rewardedLoading) return;
-    if (!_isOnline) return;
-    _rewardedLoading = true;
-    RewardedAd.load(
-      adUnitId: AdConfig.rewardedUnitId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          ad.onPaidEvent = (ad, valueMicros, precision, currencyCode) {
-            _analytics?.trackAdRevenue(
-              format: 'rewarded',
-              valueMicros: valueMicros,
-              currencyCode: currencyCode,
-              precision: precision.name,
-            );
-          };
-          _rewarded = ad;
-          _rewardedLoading = false;
-        },
-        onAdFailedToLoad: (error) {
-          _rewarded = null;
-          _rewardedLoading = false;
-          AppLogger.warning('Rewarded failed to load: ${error.message}');
-        },
-      ),
-    );
+    if (!adsEnabled || !_hasInternet) return;
+    while (_rewardedPool.length + _rewardedLoading < _rewardedBufferTarget) {
+      _rewardedLoading++;
+      RewardedAd.load(
+        adUnitId: AdConfig.rewardedUnitId,
+        request: const AdRequest(),
+        rewardedAdLoadCallback: RewardedAdLoadCallback(
+          onAdLoaded: (ad) {
+            ad.onPaidEvent = (ad, valueMicros, precision, currencyCode) {
+              _analytics?.trackAdRevenue(
+                format: 'rewarded',
+                valueMicros: valueMicros,
+                currencyCode: currencyCode,
+                precision: precision.name,
+              );
+            };
+            _rewardedLoading--;
+            _rewardedPool.add(ad);
+            _clearRetry(_kLoadRewarded);
+            _notifyRewardedReady();
+          },
+          onAdFailedToLoad: (error) {
+            _rewardedLoading--;
+            AppLogger.warning('Rewarded failed to load: ${error.message}');
+            _scheduleRetry(_kLoadRewarded, _loadRewarded);
+          },
+        ),
+      );
+    }
   }
 
   /// Eagerly (re)load a rewarded ad — call when entering a screen that offers
@@ -393,12 +569,15 @@ class AdService {
     required VoidCallback onReward,
     String placement = 'unspecified',
   }) async {
-    if (!adsEnabled || _rewarded == null) {
+    if (!adsEnabled || _rewardedPool.isEmpty) {
       _loadRewarded();
       return false;
     }
-    final ad = _rewarded!;
-    _rewarded = null;
+    final ad = _rewardedPool.removeAt(0);
+    _notifyRewardedReady();
+    // Immediately start replacing the one we just took, so a second watch
+    // right after this one finds the buffer already topped up.
+    _loadRewarded();
     var earned = false;
     var dismissed = false;
     var granted = false;
@@ -487,7 +666,7 @@ class AdService {
 
   void _loadAppOpen() {
     if (!adsEnabled || _appOpenAd != null || _appOpenLoading) return;
-    if (!_isOnline) return;
+    if (!_hasInternet) return;
     _appOpenLoading = true;
     AppOpenAd.load(
       adUnitId: AdConfig.appOpenUnitId,
@@ -505,11 +684,13 @@ class AdService {
           _appOpenAd = ad;
           _appOpenLoadedAtMs = DateTime.now().millisecondsSinceEpoch;
           _appOpenLoading = false;
+          _clearRetry(_kLoadAppOpen);
         },
         onAdFailedToLoad: (error) {
           _appOpenAd = null;
           _appOpenLoading = false;
           AppLogger.warning('App Open failed to load: ${error.message}');
+          _scheduleRetry(_kLoadAppOpen, _loadAppOpen);
         },
       ),
     );
@@ -573,6 +754,94 @@ class AdService {
     await ad.show();
   }
 
+  // ==================== Banner warm-up ====================
+  //
+  // A BannerAd can only be attached to ONE AdWidget at a time, so a banner
+  // cannot be shared between screens the way a full-screen ad is reused. What
+  // it CAN do is be loaded before the widget that will display it exists: this
+  // keeps exactly one loaded banner and hands ownership to the next placement
+  // that mounts, which is why the strip fills on its first frame rather than a
+  // second or two in.
+  //
+  // Depth is deliberately one. An impression is only counted when the ad is
+  // displayed, so a spare that is never shown is a wasted request — harmless
+  // in small numbers, but a deep pool would drag the match rate down for no
+  // benefit, since only one banner is on screen at a time anyway.
+
+  /// Register the anchored adaptive size once the banner widget has resolved
+  /// it for this device. The app is portrait-locked, so it is stable for the
+  /// session — and the warm banner must be the same size as the placement it
+  /// will fill.
+  void setBannerSize(AdSize size) {
+    if (_bannerSize == size) return;
+    _bannerSize = size;
+    // A spare at the old size can't fill a placement at the new one.
+    _warmBanner?.dispose();
+    _warmBanner = null;
+    _loadWarmBanner();
+  }
+
+  /// Hand the warm banner to a placement mounting right now, transferring
+  /// ownership (the caller disposes it), and start loading a replacement.
+  /// Returns null when none is ready or the spare has gone stale — the widget
+  /// then loads its own, exactly as before.
+  BannerAd? takeWarmBanner(AdSize size) {
+    final ad = _warmBanner;
+    if (ad == null || _bannerSize != size) {
+      _loadWarmBanner();
+      return null;
+    }
+    _warmBanner = null;
+    final age = DateTime.now().millisecondsSinceEpoch - _warmBannerLoadedAtMs;
+    if (age > _warmBannerMaxAge.inMilliseconds) {
+      ad.dispose();
+      _loadWarmBanner();
+      return null;
+    }
+    _loadWarmBanner();
+    AppLogger.info('Banner served from warm cache (no load wait)');
+    return ad;
+  }
+
+  void _loadWarmBanner() {
+    if (!adsEnabled || !_hasInternet) return;
+    final size = _bannerSize;
+    if (size == null || _warmBanner != null || _warmBannerLoading) return;
+    _warmBannerLoading = true;
+    final ad = BannerAd(
+      adUnitId: AdConfig.bannerUnitId,
+      size: size,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          _warmBanner = ad as BannerAd;
+          _warmBannerLoadedAtMs = DateTime.now().millisecondsSinceEpoch;
+          _warmBannerLoading = false;
+          _clearRetry(_kLoadBanner);
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          _warmBannerLoading = false;
+          AppLogger.warning('Warm banner failed to load: ${error.message}');
+          _scheduleRetry(_kLoadBanner, _loadWarmBanner);
+        },
+        // Revenue is attributed here because this listener travels with the ad
+        // into whichever widget displays it. The IMPRESSION is tracked by that
+        // widget when it actually renders — a loaded-but-unshown ad is not an
+        // impression, and reporting it here would inflate the count.
+        onPaidEvent: (ad, valueMicros, precision, currencyCode) {
+          _analytics?.trackAdRevenue(
+            format: 'banner',
+            valueMicros: valueMicros,
+            currencyCode: currencyCode,
+            precision: precision.name,
+          );
+        },
+      ),
+    );
+    ad.load();
+  }
+
   // ==================== Opt-in rewarded placements ====================
   //
   // Rewarded ads are opt-in (the user chooses to watch for a reward) and pay
@@ -617,11 +886,22 @@ class AdService {
   bool get canShowFreeCoinAd => isRewardedReady;
 
   void dispose() {
+    _connectivity?.removeListener(_onConnectivityChanged);
+    _premiumSub?.cancel();
+    for (final timer in _retryTimers.values) {
+      timer.cancel();
+    }
+    _retryTimers.clear();
     _interstitial?.dispose();
-    _rewarded?.dispose();
+    for (final ad in _rewardedPool) {
+      ad.dispose();
+    }
+    _rewardedPool.clear();
     _appOpenAd?.dispose();
+    _warmBanner?.dispose();
     _interstitial = null;
-    _rewarded = null;
     _appOpenAd = null;
+    _warmBanner = null;
+    _notifyRewardedReady();
   }
 }
