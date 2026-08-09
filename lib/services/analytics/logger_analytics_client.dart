@@ -299,6 +299,16 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackScoreRejected({
+    required int count,
+    required String topReason,
+  }) async {
+    AppLogger.error(
+      '$_tag score_rejected: count=$count top_reason=$topReason',
+    );
+  }
+
+  @override
   Future<void> trackReviewRequested(String trigger) async {
     AppLogger.info('$_tag review_requested: trigger=$trigger');
   }

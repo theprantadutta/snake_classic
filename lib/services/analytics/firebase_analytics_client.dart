@@ -372,6 +372,26 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackScoreRejected({
+    required int count,
+    required String topReason,
+  }) {
+    return _analytics.logEvent(
+      name: 'score_rejected',
+      parameters: {
+        'count': count,
+        // Truncated: GA4 caps string parameter values at 100 characters and
+        // silently drops the whole event if one is longer, which would make
+        // this counter vanish exactly when a verbose new validator message
+        // starts firing it.
+        'top_reason': topReason.length > 90
+            ? topReason.substring(0, 90)
+            : topReason,
+      },
+    );
+  }
+
+  @override
   Future<void> trackReviewRequested(String trigger) {
     return _analytics.logEvent(
       name: 'review_requested',

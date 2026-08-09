@@ -14,6 +14,7 @@ import 'package:snake_classic/data/daos/store_dao.dart';
 import 'package:snake_classic/data/daos/sync_dao.dart';
 import 'package:snake_classic/models/achievement.dart' as ach_model;
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/sync/statistics_merge.dart';
@@ -774,6 +775,15 @@ class SyncEngine {
   }
 
   Future<void> _drainGroup(String dataType, List<SyncQueueData> items) async {
+    // Scores are the one group where a 2xx does not mean "all of it landed".
+    // /scores/batch validates each item independently and reports per-item
+    // verdicts inside a successful response, so the group needs unpicking
+    // rather than a single accept-or-retry decision.
+    if (dataType == SyncDataType.score) {
+      await _drainScoreGroup(items);
+      return;
+    }
+
     final result = await _dispatch(dataType, items);
 
     switch (result) {
@@ -807,6 +817,208 @@ class SyncEngine {
         }
         break;
     }
+  }
+
+  /// Drain queued scores, honouring the server's PER-ITEM verdicts.
+  ///
+  /// /scores/batch validates each score independently and answers 2xx even
+  /// when some were refused, reporting the outcomes in the body. The engine
+  /// used to read only the status code and delete the whole group, so a
+  /// rejected run disappeared with no retry, no record and no counter — a
+  /// validator change or a client/server version skew could quietly eat every
+  /// score a player produced.
+  ///
+  /// Each item now ends in exactly one place:
+  ///   * accepted or already known    → removed from the outbox;
+  ///   * refused, but retryable       → left queued, retry counter bumped;
+  ///   * refused permanently          → moved to the dead-letter store;
+  ///   * no verdict at all            → left queued, so nothing is assumed.
+  Future<void> _drainScoreGroup(List<SyncQueueData> items) async {
+    final byKey = <String, SyncQueueData>{};
+    final payloads = <Map<String, dynamic>>[];
+
+    for (final item in items) {
+      try {
+        final decoded = jsonDecode(item.data) as Map<String, dynamic>;
+        final payload = decoded['payload'];
+        if (payload is! Map<String, dynamic>) continue;
+        final key = payload['idempotency_key'];
+        if (key is! String || key.isEmpty) continue;
+        byKey[key] = item;
+        payloads.add(payload);
+      } catch (_) {
+        // Malformed outbox row — skip it here; it is handled below with the
+        // other rows that never receive a verdict.
+      }
+    }
+
+    if (payloads.isEmpty) {
+      // Nothing sendable. Rows with no usable payload can never succeed, so
+      // leaving them queued would block the group forever.
+      for (final item in items) {
+        await _syncDao!.deadLetterScore(
+          outboxId: item.id,
+          idempotencyKey: 'malformed:${item.id}',
+          payload: item.data,
+          reason: 'Outbox row carried no usable score payload',
+        );
+      }
+      if (items.isNotEmpty) {
+        AppLogger.error(
+          'SyncEngine: ${items.length} score row(s) had no usable payload — '
+          'dead-lettered rather than retried forever',
+        );
+      }
+      return;
+    }
+
+    final outcome = await _api.syncScores(payloads);
+
+    if (outcome.kind == SyncOutcomeKind.transient) {
+      for (final item in items) {
+        await _syncDao!.incrementRetryCount(item.id);
+      }
+      AppLogger.warning(
+        'SyncEngine: score batch x${items.length} failed transiently — '
+        'will retry',
+      );
+      return;
+    }
+
+    if (outcome.kind == SyncOutcomeKind.permanent) {
+      // The whole request was refused (bad shape, unsupported version). No
+      // per-item verdicts exist, and resending is pointless.
+      for (final item in items) {
+        final key = byKey.entries
+            .firstWhere((e) => e.value.id == item.id,
+                orElse: () => MapEntry('unknown:${item.id}', item))
+            .key;
+        await _syncDao!.deadLetterScore(
+          outboxId: item.id,
+          idempotencyKey: key,
+          payload: item.data,
+          reason: 'Batch rejected by server '
+              '(HTTP ${outcome.statusCode ?? "unknown"})',
+        );
+      }
+      AppLogger.error(
+        'SyncEngine: score batch permanently rejected '
+        '(HTTP ${outcome.statusCode}) — ${items.length} row(s) dead-lettered',
+      );
+      _reportScoreRejections(items.length);
+      return;
+    }
+
+    final results = outcome.body?['results'];
+    if (results is! List) {
+      // 2xx with a body we cannot read. Do NOT assume acceptance — that is
+      // the exact assumption this method exists to remove.
+      for (final item in items) {
+        await _syncDao!.incrementRetryCount(item.id);
+      }
+      AppLogger.error(
+        'SyncEngine: score batch returned 2xx without a results array — '
+        'leaving ${items.length} row(s) queued rather than assuming success',
+      );
+      return;
+    }
+
+    final settled = <String>{};
+    var accepted = 0;
+    var rejected = 0;
+
+    for (final raw in results) {
+      if (raw is! Map) continue;
+      final key = raw['idempotency_key'];
+      if (key is! String) continue;
+      final item = byKey[key];
+      if (item == null) continue;
+
+      settled.add(key);
+
+      final success = raw['success'] == true;
+      final duplicate = raw['was_duplicate'] == true;
+
+      if (success || duplicate) {
+        await _syncDao!.removeSyncItem(item.id);
+        accepted++;
+        continue;
+      }
+
+      final reason = (raw['error'] as String?) ?? 'rejected without a reason';
+
+      if (raw['retryable'] == true) {
+        await _syncDao!.incrementRetryCount(item.id);
+        AppLogger.warning(
+          'SyncEngine: score $key refused transiently ($reason) — will retry',
+        );
+        continue;
+      }
+
+      await _syncDao!.deadLetterScore(
+        outboxId: item.id,
+        idempotencyKey: key,
+        payload: jsonEncode(
+          payloads.firstWhere(
+            (p) => p['idempotency_key'] == key,
+            orElse: () => <String, dynamic>{},
+          ),
+        ),
+        reason: reason,
+      );
+      rejected++;
+      AppLogger.error('SyncEngine: score $key permanently rejected — $reason');
+    }
+
+    // Rows the server said nothing about. Could be a shorter response, a
+    // version skew, or a dropped item. Leave them queued: a missing verdict
+    // is not permission to delete a player's game.
+    final unsettled =
+        byKey.entries.where((e) => !settled.contains(e.key)).toList();
+    for (final entry in unsettled) {
+      await _syncDao!.incrementRetryCount(entry.value.id);
+    }
+    if (unsettled.isNotEmpty) {
+      AppLogger.warning(
+        'SyncEngine: ${unsettled.length} queued score(s) got no verdict from '
+        'the batch response — left queued for the next drain',
+      );
+    }
+
+    AppLogger.network(
+      'SyncEngine: score batch settled — $accepted accepted, '
+      '$rejected dead-lettered, ${unsettled.length} awaiting a verdict',
+    );
+
+    if (rejected > 0) _reportScoreRejections(rejected);
+  }
+
+  /// Emit a counter so a cluster of rejections is visible without anyone
+  /// thinking to look in a local table. Grouped by reason, because one cause
+  /// normally explains the whole cluster.
+  void _reportScoreRejections(int count) {
+    unawaited(() async {
+      try {
+        await _syncDao!.pruneScoreDeadLetters();
+        final byReason = await _syncDao!.getScoreDeadLetterCountsByReason();
+        AppLogger.error(
+          'SyncEngine: score dead letters by reason → $byReason',
+        );
+        if (GetIt.I.isRegistered<AnalyticsFacade>() && byReason.isNotEmpty) {
+          // One cause normally explains a whole cluster, so the most common
+          // reason is the one worth carrying on the event.
+          final topReason = byReason.entries
+              .reduce((a, b) => b.value > a.value ? b : a)
+              .key;
+          await GetIt.I<AnalyticsFacade>().trackScoreRejected(
+            count: count,
+            topReason: topReason,
+          );
+        }
+      } catch (e) {
+        AppLogger.error('SyncEngine: dead-letter reporting failed', e);
+      }
+    }());
   }
 
   Future<_DispatchResult> _dispatch(
@@ -905,13 +1117,14 @@ class SyncEngine {
           return _mapOutcome(await _api.syncUnlockedItems(payloads));
 
         case SyncDataType.score:
-          // Event-typed: a finished run never changes, so the payload
-          // frozen at game-over is still correct however long the device
-          // stayed offline. Batched because a player can finish several
-          // runs between drains, and the endpoint is built for it.
-          final scorePayloads = _extractPayloads(items);
-          if (scorePayloads.isEmpty) return _DispatchResult.success;
-          return _mapOutcome(await _api.syncScores(scorePayloads));
+          // Unreachable: _drainGroup routes scores to _drainScoreGroup before
+          // dispatching, because a 2xx from /scores/batch does not mean every
+          // item landed and the group has to be settled per item. Kept as an
+          // explicit case so adding a score path here is an obvious mistake
+          // rather than a silent second implementation.
+          throw StateError(
+            'Scores are settled by _drainScoreGroup, not _dispatch',
+          );
 
         case SyncDataType.dailyChallengeClaim:
           // Per-row snapshot keyed by challenge id — read the current
