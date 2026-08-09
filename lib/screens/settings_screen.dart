@@ -275,17 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         _analytics.trackSettingChanged(settingName: 'dpad_enabled', value: '$value');
                                       },
                                       theme,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      l10n.settingsDPadSubtitle,
-                                      style: TextStyle(
-                                        color: theme.accentColor.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                        fontSize: 12,
-                                        fontStyle: FontStyle.italic,
-                                      ),
+                                      description: l10n.settingsDPadSubtitle,
                                     ),
                                     // D-Pad Position Selector (only show when D-Pad is enabled)
                                     if (_dPadEnabled) ...[
@@ -335,17 +325,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         _analytics.trackSettingChanged(settingName: 'screen_shake', value: '$value');
                                       },
                                       theme,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      l10n.settingsScreenShakeSubtitle,
-                                      style: TextStyle(
-                                        color: theme.accentColor.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                        fontSize: 12,
-                                        fontStyle: FontStyle.italic,
-                                      ),
+                                      description: l10n.settingsScreenShakeSubtitle,
                                     ),
                                     const SizedBox(height: 24),
                                     const Divider(height: 1),
@@ -363,17 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         _analytics.trackSettingChanged(settingName: 'haptics_enabled', value: '$value');
                                       },
                                       theme,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      l10n.settingsVibrationSubtitle,
-                                      style: TextStyle(
-                                        color: theme.accentColor.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                        fontSize: 12,
-                                        fontStyle: FontStyle.italic,
-                                      ),
+                                      description: l10n.settingsVibrationSubtitle,
                                     ),
                                   ], theme),
 
@@ -429,17 +399,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             .setTrailSystemEnabled(value);
                                       },
                                       theme,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      l10n.settingsSnakeTrailSubtitle,
-                                      style: TextStyle(
-                                        color: theme.accentColor.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                        fontSize: 12,
-                                        fontStyle: FontStyle.italic,
-                                      ),
+                                      description: l10n.settingsSnakeTrailSubtitle,
                                     ),
                                   ], theme),
 
@@ -710,29 +670,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Eyebrow + hairline card. Kept identical to `ProfileScreen._buildSection`
+  /// so the two screens are visibly the same product.
   Widget _buildSection(String title, List<Widget> children, GameTheme theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: theme.accentColor,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            letterSpacing: context.letterSpacing(1),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: context.letterSpacing(1.5),
+            ),
           ),
         ),
-        const SizedBox(height: 16),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: theme.backgroundColor.withValues(alpha: 0.3),
             border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Column(children: children),
+          // stretch, not the default centre. Rows fill either way, but a bare
+          // Text shrink-wraps — which is why every hint and caption on this
+          // screen used to sit centred while the control it described was
+          // left-aligned above it.
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
         ),
       ],
     );
@@ -816,35 +787,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondaryColor: theme.primaryColor,
           icon: Icons.palette,
           width: double.infinity,
+          height: 44,
           outlined: true,
         ),
       ],
     );
   }
 
+  /// A labelled toggle, optionally with the sentence that explains it.
+  ///
+  /// [description] belongs to the row rather than floating after it as a
+  /// separate child: attached, it reads as this setting's explanation and
+  /// wraps under its own label; loose, it was just another paragraph in the
+  /// card with nothing tying it to the switch above.
+  ///
+  /// The label is white, not accent. When every label on the screen is the
+  /// theme colour there is nothing left for the theme colour to mean, and the
+  /// eyebrows and selected states stop standing out.
   Widget _buildAudioSwitch(
     String title,
     bool value,
     Function(bool) onChanged,
-    GameTheme theme,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.8),
-            fontSize: 16,
+    GameTheme theme, {
+    String? description,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (description != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12.5,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeThumbColor: theme.accentColor,
-          activeTrackColor: theme.accentColor.withValues(alpha: 0.3),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: theme.accentColor,
+            activeTrackColor: theme.accentColor.withValues(alpha: 0.3),
+          ),
+        ],
+      ),
     );
   }
 
@@ -949,13 +956,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(
             l10n.settingsDesktopControls,
             style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: context.letterSpacing(0.5),
+              color: Colors.white.withValues(alpha: 0.45),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: context.letterSpacing(1),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _buildControlItem(
               l10n.settingsArrowKeys, l10n.settingsChangeDirection, theme),
           _buildControlItem(
@@ -985,13 +992,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(
             l10n.settingsTouchControls,
             style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: context.letterSpacing(0.5),
+              color: Colors.white.withValues(alpha: 0.45),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: context.letterSpacing(1),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _buildControlItem(
               l10n.settingsSwipeUp, l10n.settingsMoveSnakeUp, theme),
           _buildControlItem(
@@ -1007,37 +1014,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// One line of the controls reference: the gesture, and what it does.
+  ///
+  /// This is documentation, not a menu. It used to lead with a right-chevron
+  /// and stack the action underneath, which made five static lines look like
+  /// five tappable rows — the chevron is the strongest "there is something
+  /// behind this" signal in the whole app, and nothing was behind it.
+  ///
+  /// Two columns instead: the gesture reads as the key, the action as its
+  /// value, and the pair is unmistakably a table.
   Widget _buildControlItem(String control, String action, GameTheme theme) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.keyboard_arrow_right,
-            color: theme.accentColor.withValues(alpha: 0.6),
-            size: 20,
-          ),
-          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  control,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  action,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+            flex: 4,
+            child: Text(
+              control,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 5,
+            child: Text(
+              action,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 13,
+              ),
             ),
           ),
         ],
@@ -1082,9 +1094,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
-            fontStyle: FontStyle.italic,
           ),
-          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -1107,8 +1117,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 14,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
@@ -1120,7 +1130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : theme.accentColor.withValues(alpha: 0.3),
                     width: isSelected ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '${mode.icon} ${mode.localizedName(l10n)}',
@@ -1146,9 +1156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               color: Colors.orange.withValues(alpha: 0.8),
               fontSize: 11,
-              fontStyle: FontStyle.italic,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ],
@@ -1213,7 +1221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : theme.accentColor.withValues(alpha: 0.3),
                     width: isSelected ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '${difficulty.icon} ${difficulty.localizedLabel(l10n)}',
@@ -1283,6 +1291,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildBoardSizeSelector(GameCubitState gameState, GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
+      // Explicit: the default centre made the size description float in the
+      // middle while the label and value above it sat hard left.
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
@@ -1344,9 +1355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
-            fontStyle: FontStyle.italic,
           ),
-          textAlign: TextAlign.center,
         ),
 
         const SizedBox(height: 16),
@@ -1375,8 +1384,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 14,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
@@ -1388,7 +1397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : theme.accentColor.withValues(alpha: 0.3),
                     width: isSelected ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '${boardSize.localizedName(l10n)}\n${boardSize.width}×${boardSize.height}',
@@ -1416,9 +1425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               color: Colors.orange.withValues(alpha: 0.8),
               fontSize: 11,
-              fontStyle: FontStyle.italic,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ],
@@ -1443,6 +1450,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
+      // Explicit, for the same reason as the board-size selector: the default
+      // centre stranded the description in the middle of the card.
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
@@ -1494,9 +1504,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
-            fontStyle: FontStyle.italic,
           ),
-          textAlign: TextAlign.center,
         ),
 
         const SizedBox(height: 16),
@@ -1523,8 +1531,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 14,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
@@ -1536,7 +1544,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : theme.accentColor.withValues(alpha: 0.3),
                     width: isSelected ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _crashLabel(l10n, duration),
@@ -1694,6 +1702,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondaryColor: Colors.deepOrange,
             icon: Icons.edit,
             width: double.infinity,
+            height: 44,
             outlined: true,
           ),
           const SizedBox(height: 12),
@@ -1702,9 +1711,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.7),
               fontSize: 12,
-              fontStyle: FontStyle.italic,
             ),
-            textAlign: TextAlign.center,
           ),
         ] else ...[
           // For authenticated users
@@ -1715,6 +1722,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondaryColor: theme.primaryColor,
             icon: Icons.edit,
             width: double.infinity,
+            height: 44,
             outlined: true,
           ),
           const SizedBox(height: 12),
@@ -1723,9 +1731,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.7),
               fontSize: 12,
-              fontStyle: FontStyle.italic,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ],
@@ -1754,6 +1760,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondaryColor: theme.foodColor,
           icon: Icons.notifications_active,
           width: double.infinity,
+          height: 44,
           outlined: true,
         ),
         const SizedBox(height: 4),
@@ -1773,6 +1780,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondaryColor: theme.foodColor,
           icon: Icons.cloud_upload,
           width: double.infinity,
+          height: 44,
           outlined: true,
         ),
         const SizedBox(height: 4),
@@ -1796,6 +1804,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondaryColor: theme.foodColor,
             icon: Icons.content_copy,
             width: double.infinity,
+            height: 44,
             outlined: true,
           ),
           const SizedBox(height: 4),
@@ -1815,6 +1824,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondaryColor: theme.foodColor,
             icon: Icons.schedule,
             width: double.infinity,
+            height: 44,
             outlined: true,
           ),
           const SizedBox(height: 4),
@@ -1836,6 +1846,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondaryColor: theme.foodColor.withValues(alpha: 0.5),
             icon: Icons.cancel_outlined,
             width: double.infinity,
+            height: 44,
             outlined: true,
           ),
           const SizedBox(height: 16),
@@ -1846,6 +1857,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondaryColor: theme.foodColor,
             icon: Icons.alarm_on,
             width: double.infinity,
+            height: 44,
             outlined: true,
           ),
           const SizedBox(height: 4),
@@ -2029,6 +2041,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondaryColor: theme.foodColor,
           icon: Icons.privacy_tip,
           width: double.infinity,
+          height: 44,
           outlined: true,
         ),
         const SizedBox(height: 8),
@@ -2055,6 +2068,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondaryColor: theme.foodColor,
           icon: Icons.info_outline,
           width: double.infinity,
+          height: 44,
           outlined: true,
         ),
         const SizedBox(height: 8),
@@ -2097,6 +2111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       secondaryColor: theme.foodColor,
       icon: Icons.privacy_tip_outlined,
       width: double.infinity,
+      height: 44,
       outlined: true,
     );
   }
@@ -2115,6 +2130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       secondaryColor: theme.foodColor,
       icon: Icons.description_outlined,
       width: double.infinity,
+      height: 44,
       outlined: true,
     );
   }
@@ -2136,6 +2152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondaryColor: theme.foodColor,
           icon: Icons.star_rounded,
           width: double.infinity,
+          height: 44,
           outlined: true,
         ),
         const SizedBox(height: 8),
@@ -2164,6 +2181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondaryColor: theme.foodColor,
           icon: Icons.school,
           width: double.infinity,
+          height: 44,
           outlined: true,
         ),
         const SizedBox(height: 8),
