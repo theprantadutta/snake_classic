@@ -319,8 +319,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     if (!mounted) return;
 
-    // Frontend gate: already claimed today, skip everything
+    // Wait for CoinsCubit to have read Drift before trusting its answer.
+    //
+    // This gate asks "was the bonus already claimed today?", and the answer
+    // lives in state.dailyBonusLastClaimUtcMs, which is null until
+    // _loadFromDrift lands. The cubit is created with a fire-and-forget
+    // `..initialize()` in main.dart, and on a cold start that can finish
+    // well AFTER this queue runs — measured at 14s on a device where the
+    // backend was timing out, against a popup that fires ~700ms after home
+    // settles. So the gate read "never claimed" for a player who had
+    // claimed hours earlier, and the popup came back every single launch.
+    //
+    // The claim itself was never actually granted twice — StoreDao's
+    // transaction refuses a second claim in the same local day, and the coin
+    // ledger confirms one grant. But the popup closed on tap either way, so
+    // it looked exactly like a successful claim, every time.
+    //
+    // initialize() coalesces onto the in-flight future and returns
+    // immediately once ready, so this is a no-op on a warm start.
     final coinsCubit = context.read<CoinsCubit>();
+    await coinsCubit.initialize();
+    if (!mounted) return;
+
+    // Frontend gate: already claimed today, skip everything
     if (coinsCubit.wasDailyBonusClaimedToday) return;
 
     try {
@@ -366,9 +387,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         status: status,
         onClaim: () async {
           if (!mounted) return false;
+          // Capture before the await — the popup pops on return, so reading
+          // context afterwards is unsafe.
+          final messenger = ScaffoldMessenger.of(context);
+          final claimL10n = AppLocalizations.of(context)!;
           final success = await context.read<CoinsCubit>().collectDailyBonus();
           if (success) {
             getIt<AnalyticsFacade>().trackDailyBonusCollected();
+          } else {
+            // The Drift gate refused — the bonus was already claimed today
+            // and no coins were granted. Say so. The popup closes on tap
+            // either way, so without this the refusal was invisible and a
+            // failed claim was indistinguishable from a paid one.
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(claimL10n.dbAlreadyClaimed),
+                duration: const Duration(seconds: 2),
+              ),
+            );
           }
           return success;
         },
