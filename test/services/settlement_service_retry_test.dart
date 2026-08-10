@@ -4,7 +4,8 @@ import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement_service.dart';
 import 'package:snake_classic/services/multiplayer/settlement_ledger.dart';
 
-import 'settlement_applier_test.dart' show FakeLedger, FakeSink;
+import 'settlement_applier_test.dart'
+    show FakeLedger, FakeSink, SettlementWorld;
 
 /// A scripted transport. Records what was acknowledged, so a settlement being
 /// acknowledged before it was fully applied is visible.
@@ -49,55 +50,48 @@ Map<String, dynamic> row({String id = 's1', int coins = 25, int xp = 20}) => {
 
 MultiplayerSettlementService newService({
   required FakeApi api,
-  required FakeLedger ledger,
-  required FakeSink sink,
+  required SettlementWorld world,
+  SettlementRewardSink? sink,
 }) {
   return MultiplayerSettlementService(
     // No database or pipeline: the ledger and sink are injected instead.
     api: api,
-    ledger: ledger,
-    rewardSink: sink,
+    ledger: FakeLedger(world),
+    rewardSink: sink ?? FakeSink(world),
   );
 }
 
 void main() {
   test('a fully applied settlement is acknowledged', () async {
     final api = FakeApi([row()]);
-    final ledger = FakeLedger();
-    final sink = FakeSink();
+    final world = SettlementWorld();
 
-    final applied =
-        await newService(api: api, ledger: ledger, sink: sink).syncPending();
+    final applied = await newService(api: api, world: world).syncPending();
 
     expect(applied, 1);
     expect(api.allAcked, ['s1']);
+    expect((world.stats, world.coins, world.xp), (1, 1, 1));
   });
 
-  test(
-    'a settlement whose coin grant failed is NOT acknowledged',
-    () async {
-      // The core rule: acknowledging tells the server to stop offering it. Do
-      // that with rewards outstanding and they are gone for good.
-      final api = FakeApi([row()]);
-      final ledger = FakeLedger();
-      final sink = FakeSink()..failStep = 'coins';
+  test('a settlement whose coin grant failed is NOT acknowledged', () async {
+    // The core rule: acknowledging tells the server to stop offering it. Do
+    // that with rewards outstanding and they are gone for good.
+    final api = FakeApi([row()]);
+    final world = SettlementWorld()..failStep = SettlementStep.coins;
 
-      final applied =
-          await newService(api: api, ledger: ledger, sink: sink).syncPending();
+    final applied = await newService(api: api, world: world).syncPending();
 
-      expect(applied, 0);
-      expect(api.allAcked, isEmpty);
-      expect(ledger.rows['s1']!.statsApplied, isTrue);
-      expect(ledger.rows['s1']!.completed, isFalse);
-    },
-  );
+    expect(applied, 0);
+    expect(api.allAcked, isEmpty);
+    expect(world.progress['s1']!.statsApplied, isTrue);
+    expect(world.progress['s1']!.completed, isFalse);
+  });
 
   test('a local apply failure schedules an automatic retry', () {
     fakeAsync((async) {
       final api = FakeApi([row()]);
-      final ledger = FakeLedger();
-      final sink = FakeSink()..failStep = 'coins';
-      final service = newService(api: api, ledger: ledger, sink: sink);
+      final world = SettlementWorld()..failStep = SettlementStep.coins;
+      final service = newService(api: api, world: world);
 
       service.syncPending();
       async.flushMicrotasks();
@@ -105,18 +99,38 @@ void main() {
       expect(api.allAcked, isEmpty);
 
       // The grant starts working — a transient economy failure resolving.
-      sink.failStep = null;
+      world.failStep = null;
 
-      // First backoff step.
       async.elapse(MultiplayerSettlementService.retryDelays.first);
       async.flushMicrotasks();
 
       expect(api.fetches, 2, reason: 'the retry must fire on its own');
       expect(api.allAcked, ['s1']);
-      expect(ledger.rows['s1']!.completed, isTrue);
-      // Resumed rather than restarted.
-      expect(sink.stats, 1);
-      expect(sink.coins, 1);
+      expect(world.progress['s1']!.completed, isTrue);
+      // Resumed, not restarted — and paid exactly once overall.
+      expect((world.stats, world.coins, world.xp), (1, 1, 1));
+
+      service.dispose();
+    });
+  });
+
+  test('a crash mid-apply is retried and still pays exactly once', () {
+    fakeAsync((async) {
+      final api = FakeApi([row()]);
+      final world = SettlementWorld()..crashDuring = SettlementStep.coins;
+      final service = newService(api: api, world: world);
+
+      service.syncPending();
+      async.flushMicrotasks();
+      expect(api.allAcked, isEmpty);
+      expect(world.coins, 0, reason: 'the rollback undid the credit');
+
+      world.crashDuring = null;
+      async.elapse(MultiplayerSettlementService.retryDelays.first);
+      async.flushMicrotasks();
+
+      expect(api.allAcked, ['s1']);
+      expect((world.stats, world.coins, world.xp), (1, 1, 1));
 
       service.dispose();
     });
@@ -125,9 +139,8 @@ void main() {
   test('a failed FETCH also schedules a retry', () {
     fakeAsync((async) {
       final api = FakeApi(null); // null = the request failed
-      final ledger = FakeLedger();
-      final sink = FakeSink();
-      final service = newService(api: api, ledger: ledger, sink: sink);
+      final world = SettlementWorld();
+      final service = newService(api: api, world: world);
 
       service.syncPending();
       async.flushMicrotasks();
@@ -147,11 +160,7 @@ void main() {
   test('retries back off rather than hammering', () {
     fakeAsync((async) {
       final api = FakeApi(null);
-      final service = newService(
-        api: api,
-        ledger: FakeLedger(),
-        sink: FakeSink(),
-      );
+      final service = newService(api: api, world: SettlementWorld());
 
       service.syncPending();
       async.flushMicrotasks();
@@ -183,24 +192,21 @@ void main() {
     'a settlement already applied but never acknowledged is re-acknowledged '
     'without being paid again',
     () async {
-      final ledger = FakeLedger();
-      final sink = FakeSink();
+      final world = SettlementWorld();
 
       // First run: applies and acknowledges.
       final firstApi = FakeApi([row()]);
-      await newService(api: firstApi, ledger: ledger, sink: sink).syncPending();
-      expect(sink.coins, 1);
+      await newService(api: firstApi, world: world).syncPending();
+      expect(world.coins, 1);
 
       // The server still offers it — the ack was lost in flight.
       final secondApi = FakeApi([row()]);
-      final applied = await newService(
-        api: secondApi,
-        ledger: ledger,
-        sink: sink,
-      ).syncPending();
+      final applied =
+          await newService(api: secondApi, world: world).syncPending();
 
       expect(applied, 0, reason: 'nothing new was applied');
-      expect(sink.coins, 1, reason: 'it must not be paid twice');
+      expect((world.stats, world.coins, world.xp), (1, 1, 1),
+          reason: 'it must not be paid twice');
       expect(secondApi.allAcked, ['s1'],
           reason: 're-acknowledging is how it stops coming back');
     },
@@ -208,21 +214,23 @@ void main() {
 
   test('one failing settlement does not block another from settling', () async {
     final api = FakeApi([row(id: 'good'), row(id: 'bad')]);
-    final ledger = FakeLedger();
-    final sink = _SelectiveSink(failFor: 'bad');
+    final world = SettlementWorld();
 
-    final applied =
-        await newService(api: api, ledger: ledger, sink: sink).syncPending();
+    final applied = await newService(
+      api: api,
+      world: world,
+      sink: _SelectiveSink(world, failFor: 'bad'),
+    ).syncPending();
 
     expect(applied, 1);
     expect(api.allAcked, ['good']);
-    expect(ledger.rows['bad']!.completed, isFalse);
+    expect(world.progress['bad']!.completed, isFalse);
   });
 }
 
-/// Fails only for one settlement id.
+/// Fails the coin step only for one settlement id.
 class _SelectiveSink extends FakeSink {
-  _SelectiveSink({required this.failFor});
+  _SelectiveSink(super.world, {required this.failFor});
 
   final String failFor;
 

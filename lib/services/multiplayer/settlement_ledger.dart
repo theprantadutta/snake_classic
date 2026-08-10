@@ -2,15 +2,10 @@ import 'package:drift/drift.dart';
 import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 
+/// One durable effect of applying a settlement.
+enum SettlementStep { stats, coins, xp }
+
 /// How far this device has got applying one settlement.
-///
-/// Applying a settlement is three separate durable writes — statistics, coins,
-/// battle-pass XP — through three different subsystems, with no transaction
-/// spanning them. A single "applied" flag could only be set before them all (a
-/// crash then loses real rewards) or after (a crash then replays whatever
-/// already landed, double-counting statistics). Neither is acceptable for
-/// money, so each step is recorded as it completes and a retry resumes from
-/// the first one still outstanding.
 class SettlementProgress {
   final String settlementId;
   final bool statsApplied;
@@ -28,6 +23,18 @@ class SettlementProgress {
 
   bool get allStepsDone => statsApplied && coinsApplied && xpApplied;
 
+  bool hasStep(SettlementStep step) => switch (step) {
+        SettlementStep.stats => statsApplied,
+        SettlementStep.coins => coinsApplied,
+        SettlementStep.xp => xpApplied,
+      };
+
+  SettlementProgress withStep(SettlementStep step) => switch (step) {
+        SettlementStep.stats => copyWith(statsApplied: true),
+        SettlementStep.coins => copyWith(coinsApplied: true),
+        SettlementStep.xp => copyWith(xpApplied: true),
+      };
+
   SettlementProgress copyWith({
     bool? statsApplied,
     bool? coinsApplied,
@@ -44,18 +51,50 @@ class SettlementProgress {
   }
 }
 
-/// Durable record of settlement application progress.
+/// Durable record of settlement application progress, and the thing that makes
+/// each step happen exactly once.
 ///
-/// An interface so the crash cases can be tested — the point of this whole
-/// design is what happens when the process dies between two writes, and that
-/// is not observable through a real database from inside the same process.
+/// The whole guarantee lives in [runStepOnce]. Recording a step AFTER its
+/// effect returned — the obvious way to write this, and what this did at
+/// first — leaves a window where the reward has landed and the record has not.
+/// A crash there replays the step on the next attempt and pays it twice. No
+/// ordering of two separate writes closes that window: the record has to
+/// commit WITH the effect, in one transaction, or not at all.
 abstract class SettlementLedger {
   Future<SettlementProgress?> read(String settlementId);
-  Future<void> write(SettlementProgress progress);
+
+  /// Run [effect] and record [step] as one atomic unit: either the reward and
+  /// its record are both durable, or neither is. Returns false when the step
+  /// was already recorded, in which case [effect] is NOT run.
+  ///
+  /// A rollback can leave a cubit's in-memory state briefly ahead of what is
+  /// durable. That is acceptable and self-correcting: every cubit on these
+  /// paths rehydrates from Drift — watches during the session, a load on
+  /// launch — so durable state is the authority and memory is a cache of it.
+  Future<bool> runStepOnce(
+    String settlementId,
+    SettlementStep step,
+    Future<void> Function() effect,
+  );
+
+  /// Mark the settlement fully applied. Grants nothing, so repeating it is
+  /// free: a crash before it simply means the next attempt finds every step
+  /// already recorded and completes without replaying any of them.
+  Future<void> markCompleted(String settlementId);
 
   /// Ids among [candidates] that are fully applied. Partially applied ones are
   /// deliberately absent: they must be resumed, not skipped.
   Future<Set<String>> completedIds(List<String> candidates);
+}
+
+/// Where a settlement's rewards actually land.
+///
+/// Each of these runs inside the ledger's transaction, so its durable write
+/// and the record of it commit together.
+abstract class SettlementRewardSink {
+  Future<void> applyStats(MultiplayerSettlement settlement);
+  Future<void> applyCoins(MultiplayerSettlement settlement);
+  Future<void> applyBattlePassXp(MultiplayerSettlement settlement);
 }
 
 /// The two settlement calls, behind an interface.
@@ -68,25 +107,21 @@ abstract class SettlementApi {
   Future<bool> acknowledge(List<String> settlementIds);
 }
 
-/// Where a settlement's rewards actually land.
-///
-/// Every method is awaited by the applier and must not return until its write
-/// is durable — a step that reports success before it has landed reintroduces
-/// exactly the loss this design exists to prevent.
-abstract class SettlementRewardSink {
-  Future<void> applyStats(MultiplayerSettlement settlement);
-  Future<void> applyCoins(MultiplayerSettlement settlement);
-  Future<void> applyBattlePassXp(MultiplayerSettlement settlement);
-}
-
 /// Drift-backed ledger.
+///
+/// [runStepOnce] opens a Drift transaction and calls the effect inside it.
+/// Every reward path here ends in a write on this same [db.AppDatabase], and
+/// Drift joins a nested `transaction()` to the open one as a savepoint — so
+/// the reward and its marker genuinely commit or roll back together.
 class DriftSettlementLedger implements SettlementLedger {
   DriftSettlementLedger(this._db);
 
   final db.AppDatabase _db;
 
   @override
-  Future<SettlementProgress?> read(String settlementId) async {
+  Future<SettlementProgress?> read(String settlementId) => _read(settlementId);
+
+  Future<SettlementProgress?> _read(String settlementId) async {
     final row = await (_db.select(_db.appliedMultiplayerSettlements)
           ..where((t) => t.settlementId.equals(settlementId)))
         .getSingleOrNull();
@@ -101,7 +136,32 @@ class DriftSettlementLedger implements SettlementLedger {
   }
 
   @override
-  Future<void> write(SettlementProgress progress) async {
+  Future<bool> runStepOnce(
+    String settlementId,
+    SettlementStep step,
+    Future<void> Function() effect,
+  ) {
+    return _db.transaction(() async {
+      // Read INSIDE the transaction: a concurrent pass must not see a stale
+      // "not applied yet" and grant the same reward alongside this one.
+      final existing = await _read(settlementId) ??
+          SettlementProgress(settlementId: settlementId);
+      if (existing.hasStep(step)) return false;
+
+      await effect();
+      await _write(existing.withStep(step));
+      return true;
+    });
+  }
+
+  @override
+  Future<void> markCompleted(String settlementId) async {
+    final existing = await _read(settlementId) ??
+        SettlementProgress(settlementId: settlementId);
+    await _write(existing.copyWith(completed: true));
+  }
+
+  Future<void> _write(SettlementProgress progress) async {
     await _db.into(_db.appliedMultiplayerSettlements).insertOnConflictUpdate(
           db.AppliedMultiplayerSettlementsCompanion.insert(
             settlementId: progress.settlementId,
@@ -128,11 +188,12 @@ class DriftSettlementLedger implements SettlementLedger {
 
 /// Applies one settlement, resuming from wherever a previous attempt stopped.
 ///
-/// The ordering rule, in one place: **each step is recorded only after its
-/// write has returned.** A crash before the record replays that one step (the
-/// underlying grants tolerate it — the step simply has not happened yet); a
-/// crash after it skips that step forever. What can never happen is the whole
-/// settlement being marked done while any part of it is still outstanding.
+/// Every reward goes through [SettlementLedger.runStepOnce], which is the only
+/// place that decides whether a step still needs doing and the only place that
+/// records that it was done — in the same transaction as the reward itself.
+/// The applier deliberately does no check-then-act of its own: that pattern is
+/// what created the window where a crash between the act and the record paid a
+/// reward twice.
 class SettlementApplier {
   SettlementApplier({
     required SettlementLedger ledger,
@@ -147,48 +208,37 @@ class SettlementApplier {
 
   /// Apply everything still outstanding for [settlement].
   ///
-  /// Returns true once the settlement is fully applied — the ONLY condition
-  /// under which the caller may acknowledge it to the server. Throws if a step
-  /// fails, having durably recorded every step that did succeed, so the retry
-  /// picks up where this attempt stopped.
+  /// Returns true once fully applied — the ONLY condition under which the
+  /// caller may acknowledge it. Throws if a step fails, having committed every
+  /// step that did succeed, so the retry resumes rather than restarts.
   Future<bool> apply(MultiplayerSettlement settlement) async {
-    var progress = await _ledger.read(settlement.id) ??
-        SettlementProgress(settlementId: settlement.id);
-
-    if (progress.completed) return true;
+    final progress = await _ledger.read(settlement.id);
+    if (progress?.completed == true) return true;
 
     // A match the server never settled pays nothing and records nothing. Mark
-    // it done so it stops coming back, without pretending anything was
-    // granted.
+    // it done so it stops coming back, without pretending anything was granted.
     if (settlement.wasInterrupted) {
-      await _ledger.write(progress.copyWith(
-        statsApplied: true,
-        coinsApplied: true,
-        xpApplied: true,
-        completed: true,
-      ));
+      await _ledger.markCompleted(settlement.id);
       return true;
     }
 
-    if (!progress.statsApplied) {
-      await _sink.applyStats(settlement);
-      progress = progress.copyWith(statsApplied: true);
-      await _ledger.write(progress);
-    }
+    await _ledger.runStepOnce(
+      settlement.id,
+      SettlementStep.stats,
+      () => _sink.applyStats(settlement),
+    );
+    await _ledger.runStepOnce(
+      settlement.id,
+      SettlementStep.coins,
+      () => _sink.applyCoins(settlement),
+    );
+    await _ledger.runStepOnce(
+      settlement.id,
+      SettlementStep.xp,
+      () => _sink.applyBattlePassXp(settlement),
+    );
 
-    if (!progress.coinsApplied) {
-      await _sink.applyCoins(settlement);
-      progress = progress.copyWith(coinsApplied: true);
-      await _ledger.write(progress);
-    }
-
-    if (!progress.xpApplied) {
-      await _sink.applyBattlePassXp(settlement);
-      progress = progress.copyWith(xpApplied: true);
-      await _ledger.write(progress);
-    }
-
-    await _ledger.write(progress.copyWith(completed: true));
+    await _ledger.markCompleted(settlement.id);
     return true;
   }
 }
