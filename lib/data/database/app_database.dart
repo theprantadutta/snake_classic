@@ -373,6 +373,28 @@ class DailyChallenges extends Table {
 }
 
 // =====================================================
+// TABLE 8a-2: Applied multiplayer settlements (exactly-once ledger)
+// =====================================================
+/// Which server settlements this device has already applied.
+///
+/// The server decides what a player is owed for a match and hands it over as
+/// a settlement row; the client applies it and acknowledges. Between those two
+/// steps the app can die, and the next fetch would hand back the same
+/// settlement — so acknowledgement alone cannot make the payout exactly-once.
+/// This table is the client half of that guarantee: applied first, locally,
+/// then acknowledged remotely.
+class AppliedMultiplayerSettlements extends Table {
+  /// The server-side settlement id. Primary key — re-applying is impossible
+  /// rather than merely unlikely.
+  TextColumn get settlementId => text()();
+  DateTimeColumn get appliedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {settlementId};
+}
+
+// =====================================================
 // TABLE 8b: Weekly Quests (claim mirror — analogous to DailyChallenges)
 // =====================================================
 class WeeklyQuests extends Table {
@@ -758,6 +780,7 @@ class PlayerProgressTable extends Table {
     UnlockedItems,
     BattlePasses,
     DailyChallenges,
+    AppliedMultiplayerSettlements,
     WeeklyQuests,
     DailyBonusState,
     PowerUpInventoryState,
@@ -791,7 +814,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -983,6 +1006,12 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(dailyChallenges, dailyChallenges.requiredGameMode);
         await m.addColumn(dailyChallenges, dailyChallenges.xpReward);
         await m.addColumn(dailyChallenges, dailyChallenges.difficulty);
+      }
+      if (from < 18) {
+        // v18: the client half of exactly-once multiplayer settlement.
+        // Nothing to backfill — before this, rewards were credited straight
+        // off the GameEnded broadcast and were never tracked at all.
+        await m.createTable(appliedMultiplayerSettlements);
       }
     },
   );

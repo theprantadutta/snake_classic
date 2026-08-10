@@ -184,6 +184,17 @@ class ApiService {
     return null;
   }
 
+  /// Same contract as [_handleResponse] for endpoints that return a bare JSON
+  /// array. `_handleResponse` wraps those under a 'data' key, which every
+  /// caller then has to unwrap by hand.
+  List<dynamic>? _handleResponseList(http.Response response) {
+    final body = _handleResponse(response);
+    if (body == null) return null;
+    final data = body['data'];
+    if (data is List) return data;
+    return const <dynamic>[];
+  }
+
   // ==================== Authentication ====================
 
   Future<Map<String, dynamic>?> authenticateWithFirebase(
@@ -1108,6 +1119,46 @@ class ApiService {
     } catch (e) {
       AppLogger.error('Error GET /multiplayer/record', e);
       return null;
+    }
+  }
+
+  /// Match rewards the server says this player is owed and has not applied.
+  ///
+  /// The repair path for a result that never reached the client: rewards used
+  /// to be credited purely as a reaction to the GameEnded broadcast, so a
+  /// socket that died at the wrong instant lost them silently.
+  Future<List<Map<String, dynamic>>?> getPendingMultiplayerSettlements() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/multiplayer/settlements/pending'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      final body = _handleResponseList(response);
+      if (body == null) return null;
+      return body.whereType<Map<String, dynamic>>().toList();
+    } catch (e) {
+      AppLogger.error('Error GET /multiplayer/settlements/pending', e);
+      return null;
+    }
+  }
+
+  /// Confirm settlements have been applied locally. Idempotent server-side.
+  Future<bool> ackMultiplayerSettlements(List<String> settlementIds) async {
+    if (settlementIds.isEmpty) return true;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/multiplayer/settlements/ack'),
+            headers: _authHeaders,
+            body: jsonEncode({'settlement_ids': settlementIds}),
+          )
+          .timeout(_timeout);
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      AppLogger.error('Error POST /multiplayer/settlements/ack', e);
+      return false;
     }
   }
 

@@ -524,30 +524,40 @@ class GameEndPipeline {
     );
   }
 
-  /// Credit end-of-match multiplayer rewards through the standard economy
-  /// paths: the winner earns the server-announced coin amount via CoinsCubit
-  /// (caps/animations/sync apply) and both sides earn battle-pass XP via the
-  /// usual buffer→flush flow. Callers guard for once-per-match idempotency.
-  void creditMultiplayerRewards({
+  /// Credit a server settlement through the standard economy paths: coins via
+  /// CoinsCubit (caps/animations/sync apply) and battle-pass XP via the usual
+  /// buffer→flush flow.
+  ///
+  /// Both amounts come from the settlement rather than being decided here.
+  /// They used to be worked out client-side from a broadcast — the coin figure
+  /// read off the wire and the XP looked up locally — which meant the payout
+  /// existed only for as long as the socket did, and the client and server had
+  /// no shared record of what was owed.
+  ///
+  /// Exactly-once is the caller's ledger, not a flag here: see
+  /// MultiplayerSettlementService.
+  void creditMultiplayerSettlement({
+    required int coins,
+    required int battlePassXp,
     required bool won,
-    required int winnerCoinReward,
   }) {
-    if (won && winnerCoinReward > 0) {
+    if (coins > 0) {
       unawaited(
         _coinsCubit.earnCoins(
           CoinEarningSource.multiplayer,
-          customAmount: winnerCoinReward,
-          itemName: 'Multiplayer Victory',
+          customAmount: coins,
+          itemName: won ? 'Multiplayer Victory' : 'Multiplayer Match',
         ),
       );
     }
 
-    final xpKey = won ? 'multiplayer_win' : 'multiplayer_participation';
-    final xp = BattlePassXpSource.getXpForAction(xpKey);
-    if (xp > 0) {
-      _battlePassCubit.bufferXP(xp, source: xpKey);
+    if (battlePassXp > 0) {
+      _battlePassCubit.bufferXP(
+        battlePassXp,
+        source: won ? 'multiplayer_win' : 'multiplayer_participation',
+      );
+      unawaited(_battlePassCubit.flushXP());
     }
-    unawaited(_battlePassCubit.flushXP());
   }
 
   // ---------------------------------------------------------------------

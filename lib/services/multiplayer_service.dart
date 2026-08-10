@@ -102,6 +102,17 @@ class MultiplayerService {
     return _instance!;
   }
 
+  /// A live hub we can actually invoke on.
+  ///
+  /// Every call used to be `_hubConnection?.invoke(...)`, which silently does
+  /// NOTHING when the connection is null — and two of those methods went on to
+  /// return true regardless. A player could press Ready, see it accepted, and
+  /// have no ready state on the server at all.
+  HubConnection? get _liveHub =>
+      _isConnected && _hubConnection?.state == HubConnectionState.Connected
+          ? _hubConnection
+          : null;
+
   // Current game getters
   MultiplayerGame? get currentGame => _currentGame;
   String? get currentGameId => _currentGameId;
@@ -163,8 +174,19 @@ class MultiplayerService {
       // Connect to SignalR and join the room — the hub replays every
       // existing player (including ourselves) as PlayerJoined events,
       // which populate the seeded game.
-      await _connectSignalR();
-      await _joinRoom(_currentRoomCode!);
+      //
+      // Both are checked now. Without the room join the server has no
+      // connection id for this player, so nothing in the lobby reaches them
+      // and the host can never start; reporting success then handed the UI a
+      // room that only existed on this device.
+      if (!await _connectSignalR()) {
+        _clearLobbyState();
+        return null;
+      }
+      if (!await _joinRoom(_currentRoomCode!)) {
+        _clearLobbyState();
+        return null;
+      }
 
       return _currentGameId;
     } catch (e) {
@@ -187,8 +209,14 @@ class MultiplayerService {
       _currentRoomCode = normalized;
       _seedLobbyGame(mode: MultiplayerGameMode.classic, maxPlayers: 2);
 
-      await _connectSignalR();
-      await _joinRoom(_currentRoomCode!);
+      if (!await _connectSignalR()) {
+        _clearLobbyState();
+        return false;
+      }
+      if (!await _joinRoom(_currentRoomCode!)) {
+        _clearLobbyState();
+        return false;
+      }
 
       return true;
     } catch (e) {
@@ -200,8 +228,9 @@ class MultiplayerService {
   /// Leave the current game and tear the connection down.
   Future<void> leaveGame() async {
     try {
-      if (_currentRoomCode != null && _isConnected) {
-        await _hubConnection?.invoke('LeaveRoom', args: [_currentRoomCode!]);
+      final hub = _liveHub;
+      if (_currentRoomCode != null && hub != null) {
+        await hub.invoke('LeaveRoom', args: [_currentRoomCode!]);
       }
     } catch (e) {
       AppLogger.error('Error leaving game', e);
@@ -215,14 +244,21 @@ class MultiplayerService {
     }
   }
 
-  /// Mark player as ready.
+  /// Mark player as ready. False means the server did NOT hear it.
+  ///
+  /// This used to return true whenever the invoke did not throw — including
+  /// when there was no connection to invoke on, because `?.invoke` on a null
+  /// hub is a no-op that completes happily. The button lit up, the server
+  /// never knew, and the lobby sat there until the ready deadline killed it.
   Future<bool> markPlayerReady({bool isReady = true}) async {
+    final roomCode = _currentRoomCode;
+    final hub = _liveHub;
+    if (roomCode == null || hub == null) {
+      AppLogger.warning('markPlayerReady: no live hub connection');
+      return false;
+    }
     try {
-      if (_currentRoomCode == null) return false;
-      await _hubConnection?.invoke(
-        'SetReady',
-        args: [_currentRoomCode!, isReady],
-      );
+      await hub.invoke('SetReady', args: [roomCode, isReady]);
       return true;
     } catch (e) {
       AppLogger.error('Error marking player ready', e);
@@ -232,10 +268,16 @@ class MultiplayerService {
 
   /// Start the game (host only). Success means the invoke landed — the
   /// server answers with GameStarting/GameStarted or an Error event.
+  /// False means it never left this device.
   Future<bool> startGame() async {
+    final roomCode = _currentRoomCode;
+    final hub = _liveHub;
+    if (roomCode == null || hub == null) {
+      AppLogger.warning('startGame: no live hub connection');
+      return false;
+    }
     try {
-      if (_currentRoomCode == null) return false;
-      await _hubConnection?.invoke('StartGame', args: [_currentRoomCode!]);
+      await hub.invoke('StartGame', args: [roomCode]);
       return true;
     } catch (e) {
       AppLogger.error('Error starting game', e);
@@ -248,8 +290,8 @@ class MultiplayerService {
   /// invalid inputs, so there is nothing to await for the UI.
   Future<void> sendInput(Direction direction) async {
     final roomCode = _currentRoomCode;
-    final hub = _hubConnection;
-    if (roomCode == null || hub == null || !_isConnected) return;
+    final hub = _liveHub;
+    if (roomCode == null || hub == null) return;
     try {
       await hub.send('SendInput', args: [roomCode, direction.name]);
     } catch (e) {
@@ -267,13 +309,11 @@ class MultiplayerService {
     required int playerCount,
   }) async {
     try {
-      await _connectSignalR();
-      if (!_isConnected) return false;
+      if (!await _connectSignalR()) return false;
+      final hub = _liveHub;
+      if (hub == null) return false;
 
-      await _hubConnection?.invoke(
-        'JoinMatchmaking',
-        args: [mode.name, playerCount],
-      );
+      await hub.invoke('JoinMatchmaking', args: [mode.name, playerCount]);
 
       _isInMatchmaking = true;
       _matchmakingStreamController.add(
@@ -293,8 +333,9 @@ class MultiplayerService {
   /// Leave matchmaking queue.
   Future<void> leaveMatchmaking() async {
     try {
-      if (_isConnected) {
-        await _hubConnection?.invoke('LeaveMatchmaking');
+      final hub = _liveHub;
+      if (hub != null) {
+        await hub.invoke('LeaveMatchmaking');
       }
     } catch (e) {
       AppLogger.error('Error leaving matchmaking', e);
@@ -337,13 +378,17 @@ class MultiplayerService {
 
       _isReconnecting = true;
       _reconnectStartedAt = DateTime.now();
-      await _connectSignalR();
-      if (!_isConnected) {
+      if (!await _connectSignalR()) {
+        _isReconnecting = false;
+        return false;
+      }
+      final hub = _liveHub;
+      if (hub == null) {
         _isReconnecting = false;
         return false;
       }
 
-      await _hubConnection?.invoke('Reconnect', args: [_currentRoomCode!]);
+      await hub.invoke('Reconnect', args: [_currentRoomCode!]);
       return true;
     } catch (e) {
       AppLogger.error('Error attempting reconnect', e);
@@ -383,11 +428,13 @@ class MultiplayerService {
   // SIGNALR MANAGEMENT
   // =============================================
 
-  Future<void> _connectSignalR() async {
+  /// Establish the hub connection. Returns whether we ended up connected —
+  /// callers must not proceed to invoke anything on a false.
+  Future<bool> _connectSignalR() async {
     try {
       if (_hubConnection?.state == HubConnectionState.Connected) {
         _isConnected = true;
-        return;
+        return true;
       }
 
       final hubUrl = _apiService.getSignalRHubUrl();
@@ -446,9 +493,11 @@ class MultiplayerService {
       _startHeartbeat();
 
       AppLogger.network('Connected to SignalR hub: $hubUrl');
+      return true;
     } catch (e) {
       AppLogger.error('Error connecting to SignalR', e);
       _isConnected = false;
+      return false;
     }
   }
 
@@ -466,12 +515,32 @@ class MultiplayerService {
     }
   }
 
-  Future<void> _joinRoom(String roomCode) async {
+  /// Join the hub group for [roomCode]. Returns false when the server never
+  /// heard it — the caller must not present a lobby in that case, because the
+  /// server has no connection id for this player and nothing in the room will
+  /// ever reach them.
+  Future<bool> _joinRoom(String roomCode) async {
+    final hub = _liveHub;
+    if (hub == null) {
+      AppLogger.warning('_joinRoom: no live hub connection');
+      return false;
+    }
     try {
-      await _hubConnection?.invoke('JoinRoom', args: [roomCode]);
+      await hub.invoke('JoinRoom', args: [roomCode]);
+      return true;
     } catch (e) {
       AppLogger.error('Error joining room', e);
+      return false;
     }
+  }
+
+  /// Drop the half-built lobby after a failed connect/join so the service does
+  /// not keep reporting a room the server does not know about.
+  void _clearLobbyState() {
+    _currentGame = null;
+    _currentGameId = null;
+    _currentRoomCode = null;
+    _gameStreamController.add(null);
   }
 
   /// Seed a minimal lobby game so PlayerJoined events (replayed by the
@@ -501,6 +570,7 @@ class MultiplayerService {
     _hubConnection?.on('PlayerReady', _handlePlayerReady);
     _hubConnection?.on('GameStarting', _handleGameStarting);
     _hubConnection?.on('GameStarted', _handleGameStarted);
+    _hubConnection?.on('CountdownCancelled', _handleCountdownCancelled);
 
     // ---- Server-authoritative match events ----
     _hubConnection?.on('Tick', _handleTick);
@@ -685,6 +755,31 @@ class MultiplayerService {
       );
     } catch (e) {
       AppLogger.error('Error handling GameStarting', e);
+    }
+  }
+
+  /// `CountdownCancelled {reason, detail}` — the server revalidated the room
+  /// when the countdown expired and refused to start it (someone left,
+  /// dropped, or un-readied in those three seconds). Before the server
+  /// checked, the match started regardless and this client sat on a countdown
+  /// overlay with nothing coming.
+  void _handleCountdownCancelled(List<Object?>? arguments) {
+    final data = _firstArgAsMap(arguments) ?? const <String, dynamic>{};
+    try {
+      _currentGame = _currentGame?.copyWith(
+        status: MultiplayerGameStatus.waiting,
+      );
+      _gameStreamController.add(_currentGame);
+      _gameActionsController.add(
+        MultiplayerGameAction(
+          actionType: 'countdown_cancelled',
+          playerId: '',
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
+    } catch (e) {
+      AppLogger.error('Error handling CountdownCancelled', e);
     }
   }
 
