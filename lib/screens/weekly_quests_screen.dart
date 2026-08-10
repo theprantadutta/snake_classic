@@ -7,9 +7,7 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/daily_challenge.dart' show ChallengeDifficulty;
-import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/weekly_quest.dart';
-import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
@@ -42,20 +40,9 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
     final success = await _service.claimReward(quest.id);
     if (!success || !mounted) return;
 
-    // Mirror DailyChallenge: server credits coins/BP XP atomically, but we
-    // also poke the CoinsCubit so the in-app balance reflects immediately
-    // (next backend refresh will reconcile if the server amount differs).
-    context.read<CoinsCubit>().earnCoins(
-          CoinEarningSource.dailyChallenge, // closest existing source
-          customAmount: quest.coinReward,
-          itemName: quest.title,
-          metadata: {
-            'questId': quest.id,
-            'battlePassXp': quest.battlePassXpReward,
-            'difficulty': quest.difficulty.name,
-          },
-        );
-
+    // No grant here. WeeklyQuestService.claimReward already credited the
+    // coins — this screen crediting them again meant one tap produced two
+    // transactions, the same defect the daily-challenge screens had.
     HapticService().mediumImpact();
     _audioService.playSound('coin_collect');
     ScaffoldMessenger.of(context).showSnackBar(

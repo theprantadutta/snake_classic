@@ -348,6 +348,22 @@ class DailyChallenges extends Table {
   IntColumn get rewardCoins => integer().withDefault(const Constant(0))();
   BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
   BoolColumn get rewardClaimed => boolean().withDefault(const Constant(false))();
+
+  /// Which game mode a `GameMode` challenge requires, or null for "any mode"
+  /// — the same semantics the backend's `RequiredGameMode` uses.
+  ///
+  /// Persisted because progress crediting depends on it. Once the service
+  /// hydrates its in-memory list from these rows (so challenges survive an
+  /// offline launch), a challenge that lost this field would read as
+  /// "any mode" and count a Classic game toward a Zen-only goal.
+  TextColumn get requiredGameMode => text().nullable()();
+
+  /// Reward XP and difficulty label. Not used for grants (battle-pass XP comes
+  /// from [BattlePassXpSource]) — these are what the card SHOWS. Without them
+  /// a hydrated challenge advertised "0 XP" and "Easy" for everything, i.e.
+  /// the screen misstated the reward whenever it rendered from local rows.
+  IntColumn get xpReward => integer().withDefault(const Constant(0))();
+  TextColumn get difficulty => text().nullable()();
   DateTimeColumn get challengeDate => dateTime()();
   DateTimeColumn get expiresAt => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();
@@ -775,7 +791,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -958,6 +974,15 @@ class AppDatabase extends _$AppDatabase {
         // Nothing to backfill — anything rejected before this existed was
         // deleted at the time and is unrecoverable.
         await m.createTable(scoreDeadLetters);
+      }
+      if (from < 17) {
+        // v17: which game mode a GameMode challenge requires. Nullable, so
+        // existing rows land on NULL = "any mode" — the same value the
+        // backend uses for an unrestricted challenge. The next successful
+        // refresh writes the real value for today's set.
+        await m.addColumn(dailyChallenges, dailyChallenges.requiredGameMode);
+        await m.addColumn(dailyChallenges, dailyChallenges.xpReward);
+        await m.addColumn(dailyChallenges, dailyChallenges.difficulty);
       }
     },
   );

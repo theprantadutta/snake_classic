@@ -594,6 +594,16 @@ class GameDao extends DatabaseAccessor<AppDatabase> with _$GameDaoMixin {
         .get();
   }
 
+  /// One challenge row by its backend id, or null when this device has
+  /// never persisted it. Used by the claim path to decide whether it needs
+  /// to insert the row before settling — an upsert there would overwrite an
+  /// existing `rewardClaimed` with whatever a stale in-memory copy believed.
+  Future<DailyChallenge?> getChallengeById(String challengeId) {
+    return (select(dailyChallenges)
+          ..where((t) => t.challengeId.equals(challengeId)))
+        .getSingleOrNull();
+  }
+
   /// Claim challenge reward. Marks the row claimed + enqueues an
   /// outbox row so the backend records the claim.
   Future<int> claimChallengeReward(String challengeId) async {

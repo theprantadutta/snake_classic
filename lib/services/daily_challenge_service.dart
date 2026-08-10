@@ -8,6 +8,7 @@ import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/daily_challenge_hydration.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -65,11 +66,51 @@ class DailyChallengeService extends ChangeNotifier {
   int get unclaimedRewardsCount =>
       _challenges.where((c) => c.isCompleted && !c.claimedReward).length;
 
+  /// Hydrate the in-memory list from Drift, which is the offline-durable
+  /// source of truth for today's challenges.
+  ///
+  /// This used to be a no-op: the list was populated ONLY by a successful
+  /// backend fetch, so on any launch where the server was unreachable the
+  /// screen was empty — including for a challenge the player had already
+  /// completed but not yet claimed, i.e. a reward they had earned and could
+  /// no longer see. Drift held the row the whole time; nothing read it back.
+  ///
+  /// Read-only. Nothing here claims a reward, flips a claimed flag, or grants
+  /// coins — it only decides what is visible. Claiming stays on its existing
+  /// offline-first path (Drift write + `dailyChallengeClaim` outbox row in one
+  /// transaction, keyed on the challenge id so retries settle once), so a
+  /// challenge surfaced here can be claimed offline and the claim reaches the
+  /// server on the next drain.
   Future<void> initialize() async {
-    // Nothing to load locally — challenges arrive from the backend
-    // call we haven't wired yet. Claimed rows live in Drift but we
-    // don't surface them on the daily-challenges screen because the
-    // screen wants the full *today's* catalog, not the user's history.
+    await hydrateFromLocal();
+  }
+
+  /// Load today's persisted rows into the in-memory list. Safe to call more
+  /// than once; a later [setChallengesFromBackend] supersedes it.
+  Future<void> hydrateFromLocal() async {
+    try {
+      final localById = await _loadTodaysLocalById();
+      if (localById.isEmpty) return;
+
+      _challenges = hydrateFromLocalRows(localById.values);
+      _applyCounts();
+      _bonusClaimedToday =
+          localById[_todayBonusId()]?.rewardClaimed ?? _bonusClaimedToday;
+      AppLogger.info(
+        'DailyChallengeService hydrated ${_challenges.length} challenge(s) '
+        'from Drift (${_challenges.where((c) => c.canClaim).length} claimable)',
+      );
+      notifyListeners();
+    } catch (e) {
+      AppLogger.error('DailyChallengeService: local hydration failed', e);
+    }
+  }
+
+  void _applyCounts() {
+    final counts = countsFor(_challenges);
+    _completedCount = counts.completed;
+    _totalCount = counts.total;
+    _allCompleted = counts.allCompleted;
   }
 
   /// Fetch today's daily challenges from the backend and apply them
@@ -125,12 +166,8 @@ class DailyChallengeService extends ChangeNotifier {
     // progress the client earned offline but hasn't pushed yet.
     final localById = await _loadTodaysLocalById();
 
-    _challenges = [
-      for (final c in fromBackend) _mergeWithLocal(c, localById[c.id]),
-    ];
-    _totalCount = _challenges.length;
-    _completedCount = _challenges.where((c) => c.isCompleted).length;
-    _allCompleted = _completedCount == _totalCount && _totalCount > 0;
+    _challenges = mergeBackendWithLocal(fromBackend, localById);
+    _applyCounts();
     // The synthetic bonus row uses today's local-day-anchored id; if
     // it's already in Drift (this device claimed earlier OR another
     // device claimed and the cold-start sync pulled it in) the bonus
@@ -154,37 +191,33 @@ class DailyChallengeService extends ChangeNotifier {
   }
 
   /// Today's local Drift challenge rows keyed by challenge id — the
-  /// offline-durable source of truth used to reconcile a backend refresh.
-  Future<Map<String, db.DailyChallenge>> _loadTodaysLocalById() async {
+  /// offline-durable source of truth used both to hydrate on a cold start and
+  /// to reconcile a backend refresh. Adapted to [LocalChallengeRow] so the
+  /// rules that consume them stay free of Drift.
+  Future<Map<String, LocalChallengeRow>> _loadTodaysLocalById() async {
     try {
       final rows = await _storageService.gameDao.getTodaysChallenges();
-      return {for (final r in rows) r.challengeId: r};
+      return {for (final r in rows) r.challengeId: _toLocalRow(r)};
     } catch (e) {
       AppLogger.error('Error loading local challenges', e);
       return const {};
     }
   }
 
-  /// Reconcile a backend challenge with its local Drift row: MAX on the
-  /// monotonic progress (client-ahead wins), OR on the absorbing-true
-  /// completed / claimed flags. Claimed implies completed.
-  DailyChallenge _mergeWithLocal(
-    DailyChallenge backend,
-    db.DailyChallenge? local,
-  ) {
-    if (local == null) return backend;
-    final mergedProgress = local.currentProgress > backend.currentProgress
-        ? local.currentProgress
-        : backend.currentProgress;
-    final mergedClaimed = backend.claimedReward || local.rewardClaimed;
-    final mergedCompleted = mergedClaimed ||
-        backend.isCompleted ||
-        local.isCompleted ||
-        mergedProgress >= backend.targetValue;
-    return backend.copyWith(
-      currentProgress: mergedProgress,
-      isCompleted: mergedCompleted,
-      claimedReward: mergedClaimed,
+  static LocalChallengeRow _toLocalRow(db.DailyChallenge row) {
+    return LocalChallengeRow(
+      challengeId: row.challengeId,
+      challengeType: row.challengeType,
+      title: row.title,
+      description: row.description,
+      currentProgress: row.currentProgress,
+      targetProgress: row.targetProgress,
+      rewardCoins: row.rewardCoins,
+      isCompleted: row.isCompleted,
+      rewardClaimed: row.rewardClaimed,
+      requiredGameMode: row.requiredGameMode,
+      xpReward: row.xpReward,
+      difficulty: row.difficulty,
     );
   }
 
@@ -192,13 +225,7 @@ class DailyChallengeService extends ChangeNotifier {
   /// anchored so a new day creates a new claim row even if the user
   /// completed yesterday's challenges. Stays stable across app launches
   /// within the same calendar day.
-  static String _todayBonusId() {
-    final today = DateTime.now();
-    final y = today.year.toString().padLeft(4, '0');
-    final m = today.month.toString().padLeft(2, '0');
-    final d = today.day.toString().padLeft(2, '0');
-    return 'all_complete_bonus_$y-$m-$d';
-  }
+  static String _todayBonusId() => allCompleteBonusIdFor(DateTime.now());
 
   /// Auto-credit the all-complete bonus on the first claim that lands
   /// after every daily challenge is completed. Idempotent — the Drift
@@ -389,6 +416,12 @@ class DailyChallengeService extends ChangeNotifier {
       rewardCoins: Value(c.coinReward),
       isCompleted: Value(c.isCompleted),
       rewardClaimed: Value(c.claimedReward),
+      // Persisted so a hydrated challenge still knows which mode counts —
+      // without it a Classic-only goal would credit any game (null means
+      // "any mode" on both sides).
+      requiredGameMode: Value(c.requiredGameMode),
+      xpReward: Value(c.xpReward),
+      difficulty: Value(c.difficulty.name),
       challengeDate: Value(startOfDay),
       expiresAt: Value(endOfDay),
       completedAt: c.isCompleted ? Value(today) : const Value.absent(),
@@ -403,15 +436,17 @@ class DailyChallengeService extends ChangeNotifier {
     if (index < 0) return false;
 
     final challenge = _challenges[index];
-    if (!challenge.isCompleted || challenge.claimedReward) return false;
+    if (!challenge.canClaim) return false;
+
+    final coins = await _settleClaim(challenge);
+    if (coins == null) return false;
 
     _challenges[index] = challenge.copyWith(claimedReward: true);
-    await _persistClaim(_challenges[index]);
 
-    if (challenge.coinReward > 0 && GetIt.I.isRegistered<CoinsCubit>()) {
+    if (coins > 0 && GetIt.I.isRegistered<CoinsCubit>()) {
       await GetIt.I<CoinsCubit>().earnCoins(
         CoinEarningSource.dailyChallenge,
-        customAmount: challenge.coinReward,
+        customAmount: coins,
         itemName: challenge.title,
       );
     }
@@ -432,12 +467,16 @@ class DailyChallengeService extends ChangeNotifier {
     if (claimable.isEmpty) return 0;
 
     int totalClaimed = 0;
+    int settledCount = 0;
     for (final challenge in claimable) {
+      final coins = await _settleClaim(challenge);
+      if (coins == null) continue; // already claimed — grant nothing
       final index = _challenges.indexWhere((c) => c.id == challenge.id);
-      if (index < 0) continue;
-      _challenges[index] = challenge.copyWith(claimedReward: true);
-      await _persistClaim(_challenges[index]);
-      totalClaimed += challenge.coinReward;
+      if (index >= 0) {
+        _challenges[index] = _challenges[index].copyWith(claimedReward: true);
+      }
+      totalClaimed += coins;
+      settledCount++;
     }
 
     if (totalClaimed > 0 && GetIt.I.isRegistered<CoinsCubit>()) {
@@ -449,7 +488,7 @@ class DailyChallengeService extends ChangeNotifier {
     }
 
     _grantBattlePassXp(
-      List<String>.filled(claimable.length, 'daily_challenge'),
+      List<String>.filled(settledCount, 'daily_challenge'),
     );
 
     // Auto-claim the all-complete bonus if every challenge is done.
@@ -459,29 +498,48 @@ class DailyChallengeService extends ChangeNotifier {
     return totalClaimed;
   }
 
-  Future<void> _persistClaim(DailyChallenge challenge) async {
+  /// Settle a claim against Drift and return the coins to grant, or null if
+  /// the claim was refused because the row was already claimed.
+  ///
+  /// The refusal is decided by [GameDao.claimChallengeReward], which does the
+  /// check-and-set inside one transaction alongside the outbox enqueue. That
+  /// makes "never pay the same reward twice" a property of the database
+  /// rather than of the in-memory list — which matters now that the list is
+  /// hydrated from Drift on every cold start and can be stale relative to a
+  /// claim another code path just made.
+  ///
+  /// The coin amount comes back from the persisted row, not from the model,
+  /// so an in-memory copy with a stale reward value can't over-pay.
+  Future<int?> _settleClaim(DailyChallenge challenge) async {
     try {
-      final today = DateTime.now();
-      final startOfDay = DateTime(today.year, today.month, today.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
-      await _storageService.gameDao.upsertDailyChallenge(
-        db.DailyChallengesCompanion(
-          challengeId: Value(challenge.id),
-          challengeType: Value(challenge.type.apiValue),
-          title: Value(challenge.title),
-          description: Value(challenge.description),
-          currentProgress: Value(challenge.currentProgress),
-          targetProgress: Value(challenge.targetValue),
-          rewardCoins: Value(challenge.coinReward),
-          isCompleted: Value(challenge.isCompleted),
-          rewardClaimed: const Value(true),
-          challengeDate: Value(startOfDay),
-          expiresAt: Value(endOfDay),
-          completedAt: Value(today),
-        ),
-      );
+      // The row must exist for the atomic claim to find it. It normally does
+      // (hydration, refresh, and progress writes all persist), but a
+      // challenge claimed in the same breath as its first appearance would
+      // otherwise be refused for the wrong reason.
+      //
+      // Insert ONLY when genuinely absent. An unconditional upsert here would
+      // write this in-memory copy's `rewardClaimed: false` over a row that is
+      // already claimed, and the atomic gate below would then happily pay out
+      // a second time — reintroducing the exact bug it exists to prevent.
+      final existing =
+          await _storageService.gameDao.getChallengeById(challenge.id);
+      if (existing == null) {
+        await _storageService.gameDao
+            .upsertDailyChallenge(_toCompanion(challenge), enqueueSync: false);
+      }
+      final coins =
+          await _storageService.gameDao.claimChallengeReward(challenge.id);
+      if (coins <= 0) {
+        AppLogger.info(
+          'Daily challenge ${challenge.id} was already claimed (Drift gate) '
+          '— granting nothing',
+        );
+        return null;
+      }
+      return coins;
     } catch (e) {
-      AppLogger.error('Error persisting claimed challenge to Drift', e);
+      AppLogger.error('Error settling daily challenge claim', e);
+      return null;
     }
   }
 

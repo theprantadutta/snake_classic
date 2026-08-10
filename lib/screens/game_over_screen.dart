@@ -314,19 +314,10 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
 
     if (success) {
       getIt<AnalyticsFacade>().trackDailyChallengeRewardClaimed();
+      // No grant here — DailyChallengeService.claimReward already credited
+      // the coins from the persisted row once the Drift gate settled the
+      // claim. Crediting again produced two transactions per tap.
       if (!mounted) return;
-      await context.read<CoinsCubit>().earnCoins(
-        CoinEarningSource.dailyChallenge,
-        customAmount: challenge.coinReward,
-        itemName: challenge.title,
-        metadata: {
-          'challengeId': challenge.id,
-          'xpReward': challenge.xpReward,
-          'difficulty': challenge.difficulty.name,
-          'source': 'gameOverScreen',
-        },
-      );
-
       HapticService().mediumImpact();
       _audioService.playSound('coin_collect');
 
@@ -350,18 +341,8 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     setState(() => _claimingAll = false);
 
     if (totalClaimed > 0) {
+      // Same as the single claim: claimAllRewards already credited the total.
       if (!mounted) return;
-      await context.read<CoinsCubit>().earnCoins(
-        CoinEarningSource.dailyChallenge,
-        customAmount: totalClaimed,
-        itemName: 'Daily Challenges (game over)',
-        metadata: {
-          'bulkClaim': true,
-          'count': claimable.length,
-          'source': 'gameOverScreen',
-        },
-      );
-
       HapticService().heavyImpact();
       _audioService.playSound('coin_collect');
 

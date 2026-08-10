@@ -41,20 +41,11 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     final success = await ref.read(dailyChallengesProvider.notifier).claimReward(challenge.id);
     if (success) {
       getIt<AnalyticsFacade>().trackDailyChallengeRewardClaimed();
-      // Actually earn the coins via CoinsCubit
-      if (mounted) {
-        context.read<CoinsCubit>().earnCoins(
-          CoinEarningSource.dailyChallenge,
-          customAmount: challenge.coinReward,
-          itemName: challenge.title,
-          metadata: {
-            'challengeId': challenge.id,
-            'xpReward': challenge.xpReward,
-            'difficulty': challenge.difficulty.name,
-          },
-        );
-      }
-
+      // The coins are NOT granted here. DailyChallengeService.claimReward
+      // already credited them, from the amount on the persisted row, after
+      // the Drift gate settled the claim. This screen used to credit them a
+      // second time — one tap, two transactions — which stayed invisible
+      // only because the screen was empty whenever the backend was down.
       HapticService().mediumImpact();
       _audioService.playSound('coin_collect');
       if (mounted) {
@@ -83,16 +74,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   Future<void> _claimAllRewards() async {
     final totalClaimed = await ref.read(dailyChallengesProvider.notifier).claimAllRewards();
     if (totalClaimed > 0) {
-      // Actually earn the coins via CoinsCubit
-      if (mounted) {
-        context.read<CoinsCubit>().earnCoins(
-          CoinEarningSource.dailyChallenge,
-          customAmount: totalClaimed,
-          itemName: 'All Daily Challenges',
-          metadata: {'bulkClaim': true},
-        );
-      }
-
+      // Same as _claimReward: claimAllRewards already credited the total.
+      // The 2x rewarded-ad grant further down IS a separate, additional
+      // reward and stays.
       HapticService().heavyImpact();
       _audioService.playSound('coin_collect');
       if (mounted) {
