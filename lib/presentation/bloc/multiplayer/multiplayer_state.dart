@@ -94,7 +94,18 @@ class MultiplayerState extends Equatable {
   final MultiplayerGameMode? matchmakingMode;
   final int? matchmakingPlayerCount;
   final int matchmakingElapsedSeconds;
-  final bool matchmakingTimedOut;
+
+  /// The deadline the SERVER promises to resolve the queue by, in seconds
+  /// from joining it. Comes from the queue-status response; the fallback here
+  /// only matters before the first poll lands.
+  ///
+  /// The client no longer runs a deadline of its own. It used to count down
+  /// from 60 and then declare "no players found", which was wrong twice over:
+  /// an empty queue is not a failure (the server seats a house opponent), and
+  /// the client giving up while the server was still working is how a match
+  /// that had already been created went unclaimed.
+  final int matchmakingDeadlineSeconds;
+  final bool matchmakingUnreachable;
 
   const MultiplayerState({
     this.status = MultiplayerStatus.initial,
@@ -114,7 +125,8 @@ class MultiplayerState extends Equatable {
     this.matchmakingMode,
     this.matchmakingPlayerCount,
     this.matchmakingElapsedSeconds = 0,
-    this.matchmakingTimedOut = false,
+    this.matchmakingDeadlineSeconds = 35,
+    this.matchmakingUnreachable = false,
     this.settlementStatus = SettlementStatus.none,
     this.settlement,
   });
@@ -148,7 +160,8 @@ class MultiplayerState extends Equatable {
     MultiplayerGameMode? matchmakingMode,
     int? matchmakingPlayerCount,
     int? matchmakingElapsedSeconds,
-    bool? matchmakingTimedOut,
+    int? matchmakingDeadlineSeconds,
+    bool? matchmakingUnreachable,
     bool clearMatchmaking = false,
   }) {
     return MultiplayerState(
@@ -186,12 +199,14 @@ class MultiplayerState extends Equatable {
       matchmakingPlayerCount: clearMatchmaking
           ? null
           : (matchmakingPlayerCount ?? this.matchmakingPlayerCount),
+      matchmakingDeadlineSeconds:
+          matchmakingDeadlineSeconds ?? this.matchmakingDeadlineSeconds,
       matchmakingElapsedSeconds: clearMatchmaking
           ? 0
           : (matchmakingElapsedSeconds ?? this.matchmakingElapsedSeconds),
-      matchmakingTimedOut: clearMatchmaking
+      matchmakingUnreachable: clearMatchmaking
           ? false
-          : (matchmakingTimedOut ?? this.matchmakingTimedOut),
+          : (matchmakingUnreachable ?? this.matchmakingUnreachable),
     );
   }
 
@@ -254,6 +269,7 @@ class MultiplayerState extends Equatable {
     matchmakingMode,
     matchmakingPlayerCount,
     matchmakingElapsedSeconds,
-    matchmakingTimedOut,
+    matchmakingDeadlineSeconds,
+    matchmakingUnreachable,
   ];
 }

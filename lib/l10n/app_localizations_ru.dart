@@ -756,11 +756,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mpLobbyCancelUpper => 'ОТМЕНА';
 
   @override
-  String get mpLobbyNoPlayersFound => 'ИГРОКИ НЕ НАЙДЕНЫ';
+  String get mpLobbyUnreachableTitle => 'МАТЧМЕЙКИНГ НЕДОСТУПЕН';
 
   @override
-  String get mpLobbyNoPlayersBody =>
-      'К сожалению, соперников не нашлось.\nПопробуйте ещё раз или создайте свою комнату!';
+  String get mpLobbyUnreachableBody =>
+      'Не удалось связаться с сервером.\nПроверьте подключение и попробуйте снова.';
 
   @override
   String get mpLobbyGoBack => 'НАЗАД';

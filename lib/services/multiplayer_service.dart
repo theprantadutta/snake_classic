@@ -900,6 +900,44 @@ class MultiplayerService {
     }
   }
 
+  /// Ask the server where our queue entry stands. Null means the request
+  /// failed, which is the only answer the UI should treat as an error.
+  Future<Map<String, dynamic>?> fetchQueueStatus() =>
+      _apiService.getMatchmakingQueueStatus();
+
+  /// Resolve the queue from a POLLED server status, down the same path a
+  /// pushed MatchFound takes.
+  ///
+  /// Two ways in, one implementation. The push is faster when it arrives; the
+  /// poll is the one that always arrives, because MatchFound is addressed to a
+  /// connection that may live in a different backend process (there is no
+  /// SignalR backplane) and is silently dropped when it does. Whichever gets
+  /// here first wins and the other is ignored — the guard below is what keeps
+  /// a single match from being acted on twice.
+  ///
+  /// Returns true once the queue has resolved.
+  bool applyPolledQueueStatus(Map<String, dynamic> status) {
+    if (status['state']?.toString() != 'matched') return false;
+
+    final gameId = status['gameId']?.toString();
+    if (gameId == null || gameId.isEmpty) return false;
+
+    // Already handled — almost certainly by the push. Report resolved so the
+    // caller stops polling, but do NOT run the join again.
+    if (_currentGameId == gameId) return true;
+
+    _handleMatchFound([
+      <String, dynamic>{
+        'game_id': gameId,
+        'room_code': status['roomCode'],
+        'mode': status['mode'],
+        'player_count': status['playerCount'],
+        'player_index': status['playerIndex'],
+      },
+    ]);
+    return true;
+  }
+
   void _handleMatchFound(List<Object?>? arguments) {
     final data = _firstArgAsMap(arguments);
     if (data == null) return;

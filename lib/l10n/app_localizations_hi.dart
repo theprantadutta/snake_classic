@@ -752,11 +752,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get mpLobbyCancelUpper => 'रद्द करें';
 
   @override
-  String get mpLobbyNoPlayersFound => 'कोई खिलाड़ी नहीं मिला';
+  String get mpLobbyUnreachableTitle => 'मैचमेकिंग से संपर्क नहीं';
 
   @override
-  String get mpLobbyNoPlayersBody =>
-      'माफ़ कीजिए, कोई प्रतिद्वंद्वी नहीं मिला।\nफिर कोशिश करें या अपना रूम बनाएँ!';
+  String get mpLobbyUnreachableBody =>
+      'हम सर्वर तक नहीं पहुँच सके।\nअपना कनेक्शन जाँचें और फिर कोशिश करें।';
 
   @override
   String get mpLobbyGoBack => 'वापस जाएँ';

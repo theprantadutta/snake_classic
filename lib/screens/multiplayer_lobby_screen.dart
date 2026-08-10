@@ -272,8 +272,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     body: AppBackground(
                       theme: theme,
                       child: SafeArea(
-                        child: multiplayerState.matchmakingTimedOut
-                            ? _buildMatchmakingTimeoutUI(
+                        child: multiplayerState.matchmakingUnreachable
+                            ? _buildMatchmakingUnreachableUI(
                                 context,
                                 multiplayerState,
                                 theme,
@@ -763,8 +763,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   ) {
     final l10n = AppLocalizations.of(context)!;
     final elapsed = multiplayerState.matchmakingElapsedSeconds;
-    final remaining = 60 - elapsed;
-    final progress = elapsed / 60.0;
+    // Progress runs against the deadline the SERVER promised, not a number
+    // the client picked. Past that deadline the ring simply stays full and
+    // the elapsed count keeps rising: the search is never abandoned here, so
+    // there is nothing for it to count down to.
+    final deadline = multiplayerState.matchmakingDeadlineSeconds;
+    final progress = deadline <= 0 ? 1.0 : (elapsed / deadline).clamp(0.0, 1.0);
+    final remaining = (deadline - elapsed).clamp(0, deadline);
     // Countdown runs down to zero in the theme accent throughout. It used to
     // switch green → orange under ten seconds, which reads as "something is
     // wrong" when in fact the search is simply nearly over.
@@ -902,7 +907,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  Widget _buildMatchmakingTimeoutUI(
+  Widget _buildMatchmakingUnreachableUI(
     BuildContext context,
     MultiplayerState multiplayerState,
     GameTheme theme,
@@ -945,7 +950,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       const SizedBox(height: 20),
 
                       Text(
-                        l10n.mpLobbyNoPlayersFound,
+                        l10n.mpLobbyUnreachableTitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
@@ -958,7 +963,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       const SizedBox(height: 8),
 
                       Text(
-                        l10n.mpLobbyNoPlayersBody,
+                        l10n.mpLobbyUnreachableBody,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13.5,

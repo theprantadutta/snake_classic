@@ -9,6 +9,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
+import 'package:snake_classic/services/multiplayer/queue_resolution.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/direction.dart';
@@ -53,7 +54,26 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   // Matchmaking timer
   Timer? _matchmakingTimer;
-  static const int matchmakingTimeoutSeconds = 60;
+
+  /// Reads each poll answer. Recreated per search so a previous search's
+  /// failures cannot leak into this one.
+  QueueResolution _queueResolution = QueueResolution();
+
+  /// Guards against a slow poll overlapping the next tick.
+  bool _pollInFlight = false;
+  /// How often the client asks the server where the queue stands.
+  ///
+  /// There is no client-side deadline any more. The server promises to
+  /// resolve every queued player (with a house opponent if nobody human turns
+  /// up) and reports the deadline it is working to; the client's only job is
+  /// to keep asking until it does, or until the player presses Cancel.
+  static const Duration queuePollInterval = Duration(seconds: 2);
+
+  /// Consecutive failed polls before the player is told the service is
+  /// unreachable. Deliberately several: one failed request is a blip, and
+  /// showing an error for it would be the old "gave up too early" bug in a
+  /// new costume.
+  static const int queuePollFailuresBeforeError = 5;
 
   // Start game timeout
   Timer? _startGameTimeoutTimer;
@@ -480,14 +500,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           matchmakingMode: mode,
           matchmakingPlayerCount: playerCount,
           matchmakingElapsedSeconds: 0,
-          matchmakingTimedOut: false,
+          matchmakingUnreachable: false,
         ),
       );
 
       _analytics.trackMultiplayerQueueJoined();
 
-      // Start the matchmaking timer
-      _startMatchmakingTimer();
+      _startMatchmakingWatch();
 
       return true;
     } catch (e) {
@@ -502,21 +521,88 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     }
   }
 
-  /// Start matchmaking countdown timer
-  void _startMatchmakingTimer() {
+  /// Tick the elapsed display, and ask the server where the queue stands.
+  ///
+  /// This replaced a 60-second client deadline that ended in "NO PLAYERS
+  /// FOUND". Both halves of that were wrong. An empty queue is not a failure
+  /// — after 30 seconds the server seats a house opponent, so a queued player
+  /// always gets a match. And the client deciding it was over could not be
+  /// right, because it did not know: a match created 34 seconds after
+  /// queueing was observed sitting in the database, matched and waiting,
+  /// while the app counted down to its own timeout and abandoned it. MatchFound
+  /// is a push to one connection, from whichever backend process ran the pass,
+  /// with no backplane behind it — asking is the only thing that cannot miss.
+  ///
+  /// So the client waits. The only two ways out are the server resolving the
+  /// queue and the player pressing Cancel — plus the genuine third case of
+  /// not being able to reach the server at all, which is reported as what it
+  /// is rather than as "nobody wanted to play with you".
+  void _startMatchmakingWatch() {
     _stopMatchmakingTimer();
+    _queueResolution = QueueResolution(
+      failuresBeforeUnreachable: queuePollFailuresBeforeError,
+    );
 
     _matchmakingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final elapsed = timer.tick;
+      if (!state.isMatchmaking) {
+        _stopMatchmakingTimer();
+        return;
+      }
+      emit(state.copyWith(matchmakingElapsedSeconds: timer.tick));
 
-      if (elapsed >= matchmakingTimeoutSeconds) {
-        // Timeout reached
-        _onMatchmakingTimeout();
-      } else {
-        // Update elapsed time
-        emit(state.copyWith(matchmakingElapsedSeconds: elapsed));
+      if (timer.tick % queuePollInterval.inSeconds == 0) {
+        unawaited(_pollQueueStatus());
       }
     });
+  }
+
+  /// One round of "am I still waiting?". The reading of the answer lives in
+  /// [QueueResolution] so it can be tested without any of this machinery.
+  Future<void> _pollQueueStatus() async {
+    if (_pollInFlight || !state.isMatchmaking) return;
+    _pollInFlight = true;
+    try {
+      Map<String, dynamic>? status;
+      try {
+        status = await _multiplayerService.fetchQueueStatus();
+      } catch (e) {
+        AppLogger.error('Error polling matchmaking queue status', e);
+        status = null; // a throw is a failed request like any other
+      }
+
+      final deadline = QueueResolution.deadlineFrom(status);
+      if (deadline != null && deadline != state.matchmakingDeadlineSeconds) {
+        emit(state.copyWith(matchmakingDeadlineSeconds: deadline));
+      }
+
+      switch (_queueResolution.apply(status)) {
+        case QueueOutcome.keepWaiting:
+          break;
+
+        case QueueOutcome.resolved:
+          // applyPolledQueueStatus feeds the same stream a pushed MatchFound
+          // does, so the lobby transition is untouched — and it ignores a
+          // match the push already handled.
+          if (_multiplayerService.applyPolledQueueStatus(status!)) {
+            _stopMatchmakingTimer();
+          }
+
+        case QueueOutcome.notQueued:
+          // Cancelled or swept elsewhere. Leave the searching UI without
+          // claiming anything went wrong.
+          _stopMatchmakingTimer();
+          emit(state.copyWith(
+            status: MultiplayerStatus.idle,
+            isMatchmaking: false,
+            clearMatchmaking: true,
+          ));
+
+        case QueueOutcome.unreachable:
+          await _onMatchmakingUnreachable();
+      }
+    } finally {
+      _pollInFlight = false;
+    }
   }
 
   /// Stop matchmaking timer
@@ -525,19 +611,21 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _matchmakingTimer = null;
   }
 
-  /// Handle matchmaking timeout
-  Future<void> _onMatchmakingTimeout() async {
+  /// The backend cannot be reached at all — distinct from, and much rarer
+  /// than, simply not having been matched yet.
+  Future<void> _onMatchmakingUnreachable() async {
     _stopMatchmakingTimer();
 
     _audioService.playSound('game_over');
     _hapticService.mediumImpact();
 
-    // Cancel matchmaking on the server
+    // Best effort: if the server is genuinely down this fails too, and the
+    // entry is swept server-side anyway.
     try {
       await _multiplayerService.leaveMatchmaking();
     } catch (e) {
       if (kDebugMode) {
-        print('Error leaving matchmaking after timeout: $e');
+        print('Error leaving matchmaking after losing the server: $e');
       }
     }
 
@@ -545,8 +633,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       state.copyWith(
         status: MultiplayerStatus.idle,
         isMatchmaking: false,
-        matchmakingTimedOut: true,
-        matchmakingElapsedSeconds: matchmakingTimeoutSeconds,
+        matchmakingUnreachable: true,
       ),
     );
   }
@@ -577,7 +664,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   /// Clear matchmaking timeout state (to dismiss the timeout message)
   void clearMatchmakingTimeout() {
-    emit(state.copyWith(matchmakingTimedOut: false, clearMatchmaking: true));
+    emit(state.copyWith(matchmakingUnreachable: false, clearMatchmaking: true));
   }
 
   /// Attempt to reconnect to a game after disconnect. Stays in

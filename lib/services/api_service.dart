@@ -1144,6 +1144,33 @@ class ApiService {
     }
   }
 
+  /// Where the caller's quick-match request stands, straight from the server.
+  ///
+  /// The client polls this while queued instead of running its own deadline.
+  /// MatchFound is a SignalR push from whichever backend process ran the
+  /// matchmaking pass, addressed to a specific connection; with no backplane
+  /// it is simply dropped when the socket lives in a different process. That
+  /// was observed: a match created 34 seconds after queueing while the app
+  /// searched on to its own timeout and gave up. Asking cannot miss.
+  ///
+  /// Returns null ONLY when the server could not be reached — which is the
+  /// one condition that should surface to the player as an error. An empty
+  /// queue is not an error and never returns null.
+  Future<Map<String, dynamic>?> getMatchmakingQueueStatus() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/multiplayer/queue/status'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /multiplayer/queue/status', e);
+      return null;
+    }
+  }
+
   /// Confirm settlements have been applied locally. Idempotent server-side.
   Future<bool> ackMultiplayerSettlements(List<String> settlementIds) async {
     if (settlementIds.isEmpty) return true;

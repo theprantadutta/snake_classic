@@ -762,11 +762,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mpLobbyCancelUpper => 'CANCELAR';
 
   @override
-  String get mpLobbyNoPlayersFound => 'NO SE ENCONTRARON JUGADORES';
+  String get mpLobbyUnreachableTitle => 'SIN CONEXIÓN CON EL EMPAREJAMIENTO';
 
   @override
-  String get mpLobbyNoPlayersBody =>
-      'Lo sentimos, no encontramos oponentes.\n¡Inténtalo de nuevo o crea tu propia sala!';
+  String get mpLobbyUnreachableBody =>
+      'No pudimos contactar con el servidor.\nComprueba tu conexión e inténtalo de nuevo.';
 
   @override
   String get mpLobbyGoBack => 'VOLVER';

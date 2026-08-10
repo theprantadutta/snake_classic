@@ -763,11 +763,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mpLobbyCancelUpper => 'ANNULER';
 
   @override
-  String get mpLobbyNoPlayersFound => 'AUCUN JOUEUR TROUVÉ';
+  String get mpLobbyUnreachableTitle => 'MATCHMAKING INJOIGNABLE';
 
   @override
-  String get mpLobbyNoPlayersBody =>
-      'Désolé, aucun adversaire trouvé.\nRéessayez ou créez votre propre salon !';
+  String get mpLobbyUnreachableBody =>
+      'Impossible de contacter le serveur.\nVérifiez votre connexion et réessayez.';
 
   @override
   String get mpLobbyGoBack => 'RETOUR';
