@@ -387,8 +387,31 @@ class AppliedMultiplayerSettlements extends Table {
   /// The server-side settlement id. Primary key — re-applying is impossible
   /// rather than merely unlikely.
   TextColumn get settlementId => text()();
+
+  /// When the row was first written, i.e. when this device CLAIMED the
+  /// settlement. Not when it finished applying it — see [completedAt].
   DateTimeColumn get appliedAt =>
       dateTime().withDefault(currentDateAndTime)();
+
+  // Per-step progress.
+  //
+  // Applying a settlement is three separate durable writes — statistics,
+  // coins, battle-pass XP — through three different subsystems, and there is
+  // no transaction that spans them. A single "applied" flag could only be set
+  // before them all (a crash then loses real rewards) or after (a crash then
+  // replays the ones that already landed, double-counting statistics). Neither
+  // is acceptable for money.
+  //
+  // Recording each step as it completes makes a retry RESUME instead of
+  // restart: every step runs exactly once across any number of crashes.
+  BoolColumn get statsApplied => boolean().withDefault(const Constant(false))();
+  BoolColumn get coinsApplied => boolean().withDefault(const Constant(false))();
+  BoolColumn get xpApplied => boolean().withDefault(const Constant(false))();
+
+  /// Set only once every step is durably done. This — not the row's existence
+  /// — is what makes a settlement finished, and only a finished settlement is
+  /// acknowledged to the server.
+  DateTimeColumn get completedAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {settlementId};
@@ -814,7 +837,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1012,6 +1035,27 @@ class AppDatabase extends _$AppDatabase {
         // Nothing to backfill — before this, rewards were credited straight
         // off the GameEnded broadcast and were never tracked at all.
         await m.createTable(appliedMultiplayerSettlements);
+      }
+      if (from < 19) {
+        // v19: per-step progress, so a crash midway through applying a
+        // settlement neither loses the remaining rewards nor replays the ones
+        // already applied.
+        await m.addColumn(
+            appliedMultiplayerSettlements, appliedMultiplayerSettlements.statsApplied);
+        await m.addColumn(
+            appliedMultiplayerSettlements, appliedMultiplayerSettlements.coinsApplied);
+        await m.addColumn(
+            appliedMultiplayerSettlements, appliedMultiplayerSettlements.xpApplied);
+        await m.addColumn(
+            appliedMultiplayerSettlements, appliedMultiplayerSettlements.completedAt);
+        // Under v18 a row's mere existence meant "fully applied". Migrating it
+        // to all-steps-done preserves that meaning; leaving the new flags
+        // false would re-apply rewards that were already granted.
+        await m.database.customStatement(
+          'UPDATE applied_multiplayer_settlements '
+          'SET stats_applied = 1, coins_applied = 1, xp_applied = 1, '
+          '    completed_at = applied_at',
+        );
       }
     },
   );

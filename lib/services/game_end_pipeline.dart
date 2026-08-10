@@ -536,28 +536,37 @@ class GameEndPipeline {
   ///
   /// Exactly-once is the caller's ledger, not a flag here: see
   /// MultiplayerSettlementService.
-  void creditMultiplayerSettlement({
+  /// Credit a settlement's coins. AWAITED, and awaited all the way down.
+  ///
+  /// This used to fire the grant off with `unawaited` and return immediately,
+  /// which made "the reward has been applied" unknowable: the caller recorded
+  /// the settlement as done while the write was still in flight, so a crash in
+  /// that window lost the coins with the ledger claiming they had been paid.
+  /// Returns whether the grant actually landed.
+  Future<bool> creditMultiplayerCoins({
     required int coins,
+    required bool won,
+  }) async {
+    if (coins <= 0) return true;
+    return _coinsCubit.earnCoins(
+      CoinEarningSource.multiplayer,
+      customAmount: coins,
+      itemName: won ? 'Multiplayer Victory' : 'Multiplayer Match',
+    );
+  }
+
+  /// Credit a settlement's battle-pass XP. Same reasoning as
+  /// [creditMultiplayerCoins]: the flush is awaited so the caller knows.
+  Future<void> creditMultiplayerBattlePassXp({
     required int battlePassXp,
     required bool won,
-  }) {
-    if (coins > 0) {
-      unawaited(
-        _coinsCubit.earnCoins(
-          CoinEarningSource.multiplayer,
-          customAmount: coins,
-          itemName: won ? 'Multiplayer Victory' : 'Multiplayer Match',
-        ),
-      );
-    }
-
-    if (battlePassXp > 0) {
-      _battlePassCubit.bufferXP(
-        battlePassXp,
-        source: won ? 'multiplayer_win' : 'multiplayer_participation',
-      );
-      unawaited(_battlePassCubit.flushXP());
-    }
+  }) async {
+    if (battlePassXp <= 0) return;
+    _battlePassCubit.bufferXP(
+      battlePassXp,
+      source: won ? 'multiplayer_win' : 'multiplayer_participation',
+    );
+    await _battlePassCubit.flushXP();
   }
 
   // ---------------------------------------------------------------------

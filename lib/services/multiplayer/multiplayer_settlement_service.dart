@@ -1,35 +1,116 @@
 import 'dart:async';
 
 import 'package:snake_classic/data/database/app_database.dart' as db;
-import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/game_end_pipeline.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
+import 'package:snake_classic/services/multiplayer/settlement_ledger.dart';
 import 'package:snake_classic/utils/logger.dart';
+
+/// Routes a settlement's rewards into the real economy subsystems.
+///
+/// Every method awaits its write all the way down. A step that returned before
+/// its grant was durable would let the applier record it as done while it was
+/// still in flight, which is exactly the loss this design exists to prevent.
+class PipelineRewardSink implements SettlementRewardSink {
+  PipelineRewardSink(this._pipeline);
+
+  final GameEndPipeline _pipeline;
+
+  @override
+  Future<void> applyStats(MultiplayerSettlement s) {
+    return _pipeline.recordMultiplayerMatch(
+      score: s.score,
+      foodsEaten: s.foodsEaten,
+      gameTimeSeconds: s.durationSeconds,
+      alive: s.survivedToEnd,
+      deathReason: s.deathReason,
+    );
+  }
+
+  @override
+  Future<void> applyCoins(MultiplayerSettlement s) async {
+    final granted = await _pipeline.creditMultiplayerCoins(
+      coins: s.coinsAwarded,
+      won: s.isWin,
+    );
+    if (!granted) {
+      // Throwing is what keeps the step unrecorded, so the retry tries again.
+      // Swallowing it would mark the coins applied and lose them.
+      throw StateError('Coin grant for settlement ${s.id} did not land');
+    }
+  }
+
+  @override
+  Future<void> applyBattlePassXp(MultiplayerSettlement s) {
+    return _pipeline.creditMultiplayerBattlePassXp(
+      battlePassXp: s.battlePassXpAwarded,
+      won: s.isWin,
+    );
+  }
+}
+
+/// The production transport: the real API.
+class ApiSettlementApi implements SettlementApi {
+  ApiSettlementApi(this._api);
+
+  final ApiService _api;
+
+  @override
+  Future<List<Map<String, dynamic>>?> fetchPending() =>
+      _api.getPendingMultiplayerSettlements();
+
+  @override
+  Future<bool> acknowledge(List<String> settlementIds) =>
+      _api.ackMultiplayerSettlements(settlementIds);
+}
 
 /// Applies the match rewards the server says this player is owed.
 ///
-/// The order is deliberate and is the whole point: apply locally, record
-/// locally, THEN acknowledge remotely. A crash anywhere in that sequence costs
-/// an extra fetch, never a duplicate payout — the local ledger is checked
-/// before anything is credited, and the server keeps handing the row back
-/// until it is acknowledged.
+/// Two guarantees that pull in opposite directions:
 ///
-/// Runs after every match and on launch. The launch pass is what repairs a
-/// result whose broadcast never arrived, which used to be unrecoverable.
+///   * nothing is acknowledged until it has been durably applied, so a reward
+///     is never lost; and
+///   * nothing is applied twice, so statistics and coins are never inflated.
+///
+/// A single "applied" flag can satisfy only one of them — set it before the
+/// writes and a crash loses rewards, set it after and a crash replays whatever
+/// already landed. So progress is recorded per step (see [SettlementApplier]),
+/// a retry resumes rather than restarts, and acknowledgement happens only once
+/// every step is done.
+///
+/// Retrieval is durable on three legs, because a settlement is money owed and
+/// giving up on it is not an option: backoff within the session, a
+/// connectivity listener, and a pass on every sign-in.
 class MultiplayerSettlementService {
+  /// Supply either the real dependency or its seam for each of the three
+  /// collaborators. Production passes [database] and [endPipeline]; tests pass
+  /// [ledger], [rewardSink] and [api], because what is worth testing here is
+  /// what happens when a write fails halfway — which is not reachable through
+  /// the real ones.
   MultiplayerSettlementService({
-    required db.AppDatabase database,
-    required GameEndPipeline endPipeline,
+    db.AppDatabase? database,
+    GameEndPipeline? endPipeline,
     ApiService? apiService,
-  })  : _db = database,
-        _api = apiService ?? ApiService() {
-    _endPipeline = endPipeline;
+    SettlementApi? api,
+    SettlementLedger? ledger,
+    SettlementRewardSink? rewardSink,
+  })  : assert(database != null || ledger != null,
+            'needs a database or an injected ledger'),
+        assert(endPipeline != null || rewardSink != null,
+            'needs a pipeline or an injected reward sink'),
+        _api = api ?? ApiSettlementApi(apiService ?? ApiService()),
+        _ledger = ledger ?? DriftSettlementLedger(database!) {
+    _applier = SettlementApplier(
+      ledger: _ledger,
+      sink: rewardSink ?? PipelineRewardSink(endPipeline!),
+    );
   }
 
-  final db.AppDatabase _db;
-  late final GameEndPipeline _endPipeline;
-  final ApiService _api;
+  final SettlementApi _api;
+  final SettlementLedger _ledger;
+  late final SettlementApplier _applier;
 
   /// Guards against two triggers overlapping (a match ending as the launch
   /// pass is still running). Without it both could read the ledger before
@@ -42,10 +123,9 @@ class MultiplayerSettlementService {
       StreamController<MultiplayerSettlement>.broadcast();
   Stream<MultiplayerSettlement> get appliedStream => _appliedController.stream;
 
-  /// Backoff for a fetch that failed. A settlement is money the player is
-  /// owed, so giving up on it is not an option — but neither is hammering a
-  /// server that is already unhappy.
-  static const List<Duration> _retryDelays = [
+  /// Backoff for a failed attempt — whether the fetch failed or a reward write
+  /// did. Both mean the player is still owed something.
+  static const List<Duration> retryDelays = [
     Duration(seconds: 3),
     Duration(seconds: 15),
     Duration(seconds: 60),
@@ -58,9 +138,9 @@ class MultiplayerSettlementService {
 
   /// Start watching for connectivity coming back.
   ///
-  /// The other half of durability: the launch pass covers an app restart, this
-  /// covers a device that was offline when the match ended and is not going to
-  /// be restarted any time soon.
+  /// The third durability leg: the sign-in pass covers an app restart and the
+  /// backoff covers a transient failure; this covers a device that was simply
+  /// offline when the match ended and is not going to be restarted soon.
   void startWatching(ConnectivityService connectivity) {
     if (_connectivity != null) return;
     _connectivity = connectivity;
@@ -79,8 +159,8 @@ class MultiplayerSettlementService {
   }
 
   void _scheduleRetry() {
-    if (_retryAttempt >= _retryDelays.length) return;
-    final delay = _retryDelays[_retryAttempt];
+    if (_retryAttempt >= retryDelays.length) return;
+    final delay = retryDelays[_retryAttempt];
     _retryAttempt++;
     _retryTimer?.cancel();
     _retryTimer = Timer(delay, () => unawaited(syncPending()));
@@ -93,12 +173,12 @@ class MultiplayerSettlementService {
   }
 
   /// Fetch, apply and acknowledge everything outstanding. Returns the number
-  /// of settlements newly applied.
+  /// of settlements brought to fully-applied by this pass.
   Future<int> syncPending() async {
     if (_running) return 0;
     _running = true;
     try {
-      final rows = await _api.getPendingMultiplayerSettlements();
+      final rows = await _api.fetchPending();
       if (rows == null) {
         // The request failed — not "there is nothing owed". Keep trying.
         _scheduleRetry();
@@ -110,82 +190,60 @@ class MultiplayerSettlementService {
       final fetched = MultiplayerSettlement.parseAll(rows);
       if (fetched.isEmpty) return 0;
 
-      final applied = await _appliedIds(fetched.map((s) => s.id).toList());
-      final plan = planSettlements(fetched: fetched, alreadyApplied: applied);
+      // Only FULLY applied settlements are skipped. A partially applied one is
+      // in [toApply] on purpose: the applier resumes it from its last
+      // completed step.
+      final completed =
+          await _ledger.completedIds(fetched.map((s) => s.id).toList());
+      final plan = planSettlements(fetched: fetched, alreadyApplied: completed);
+
+      // Already complete but still pending server-side: the acknowledgement
+      // never landed last time. Re-acknowledging is how it stops coming back.
+      final acknowledgeable = plan.toAcknowledge
+          .where(completed.contains)
+          .toList();
+
+      var applied = 0;
+      var anyFailed = false;
 
       for (final settlement in plan.toApply) {
         try {
-          await _apply(settlement);
-          // Recorded BEFORE acknowledging: if the ack never lands, the next
-          // fetch returns this row again and the ledger is what stops it
-          // being paid twice.
-          await _markApplied(settlement.id);
+          final done = await _applier.apply(settlement);
+          if (!done) continue;
+          applied++;
+          acknowledgeable.add(settlement.id);
           if (!_appliedController.isClosed) {
             _appliedController.add(settlement);
           }
         } catch (e) {
+          // Whatever steps succeeded are recorded; the rest are still owed.
+          // Leave it unacknowledged so the server keeps offering it, and
+          // schedule a retry so recovery does not wait for the next launch.
+          anyFailed = true;
           AppLogger.error(
-            'Failed to apply multiplayer settlement ${settlement.id}',
+            'Failed to apply multiplayer settlement ${settlement.id} — '
+            'will resume from the last completed step',
             e,
           );
-          // Leave it unacknowledged so it comes back next time.
-          plan.toAcknowledge.remove(settlement.id);
         }
       }
 
-      if (plan.toAcknowledge.isNotEmpty) {
-        await _api.ackMultiplayerSettlements(plan.toAcknowledge);
+      if (acknowledgeable.isNotEmpty) {
+        await _api.acknowledge(acknowledgeable);
       }
 
-      if (plan.toApply.isNotEmpty) {
-        AppLogger.info(
-          'Applied ${plan.toApply.length} multiplayer settlement(s)',
-        );
+      if (anyFailed) _scheduleRetry();
+
+      if (applied > 0) {
+        AppLogger.info('Applied $applied multiplayer settlement(s)');
       }
-      return plan.toApply.length;
+      return applied;
     } catch (e) {
       AppLogger.error('Multiplayer settlement sync failed', e);
+      _scheduleRetry();
       return 0;
     } finally {
       _running = false;
     }
-  }
-
-  Future<void> _apply(MultiplayerSettlement settlement) async {
-    // An interrupted match has no verdict, so it pays nothing and records
-    // nothing. The row exists only so the player can be told.
-    if (settlement.wasInterrupted) return;
-
-    await _endPipeline.recordMultiplayerMatch(
-      score: settlement.score,
-      foodsEaten: settlement.foodsEaten,
-      gameTimeSeconds: settlement.durationSeconds,
-      alive: settlement.survivedToEnd,
-      deathReason: settlement.deathReason,
-    );
-
-    _endPipeline.creditMultiplayerSettlement(
-      coins: settlement.coinsAwarded,
-      battlePassXp: settlement.battlePassXpAwarded,
-      won: settlement.isWin,
-    );
-  }
-
-  Future<Set<String>> _appliedIds(List<String> candidates) async {
-    if (candidates.isEmpty) return <String>{};
-    final rows = await (_db.select(_db.appliedMultiplayerSettlements)
-          ..where((t) => t.settlementId.isIn(candidates)))
-        .get();
-    return rows.map((r) => r.settlementId).toSet();
-  }
-
-  Future<void> _markApplied(String settlementId) async {
-    await _db
-        .into(_db.appliedMultiplayerSettlements)
-        .insertOnConflictUpdate(
-          db.AppliedMultiplayerSettlementsCompanion.insert(
-            settlementId: settlementId,
-          ),
-        );
   }
 }
