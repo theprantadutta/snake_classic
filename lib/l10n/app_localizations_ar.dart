@@ -90,6 +90,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mpBetterLuck => 'حظًا أوفر في المرة القادمة!';
 
   @override
+  String get mpRewardProcessing => 'جارٍ معالجة المكافآت…';
+
+  @override
   String mpCoinReward(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

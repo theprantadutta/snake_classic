@@ -250,38 +250,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 ],
               ),
             ),
-            if (won && result.winnerCoinReward > 0) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.monetization_on,
-                      color: Colors.amber,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.mpCoinReward(result.winnerCoinReward),
-                      style: const TextStyle(
-                        color: Colors.amber,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            // The reward is whatever the SERVER settled, not a number read
+            // off the broadcast. Until the settlement lands this says so,
+            // rather than announcing coins that have not been credited — the
+            // old version showed the figure immediately and could be wrong in
+            // both directions if the socket died before the grant.
+            const SizedBox(height: 16),
+            _RewardChip(theme: theme),
           ],
         ),
         actions: [
@@ -1561,5 +1536,81 @@ class _GameBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
+  }
+}
+
+
+/// Reward line on the result dialog.
+///
+/// Rewards are server-decided and fetched, so there is a real gap between the
+/// result arriving and the coins existing. This shows "processing" across that
+/// gap and the settled amount afterwards. It never shows a locally-invented
+/// figure, and it never queues a local grant — if the fetch is failing the
+/// service is retrying, and the honest answer is "not yet".
+class _RewardChip extends StatelessWidget {
+  const _RewardChip({required this.theme});
+
+  final GameTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return BlocBuilder<MultiplayerCubit, MultiplayerState>(
+      buildWhen: (prev, curr) =>
+          prev.settlementStatus != curr.settlementStatus ||
+          prev.settlement != curr.settlement,
+      builder: (context, state) {
+        if (state.settlementStatus == SettlementStatus.none) {
+          return const SizedBox.shrink();
+        }
+
+        final settled = state.settlement;
+        final processing =
+            state.settlementStatus != SettlementStatus.applied || settled == null;
+
+        // Nothing was awarded (a loss, or a match the server never settled).
+        if (!processing && settled.coinsAwarded <= 0) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: processing ? 0.08 : 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.amber.withValues(alpha: processing ? 0.2 : 0.4),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (processing)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                  ),
+                )
+              else
+                const Icon(Icons.monetization_on, color: Colors.amber, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                processing
+                    ? l10n.mpRewardProcessing
+                    : l10n.mpCoinReward(settled.coinsAwarded),
+                style: TextStyle(
+                  color: Colors.amber.withValues(alpha: processing ? 0.75 : 1),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

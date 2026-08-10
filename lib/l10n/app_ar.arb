@@ -27,6 +27,7 @@
   "mpDeathHeadOn": "تصادم وجهًا لوجه!",
   "mpDeathForfeit": "انقطع الاتصال طويلًا — خسرت المباراة.",
   "mpBetterLuck": "حظًا أوفر في المرة القادمة!",
+  "mpRewardProcessing": "جارٍ معالجة المكافآت…",
   "mpCoinReward": "{count, plural, zero{+{count} عملة} one{+عملة واحدة} two{+عملتان} few{+{count} عملات} many{+{count} عملة} other{+{count} عملة}}",
   "mpLeaveGameTitle": "مغادرة اللعبة؟",
   "mpLeaveGameBody": "تستمر المباراة على الخادم — المغادرة تعني الانسحاب.",

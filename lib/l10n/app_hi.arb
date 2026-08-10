@@ -27,6 +27,7 @@
   "mpDeathHeadOn": "आमने-सामने की टक्कर!",
   "mpDeathForfeit": "बहुत देर तक डिस्कनेक्ट — मैच ज़ब्त।",
   "mpBetterLuck": "अगली बार बेहतर किस्मत!",
+  "mpRewardProcessing": "इनाम प्रोसेस हो रहे हैं…",
   "mpCoinReward": "{count, plural, one{+{count} सिक्का} other{+{count} सिक्के}}",
   "mpLeaveGameTitle": "गेम छोड़ें?",
   "mpLeaveGameBody": "मैच सर्वर पर चलता रहेगा — छोड़ने पर हार मानी जाएगी।",

@@ -274,6 +274,12 @@ abstract class AppLocalizations {
   /// **'Better luck next time!'**
   String get mpBetterLuck;
 
+  /// No description provided for @mpRewardProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards processing…'**
+  String get mpRewardProcessing;
+
   /// Coin reward chip on the victory dialog.
   ///
   /// In en, this message translates to:

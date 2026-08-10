@@ -27,6 +27,7 @@
   "mpDeathHeadOn": "Collision frontale !",
   "mpDeathForfeit": "Déconnecté trop longtemps — match perdu par forfait.",
   "mpBetterLuck": "Plus de chance la prochaine fois !",
+  "mpRewardProcessing": "Récompenses en cours…",
   "mpCoinReward": "{count, plural, one{+{count} pièce} other{+{count} pièces}}",
   "mpLeaveGameTitle": "Quitter la partie ?",
   "mpLeaveGameBody": "Le match continue sur le serveur — quitter vaut forfait.",

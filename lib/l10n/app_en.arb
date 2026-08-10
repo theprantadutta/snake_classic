@@ -51,6 +51,7 @@
   "mpDeathHeadOn": "Head-on collision!",
   "mpDeathForfeit": "Disconnected too long — match forfeited.",
   "mpBetterLuck": "Better luck next time!",
+  "mpRewardProcessing": "Rewards processing…",
   "mpCoinReward": "{count, plural, one{+{count} coin} other{+{count} coins}}",
   "@mpCoinReward": {
     "description": "Coin reward chip on the victory dialog.",

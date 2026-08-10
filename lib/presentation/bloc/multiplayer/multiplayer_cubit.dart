@@ -6,6 +6,7 @@ import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
@@ -35,6 +36,12 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Shared end-of-game rewards/stats pipeline (same instance the
   /// single-player GameCubit uses) — keeps reward rules in one place.
   final MultiplayerSettlementService _settlementService;
+  StreamSubscription<MultiplayerSettlement>? _settlementSubscription;
+
+  /// The game whose settlement the result screen is waiting on. Captured at
+  /// match end because a settlement being repaired in the background belongs
+  /// to a different match and must not relabel this one.
+  String? _settlingGameId;
 
   // Stream subscriptions
   StreamSubscription? _gameSubscription;
@@ -92,6 +99,26 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     // Match streams are hub-wide, not per-lobby — subscribe for the
     // cubit's whole lifetime so a resumed match is never missed.
     _startMatchListeners();
+    // Settlements can land long after the match — a retry, a reconnect, the
+    // next launch — so this listens for the cubit's whole lifetime too.
+    _startSettlementListener();
+  }
+
+  /// Reflect an applied settlement into the result screen, replacing
+  /// "processing" with what the server actually awarded.
+  void _startSettlementListener() {
+    _settlementSubscription =
+        _settlementService.appliedStream.listen((settlement) {
+      // Only the settlement for the match currently on screen. An older one
+      // being repaired in the background must not relabel this result.
+      if (_settlingGameId != null && settlement.gameId != _settlingGameId) {
+        return;
+      }
+      emit(state.copyWith(
+        settlementStatus: SettlementStatus.applied,
+        settlement: settlement,
+      ));
+    });
   }
 
   void _startErrorListener() {
@@ -973,14 +1000,19 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     // repaired on the next launch if this fetch fails — which is the whole
     // point: a socket that died a second earlier used to lose them outright,
     // with nothing anywhere recording that anything was owed.
+    // Rewards are shown as processing until the settlement lands. The fetch
+    // retries on its own (backoff, connectivity, next launch), so a failure
+    // here is a delay rather than a loss.
     unawaited(_settlementService.syncPending());
 
     _matchActive = false;
+    _settlingGameId = _multiplayerService.currentGameId;
     emit(
       state.copyWith(
         status: MultiplayerStatus.finished,
         matchEnd: result,
         isLoading: false,
+        settlementStatus: SettlementStatus.processing,
       ),
     );
   }
@@ -1069,6 +1101,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _errorSubscription?.cancel();
     _snapshotSubscription?.cancel();
     _matchEndSubscription?.cancel();
+    _settlementSubscription?.cancel();
     _multiplayerService.dispose();
     return super.close();
   }

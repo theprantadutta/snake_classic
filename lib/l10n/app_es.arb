@@ -27,6 +27,7 @@
   "mpDeathHeadOn": "¡Choque frontal!",
   "mpDeathForfeit": "Desconectado demasiado tiempo — partida perdida.",
   "mpBetterLuck": "¡Mejor suerte la próxima vez!",
+  "mpRewardProcessing": "Procesando recompensas…",
   "mpCoinReward": "{count, plural, one{+{count} moneda} other{+{count} monedas}}",
   "mpLeaveGameTitle": "¿Salir de la partida?",
   "mpLeaveGameBody": "La partida sigue en el servidor — salir es rendirse.",

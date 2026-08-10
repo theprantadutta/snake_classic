@@ -92,6 +92,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mpBetterLuck => 'Повезёт в следующий раз!';
 
   @override
+  String get mpRewardProcessing => 'Начисление наград…';
+
+  @override
   String mpCoinReward(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

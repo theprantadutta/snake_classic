@@ -27,6 +27,7 @@
   "mpDeathHeadOn": "Лобовое столкновение!",
   "mpDeathForfeit": "Слишком долгое отключение — техническое поражение.",
   "mpBetterLuck": "Повезёт в следующий раз!",
+  "mpRewardProcessing": "Начисление наград…",
   "mpCoinReward": "{count, plural, one{+{count} монета} few{+{count} монеты} many{+{count} монет} other{+{count} монеты}}",
   "mpLeaveGameTitle": "Покинуть игру?",
   "mpLeaveGameBody": "Матч продолжается на сервере — выход засчитывается как поражение.",

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:snake_classic/data/database/app_database.dart' as db;
+import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/game_end_pipeline.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
@@ -33,6 +36,62 @@ class MultiplayerSettlementService {
   /// either writes to it.
   bool _running = false;
 
+  /// Settlements applied on this device, as they are applied. The multiplayer
+  /// cubit listens so the result screen can stop saying "processing".
+  final _appliedController =
+      StreamController<MultiplayerSettlement>.broadcast();
+  Stream<MultiplayerSettlement> get appliedStream => _appliedController.stream;
+
+  /// Backoff for a fetch that failed. A settlement is money the player is
+  /// owed, so giving up on it is not an option — but neither is hammering a
+  /// server that is already unhappy.
+  static const List<Duration> _retryDelays = [
+    Duration(seconds: 3),
+    Duration(seconds: 15),
+    Duration(seconds: 60),
+  ];
+  int _retryAttempt = 0;
+  Timer? _retryTimer;
+
+  ConnectivityService? _connectivity;
+  bool _lastHadInternet = true;
+
+  /// Start watching for connectivity coming back.
+  ///
+  /// The other half of durability: the launch pass covers an app restart, this
+  /// covers a device that was offline when the match ended and is not going to
+  /// be restarted any time soon.
+  void startWatching(ConnectivityService connectivity) {
+    if (_connectivity != null) return;
+    _connectivity = connectivity;
+    _lastHadInternet = connectivity.hasInternetAccess;
+    connectivity.addListener(_onConnectivityChanged);
+  }
+
+  void _onConnectivityChanged() {
+    final hasInternet = _connectivity?.hasInternetAccess ?? true;
+    if (hasInternet && !_lastHadInternet) {
+      AppLogger.info('Network returned — retrying multiplayer settlements');
+      _retryAttempt = 0;
+      unawaited(syncPending());
+    }
+    _lastHadInternet = hasInternet;
+  }
+
+  void _scheduleRetry() {
+    if (_retryAttempt >= _retryDelays.length) return;
+    final delay = _retryDelays[_retryAttempt];
+    _retryAttempt++;
+    _retryTimer?.cancel();
+    _retryTimer = Timer(delay, () => unawaited(syncPending()));
+  }
+
+  void dispose() {
+    _retryTimer?.cancel();
+    _connectivity?.removeListener(_onConnectivityChanged);
+    _appliedController.close();
+  }
+
   /// Fetch, apply and acknowledge everything outstanding. Returns the number
   /// of settlements newly applied.
   Future<int> syncPending() async {
@@ -40,7 +99,13 @@ class MultiplayerSettlementService {
     _running = true;
     try {
       final rows = await _api.getPendingMultiplayerSettlements();
-      if (rows == null || rows.isEmpty) return 0;
+      if (rows == null) {
+        // The request failed — not "there is nothing owed". Keep trying.
+        _scheduleRetry();
+        return 0;
+      }
+      _retryAttempt = 0;
+      if (rows.isEmpty) return 0;
 
       final fetched = MultiplayerSettlement.parseAll(rows);
       if (fetched.isEmpty) return 0;
@@ -55,6 +120,9 @@ class MultiplayerSettlementService {
           // fetch returns this row again and the ledger is what stops it
           // being paid twice.
           await _markApplied(settlement.id);
+          if (!_appliedController.isClosed) {
+            _appliedController.add(settlement);
+          }
         } catch (e) {
           AppLogger.error(
             'Failed to apply multiplayer settlement ${settlement.id}',

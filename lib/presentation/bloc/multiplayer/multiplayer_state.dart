@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
+import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 import 'package:snake_classic/models/multiplayer_error.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/utils/direction.dart';
@@ -20,6 +21,23 @@ enum MultiplayerStatus {
 }
 
 /// State class for MultiplayerCubit
+/// Where this match's rewards have got to.
+///
+/// Rewards are decided by the server and fetched, so between the result
+/// arriving and the settlement landing there is a real gap. Saying
+/// "processing" during it is honest; showing a number the client made up —
+/// which is what the old broadcast-driven credit did — was not.
+enum SettlementStatus {
+  /// Nothing owed, or no match has ended yet.
+  none,
+
+  /// The result is in and the settlement has not been applied yet.
+  processing,
+
+  /// Applied. [MultiplayerState.settlement] holds what was awarded.
+  applied,
+}
+
 class MultiplayerState extends Equatable {
   final MultiplayerStatus status;
   final MultiplayerGame? currentGame;
@@ -37,6 +55,14 @@ class MultiplayerState extends Equatable {
   final MatchSnapshot? snapshot;
   final MatchEndResult? matchEnd;
   final int boardSize;
+
+  /// Where this match's rewards have got to. The result screen shows
+  /// "processing" until the server's settlement lands, rather than a number
+  /// the client invented.
+  final SettlementStatus settlementStatus;
+
+  /// What the server actually awarded, once applied.
+  final MultiplayerSettlement? settlement;
 
   /// Local input echo: the direction we last sent to the server, shown
   /// on the swipe indicator until a snapshot confirms (or overrides) it.
@@ -89,6 +115,8 @@ class MultiplayerState extends Equatable {
     this.matchmakingPlayerCount,
     this.matchmakingElapsedSeconds = 0,
     this.matchmakingTimedOut = false,
+    this.settlementStatus = SettlementStatus.none,
+    this.settlement,
   });
 
   /// Initial state
@@ -105,6 +133,8 @@ class MultiplayerState extends Equatable {
     MatchSnapshot? snapshot,
     MatchEndResult? matchEnd,
     int? boardSize,
+    SettlementStatus? settlementStatus,
+    MultiplayerSettlement? settlement,
     Direction? intentDirection,
     bool clearIntentDirection = false,
     int? countdownSeconds,
@@ -129,6 +159,8 @@ class MultiplayerState extends Equatable {
       snapshot: (clearMatch || clearGame) ? null : (snapshot ?? this.snapshot),
       matchEnd: (clearMatch || clearGame) ? null : (matchEnd ?? this.matchEnd),
       boardSize: boardSize ?? this.boardSize,
+      settlementStatus: settlementStatus ?? this.settlementStatus,
+      settlement: settlement ?? this.settlement,
       intentDirection: (clearMatch || clearGame || clearIntentDirection)
           ? null
           : (intentDirection ?? this.intentDirection),
@@ -209,6 +241,8 @@ class MultiplayerState extends Equatable {
     isLoading,
     snapshot,
     matchEnd,
+    settlementStatus,
+    settlement,
     boardSize,
     intentDirection,
     countdownSeconds,

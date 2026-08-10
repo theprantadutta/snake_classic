@@ -94,6 +94,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mpBetterLuck => 'Better luck next time!';
 
   @override
+  String get mpRewardProcessing => 'Rewards processing…';
+
+  @override
   String mpCoinReward(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

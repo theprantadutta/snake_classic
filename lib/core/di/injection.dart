@@ -177,10 +177,18 @@ Future<void> configureDependencies() async {
   // its in-flight guard actually guards — a match ending while the launch
   // pass is still running must not read the applied-ledger twice.
   getIt.registerLazySingleton<MultiplayerSettlementService>(
-    () => MultiplayerSettlementService(
-      database: getIt<AppDatabase>(),
-      endPipeline: getIt<GameEndPipeline>(),
-    ),
+    () {
+      final service = MultiplayerSettlementService(
+        database: getIt<AppDatabase>(),
+        endPipeline: getIt<GameEndPipeline>(),
+      );
+      // The third durability leg. The launch pass covers an app restart and
+      // the backoff covers a transient failure; this covers a device that was
+      // simply offline when the match ended and is not going to be restarted
+      // any time soon.
+      service.startWatching(ConnectivityService());
+      return service;
+    },
   );
 
   getIt.registerFactory<GameCubit>(

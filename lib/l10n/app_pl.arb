@@ -27,6 +27,7 @@
   "mpDeathHeadOn": "Czołowe zderzenie!",
   "mpDeathForfeit": "Zbyt długo bez połączenia — mecz oddany walkowerem.",
   "mpBetterLuck": "Powodzenia następnym razem!",
+  "mpRewardProcessing": "Przetwarzanie nagród…",
   "mpCoinReward": "{count, plural, one{+{count} moneta} few{+{count} monety} many{+{count} monet} other{+{count} monety}}",
   "mpLeaveGameTitle": "Opuścić grę?",
   "mpLeaveGameBody": "Mecz trwa dalej na serwerze — wyjście oznacza poddanie.",
