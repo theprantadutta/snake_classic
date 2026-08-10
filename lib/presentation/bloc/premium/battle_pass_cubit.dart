@@ -125,6 +125,10 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     });
   }
 
+  /// Re-read the battle pass from Drift. See CoinsCubit.reloadFromDrift for
+  /// why the settlement path needs this explicitly.
+  Future<void> reloadFromDrift() => _loadFromLocalStorage();
+
   /// Subscribe to the `battle_passes` Drift table so any write
   /// (snapshot apply on first sign-in, sync restore, server XP-grant
   /// echo) reactively re-projects into [state]. Emits immediately

@@ -121,6 +121,10 @@ class StatisticsService extends ChangeNotifier {
   /// flows raced the snapshot pull and wiped the server's real stats.
   /// The new contract: only [recordGameResult] and the snapshot apply
   /// in `SyncEngine._applyCloudSnapshot` ever write a row.
+  /// Re-read the statistics blob from Drift. See CoinsCubit.reloadFromDrift
+  /// for why the settlement path needs this explicitly.
+  Future<void> reloadFromDrift() => _loadFromDrift();
+
   Future<void> _loadFromDrift() async {
     try {
       final row = await _storageService.gameDao.getStatistics();

@@ -180,7 +180,6 @@ Future<void> configureDependencies() async {
     () {
       final service = MultiplayerSettlementService(
         database: getIt<AppDatabase>(),
-        endPipeline: getIt<GameEndPipeline>(),
       );
       // The third durability leg. The launch pass covers an app restart and
       // the backoff covers a transient failure; this covers a device that was

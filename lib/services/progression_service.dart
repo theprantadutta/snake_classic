@@ -76,6 +76,31 @@ class ProgressionService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Re-read progress from Drift and, when [announceLevelUp] is set, surface
+  /// the celebration for it.
+  ///
+  /// For the settlement path, which writes lifetime XP and pays the level-up
+  /// coins inside its own transaction. The celebration still has to happen —
+  /// but crediting must NOT, or the settlement's coins would be paid twice.
+  /// That is exactly what the old fire-and-forget `_creditLevelUpRewards` did
+  /// from inside flushXp: an unawaited grant, outside any transaction, with no
+  /// record that could dedupe it.
+  Future<void> reloadFromDrift({int? announceLevelUp}) async {
+    try {
+      final row = await _storageService.gameDao.getPlayerProgress();
+      if (row != null) {
+        _progress = PlayerProgress(totalXp: row.totalXp, level: row.level);
+      }
+    } catch (e) {
+      AppLogger.error('ProgressionService: reload from Drift failed', e);
+    }
+    if (announceLevelUp != null) {
+      _pendingLevelUp = announceLevelUp;
+      _levelUps.add(announceLevelUp);
+    }
+    notifyListeners();
+  }
+
   /// Keep [_progress] in lock-step with the Drift singleton so a cloud-snapshot
   /// restore (which writes Drift directly) refreshes the UI. Does not emit
   /// level-ups — those come only from [flushXp].
@@ -128,7 +153,8 @@ class ProgressionService extends ChangeNotifier {
   /// (every ~10-20 games at typical XP rates), so the reward is sized
   /// to feel like an event next to the <=10-coin game-completion grant:
   /// 50 coins per level, 200 at every 10th.
-  static int coinRewardForLevel(int level) => level % 10 == 0 ? 200 : 50;
+  static int coinRewardForLevel(int level) =>
+      PlayerLevel.coinRewardForLevel(level);
 
   /// Credit the coin reward for every level gained in this flush.
   /// Before this existed, the lifetime level granted NOTHING — the

@@ -1,55 +1,17 @@
 import 'dart:async';
+import 'package:get_it/get_it.dart';
 
 import 'package:snake_classic/data/database/app_database.dart' as db;
+import 'package:snake_classic/data/database/settlement_write.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
-import 'package:snake_classic/services/game_end_pipeline.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 import 'package:snake_classic/services/multiplayer/settlement_ledger.dart';
+import 'package:snake_classic/services/progression_service.dart';
+import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/logger.dart';
-
-/// Routes a settlement's rewards into the real economy subsystems.
-///
-/// Every method awaits its write all the way down. A step that returned before
-/// its grant was durable would let the applier record it as done while it was
-/// still in flight, which is exactly the loss this design exists to prevent.
-class PipelineRewardSink implements SettlementRewardSink {
-  PipelineRewardSink(this._pipeline);
-
-  final GameEndPipeline _pipeline;
-
-  @override
-  Future<void> applyStats(MultiplayerSettlement s) {
-    return _pipeline.recordMultiplayerMatch(
-      score: s.score,
-      foodsEaten: s.foodsEaten,
-      gameTimeSeconds: s.durationSeconds,
-      alive: s.survivedToEnd,
-      deathReason: s.deathReason,
-    );
-  }
-
-  @override
-  Future<void> applyCoins(MultiplayerSettlement s) async {
-    final granted = await _pipeline.creditMultiplayerCoins(
-      coins: s.coinsAwarded,
-      won: s.isWin,
-    );
-    if (!granted) {
-      // Throwing is what keeps the step unrecorded, so the retry tries again.
-      // Swallowing it would mark the coins applied and lose them.
-      throw StateError('Coin grant for settlement ${s.id} did not land');
-    }
-  }
-
-  @override
-  Future<void> applyBattlePassXp(MultiplayerSettlement s) {
-    return _pipeline.creditMultiplayerBattlePassXp(
-      battlePassXp: s.battlePassXpAwarded,
-      won: s.isWin,
-    );
-  }
-}
 
 /// The production transport: the real API.
 class ApiSettlementApi implements SettlementApi {
@@ -89,28 +51,62 @@ class MultiplayerSettlementService {
   /// [ledger], [rewardSink] and [api], because what is worth testing here is
   /// what happens when a write fails halfway — which is not reachable through
   /// the real ones.
+  /// Supply either [database] (production) or [writer] (tests).
   MultiplayerSettlementService({
     db.AppDatabase? database,
-    GameEndPipeline? endPipeline,
     ApiService? apiService,
     SettlementApi? api,
-    SettlementLedger? ledger,
-    SettlementRewardSink? rewardSink,
-  })  : assert(database != null || ledger != null,
-            'needs a database or an injected ledger'),
-        assert(endPipeline != null || rewardSink != null,
-            'needs a pipeline or an injected reward sink'),
+    SettlementWriter? writer,
+    Future<void> Function(SettlementWriteResult)? onApplied,
+  })  : assert(database != null || writer != null,
+            'needs a database or an injected writer'),
         _api = api ?? ApiSettlementApi(apiService ?? ApiService()),
-        _ledger = ledger ?? DriftSettlementLedger(database!) {
-    _applier = SettlementApplier(
-      ledger: _ledger,
-      sink: rewardSink ?? PipelineRewardSink(endPipeline!),
-    );
-  }
+        _writer = writer ??
+            DriftSettlementWriter(
+              database!,
+              onApplied: onApplied ?? _refreshInMemoryState,
+            );
 
   final SettlementApi _api;
-  final SettlementLedger _ledger;
-  late final SettlementApplier _applier;
+  final SettlementWriter _writer;
+
+  /// Re-read the in-memory layer from the database AFTER a settlement commits.
+  ///
+  /// The write path deliberately touches no cubit: it is one transaction of
+  /// DAO writes, so a rollback cannot leave memory ahead of the database. The
+  /// cost is that memory is stale until this runs, which is why it runs here
+  /// rather than being left to the watch streams.
+  ///
+  /// The level-up celebration is announced without crediting anything — the
+  /// coins for it were already paid inside the transaction. That is the bug
+  /// this replaced: ProgressionService fired an unawaited, unrecorded coin
+  /// grant on level-up, so a replayed settlement paid it again.
+  static Future<void> _refreshInMemoryState(SettlementWriteResult result) async {
+    Future<void> safely(String what, Future<void> Function() action) async {
+      try {
+        await action();
+      } catch (e) {
+        // The rewards are already durable. A refresh failing is a display
+        // problem that the next launch fixes, not a lost reward.
+        AppLogger.error('Settlement refresh ($what) failed', e);
+      }
+    }
+
+    if (GetIt.I.isRegistered<CoinsCubit>()) {
+      await safely('coins', () => GetIt.I<CoinsCubit>().reloadFromDrift());
+    }
+    if (GetIt.I.isRegistered<BattlePassCubit>()) {
+      await safely(
+          'battle pass', () => GetIt.I<BattlePassCubit>().reloadFromDrift());
+    }
+    await safely('statistics', () => StatisticsService().reloadFromDrift());
+    await safely(
+      'progression',
+      () => ProgressionService().reloadFromDrift(
+        announceLevelUp: result.leveledUp ? result.levelAfter : null,
+      ),
+    );
+  }
 
   /// Guards against two triggers overlapping (a match ending as the launch
   /// pass is still running). Without it both could read the ledger before
@@ -194,7 +190,7 @@ class MultiplayerSettlementService {
       // in [toApply] on purpose: the applier resumes it from its last
       // completed step.
       final completed =
-          await _ledger.completedIds(fetched.map((s) => s.id).toList());
+          await _writer.appliedIds(fetched.map((s) => s.id).toList());
       final plan = planSettlements(fetched: fetched, alreadyApplied: completed);
 
       // Already complete but still pending server-side: the acknowledgement
@@ -208,7 +204,7 @@ class MultiplayerSettlementService {
 
       for (final settlement in plan.toApply) {
         try {
-          final done = await _applier.apply(settlement);
+          final done = await _writer.applyOnce(settlement);
           if (!done) continue;
           applied++;
           acknowledgeable.add(settlement.id);
@@ -216,9 +212,10 @@ class MultiplayerSettlementService {
             _appliedController.add(settlement);
           }
         } catch (e) {
-          // Whatever steps succeeded are recorded; the rest are still owed.
-          // Leave it unacknowledged so the server keeps offering it, and
-          // schedule a retry so recovery does not wait for the next launch.
+          // The transaction rolled back, so nothing was applied and nothing
+          // was lost. Leave it unacknowledged so the server keeps offering it,
+          // and schedule a retry so recovery does not wait for the next
+          // launch.
           anyFailed = true;
           AppLogger.error(
             'Failed to apply multiplayer settlement ${settlement.id} — '

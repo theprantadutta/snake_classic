@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
@@ -835,6 +836,13 @@ class PlayerProgressTable extends Table {
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
+
+  /// Test-only: an isolated database on a caller-supplied executor, so tests
+  /// can run the real schema, the real migrations and the real transactions
+  /// against an in-memory SQLite rather than a stub that would answer whatever
+  /// the test author assumed.
+  @visibleForTesting
+  AppDatabase.forTesting(super.executor);
 
   @override
   int get schemaVersion => 19;
