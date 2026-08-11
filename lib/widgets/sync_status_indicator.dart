@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:get_it/get_it.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/sync/sync_engine.dart';
+import 'package:snake_classic/services/sync/sync_status.dart';
 
 /// A subtle sync status indicator widget that shows connectivity and sync state.
 ///
@@ -36,7 +38,7 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
     with SingleTickerProviderStateMixin {
   late AnimationController _spinController;
   final ConnectivityService _connectivityService = ConnectivityService();
-  final DataSyncService _dataSyncService = DataSyncService();
+  final SyncEngine _syncEngine = GetIt.I<SyncEngine>();
 
   @override
   void initState() {
@@ -55,26 +57,42 @@ class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _dataSyncService,
-      child: Consumer<DataSyncService>(
-        builder: (context, syncService, child) {
-          return ListenableBuilder(
-            listenable: _connectivityService,
-            builder: (context, child) {
-              return _buildIndicator(context, syncService);
-            },
-          );
-        },
-      ),
+    // Reads the CANONICAL engine, not the legacy transport.
+    //
+    // This used to render DataSyncService, which by now owns little beyond
+    // FCM token registration — so it could show a contented "all synced"
+    // while the real outbox held pending scores and a dead-lettered
+    // submission the player was never told about.
+    return StreamBuilder<SyncStatusSnapshot>(
+      initialData: _syncEngine.status,
+      stream: _syncEngine.statusStream,
+      builder: (context, statusSnapshot) {
+        return ListenableBuilder(
+          listenable: _connectivityService,
+          builder: (context, child) {
+            return _buildIndicator(
+              context,
+              statusSnapshot.data ?? const SyncStatusSnapshot(),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildIndicator(BuildContext context, DataSyncService syncService) {
+  Widget _buildIndicator(BuildContext context, SyncStatusSnapshot status) {
     final isOnline = _connectivityService.isOnline;
-    final syncStatus = syncService.syncStatus;
-    final pendingCount = syncService.pendingCount;
-    final failedCount = syncService.failedCount;
+    final syncStatus = status.isDraining ? SyncStatus.syncing : SyncStatus.idle;
+
+    // Pending includes the legacy FCM queue so nothing is invisible, but the
+    // two are counted separately in the snapshot so the legacy queue can be
+    // retired without changing what this means.
+    final pendingCount = status.pendingCount + status.legacyPendingCount;
+
+    // Dead letters are permanent rejections — the server will never take
+    // them without intervention. They matter more than a transient backlog,
+    // which is why they drive the warning state.
+    final failedCount = status.deadLetterCount;
 
     // Update spin animation
     if (syncStatus == SyncStatus.syncing) {

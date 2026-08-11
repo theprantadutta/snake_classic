@@ -615,7 +615,12 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       // A silently-cancelled Play billing sheet emits no purchaseStream event,
       // so clear any stuck "Verifying…" state now that we're back in front.
       PurchaseService().notifyAppResumed();
-      // Trigger sync when app comes back to foreground
+      // Force the CANONICAL drain, then the legacy FCM queue.
+      //
+      // Resume used to call only DataSyncService, which no longer owns the
+      // data anyone means by "sync" — so coming back to the app did not push
+      // the outbox that actually held the player's scores and coins.
+      unawaited(getIt<SyncEngine>().syncNow());
       DataSyncService().forceSyncNow();
       // Re-authenticate with backend if JWT expired and refresh premium state
       _refreshOnResume();
@@ -632,6 +637,7 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
     // When app goes to background, attempt to sync pending data
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
+      unawaited(getIt<SyncEngine>().syncNow());
       DataSyncService().forceSyncNow();
       // Mark the background trip and warm up an App Open ad for the next resume.
       getIt<AdService>().markBackgrounded();
