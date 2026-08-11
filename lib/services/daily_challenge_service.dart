@@ -1,14 +1,16 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:snake_classic/data/database/app_database.dart' as db;
-import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
-import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/daily_challenge_hydration.dart';
+import 'package:snake_classic/data/database/settlement_write.dart';
+import 'package:snake_classic/services/daily_challenge_settlement_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -32,6 +34,29 @@ class DailyChallengeService extends ChangeNotifier {
   DailyChallengeService._internal();
 
   final StorageService _storageService = StorageService();
+
+  /// Applies server settlements exactly once. Built lazily so tests can run
+  /// the service without a database.
+  DailyChallengeSettlementServiceClient? _settlementsOverride;
+  DailyChallengeSettlementServiceClient get _settlements =>
+      _settlementsOverride ??= DailyChallengeSettlementServiceClient.forDatabase(
+        _storageService.db,
+        onApplied: (_) async {
+          // Refresh from durable truth AFTER the commit, never before — a
+          // rolled-back apply must not leave the UI showing coins that were
+          // not banked.
+          if (GetIt.I.isRegistered<CoinsCubit>()) {
+            await GetIt.I<CoinsCubit>().reloadFromDrift();
+          }
+          if (GetIt.I.isRegistered<BattlePassCubit>()) {
+            await GetIt.I<BattlePassCubit>().reloadFromDrift();
+          }
+        },
+      );
+
+  @visibleForTesting
+  set settlementClientForTesting(DailyChallengeSettlementServiceClient client) =>
+      _settlementsOverride = client;
 
   // Flat coin + XP bonus granted exactly once on the day the player
   // completes every daily challenge. Persisted as a synthetic
@@ -83,6 +108,14 @@ class DailyChallengeService extends ChangeNotifier {
   /// server on the next drain.
   Future<void> initialize() async {
     await hydrateFromLocal();
+
+    // Settlements the server already owes this account are applied on the way
+    // in — a reward claimed on another device, or one this device claimed
+    // before it was killed, lands without the player doing anything.
+    //
+    // Unawaited: an offline start must not be held up by it, and a failure
+    // leaves the intent exactly where it was.
+    unawaited(refreshSettlements());
   }
 
   /// Load today's persisted rows into the in-memory list. Safe to call more
@@ -94,8 +127,10 @@ class DailyChallengeService extends ChangeNotifier {
 
       _challenges = hydrateFromLocalRows(localById.values);
       _applyCounts();
-      _bonusClaimedToday =
-          localById[_todayBonusId()]?.rewardClaimed ?? _bonusClaimedToday;
+      // Bonus state comes from the settlement ledger — what this device has
+      // actually banked — not from the synthetic local row, which recorded an
+      // intent the server may not have honoured yet.
+      await _refreshBonusStateFromLedger();
       AppLogger.info(
         'DailyChallengeService hydrated ${_challenges.length} challenge(s) '
         'from Drift (${_challenges.where((c) => c.canClaim).length} claimable)',
@@ -227,66 +262,55 @@ class DailyChallengeService extends ChangeNotifier {
   /// within the same calendar day.
   static String _todayBonusId() => allCompleteBonusIdFor(DateTime.now());
 
-  /// Auto-credit the all-complete bonus on the first claim that lands
-  /// after every daily challenge is completed. Idempotent — the Drift
-  /// upsert + the in-memory flag guarantee at-most-once per local day.
-  Future<void> _tryAutoClaimAllCompleteBonus() async {
-    if (!_allCompleted || _bonusClaimedToday) return;
-    if (_totalCount == 0) return; // sanity: never bonus on an empty set
+  /// The server's key for today's set bonus: `bonus:yyyy-MM-dd` in UTC.
+  ///
+  /// UTC, not local. The catalog is generated on the UTC day boundary, so a
+  /// local-midnight key would disagree with the server for every player who is
+  /// not on UTC — which is exactly the timezone edge case the old synthetic
+  /// local bonus id created.
+  static String _todayBonusSettlementKey() {
+    final utc = DateTime.now().toUtc();
+    final y = utc.year.toString().padLeft(4, '0');
+    final m = utc.month.toString().padLeft(2, '0');
+    final d = utc.day.toString().padLeft(2, '0');
+    return 'bonus:$y-$m-$d';
+  }
+
+  /// Pull any settlements the server owes this account and apply them.
+  ///
+  /// Safe to call from anywhere and at any time: it is idempotent, it has no
+  /// connectivity preflight (the request is the authority), and a failure
+  /// leaves the intent exactly where it was.
+  Future<void> refreshSettlements() async {
     try {
-      final today = DateTime.now();
-      final startOfDay = DateTime(today.year, today.month, today.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
-      final bonusId = _todayBonusId();
-
-      // Drift gate + sync push in one shot. The existing
-      // dailyChallengeClaim outbox dataType carries this row to the
-      // backend's UserDailyChallengeClaims mirror table, so the
-      // dashboard sees the bonus as a regular claimed row and other
-      // devices pick it up on their next pull.
-      await _storageService.gameDao.upsertDailyChallenge(
-        db.DailyChallengesCompanion(
-          challengeId: Value(bonusId),
-          challengeType: const Value('bonus'),
-          title: const Value('All Challenges Bonus'),
-          description: const Value(
-            'Completed every daily challenge today.',
-          ),
-          currentProgress: const Value(1),
-          targetProgress: const Value(1),
-          rewardCoins: const Value(allCompleteBonusCoins),
-          isCompleted: const Value(true),
-          rewardClaimed: const Value(true),
-          challengeDate: Value(startOfDay),
-          expiresAt: Value(endOfDay),
-          completedAt: Value(today),
-        ),
-      );
-
-      if (GetIt.I.isRegistered<CoinsCubit>()) {
-        await GetIt.I<CoinsCubit>().earnCoins(
-          CoinEarningSource.dailyChallenge,
-          customAmount: allCompleteBonusCoins,
-          itemName: 'All Challenges Bonus',
-          metadata: {'bonus_id': bonusId},
-        );
+      final applied = await _settlements.syncPending();
+      if (applied > 0) {
+        await _refreshBonusStateFromLedger();
+        notifyListeners();
       }
-
-      // Grant the dedicated all-complete bonus XP (not the per-challenge
-      // 'daily_challenge' amount, which is far smaller). bonusXp == 100.
-      if (GetIt.I.isRegistered<BattlePassCubit>()) {
-        final cubit = GetIt.I<BattlePassCubit>();
-        cubit.bufferXP(allCompleteBonusXp, source: 'all_complete_bonus');
-        cubit.flushXP();
-      }
-
-      _bonusClaimedToday = true;
-      AppLogger.info(
-        'All-challenges bonus auto-claimed: +$allCompleteBonusCoins coins '
-        '(bonusId=$bonusId)',
-      );
     } catch (e) {
-      AppLogger.error('Failed to auto-claim all-complete bonus', e);
+      AppLogger.error('Daily challenge settlement refresh failed', e);
+    }
+  }
+
+  /// The all-complete bonus is a SERVER settlement now, not a local grant.
+  ///
+  /// This used to write a synthetic bonus row and credit coins and XP
+  /// directly, as soon as the set was complete and one card had been
+  /// collected. The old server handler paid it only once every card had been
+  /// collected — so whether a player got it, and when, depended on which app
+  /// version they were running and the order they tapped things in. Two
+  /// devices could also each grant it.
+  ///
+  /// One rule lives on the server now: it settles once all three are
+  /// COMPLETE, regardless of collection order, keyed on the day so it can
+  /// only exist once. Nothing here credits it.
+  Future<void> _refreshBonusStateFromLedger() async {
+    try {
+      final settled = await _storageService.db.settledDailyChallengeKeys();
+      _bonusClaimedToday = settled.contains(_todayBonusSettlementKey());
+    } catch (e) {
+      AppLogger.error('Failed to read daily settlement ledger', e);
     }
   }
 
@@ -438,24 +462,28 @@ class DailyChallengeService extends ChangeNotifier {
     final challenge = _challenges[index];
     if (!challenge.canClaim) return false;
 
+    // Records a durable INTENT and pays nothing.
+    //
+    // This used to flip a local flag and then credit coins and XP directly,
+    // which meant the device decided it had earned something. Two devices
+    // offline could each see the same challenge legitimately unclaimed and
+    // each pay themselves, and a crash between the flag and the credit lost
+    // the reward for good on that install.
+    //
+    // The intent is durable (Drift row + sync outbox), so it survives an
+    // app-kill and reaches the server on the next drain. The server settles it
+    // once per ACCOUNT, and DailyChallengeSettlementServiceClient applies that
+    // settlement here exactly once. Until then the card reads as pending —
+    // saved, not paid — which is the truth.
     final coins = await _settleClaim(challenge);
     if (coins == null) return false;
 
     _challenges[index] = challenge.copyWith(claimedReward: true);
 
-    if (coins > 0 && GetIt.I.isRegistered<CoinsCubit>()) {
-      await GetIt.I<CoinsCubit>().earnCoins(
-        CoinEarningSource.dailyChallenge,
-        customAmount: coins,
-        itemName: challenge.title,
-      );
-    }
-
-    _grantBattlePassXp(['daily_challenge']);
-
-    // If this claim made the user all-complete (or they already were
-    // and this is the first claim since), credit the bonus too.
-    await _tryAutoClaimAllCompleteBonus();
+    // Nudge the settlement path so a player who is online sees the reward land
+    // moments later rather than on the next app start. Offline this fails
+    // harmlessly and the intent waits.
+    unawaited(refreshSettlements());
 
     notifyListeners();
     return true;
@@ -479,20 +507,11 @@ class DailyChallengeService extends ChangeNotifier {
       settledCount++;
     }
 
-    if (totalClaimed > 0 && GetIt.I.isRegistered<CoinsCubit>()) {
-      await GetIt.I<CoinsCubit>().earnCoins(
-        CoinEarningSource.dailyChallenge,
-        customAmount: totalClaimed,
-        itemName: 'Daily challenges',
-      );
+    // Same as claimReward: intents only. The coins arrive when the server's
+    // settlements do.
+    if (settledCount > 0) {
+      unawaited(refreshSettlements());
     }
-
-    _grantBattlePassXp(
-      List<String>.filled(settledCount, 'daily_challenge'),
-    );
-
-    // Auto-claim the all-complete bonus if every challenge is done.
-    await _tryAutoClaimAllCompleteBonus();
 
     notifyListeners();
     return totalClaimed;
@@ -543,18 +562,10 @@ class DailyChallengeService extends ChangeNotifier {
     }
   }
 
-  /// Buffer + flush battle-pass XP for one or more claim sources.
-  /// Fire-and-forget: failure here must not roll back the user-visible claim.
-  void _grantBattlePassXp(List<String> sources) {
-    if (sources.isEmpty) return;
-    if (!GetIt.I.isRegistered<BattlePassCubit>()) return;
-    final cubit = GetIt.I<BattlePassCubit>();
-    for (final source in sources) {
-      final xp = BattlePassXpSource.getXpForAction(source);
-      if (xp > 0) cubit.bufferXP(xp, source: source);
-    }
-    cubit.flushXP();
-  }
+  // _grantBattlePassXp is gone. Per-challenge XP was granted here the moment
+  // a card was collected, alongside the coins; both are settlement effects
+  // now and are applied together, in one transaction, from what the server
+  // says is owed.
 
   /// Legacy entry point. In the offline-first build "sync" = re-fetch
   /// from the backend, so this is a thin alias for [refreshChallenges].

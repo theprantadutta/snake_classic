@@ -384,6 +384,61 @@ class DailyChallenges extends Table {
 /// settlement — so acknowledgement alone cannot make the payout exactly-once.
 /// This table is the client half of that guarantee: applied first, locally,
 /// then acknowledged remotely.
+/// Daily-challenge rewards this device has durably applied.
+///
+/// Same job as [AppliedMultiplayerSettlements] and the same reasoning: the
+/// server decides ONCE that a reward is owed, and this table is how one device
+/// proves to itself that it has already banked it. Without it, a crash between
+/// crediting coins and remembering that we did would either lose the reward or
+/// pay it twice on the next fetch.
+///
+/// Rewards used to be credited straight from a local claim — a Drift flag,
+/// then a separate CoinsCubit call — so two devices offline could each see the
+/// same challenge legitimately unclaimed and each pay themselves.
+class AppliedDailyChallengeSettlements extends Table {
+  /// Server settlement id. Primary key, so re-applying is impossible rather
+  /// than merely unlikely.
+  TextColumn get settlementId => text()();
+
+  /// The server's uniqueness key: a catalog challenge id, or `bonus:<date>`.
+  ///
+  /// Stored as well as the id because the CLIENT needs to answer a different
+  /// question from the server's: "has this challenge's reward landed here
+  /// yet?" — which is what separates a claim that has settled from one that is
+  /// still pending, and what stops a locally-claimed row from ever being paid
+  /// a second time.
+  TextColumn get settlementKey => text()();
+
+  IntColumn get coinsApplied => integer().withDefault(const Constant(0))();
+  IntColumn get xpApplied => integer().withDefault(const Constant(0))();
+
+  /// Where this row came from: `settlement` for a reward this device actually
+  /// applied, `legacy_local_claim` for one seeded by the v20 migration.
+  ///
+  /// The distinction is load-bearing. A seeded row means "this device claimed
+  /// it under the old local-credit flow, so do not pay the original again" —
+  /// NOT "this device paid it". The old flow committed the claim flag and
+  /// credited coins in two separate steps, and a crash in between left a
+  /// claim with no payment. Flattening the two into one state would make that
+  /// category invisible on every device that has it.
+  ///
+  /// A compensation settlement carries its own distinct key, so it is not
+  /// blocked by either kind of row.
+  TextColumn get origin =>
+      text().withDefault(const Constant('settlement'))();
+
+  /// Null until the whole application has committed. A row with a null
+  /// completedAt is a settlement that started and did not finish, which on the
+  /// next run must be retried, not skipped.
+  DateTimeColumn get completedAt => dateTime().nullable()();
+
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {settlementId};
+}
+
 class AppliedMultiplayerSettlements extends Table {
   /// The server-side settlement id. Primary key — re-applying is impossible
   /// rather than merely unlikely.
@@ -805,6 +860,7 @@ class PlayerProgressTable extends Table {
     BattlePasses,
     DailyChallenges,
     AppliedMultiplayerSettlements,
+    AppliedDailyChallengeSettlements,
     WeeklyQuests,
     DailyBonusState,
     PowerUpInventoryState,
@@ -845,7 +901,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1063,6 +1119,30 @@ class AppDatabase extends _$AppDatabase {
           'UPDATE applied_multiplayer_settlements '
           'SET stats_applied = 1, coins_applied = 1, xp_applied = 1, '
           '    completed_at = applied_at',
+        );
+      }
+      if (from < 20) {
+        // v20: daily-challenge rewards stop being credited locally and start
+        // being applied from server settlements, exactly once.
+        await m.createTable(appliedDailyChallengeSettlements);
+
+        // Seed the ledger with everything this device has ALREADY paid
+        // itself for, so a settlement the server offers for one of them is
+        // skipped rather than paid a second time.
+        //
+        // The backend backfill already marks historical claims acknowledged
+        // so they are never offered, which makes this belt as well as braces
+        // — but the two deploys are not simultaneous, and a device that
+        // upgrades between them would otherwise be handed a settlement for a
+        // reward it spent last week. There is no server settlement id for
+        // these, so they are recorded under a synthetic "local:" id.
+        await customStatement(
+          "INSERT OR IGNORE INTO applied_daily_challenge_settlements "
+          "(settlement_id, settlement_key, coins_applied, xp_applied, "
+          " origin, completed_at, created_at) "
+          "SELECT 'local:' || challenge_id, challenge_id, reward_coins, 0, "
+          "       'legacy_local_claim', strftime('%s','now'), strftime('%s','now') "
+          "FROM daily_challenges WHERE reward_claimed = 1",
         );
       }
     },

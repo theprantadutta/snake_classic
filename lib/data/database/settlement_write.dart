@@ -43,6 +43,21 @@ class SettlementWriteResult {
   int get totalCoins => coinsCredited + levelUpCoins;
 }
 
+/// What one daily-challenge settlement changed.
+class DailyChallengeWriteResult {
+  final bool applied;
+  final int coinsCredited;
+  final int xpCredited;
+
+  const DailyChallengeWriteResult({
+    required this.applied,
+    this.coinsCredited = 0,
+    this.xpCredited = 0,
+  });
+
+  static const alreadyApplied = DailyChallengeWriteResult(applied: false);
+}
+
 /// The whole durable effect of applying one multiplayer settlement, as a
 /// single atomic database operation.
 ///
@@ -160,6 +175,108 @@ extension SettlementWrite on AppDatabase {
         levelUpCoins: levelUpCoins,
       );
     });
+  }
+
+  /// Apply one daily-challenge settlement's coins and XP, exactly once.
+  ///
+  /// Same shape and the same reasoning as
+  /// [applyMultiplayerSettlementOnce]: one transaction covering the coins,
+  /// the battle-pass XP and the marker, at the DAO layer, so a failure
+  /// anywhere rolls back everything and a replay pays nothing. Nothing
+  /// in-memory is touched — the caller refreshes from Drift after the commit
+  /// returns, so a rollback cannot leave the UI ahead of the database.
+  ///
+  /// This replaces "set a local claimed flag, then call CoinsCubit". That was
+  /// two independent writes with a crash window between them, and it was the
+  /// device deciding it had earned something rather than the server.
+  Future<DailyChallengeWriteResult> applyDailyChallengeSettlementOnce({
+    required String settlementId,
+    required String settlementKey,
+    required int coinsAwarded,
+    required int xpAwarded,
+    required String description,
+  }) {
+    return transaction(() async {
+      // Read BOTH markers inside the transaction.
+      //
+      // By id, so a re-delivered settlement is a no-op. And by key, so a
+      // reward this device already paid itself under the old local-claim flow
+      // — recorded during the v20 migration — is never paid again, even if
+      // the server offers a settlement for it.
+      final byId = await (select(appliedDailyChallengeSettlements)
+            ..where((t) => t.settlementId.equals(settlementId)))
+          .getSingleOrNull();
+      if (byId?.completedAt != null) {
+        return DailyChallengeWriteResult.alreadyApplied;
+      }
+
+      final byKey = await (select(appliedDailyChallengeSettlements)
+            ..where((t) =>
+                t.settlementKey.equals(settlementKey) &
+                t.completedAt.isNotNull()))
+          .get();
+      if (byKey.isNotEmpty) {
+        // Record the id as seen so it stops being offered, but pay nothing.
+        await into(appliedDailyChallengeSettlements).insertOnConflictUpdate(
+          AppliedDailyChallengeSettlementsCompanion.insert(
+            settlementId: settlementId,
+            settlementKey: settlementKey,
+            coinsApplied: const Value(0),
+            xpApplied: const Value(0),
+            completedAt: Value(DateTime.now()),
+          ),
+        );
+        return DailyChallengeWriteResult.alreadyApplied;
+      }
+
+      if (coinsAwarded > 0) {
+        await storeDao.addCoins(
+          coinsAwarded,
+          CoinEarningSource.dailyChallenge.name,
+          description: description,
+        );
+      }
+
+      await _addBattlePassXp(xpAwarded);
+
+      await into(appliedDailyChallengeSettlements).insertOnConflictUpdate(
+        AppliedDailyChallengeSettlementsCompanion.insert(
+          settlementId: settlementId,
+          settlementKey: settlementKey,
+          coinsApplied: Value(coinsAwarded),
+          xpApplied: Value(xpAwarded),
+          completedAt: Value(DateTime.now()),
+        ),
+      );
+
+      return DailyChallengeWriteResult(
+        applied: true,
+        coinsCredited: coinsAwarded,
+        xpCredited: xpAwarded,
+      );
+    });
+  }
+
+  /// Whether this device has already banked the reward for [settlementKey] —
+  /// a catalog challenge id, or `bonus:<date>`.
+  ///
+  /// What separates a claim that has SETTLED from one still pending, which is
+  /// what the UI shows the player while they are offline.
+  Future<bool> isDailyChallengeSettled(String settlementKey) async {
+    final rows = await (select(appliedDailyChallengeSettlements)
+          ..where((t) =>
+              t.settlementKey.equals(settlementKey) &
+              t.completedAt.isNotNull()))
+        .get();
+    return rows.isNotEmpty;
+  }
+
+  /// Every settled key, for hydrating the UI in one read.
+  Future<Set<String>> settledDailyChallengeKeys() async {
+    final rows = await (select(appliedDailyChallengeSettlements)
+          ..where((t) => t.completedAt.isNotNull()))
+        .get();
+    return rows.map((r) => r.settlementKey).toSet();
   }
 
   /// Mark a settlement done without granting anything — a match the server
