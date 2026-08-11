@@ -5958,4 +5958,31 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mpLobbyWaitingOpponentReady => 'بانتظار جاهزية خصمك…';
+
+  @override
+  String get gameDirectionalPad => 'لوحة الاتجاهات';
+
+  @override
+  String get gameGoHome => 'الانتقال إلى الشاشة الرئيسية';
+
+  @override
+  String get gamePauseGame => 'إيقاف اللعبة مؤقتًا';
+
+  @override
+  String get gameResumeGame => 'متابعة اللعبة';
+
+  @override
+  String get gameLeaveMatch => 'مغادرة المباراة';
+
+  @override
+  String get gameSteerUp => 'الاتجاه لأعلى';
+
+  @override
+  String get gameSteerDown => 'الاتجاه لأسفل';
+
+  @override
+  String get gameSteerLeft => 'الاتجاه يسارًا';
+
+  @override
+  String get gameSteerRight => 'الاتجاه يمينًا';
 }

@@ -1776,5 +1776,14 @@
   "boardTallPlusDesc": "और बड़ा फ़ोन-आकार का मैदान",
   "mpErrReadyTimeout": "दोनों खिलाड़ी समय पर तैयार नहीं हुए। नया मैच खोजा जा रहा है…",
   "mpLobbyReadyDeadline": "तैयारी · {seconds}से",
-  "mpLobbyWaitingOpponentReady": "आपके प्रतिद्वंद्वी के तैयार होने की प्रतीक्षा…"
+  "mpLobbyWaitingOpponentReady": "आपके प्रतिद्वंद्वी के तैयार होने की प्रतीक्षा…",
+  "gameDirectionalPad": "दिशा पैड",
+  "gameGoHome": "होम स्क्रीन पर जाएँ",
+  "gamePauseGame": "गेम पॉज करें",
+  "gameResumeGame": "गेम फिर से शुरू करें",
+  "gameLeaveMatch": "मैच छोड़ें",
+  "gameSteerUp": "ऊपर मोड़ें",
+  "gameSteerDown": "नीचे मोड़ें",
+  "gameSteerLeft": "बाएं मोड़ें",
+  "gameSteerRight": "दाएं मोड़ें"
 }

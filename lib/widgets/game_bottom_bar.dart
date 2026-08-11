@@ -29,6 +29,7 @@ class GameBottomBar extends StatelessWidget {
     required this.isSmallScreen,
     required this.dPadEnabled,
     required this.onDirection,
+    this.dPadPosition = DPadPosition.bottomCenter,
   });
 
   final GameState gameState;
@@ -36,6 +37,14 @@ class GameBottomBar extends StatelessWidget {
   final bool isSmallScreen;
   final bool dPadEnabled;
   final void Function(Direction) onDirection;
+
+  /// Where the player asked for the d-pad, from settings.
+  ///
+  /// The preference was stored, synced and offered in Settings, and then
+  /// ignored by every gameplay screen — a visible promise that did nothing.
+  /// Centre stays the default, and existing saved values start working as-is;
+  /// nothing about them needed migrating.
+  final DPadPosition dPadPosition;
 
   // Convert game speed (ms per tick) to human-readable label
   String _getSpeedLabel(AppLocalizations l10n, int gameSpeed) {
@@ -94,50 +103,11 @@ class GameBottomBar extends StatelessWidget {
             // D-Pad on: center reserves the dpadSize square, side stats
             // shrink to fit the remaining columns. Compact cards aligned
             // to the outer edges so the d-pad has breathing room.
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: _buildControlBarStat(
-                      l10n.gbLength,
-                      '${gameState.snake.length}',
-                      Icons.straighten,
-                      theme,
-                      isSmallScreen,
-                      alignment: Alignment.centerLeft,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: SizedBox(
-                      width: dpadSize,
-                      height: dpadSize,
-                      child: Opacity(
-                        opacity: isInteractive ? 1.0 : 0.45,
-                        child: IgnorePointer(
-                          ignoring: !isInteractive,
-                          child: DPadControls(
-                            onDirection: onDirection,
-                            theme: theme,
-                            opacity: 0.8,
-                            size: dpadSize,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildControlBarStat(
-                      l10n.gbSpeed,
-                      _getSpeedLabel(l10n, gameState.gameSpeed),
-                      _getSpeedIcon(gameState.gameSpeed),
-                      theme,
-                      isSmallScreen,
-                      alignment: Alignment.centerRight,
-                    ),
-                  ),
-                ],
+            ? _buildDPadRow(
+                context,
+                l10n: l10n,
+                dpadSize: dpadSize,
+                isInteractive: isInteractive,
               )
             // D-Pad off: one slim inline strip instead of three stacked
             // cards.
@@ -204,6 +174,95 @@ class GameBottomBar extends StatelessWidget {
   }
 
   /// Builds a stat display for the control bar
+  /// Lay the lower bar out around the player's chosen d-pad position.
+  ///
+  /// Ordering inside the existing row, deliberately — not an overlay floated
+  /// over the board. The board's geometry must not change with this setting,
+  /// and a left-handed player should get a left-hand d-pad without giving up
+  /// any playfield.
+  ///
+  /// Centre keeps the original [stat] [d-pad] [stat] shape. Left and right
+  /// move the d-pad to that edge and put both stats together on the other
+  /// side, which keeps the thumb's half of the bar clear of anything it might
+  /// brush past on the way to a turn.
+  Widget _buildDPadRow(
+    BuildContext context, {
+    required AppLocalizations l10n,
+    required double dpadSize,
+    required bool isInteractive,
+  }) {
+    final dPad = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: SizedBox(
+        width: dpadSize,
+        height: dpadSize,
+        child: Opacity(
+          opacity: isInteractive ? 1.0 : 0.45,
+          child: IgnorePointer(
+            ignoring: !isInteractive,
+            child: DPadControls(
+              onDirection: onDirection,
+              theme: theme,
+              opacity: 0.8,
+              size: dpadSize,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Widget lengthStat(Alignment alignment) => _buildControlBarStat(
+          l10n.gbLength,
+          '${gameState.snake.length}',
+          Icons.straighten,
+          theme,
+          isSmallScreen,
+          alignment: alignment,
+        );
+
+    Widget speedStat(Alignment alignment) => _buildControlBarStat(
+          l10n.gbSpeed,
+          _getSpeedLabel(l10n, gameState.gameSpeed),
+          _getSpeedIcon(gameState.gameSpeed),
+          theme,
+          isSmallScreen,
+          alignment: alignment,
+        );
+
+    switch (dPadPosition) {
+      case DPadPosition.bottomLeft:
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            dPad,
+            Expanded(child: lengthStat(Alignment.centerRight)),
+            Expanded(child: speedStat(Alignment.centerRight)),
+          ],
+        );
+      case DPadPosition.bottomRight:
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: lengthStat(Alignment.centerLeft)),
+            Expanded(child: speedStat(Alignment.centerLeft)),
+            dPad,
+          ],
+        );
+      case DPadPosition.bottomCenter:
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: lengthStat(Alignment.centerLeft)),
+            dPad,
+            Expanded(child: speedStat(Alignment.centerRight)),
+          ],
+        );
+    }
+  }
+
   Widget _buildControlBarStat(
     String label,
     String value,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 
@@ -98,6 +99,11 @@ class _DPadControlsState extends State<DPadControls> {
       // Opaque so presses anywhere in the square are captured, including
       // the gaps that used to fall through to the bar behind.
       behavior: HitTestBehavior.opaque,
+      // Quadrant resolution is meaningless to a screen reader — where you
+      // touched inside the square is the whole input. The accessible
+      // control is the four labelled buttons underneath, each of which
+      // carries its own tap action.
+      excludeFromSemantics: true,
       onTapDown: (details) => _handlePointer(details.localPosition),
       onTapUp: (_) => _releasePointer(),
       onTapCancel: _releasePointer,
@@ -181,13 +187,36 @@ class _DPadControlsState extends State<DPadControls> {
     required IconData icon,
     required double buttonSize,
   }) {
-    return _DPadButton(
-      icon: icon,
-      size: buttonSize,
-      theme: widget.theme,
-      opacity: widget.opacity,
-      isPressed: _activeDirection == direction,
+    // The accessible half of the control. Sighted players drive the single
+    // quadrant gesture layer above; assistive tech gets four ordinary
+    // labelled buttons with real tap actions, which is the only way to
+    // steer without being able to aim at a quadrant.
+    return Semantics(
+      button: true,
+      label: _labelFor(context, direction),
+      onTap: () => widget.onDirection(direction),
+      child: _DPadButton(
+        icon: icon,
+        size: buttonSize,
+        theme: widget.theme,
+        opacity: widget.opacity,
+        isPressed: _activeDirection == direction,
+      ),
     );
+  }
+
+  static String _labelFor(BuildContext context, Direction direction) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (direction) {
+      case Direction.up:
+        return l10n.gameSteerUp;
+      case Direction.down:
+        return l10n.gameSteerDown;
+      case Direction.left:
+        return l10n.gameSteerLeft;
+      case Direction.right:
+        return l10n.gameSteerRight;
+    }
   }
 }
 

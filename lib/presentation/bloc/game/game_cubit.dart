@@ -35,6 +35,7 @@ import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
+import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -622,9 +623,19 @@ class GameCubit extends Cubit<GameCubitState> {
   }
 
   /// Change snake direction
-  void changeDirection(Direction newDirection) {
-    if (state.status != GamePlayStatus.playing) return;
-    if (state.gameState == null) return;
+  /// Steer, and say what became of the input.
+  ///
+  /// Returns [InputResult.ignored] when the game was not running to receive
+  /// it, [InputResult.rejected] when the two-slot queue refused it (a reversal
+  /// into your own neck), and [InputResult.accepted] otherwise. The screen
+  /// used to animate its indicator before knowing which, so a refused input
+  /// still looked partly successful.
+  ///
+  /// Haptics stay here. One owner, so the three entry points cannot each add
+  /// their own.
+  InputResult changeDirection(Direction newDirection) {
+    if (state.status != GamePlayStatus.playing) return InputResult.ignored;
+    if (state.gameState == null) return InputResult.ignored;
 
     final accepted = state.gameState!.snake.changeDirection(newDirection);
     if (accepted) {
@@ -659,6 +670,8 @@ class GameCubit extends Cubit<GameCubitState> {
         }
       });
     }
+
+    return accepted ? InputResult.accepted : InputResult.rejected;
   }
 
   void _startGameLoop() {

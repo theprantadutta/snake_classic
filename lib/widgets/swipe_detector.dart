@@ -101,6 +101,12 @@ class _SwipeDetectorState extends State<SwipeDetector> {
     return null;
   }
 
+  void _resetGesture() {
+    _cumulativeDelta = Offset.zero;
+    _hasTriggeredThisGesture = false;
+    _lastGestureDirection = null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -162,14 +168,25 @@ class _SwipeDetectorState extends State<SwipeDetector> {
         }
 
         // Reset for next gesture
-        _cumulativeDelta = Offset.zero;
-        _hasTriggeredThisGesture = false;
-        _lastGestureDirection = null;
+        _resetGesture();
       },
-      onTap: () {
-        HapticService().selectionClick();
-        widget.onTap?.call(); // Call external tap handler (e.g. pause)
-      },
+      // A cancelled drag (the arena handed the pointer elsewhere, or the
+      // pointer left the window) left the accumulator holding the last
+      // partial delta, so the NEXT drag started part-way to a threshold it
+      // had not earned.
+      onPanCancel: _resetGesture,
+      // Only claim taps when somebody is listening for them.
+      //
+      // This used to buzz on EVERY tap and then call an onTap that is null on
+      // both gameplay screens — so tapping the board, or anything else this
+      // wrapped, produced feedback for an input with no meaning. A haptic that
+      // corresponds to nothing teaches the player their taps do something.
+      onTap: widget.onTap == null
+          ? null
+          : () {
+              HapticService().selectionClick();
+              widget.onTap!.call();
+            },
       child: widget.child,
     );
   }

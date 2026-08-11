@@ -10773,6 +10773,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for your opponent to get ready…'**
   String get mpLobbyWaitingOpponentReady;
+
+  /// No description provided for @gameDirectionalPad.
+  ///
+  /// In en, this message translates to:
+  /// **'Directional pad'**
+  String get gameDirectionalPad;
+
+  /// No description provided for @gameGoHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to home screen'**
+  String get gameGoHome;
+
+  /// No description provided for @gamePauseGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause game'**
+  String get gamePauseGame;
+
+  /// No description provided for @gameResumeGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume game'**
+  String get gameResumeGame;
+
+  /// No description provided for @gameLeaveMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave match'**
+  String get gameLeaveMatch;
+
+  /// No description provided for @gameSteerUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Steer up'**
+  String get gameSteerUp;
+
+  /// No description provided for @gameSteerDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Steer down'**
+  String get gameSteerDown;
+
+  /// No description provided for @gameSteerLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Steer left'**
+  String get gameSteerLeft;
+
+  /// No description provided for @gameSteerRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Steer right'**
+  String get gameSteerRight;
 }
 
 class _AppLocalizationsDelegate

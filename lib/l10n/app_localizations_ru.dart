@@ -6004,4 +6004,31 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mpLobbyWaitingOpponentReady => 'Ждём готовности соперника…';
+
+  @override
+  String get gameDirectionalPad => 'Крестовина';
+
+  @override
+  String get gameGoHome => 'На главный экран';
+
+  @override
+  String get gamePauseGame => 'Пауза';
+
+  @override
+  String get gameResumeGame => 'Продолжить';
+
+  @override
+  String get gameLeaveMatch => 'Покинуть матч';
+
+  @override
+  String get gameSteerUp => 'Повернуть вверх';
+
+  @override
+  String get gameSteerDown => 'Повернуть вниз';
+
+  @override
+  String get gameSteerLeft => 'Повернуть влево';
+
+  @override
+  String get gameSteerRight => 'Повернуть вправо';
 }

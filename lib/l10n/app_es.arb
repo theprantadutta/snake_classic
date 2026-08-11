@@ -1776,5 +1776,14 @@
   "boardTallPlusDesc": "Una arena más grande con forma de móvil",
   "mpErrReadyTimeout": "Los dos jugadores no estuvieron listos a tiempo. Buscando una nueva partida…",
   "mpLobbyReadyDeadline": "Confirmación · {seconds}s",
-  "mpLobbyWaitingOpponentReady": "Esperando a que tu rival esté listo…"
+  "mpLobbyWaitingOpponentReady": "Esperando a que tu rival esté listo…",
+  "gameDirectionalPad": "Pad direccional",
+  "gameGoHome": "Ir a la pantalla de inicio",
+  "gamePauseGame": "Pausar juego",
+  "gameResumeGame": "Reanudar juego",
+  "gameLeaveMatch": "Abandonar partida",
+  "gameSteerUp": "Girar hacia arriba",
+  "gameSteerDown": "Girar hacia abajo",
+  "gameSteerLeft": "Girar a la izquierda",
+  "gameSteerRight": "Girar a la derecha"
 }

@@ -12,6 +12,7 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/multiplayer/queue_resolution.dart';
 import 'package:snake_classic/services/multiplayer_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
+import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -436,28 +437,58 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Send a direction input to the server engine. Fire-and-forget — the
   /// input takes effect on the next tick snapshot; [MultiplayerState.
   /// intentDirection] echoes it locally for immediate input feedback.
-  void changeDirection(Direction direction) {
-    final snapshot = state.snapshot;
-    if (state.status != MultiplayerStatus.playing || snapshot == null) return;
+  /// Whether the local player is in a position to steer at all.
+  ///
+  /// One named predicate rather than a chain of guards buried in
+  /// changeDirection, because the D-pad needs the same answer to decide
+  /// whether to render itself as usable. It looked interactive to a dead or
+  /// reconnecting player while every press was silently refused — the control
+  /// said "press me" and meant nothing by it.
+  bool get canSteer {
+    if (state.status != MultiplayerStatus.playing) return false;
+    if (state.snapshot == null) return false;
+    if (state.errorCode != null) return false;
 
     final currentUserId = _userService.currentUser?.uid;
-    if (currentUserId == null) return;
+    if (currentUserId == null) return false;
 
-    final me = snapshot.playerByUserId(currentUserId);
-    if (me == null || !me.alive) return;
+    final me = state.snapshot!.playerByUserId(currentUserId);
+    return me != null && me.alive;
+  }
+
+  /// Steer, and say what became of the input.
+  ///
+  /// Returns [InputResult.ignored] when the player was never in a position to
+  /// steer, [InputResult.rejected] when they were and the input was refused on
+  /// its merits, and [InputResult.accepted] when it was sent.
+  ///
+  /// This owns the haptics. The screen used to add a selectionClick of its own
+  /// on top of the lightImpact here, so an accepted turn buzzed twice — and it
+  /// did so unconditionally, so a refused or ignored one buzzed once and
+  /// animated a success cue.
+  ///
+  /// Accepted means accepted LOCALLY. The input passed the client's rules and
+  /// went to the server; waiting for acknowledgement before acknowledging the
+  /// player would make the controls feel broken on any real connection.
+  InputResult changeDirection(Direction direction) {
+    if (!canSteer) return InputResult.ignored;
+
+    final snapshot = state.snapshot!;
+    final me = snapshot.playerByUserId(_userService.currentUser!.uid)!;
 
     // Same-direction dedupe: repeated identical swipes and keyboard
     // auto-repeat would each cost a hub message for a no-op.
-    if (direction == state.intentDirection) return;
+    if (direction == state.intentDirection) return InputResult.rejected;
 
     // Skip obvious reversals against the last committed/intended
     // direction — the server would drop them anyway.
     final reference = state.intentDirection ?? me.direction;
-    if (direction == reference.opposite) return;
+    if (direction == reference.opposite) return InputResult.rejected;
 
     _hapticService.lightImpact();
     unawaited(_multiplayerService.sendInput(direction));
     emit(state.copyWith(intentDirection: direction));
+    return InputResult.accepted;
   }
 
   /// Quick match using matchmaking system
