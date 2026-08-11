@@ -280,6 +280,74 @@ void main() {
     });
   });
 
+  group('the historical known-loss category stays visible', () {
+    // The seed must not flatten "claimed under the old flow" into "paid".
+    // The old flow committed the claim flag and credited coins in two steps,
+    // and a crash in between left a claim with no payment. Marking those rows
+    // as ordinary settlements would make that category invisible on every
+    // device that has it.
+
+    Future<void> seedLegacyClaim(String key) =>
+        db.into(db.appliedDailyChallengeSettlements).insert(
+              AppliedDailyChallengeSettlementsCompanion.insert(
+                settlementId: 'local:$key',
+                settlementKey: key,
+                coinsApplied: const Value(25),
+                origin: const Value('legacy_local_claim'),
+                completedAt: Value(DateTime.now()),
+              ),
+            );
+
+    test('a seeded row is marked as a legacy claim, not a settlement', () async {
+      await seedLegacyClaim('challenge-a');
+
+      final row = await (db.select(db.appliedDailyChallengeSettlements)
+            ..where((t) => t.settlementKey.equals('challenge-a')))
+          .getSingle();
+
+      expect(row.origin, 'legacy_local_claim');
+    });
+
+    test('a row this device really applied is marked as a settlement', () async {
+      await apply(id: 's1', key: 'challenge-b');
+
+      final row = await (db.select(db.appliedDailyChallengeSettlements)
+            ..where((t) => t.settlementId.equals('s1')))
+          .getSingle();
+
+      expect(row.origin, 'settlement');
+    });
+
+    test('a COMPENSATION settlement still applies over a legacy claim', () async {
+      // The repair path. The challenge key is deliberately blocked so the
+      // original reward can never be paid twice; compensation carries its own
+      // key and must pay straight through that block.
+      await seedLegacyClaim('challenge-a');
+
+      final blocked = await apply(id: 'server-1', key: 'challenge-a');
+      expect(blocked.applied, isFalse, reason: 'the original stays blocked');
+      expect(await balance(), 0);
+
+      final compensation = await apply(
+        id: 'comp-1',
+        key: 'compensation:challenge-a',
+        coins: 25,
+        xp: 10,
+      );
+
+      expect(compensation.applied, isTrue);
+      expect(await balance(), 25);
+    });
+
+    test('a compensation is itself paid only once', () async {
+      await apply(id: 'comp-1', key: 'compensation:challenge-a', coins: 25);
+      await apply(id: 'comp-2', key: 'compensation:challenge-a', coins: 25);
+
+      expect(await balance(), 25);
+      expect(await coinTransactionCount(), 1);
+    });
+  });
+
   group('what the player sees while offline', () {
     test('an unsettled claim is not reported as settled', () async {
       // The claim intent is durable, but no money has moved. The card must

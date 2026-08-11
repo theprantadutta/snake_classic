@@ -412,6 +412,21 @@ class AppliedDailyChallengeSettlements extends Table {
   IntColumn get coinsApplied => integer().withDefault(const Constant(0))();
   IntColumn get xpApplied => integer().withDefault(const Constant(0))();
 
+  /// Where this row came from: `settlement` for a reward this device actually
+  /// applied, `legacy_local_claim` for one seeded by the v20 migration.
+  ///
+  /// The distinction is load-bearing. A seeded row means "this device claimed
+  /// it under the old local-credit flow, so do not pay the original again" —
+  /// NOT "this device paid it". The old flow committed the claim flag and
+  /// credited coins in two separate steps, and a crash in between left a
+  /// claim with no payment. Flattening the two into one state would make that
+  /// category invisible on every device that has it.
+  ///
+  /// A compensation settlement carries its own distinct key, so it is not
+  /// blocked by either kind of row.
+  TextColumn get origin =>
+      text().withDefault(const Constant('settlement'))();
+
   /// Null until the whole application has committed. A row with a null
   /// completedAt is a settlement that started and did not finish, which on the
   /// next run must be retried, not skipped.
@@ -1124,9 +1139,9 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "INSERT OR IGNORE INTO applied_daily_challenge_settlements "
           "(settlement_id, settlement_key, coins_applied, xp_applied, "
-          " completed_at, created_at) "
+          " origin, completed_at, created_at) "
           "SELECT 'local:' || challenge_id, challenge_id, reward_coins, 0, "
-          "       strftime('%s','now'), strftime('%s','now') "
+          "       'legacy_local_claim', strftime('%s','now'), strftime('%s','now') "
           "FROM daily_challenges WHERE reward_claimed = 1",
         );
       }
