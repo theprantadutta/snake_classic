@@ -20,6 +20,7 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/game_end_pipeline.dart';
+import 'package:snake_classic/services/multiplayer/multiplayer_settlement_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -142,7 +143,7 @@ Future<void> configureDependencies() async {
       audioService: getIt<AudioService>(),
       hapticService: getIt<HapticService>(),
       analytics: getIt<AnalyticsFacade>(),
-      endPipeline: getIt<GameEndPipeline>(),
+      settlementService: getIt<MultiplayerSettlementService>(),
     ),
   );
 
@@ -170,6 +171,23 @@ Future<void> configureDependencies() async {
       appDataCache: getIt<AppDataCache>(),
       database: getIt<AppDatabase>(),
     ),
+  );
+
+  // Applies the match rewards the server says a player is owed. Singleton so
+  // its in-flight guard actually guards — a match ending while the launch
+  // pass is still running must not read the applied-ledger twice.
+  getIt.registerLazySingleton<MultiplayerSettlementService>(
+    () {
+      final service = MultiplayerSettlementService(
+        database: getIt<AppDatabase>(),
+      );
+      // The third durability leg. The launch pass covers an app restart and
+      // the backoff covers a transient failure; this covers a device that was
+      // simply offline when the match ended and is not going to be restarted
+      // any time soon.
+      service.startWatching(ConnectivityService());
+      return service;
+    },
   );
 
   getIt.registerFactory<GameCubit>(

@@ -274,6 +274,12 @@ abstract class AppLocalizations {
   /// **'Better luck next time!'**
   String get mpBetterLuck;
 
+  /// No description provided for @mpRewardProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards processing…'**
+  String get mpRewardProcessing;
+
   /// Coin reward chip on the victory dialog.
   ///
   /// In en, this message translates to:
@@ -1432,17 +1438,17 @@ abstract class AppLocalizations {
   /// **'CANCEL'**
   String get mpLobbyCancelUpper;
 
-  /// No description provided for @mpLobbyNoPlayersFound.
+  /// No description provided for @mpLobbyUnreachableTitle.
   ///
   /// In en, this message translates to:
-  /// **'NO PLAYERS FOUND'**
-  String get mpLobbyNoPlayersFound;
+  /// **'CAN\'T REACH MATCHMAKING'**
+  String get mpLobbyUnreachableTitle;
 
-  /// No description provided for @mpLobbyNoPlayersBody.
+  /// Shown when quick match cannot reach the backend at all. NOT shown merely because the queue is empty — the server always resolves a queued player, so an empty queue is not a failure.
   ///
   /// In en, this message translates to:
-  /// **'Sorry, we couldn\'t find any opponents.\nTry again or create your own room!'**
-  String get mpLobbyNoPlayersBody;
+  /// **'We couldn\'t reach the server.\nCheck your connection and try again.'**
+  String get mpLobbyUnreachableBody;
 
   /// No description provided for @mpLobbyGoBack.
   ///

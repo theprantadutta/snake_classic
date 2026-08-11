@@ -272,8 +272,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     body: AppBackground(
                       theme: theme,
                       child: SafeArea(
-                        child: multiplayerState.matchmakingTimedOut
-                            ? _buildMatchmakingTimeoutUI(
+                        child: multiplayerState.matchmakingUnreachable
+                            ? _buildMatchmakingUnreachableUI(
                                 context,
                                 multiplayerState,
                                 theme,
@@ -763,8 +763,16 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   ) {
     final l10n = AppLocalizations.of(context)!;
     final elapsed = multiplayerState.matchmakingElapsedSeconds;
-    final remaining = 60 - elapsed;
-    final progress = elapsed / 60.0;
+    // The number COUNTS UP, and the ring fills toward the deadline the server
+    // promised rather than a number the client invented.
+    //
+    // It used to count down, which meant that whenever anything ran past the
+    // deadline the screen sat on a motionless "0 SEC" inside an empty ring —
+    // indistinguishable from a hung app, and reported as one. A rising count
+    // cannot freeze, and it never promises an ending the client is not the
+    // one to decide.
+    final deadline = multiplayerState.matchmakingDeadlineSeconds;
+    final progress = deadline <= 0 ? 1.0 : (elapsed / deadline).clamp(0.0, 1.0);
     // Countdown runs down to zero in the theme accent throughout. It used to
     // switch green → orange under ten seconds, which reads as "something is
     // wrong" when in fact the search is simply nearly over.
@@ -799,7 +807,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                             width: 108,
                             height: 108,
                             child: CircularProgressIndicator(
-                              value: 1 - progress,
+                              value: progress,
                               strokeWidth: 3,
                               backgroundColor: theme.accentColor.withValues(
                                 alpha: 0.15,
@@ -813,7 +821,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                '$remaining',
+                                '$elapsed',
                                 style: const TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
@@ -902,7 +910,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  Widget _buildMatchmakingTimeoutUI(
+  Widget _buildMatchmakingUnreachableUI(
     BuildContext context,
     MultiplayerState multiplayerState,
     GameTheme theme,
@@ -945,7 +953,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       const SizedBox(height: 20),
 
                       Text(
-                        l10n.mpLobbyNoPlayersFound,
+                        l10n.mpLobbyUnreachableTitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
@@ -958,7 +966,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       const SizedBox(height: 8),
 
                       Text(
-                        l10n.mpLobbyNoPlayersBody,
+                        l10n.mpLobbyUnreachableBody,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13.5,

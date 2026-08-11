@@ -130,6 +130,10 @@ dev_dependencies:
 
   flutter_launcher_icons: "^0.14.4"
 
+  # Virtual clock for the settlement retry/backoff tests — a real one would
+  # make them take minutes.
+  fake_async: ^1.3.1
+
   # Drift code generation
   drift_dev: ^2.18.0
   build_runner: ^2.4.9

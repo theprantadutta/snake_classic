@@ -297,6 +297,15 @@ class CoinsCubit extends Cubit<CoinsState> {
     );
   }
 
+  /// Re-read everything from Drift.
+  ///
+  /// Used after the settlement transaction commits: that path writes the
+  /// database directly (see SettlementWrite) and deliberately touches no
+  /// in-memory state, so the refresh has to be explicit. The watches would get
+  /// there eventually; this makes "the balance is correct by the time apply()
+  /// returns" true instead of eventually-true.
+  Future<void> reloadFromDrift() => _loadFromDrift();
+
   /// Hydrate state.balance + state.transactions from Drift.
   Future<void> _loadFromDrift() async {
     final storageService = StorageService();

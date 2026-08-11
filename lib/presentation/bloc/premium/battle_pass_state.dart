@@ -98,10 +98,7 @@ class BattlePassState extends Equatable {
   int get maxTier => season?.levels.length ?? 100;
 
   /// XP required per tier (can be customized)
-  int xpRequiredForTier(int tier) {
-    // Base: 100 XP, increasing by 50 per tier
-    return 100 + (tier * 50);
-  }
+  int xpRequiredForTier(int tier) => BattlePassTiers.xpRequiredForTier(tier);
 
   @override
   List<Object?> get props => [
@@ -117,4 +114,21 @@ class BattlePassState extends Equatable {
     seasonName,
     season,
   ];
+}
+
+
+/// Battle-pass tier maths, free of any state object.
+///
+/// The settlement transaction rolls tiers itself — it writes the row directly
+/// rather than deriving from cubit memory — so this rule needs a home that
+/// both callers can reach.
+class BattlePassTiers {
+  const BattlePassTiers._();
+
+  /// Fallback ceiling when no season is loaded; mirrors
+  /// [BattlePassState.maxTier].
+  static const int max = 100;
+
+  /// Base: 100 XP, increasing by 50 per tier.
+  static int xpRequiredForTier(int tier) => 100 + (tier * 50);
 }

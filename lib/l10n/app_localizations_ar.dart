@@ -90,6 +90,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mpBetterLuck => 'حظًا أوفر في المرة القادمة!';
 
   @override
+  String get mpRewardProcessing => 'جارٍ معالجة المكافآت…';
+
+  @override
   String mpCoinReward(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -745,11 +748,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mpLobbyCancelUpper => 'إلغاء';
 
   @override
-  String get mpLobbyNoPlayersFound => 'لم يُعثر على لاعبين';
+  String get mpLobbyUnreachableTitle => 'تعذّر الوصول إلى المطابقة';
 
   @override
-  String get mpLobbyNoPlayersBody =>
-      'عذرًا، لم نجد أي خصوم.\nحاول مجددًا أو أنشئ غرفتك الخاصة!';
+  String get mpLobbyUnreachableBody =>
+      'لم نتمكن من الوصول إلى الخادم.\nتحقق من اتصالك وحاول مرة أخرى.';
 
   @override
   String get mpLobbyGoBack => 'رجوع';

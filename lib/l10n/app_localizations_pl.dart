@@ -94,6 +94,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get mpBetterLuck => 'Powodzenia następnym razem!';
 
   @override
+  String get mpRewardProcessing => 'Przetwarzanie nagród…';
+
+  @override
   String mpCoinReward(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -755,11 +758,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get mpLobbyCancelUpper => 'ANULUJ';
 
   @override
-  String get mpLobbyNoPlayersFound => 'NIE ZNALEZIONO GRACZY';
+  String get mpLobbyUnreachableTitle => 'BRAK POŁĄCZENIA Z MATCHMAKINGIEM';
 
   @override
-  String get mpLobbyNoPlayersBody =>
-      'Przykro nam, nie znaleźliśmy przeciwników.\nSpróbuj ponownie lub stwórz własny pokój!';
+  String get mpLobbyUnreachableBody =>
+      'Nie udało się połączyć z serwerem.\nSprawdź połączenie i spróbuj ponownie.';
 
   @override
   String get mpLobbyGoBack => 'WRÓĆ';

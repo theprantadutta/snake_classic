@@ -767,6 +767,24 @@ class AdService {
   // displayed, so a spare that is never shown is a wasted request — harmless
   // in small numbers, but a deep pool would drag the match rate down for no
   // benefit, since only one banner is on screen at a time anyway.
+  //
+  // The subtle part is what happens AFTER the hand-off. A BannerAd's listener
+  // is final — fixed at construction — so the listener built here keeps firing
+  // for the whole life of the ad, including once a widget owns it. AdMob
+  // auto-refreshes a displayed banner roughly once a minute and calls
+  // onAdLoaded again each time. Treating that as "a warm banner is ready"
+  // re-armed the slot with an ad that was on screen, and the next placement to
+  // mount got the same BannerAd — which Flutter rejects with "This AdWidget is
+  // already in the Widget tree". Ownership is therefore tracked, and a refresh
+  // for an ad we no longer own is forwarded to its owner instead.
+
+  /// Refresh hooks for banners a widget has taken ownership of, keyed by the
+  /// ad itself. Non-null means "handed out — not ours to give away again".
+  ///
+  /// An [Expando] rather than a Set/Map on purpose: it holds the ad weakly, so
+  /// a placement torn down without releasing cannot pin a dead banner in
+  /// memory for the rest of the session.
+  final Expando<void Function()> _bannerOwners = Expando<void Function()>();
 
   /// Register the anchored adaptive size once the banner widget has resolved
   /// it for this device. The app is portrait-locked, so it is stable for the
@@ -782,10 +800,16 @@ class AdService {
   }
 
   /// Hand the warm banner to a placement mounting right now, transferring
-  /// ownership (the caller disposes it), and start loading a replacement.
-  /// Returns null when none is ready or the spare has gone stale — the widget
-  /// then loads its own, exactly as before.
-  BannerAd? takeWarmBanner(AdSize size) {
+  /// ownership (the caller disposes it, via [releaseBanner]), and start loading
+  /// a replacement. Returns null when none is ready or the spare has gone stale
+  /// — the widget then loads its own, exactly as before.
+  ///
+  /// [onRefreshed] fires when AdMob auto-refreshes the ad while the caller
+  /// still owns it. The caller needs this because the ad carries THIS
+  /// listener, not the caller's: without it a warm-served banner would silently
+  /// stop counting impressions on refresh, while a self-loaded one kept
+  /// counting them.
+  BannerAd? takeWarmBanner(AdSize size, {required void Function() onRefreshed}) {
     final ad = _warmBanner;
     if (ad == null || _bannerSize != size) {
       _loadWarmBanner();
@@ -798,10 +822,16 @@ class AdService {
       _loadWarmBanner();
       return null;
     }
+    _bannerOwners[ad] = onRefreshed;
     _loadWarmBanner();
     AppLogger.info('Banner served from warm cache (no load wait)');
     return ad;
   }
+
+  /// Give up ownership of a banner taken from [takeWarmBanner], immediately
+  /// before disposing it. After this the ad is dead, so its refresh hook must
+  /// not be called again.
+  void releaseBanner(BannerAd ad) => _bannerOwners[ad] = null;
 
   void _loadWarmBanner() {
     if (!adsEnabled || !_hasInternet) return;
@@ -814,7 +844,32 @@ class AdService {
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          _warmBanner = ad as BannerAd;
+          final banner = ad as BannerAd;
+
+          // An auto-refresh of an ad a placement already owns. It is in the
+          // widget tree right now, so putting it back in the warm slot would
+          // hand the same BannerAd to a second AdWidget. Tell the owner it
+          // refreshed (that is their impression) and leave the slot alone —
+          // including _warmBannerLoading, which belongs to a different,
+          // genuinely in-flight request.
+          final owner = _bannerOwners[banner];
+          if (owner != null) {
+            owner();
+            return;
+          }
+
+          // A load that finished after setBannerSize moved on. Its size no
+          // longer matches the placements it would fill, and takeWarmBanner
+          // compares against _bannerSize, so it would be handed out at the
+          // wrong size rather than rejected.
+          if (size != _bannerSize) {
+            banner.dispose();
+            _warmBannerLoading = false;
+            _loadWarmBanner();
+            return;
+          }
+
+          _warmBanner = banner;
           _warmBannerLoadedAtMs = DateTime.now().millisecondsSinceEpoch;
           _warmBannerLoading = false;
           _clearRetry(_kLoadBanner);

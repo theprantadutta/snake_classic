@@ -133,7 +133,10 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     // Warm hand-off first: if the service already has a loaded banner at this
     // size, take ownership and show it now. This is the whole point of the
     // warm-up — no load wait at all on any screen after the first.
-    final warm = ads.takeWarmBanner(_adaptiveSize ?? AdSize.banner);
+    final warm = ads.takeWarmBanner(
+      _adaptiveSize ?? AdSize.banner,
+      onRefreshed: _onOwnedBannerRefreshed,
+    );
     if (warm != null) {
       _trackImpression();
       setState(() {
@@ -183,6 +186,18 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     ad.load();
   }
 
+  /// AdMob refreshed a banner we took from the warm slot.
+  ///
+  /// A warm-served ad carries [AdService]'s listener, not ours — the listener
+  /// is fixed when the BannerAd is constructed — so refreshes arrive through
+  /// this hook instead of our own `onAdLoaded`. Without it a warm-served
+  /// banner would stop counting impressions after its first render while a
+  /// self-loaded one kept counting them.
+  void _onOwnedBannerRefreshed() {
+    if (!mounted) return;
+    _trackImpression();
+  }
+
   /// An impression is the ad being DISPLAYED, which for a warm hand-off is
   /// here rather than at load time — the service loaded it long before, and
   /// possibly for a screen the user never reached.
@@ -207,7 +222,13 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     _ads?.adsEnabledListenable.removeListener(_onAdsEnabledChanged);
     _ads?.rearmListenable.removeListener(_onRearm);
     _retryTimer?.cancel();
-    _ad?.dispose();
+    final ad = _ad;
+    if (ad != null) {
+      // Hand ownership back BEFORE disposing, so a refresh callback can never
+      // reach a dead ad — and so the service knows this one is gone.
+      _ads?.releaseBanner(ad);
+      ad.dispose();
+    }
     super.dispose();
   }
 

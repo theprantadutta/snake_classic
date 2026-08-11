@@ -184,6 +184,17 @@ class ApiService {
     return null;
   }
 
+  /// Same contract as [_handleResponse] for endpoints that return a bare JSON
+  /// array. `_handleResponse` wraps those under a 'data' key, which every
+  /// caller then has to unwrap by hand.
+  List<dynamic>? _handleResponseList(http.Response response) {
+    final body = _handleResponse(response);
+    if (body == null) return null;
+    final data = body['data'];
+    if (data is List) return data;
+    return const <dynamic>[];
+  }
+
   // ==================== Authentication ====================
 
   Future<Map<String, dynamic>?> authenticateWithFirebase(
@@ -1108,6 +1119,73 @@ class ApiService {
     } catch (e) {
       AppLogger.error('Error GET /multiplayer/record', e);
       return null;
+    }
+  }
+
+  /// Match rewards the server says this player is owed and has not applied.
+  ///
+  /// The repair path for a result that never reached the client: rewards used
+  /// to be credited purely as a reaction to the GameEnded broadcast, so a
+  /// socket that died at the wrong instant lost them silently.
+  Future<List<Map<String, dynamic>>?> getPendingMultiplayerSettlements() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/multiplayer/settlements/pending'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      final body = _handleResponseList(response);
+      if (body == null) return null;
+      return body.whereType<Map<String, dynamic>>().toList();
+    } catch (e) {
+      AppLogger.error('Error GET /multiplayer/settlements/pending', e);
+      return null;
+    }
+  }
+
+  /// Where the caller's quick-match request stands, straight from the server.
+  ///
+  /// The client polls this while queued instead of running its own deadline.
+  /// MatchFound is a SignalR push from whichever backend process ran the
+  /// matchmaking pass, addressed to a specific connection; with no backplane
+  /// it is simply dropped when the socket lives in a different process. That
+  /// was observed: a match created 34 seconds after queueing while the app
+  /// searched on to its own timeout and gave up. Asking cannot miss.
+  ///
+  /// Returns null ONLY when the server could not be reached — which is the
+  /// one condition that should surface to the player as an error. An empty
+  /// queue is not an error and never returns null.
+  Future<Map<String, dynamic>?> getMatchmakingQueueStatus() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/multiplayer/queue/status'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /multiplayer/queue/status', e);
+      return null;
+    }
+  }
+
+  /// Confirm settlements have been applied locally. Idempotent server-side.
+  Future<bool> ackMultiplayerSettlements(List<String> settlementIds) async {
+    if (settlementIds.isEmpty) return true;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/multiplayer/settlements/ack'),
+            headers: _authHeaders,
+            body: jsonEncode({'settlement_ids': settlementIds}),
+          )
+          .timeout(_timeout);
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      AppLogger.error('Error POST /multiplayer/settlements/ack', e);
+      return false;
     }
   }
 

@@ -51,6 +51,7 @@
   "mpDeathHeadOn": "Head-on collision!",
   "mpDeathForfeit": "Disconnected too long — match forfeited.",
   "mpBetterLuck": "Better luck next time!",
+  "mpRewardProcessing": "Rewards processing…",
   "mpCoinReward": "{count, plural, one{+{count} coin} other{+{count} coins}}",
   "@mpCoinReward": {
     "description": "Coin reward chip on the victory dialog.",
@@ -346,8 +347,11 @@
   "mpLobbyModePlayers": "{mode} • {count, plural, one{{count} Player} other{{count} Players}}",
   "mpLobbyQueuePosition": "Queue Position: {position}",
   "mpLobbyCancelUpper": "CANCEL",
-  "mpLobbyNoPlayersFound": "NO PLAYERS FOUND",
-  "mpLobbyNoPlayersBody": "Sorry, we couldn't find any opponents.\nTry again or create your own room!",
+  "mpLobbyUnreachableTitle": "CAN'T REACH MATCHMAKING",
+  "mpLobbyUnreachableBody": "We couldn't reach the server.\nCheck your connection and try again.",
+  "@mpLobbyUnreachableBody": {
+    "description": "Shown when quick match cannot reach the backend at all. NOT shown merely because the queue is empty — the server always resolves a queued player, so an empty queue is not a failure."
+  },
   "mpLobbyGoBack": "GO BACK",
   "mpLobbyTryAgain": "TRY AGAIN",
   "mpLobbyWinsChip": "{count} W",

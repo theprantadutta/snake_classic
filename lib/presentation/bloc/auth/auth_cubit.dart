@@ -12,6 +12,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
+import 'package:snake_classic/services/multiplayer/multiplayer_settlement_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -160,6 +161,16 @@ class AuthCubit extends Cubit<AuthState> {
     // propagates into GameSettingsCubit state.
     try {
       unawaited(getIt<GameSettingsCubit>().syncWithBackend());
+    } catch (_) {}
+
+    // Multiplayer settlements — the repair pass for a match whose result
+    // never reached this device. Rewards used to be credited purely as a
+    // reaction to the GameEnded broadcast, so a socket that died at the wrong
+    // moment lost them with nothing recording that anything was owed. Applying
+    // is guarded by a local ledger, so running this on every sign-in cannot
+    // pay anything twice.
+    try {
+      unawaited(getIt<MultiplayerSettlementService>().syncPending());
     } catch (_) {}
   }
 

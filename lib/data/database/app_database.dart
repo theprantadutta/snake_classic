@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
@@ -370,6 +371,51 @@ class DailyChallenges extends Table {
   /// Sync-engine timestamp — see [GameSettings.updatedAt].
   DateTimeColumn get updatedAt =>
       dateTime().withDefault(currentDateAndTime)();
+}
+
+// =====================================================
+// TABLE 8a-2: Applied multiplayer settlements (exactly-once ledger)
+// =====================================================
+/// Which server settlements this device has already applied.
+///
+/// The server decides what a player is owed for a match and hands it over as
+/// a settlement row; the client applies it and acknowledges. Between those two
+/// steps the app can die, and the next fetch would hand back the same
+/// settlement — so acknowledgement alone cannot make the payout exactly-once.
+/// This table is the client half of that guarantee: applied first, locally,
+/// then acknowledged remotely.
+class AppliedMultiplayerSettlements extends Table {
+  /// The server-side settlement id. Primary key — re-applying is impossible
+  /// rather than merely unlikely.
+  TextColumn get settlementId => text()();
+
+  /// When the row was first written, i.e. when this device CLAIMED the
+  /// settlement. Not when it finished applying it — see [completedAt].
+  DateTimeColumn get appliedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  // Per-step progress.
+  //
+  // Applying a settlement is three separate durable writes — statistics,
+  // coins, battle-pass XP — through three different subsystems, and there is
+  // no transaction that spans them. A single "applied" flag could only be set
+  // before them all (a crash then loses real rewards) or after (a crash then
+  // replays the ones that already landed, double-counting statistics). Neither
+  // is acceptable for money.
+  //
+  // Recording each step as it completes makes a retry RESUME instead of
+  // restart: every step runs exactly once across any number of crashes.
+  BoolColumn get statsApplied => boolean().withDefault(const Constant(false))();
+  BoolColumn get coinsApplied => boolean().withDefault(const Constant(false))();
+  BoolColumn get xpApplied => boolean().withDefault(const Constant(false))();
+
+  /// Set only once every step is durably done. This — not the row's existence
+  /// — is what makes a settlement finished, and only a finished settlement is
+  /// acknowledged to the server.
+  DateTimeColumn get completedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {settlementId};
 }
 
 // =====================================================
@@ -758,6 +804,7 @@ class PlayerProgressTable extends Table {
     UnlockedItems,
     BattlePasses,
     DailyChallenges,
+    AppliedMultiplayerSettlements,
     WeeklyQuests,
     DailyBonusState,
     PowerUpInventoryState,
@@ -790,8 +837,15 @@ class PlayerProgressTable extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// Test-only: an isolated database on a caller-supplied executor, so tests
+  /// can run the real schema, the real migrations and the real transactions
+  /// against an in-memory SQLite rather than a stub that would answer whatever
+  /// the test author assumed.
+  @visibleForTesting
+  AppDatabase.forTesting(super.executor);
+
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -983,6 +1037,33 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(dailyChallenges, dailyChallenges.requiredGameMode);
         await m.addColumn(dailyChallenges, dailyChallenges.xpReward);
         await m.addColumn(dailyChallenges, dailyChallenges.difficulty);
+      }
+      if (from < 18) {
+        // v18: the client half of exactly-once multiplayer settlement.
+        // Nothing to backfill — before this, rewards were credited straight
+        // off the GameEnded broadcast and were never tracked at all.
+        await m.createTable(appliedMultiplayerSettlements);
+      }
+      if (from < 19) {
+        // v19: per-step progress, so a crash midway through applying a
+        // settlement neither loses the remaining rewards nor replays the ones
+        // already applied.
+        await m.addColumn(
+            appliedMultiplayerSettlements, appliedMultiplayerSettlements.statsApplied);
+        await m.addColumn(
+            appliedMultiplayerSettlements, appliedMultiplayerSettlements.coinsApplied);
+        await m.addColumn(
+            appliedMultiplayerSettlements, appliedMultiplayerSettlements.xpApplied);
+        await m.addColumn(
+            appliedMultiplayerSettlements, appliedMultiplayerSettlements.completedAt);
+        // Under v18 a row's mere existence meant "fully applied". Migrating it
+        // to all-steps-done preserves that meaning; leaving the new flags
+        // false would re-apply rewards that were already granted.
+        await m.database.customStatement(
+          'UPDATE applied_multiplayer_settlements '
+          'SET stats_applied = 1, coins_applied = 1, xp_applied = 1, '
+          '    completed_at = applied_at',
+        );
       }
     },
   );

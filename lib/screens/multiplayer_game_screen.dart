@@ -250,38 +250,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 ],
               ),
             ),
-            if (won && result.winnerCoinReward > 0) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.monetization_on,
-                      color: Colors.amber,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.mpCoinReward(result.winnerCoinReward),
-                      style: const TextStyle(
-                        color: Colors.amber,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            // The reward is whatever the SERVER settled, not a number read
+            // off the broadcast. Until the settlement lands this says so,
+            // rather than announcing coins that have not been credited — the
+            // old version showed the figure immediately and could be wrong in
+            // both directions if the socket died before the grant.
+            const SizedBox(height: 16),
+            _RewardChip(theme: theme),
           ],
         ),
         actions: [
@@ -485,7 +460,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             // Stranded exit: the cubit gave up on the match (reconnect
             // refused/timed out) with no GameEnded result. Leave the
             // dead board instead of freezing on it.
-            final stranded = !_exiting &&
+            final stranded =
+                !_exiting &&
                 !_resultDialogShown &&
                 state.matchEnd == null &&
                 (state.status == MultiplayerStatus.idle ||
@@ -497,9 +473,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      errorCode.localizedMessage(
-                        AppLocalizations.of(context)!,
-                      ),
+                      errorCode.localizedMessage(AppLocalizations.of(context)!),
                     ),
                   ),
                 );
@@ -507,126 +481,135 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               context.pushReplacement(AppRoutes.multiplayerLobby);
             }
           },
-          child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
-            builder: (context, multiplayerState) {
-              return BlocBuilder<AuthCubit, AuthState>(
-                builder: (context, authState) {
-                  final snapshot = multiplayerState.snapshot;
-                  final currentUserId = authState.userId ?? '';
-
-                  // Waiting for the first authoritative snapshot
-                  // (GameStarted lands right after the countdown). The
-                  // PopScope matters here too: backing out of "GET READY"
-                  // without it left the room joined server-side.
-                  if (snapshot == null) {
-                    return PopScope(
-                      canPop: false,
-                      onPopInvokedWithResult: (didPop, result) {
-                        if (!didPop) {
-                          _showExitDialog();
-                        }
-                      },
-                      child: _buildMatchIntro(theme),
-                    );
-                  }
-
-                  return PopScope(
-                    canPop: false,
-                    onPopInvokedWithResult: (didPop, result) {
-                      if (!didPop) {
-                        _showExitDialog();
-                      }
-                    },
-                    child: KeyboardListener(
-                      focusNode: _keyboardFocusNode,
-                      onKeyEvent: _handleKeyPress,
-                      child: GameJuiceWidget(
-                        controller: _juiceController,
-                        applyShake: true,
-                        child: Scaffold(
-                          body: Container(
-                            decoration: BoxDecoration(
-                              // Use theme colors, matching single-player
-                              gradient: RadialGradient(
-                                center: Alignment.topRight,
-                                radius: 1.5,
-                                colors: [
-                                  theme.accentColor.withValues(alpha: 0.15),
-                                  theme.backgroundColor,
-                                  theme.backgroundColor.withValues(alpha: 0.9),
-                                  Colors.black.withValues(alpha: 0.1),
-                                ],
-                                stops: const [0.0, 0.4, 0.8, 1.0],
-                              ),
-                            ),
-                            child: SafeArea(
-                              child: Stack(
-                                children: [
-                                  // Background pattern
-                                  Positioned.fill(
-                                    child: CustomPaint(
-                                      painter: _GameBackgroundPainter(theme),
-                                    ),
-                                  ),
-
-                                  // Main game content
-                                  SwipeDetector(
-                                    onSwipe: _handleSwipe,
-                                    child: Column(
-                                      children: [
-                                        // Face-to-face versus header:
-                                        // duel panel, live scores, momentum
-                                        // bar and match clock.
-                                        _buildVersusHeader(
-                                          theme,
-                                          snapshot,
-                                          currentUserId,
-                                        ),
-
-                                        // Game Board — renders the
-                                        // authoritative snapshots
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(12),
-                                            child: MultiplayerFlameBoard(
-                                              snapshot: snapshot,
-                                              boardSize:
-                                                  multiplayerState.boardSize,
-                                              currentUserId: currentUserId,
-                                            ),
-                                          ),
-                                        ),
-
-                                        // Bottom control strip
-                                        _buildControlStrip(
-                                          theme,
-                                          snapshot,
-                                          currentUserId,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  // Connection-loss overlay: the board
-                                  // freezes on the last snapshot while
-                                  // the cubit retries; say so instead of
-                                  // looking hung.
-                                  if (multiplayerState.status ==
-                                      MultiplayerStatus.reconnecting)
-                                    Positioned.fill(
-                                      child: _buildReconnectingOverlay(theme),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
+          // Everything from here down to the Stack depends on the THEME, not
+          // on the snapshot: the gradient, the background painter, the
+          // keyboard listener, the exit guard. All of it used to sit INSIDE
+          // the snapshot builder, so a BoxDecoration, a RadialGradient and a
+          // full-screen CustomPaint were rebuilt five times a second for a
+          // board that moves independently of them. Only the parts that
+          // actually read the snapshot rebuild per tick now.
+          child: PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) {
+              if (!didPop) {
+                _showExitDialog();
+              }
+            },
+            child: KeyboardListener(
+              focusNode: _keyboardFocusNode,
+              onKeyEvent: _handleKeyPress,
+              child: GameJuiceWidget(
+                controller: _juiceController,
+                applyShake: true,
+                child: Scaffold(
+                  body: Container(
+                    decoration: BoxDecoration(
+                      // Use theme colors, matching single-player
+                      gradient: RadialGradient(
+                        center: Alignment.topRight,
+                        radius: 1.5,
+                        colors: [
+                          theme.accentColor.withValues(alpha: 0.15),
+                          theme.backgroundColor,
+                          theme.backgroundColor.withValues(alpha: 0.9),
+                          Colors.black.withValues(alpha: 0.1),
+                        ],
+                        stops: const [0.0, 0.4, 0.8, 1.0],
                       ),
                     ),
-                  );
-                },
-              );
-            },
+                    child: SafeArea(
+                      child: Stack(
+                        children: [
+                          // Background pattern
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _GameBackgroundPainter(theme),
+                            ),
+                          ),
+
+                          BlocBuilder<MultiplayerCubit, MultiplayerState>(
+                            builder: (context, multiplayerState) {
+                              return BlocBuilder<AuthCubit, AuthState>(
+                                builder: (context, authState) {
+                                  final snapshot = multiplayerState.snapshot;
+                                  final currentUserId = authState.userId ?? '';
+
+                                  // Waiting for the first authoritative
+                                  // snapshot — GameStarted lands right after
+                                  // the countdown. The exit guard is above
+                                  // this, so backing out of "GET READY"
+                                  // still cannot silently leave the room
+                                  // joined server-side.
+                                  if (snapshot == null) {
+                                    return _buildMatchIntro(theme);
+                                  }
+
+                                  return Stack(
+                                    children: [
+                                      // Main game content
+                                      SwipeDetector(
+                                        onSwipe: _handleSwipe,
+                                        child: Column(
+                                          children: [
+                                            // Face-to-face versus header:
+                                            // duel panel, live scores, momentum
+                                            // bar and match clock.
+                                            _buildVersusHeader(
+                                              theme,
+                                              snapshot,
+                                              currentUserId,
+                                            ),
+
+                                            // Game Board — renders the
+                                            // authoritative snapshots
+                                            Expanded(
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
+                                                child: MultiplayerFlameBoard(
+                                                  snapshot: snapshot,
+                                                  boardSize: multiplayerState
+                                                      .boardSize,
+                                                  currentUserId: currentUserId,
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Bottom control strip
+                                            _buildControlStrip(
+                                              theme,
+                                              snapshot,
+                                              currentUserId,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // Connection-loss overlay: the board
+                                      // freezes on the last snapshot while
+                                      // the cubit retries; say so instead of
+                                      // looking hung.
+                                      if (multiplayerState.status ==
+                                          MultiplayerStatus.reconnecting)
+                                        Positioned.fill(
+                                          child: _buildReconnectingOverlay(
+                                            theme,
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -869,11 +852,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
-  Widget _circleIconButton(
-    GameTheme theme,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
+  Widget _circleIconButton(GameTheme theme, IconData icon, VoidCallback onTap) {
     return Material(
       color: theme.backgroundColor.withValues(alpha: 0.6),
       shape: const CircleBorder(),
@@ -989,8 +968,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     required bool leading,
   }) {
     final l10n = AppLocalizations.of(context)!;
-    final rawName =
-        player == null ? l10n.mpWaitingPlayer : (isMe ? l10n.mpYou : player.username);
+    final rawName = player == null
+        ? l10n.mpWaitingPlayer
+        : (isMe ? l10n.mpYou : player.username);
     final name = rawName.length > 9 ? '${rawName.substring(0, 9)}…' : rawName;
     final score = player?.score ?? 0;
     final alive = player?.alive ?? true;
@@ -1009,8 +989,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
     final info = Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -1073,16 +1054,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
 
     final children = alignEnd
-        ? [
-            Expanded(child: info),
-            SizedBox(width: context.scaled(10)),
-            avatar,
-          ]
-        : [
-            avatar,
-            SizedBox(width: context.scaled(10)),
-            Expanded(child: info),
-          ];
+        ? [Expanded(child: info), SizedBox(width: context.scaled(10)), avatar]
+        : [avatar, SizedBox(width: context.scaled(10)), Expanded(child: info)];
 
     return Row(mainAxisSize: MainAxisSize.max, children: children);
   }
@@ -1324,12 +1297,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
-  Widget _statPill(
-    GameTheme theme,
-    IconData icon,
-    String label,
-    String value,
-  ) {
+  Widget _statPill(GameTheme theme, IconData icon, String label, String value) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -1492,8 +1460,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                         color: player.alive ? theme.accentColor : Colors.grey,
                         fontWeight: FontWeight.bold,
                         fontSize: 11,
-                        decoration:
-                            player.alive ? null : TextDecoration.lineThrough,
+                        decoration: player.alive
+                            ? null
+                            : TextDecoration.lineThrough,
                       ),
                     ),
                     Text(
@@ -1561,5 +1530,85 @@ class _GameBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
+  }
+}
+
+/// Reward line on the result dialog.
+///
+/// Rewards are server-decided and fetched, so there is a real gap between the
+/// result arriving and the coins existing. This shows "processing" across that
+/// gap and the settled amount afterwards. It never shows a locally-invented
+/// figure, and it never queues a local grant — if the fetch is failing the
+/// service is retrying, and the honest answer is "not yet".
+class _RewardChip extends StatelessWidget {
+  const _RewardChip({required this.theme});
+
+  final GameTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return BlocBuilder<MultiplayerCubit, MultiplayerState>(
+      buildWhen: (prev, curr) =>
+          prev.settlementStatus != curr.settlementStatus ||
+          prev.settlement != curr.settlement,
+      builder: (context, state) {
+        if (state.settlementStatus == SettlementStatus.none) {
+          return const SizedBox.shrink();
+        }
+
+        final settled = state.settlement;
+        final processing =
+            state.settlementStatus != SettlementStatus.applied ||
+            settled == null;
+
+        // Nothing was awarded (a loss, or a match the server never settled).
+        if (!processing && settled.coinsAwarded <= 0) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: processing ? 0.08 : 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.amber.withValues(alpha: processing ? 0.2 : 0.4),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (processing)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                  ),
+                )
+              else
+                const Icon(
+                  Icons.monetization_on,
+                  color: Colors.amber,
+                  size: 18,
+                ),
+              const SizedBox(width: 8),
+              Text(
+                processing
+                    ? l10n.mpRewardProcessing
+                    : l10n.mpCoinReward(settled.coinsAwarded),
+                style: TextStyle(
+                  color: Colors.amber.withValues(alpha: processing ? 0.75 : 1),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

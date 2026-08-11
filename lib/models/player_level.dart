@@ -40,6 +40,16 @@ class PlayerLevel {
   }
 
   /// The level a player with [totalXp] lifetime XP has reached.
+  /// Coin reward for reaching lifetime [level]. Levels are rare (every ~10-20
+  /// games at typical XP rates), so the reward is sized to feel like an event
+  /// next to the <=10-coin game-completion grant: 50 coins per level, 200 at
+  /// every 10th.
+  ///
+  /// Lives here rather than on ProgressionService because the settlement
+  /// transaction has to pay it too, and two copies of a payout rule is one too
+  /// many.
+  static int coinRewardForLevel(int level) => level % 10 == 0 ? 200 : 50;
+
   static int levelForXp(int totalXp) {
     if (totalXp <= 0) return minLevel;
     var level = minLevel;
