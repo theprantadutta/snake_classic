@@ -50,6 +50,12 @@ class StorageService {
   /// and the backend UserCoinBalance falls behind.
   StoreDao get storeDao => _storeDao!;
 
+  /// The database itself, for callers that need a transaction spanning
+  /// several DAOs — the settlement writers, which must apply coins, XP and
+  /// their own marker together or not at all. Throws if accessed before
+  /// [initialize].
+  AppDatabase get db => _database!;
+
   // ==================== High Score ====================
 
   Future<int> getHighScore() async {

@@ -1255,6 +1255,44 @@ class ApiService {
     }
   }
 
+  /// Daily-challenge rewards this account has earned and not yet confirmed
+  /// applying. The server decides what is owed; the device only applies it.
+  Future<List<Map<String, dynamic>>?> getPendingDailyChallengeSettlements() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/daily-challenges/settlements/pending'),
+            headers: _authHeaders,
+          )
+          .timeout(_timeout);
+      final body = _handleResponseList(response);
+      if (body == null) return null;
+      return body.whereType<Map<String, dynamic>>().toList();
+    } catch (e) {
+      AppLogger.error('Error GET /daily-challenges/settlements/pending', e);
+      return null;
+    }
+  }
+
+  /// Confirm daily-challenge settlements have been applied locally.
+  /// Idempotent server-side; safe to retry.
+  Future<bool> ackDailyChallengeSettlements(List<String> settlementIds) async {
+    if (settlementIds.isEmpty) return true;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/daily-challenges/settlements/ack'),
+            headers: _authHeaders,
+            body: jsonEncode({'settlement_ids': settlementIds}),
+          )
+          .timeout(_timeout);
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      AppLogger.error('Error POST /daily-challenges/settlements/ack', e);
+      return false;
+    }
+  }
+
   /// Confirm settlements have been applied locally. Idempotent server-side.
   Future<bool> ackMultiplayerSettlements(List<String> settlementIds) async {
     if (settlementIds.isEmpty) return true;

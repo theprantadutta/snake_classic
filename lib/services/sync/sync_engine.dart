@@ -17,6 +17,7 @@ import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/sync/statistics_merge.dart';
 import 'package:snake_classic/services/sync/sync_status.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -848,6 +849,16 @@ class SyncEngine {
       for (final entry in groups.entries) {
         await _drainGroup(entry.key, entry.value);
       }
+
+      // Claim intents have just gone up; the settlements they produce come
+      // back down here. Doing it on the drain means a player who claimed
+      // offline sees the coins land on the same reconnect that pushed the
+      // intent, rather than on the next app start.
+      //
+      // Deliberately after the push and deliberately unawaited: it must not
+      // delay or fail the drain, and it is idempotent, so a failure now is
+      // retried on the next trigger.
+      unawaited(DailyChallengeService().refreshSettlements());
     } catch (e) {
       AppLogger.error('SyncEngine drain failed', e);
       _publishStatus(
