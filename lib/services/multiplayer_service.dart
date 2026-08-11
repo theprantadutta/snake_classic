@@ -828,8 +828,22 @@ class MultiplayerService {
     final data = _firstArgAsMap(arguments);
     if (data == null) return;
     _isReconnecting = false;
+
+    // A client that restarted mid-match never saw GameStarted, so this is
+    // the only place it learns how big the board is. Without it the grid
+    // falls back to the default and every snapshot coordinate is drawn at
+    // the wrong scale.
+    final resumedBoardSize = (data['board_size'] as num?)?.toInt();
+    if (resumedBoardSize != null && resumedBoardSize > 0) {
+      _boardSize = resumedBoardSize;
+    }
+
     _currentGame = _currentGame?.copyWith(
       status: MultiplayerGameStatus.playing,
+      gameSettings: {
+        ...?_currentGame?.gameSettings,
+        'boardSize': _boardSize,
+      },
     );
     _gameStreamController.add(_currentGame);
     _emitSnapshot(data['snapshot']);

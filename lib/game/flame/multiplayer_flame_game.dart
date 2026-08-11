@@ -53,6 +53,24 @@ class MultiplayerFlameGame extends FlameGame {
   double moveProgress = 0;
   double _elapsedSinceTick = 0;
 
+  /// Smoothed measurement of how far apart snapshots ACTUALLY arrive, in
+  /// milliseconds. Zero until two have been seen.
+  ///
+  /// Interpolating over the server's nominal `tick_ms` assumes snapshots
+  /// arrive exactly that far apart. They do not: the engine can only fire on
+  /// its own loop boundary, and the network adds its own jitter on top. Every
+  /// millisecond of the difference is time both snakes spend frozen at the
+  /// end of the glide, having already arrived — the stutter reads as lag even
+  /// though nothing is late. Interpolating over the observed gap instead
+  /// leaves the board a few milliseconds behind the server and perfectly
+  /// smooth, which is the trade every netcode makes.
+  double _observedTickMs = 0;
+
+  /// Never stretch beyond this multiple of the nominal tick. Past it the
+  /// snapshots really are late, and drifting further behind the server is
+  /// worse than showing the hitch.
+  static const double _maxStretch = 1.6;
+
   GameParticlesComponent? _particles;
 
   double get worldSize => boardSize * GameConstants.cellSize;
@@ -85,22 +103,43 @@ class MultiplayerFlameGame extends FlameGame {
     this.theme = theme;
     if (identical(snapshot, this.snapshot)) return;
 
-    if (snapshot.tick != this.snapshot.tick) {
-      previousSnapshot = this.snapshot;
+    final previous = this.snapshot;
+    final isNewTick = snapshot.tick != previous.tick;
+
+    if (isNewTick) {
+      // How long this tick actually took to arrive, smoothed so one late
+      // packet does not stretch the whole match.
+      final observed = _elapsedSinceTick * 1000;
+      if (observed > 0) {
+        _observedTickMs = _observedTickMs <= 0
+            ? observed
+            : _observedTickMs * 0.7 + observed * 0.3;
+      }
+      previousSnapshot = previous;
       _elapsedSinceTick = 0;
     }
 
-    // Food burst when the local score rises — emit at the head cell the
-    // snake just moved onto (where the food was).
+    // Burst wherever the food was eaten, WHOEVER ate it.
+    //
+    // This used to fire only when the local score rose, so an opponent
+    // eating was completely silent: the apple simply vanished from one place
+    // and reappeared somewhere else, which reads as the game losing track of
+    // it rather than as losing the race to it. Against a bot that eats often,
+    // that is most of the match.
     final me = snapshot.playerByUserId(currentUserId);
-    final head = me?.head;
-    if (me != null && head != null && me.score > _lastMyScore) {
+    if (isNewTick && previous.food != snapshot.food) {
+      final eatenAt = previous.food;
+      final mine = (me?.score ?? 0) > _lastMyScore;
       _particles?.emitAt(
         Offset(
-          head.x * GameConstants.cellSize + GameConstants.cellSize / 2,
-          head.y * GameConstants.cellSize + GameConstants.cellSize / 2,
+          eatenAt.x * GameConstants.cellSize + GameConstants.cellSize / 2,
+          eatenAt.y * GameConstants.cellSize + GameConstants.cellSize / 2,
         ),
-        ParticleConfig.appleFoodExplosion,
+        // The opponent's is smaller and shorter: legible, but never louder
+        // than the player's own pickup.
+        mine
+            ? ParticleConfig.appleFoodExplosion
+            : ParticleConfig.snakeTrail,
       );
     }
     _lastMyScore = me?.score ?? _lastMyScore;
@@ -113,11 +152,20 @@ class MultiplayerFlameGame extends FlameGame {
     super.update(dt);
     _elapsed += dt;
 
-    final tickSeconds = snapshot.tickMs / 1000.0;
     _elapsedSinceTick += dt;
-    moveProgress = tickSeconds <= 0
+
+    // Glide over how long snapshots really take to arrive, floored at the
+    // server's nominal tick so a fast burst cannot make the snakes crawl.
+    final nominalMs = snapshot.tickMs.toDouble();
+    final windowMs = nominalMs <= 0
+        ? 0.0
+        : (_observedTickMs <= 0
+              ? nominalMs
+              : _observedTickMs.clamp(nominalMs, nominalMs * _maxStretch));
+
+    moveProgress = windowMs <= 0
         ? 1.0
-        : (_elapsedSinceTick / tickSeconds).clamp(0.0, 1.0);
+        : (_elapsedSinceTick * 1000 / windowMs).clamp(0.0, 1.0);
   }
 }
 
