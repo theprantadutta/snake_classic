@@ -478,15 +478,20 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       // so a hub that was never connected still put the UI into "searching"
       // — a queue the server had no idea about, counting down to a timeout
       // that could never have been anything else.
-      final joined = await _multiplayerService.joinMatchmaking(
+      final outcome = await _multiplayerService.joinMatchmaking(
         mode: mode,
         playerCount: playerCount,
       );
-      if (!joined) {
+      if (outcome != JoinQueueOutcome.joined) {
+        // Say which thing broke. "Matchmaking failed" for a socket that
+        // never opened sends the player to look at the wrong thing — the
+        // matchmaker was never asked anything.
         emit(
           state.copyWith(
             isLoading: false,
-            errorCode: MultiplayerError.matchmaking,
+            errorCode: outcome == JoinQueueOutcome.unreachable
+                ? MultiplayerError.checkInternet
+                : MultiplayerError.matchmaking,
           ),
         );
         return false;

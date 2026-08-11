@@ -10,6 +10,16 @@ import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 /// Matchmaking status snapshot consumed by the multiplayer cubit.
+/// Why a request to join the queue did or did not land.
+enum JoinQueueOutcome {
+  /// The server has us in the queue.
+  joined,
+
+  /// We never got as far as asking — the hub connection could not be
+  /// established. A connectivity problem, not a matchmaking one.
+  unreachable,
+}
+
 class MatchmakingStatus {
   final bool isSearching;
   final int queuePosition;
@@ -305,14 +315,19 @@ class MultiplayerService {
   // =============================================
 
   /// Join matchmaking queue.
-  Future<bool> joinMatchmaking({
+  ///
+  /// Distinguishes "could not reach the server" from "the server said no",
+  /// because they are different problems and only one of them is about
+  /// matchmaking. Reporting a failed socket handshake as "matchmaking
+  /// failed" sends the player to look at the wrong thing entirely.
+  Future<JoinQueueOutcome> joinMatchmaking({
     required MultiplayerGameMode mode,
     required int playerCount,
   }) async {
     try {
-      if (!await _connectSignalR()) return false;
+      if (!await _connectSignalR()) return JoinQueueOutcome.unreachable;
       final hub = _liveHub;
-      if (hub == null) return false;
+      if (hub == null) return JoinQueueOutcome.unreachable;
 
       await hub.invoke('JoinMatchmaking', args: [mode.name, playerCount]);
 
@@ -324,10 +339,10 @@ class MultiplayerService {
           playerCount: playerCount,
         ),
       );
-      return true;
+      return JoinQueueOutcome.joined;
     } catch (e) {
       AppLogger.error('Error joining matchmaking', e);
-      return false;
+      return JoinQueueOutcome.unreachable;
     }
   }
 
@@ -445,6 +460,18 @@ class MultiplayerService {
             hubUrl,
             options: HttpConnectionOptions(
               accessTokenFactory: () async => _apiService.accessToken ?? '',
+              // signalr_netcore defaults this to TWO SECONDS, which is the
+              // budget for the whole negotiate round-trip. A warm connection
+              // fits; a cold one — the first search after a match ended and
+              // stopped the hub — does not, and the throw surfaced to the
+              // player as "Matchmaking failed. Please try again." about a
+              // matchmaker that had not been asked anything yet.
+              //
+              // Matched to ApiService's REST timeout, because it is the same
+              // server over the same connection and there is no reason for
+              // the socket handshake to be held to a stricter deadline than
+              // an ordinary request.
+              requestTimeout: 15000,
             ),
           )
           .withAutomaticReconnect()
