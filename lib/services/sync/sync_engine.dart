@@ -18,6 +18,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/sync/statistics_merge.dart';
+import 'package:snake_classic/services/sync/sync_status.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/sync_restore_overlay.dart';
 
@@ -195,6 +196,62 @@ class SyncEngine {
 
   /// Broadcast stream the UI subscribes to for the loading modal
   /// during first-sign-in restore.
+  // ---- Canonical sync status -------------------------------------------
+  //
+  // One place the UI and the app lifecycle can ask "is my data up yet?".
+  // The status indicator used to render DataSyncService, which by now owns
+  // little beyond FCM registration, so it could report everything synced
+  // while this outbox held pending scores and a dead letter.
+
+  SyncStatusSnapshot _status = const SyncStatusSnapshot();
+  SyncStatusSnapshot get status => _status;
+
+  final StreamController<SyncStatusSnapshot> _statusController =
+      StreamController<SyncStatusSnapshot>.broadcast();
+
+  /// Replays the current snapshot to every new subscriber, so a widget built
+  /// after a drain still shows the right thing.
+  Stream<SyncStatusSnapshot> get statusStream async* {
+    yield _status;
+    yield* _statusController.stream;
+  }
+
+  void _publishStatus(SyncStatusSnapshot next) {
+    if (next == _status) return;
+    _status = next;
+    if (!_statusController.isClosed) _statusController.add(next);
+  }
+
+  /// Push whatever is waiting, now.
+  ///
+  /// The app lifecycle calls this on foreground and background. It used to
+  /// call only DataSyncService, which no longer owns the data anyone means by
+  /// "sync", so returning to the app did not push the outbox holding the
+  /// player's scores and coins.
+  ///
+  /// Returns when the drain finishes, so a caller can await it if it needs to.
+  Future<void> syncNow() => _drain();
+
+  /// Recount the outbox and dead letters from Drift and publish.
+  Future<void> refreshStatus() async {
+    final dao = _syncDao;
+    if (dao == null) return;
+    try {
+      final pending = await dao.getPendingSyncItems();
+      final owned = pending.where(_isOwned).length;
+      final legacy = pending.length - owned;
+      final deadLetters = await dao.getScoreDeadLetters();
+
+      _publishStatus(_status.copyWith(
+        pendingCount: owned,
+        legacyPendingCount: legacy,
+        deadLetterCount: deadLetters.length,
+      ));
+    } catch (e) {
+      AppLogger.error('SyncEngine: status refresh failed', e);
+    }
+  }
+
   final StreamController<FirstSignInState> _firstSignInStateController =
       StreamController<FirstSignInState>.broadcast();
   Stream<FirstSignInState> get firstSignInStateStream =>
@@ -371,6 +428,10 @@ class SyncEngine {
     // game-end that touches stats + coins + achievements + battle
     // pass all at once) collapses into a single drain.
     _outboxWatcher = _syncDao!.watchPendingSyncItems().listen((_) {
+      // Keep the status honest as rows arrive, not only as they leave —
+      // otherwise the indicator says "synced" for the whole debounce window
+      // after a game end has queued four writes.
+      unawaited(refreshStatus());
       _scheduleDrain();
     });
 
@@ -744,9 +805,31 @@ class SyncEngine {
     }
     if (_db == null || _syncDao == null) return;
     if (!_api.isAuthenticated) return;
-    if (!_connectivity.isOnline) return;
+
+    // Link state is a scheduling hint, NOT permission.
+    //
+    // This used to be `if (!_connectivity.isOnline) return`, where isOnline
+    // demanded a network link AND a DNS lookup AND a 200 from a
+    // database-backed health endpoint. Any one of those failing froze the
+    // outbox — including on the setups where the API itself works fine and
+    // the probe does not: LAN dev backends, captive Wi-Fi, split-tunnel VPN.
+    // The first sign-in restore path had already removed the same preflight
+    // for the same reason and left a comment saying so; this one kept it, so
+    // a device that could sync sat waiting for a probe instead.
+    //
+    // Now the only refusal is the one that is definitely true: the OS says
+    // there is no transport at all. Everything else — unknown, or a backend
+    // a previous call found unavailable — proceeds, because the POST is
+    // idempotent, its failure is classified and backed off, and a backend
+    // marked unavailable has to be allowed to prove otherwise or nothing
+    // ever clears it.
+    if (!_connectivity.shouldAttemptNetworkWork) return;
 
     _isDraining = true;
+    _publishStatus(_status.copyWith(
+      isDraining: true,
+      lastAttemptAt: DateTime.now(),
+    ));
     final completer = Completer<void>();
     _drainInFlight = completer.future;
     try {
@@ -767,9 +850,16 @@ class SyncEngine {
       }
     } catch (e) {
       AppLogger.error('SyncEngine drain failed', e);
+      _publishStatus(
+        _status.copyWith(lastFailure: SyncFailureCategory.transport),
+      );
     } finally {
       _isDraining = false;
       _drainInFlight = null;
+      _publishStatus(_status.copyWith(isDraining: false));
+      // Recount from Drift rather than guessing: the drain may have
+      // dead-lettered, retried, or partially succeeded.
+      unawaited(refreshStatus());
       completer.complete();
     }
   }

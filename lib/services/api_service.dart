@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_result.dart';
+import 'connectivity_service.dart';
 import '../utils/logger.dart';
 
 /// Outcome of a `/sync/*` POST. The SyncEngine uses this to route
@@ -160,7 +162,89 @@ class ApiService {
     if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
   };
 
+  /// Record what a REAL request just proved about backend reachability.
+  ///
+  /// This is the authority the old 30-second `/health/status` poll was
+  /// pretending to be. Every HTTP response — including a 401 or a 422 —
+  /// proves the backend is there and answering; only a transport failure,
+  /// a timeout or a 5xx says otherwise.
+  void _observe(ApiResult<Object?> result) {
+    final connectivity = ConnectivityService();
+    if (result.indicatesBackendUnreachable) {
+      connectivity.recordBackendFailure();
+    } else if (result.indicatesBackendReachable) {
+      connectivity.recordBackendSuccess();
+    }
+  }
+
+  /// Perform an interactive request and report a typed outcome.
+  ///
+  /// Interactive callers used to receive `null` for everything: offline, a
+  /// timeout, an expired session, a validation conflict, rate limiting and a
+  /// backend 5xx were indistinguishable, so the UI could only ever say
+  /// "failed" and support could not tell them apart afterwards.
+  ///
+  /// Bodies are never logged. They carry player data, and a status code plus
+  /// a correlation id is enough to match a report to a server log.
+  Future<ApiResult<Map<String, dynamic>>> sendJson({
+    required String method,
+    required String path,
+    Object? body,
+    Map<String, String>? headers,
+    Duration? timeout,
+    bool authenticated = true,
+  }) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final requestHeaders = <String, String>{
+      'Content-Type': 'application/json',
+      if (authenticated) ..._authHeaders,
+      ...?headers,
+    };
+
+    try {
+      final future = switch (method.toUpperCase()) {
+        'POST' => http.post(uri,
+            headers: requestHeaders,
+            body: body == null ? null : jsonEncode(body)),
+        'PUT' => http.put(uri,
+            headers: requestHeaders,
+            body: body == null ? null : jsonEncode(body)),
+        'DELETE' => http.delete(uri, headers: requestHeaders),
+        _ => http.get(uri, headers: requestHeaders),
+      };
+
+      final response = await future.timeout(timeout ?? _timeout);
+      final result = ApiFailureClassifier.decodeObject(response);
+      _observe(result);
+
+      // The existing session-expiry hook still fires, so nothing that
+      // depended on it changes.
+      if (result.failure == ApiFailure.unauthorized) {
+        AppLogger.error('Unauthorized on $path - token may be expired');
+        clearToken();
+        onUnauthorized?.call();
+      } else if (!result.isSuccess) {
+        AppLogger.error(
+          'API $method $path failed: ${result.failure!.name} '
+          '(status ${result.statusCode})',
+        );
+      }
+      return result;
+    } catch (e) {
+      final failure = ApiFailureClassifier.forError(e);
+      final result = ApiResult<Map<String, dynamic>>.failed(failure);
+      _observe(result);
+      AppLogger.error('API $method $path failed: ${failure.name}');
+      return result;
+    }
+  }
+
   Map<String, dynamic>? _handleResponse(http.Response response) {
+    // A response of ANY status proves the backend answered. This is what
+    // replaces the periodic health probe for the many legacy callers that
+    // still return a bare nullable map.
+    ConnectivityService().recordBackendSuccess();
+
     if (response.statusCode == 401) {
       AppLogger.error('Unauthorized - token may be expired');
       clearToken();
