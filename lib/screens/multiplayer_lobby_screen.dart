@@ -763,13 +763,16 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   ) {
     final l10n = AppLocalizations.of(context)!;
     final elapsed = multiplayerState.matchmakingElapsedSeconds;
-    // Progress runs against the deadline the SERVER promised, not a number
-    // the client picked. Past that deadline the ring simply stays full and
-    // the elapsed count keeps rising: the search is never abandoned here, so
-    // there is nothing for it to count down to.
+    // The number COUNTS UP, and the ring fills toward the deadline the server
+    // promised rather than a number the client invented.
+    //
+    // It used to count down, which meant that whenever anything ran past the
+    // deadline the screen sat on a motionless "0 SEC" inside an empty ring —
+    // indistinguishable from a hung app, and reported as one. A rising count
+    // cannot freeze, and it never promises an ending the client is not the
+    // one to decide.
     final deadline = multiplayerState.matchmakingDeadlineSeconds;
     final progress = deadline <= 0 ? 1.0 : (elapsed / deadline).clamp(0.0, 1.0);
-    final remaining = (deadline - elapsed).clamp(0, deadline);
     // Countdown runs down to zero in the theme accent throughout. It used to
     // switch green → orange under ten seconds, which reads as "something is
     // wrong" when in fact the search is simply nearly over.
@@ -804,7 +807,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                             width: 108,
                             height: 108,
                             child: CircularProgressIndicator(
-                              value: 1 - progress,
+                              value: progress,
                               strokeWidth: 3,
                               backgroundColor: theme.accentColor.withValues(
                                 alpha: 0.15,
@@ -818,7 +821,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                '$remaining',
+                                '$elapsed',
                                 style: const TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,

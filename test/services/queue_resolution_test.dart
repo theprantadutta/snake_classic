@@ -10,20 +10,24 @@ import 'package:snake_classic/services/multiplayer/queue_resolution.dart';
 /// after queueing was observed sitting matched in the database while the app
 /// counted itself out and abandoned it.
 void main() {
+  // EXACTLY the JSON the API emits. The keys are snake_case because the API
+  // serialises with JsonNamingPolicy.SnakeCaseLower — writing camelCase here
+  // is what let the client read `gameId` off a body that says `game_id`, see
+  // every match as unusable, and poll a resolved queue forever.
   Map<String, dynamic> waiting({int waited = 3, int deadline = 35}) => {
         'state': 'waiting',
-        'waitedSeconds': waited,
-        'resolvesWithinSeconds': deadline,
+        'waited_seconds': waited,
+        'resolves_within_seconds': deadline,
       };
 
   Map<String, dynamic> matched({String gameId = 'g1'}) => {
         'state': 'matched',
-        'gameId': gameId,
-        'roomCode': 'ABC123',
+        'game_id': gameId,
+        'room_code': 'ABC123',
         'mode': 'Classic',
-        'playerCount': 2,
-        'playerIndex': 0,
-        'resolvesWithinSeconds': 35,
+        'player_count': 2,
+        'player_index': 0,
+        'resolves_within_seconds': 35,
       };
 
   group('an empty queue is not a failure', () {
@@ -73,8 +77,39 @@ void main() {
     test('matched without a game id is not treated as resolved', () {
       // Sending the player to a room with no id strands them worse than
       // waiting does.
-      final broken = matched()..remove('gameId');
+      final broken = matched()..remove('game_id');
       expect(QueueResolution().apply(broken), QueueOutcome.keepWaiting);
+    });
+
+    test('a camelCase body is NOT accepted as a match', () {
+      // The regression, stated as a test. This body carries a perfectly good
+      // match — under the wrong key. It has to read as unusable rather than
+      // silently resolving to a null game id, and the snake_case body above
+      // has to read as resolved. Both halves matter: if this ever passes as
+      // resolved, the constants have drifted from the wire again.
+      final camel = {
+        'state': 'matched',
+        'gameId': 'g1',
+        'roomCode': 'ABC123',
+        'resolvesWithinSeconds': 35,
+      };
+
+      expect(QueueResolution().apply(camel), QueueOutcome.keepWaiting);
+      expect(QueueResolution.deadlineFrom(camel), isNull);
+
+      expect(QueueResolution().apply(matched()), QueueOutcome.resolved);
+      expect(QueueResolution.deadlineFrom(waiting()), 35);
+    });
+
+    test('the key constants are the ones the API actually sends', () {
+      expect(kState, 'state');
+      expect(kGameId, 'game_id');
+      expect(kRoomCode, 'room_code');
+      expect(kMode, 'mode');
+      expect(kPlayerCount, 'player_count');
+      expect(kPlayerIndex, 'player_index');
+      expect(kResolvesWithin, 'resolves_within_seconds');
+      expect(kWaitedSeconds, 'waited_seconds');
     });
 
     test('the server deadline is read from the answer, not assumed', () {

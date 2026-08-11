@@ -1,3 +1,21 @@
+/// The queue-status field names, exactly as they arrive on the wire.
+///
+/// The API serialises with JsonNamingPolicy.SnakeCaseLower (see Program.cs),
+/// so a C# property called GameId reaches us as `game_id`. Reading `gameId`
+/// gets null — and because a matched status with no game id is deliberately
+/// treated as "not usable, keep waiting", the mismatch did not fail loudly.
+/// It made the client poll a resolved match forever: the server seated the
+/// player at 32 seconds and the app sat on SEARCHING FOR PLAYERS until it was
+/// force-quit. Naming them once, here, is what stops that recurring.
+const String kState = 'state';
+const String kGameId = 'game_id';
+const String kRoomCode = 'room_code';
+const String kMode = 'mode';
+const String kPlayerCount = 'player_count';
+const String kPlayerIndex = 'player_index';
+const String kResolvesWithin = 'resolves_within_seconds';
+const String kWaitedSeconds = 'waited_seconds';
+
 /// What the client should do with one queue-status answer.
 enum QueueOutcome {
   /// Still queued. Keep waiting — this includes the case where nobody else is
@@ -58,11 +76,11 @@ class QueueResolution {
     // across an entire search.
     _consecutiveFailures = 0;
 
-    switch (status['state']?.toString()) {
+    switch (status[kState]?.toString()) {
       case 'matched':
         // A matched state with no game is not usable — treat it as still
         // waiting rather than sending the player to a room that has no id.
-        final gameId = status['gameId']?.toString();
+        final gameId = status[kGameId]?.toString();
         return (gameId == null || gameId.isEmpty)
             ? QueueOutcome.keepWaiting
             : QueueOutcome.resolved;
@@ -75,5 +93,5 @@ class QueueResolution {
 
   /// The server's promised deadline, when it sent one.
   static int? deadlineFrom(Map<String, dynamic>? status) =>
-      (status?['resolvesWithinSeconds'] as num?)?.toInt();
+      (status?[kResolvesWithin] as num?)?.toInt();
 }

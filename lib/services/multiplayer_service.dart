@@ -5,6 +5,7 @@ import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_error.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/multiplayer/queue_resolution.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -917,22 +918,25 @@ class MultiplayerService {
   ///
   /// Returns true once the queue has resolved.
   bool applyPolledQueueStatus(Map<String, dynamic> status) {
-    if (status['state']?.toString() != 'matched') return false;
+    if (status[kState]?.toString() != 'matched') return false;
 
-    final gameId = status['gameId']?.toString();
+    final gameId = status[kGameId]?.toString();
     if (gameId == null || gameId.isEmpty) return false;
 
     // Already handled — almost certainly by the push. Report resolved so the
     // caller stops polling, but do NOT run the join again.
     if (_currentGameId == gameId) return true;
 
+    // Both sides of this map are snake_case, and for the same reason: the
+    // REST body arrives that way (SnakeCaseLower) and _handleMatchFound reads
+    // the SignalR payload, which is serialised with the same policy.
     _handleMatchFound([
       <String, dynamic>{
         'game_id': gameId,
-        'room_code': status['roomCode'],
-        'mode': status['mode'],
-        'player_count': status['playerCount'],
-        'player_index': status['playerIndex'],
+        'room_code': status[kRoomCode],
+        'mode': status[kMode],
+        'player_count': status[kPlayerCount],
+        'player_index': status[kPlayerIndex],
       },
     ]);
     return true;
