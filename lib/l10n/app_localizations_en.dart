@@ -3213,23 +3213,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'The top bar shows your score, level, and high score. Watch your progress as you play!';
 
   @override
-  String get wtControlsTitle => 'Swipe to Move';
+  String get wtControlsTitle => 'Steering';
 
   @override
   String get wtControlsMsg =>
-      'Swipe in any direction to change where your snake is heading. The snake will turn to follow your swipe.';
+      'Change direction by swiping the board, using the on-screen D-pad, or pressing the arrow keys. Pick your style in Settings → Controls.';
 
   @override
-  String get wtPracticeRightTitle => 'Try it! Swipe RIGHT';
+  String get wtPracticeRightTitle => 'Try it — turn RIGHT';
 
   @override
-  String get wtPracticeRightMsg => 'Swipe RIGHT on the screen to continue.';
+  String get wtPracticeRightMsg =>
+      'Turn right to continue. Swipe, D-pad or arrow keys all work.';
 
   @override
-  String get wtPracticeUpTitle => 'Great! Now swipe UP';
+  String get wtPracticeUpTitle => 'Nice — now turn UP';
 
   @override
-  String get wtPracticeUpMsg => 'Swipe UP on the screen to continue.';
+  String get wtPracticeUpMsg => 'Turn up to continue.';
 
   @override
   String get wtFoodTitle => 'Eat to Grow';
@@ -3287,22 +3288,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wtSkipTutorial => 'Skip Tutorial';
 
   @override
-  String get wtSwipeRightUpper => 'SWIPE RIGHT';
+  String get wtSwipeRightUpper => 'TURN RIGHT';
 
   @override
-  String get wtSwipeLeftUpper => 'SWIPE LEFT';
+  String get wtSwipeLeftUpper => 'TURN LEFT';
 
   @override
-  String get wtSwipeUpUpper => 'SWIPE UP';
+  String get wtSwipeUpUpper => 'TURN UP';
 
   @override
-  String get wtSwipeDownUpper => 'SWIPE DOWN';
+  String get wtSwipeDownUpper => 'TURN DOWN';
 
   @override
-  String get wtSwipeAnywhereScreen => 'Swipe anywhere on screen!';
+  String get wtSwipeAnywhereScreen => 'Swipe, D-pad or arrow keys';
 
   @override
-  String get wtSwipeAnywhere => 'Swipe anywhere!';
+  String get wtSwipeAnywhere => 'Your move!';
 
   @override
   String get wtGotIt => 'Got it!';
@@ -4752,12 +4753,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get insSwipeRightDesc => 'Move snake right';
 
   @override
-  String get insTapScreen => 'Tap Screen';
-
-  @override
-  String get insTapScreenDesc => 'Pause/Resume game';
-
-  @override
   String get insArrowKeys => 'Arrow Keys (Desktop)';
 
   @override
@@ -5994,4 +5989,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mpTurnBlocked => 'Blocked';
+
+  @override
+  String get insHudPause => 'Pause Button';
+
+  @override
+  String get insHudPauseDesc =>
+      'Pause or resume — top right of the game screen';
+
+  @override
+  String get insDpad => 'On-Screen D-Pad';
+
+  @override
+  String get insDpadDesc => 'Optional buttons for turning, instead of swiping';
+
+  @override
+  String get insControlsNote =>
+      'Turn the D-pad on or off — and choose where it sits — in Settings → Controls.';
+
+  @override
+  String get insVersus => 'Versus';
+
+  @override
+  String get insVersusOnline => 'Online 1v1';
+
+  @override
+  String get insVersusOnlineDesc =>
+      'Classic rules, two snakes, one board, in real time';
+
+  @override
+  String get insVersusQuick => 'Quick Match';
+
+  @override
+  String get insVersusQuickDesc => 'Finds you an opponent automatically';
+
+  @override
+  String get insVersusRoom => 'Private Room';
+
+  @override
+  String get insVersusRoomDesc =>
+      'Create a room and share the code, or join a friend’s';
+
+  @override
+  String get homeVersusCta => 'VERSUS';
+
+  @override
+  String get homeVersusSubtitle =>
+      '1v1 Classic · Quick match or invite a friend';
+
+  @override
+  String get hwVersusTitle => 'Play someone else';
+
+  @override
+  String get hwVersusMsg =>
+      'Versus is online 1v1 Classic. Quick Match finds you an opponent, or create a private room and invite a friend.';
+
+  @override
+  String get hwHelpTitle => 'Anything else?';
+
+  @override
+  String get hwHelpMsg =>
+      'Rules, controls and Versus are all explained here. Settings sits right beside it.';
 }

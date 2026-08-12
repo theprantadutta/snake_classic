@@ -31,6 +31,7 @@ class GameBottomBar extends StatelessWidget {
     required this.dPadEnabled,
     required this.onDirection,
     this.dPadPosition = DPadPosition.bottomCenter,
+    this.canSteerOverride,
   });
 
   final GameState gameState;
@@ -38,6 +39,12 @@ class GameBottomBar extends StatelessWidget {
   final bool isSmallScreen;
   final bool dPadEnabled;
   final void Function(Direction) onDirection;
+
+  /// Forces the d-pad's usable state instead of deriving it from the game
+  /// status. Only the game tutorial sets it: it pauses the game and then asks
+  /// for a turn, so the control has to work while the status says paused.
+  /// Null everywhere else, which keeps the ordinary rule.
+  final bool? canSteerOverride;
 
   /// Where the player asked for the d-pad, from settings.
   ///
@@ -92,7 +99,11 @@ class GameBottomBar extends StatelessWidget {
     final barHeight = dPadEnabled
         ? dpadSize + verticalPadding * 2
         : statsBarHeight;
-    final isInteractive = gameState.status == GameStatus.playing;
+    // Normally "you may steer" means "the game is running". The tutorial is
+    // the one exception: it deliberately pauses the game and then asks the
+    // player to turn, so it passes true and the control stays live.
+    final isInteractive =
+        canSteerOverride ?? gameState.status == GameStatus.playing;
 
     return SizedBox(
       height: barHeight,

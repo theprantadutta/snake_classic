@@ -3249,23 +3249,24 @@ class AppLocalizationsFr extends AppLocalizations {
       'La barre du haut affiche votre score, niveau et record. Suivez votre progression en jouant !';
 
   @override
-  String get wtControlsTitle => 'Balayez pour bouger';
+  String get wtControlsTitle => 'Direction';
 
   @override
   String get wtControlsMsg =>
-      'Balayez dans n\'importe quelle direction pour changer le cap du serpent. Il tournera en suivant votre geste.';
+      'Change de direction en balayant le plateau, avec la croix directionnelle à l’écran ou avec les flèches. Choisis ton style dans Réglages → Commandes.';
 
   @override
-  String get wtPracticeRightTitle => 'Essayez ! Balayez à DROITE';
+  String get wtPracticeRightTitle => 'Essaie — tourne à DROITE';
 
   @override
-  String get wtPracticeRightMsg => 'Balayez vers la DROITE pour continuer.';
+  String get wtPracticeRightMsg =>
+      'Tourne à droite pour continuer. Balayage, croix directionnelle ou flèches, au choix.';
 
   @override
-  String get wtPracticeUpTitle => 'Bien ! Balayez vers le HAUT';
+  String get wtPracticeUpTitle => 'Bien — maintenant vers le HAUT';
 
   @override
-  String get wtPracticeUpMsg => 'Balayez vers le HAUT pour continuer.';
+  String get wtPracticeUpMsg => 'Tourne vers le haut pour continuer.';
 
   @override
   String get wtFoodTitle => 'Mangez pour grandir';
@@ -3323,22 +3324,23 @@ class AppLocalizationsFr extends AppLocalizations {
   String get wtSkipTutorial => 'Passer le tutoriel';
 
   @override
-  String get wtSwipeRightUpper => 'BALAYEZ À DROITE';
+  String get wtSwipeRightUpper => 'TOURNE À DROITE';
 
   @override
-  String get wtSwipeLeftUpper => 'BALAYEZ À GAUCHE';
+  String get wtSwipeLeftUpper => 'TOURNE À GAUCHE';
 
   @override
-  String get wtSwipeUpUpper => 'BALAYEZ VERS LE HAUT';
+  String get wtSwipeUpUpper => 'TOURNE VERS LE HAUT';
 
   @override
-  String get wtSwipeDownUpper => 'BALAYEZ VERS LE BAS';
+  String get wtSwipeDownUpper => 'TOURNE VERS LE BAS';
 
   @override
-  String get wtSwipeAnywhereScreen => 'Balayez n\'importe où sur l\'écran !';
+  String get wtSwipeAnywhereScreen =>
+      'Balayage, croix directionnelle ou flèches';
 
   @override
-  String get wtSwipeAnywhere => 'Balayez n\'importe où !';
+  String get wtSwipeAnywhere => 'À toi de jouer !';
 
   @override
   String get wtGotIt => 'Compris !';
@@ -4810,12 +4812,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get insSwipeRightDesc => 'Déplace le serpent à droite';
 
   @override
-  String get insTapScreen => 'Touchez l\'Écran';
-
-  @override
-  String get insTapScreenDesc => 'Pause/Reprise de la partie';
-
-  @override
   String get insArrowKeys => 'Flèches (Bureau)';
 
   @override
@@ -6074,4 +6070,66 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mpTurnBlocked => 'Bloqué';
+
+  @override
+  String get insHudPause => 'Bouton pause';
+
+  @override
+  String get insHudPauseDesc =>
+      'Pause ou reprise — en haut à droite de l’écran';
+
+  @override
+  String get insDpad => 'Croix directionnelle à l’écran';
+
+  @override
+  String get insDpadDesc =>
+      'Boutons optionnels pour tourner, au lieu du balayage';
+
+  @override
+  String get insControlsNote =>
+      'Active ou désactive la croix directionnelle — et choisis sa position — dans Réglages → Commandes.';
+
+  @override
+  String get insVersus => 'Versus';
+
+  @override
+  String get insVersusOnline => '1c1 en ligne';
+
+  @override
+  String get insVersusOnlineDesc =>
+      'Règles classiques, deux serpents, un plateau, en temps réel';
+
+  @override
+  String get insVersusQuick => 'Partie rapide';
+
+  @override
+  String get insVersusQuickDesc => 'Te trouve un adversaire automatiquement';
+
+  @override
+  String get insVersusRoom => 'Salon privé';
+
+  @override
+  String get insVersusRoomDesc =>
+      'Crée un salon et partage le code, ou rejoins celui d’un ami';
+
+  @override
+  String get homeVersusCta => 'VERSUS';
+
+  @override
+  String get homeVersusSubtitle =>
+      '1c1 Classique · Partie rapide ou invite un ami';
+
+  @override
+  String get hwVersusTitle => 'Affronte quelqu’un';
+
+  @override
+  String get hwVersusMsg =>
+      'Versus, c’est du 1c1 Classique en ligne. La partie rapide te trouve un adversaire, ou crée un salon privé et invite un ami.';
+
+  @override
+  String get hwHelpTitle => 'Autre chose ?';
+
+  @override
+  String get hwHelpMsg =>
+      'Règles, commandes et Versus sont expliqués ici. Les réglages sont juste à côté.';
 }

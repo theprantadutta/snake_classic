@@ -17,6 +17,8 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/supported_locales.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/data/daos/game_dao.dart';
+import 'package:snake_classic/data/daos/settings_dao.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/data/database/legacy_prefs_import.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -284,6 +286,27 @@ Future<void> _bootstrap() async {
     // safe to "fully onboarded" when uninitialized — so a late init would
     // silently show veteran UI to a brand-new player. Cheap: one prefs read.
     await FirstRunService().initialize();
+
+    // Classify installs that predate those preferences. Runs here because it
+    // needs Drift (already up, two statements above) and must land before the
+    // router builds, for the same reason initialize() must: every first-run
+    // gate reads the synchronous getters. Stamps itself, so this is a single
+    // indexed read on every launch after the first.
+    //
+    // The evidence is deliberately local and durable — a statistics row with
+    // games in it, or a high score on this device. Not the network, not "is
+    // signed in": a restored cloud profile proves someone played, not that
+    // THIS device ever did, and first-run state describes the device.
+    await FirstRunService().migrateExistingInstall(() async {
+      final db = getIt<AppDatabase>();
+      final stats = await GameDao(db).getStatistics();
+      if (stats != null &&
+          (stats.totalGamesPlayed > 0 || stats.highestScore > 0)) {
+        return true;
+      }
+      final settings = await SettingsDao(db).getSettings();
+      return (settings?.highScore ?? 0) > 0;
+    });
 
     // Initialize router with analytics observer. `appRouter` is `late final`,
     // so this must run exactly once: SnakeClassicApp throws

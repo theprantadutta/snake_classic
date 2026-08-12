@@ -15,35 +15,41 @@ class HomeWalkthrough {
   /// Cosmetics nav item (skins + trails).
   static final cosmeticsKey = GlobalKey();
 
-  /// Get the list of walkthrough steps
-  /// Call this after the keys have been assigned to their widgets
+  /// Versus call-to-action, directly under the Play button.
+  static final versusKey = GlobalKey();
+
+  /// The help ("?") button in the top navigation.
+  static final helpKey = GlobalKey();
+
+  /// The tour, cut from seven steps to three.
+  ///
+  /// It used to walk a first-session player through Coins, Daily Challenges,
+  /// Store, Cosmetics, Profile and Settings — six screens of metagame for
+  /// someone who had played once — and then hand off to a daily-bonus dialog
+  /// and a notification permission ask in the same visit. That is the stacked
+  /// interruption the play-first redesign existed to remove, rebuilt inside
+  /// the tour.
+  ///
+  /// What is left is what a player cannot discover by looking: that there is
+  /// a second mode, that today's challenges are worth a look, and where the
+  /// rules live. Store, cosmetics and profile are visible on the screen and
+  /// can be found by anyone curious enough to tap them.
   static List<WalkthroughStep> getSteps(AppLocalizations l10n) {
     return [
-      // Step 1: Welcome and Play Button
+      // Step 1: Versus. First on purpose — it is the least discoverable
+      // thing in the app and the reason the tour was re-cut.
       WalkthroughStep(
-        id: 'home_play',
-        title: l10n.hwPlayTitle,
-        message: l10n.hwPlayMsg,
-        targetKey: playButtonKey,
+        id: 'home_versus',
+        title: l10n.hwVersusTitle,
+        message: l10n.hwVersusMsg,
+        targetKey: versusKey,
         position: TooltipPosition.above,
-        icon: Icons.play_arrow_rounded,
-        spotlightPadding: 12,
-        spotlightBorderRadius: 100, // Circular button
-      ),
-
-      // Step 2: Coins Display
-      WalkthroughStep(
-        id: 'home_coins',
-        title: l10n.hwCoinsTitle,
-        message: l10n.hwCoinsMsg,
-        targetKey: coinsKey,
-        position: TooltipPosition.below,
-        icon: Icons.monetization_on,
+        icon: Icons.sports_esports,
         spotlightPadding: 8,
         spotlightBorderRadius: 20,
       ),
 
-      // Step 3: Daily Challenges
+      // Step 2: Daily Challenges — a reason to come back tomorrow.
       WalkthroughStep(
         id: 'home_daily',
         title: l10n.hwDailyTitle,
@@ -55,50 +61,14 @@ class HomeWalkthrough {
         spotlightBorderRadius: 18,
       ),
 
-      // Step 4: Store
+      // Step 3: Help — rules, controls and Versus, with Settings beside it.
       WalkthroughStep(
-        id: 'home_store',
-        title: l10n.hwStoreTitle,
-        message: l10n.hwStoreMsg,
-        targetKey: storeKey,
-        position: TooltipPosition.above,
-        icon: Icons.store,
-        spotlightPadding: 6,
-        spotlightBorderRadius: 14,
-      ),
-
-      // Step 5: Cosmetics
-      WalkthroughStep(
-        id: 'home_cosmetics',
-        title: l10n.hwCosmeticsTitle,
-        message: l10n.hwCosmeticsMsg,
-        targetKey: cosmeticsKey,
-        position: TooltipPosition.above,
-        icon: Icons.palette,
-        spotlightPadding: 6,
-        spotlightBorderRadius: 14,
-      ),
-
-      // Step 7: Profile
-      WalkthroughStep(
-        id: 'home_profile',
-        title: l10n.hwProfileTitle,
-        message: l10n.hwProfileMsg,
-        targetKey: profileKey,
+        id: 'home_help',
+        title: l10n.hwHelpTitle,
+        message: l10n.hwHelpMsg,
+        targetKey: helpKey,
         position: TooltipPosition.below,
-        icon: Icons.account_circle,
-        spotlightPadding: 8,
-        spotlightBorderRadius: 20,
-      ),
-
-      // Step 8: Settings
-      WalkthroughStep(
-        id: 'home_settings',
-        title: l10n.hwSettingsTitle,
-        message: l10n.hwSettingsMsg,
-        targetKey: settingsKey,
-        position: TooltipPosition.below,
-        icon: Icons.settings,
+        icon: Icons.help_outline,
         spotlightPadding: 8,
         spotlightBorderRadius: 20,
         actionLabel: l10n.wtStartPlaying,

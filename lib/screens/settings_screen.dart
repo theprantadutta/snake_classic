@@ -2255,7 +2255,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await walkthroughService.initialize();
               await walkthroughService.reset(WalkthroughService.gameTutorialId);
               if (mounted) {
-                context.go(AppRoutes.game);
+                // The request travels with the navigation. Resetting the
+                // stored flag and going to /game used to be the whole
+                // implementation, and nothing on the game screen read that
+                // flag — so the player who asked to be taught got an ordinary
+                // run and the tutorial never appeared.
+                context.go(AppRoutes.gameWithTutorial);
               }
             },
             child: Text(

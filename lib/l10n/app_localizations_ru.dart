@@ -3230,24 +3230,24 @@ class AppLocalizationsRu extends AppLocalizations {
       'Верхняя панель показывает счёт, уровень и рекорд. Следите за прогрессом во время игры!';
 
   @override
-  String get wtControlsTitle => 'Свайп для движения';
+  String get wtControlsTitle => 'Управление';
 
   @override
   String get wtControlsMsg =>
-      'Свайпайте в любую сторону, чтобы менять направление змейки. Она повернёт за вашим свайпом.';
+      'Меняйте направление свайпом по полю, экранной крестовиной или стрелками.';
 
   @override
-  String get wtPracticeRightTitle => 'Попробуйте! Свайп ВПРАВО';
+  String get wtPracticeRightTitle => 'Попробуйте — поверните ВПРАВО';
 
   @override
   String get wtPracticeRightMsg =>
-      'Свайпните ВПРАВО по экрану, чтобы продолжить.';
+      'Поверните вправо, чтобы продолжить. Свайп, крестовина или стрелки — подойдёт любой способ.';
 
   @override
-  String get wtPracticeUpTitle => 'Отлично! Теперь свайп ВВЕРХ';
+  String get wtPracticeUpTitle => 'Отлично — теперь ВВЕРХ';
 
   @override
-  String get wtPracticeUpMsg => 'Свайпните ВВЕРХ по экрану, чтобы продолжить.';
+  String get wtPracticeUpMsg => 'Поверните вверх, чтобы продолжить.';
 
   @override
   String get wtFoodTitle => 'Ешьте и растите';
@@ -3305,22 +3305,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get wtSkipTutorial => 'Пропустить обучение';
 
   @override
-  String get wtSwipeRightUpper => 'СВАЙП ВПРАВО';
+  String get wtSwipeRightUpper => 'ВПРАВО';
 
   @override
-  String get wtSwipeLeftUpper => 'СВАЙП ВЛЕВО';
+  String get wtSwipeLeftUpper => 'ВЛЕВО';
 
   @override
-  String get wtSwipeUpUpper => 'СВАЙП ВВЕРХ';
+  String get wtSwipeUpUpper => 'ВВЕРХ';
 
   @override
-  String get wtSwipeDownUpper => 'СВАЙП ВНИЗ';
+  String get wtSwipeDownUpper => 'ВНИЗ';
 
   @override
-  String get wtSwipeAnywhereScreen => 'Свайпайте в любом месте экрана!';
+  String get wtSwipeAnywhereScreen => 'Свайп, крестовина или стрелки';
 
   @override
-  String get wtSwipeAnywhere => 'Свайпайте где угодно!';
+  String get wtSwipeAnywhere => 'Ваш ход!';
 
   @override
   String get wtGotIt => 'Понятно!';
@@ -4775,12 +4775,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get insSwipeRightDesc => 'Двигает змейку вправо';
 
   @override
-  String get insTapScreen => 'Касание экрана';
-
-  @override
-  String get insTapScreenDesc => 'Пауза/продолжение игры';
-
-  @override
   String get insArrowKeys => 'Стрелки (ПК)';
 
   @override
@@ -6034,4 +6028,63 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mpTurnBlocked => 'Заблокировано';
+
+  @override
+  String get insHudPause => 'Кнопка паузы';
+
+  @override
+  String get insHudPauseDesc => 'Пауза и продолжение — вверху справа';
+
+  @override
+  String get insDpad => 'Экранная крестовина';
+
+  @override
+  String get insDpadDesc => 'Кнопки для поворотов вместо свайпов';
+
+  @override
+  String get insControlsNote =>
+      'Включить крестовину и выбрать её расположение можно в настройках управления.';
+
+  @override
+  String get insVersus => 'Версус';
+
+  @override
+  String get insVersusOnline => 'Онлайн 1 на 1';
+
+  @override
+  String get insVersusOnlineDesc =>
+      'Классические правила, две змейки, одно поле, в реальном времени';
+
+  @override
+  String get insVersusQuick => 'Быстрый матч';
+
+  @override
+  String get insVersusQuickDesc => 'Автоматически находит соперника';
+
+  @override
+  String get insVersusRoom => 'Приватная комната';
+
+  @override
+  String get insVersusRoomDesc =>
+      'Создайте комнату и поделитесь кодом или присоединитесь к другу';
+
+  @override
+  String get homeVersusCta => 'ВЕРСУС';
+
+  @override
+  String get homeVersusSubtitle => '1 на 1, классика · Быстрый матч или друг';
+
+  @override
+  String get hwVersusTitle => 'Сыграйте с кем-то';
+
+  @override
+  String get hwVersusMsg =>
+      'Версус — это онлайн 1 на 1 по классическим правилам. Быстрый матч найдёт соперника, или создайте приватную комнату.';
+
+  @override
+  String get hwHelpTitle => 'Что-то ещё?';
+
+  @override
+  String get hwHelpMsg =>
+      'Здесь описаны правила, управление и режим Версус. Настройки — рядом.';
 }

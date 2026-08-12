@@ -3234,24 +3234,24 @@ class AppLocalizationsPt extends AppLocalizations {
       'A barra superior mostra sua pontuação, nível e recorde. Acompanhe seu progresso enquanto joga!';
 
   @override
-  String get wtControlsTitle => 'Deslize para mover';
+  String get wtControlsTitle => 'Direção';
 
   @override
   String get wtControlsMsg =>
-      'Deslize em qualquer direção para mudar o rumo da cobra. Ela vai virar seguindo seu deslize.';
+      'Muda de direção deslizando no tabuleiro, com o botão direcional no ecrã ou com as setas. Escolhe o teu estilo em Definições → Controlos.';
 
   @override
-  String get wtPracticeRightTitle => 'Experimente! Deslize para a DIREITA';
+  String get wtPracticeRightTitle => 'Experimenta — vira à DIREITA';
 
   @override
   String get wtPracticeRightMsg =>
-      'Deslize para a DIREITA na tela para continuar.';
+      'Vira à direita para continuar. Deslizar, botão direcional ou setas — tudo funciona.';
 
   @override
-  String get wtPracticeUpTitle => 'Ótimo! Agora deslize para CIMA';
+  String get wtPracticeUpTitle => 'Boa — agora vira para CIMA';
 
   @override
-  String get wtPracticeUpMsg => 'Deslize para CIMA na tela para continuar.';
+  String get wtPracticeUpMsg => 'Vira para cima para continuar.';
 
   @override
   String get wtFoodTitle => 'Coma para crescer';
@@ -3309,22 +3309,22 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wtSkipTutorial => 'Pular tutorial';
 
   @override
-  String get wtSwipeRightUpper => 'DESLIZE PARA A DIREITA';
+  String get wtSwipeRightUpper => 'VIRAR À DIREITA';
 
   @override
-  String get wtSwipeLeftUpper => 'DESLIZE PARA A ESQUERDA';
+  String get wtSwipeLeftUpper => 'VIRAR À ESQUERDA';
 
   @override
-  String get wtSwipeUpUpper => 'DESLIZE PARA CIMA';
+  String get wtSwipeUpUpper => 'VIRAR PARA CIMA';
 
   @override
-  String get wtSwipeDownUpper => 'DESLIZE PARA BAIXO';
+  String get wtSwipeDownUpper => 'VIRAR PARA BAIXO';
 
   @override
-  String get wtSwipeAnywhereScreen => 'Deslize em qualquer lugar da tela!';
+  String get wtSwipeAnywhereScreen => 'Deslizar, botão direcional ou setas';
 
   @override
-  String get wtSwipeAnywhere => 'Deslize em qualquer lugar!';
+  String get wtSwipeAnywhere => 'É contigo!';
 
   @override
   String get wtGotIt => 'Entendi!';
@@ -4788,12 +4788,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get insSwipeRightDesc => 'Move a cobra para a direita';
 
   @override
-  String get insTapScreen => 'Toque na Tela';
-
-  @override
-  String get insTapScreenDesc => 'Pausar/Retomar o jogo';
-
-  @override
   String get insArrowKeys => 'Setas (Desktop)';
 
   @override
@@ -6051,4 +6045,65 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get mpTurnBlocked => 'Bloqueado';
+
+  @override
+  String get insHudPause => 'Botão de pausa';
+
+  @override
+  String get insHudPauseDesc =>
+      'Pausar ou retomar — canto superior direito do jogo';
+
+  @override
+  String get insDpad => 'Botão direcional no ecrã';
+
+  @override
+  String get insDpadDesc => 'Botões opcionais para virar, em vez de deslizar';
+
+  @override
+  String get insControlsNote =>
+      'Ativa ou desativa o botão direcional — e escolhe onde fica — em Definições → Controlos.';
+
+  @override
+  String get insVersus => 'Versus';
+
+  @override
+  String get insVersusOnline => '1v1 online';
+
+  @override
+  String get insVersusOnlineDesc =>
+      'Regras clássicas, duas cobras, um tabuleiro, em tempo real';
+
+  @override
+  String get insVersusQuick => 'Partida rápida';
+
+  @override
+  String get insVersusQuickDesc => 'Encontra-te um adversário automaticamente';
+
+  @override
+  String get insVersusRoom => 'Sala privada';
+
+  @override
+  String get insVersusRoomDesc =>
+      'Cria uma sala e partilha o código, ou entra na de um amigo';
+
+  @override
+  String get homeVersusCta => 'VERSUS';
+
+  @override
+  String get homeVersusSubtitle =>
+      '1v1 Clássico · Partida rápida ou convida um amigo';
+
+  @override
+  String get hwVersusTitle => 'Joga contra alguém';
+
+  @override
+  String get hwVersusMsg =>
+      'Versus é 1v1 Clássico online. A partida rápida encontra-te um adversário, ou cria uma sala privada e convida um amigo.';
+
+  @override
+  String get hwHelpTitle => 'Mais alguma coisa?';
+
+  @override
+  String get hwHelpMsg =>
+      'Regras, controlos e Versus estão explicados aqui. As definições estão mesmo ao lado.';
 }

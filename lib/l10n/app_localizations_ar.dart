@@ -3198,23 +3198,24 @@ class AppLocalizationsAr extends AppLocalizations {
       'الشريط العلوي يعرض نتيجتك ومستواك وأعلى نتيجة. راقب تقدمك أثناء اللعب!';
 
   @override
-  String get wtControlsTitle => 'اسحب للتحرك';
+  String get wtControlsTitle => 'التوجيه';
 
   @override
   String get wtControlsMsg =>
-      'اسحب في أي اتجاه لتغيير وجهة الثعبان. سينعطف الثعبان تبعًا لسحبك.';
+      'غيّر الاتجاه بالسحب على اللوحة أو بلوحة الاتجاهات أو بمفاتيح الأسهم.';
 
   @override
-  String get wtPracticeRightTitle => 'جرّب! اسحب لليمين';
+  String get wtPracticeRightTitle => 'جرّب — اتجه يمينًا';
 
   @override
-  String get wtPracticeRightMsg => 'اسحب لليمين على الشاشة للمتابعة.';
+  String get wtPracticeRightMsg =>
+      'اتجه يمينًا للمتابعة. يمكنك استخدام السحب أو لوحة الاتجاهات أو مفاتيح الأسهم.';
 
   @override
-  String get wtPracticeUpTitle => 'رائع! الآن اسحب لأعلى';
+  String get wtPracticeUpTitle => 'ممتاز — الآن اتجه لأعلى';
 
   @override
-  String get wtPracticeUpMsg => 'اسحب لأعلى على الشاشة للمتابعة.';
+  String get wtPracticeUpMsg => 'اتجه لأعلى للمتابعة.';
 
   @override
   String get wtFoodTitle => 'كُل لتكبر';
@@ -3271,22 +3272,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get wtSkipTutorial => 'تخطي الدرس';
 
   @override
-  String get wtSwipeRightUpper => 'اسحب لليمين';
+  String get wtSwipeRightUpper => 'يمينًا';
 
   @override
-  String get wtSwipeLeftUpper => 'اسحب لليسار';
+  String get wtSwipeLeftUpper => 'يسارًا';
 
   @override
-  String get wtSwipeUpUpper => 'اسحب لأعلى';
+  String get wtSwipeUpUpper => 'لأعلى';
 
   @override
-  String get wtSwipeDownUpper => 'اسحب لأسفل';
+  String get wtSwipeDownUpper => 'لأسفل';
 
   @override
-  String get wtSwipeAnywhereScreen => 'اسحب في أي مكان على الشاشة!';
+  String get wtSwipeAnywhereScreen => 'السحب أو لوحة الاتجاهات أو الأسهم';
 
   @override
-  String get wtSwipeAnywhere => 'اسحب في أي مكان!';
+  String get wtSwipeAnywhere => 'دورك!';
 
   @override
   String get wtGotIt => 'فهمت!';
@@ -4731,12 +4732,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get insSwipeRightDesc => 'يحرّك الثعبان لليمين';
 
   @override
-  String get insTapScreen => 'المس الشاشة';
-
-  @override
-  String get insTapScreenDesc => 'إيقاف/استئناف اللعبة';
-
-  @override
   String get insArrowKeys => 'مفاتيح الأسهم (كمبيوتر)';
 
   @override
@@ -5988,4 +5983,64 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mpTurnBlocked => 'محظور';
+
+  @override
+  String get insHudPause => 'زر الإيقاف المؤقت';
+
+  @override
+  String get insHudPauseDesc => 'إيقاف مؤقت أو متابعة — أعلى يمين شاشة اللعبة';
+
+  @override
+  String get insDpad => 'لوحة اتجاهات على الشاشة';
+
+  @override
+  String get insDpadDesc => 'أزرار اختيارية للانعطاف بدلاً من السحب';
+
+  @override
+  String get insControlsNote =>
+      'يمكنك تفعيل لوحة الاتجاهات أو إيقافها واختيار موضعها من الإعدادات.';
+
+  @override
+  String get insVersus => 'مواجهة';
+
+  @override
+  String get insVersusOnline => 'مواجهة فردية عبر الإنترنت';
+
+  @override
+  String get insVersusOnlineDesc =>
+      'قواعد كلاسيكية، أفعيان، لوحة واحدة، في الوقت الفعلي';
+
+  @override
+  String get insVersusQuick => 'مباراة سريعة';
+
+  @override
+  String get insVersusQuickDesc => 'يجد لك خصمًا تلقائيًا';
+
+  @override
+  String get insVersusRoom => 'غرفة خاصة';
+
+  @override
+  String get insVersusRoomDesc =>
+      'أنشئ غرفة وشارك الرمز، أو انضم إلى غرفة صديق';
+
+  @override
+  String get homeVersusCta => 'مواجهة';
+
+  @override
+  String get homeVersusSubtitle =>
+      'مواجهة فردية كلاسيكية · مباراة سريعة أو ادعُ صديقًا';
+
+  @override
+  String get hwVersusTitle => 'العب ضد شخص آخر';
+
+  @override
+  String get hwVersusMsg =>
+      'المواجهة هي لعب فردي كلاسيكي عبر الإنترنت. المباراة السريعة تجد لك خصمًا، أو أنشئ غرفة خاصة وادعُ صديقًا.';
+
+  @override
+  String get hwHelpTitle => 'أي شيء آخر؟';
+
+  @override
+  String get hwHelpMsg =>
+      'القواعد والتحكم والمواجهة كلها موضحة هنا، والإعدادات بجوارها.';
 }

@@ -20,6 +20,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/analytics/analytics_values.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/formatting.dart';
@@ -140,7 +141,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// stops the back path from stranding the queue until the next cold start.
   void _maybeRunOnboardingPromptQueue() {
     if (_promptQueueDispatched) return;
-    if (FirstRunService().isFirstGame) return;
+    // After the three-game onboarding window, not after a single START.
+    // `isFirstGame` flips the moment somebody taps Play — including a player
+    // who quit two seconds in — so the whole queue could fire at a player who
+    // had seen the board once. Three games is the window every other first-run
+    // gate already uses, and the one FirstRunService documents.
+    if (!FirstRunService().hasCompletedOnboarding) return;
     _promptQueueDispatched = true;
     unawaited(_runOnboardingPromptQueue());
   }
@@ -153,8 +159,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     // 1. Home walkthrough — resolves once completed or skipped (or
     //    immediately if it was already seen).
-    await _checkWalkthrough();
+    final tourRan = await _checkWalkthrough();
     if (!mounted) return;
+
+    // If the player just sat through (or dismissed) the tour, that is enough
+    // for one visit. A coach-mark tour followed immediately by a bonus dialog
+    // followed immediately by an OS permission prompt is three interruptions
+    // deep, and asking for notifications at the end of that queue is both the
+    // worst-converting moment to ask and a poor thing to do to someone still
+    // deciding about the app. Nothing is lost: the daily badge stays on
+    // screen, and the remaining prompts self-gate and run on the next visit.
+    if (tourRan) return;
 
     // 2. Daily bonus popup — resolves when the dialog is dismissed.
     await _checkDailyBonus();
@@ -233,8 +248,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             .timeout(const Duration(seconds: 2));
         alreadyPrompted = ready.gameModeFirstLaunchPrompted;
       } catch (_) {
-        alreadyPrompted =
-            await getIt<StorageService>().hasGameModeBeenPrompted();
+        alreadyPrompted = await getIt<StorageService>()
+            .hasGameModeBeenPrompted();
       }
     }
 
@@ -255,9 +270,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // Cap width so the sheet centers on tablets instead of spanning the
       // full width (no-op on phones narrower than 640).
       constraints: const BoxConstraints(maxWidth: 640),
-      builder: (sheetContext) => _GameModeFirstLaunchSheet(
-        initialMode: settingsCubit.state.gameMode,
-      ),
+      builder: (sheetContext) =>
+          _GameModeFirstLaunchSheet(initialMode: settingsCubit.state.gameMode),
     );
 
     if (!mounted) return;
@@ -270,8 +284,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// Check if home walkthrough should be shown. Resolves once the
   /// walkthrough is completed or skipped (or immediately if it doesn't
   /// need to run), so later onboarding prompts can queue behind it.
-  Future<void> _checkWalkthrough() async {
-    if (_walkthroughChecked) return;
+  Future<bool> _checkWalkthrough() async {
+    if (_walkthroughChecked) return false;
 
     _walkthroughChecked = true;
 
@@ -281,12 +295,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
 
     if (!isComplete && mounted) {
-      getIt<AnalyticsFacade>().trackWalkthroughStarted();
+      getIt<AnalyticsFacade>().trackHomeTourStarted(version: kHomeTourVersion);
       final done = Completer<void>();
       await walkthroughNotifier.start(
         walkthroughId: WalkthroughService.homeWalkthroughId,
         steps: HomeWalkthrough.getSteps(AppLocalizations.of(context)!),
-        onComplete: () {
+        onComplete: (outcome) {
           // `tutorial_complete` had never fired in production: the facade
           // method existed but nothing called it, so GA4 showed 3.5k
           // tutorial_begin against zero completions and we could not tell
@@ -296,19 +310,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           // in the player's way"), and the two are separable by whether the
           // user reached the last step in the walkthrough state.
           if (!done.isCompleted) {
-            getIt<AnalyticsFacade>().trackWalkthroughCompleted();
+            final analytics = getIt<AnalyticsFacade>();
+            switch (outcome) {
+              case WalkthroughOutcome.finished:
+                analytics.trackHomeTourFinished(version: kHomeTourVersion);
+              case WalkthroughOutcome.skipped:
+                analytics.trackHomeTourSkipped(version: kHomeTourVersion);
+            }
             done.complete();
           }
         },
       );
-      if (!mounted) return;
+      if (!mounted) return false;
       // start() no-ops if the walkthrough raced to a completed state,
       // in which case onComplete never fires — don't hang the queue.
-      if (!ref.read(walkthroughProvider).isActive && !done.isCompleted) {
+      final started = ref.read(walkthroughProvider).isActive;
+      if (!started && !done.isCompleted) {
         done.complete();
       }
       await done.future;
+      return started;
     }
+    return false;
   }
 
   /// Check and show daily bonus popup if available.
@@ -503,16 +526,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 // stretching edge-to-edge. Unbounded on phones,
                                 // so all the screenWidth-based math below is
                                 // unchanged there.
-                                final maxContentWidth =
-                                    context.responsive<double>(
-                                  phone: double.infinity,
-                                  tablet: ContentWidth.menuMaxWidth,
-                                  largeTablet: ContentWidth.menuMaxWidth,
-                                );
+                                final maxContentWidth = context
+                                    .responsive<double>(
+                                      phone: double.infinity,
+                                      tablet: ContentWidth.menuMaxWidth,
+                                      largeTablet: ContentWidth.menuMaxWidth,
+                                    );
                                 final screenWidth =
                                     constraints.maxWidth > maxContentWidth
-                                        ? maxContentWidth
-                                        : constraints.maxWidth;
+                                    ? maxContentWidth
+                                    : constraints.maxWidth;
 
                                 // Enhanced screen size detection with more granular breakpoints
                                 final isVerySmallScreen =
@@ -523,103 +546,113 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   child: SizedBox(
                                     width: screenWidth,
                                     child: Column(
-                                  children: [
-                                    // Top navigation bar - fixed height
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: screenWidth * 0.04,
-                                        vertical: isVerySmallScreen ? 4 : 8,
-                                      ),
-                                      child: _buildTopNavigation(
-                                        context,
-                                        authState,
-                                        theme,
-                                        isVerySmallScreen,
-                                      ),
-                                    ),
+                                      children: [
+                                        // Top navigation bar - fixed height
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: screenWidth * 0.04,
+                                            vertical: isVerySmallScreen ? 4 : 8,
+                                          ),
+                                          child: _buildTopNavigation(
+                                            context,
+                                            authState,
+                                            theme,
+                                            isVerySmallScreen,
+                                          ),
+                                        ),
 
-                                    // Game title with logo - flexible sizing
-                                    _buildGameTitle(theme, screenHeight),
+                                        // Game title with logo - flexible sizing
+                                        _buildGameTitle(theme, screenHeight),
 
-                                    // Main content area - scrollable if needed
-                                    Expanded(
-                                      child: screenHeight < 600
-                                          ? SingleChildScrollView(
-                                              child: Column(
-                                                children: [
-                                                  SizedBox(
-                                                    height: (screenHeight * 0.6)
-                                                        .clamp(300, 500),
-                                                    child: _buildMainPlayArea(
-                                                      context,
-                                                      gameState,
-                                                      authState,
-                                                      theme,
-                                                      screenHeight,
-                                                      screenWidth,
-                                                      screenHeight,
+                                        // Main content area - scrollable if needed
+                                        Expanded(
+                                          child: screenHeight < 600
+                                              ? SingleChildScrollView(
+                                                  child: Column(
+                                                    children: [
+                                                      SizedBox(
+                                                        height:
+                                                            (screenHeight * 0.6)
+                                                                .clamp(
+                                                                  300,
+                                                                  500,
+                                                                ),
+                                                        child:
+                                                            _buildMainPlayArea(
+                                                              context,
+                                                              gameState,
+                                                              authState,
+                                                              theme,
+                                                              screenHeight,
+                                                              screenWidth,
+                                                              screenHeight,
+                                                            ),
+                                                      ),
+                                                      Padding(
+                                                        padding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  screenWidth *
+                                                                  0.04,
+                                                            ),
+                                                        child:
+                                                            _buildBottomNavigation(
+                                                              context,
+                                                              themeState,
+                                                              theme,
+                                                              screenHeight,
+                                                              screenWidth,
+                                                            ),
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            isVerySmallScreen
+                                                            ? 8
+                                                            : 12,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                )
+                                              : Column(
+                                                  children: [
+                                                    // Main play area - takes available space
+                                                    Expanded(
+                                                      child: _buildMainPlayArea(
+                                                        context,
+                                                        gameState,
+                                                        authState,
+                                                        theme,
+                                                        screenHeight,
+                                                        screenWidth,
+                                                        screenHeight,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal:
-                                                              screenWidth *
-                                                              0.04,
-                                                        ),
-                                                    child:
-                                                        _buildBottomNavigation(
-                                                          context,
-                                                          themeState,
-                                                          theme,
-                                                          screenHeight,
-                                                          screenWidth,
-                                                        ),
-                                                  ),
-                                                  SizedBox(
-                                                    height: isVerySmallScreen
-                                                        ? 8
-                                                        : 12,
-                                                  ),
-                                                ],
-                                              ),
-                                            )
-                                          : Column(
-                                              children: [
-                                                // Main play area - takes available space
-                                                Expanded(
-                                                  child: _buildMainPlayArea(
-                                                    context,
-                                                    gameState,
-                                                    authState,
-                                                    theme,
-                                                    screenHeight,
-                                                    screenWidth,
-                                                    screenHeight,
-                                                  ),
-                                                ),
 
-                                                // Bottom navigation grid - fixed at bottom
-                                                Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal:
-                                                        screenWidth * 0.04,
-                                                    vertical: isVerySmallScreen
-                                                        ? 8
-                                                        : 12,
-                                                  ),
-                                                  child: _buildBottomNavigation(
-                                                    context,
-                                                    themeState,
-                                                    theme,
-                                                    screenHeight,
-                                                    screenWidth,
-                                                  ),
+                                                    // Bottom navigation grid - fixed at bottom
+                                                    Padding(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            horizontal:
+                                                                screenWidth *
+                                                                0.04,
+                                                            vertical:
+                                                                isVerySmallScreen
+                                                                ? 8
+                                                                : 12,
+                                                          ),
+                                                      child:
+                                                          _buildBottomNavigation(
+                                                            context,
+                                                            themeState,
+                                                            theme,
+                                                            screenHeight,
+                                                            screenWidth,
+                                                          ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                    ),
-                                  ],
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 );
@@ -808,6 +841,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 context.push(AppRoutes.instructions);
               },
               child: Container(
+                key: HomeWalkthrough.helpKey,
                 padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
                 decoration: BoxDecoration(
                   color: theme.foodColor.withValues(alpha: 0.1),
@@ -995,6 +1029,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
 
+              SizedBox(height: (spacing * 0.6).clamp(4.0, 10.0)),
+
+              // Versus. Secondary by every visual measure — a short pill
+              // against a filled circle — and persistent, because the mode
+              // was previously reachable only through the eighth tile of a
+              // two-row nav grid and appeared in neither the tour nor the
+              // help page. It opens the lobby; it does not queue anyone.
+              _buildVersusCta(context, theme, isSmallScreen),
+
               SizedBox(height: spacing),
 
               // Compact stats row (high score + quick actions) — moved
@@ -1012,10 +1055,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   // ~320 px of available height.
                   constraints: BoxConstraints(
                     minHeight: 80,
-                    maxHeight: (availableHeight > 0
-                            ? availableHeight * 0.25
-                            : 120.0)
-                        .clamp(80.0, double.infinity),
+                    maxHeight:
+                        (availableHeight > 0 ? availableHeight * 0.25 : 120.0)
+                            .clamp(80.0, double.infinity),
                   ),
                   child: _buildCompactStatsRow(
                     context: context,
@@ -1032,9 +1074,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               // taller button row below doesn't grow the column —
               // ~half of the standard inter-section spacing, clamped so
               // a very tall screen doesn't open the gap back up.
-              SizedBox(
-                height: (spacing * 0.4).clamp(2.0, 6.0),
-              ),
+              SizedBox(height: (spacing * 0.4).clamp(2.0, 6.0)),
 
               // Action buttons row - Store and Pro. Taller container
               // (~20 px more) for a more tappable target; the column's
@@ -1236,6 +1276,114 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
+  /// The secondary Home action: open the Versus lobby.
+  ///
+  /// Deliberately quiet next to PLAY — an outlined pill, not a second hero
+  /// button — because there is exactly one primary action on this screen and
+  /// it is still Play. But persistent, because Versus was previously the
+  /// eighth tile of a nav grid, absent from the tour and absent from Help,
+  /// which made a whole online mode effectively invisible.
+  ///
+  /// It opens the lobby and stops there. No queue is joined from Home: the
+  /// player chooses Find Match, Join or Create once they are looking at the
+  /// options. And no connectivity pre-flight gates the tap — the lobby's own
+  /// request is the source of truth about the network and already reports
+  /// offline properly, whereas a local pre-check can only guess wrong in a
+  /// way the player cannot argue with.
+  ///
+  /// The copy says Quick Match finds an opponent. It does not say the
+  /// opponent is a person, because that is not something the matchmaker
+  /// promises.
+  Widget _buildVersusCta(
+    BuildContext context,
+    GameTheme theme,
+    bool isSmallScreen,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Semantics(
+      button: true,
+      label: '${l10n.homeVersusCta}. ${l10n.homeVersusSubtitle}',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () => _openVersusLobby(context),
+        child: Container(
+          key: HomeWalkthrough.versusKey,
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 16 : 20,
+            vertical: isSmallScreen ? 8 : 10,
+          ),
+          decoration: BoxDecoration(
+            color: theme.backgroundColor.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: theme.accentColor.withValues(alpha: 0.45),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.sports_esports,
+                color: theme.accentColor,
+                size: isSmallScreen ? 20 : 24,
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.homeVersusCta,
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: isSmallScreen ? 14 : 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: context.letterSpacing(1.5),
+                        height: 1.1,
+                      ),
+                    ),
+                    Text(
+                      l10n.homeVersusSubtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                        fontSize: isSmallScreen ? 10 : 11,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Open the lobby, and say where the player came from.
+  ///
+  /// The entry point is the measurement the CTA exists for: whether this is
+  /// what brings people to multiplayer, or whether they were finding the nav
+  /// tile anyway.
+  void _openVersusLobby(BuildContext context) {
+    final analytics = getIt<AnalyticsFacade>();
+    analytics.trackHomeVersusCtaTapped(
+      onboardingStage: FirstRunService().hasCompletedOnboarding
+          ? OnboardingStage.established
+          : OnboardingStage.onboarding,
+    );
+    analytics.trackMultiplayerLobbyOpened(
+      entryPoint: LobbyEntryPoint.homeVersus,
+    );
+    context.push(AppRoutes.multiplayerLobby);
+  }
+
   Widget _buildPowerUpLoadoutChip(GameTheme theme) {
     return BlocBuilder<PowerUpCubit, PowerUpState>(
       builder: (context, powerUpState) {
@@ -1246,16 +1394,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
         final l10n = AppLocalizations.of(context)!;
         final armed = powerUpState.armed;
-        final armedLabel = armed == null ? null : _loadoutLabelFor(context, armed);
+        final armedLabel = armed == null
+            ? null
+            : _loadoutLabelFor(context, armed);
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: GestureDetector(
             onTap: () => _openLoadoutSheet(theme, powerUpState),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: armed != null
                     ? theme.accentColor.withValues(alpha: 0.18)
@@ -1792,6 +1939,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         context.push(AppRoutes.achievements);
       }),
       _NavItem(Icons.sports_esports, l10n.homeTileVersus, Colors.green, () {
+        getIt<AnalyticsFacade>().trackMultiplayerLobbyOpened(
+          entryPoint: LobbyEntryPoint.navTile,
+        );
         context.push(AppRoutes.multiplayerLobby);
       }),
     ];
@@ -1817,24 +1967,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final secondRow = navigationItems.skip(firstRowCount).toList();
 
     Widget buildRow(List<_NavItem> items, int indexOffset) => Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: items.asMap().entries.map((entry) {
-            final index = entry.key + indexOffset;
-            final item = entry.value;
-            return _buildNavButton(
-                  icon: item.icon,
-                  label: item.label,
-                  color: item.color,
-                  onTap: item.onTap,
-                  theme: theme,
-                  isSmallScreen: isVerySmallScreen || isSmallScreen,
-                  screenHeight: screenHeight,
-                  badge: item.badge,
-                  widgetKey: item.widgetKey,
-                )
-                .gameGridItem(index);
-          }).toList(),
-        );
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: items.asMap().entries.map((entry) {
+        final index = entry.key + indexOffset;
+        final item = entry.value;
+        return _buildNavButton(
+          icon: item.icon,
+          label: item.label,
+          color: item.color,
+          onTap: item.onTap,
+          theme: theme,
+          isSmallScreen: isVerySmallScreen || isSmallScreen,
+          screenHeight: screenHeight,
+          badge: item.badge,
+          widgetKey: item.widgetKey,
+        ).gameGridItem(index);
+      }).toList(),
+    );
 
     return Column(
       children: [
@@ -1959,7 +2108,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
     );
   }
-
 
   // void _showComingSoonDialog(
   //   BuildContext context,
@@ -2136,9 +2284,7 @@ class _NavItem {
 /// First-launch bottom sheet that asks the user to pick a default game mode.
 /// Returns the selected GameMode, or null if dismissed without confirming.
 class _GameModeFirstLaunchSheet extends StatefulWidget {
-  const _GameModeFirstLaunchSheet({
-    required this.initialMode,
-  });
+  const _GameModeFirstLaunchSheet({required this.initialMode});
 
   final GameMode initialMode;
 
@@ -2208,7 +2354,9 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
                   onTap: () => setState(() => _selected = mode),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? theme.accentColor.withValues(alpha: 0.18)
@@ -2249,8 +2397,11 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
                           ),
                         ),
                         if (isSelected)
-                          Icon(Icons.check_circle,
-                              color: theme.accentColor, size: 22),
+                          Icon(
+                            Icons.check_circle,
+                            color: theme.accentColor,
+                            size: 22,
+                          ),
                       ],
                     ),
                   ),
@@ -2273,7 +2424,9 @@ class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
                 child: Text(
                   l10n.homeStartPlaying,
                   style: TextStyle(
-                      fontWeight: FontWeight.bold, letterSpacing: context.letterSpacing(1.5)),
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: context.letterSpacing(1.5),
+                  ),
                 ),
               ),
             ),
@@ -2311,8 +2464,9 @@ class _LoadoutBottomSheet extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: theme.backgroundColor.withValues(alpha: 0.98),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
               border: Border.all(
                 color: theme.accentColor.withValues(alpha: 0.4),
                 width: 2,
@@ -2410,7 +2564,9 @@ class _LoadoutBottomSheet extends StatelessWidget {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: isArmed
                                 ? theme.accentColor.withValues(alpha: 0.20)
@@ -2428,8 +2584,9 @@ class _LoadoutBottomSheet extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: theme.accentColor
-                                      .withValues(alpha: 0.15),
+                                  color: theme.accentColor.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -2454,8 +2611,9 @@ class _LoadoutBottomSheet extends StatelessWidget {
                                     Text(
                                       l10n.homeOwnedCount(count),
                                       style: TextStyle(
-                                        color: theme.accentColor
-                                            .withValues(alpha: 0.65),
+                                        color: theme.accentColor.withValues(
+                                          alpha: 0.65,
+                                        ),
                                         fontSize: 11,
                                       ),
                                     ),
@@ -2465,7 +2623,9 @@ class _LoadoutBottomSheet extends StatelessWidget {
                               if (isArmed)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 5),
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: theme.accentColor,
                                     borderRadius: BorderRadius.circular(12),
@@ -2482,8 +2642,9 @@ class _LoadoutBottomSheet extends StatelessWidget {
                               else
                                 Icon(
                                   Icons.add_circle_outline,
-                                  color: theme.accentColor
-                                      .withValues(alpha: 0.7),
+                                  color: theme.accentColor.withValues(
+                                    alpha: 0.7,
+                                  ),
                                   size: 22,
                                 ),
                             ],

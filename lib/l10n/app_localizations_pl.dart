@@ -3241,24 +3241,24 @@ class AppLocalizationsPl extends AppLocalizations {
       'Górny pasek pokazuje wynik, poziom i rekord. Śledź swoje postępy w trakcie gry!';
 
   @override
-  String get wtControlsTitle => 'Przesuń, aby się ruszać';
+  String get wtControlsTitle => 'Sterowanie';
 
   @override
   String get wtControlsMsg =>
-      'Przesuń w dowolnym kierunku, aby zmienić kurs węża. Wąż skręci za twoim gestem.';
+      'Zmieniaj kierunek gestem na planszy, padem kierunkowym na ekranie lub strzałkami. Wybierz styl w Ustawienia → Sterowanie.';
 
   @override
-  String get wtPracticeRightTitle => 'Spróbuj! Przesuń w PRAWO';
+  String get wtPracticeRightTitle => 'Spróbuj — skręć w PRAWO';
 
   @override
   String get wtPracticeRightMsg =>
-      'Przesuń w PRAWO po ekranie, aby kontynuować.';
+      'Skręć w prawo, aby kontynuować. Zadziała gest, pad kierunkowy lub strzałki.';
 
   @override
-  String get wtPracticeUpTitle => 'Świetnie! Teraz przesuń w GÓRĘ';
+  String get wtPracticeUpTitle => 'Świetnie — teraz skręć w GÓRĘ';
 
   @override
-  String get wtPracticeUpMsg => 'Przesuń w GÓRĘ po ekranie, aby kontynuować.';
+  String get wtPracticeUpMsg => 'Skręć w górę, aby kontynuować.';
 
   @override
   String get wtFoodTitle => 'Jedz, aby rosnąć';
@@ -3316,22 +3316,22 @@ class AppLocalizationsPl extends AppLocalizations {
   String get wtSkipTutorial => 'Pomiń samouczek';
 
   @override
-  String get wtSwipeRightUpper => 'PRZESUŃ W PRAWO';
+  String get wtSwipeRightUpper => 'W PRAWO';
 
   @override
-  String get wtSwipeLeftUpper => 'PRZESUŃ W LEWO';
+  String get wtSwipeLeftUpper => 'W LEWO';
 
   @override
-  String get wtSwipeUpUpper => 'PRZESUŃ W GÓRĘ';
+  String get wtSwipeUpUpper => 'W GÓRĘ';
 
   @override
-  String get wtSwipeDownUpper => 'PRZESUŃ W DÓŁ';
+  String get wtSwipeDownUpper => 'W DÓŁ';
 
   @override
-  String get wtSwipeAnywhereScreen => 'Przesuń gdziekolwiek na ekranie!';
+  String get wtSwipeAnywhereScreen => 'Gest, pad kierunkowy lub strzałki';
 
   @override
-  String get wtSwipeAnywhere => 'Przesuń gdziekolwiek!';
+  String get wtSwipeAnywhere => 'Twój ruch!';
 
   @override
   String get wtGotIt => 'Rozumiem!';
@@ -4782,12 +4782,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get insSwipeRightDesc => 'Przesuwa węża w prawo';
 
   @override
-  String get insTapScreen => 'Dotknij Ekranu';
-
-  @override
-  String get insTapScreenDesc => 'Pauza/wznowienie gry';
-
-  @override
   String get insArrowKeys => 'Strzałki (Komputer)';
 
   @override
@@ -6041,4 +6035,65 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get mpTurnBlocked => 'Zablokowane';
+
+  @override
+  String get insHudPause => 'Przycisk pauzy';
+
+  @override
+  String get insHudPauseDesc =>
+      'Wstrzymaj lub wznów — prawy górny róg ekranu gry';
+
+  @override
+  String get insDpad => 'Pad kierunkowy na ekranie';
+
+  @override
+  String get insDpadDesc => 'Opcjonalne przyciski do skręcania zamiast gestów';
+
+  @override
+  String get insControlsNote =>
+      'Włącz lub wyłącz pad kierunkowy — i wybierz jego położenie — w Ustawienia → Sterowanie.';
+
+  @override
+  String get insVersus => 'Versus';
+
+  @override
+  String get insVersusOnline => 'Online 1v1';
+
+  @override
+  String get insVersusOnlineDesc =>
+      'Klasyczne zasady, dwa węże, jedna plansza, w czasie rzeczywistym';
+
+  @override
+  String get insVersusQuick => 'Szybki mecz';
+
+  @override
+  String get insVersusQuickDesc => 'Automatycznie znajduje przeciwnika';
+
+  @override
+  String get insVersusRoom => 'Prywatny pokój';
+
+  @override
+  String get insVersusRoomDesc =>
+      'Stwórz pokój i podziel się kodem albo dołącz do znajomego';
+
+  @override
+  String get homeVersusCta => 'VERSUS';
+
+  @override
+  String get homeVersusSubtitle =>
+      '1v1 Klasyk · Szybki mecz lub zaproś znajomego';
+
+  @override
+  String get hwVersusTitle => 'Zagraj z kimś';
+
+  @override
+  String get hwVersusMsg =>
+      'Versus to klasyczne 1v1 online. Szybki mecz znajdzie przeciwnika albo stwórz prywatny pokój i zaproś znajomego.';
+
+  @override
+  String get hwHelpTitle => 'Coś jeszcze?';
+
+  @override
+  String get hwHelpMsg =>
+      'Zasady, sterowanie i Versus są opisane tutaj. Ustawienia są obok.';
 }

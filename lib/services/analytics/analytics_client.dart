@@ -125,8 +125,31 @@ abstract class AnalyticsClient {
   // ==================== Engagement ====================
 
   Future<void> trackDailyBonusCollected();
-  Future<void> trackWalkthroughStarted();
-  Future<void> trackWalkthroughCompleted();
+  /// The short Home coach-mark tour. Finished and skipped are separate
+  /// events on purpose: the old code recorded "completed" for both, which is
+  /// the one distinction the tour's length was being judged on.
+  ///
+  /// [version] is the tour's content version, so a re-cut tour's numbers are
+  /// not silently compared against the old one's.
+  Future<void> trackHomeTourStarted({required int version});
+  Future<void> trackHomeTourFinished({required int version});
+  Future<void> trackHomeTourSkipped({required int version});
+
+  /// The optional in-game tutorial. [entryPoint] is `pause` or
+  /// `settings_replay` — two deliberate, differently-motivated openings that
+  /// were previously indistinguishable.
+  Future<void> trackGameTutorialStarted({required String entryPoint});
+  Future<void> trackGameTutorialFinished({required String entryPoint});
+  Future<void> trackGameTutorialSkipped({required String entryPoint});
+
+  /// The Home Versus call to action. [onboardingStage] is `onboarding` or
+  /// `established` — whether the player is still inside the first-run window.
+  Future<void> trackHomeVersusCtaTapped({required String onboardingStage});
+
+  /// The multiplayer lobby was opened. [entryPoint] is `home_versus` or
+  /// `nav_tile`, which is the whole point of adding the CTA: knowing whether
+  /// it is what brought people here.
+  Future<void> trackMultiplayerLobbyOpened({required String entryPoint});
 
   // ==================== First-run funnel ====================
   //

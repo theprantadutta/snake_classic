@@ -298,12 +298,41 @@ class AnalyticsFacade implements AnalyticsClient {
       _fire((c) => c.trackDailyBonusCollected());
 
   @override
-  Future<void> trackWalkthroughStarted() async =>
-      _fire((c) => c.trackWalkthroughStarted());
+  Future<void> trackHomeTourStarted({required int version}) async =>
+      _fire((c) => c.trackHomeTourStarted(version: version));
 
   @override
-  Future<void> trackWalkthroughCompleted() async =>
-      _fire((c) => c.trackWalkthroughCompleted());
+  Future<void> trackHomeTourFinished({required int version}) async =>
+      _fire((c) => c.trackHomeTourFinished(version: version));
+
+  @override
+  Future<void> trackHomeTourSkipped({required int version}) async =>
+      _fire((c) => c.trackHomeTourSkipped(version: version));
+
+  @override
+  Future<void> trackGameTutorialStarted({required String entryPoint}) async =>
+      _fire((c) => c.trackGameTutorialStarted(entryPoint: entryPoint));
+
+  @override
+  Future<void> trackGameTutorialFinished({required String entryPoint}) async =>
+      _fire((c) => c.trackGameTutorialFinished(entryPoint: entryPoint));
+
+  @override
+  Future<void> trackGameTutorialSkipped({required String entryPoint}) async =>
+      _fire((c) => c.trackGameTutorialSkipped(entryPoint: entryPoint));
+
+  @override
+  Future<void> trackHomeVersusCtaTapped({
+    required String onboardingStage,
+  }) async => _fire(
+    (c) => c.trackHomeVersusCtaTapped(onboardingStage: onboardingStage),
+  );
+
+  @override
+  Future<void> trackMultiplayerLobbyOpened({
+    required String entryPoint,
+  }) async =>
+      _fire((c) => c.trackMultiplayerLobbyOpened(entryPoint: entryPoint));
 
   // ==================== First-run funnel ====================
 

@@ -5,6 +5,12 @@ import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
 
+/// How a tutorial run ended.
+///
+/// Both endings resume the game and mark the tutorial seen; only the
+/// analytics differ, and that difference is the whole measurement.
+enum TutorialOutcome { finished, skipped }
+
 /// Controller for the interactive game tutorial
 class GameTutorialController extends ChangeNotifier {
   /// Localized step list. Supplied/refreshed by [GameTutorialOverlay]'s
@@ -18,7 +24,7 @@ class GameTutorialController extends ChangeNotifier {
   bool _awaitingInput = false;
   Direction? _expectedDirection;
   bool _isComplete = false;
-  VoidCallback? _onComplete;
+  ValueChanged<TutorialOutcome>? _onFinished;
 
   /// Current step index
   int get currentStep => _currentStep;
@@ -32,9 +38,14 @@ class GameTutorialController extends ChangeNotifier {
   /// Whether the tutorial has been completed
   bool get isComplete => _isComplete;
 
-  /// Set the completion callback
-  set onComplete(VoidCallback? callback) {
-    _onComplete = callback;
+  /// The single owner of "the tutorial is over".
+  ///
+  /// Called exactly once per run, from [complete], with how it ended. The
+  /// overlay used to call [skip] AND a separate onSkip callback that ran the
+  /// screen's completion handler a second time — two resumes, and a setState
+  /// against a controller the first pass had disposed.
+  set onFinished(ValueChanged<TutorialOutcome>? callback) {
+    _onFinished = callback;
   }
 
   /// Get all tutorial steps
@@ -91,16 +102,17 @@ class GameTutorialController extends ChangeNotifier {
   }
 
   /// Skip the tutorial
-  void skip() {
-    complete();
-  }
+  void skip() => _finish(TutorialOutcome.skipped);
 
   /// Mark the tutorial as complete
-  void complete() {
+  void complete() => _finish(TutorialOutcome.finished);
+
+  void _finish(TutorialOutcome outcome) {
+    if (_isComplete) return;
     _isComplete = true;
     _awaitingInput = false;
     _expectedDirection = null;
-    _onComplete?.call();
+    _onFinished?.call(outcome);
     notifyListeners();
   }
 
@@ -141,7 +153,7 @@ class GameTutorialController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _onComplete = null;
+    _onFinished = null;
     super.dispose();
   }
 }
@@ -149,6 +161,7 @@ class GameTutorialController extends ChangeNotifier {
 /// GlobalKeys for game tutorial targets
 class GameTutorialKeys {
   static final hudKey = GlobalKey();
+
   /// Spotlight target for the tutorial_pause step — the pause icon in
   /// the HUD's top-right. Wired via GameHUD(pauseButtonKey: ...).
   static final pauseButtonKey = GlobalKey();
@@ -284,13 +297,11 @@ List<WalkthroughStep> _buildTutorialSteps(AppLocalizations l10n) => [
 class GameTutorialOverlay extends StatelessWidget {
   final GameTutorialController controller;
   final GameTheme theme;
-  final VoidCallback onSkip;
 
   const GameTutorialOverlay({
     super.key,
     required this.controller,
     required this.theme,
-    required this.onSkip,
   });
 
   @override
@@ -316,11 +327,7 @@ class GameTutorialOverlay extends StatelessWidget {
           isAwaitingInput: controller.awaitingInput,
           expectedDirection: controller.expectedDirection,
           onNext: controller.advance,
-          onSkip: () {
-            controller.skip();
-            onSkip();
-          },
-          onSwipe: controller.onSwipeDetected,
+          onSkip: controller.skip,
         );
       },
     );
@@ -337,7 +344,6 @@ class WalkthroughOverlayWidget extends StatelessWidget {
   final Direction? expectedDirection;
   final VoidCallback onNext;
   final VoidCallback onSkip;
-  final Function(Direction)? onSwipe;
 
   const WalkthroughOverlayWidget({
     super.key,
@@ -349,7 +355,6 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     this.expectedDirection,
     required this.onNext,
     required this.onSkip,
-    this.onSwipe,
   });
 
   @override
@@ -376,52 +381,50 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  /// Build a minimal floating overlay for interactive swipe steps
+  /// The practice steps, laid over a live board.
+  ///
+  /// Everything here except the skip button is pointer-transparent, and that
+  /// is the fix: this used to be one full-screen GestureDetector with its own
+  /// horizontal/vertical drag handlers, so it swallowed every touch before
+  /// the board or the D-pad could see it. A player with the D-pad enabled
+  /// could see their control, press it, and have nothing happen — the
+  /// tutorial demanded a swipe from someone who had chosen not to swipe.
+  ///
+  /// Now the real controls deliver the input. The board's SwipeDetector and
+  /// the D-pad both call the screen's direction handler, which routes to this
+  /// tutorial while it is running, so all three input methods work and the
+  /// practice step is practising the controls the player actually uses.
   Widget _buildInteractiveOverlay(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Material(
       type: MaterialType.transparency,
-      child: GestureDetector(
-        onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity != null && onSwipe != null) {
-            if (details.primaryVelocity! > 100) {
-              onSwipe!(Direction.right);
-            } else if (details.primaryVelocity! < -100) {
-              onSwipe!(Direction.left);
-            }
-          }
-        },
-        onVerticalDragEnd: (details) {
-          if (details.primaryVelocity != null && onSwipe != null) {
-            if (details.primaryVelocity! > 100) {
-              onSwipe!(Direction.down);
-            } else if (details.primaryVelocity! < -100) {
-              onSwipe!(Direction.up);
-            }
-          }
-        },
-        // Light overlay so game board is visible
-        child: Container(
-          color: Colors.black.withValues(alpha: 0.3),
-          child: SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 80), // Space for HUD
-                // Floating instruction card at top
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _buildInteractiveCard(context, l10n),
-                ),
-                const Spacer(),
-                // Bottom hint
-                Padding(
+      child: Stack(
+        children: [
+          // Dim, so the instruction reads over a busy board. Non-interactive.
+          const Positioned.fill(
+            child: IgnorePointer(child: ColoredBox(color: Color(0x4D000000))),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 80, left: 24, right: 24),
+                child: _buildInteractiveCard(context, l10n),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: IgnorePointer(
+                child: Padding(
                   padding: const EdgeInsets.only(bottom: 40),
                   child: _buildSwipeHint(l10n),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -451,11 +454,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                step.icon ?? Icons.swipe,
-                color: theme.foodColor,
-                size: 28,
-              ),
+              Icon(step.icon ?? Icons.swipe, color: theme.foodColor, size: 28),
               const SizedBox(width: 12),
               Text(
                 step.title,
@@ -469,7 +468,8 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           // Direction arrow
-          if (expectedDirection != null) _buildLargeDirectionArrow(context, l10n),
+          if (expectedDirection != null)
+            _buildLargeDirectionArrow(context, l10n),
           const SizedBox(height: 12),
           // Skip button
           TextButton(
@@ -487,7 +487,10 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildLargeDirectionArrow(BuildContext context, AppLocalizations l10n) {
+  Widget _buildLargeDirectionArrow(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
     IconData icon;
     String text;
 
@@ -515,9 +518,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [theme.foodColor, theme.accentColor],
-        ),
+        gradient: LinearGradient(colors: [theme.foodColor, theme.accentColor]),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -545,9 +546,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.backgroundColor.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -746,8 +745,8 @@ class WalkthroughOverlayWidget extends StatelessWidget {
             color: isActive
                 ? theme.accentColor
                 : isPast
-                    ? theme.accentColor.withValues(alpha: 0.5)
-                    : theme.accentColor.withValues(alpha: 0.2),
+                ? theme.accentColor.withValues(alpha: 0.5)
+                : theme.accentColor.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(4),
           ),
         );

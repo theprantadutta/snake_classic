@@ -35,11 +35,22 @@ import 'package:snake_classic/widgets/game_bottom_bar.dart';
 import 'package:snake_classic/widgets/rejected_input_flash.dart';
 import 'package:snake_classic/widgets/score_popup_layer.dart';
 import 'package:snake_classic/widgets/snake_compass_indicator.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/analytics/analytics_values.dart';
 import 'package:snake_classic/widgets/walkthrough/game_tutorial.dart';
 import 'package:snake_classic/models/food.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  const GameScreen({super.key, this.startTutorial = false});
+
+  /// A one-shot request, carried on the route, to run the tutorial over this
+  /// game. Settings → Replay Tutorial is the only thing that sets it.
+  ///
+  /// It is deliberately not a stored flag. The old flow reset
+  /// `game_tutorial` in preferences and navigated to `/game`, where nothing
+  /// read it — so the player who explicitly asked to be taught got a normal
+  /// run, and the reset flag sat there waiting to surprise somebody later.
+  final bool startTutorial;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -70,6 +81,10 @@ class _GameScreenState extends State<GameScreen>
 
   // Game tutorial
   bool _tutorialActive = false;
+
+  /// Which entry point opened the running tutorial, held so the finish/skip
+  /// event carries the same value its start did.
+  String? _tutorialEntryPoint;
   GameTutorialController? _tutorialController;
   bool _tutorialChecked = false;
 
@@ -147,29 +162,68 @@ class _GameScreenState extends State<GameScreen>
         '[GameScreen] Game already in status: ${gameCubit.state.status}, not starting',
       );
     }
+
+    // The explicit replay request. Start the game first so the tutorial has a
+    // real board to point at, then pause it on the next frame — the tutorial
+    // teaches over a still game, and pausing inside the same frame as the
+    // start would race the cubit's own status transition.
+    if (widget.startTutorial) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _startTutorial(entryPoint: TutorialEntryPoint.settingsReplay);
+      });
+    }
   }
 
-  /// Start the game tutorial
-  void _startTutorial() {
+  /// Start the game tutorial.
+  ///
+  /// [entryPoint] is one of [TutorialEntryPoint] — the pause menu or the
+  /// Settings replay. They are different intents and are measured separately.
+  void _startTutorial({required String entryPoint}) {
+    if (_tutorialActive) return;
     final gameCubit = context.read<GameCubit>();
     gameCubit.pauseGame();
+
+    _tutorialEntryPoint = entryPoint;
+    getIt<AnalyticsFacade>().trackGameTutorialStarted(entryPoint: entryPoint);
 
     setState(() {
       _tutorialActive = true;
       _tutorialController = GameTutorialController();
-      _tutorialController!.onComplete = _onTutorialComplete;
+      _tutorialController!.onFinished = _onTutorialFinished;
       _tutorialController!.start();
     });
   }
 
-  /// Called when tutorial is complete
-  void _onTutorialComplete() async {
+  /// Called once when the tutorial ends, however it ended.
+  ///
+  /// Exactly once is the property that matters. The overlay used to call
+  /// `controller.skip()` — whose completion callback already ran this — and
+  /// then call `onSkip`, which ran it again: two resumes, two writes of the
+  /// completion flag, and a second `setState` against a controller the first
+  /// one had already disposed. The controller is now the single owner and
+  /// reports how it ended.
+  void _onTutorialFinished(TutorialOutcome outcome) async {
+    if (!_tutorialActive) return;
+    _tutorialActive = false;
+
+    final entryPoint = _tutorialEntryPoint ?? TutorialEntryPoint.pause;
+    _tutorialEntryPoint = null;
+    final analytics = getIt<AnalyticsFacade>();
+    switch (outcome) {
+      case TutorialOutcome.finished:
+        analytics.trackGameTutorialFinished(entryPoint: entryPoint);
+      case TutorialOutcome.skipped:
+        // Recorded separately. The old code called both endings "completed",
+        // which is precisely the distinction a tutorial is judged on.
+        analytics.trackGameTutorialSkipped(entryPoint: entryPoint);
+    }
+
     final walkthroughService = WalkthroughService();
     await walkthroughService.markComplete(WalkthroughService.gameTutorialId);
 
     if (mounted) {
       setState(() {
-        _tutorialActive = false;
         _tutorialController?.dispose();
         _tutorialController = null;
       });
@@ -849,7 +903,10 @@ class _GameScreenState extends State<GameScreen>
                                           },
                                           onHome: () =>
                                               _showExitConfirmation(context),
-                                          onShowTutorial: _startTutorial,
+                                          onShowTutorial: () => _startTutorial(
+                                            entryPoint:
+                                                TutorialEntryPoint.pause,
+                                          ),
                                         ),
 
                                       // Score Popups Layer - isolated StatefulWidget
@@ -946,7 +1003,6 @@ class _GameScreenState extends State<GameScreen>
                                     GameTutorialOverlay(
                                       controller: _tutorialController!,
                                       theme: theme,
-                                      onSkip: _onTutorialComplete,
                                     ),
                                   // Rejected-input flash. Paints a brief centered
                                   // red ring whenever the cubit denies a direction

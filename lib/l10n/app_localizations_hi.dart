@@ -3208,24 +3208,24 @@ class AppLocalizationsHi extends AppLocalizations {
       'ऊपर की पट्टी में आपका स्कोर, स्तर और उच्चतम स्कोर दिखता है। खेलते हुए अपनी प्रगति देखें!';
 
   @override
-  String get wtControlsTitle => 'चलाने के लिए स्वाइप करें';
+  String get wtControlsTitle => 'नियंत्रण';
 
   @override
   String get wtControlsMsg =>
-      'साँप की दिशा बदलने के लिए किसी भी दिशा में स्वाइप करें। साँप आपके स्वाइप के अनुसार मुड़ेगा।';
+      'बोर्ड पर स्वाइप करके, ऑन-स्क्रीन डी-पैड से, या तीर कुंजियों से दिशा बदलें।';
 
   @override
-  String get wtPracticeRightTitle => 'आज़माएँ! दाएँ स्वाइप करें';
+  String get wtPracticeRightTitle => 'आज़माएँ — दाएँ मुड़ें';
 
   @override
   String get wtPracticeRightMsg =>
-      'आगे बढ़ने के लिए स्क्रीन पर दाएँ स्वाइप करें।';
+      'जारी रखने के लिए दाएँ मुड़ें। स्वाइप, डी-पैड या तीर कुंजियाँ — सभी काम करती हैं।';
 
   @override
-  String get wtPracticeUpTitle => 'बढ़िया! अब ऊपर स्वाइप करें';
+  String get wtPracticeUpTitle => 'बढ़िया — अब ऊपर मुड़ें';
 
   @override
-  String get wtPracticeUpMsg => 'आगे बढ़ने के लिए स्क्रीन पर ऊपर स्वाइप करें।';
+  String get wtPracticeUpMsg => 'जारी रखने के लिए ऊपर मुड़ें।';
 
   @override
   String get wtFoodTitle => 'खाकर बढ़ें';
@@ -3282,22 +3282,22 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wtSkipTutorial => 'ट्यूटोरियल छोड़ें';
 
   @override
-  String get wtSwipeRightUpper => 'दाएँ स्वाइप';
+  String get wtSwipeRightUpper => 'दाएँ मुड़ें';
 
   @override
-  String get wtSwipeLeftUpper => 'बाएँ स्वाइप';
+  String get wtSwipeLeftUpper => 'बाएँ मुड़ें';
 
   @override
-  String get wtSwipeUpUpper => 'ऊपर स्वाइप';
+  String get wtSwipeUpUpper => 'ऊपर मुड़ें';
 
   @override
-  String get wtSwipeDownUpper => 'नीचे स्वाइप';
+  String get wtSwipeDownUpper => 'नीचे मुड़ें';
 
   @override
-  String get wtSwipeAnywhereScreen => 'स्क्रीन पर कहीं भी स्वाइप करें!';
+  String get wtSwipeAnywhereScreen => 'स्वाइप, डी-पैड या तीर कुंजियाँ';
 
   @override
-  String get wtSwipeAnywhere => 'कहीं भी स्वाइप करें!';
+  String get wtSwipeAnywhere => 'आपकी बारी!';
 
   @override
   String get wtGotIt => 'समझ गया!';
@@ -4740,12 +4740,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get insSwipeRightDesc => 'साँप को दाएँ ले जाएँ';
 
   @override
-  String get insTapScreen => 'स्क्रीन टैप करें';
-
-  @override
-  String get insTapScreenDesc => 'गेम रोकें/जारी रखें';
-
-  @override
   String get insArrowKeys => 'एरो कुंजियाँ (डेस्कटॉप)';
 
   @override
@@ -5985,4 +5979,64 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get mpTurnBlocked => 'अवरुद्ध';
+
+  @override
+  String get insHudPause => 'पॉज़ बटन';
+
+  @override
+  String get insHudPauseDesc =>
+      'रोकें या जारी रखें — गेम स्क्रीन के ऊपर दाईं ओर';
+
+  @override
+  String get insDpad => 'ऑन-स्क्रीन डी-पैड';
+
+  @override
+  String get insDpadDesc => 'स्वाइप के बजाय मुड़ने के लिए वैकल्पिक बटन';
+
+  @override
+  String get insControlsNote =>
+      'डी-पैड चालू/बंद करें और उसकी जगह चुनें — Settings → Controls.';
+
+  @override
+  String get insVersus => 'वर्सेस';
+
+  @override
+  String get insVersusOnline => 'ऑनलाइन 1v1';
+
+  @override
+  String get insVersusOnlineDesc =>
+      'क्लासिक नियम, दो साँप, एक बोर्ड — रीयल टाइम में';
+
+  @override
+  String get insVersusQuick => 'क्विक मैच';
+
+  @override
+  String get insVersusQuickDesc => 'आपके लिए अपने-आप प्रतिद्वंद्वी ढूँढता है';
+
+  @override
+  String get insVersusRoom => 'प्राइवेट रूम';
+
+  @override
+  String get insVersusRoomDesc =>
+      'रूम बनाएँ और कोड साझा करें, या किसी मित्र के रूम में शामिल हों';
+
+  @override
+  String get homeVersusCta => 'वर्सेस';
+
+  @override
+  String get homeVersusSubtitle => '1v1 क्लासिक · क्विक मैच या मित्र को बुलाएँ';
+
+  @override
+  String get hwVersusTitle => 'किसी और से खेलें';
+
+  @override
+  String get hwVersusMsg =>
+      'वर्सेस ऑनलाइन 1v1 क्लासिक है। क्विक मैच प्रतिद्वंद्वी ढूँढता है, या प्राइवेट रूम बनाकर मित्र को बुलाएँ।';
+
+  @override
+  String get hwHelpTitle => 'और कुछ?';
+
+  @override
+  String get hwHelpMsg =>
+      'नियम, नियंत्रण और वर्सेस — सब यहाँ समझाया गया है। सेटिंग्स इसके बगल में है।';
 }

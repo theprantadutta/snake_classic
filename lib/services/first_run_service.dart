@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
@@ -33,6 +34,15 @@ class FirstRunService {
   static const _kInstalledAtMs = 'first_run_installed_at_ms';
   static const _kGamesStarted = 'first_run_games_started';
   static const _kFirstGameLogged = 'first_run_first_game_logged';
+  static const _kMigrationVersion = 'first_run_migration_version';
+
+  /// Migrations applied so far. Bump when a new one is added; each runs at
+  /// most once per install, in order, and only when the stored version is
+  /// below it.
+  ///
+  /// 1 — classify an install that predates these preferences. See
+  ///     [migrateExistingInstall].
+  static const int currentMigrationVersion = 1;
 
   /// Games after which the full metagame UI comes online (walkthrough, the
   /// complete nav grid, the mode picker, the pre-game loader). Three is enough
@@ -64,6 +74,70 @@ class FirstRunService {
     } catch (e) {
       AppLogger.error('FirstRunService init failed', e);
     }
+  }
+
+  /// Classify an install that predates these preferences.
+  ///
+  /// [initialize] stamps a new install whenever the install key is absent,
+  /// and absent is exactly what it looks like on the launch that first ships
+  /// this service. Everyone who was already playing therefore read as
+  /// gamesStarted == 0 and got the treatment meant for someone who has never
+  /// seen the board: the gentle three-game opening speed, the deferred mode
+  /// picker, the first-run prompt queue, the later sign-in ask. The one group
+  /// most entitled to be left alone.
+  ///
+  /// So: when this install has no migration stamp, ask the local database
+  /// whether this device has actually played. If it has, graduate it out of
+  /// onboarding by seeding [gamesStarted]. If it has not — a genuine fresh
+  /// install, a reinstall, or someone who installed months ago and never
+  /// pressed Play — leave it at zero and let them have the new-player path,
+  /// which is the right one for all three.
+  ///
+  /// [hasLocalGameplay] is injected rather than read here so this stays
+  /// testable and so the caller controls when Drift is ready. It must consult
+  /// DURABLE LOCAL evidence only. Not the network, and not "is signed in": a
+  /// cloud profile says the person played somewhere, not that this device
+  /// ever rendered a frame, and the whole point of keeping first-run state in
+  /// SharedPreferences is that it describes the device.
+  ///
+  /// Idempotent. Runs at most once; a thrown or false probe leaves the stamp
+  /// unset so the next launch can try again rather than baking in a guess
+  /// made while the database was unavailable.
+  Future<void> migrateExistingInstall(
+    Future<bool> Function() hasLocalGameplay,
+  ) async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+
+    final applied = prefs.getInt(_kMigrationVersion) ?? 0;
+    if (applied >= currentMigrationVersion) return;
+
+    // Someone who has already started games under this service needs no
+    // classification — they are exactly what the counter says they are.
+    if (gamesStarted > 0) {
+      await prefs.setInt(_kMigrationVersion, currentMigrationVersion);
+      return;
+    }
+
+    bool played;
+    try {
+      played = await hasLocalGameplay();
+    } catch (e) {
+      // The database is not readable yet. Do NOT stamp: guessing "new
+      // player" here would be the very bug this migration exists to fix,
+      // and the next launch gets another chance.
+      AppLogger.error('FirstRunService: gameplay-history probe failed', e);
+      return;
+    }
+
+    if (played) {
+      await prefs.setInt(_kGamesStarted, onboardingGameCount);
+      AppLogger.lifecycle(
+        'FirstRunService: existing install detected, onboarding skipped',
+      );
+    }
+
+    await prefs.setInt(_kMigrationVersion, currentMigrationVersion);
   }
 
   /// Number of games started on this device. 0 until the first tap of Play.
@@ -122,5 +196,14 @@ class FirstRunService {
     } catch (e) {
       AppLogger.error('FirstRunService.recordGameStarted failed', e);
     }
+  }
+
+  /// Drop all cached state so a test can build a fresh service over new mock
+  /// preferences. Never called by the app — the singleton lives for the
+  /// process.
+  @visibleForTesting
+  void resetForTest() {
+    _prefs = null;
+    _initialized = false;
   }
 }

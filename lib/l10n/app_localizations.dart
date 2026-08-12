@@ -5707,37 +5707,37 @@ abstract class AppLocalizations {
   /// No description provided for @wtControlsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Swipe to Move'**
+  /// **'Steering'**
   String get wtControlsTitle;
 
   /// No description provided for @wtControlsMsg.
   ///
   /// In en, this message translates to:
-  /// **'Swipe in any direction to change where your snake is heading. The snake will turn to follow your swipe.'**
+  /// **'Change direction by swiping the board, using the on-screen D-pad, or pressing the arrow keys. Pick your style in Settings → Controls.'**
   String get wtControlsMsg;
 
   /// No description provided for @wtPracticeRightTitle.
   ///
   /// In en, this message translates to:
-  /// **'Try it! Swipe RIGHT'**
+  /// **'Try it — turn RIGHT'**
   String get wtPracticeRightTitle;
 
   /// No description provided for @wtPracticeRightMsg.
   ///
   /// In en, this message translates to:
-  /// **'Swipe RIGHT on the screen to continue.'**
+  /// **'Turn right to continue. Swipe, D-pad or arrow keys all work.'**
   String get wtPracticeRightMsg;
 
   /// No description provided for @wtPracticeUpTitle.
   ///
   /// In en, this message translates to:
-  /// **'Great! Now swipe UP'**
+  /// **'Nice — now turn UP'**
   String get wtPracticeUpTitle;
 
   /// No description provided for @wtPracticeUpMsg.
   ///
   /// In en, this message translates to:
-  /// **'Swipe UP on the screen to continue.'**
+  /// **'Turn up to continue.'**
   String get wtPracticeUpMsg;
 
   /// No description provided for @wtFoodTitle.
@@ -5839,37 +5839,37 @@ abstract class AppLocalizations {
   /// No description provided for @wtSwipeRightUpper.
   ///
   /// In en, this message translates to:
-  /// **'SWIPE RIGHT'**
+  /// **'TURN RIGHT'**
   String get wtSwipeRightUpper;
 
   /// No description provided for @wtSwipeLeftUpper.
   ///
   /// In en, this message translates to:
-  /// **'SWIPE LEFT'**
+  /// **'TURN LEFT'**
   String get wtSwipeLeftUpper;
 
   /// No description provided for @wtSwipeUpUpper.
   ///
   /// In en, this message translates to:
-  /// **'SWIPE UP'**
+  /// **'TURN UP'**
   String get wtSwipeUpUpper;
 
   /// No description provided for @wtSwipeDownUpper.
   ///
   /// In en, this message translates to:
-  /// **'SWIPE DOWN'**
+  /// **'TURN DOWN'**
   String get wtSwipeDownUpper;
 
   /// No description provided for @wtSwipeAnywhereScreen.
   ///
   /// In en, this message translates to:
-  /// **'Swipe anywhere on screen!'**
+  /// **'Swipe, D-pad or arrow keys'**
   String get wtSwipeAnywhereScreen;
 
   /// No description provided for @wtSwipeAnywhere.
   ///
   /// In en, this message translates to:
-  /// **'Swipe anywhere!'**
+  /// **'Your move!'**
   String get wtSwipeAnywhere;
 
   /// No description provided for @wtGotIt.
@@ -8674,18 +8674,6 @@ abstract class AppLocalizations {
   /// **'Move snake right'**
   String get insSwipeRightDesc;
 
-  /// No description provided for @insTapScreen.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap Screen'**
-  String get insTapScreen;
-
-  /// No description provided for @insTapScreenDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Pause/Resume game'**
-  String get insTapScreenDesc;
-
   /// No description provided for @insArrowKeys.
   ///
   /// In en, this message translates to:
@@ -10833,6 +10821,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Blocked'**
   String get mpTurnBlocked;
+
+  /// No description provided for @insHudPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause Button'**
+  String get insHudPause;
+
+  /// No description provided for @insHudPauseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause or resume — top right of the game screen'**
+  String get insHudPauseDesc;
+
+  /// No description provided for @insDpad.
+  ///
+  /// In en, this message translates to:
+  /// **'On-Screen D-Pad'**
+  String get insDpad;
+
+  /// No description provided for @insDpadDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional buttons for turning, instead of swiping'**
+  String get insDpadDesc;
+
+  /// No description provided for @insControlsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn the D-pad on or off — and choose where it sits — in Settings → Controls.'**
+  String get insControlsNote;
+
+  /// No description provided for @insVersus.
+  ///
+  /// In en, this message translates to:
+  /// **'Versus'**
+  String get insVersus;
+
+  /// No description provided for @insVersusOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online 1v1'**
+  String get insVersusOnline;
+
+  /// No description provided for @insVersusOnlineDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic rules, two snakes, one board, in real time'**
+  String get insVersusOnlineDesc;
+
+  /// No description provided for @insVersusQuick.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Match'**
+  String get insVersusQuick;
+
+  /// No description provided for @insVersusQuickDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Finds you an opponent automatically'**
+  String get insVersusQuickDesc;
+
+  /// No description provided for @insVersusRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Room'**
+  String get insVersusRoom;
+
+  /// No description provided for @insVersusRoomDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a room and share the code, or join a friend’s'**
+  String get insVersusRoomDesc;
+
+  /// No description provided for @homeVersusCta.
+  ///
+  /// In en, this message translates to:
+  /// **'VERSUS'**
+  String get homeVersusCta;
+
+  /// No description provided for @homeVersusSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'1v1 Classic · Quick match or invite a friend'**
+  String get homeVersusSubtitle;
+
+  /// No description provided for @hwVersusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Play someone else'**
+  String get hwVersusTitle;
+
+  /// No description provided for @hwVersusMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Versus is online 1v1 Classic. Quick Match finds you an opponent, or create a private room and invite a friend.'**
+  String get hwVersusMsg;
+
+  /// No description provided for @hwHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Anything else?'**
+  String get hwHelpTitle;
+
+  /// No description provided for @hwHelpMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules, controls and Versus are all explained here. Settings sits right beside it.'**
+  String get hwHelpMsg;
 }
 
 class _AppLocalizationsDelegate

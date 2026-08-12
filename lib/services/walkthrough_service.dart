@@ -38,9 +38,8 @@ class WalkthroughService {
 
   /// Reset all walkthroughs
   Future<void> resetAll() async {
-    await reset('home');
-    await reset('game_tutorial');
-    await reset('control_choice');
+    await reset(homeWalkthroughId);
+    await reset(gameTutorialId);
   }
 
   // ==================== Walkthrough IDs ====================
@@ -51,7 +50,9 @@ class WalkthroughService {
   /// Game tutorial walkthrough ID
   static const String gameTutorialId = 'game_tutorial';
 
-  /// First-time control method choice (D-Pad vs Gestures). Asked before
-  /// the game tutorial runs so the tutorial demos the right input.
-  static const String controlChoiceId = 'control_choice';
+  // There was a third id here — 'control_choice' — describing a D-pad
+  // versus gestures modal shown before the tutorial. That modal was removed
+  // when the play-first path landed; the id was read by nothing and the
+  // comment described a flow that no longer existed, which is worse than
+  // no comment. Controls default to swipe and live in Settings → Controls.
 }
