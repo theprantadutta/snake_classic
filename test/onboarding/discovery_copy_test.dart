@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -262,6 +263,37 @@ void main() {
         greaterThanOrEqualTo(48.0),
       );
 
+      handle.dispose();
+    });
+
+    testWidgets('a screen reader can actually activate it', (tester) async {
+      // A label plus button: true and nothing else announces a button that
+      // cannot be pressed. excludeSemantics drops the GestureDetector's own
+      // tap action along with everything else beneath, so the action has to
+      // live on this node.
+      final handle = tester.ensureSemantics();
+      var opened = 0;
+      await tester.pumpWidget(
+        harness(
+          HomeVersusCta(theme: GameTheme.classic, onOpen: () => opened++),
+        ),
+      );
+
+      final node = tester.getSemantics(find.byType(HomeVersusCta));
+      expect(
+        node.getSemanticsData().hasAction(SemanticsAction.tap),
+        isTrue,
+        reason: 'the node advertises a tap action',
+      );
+
+      tester.semantics.tap(
+        find.semantics.byLabel(
+          'VERSUS. 1v1 Classic · Quick match or invite a friend',
+        ),
+      );
+      await tester.pump();
+
+      expect(opened, 1, reason: 'activating it opens the lobby exactly once');
       handle.dispose();
     });
 

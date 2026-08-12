@@ -40,9 +40,15 @@ class HomeVersusCta extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
+    // onTap is not decoration here. `excludeSemantics` drops the
+    // GestureDetector's own semantics along with everything else beneath,
+    // so without an action on this node a screen reader would announce a
+    // button and then have nothing to activate — a control that says "button"
+    // and cannot be pressed is worse than an unlabelled one.
     return Semantics(
       button: true,
       label: '${l10n.homeVersusCta}. ${l10n.homeVersusSubtitle}',
+      onTap: onOpen,
       excludeSemantics: true,
       child: GestureDetector(
         onTap: onOpen,

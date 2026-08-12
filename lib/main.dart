@@ -17,8 +17,6 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/supported_locales.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
-import 'package:snake_classic/data/daos/game_dao.dart';
-import 'package:snake_classic/data/daos/settings_dao.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/data/database/legacy_prefs_import.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -36,6 +34,7 @@ import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/existing_install_probe.dart';
 import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
@@ -297,16 +296,9 @@ Future<void> _bootstrap() async {
     // games in it, or a high score on this device. Not the network, not "is
     // signed in": a restored cloud profile proves someone played, not that
     // THIS device ever did, and first-run state describes the device.
-    await FirstRunService().migrateExistingInstall(() async {
-      final db = getIt<AppDatabase>();
-      final stats = await GameDao(db).getStatistics();
-      if (stats != null &&
-          (stats.totalGamesPlayed > 0 || stats.highestScore > 0)) {
-        return true;
-      }
-      final settings = await SettingsDao(db).getSettings();
-      return (settings?.highScore ?? 0) > 0;
-    });
+    await FirstRunService().migrateExistingInstall(
+      () => hasLocalGameplayEvidence(getIt<AppDatabase>()),
+    );
 
     // Initialize router with analytics observer. `appRouter` is `late final`,
     // so this must run exactly once: SnakeClassicApp throws

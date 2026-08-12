@@ -871,6 +871,21 @@ class _GameScreenState extends State<GameScreen>
                                                         dPadPosition:
                                                             controlSettings
                                                                 .dPadPosition,
+                                                        // The tutorial pauses
+                                                        // the game and then
+                                                        // asks for a turn.
+                                                        // Without this the
+                                                        // d-pad it is
+                                                        // teaching would be
+                                                        // dimmed and inert,
+                                                        // and a d-pad player
+                                                        // could not finish
+                                                        // the practice steps
+                                                        // at all.
+                                                        canSteerOverride:
+                                                            _tutorialActive
+                                                            ? true
+                                                            : null,
                                                         onDirection:
                                                             _handleSwipe,
                                                       );
