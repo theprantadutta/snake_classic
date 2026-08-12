@@ -16,6 +16,7 @@ import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 
+import 'multiplayer_steering.dart';
 import 'multiplayer_state.dart';
 
 export 'multiplayer_state.dart';
@@ -62,6 +63,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   /// Guards against a slow poll overlapping the next tick.
   bool _pollInFlight = false;
+
   /// How often the client asks the server where the queue stands.
   ///
   /// There is no client-side deadline any more. The server promises to
@@ -128,17 +130,20 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Reflect an applied settlement into the result screen, replacing
   /// "processing" with what the server actually awarded.
   void _startSettlementListener() {
-    _settlementSubscription =
-        _settlementService.appliedStream.listen((settlement) {
+    _settlementSubscription = _settlementService.appliedStream.listen((
+      settlement,
+    ) {
       // Only the settlement for the match currently on screen. An older one
       // being repaired in the background must not relabel this result.
       if (_settlingGameId != null && settlement.gameId != _settlingGameId) {
         return;
       }
-      emit(state.copyWith(
-        settlementStatus: SettlementStatus.applied,
-        settlement: settlement,
-      ));
+      emit(
+        state.copyWith(
+          settlementStatus: SettlementStatus.applied,
+          settlement: settlement,
+        ),
+      );
     });
   }
 
@@ -444,17 +449,12 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// whether to render itself as usable. It looked interactive to a dead or
   /// reconnecting player while every press was silently refused — the control
   /// said "press me" and meant nothing by it.
-  bool get canSteer {
-    if (state.status != MultiplayerStatus.playing) return false;
-    if (state.snapshot == null) return false;
-    if (state.errorCode != null) return false;
-
-    final currentUserId = _userService.currentUser?.uid;
-    if (currentUserId == null) return false;
-
-    final me = state.snapshot!.playerByUserId(currentUserId);
-    return me != null && me.alive;
-  }
+  bool get canSteer => MultiplayerSteering.canSteer(
+    status: state.status,
+    snapshot: state.snapshot,
+    errorCode: state.errorCode,
+    currentUserId: _userService.currentUser?.uid,
+  );
 
   /// Steer, and say what became of the input.
   ///
@@ -471,24 +471,23 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// went to the server; waiting for acknowledgement before acknowledging the
   /// player would make the controls feel broken on any real connection.
   InputResult changeDirection(Direction direction) {
-    if (!canSteer) return InputResult.ignored;
+    final steerable = canSteer;
+    final me = steerable
+        ? state.snapshot!.playerByUserId(_userService.currentUser!.uid)!
+        : null;
 
-    final snapshot = state.snapshot!;
-    final me = snapshot.playerByUserId(_userService.currentUser!.uid)!;
-
-    // Same-direction dedupe: repeated identical swipes and keyboard
-    // auto-repeat would each cost a hub message for a no-op.
-    if (direction == state.intentDirection) return InputResult.rejected;
-
-    // Skip obvious reversals against the last committed/intended
-    // direction — the server would drop them anyway.
-    final reference = state.intentDirection ?? me.direction;
-    if (direction == reference.opposite) return InputResult.rejected;
+    final result = MultiplayerSteering.resolve(
+      canSteerNow: steerable,
+      requested: direction,
+      intent: state.intentDirection,
+      committed: me?.direction ?? Direction.right,
+    );
+    if (!result.isAccepted) return result;
 
     _hapticService.lightImpact();
     unawaited(_multiplayerService.sendInput(direction));
     emit(state.copyWith(intentDirection: direction));
-    return InputResult.accepted;
+    return result;
   }
 
   /// Quick match using matchmaking system
@@ -627,11 +626,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           // Cancelled or swept elsewhere. Leave the searching UI without
           // claiming anything went wrong.
           _stopMatchmakingTimer();
-          emit(state.copyWith(
-            status: MultiplayerStatus.idle,
-            isMatchmaking: false,
-            clearMatchmaking: true,
-          ));
+          emit(
+            state.copyWith(
+              status: MultiplayerStatus.idle,
+              isMatchmaking: false,
+              clearMatchmaking: true,
+            ),
+          );
 
         case QueueOutcome.unreachable:
           await _onMatchmakingUnreachable();

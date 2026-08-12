@@ -4,7 +4,8 @@ import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/widgets/dpad_controls.dart';
+import 'package:snake_classic/widgets/dpad_row_layout.dart';
+import 'package:snake_classic/widgets/steerable_dpad.dart';
 
 /// The bar under the board. Two shapes, one per control mode:
 ///
@@ -88,8 +89,9 @@ class GameBottomBar extends StatelessWidget {
     // toggle that cannot change mid-game, so branching the height on it is
     // constant for the whole run in either mode.
     final statsBarHeight = (isSmallScreen ? 40.0 : 46.0) * scale;
-    final barHeight =
-        dPadEnabled ? dpadSize + verticalPadding * 2 : statsBarHeight;
+    final barHeight = dPadEnabled
+        ? dpadSize + verticalPadding * 2
+        : statsBarHeight;
     final isInteractive = gameState.status == GameStatus.playing;
 
     return SizedBox(
@@ -191,76 +193,37 @@ class GameBottomBar extends StatelessWidget {
     required double dpadSize,
     required bool isInteractive,
   }) {
-    final dPad = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: SizedBox(
-        width: dpadSize,
-        height: dpadSize,
-        child: Opacity(
-          opacity: isInteractive ? 1.0 : 0.45,
-          child: IgnorePointer(
-            ignoring: !isInteractive,
-            child: DPadControls(
-              onDirection: onDirection,
-              theme: theme,
-              opacity: 0.8,
-              size: dpadSize,
-            ),
-          ),
-        ),
-      ),
+    final dPad = SteerableDPad(
+      onDirection: onDirection,
+      theme: theme,
+      size: dpadSize,
+      canSteer: isInteractive,
     );
 
     Widget lengthStat(Alignment alignment) => _buildControlBarStat(
-          l10n.gbLength,
-          '${gameState.snake.length}',
-          Icons.straighten,
-          theme,
-          isSmallScreen,
-          alignment: alignment,
-        );
+      l10n.gbLength,
+      '${gameState.snake.length}',
+      Icons.straighten,
+      theme,
+      isSmallScreen,
+      alignment: alignment,
+    );
 
     Widget speedStat(Alignment alignment) => _buildControlBarStat(
-          l10n.gbSpeed,
-          _getSpeedLabel(l10n, gameState.gameSpeed),
-          _getSpeedIcon(gameState.gameSpeed),
-          theme,
-          isSmallScreen,
-          alignment: alignment,
-        );
+      l10n.gbSpeed,
+      _getSpeedLabel(l10n, gameState.gameSpeed),
+      _getSpeedIcon(gameState.gameSpeed),
+      theme,
+      isSmallScreen,
+      alignment: alignment,
+    );
 
-    switch (dPadPosition) {
-      case DPadPosition.bottomLeft:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            dPad,
-            Expanded(child: lengthStat(Alignment.centerRight)),
-            Expanded(child: speedStat(Alignment.centerRight)),
-          ],
-        );
-      case DPadPosition.bottomRight:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(child: lengthStat(Alignment.centerLeft)),
-            Expanded(child: speedStat(Alignment.centerLeft)),
-            dPad,
-          ],
-        );
-      case DPadPosition.bottomCenter:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(child: lengthStat(Alignment.centerLeft)),
-            dPad,
-            Expanded(child: speedStat(Alignment.centerRight)),
-          ],
-        );
-    }
+    return DPadRowLayout.build(
+      position: dPadPosition,
+      dPad: dPad,
+      leading: lengthStat,
+      trailing: speedStat,
+    );
   }
 
   Widget _buildControlBarStat(
@@ -283,31 +246,43 @@ class GameBottomBar extends StatelessWidget {
           border: Border.all(color: theme.accentColor.withValues(alpha: 0.25)),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: theme.accentColor.withValues(alpha: 0.7),
-              size: isSmallScreen ? 16 : 20,
+        // A three-line readout in a row whose height is set by the d-pad
+        // beside it. At a 2.0 text scale the labels alone were 90px taller
+        // than the space they had. Accessibility text scaling is honoured up
+        // to a point and then the whole chip shrinks to fit rather than
+        // painting over the board — the number stays legible either way, and
+        // the row height (and therefore the board) never moves.
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.3,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  color: theme.accentColor.withValues(alpha: 0.7),
+                  size: isSmallScreen ? 16 : 20,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isSmallScreen ? 14 : 16,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.5),
+                    fontSize: isSmallScreen ? 9 : 10,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-                fontSize: isSmallScreen ? 14 : 16,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.5),
-                fontSize: isSmallScreen ? 9 : 10,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

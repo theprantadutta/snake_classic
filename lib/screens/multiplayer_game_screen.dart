@@ -16,7 +16,8 @@ import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/dpad_controls.dart';
+import 'package:snake_classic/widgets/dpad_row_layout.dart';
+import 'package:snake_classic/widgets/steerable_dpad.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
@@ -438,6 +439,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
   @override
   Widget build(BuildContext context) {
+    final shakeEnabled = context
+        .watch<GameSettingsCubit>()
+        .state
+        .screenShakeEnabled;
+    _juiceController.shakeEnabled = shakeEnabled;
+
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
@@ -507,11 +514,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 controller: _juiceController,
                 // The player's motion setting applies here too. This was
                 // hard-coded true, so someone who had turned shake off still
-                // got shaken by every multiplayer crash.
-                applyShake: context
-                    .watch<GameSettingsCubit>()
-                    .state
-                    .screenShakeEnabled,
+                // got shaken by every multiplayer crash. The controller is
+                // told as well as the widget, exactly as single-player does
+                // it, so a disabled shake is never animated in the first
+                // place rather than animated into a widget that drops it.
+                applyShake: shakeEnabled,
                 child: Scaffold(
                   body: Container(
                     decoration: BoxDecoration(
@@ -1326,35 +1333,15 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     required bool canSteer,
     required int snakeLength,
   }) {
-    final dPad = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: SizedBox(
-        width: dpadSize,
-        height: dpadSize,
-        // Dimmed AND non-interactive together, matching single-player. A
-        // control that reacts to a press it will discard is worse than one
-        // that plainly says it is unavailable.
-        child: Opacity(
-          opacity: canSteer ? 1.0 : 0.45,
-          child: IgnorePointer(
-            ignoring: !canSteer,
-            child: Semantics(
-              label: AppLocalizations.of(context)!.gameDirectionalPad,
-              enabled: canSteer,
-              child: DPadControls(
-                onDirection: _handleSwipe,
-                theme: theme,
-                opacity: 0.8,
-                size: dpadSize,
-              ),
-            ),
-          ),
-        ),
-      ),
+    final dPad = SteerableDPad(
+      onDirection: _handleSwipe,
+      theme: theme,
+      size: dpadSize,
+      canSteer: canSteer,
     );
 
-    final lengthPill = Align(
-      alignment: Alignment.centerLeft,
+    Widget lengthPill(Alignment alignment) => Align(
+      alignment: alignment,
       child: _statPill(
         theme,
         Icons.straighten,
@@ -1362,43 +1349,15 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         '$snakeLength',
       ),
     );
-    final indicator = Align(
-      alignment: Alignment.centerRight,
-      child: _swipeIndicator(theme),
-    );
+    Widget indicator(Alignment alignment) =>
+        Align(alignment: alignment, child: _swipeIndicator(theme));
 
-    switch (dPadPosition) {
-      case DPadPosition.bottomLeft:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            dPad,
-            Expanded(child: lengthPill),
-            Expanded(child: indicator),
-          ],
-        );
-      case DPadPosition.bottomRight:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(child: lengthPill),
-            Expanded(child: indicator),
-            dPad,
-          ],
-        );
-      case DPadPosition.bottomCenter:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(child: lengthPill),
-            dPad,
-            Expanded(child: indicator),
-          ],
-        );
-    }
+    return DPadRowLayout.build(
+      position: dPadPosition,
+      dPad: dPad,
+      leading: lengthPill,
+      trailing: indicator,
+    );
   }
 
   Widget _statPill(GameTheme theme, IconData icon, String label, String value) {

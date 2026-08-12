@@ -403,40 +403,50 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     // progress-ring indicator — chosen to match so both render
     // identically when present.
     final rowHeight = _s(isSmallScreen ? 32.0 : 38.0);
-    return SizedBox(
-      height: rowHeight,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Level progress
-          Expanded(flex: 2, child: _buildLevelCard()),
+    // The fixed height is the point of this row — it exists so that a
+    // power-up card appearing mid-run cannot shove the board up or down. That
+    // makes it the one place large accessibility text has nowhere to go, and
+    // at a 2.0 scale the level card overflowed it. Text scaling is honoured
+    // up to 1.3 here; past that the chips hold their size rather than move
+    // the board out from under the player's thumb. The score itself, above,
+    // scales without limit.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: SizedBox(
+        height: rowHeight,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Level progress
+            Expanded(flex: 2, child: _buildLevelCard()),
 
-          const SizedBox(width: 8),
-
-          // TimeAttack countdown
-          if (hasTimeLimit) ...[
-            _buildTimeAttackChip(),
             const SizedBox(width: 8),
-          ],
 
-          // Lives indicator (survival mode)
-          if (hasMultipleLives) ...[
-            _buildLivesChip(),
-            const SizedBox(width: 8),
-          ],
+            // TimeAttack countdown
+            if (hasTimeLimit) ...[
+              _buildTimeAttackChip(),
+              const SizedBox(width: 8),
+            ],
 
-          // Food indicator
-          if (gameState.food != null) ...[
-            _buildFoodChip(gameState.food!),
-            const SizedBox(width: 8),
-          ],
+            // Lives indicator (survival mode)
+            if (hasMultipleLives) ...[
+              _buildLivesChip(),
+              const SizedBox(width: 8),
+            ],
 
-          // Power-ups — clipped to the row's fixed height so the
-          // indicator doesn't push past the chip line. The card sizes
-          // to its children but the SizedBox above bounds it.
-          if (gameState.activePowerUps.isNotEmpty)
-            Expanded(flex: 2, child: _buildPowerUpsCard()),
-        ],
+            // Food indicator
+            if (gameState.food != null) ...[
+              _buildFoodChip(gameState.food!),
+              const SizedBox(width: 8),
+            ],
+
+            // Power-ups — clipped to the row's fixed height so the
+            // indicator doesn't push past the chip line. The card sizes
+            // to its children but the SizedBox above bounds it.
+            if (gameState.activePowerUps.isNotEmpty)
+              Expanded(flex: 2, child: _buildPowerUpsCard()),
+          ],
+        ),
       ),
     );
   }
