@@ -5,6 +5,7 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/dpad_controls.dart';
 import 'package:snake_classic/widgets/game_bottom_bar.dart';
+import 'package:snake_classic/widgets/game_circle_button.dart';
 import 'package:snake_classic/widgets/game_hud.dart';
 import 'package:snake_classic/widgets/steerable_dpad.dart';
 
@@ -105,6 +106,35 @@ void main() {
         handle.dispose();
       });
     }
+  });
+
+  group('the multiplayer exit is labelled and hittable', () {
+    testWidgets('48dp target with a leave label', (tester) async {
+      // The one button that abandons a live match was a ~34dp unlabelled
+      // target tucked in the corner of the versus header.
+      final handle = tester.ensureSemantics();
+      var left = 0;
+      await tester.pumpWidget(
+        harness(
+          GameCircleButton(
+            icon: Icons.arrow_back_ios_new,
+            onTap: () => left++,
+            theme: GameTheme.classic,
+            semanticLabel: 'Leave match',
+          ),
+        ),
+      );
+
+      final size = tester.getSize(find.byType(GameCircleButton));
+      expect(size.width, greaterThanOrEqualTo(48.0));
+      expect(size.height, greaterThanOrEqualTo(48.0));
+
+      await tester.tap(find.bySemanticsLabel('Leave match'));
+      await tester.pump();
+      expect(left, 1);
+
+      handle.dispose();
+    });
   });
 
   group('the d-pad can be used without aiming', () {

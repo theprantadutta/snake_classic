@@ -17,6 +17,7 @@ import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/dpad_row_layout.dart';
+import 'package:snake_classic/widgets/game_circle_button.dart';
 import 'package:snake_classic/widgets/steerable_dpad.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
@@ -434,7 +435,18 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           ),
         ],
       ),
-    );
+    ).whenComplete(_restoreGameplayFocus);
+  }
+
+  /// Give the keyboard back to the match after a modal takes it away.
+  ///
+  /// A dialog route steals focus and does not hand it back on dismissal, so
+  /// on desktop and web the arrow keys silently stopped steering after any
+  /// Cancel — in a live match, where the snake keeps moving.
+  void _restoreGameplayFocus() {
+    if (!mounted) return;
+    if (_keyboardFocusNode.hasFocus) return;
+    _keyboardFocusNode.requestFocus();
   }
 
   @override
@@ -830,10 +842,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           // Top control row: back button + live match clock.
           Row(
             children: [
-              _circleIconButton(
-                theme,
-                Icons.arrow_back_ios_new,
-                _showExitDialog,
+              GameCircleButton(
+                icon: Icons.arrow_back_ios_new,
+                onTap: _showExitDialog,
+                theme: theme,
                 semanticLabel: AppLocalizations.of(context)!.gameLeaveMatch,
               ),
               const Spacer(),
@@ -871,43 +883,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           SizedBox(height: context.scaled(12)),
           _momentumBar(myColor, oppColor, myScore, oppScore),
         ],
-      ),
-    );
-  }
-
-  Widget _circleIconButton(
-    GameTheme theme,
-    IconData icon,
-    VoidCallback onTap, {
-    required String semanticLabel,
-  }) {
-    // 18dp icon + 8dp padding came to a ~34dp target — under the 48dp
-    // minimum, on the one button that abandons a live match. The circle
-    // keeps its drawn size; the constraints widen the thing you press.
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      excludeSemantics: true,
-      child: Material(
-        color: theme.backgroundColor.withValues(alpha: 0.6),
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: context.scaled(48),
-              minHeight: context.scaled(48),
-            ),
-            child: Center(
-              child: Icon(
-                icon,
-                color: theme.accentColor,
-                size: context.scaled(18),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
