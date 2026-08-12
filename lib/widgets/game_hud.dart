@@ -17,6 +17,7 @@ class GameHUD extends StatefulWidget {
   final VoidCallback onPause;
   final VoidCallback onHome;
   final bool isSmallScreen;
+
   /// Multiplier applied to fixed structural sizes (paddings, icon/button
   /// sizes, fixed chip/row heights) so the HUD scales up on tablets. `1.0` on
   /// phones (no change). Font sizes are NOT multiplied here — the root
@@ -25,6 +26,7 @@ class GameHUD extends StatefulWidget {
   final double uiScale;
   final String? tournamentId;
   final TournamentGameMode? tournamentMode;
+
   /// Optional GlobalKey attached to the pause button so the tutorial's
   /// "Pause Anytime" step can spotlight it. game_screen.dart passes
   /// `GameTutorialKeys.pauseButtonKey` here; everywhere else omit it.
@@ -214,6 +216,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 icon: Icons.home_rounded,
                 onTap: widget.onHome,
                 color: theme.accentColor.withValues(alpha: 0.7),
+                semanticLabel: AppLocalizations.of(context)!.gameGoHome,
               ),
 
               const SizedBox(width: 12),
@@ -233,6 +236,9 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                       : Icons.play_arrow_rounded,
                   onTap: widget.onPause,
                   color: theme.accentColor,
+                  semanticLabel: gameState.status == GameStatus.playing
+                      ? AppLocalizations.of(context)!.gamePauseGame
+                      : AppLocalizations.of(context)!.gameResumeGame,
                   isPrimary: true,
                 ),
               ),
@@ -257,34 +263,52 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     required IconData icon,
     required VoidCallback onTap,
     required Color color,
+    required String semanticLabel,
     bool isPrimary = false,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: _s(isSmallScreen ? 36 : 42),
-        height: _s(isSmallScreen ? 36 : 42),
-        decoration: BoxDecoration(
-          color: isPrimary
-              ? color.withValues(alpha: 0.15)
-              : theme.backgroundColor.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withValues(alpha: isPrimary ? 0.4 : 0.2),
-            width: 1.5,
-          ),
-          boxShadow: isPrimary
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+    // The painted badge stays 36/42dp so the HUD keeps its proportions, but
+    // the thing you can actually hit — and the thing a screen reader focuses
+    // — is at least 48dp. The row is already taller than that thanks to the
+    // score panel, so this costs no vertical space.
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: _s(48), minHeight: _s(48)),
+          child: Center(child: _iconBadge(icon, color, isPrimary)),
         ),
-        child: Icon(icon, color: color, size: _s(isSmallScreen ? 18 : 22)),
       ),
+    );
+  }
+
+  Widget _iconBadge(IconData icon, Color color, bool isPrimary) {
+    return Container(
+      width: _s(isSmallScreen ? 36 : 42),
+      height: _s(isSmallScreen ? 36 : 42),
+      decoration: BoxDecoration(
+        color: isPrimary
+            ? color.withValues(alpha: 0.15)
+            : theme.backgroundColor.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: isPrimary ? 0.4 : 0.2),
+          width: 1.5,
+        ),
+        boxShadow: isPrimary
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+      child: Icon(icon, color: color, size: _s(isSmallScreen ? 18 : 22)),
     );
   }
 
@@ -379,40 +403,50 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     // progress-ring indicator — chosen to match so both render
     // identically when present.
     final rowHeight = _s(isSmallScreen ? 32.0 : 38.0);
-    return SizedBox(
-      height: rowHeight,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Level progress
-          Expanded(flex: 2, child: _buildLevelCard()),
+    // The fixed height is the point of this row — it exists so that a
+    // power-up card appearing mid-run cannot shove the board up or down. That
+    // makes it the one place large accessibility text has nowhere to go, and
+    // at a 2.0 scale the level card overflowed it. Text scaling is honoured
+    // up to 1.3 here; past that the chips hold their size rather than move
+    // the board out from under the player's thumb. The score itself, above,
+    // scales without limit.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: SizedBox(
+        height: rowHeight,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Level progress
+            Expanded(flex: 2, child: _buildLevelCard()),
 
-          const SizedBox(width: 8),
-
-          // TimeAttack countdown
-          if (hasTimeLimit) ...[
-            _buildTimeAttackChip(),
             const SizedBox(width: 8),
-          ],
 
-          // Lives indicator (survival mode)
-          if (hasMultipleLives) ...[
-            _buildLivesChip(),
-            const SizedBox(width: 8),
-          ],
+            // TimeAttack countdown
+            if (hasTimeLimit) ...[
+              _buildTimeAttackChip(),
+              const SizedBox(width: 8),
+            ],
 
-          // Food indicator
-          if (gameState.food != null) ...[
-            _buildFoodChip(gameState.food!),
-            const SizedBox(width: 8),
-          ],
+            // Lives indicator (survival mode)
+            if (hasMultipleLives) ...[
+              _buildLivesChip(),
+              const SizedBox(width: 8),
+            ],
 
-          // Power-ups — clipped to the row's fixed height so the
-          // indicator doesn't push past the chip line. The card sizes
-          // to its children but the SizedBox above bounds it.
-          if (gameState.activePowerUps.isNotEmpty)
-            Expanded(flex: 2, child: _buildPowerUpsCard()),
-        ],
+            // Food indicator
+            if (gameState.food != null) ...[
+              _buildFoodChip(gameState.food!),
+              const SizedBox(width: 8),
+            ],
+
+            // Power-ups — clipped to the row's fixed height so the
+            // indicator doesn't push past the chip line. The card sizes
+            // to its children but the SizedBox above bounds it.
+            if (gameState.activePowerUps.isNotEmpty)
+              Expanded(flex: 2, child: _buildPowerUpsCard()),
+          ],
+        ),
       ),
     );
   }
@@ -448,7 +482,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
             // Directional so the inter-heart gap stays *between* the hearts
             // when the HUD row reverses in Arabic.
             padding: EdgeInsetsDirectional.only(
-                end: i < gameState.initialLives - 1 ? 2 : 0),
+              end: i < gameState.initialLives - 1 ? 2 : 0,
+            ),
             child: Icon(
               isAlive ? Icons.favorite : Icons.favorite_border,
               size: _s(isSmallScreen ? 14 : 16),
@@ -506,63 +541,68 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                       ),
                     ),
                   Transform.scale(
-                scale: _showLevelUpEffect ? _levelUpScale.value : 1.0,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen ? 6 : 8,
-                    vertical: isSmallScreen ? 2 : 3,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: _showLevelUpEffect
-                          ? [Colors.amber, Colors.orange]
-                          : isNearLevelUp
-                          ? [Colors.amber, Colors.orange]
-                          : [theme.snakeColor, theme.accentColor],
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: _showLevelUpEffect
-                        ? [
-                            BoxShadow(
-                              color: Colors.amber.withValues(
-                                alpha: _levelUpGlow.value * 0.8,
-                              ),
-                              blurRadius: 12 * _levelUpGlow.value,
-                              spreadRadius: 4 * _levelUpGlow.value,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_showLevelUpEffect) ...[
-                        Text(
-                          '⬆️',
-                          style: TextStyle(fontSize: isSmallScreen ? 8 : 10),
-                        ),
-                        const SizedBox(width: 2),
-                      ],
-                      Text(
-                        AppLocalizations.of(context)!
-                            .hudLevelBadge(gameState.level),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: isSmallScreen ? 10 : 11,
-                          fontWeight: FontWeight.w800,
-                        ),
+                    scale: _showLevelUpEffect ? _levelUpScale.value : 1.0,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 6 : 8,
+                        vertical: isSmallScreen ? 2 : 3,
                       ),
-                      if (_showLevelUpEffect) ...[
-                        const SizedBox(width: 2),
-                        Text(
-                          '⬆️',
-                          style: TextStyle(fontSize: isSmallScreen ? 8 : 10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: _showLevelUpEffect
+                              ? [Colors.amber, Colors.orange]
+                              : isNearLevelUp
+                              ? [Colors.amber, Colors.orange]
+                              : [theme.snakeColor, theme.accentColor],
                         ),
-                      ],
-                    ],
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: _showLevelUpEffect
+                            ? [
+                                BoxShadow(
+                                  color: Colors.amber.withValues(
+                                    alpha: _levelUpGlow.value * 0.8,
+                                  ),
+                                  blurRadius: 12 * _levelUpGlow.value,
+                                  spreadRadius: 4 * _levelUpGlow.value,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_showLevelUpEffect) ...[
+                            Text(
+                              '⬆️',
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 8 : 10,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                          ],
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.hudLevelBadge(gameState.level),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 10 : 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (_showLevelUpEffect) ...[
+                            const SizedBox(width: 2),
+                            Text(
+                              '⬆️',
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 8 : 10,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
                 ],
               );
             },
@@ -639,36 +679,33 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           return Transform.scale(scale: scale, child: child);
         },
         child: Container(
-        padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // The board's sprite art, so the chip previews exactly what's
-            // sitting on the playfield (fixed square, no font-metric
-            // height variance). _s() keeps tablet parity: the emoji this
-            // replaced grew via the root textScaler, images don't.
-            PickupIcon.food(
-              food.type,
-              size: _s(isSmallScreen ? 14 : 16),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '+${food.type.points}',
-              style: TextStyle(
-                color: color,
-                fontSize: isSmallScreen ? 11 : 12,
-                fontWeight: FontWeight.w700,
-                height: 1.0,
+          padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // The board's sprite art, so the chip previews exactly what's
+              // sitting on the playfield (fixed square, no font-metric
+              // height variance). _s() keeps tablet parity: the emoji this
+              // replaced grew via the root textScaler, images don't.
+              PickupIcon.food(food.type, size: _s(isSmallScreen ? 14 : 16)),
+              const SizedBox(width: 4),
+              Text(
+                '+${food.type.points}',
+                style: TextStyle(
+                  color: color,
+                  fontSize: isSmallScreen ? 11 : 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1.0,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -723,12 +760,12 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('🔥',
-                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
+                Text('🔥', style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
                 const SizedBox(width: 4),
                 Text(
-                  AppLocalizations.of(context)!
-                      .hudComboMultiplier(multiplier.toStringAsFixed(1)),
+                  AppLocalizations.of(
+                    context,
+                  )!.hudComboMultiplier(multiplier.toStringAsFixed(1)),
                   style: TextStyle(
                     color: color,
                     fontSize: isSmallScreen ? 12 : 14,
@@ -957,8 +994,7 @@ class _PowerUpRingState extends State<_PowerUpRing>
                     value: progress,
                     strokeWidth: 3.0,
                     strokeCap: StrokeCap.round,
-                    backgroundColor:
-                        powerUp.type.color.withValues(alpha: 0.15),
+                    backgroundColor: powerUp.type.color.withValues(alpha: 0.15),
                     valueColor: AlwaysStoppedAnimation(
                       isUrgent ? Colors.red : powerUp.type.color,
                     ),
@@ -1161,8 +1197,9 @@ class _ComboDecayBarState extends State<_ComboDecayBar>
     if (gs.status == GameStatus.playing &&
         gs.pausedAt == null &&
         gs.lastMoveTime != null) {
-      final sinceTick =
-          DateTime.now().difference(gs.lastMoveTime!).inMilliseconds;
+      final sinceTick = DateTime.now()
+          .difference(gs.lastMoveTime!)
+          .inMilliseconds;
       // Ticks are <= ~600ms apart in play; the clamp bounds the brief
       // stale-anchor window right after a resume.
       idleMs += sinceTick.clamp(0, 1000);

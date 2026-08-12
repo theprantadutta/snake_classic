@@ -1776,5 +1776,15 @@
   "boardTallPlusDesc": "ساحة أكبر بشكل الهاتف",
   "mpErrReadyTimeout": "لم يستعدّ اللاعبان في الوقت المحدد. نبحث عن مباراة جديدة…",
   "mpLobbyReadyDeadline": "تأكيد الجاهزية · {seconds}ث",
-  "mpLobbyWaitingOpponentReady": "بانتظار جاهزية خصمك…"
+  "mpLobbyWaitingOpponentReady": "بانتظار جاهزية خصمك…",
+  "gameDirectionalPad": "لوحة الاتجاهات",
+  "gameGoHome": "الانتقال إلى الشاشة الرئيسية",
+  "gamePauseGame": "إيقاف اللعبة مؤقتًا",
+  "gameResumeGame": "متابعة اللعبة",
+  "gameLeaveMatch": "مغادرة المباراة",
+  "gameSteerUp": "الاتجاه لأعلى",
+  "gameSteerDown": "الاتجاه لأسفل",
+  "gameSteerLeft": "الاتجاه يسارًا",
+  "gameSteerRight": "الاتجاه يمينًا",
+  "mpTurnBlocked": "محظور"
 }

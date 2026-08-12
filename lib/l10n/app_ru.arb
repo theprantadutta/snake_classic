@@ -1776,5 +1776,15 @@
   "boardTallPlusDesc": "Арена побольше в формате телефона",
   "mpErrReadyTimeout": "Игроки не успели подтвердить готовность. Ищем новый матч…",
   "mpLobbyReadyDeadline": "Готовность · {seconds}с",
-  "mpLobbyWaitingOpponentReady": "Ждём готовности соперника…"
+  "mpLobbyWaitingOpponentReady": "Ждём готовности соперника…",
+  "gameDirectionalPad": "Крестовина",
+  "gameGoHome": "На главный экран",
+  "gamePauseGame": "Пауза",
+  "gameResumeGame": "Продолжить",
+  "gameLeaveMatch": "Покинуть матч",
+  "gameSteerUp": "Повернуть вверх",
+  "gameSteerDown": "Повернуть вниз",
+  "gameSteerLeft": "Повернуть влево",
+  "gameSteerRight": "Повернуть вправо",
+  "mpTurnBlocked": "Заблокировано"
 }

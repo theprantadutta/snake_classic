@@ -1776,5 +1776,15 @@
   "boardTallPlusDesc": "Une arène plus grande au format téléphone",
   "mpErrReadyTimeout": "Les deux joueurs n'étaient pas prêts à temps. Recherche d'un nouveau match…",
   "mpLobbyReadyDeadline": "Vérification · {seconds}s",
-  "mpLobbyWaitingOpponentReady": "En attente que votre adversaire soit prêt…"
+  "mpLobbyWaitingOpponentReady": "En attente que votre adversaire soit prêt…",
+  "gameDirectionalPad": "Croix directionnelle",
+  "gameGoHome": "Aller à l'écran d'accueil",
+  "gamePauseGame": "Mettre en pause",
+  "gameResumeGame": "Reprendre la partie",
+  "gameLeaveMatch": "Quitter le match",
+  "gameSteerUp": "Aller vers le haut",
+  "gameSteerDown": "Aller vers le bas",
+  "gameSteerLeft": "Aller à gauche",
+  "gameSteerRight": "Aller à droite",
+  "mpTurnBlocked": "Bloqué"
 }

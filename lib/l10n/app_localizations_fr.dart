@@ -6044,4 +6044,34 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get mpLobbyWaitingOpponentReady =>
       'En attente que votre adversaire soit prêt…';
+
+  @override
+  String get gameDirectionalPad => 'Croix directionnelle';
+
+  @override
+  String get gameGoHome => 'Aller à l\'écran d\'accueil';
+
+  @override
+  String get gamePauseGame => 'Mettre en pause';
+
+  @override
+  String get gameResumeGame => 'Reprendre la partie';
+
+  @override
+  String get gameLeaveMatch => 'Quitter le match';
+
+  @override
+  String get gameSteerUp => 'Aller vers le haut';
+
+  @override
+  String get gameSteerDown => 'Aller vers le bas';
+
+  @override
+  String get gameSteerLeft => 'Aller à gauche';
+
+  @override
+  String get gameSteerRight => 'Aller à droite';
+
+  @override
+  String get mpTurnBlocked => 'Bloqué';
 }

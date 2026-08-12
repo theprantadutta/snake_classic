@@ -2266,5 +2266,15 @@
   "mpLobbyWaitingOpponentReady": "Waiting for your opponent to get ready…",
   "@mpLobbyWaitingOpponentReady": {
     "description": "Shown to a player who has pressed READY while the opponent has not."
-  }
+  },
+  "gameDirectionalPad": "Directional pad",
+  "gameGoHome": "Go to home screen",
+  "gamePauseGame": "Pause game",
+  "gameResumeGame": "Resume game",
+  "gameLeaveMatch": "Leave match",
+  "gameSteerUp": "Steer up",
+  "gameSteerDown": "Steer down",
+  "gameSteerLeft": "Steer left",
+  "gameSteerRight": "Steer right",
+  "mpTurnBlocked": "Blocked"
 }

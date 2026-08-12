@@ -1776,5 +1776,15 @@
   "boardTallPlusDesc": "Większa arena w formacie telefonu",
   "mpErrReadyTimeout": "Obaj gracze nie zdążyli się przygotować. Szukamy nowego meczu…",
   "mpLobbyReadyDeadline": "Potwierdzenie · {seconds}s",
-  "mpLobbyWaitingOpponentReady": "Czekamy, aż przeciwnik będzie gotowy…"
+  "mpLobbyWaitingOpponentReady": "Czekamy, aż przeciwnik będzie gotowy…",
+  "gameDirectionalPad": "Pad kierunkowy",
+  "gameGoHome": "Przejdź do ekranu głównego",
+  "gamePauseGame": "Wstrzymaj grę",
+  "gameResumeGame": "Wznów grę",
+  "gameLeaveMatch": "Opuść mecz",
+  "gameSteerUp": "Skręć w górę",
+  "gameSteerDown": "Skręć w dół",
+  "gameSteerLeft": "Skręć w lewo",
+  "gameSteerRight": "Skręć w prawo",
+  "mpTurnBlocked": "Zablokowane"
 }

@@ -3,20 +3,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
-import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/dpad_controls.dart';
+import 'package:snake_classic/widgets/dpad_row_layout.dart';
+import 'package:snake_classic/widgets/game_circle_button.dart';
+import 'package:snake_classic/widgets/steerable_dpad.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
@@ -101,13 +103,18 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   String? get _currentUserId => context.read<AuthCubit>().state.userId;
 
   void _handleSwipe(Direction direction) {
-    // The cubit guards reversals and dead/ended states — this just sends
-    // and animates the local echo.
-    context.read<MultiplayerCubit>().changeDirection(direction);
-    _lastSwipeDirection = direction;
-    HapticService().selectionClick();
+    // One result, one owner of the feedback.
+    //
+    // This used to call the cubit and then unconditionally add its own
+    // selectionClick and success animation. The cubit already emits a
+    // lightImpact for an accepted input, so an accepted turn buzzed TWICE —
+    // and a refused or ignored one (dead, reconnecting, a reversal) still got
+    // a positive click and the accepted cue, which is the game telling the
+    // player it did something it did not do.
+    final result = context.read<MultiplayerCubit>().changeDirection(direction);
+    if (!result.isAccepted) return;
 
-    // Animate gesture indicator
+    _lastSwipeDirection = direction;
     _gestureIndicatorController.forward().then((_) {
       _gestureIndicatorController.reverse();
     });
@@ -428,11 +435,28 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           ),
         ],
       ),
-    );
+    ).whenComplete(_restoreGameplayFocus);
+  }
+
+  /// Give the keyboard back to the match after a modal takes it away.
+  ///
+  /// A dialog route steals focus and does not hand it back on dismissal, so
+  /// on desktop and web the arrow keys silently stopped steering after any
+  /// Cancel — in a live match, where the snake keeps moving.
+  void _restoreGameplayFocus() {
+    if (!mounted) return;
+    if (_keyboardFocusNode.hasFocus) return;
+    _keyboardFocusNode.requestFocus();
   }
 
   @override
   Widget build(BuildContext context) {
+    final shakeEnabled = context
+        .watch<GameSettingsCubit>()
+        .state
+        .screenShakeEnabled;
+    _juiceController.shakeEnabled = shakeEnabled;
+
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
@@ -500,7 +524,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               onKeyEvent: _handleKeyPress,
               child: GameJuiceWidget(
                 controller: _juiceController,
-                applyShake: true,
+                // The player's motion setting applies here too. This was
+                // hard-coded true, so someone who had turned shake off still
+                // got shaken by every multiplayer crash. The controller is
+                // told as well as the widget, exactly as single-player does
+                // it, so a disabled shake is never animated in the first
+                // place rather than animated into a widget that drops it.
+                applyShake: shakeEnabled,
                 child: Scaffold(
                   body: Container(
                     decoration: BoxDecoration(
@@ -547,26 +577,30 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                   return Stack(
                                     children: [
                                       // Main game content
-                                      SwipeDetector(
-                                        onSwipe: _handleSwipe,
-                                        child: Column(
-                                          children: [
-                                            // Face-to-face versus header:
-                                            // duel panel, live scores, momentum
-                                            // bar and match clock.
-                                            _buildVersusHeader(
-                                              theme,
-                                              snapshot,
-                                              currentUserId,
-                                            ),
+                                      Column(
+                                        children: [
+                                          // Face-to-face versus header:
+                                          // duel panel, live scores, momentum
+                                          // bar and match clock.
+                                          _buildVersusHeader(
+                                            theme,
+                                            snapshot,
+                                            currentUserId,
+                                          ),
 
-                                            // Game Board — renders the
-                                            // authoritative snapshots
-                                            Expanded(
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(
-                                                  12,
-                                                ),
+                                          // Game Board — renders the
+                                          // authoritative snapshots
+                                          Expanded(
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(12),
+                                              // Swipe recognition is scoped
+                                              // to the board rectangle. It
+                                              // used to wrap the whole
+                                              // column, so a drag starting
+                                              // on the versus header or the
+                                              // control strip could steer.
+                                              child: SwipeDetector(
+                                                onSwipe: _handleSwipe,
                                                 child: MultiplayerFlameBoard(
                                                   snapshot: snapshot,
                                                   boardSize: multiplayerState
@@ -575,15 +609,15 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                                 ),
                                               ),
                                             ),
+                                          ),
 
-                                            // Bottom control strip
-                                            _buildControlStrip(
-                                              theme,
-                                              snapshot,
-                                              currentUserId,
-                                            ),
-                                          ],
-                                        ),
+                                          // Bottom control strip
+                                          _buildControlStrip(
+                                            theme,
+                                            snapshot,
+                                            currentUserId,
+                                          ),
+                                        ],
                                       ),
 
                                       // Connection-loss overlay: the board
@@ -808,10 +842,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           // Top control row: back button + live match clock.
           Row(
             children: [
-              _circleIconButton(
-                theme,
-                Icons.arrow_back_ios_new,
-                _showExitDialog,
+              GameCircleButton(
+                icon: Icons.arrow_back_ios_new,
+                onTap: _showExitDialog,
+                theme: theme,
+                semanticLabel: AppLocalizations.of(context)!.gameLeaveMatch,
               ),
               const Spacer(),
               _liveTimerChip(theme, snapshot),
@@ -848,21 +883,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           SizedBox(height: context.scaled(12)),
           _momentumBar(myColor, oppColor, myScore, oppScore),
         ],
-      ),
-    );
-  }
-
-  Widget _circleIconButton(GameTheme theme, IconData icon, VoidCallback onTap) {
-    return Material(
-      color: theme.backgroundColor.withValues(alpha: 0.6),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.all(context.scaled(8)),
-          child: Icon(icon, color: theme.accentColor, size: context.scaled(18)),
-        ),
       ),
     );
   }
@@ -1224,8 +1244,16 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     // Same dpad_enabled setting as single-player — D-pad users get their
     // D-pad in VS matches too. watch: the pause-less match screen still
     // reflects a toggle made before entering.
-    final dPadEnabled = context.watch<GameSettingsCubit>().state.dPadEnabled;
+    final settings = context.watch<GameSettingsCubit>().state;
+    final dPadEnabled = settings.dPadEnabled;
+    final dPadPosition = settings.dPadPosition;
     final dpadSize = 120.0 * context.uiScale;
+
+    // Whether this player can steer AT ALL right now — dead, ended, or
+    // reconnecting all mean no. The cubit already refused those inputs; the
+    // control carried on looking pressable, which is the game inviting an
+    // action it will silently discard.
+    final canSteer = context.watch<MultiplayerCubit>().canSteer;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -1239,41 +1267,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         ),
       ),
       child: dPadEnabled
-          ? Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: _statPill(
-                      theme,
-                      Icons.straighten,
-                      AppLocalizations.of(context)!.mpLength,
-                      '${mySnake?.body.length ?? 0}',
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(
-                    width: dpadSize,
-                    height: dpadSize,
-                    child: DPadControls(
-                      onDirection: _handleSwipe,
-                      theme: theme,
-                      opacity: 0.8,
-                      size: dpadSize,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: _swipeIndicator(theme),
-                  ),
-                ),
-              ],
+          ? _buildDPadRow(
+              theme: theme,
+              dpadSize: dpadSize,
+              dPadPosition: dPadPosition,
+              canSteer: canSteer,
+              snakeLength: mySnake?.body.length ?? 0,
             )
           : Row(
               children: [
@@ -1294,6 +1293,45 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 _swipeIndicator(theme),
               ],
             ),
+    );
+  }
+
+  /// The lower control row, honouring the player's saved d-pad position.
+  ///
+  /// Same treatment as single-player: the setting was stored, synced and
+  /// offered in Settings, and then ignored here. Placement is a reorder inside
+  /// the existing strip, so the board's geometry does not move with it.
+  Widget _buildDPadRow({
+    required GameTheme theme,
+    required double dpadSize,
+    required DPadPosition dPadPosition,
+    required bool canSteer,
+    required int snakeLength,
+  }) {
+    final dPad = SteerableDPad(
+      onDirection: _handleSwipe,
+      theme: theme,
+      size: dpadSize,
+      canSteer: canSteer,
+    );
+
+    Widget lengthPill(Alignment alignment) => Align(
+      alignment: alignment,
+      child: _statPill(
+        theme,
+        Icons.straighten,
+        AppLocalizations.of(context)!.mpLength,
+        '$snakeLength',
+      ),
+    );
+    Widget indicator(Alignment alignment) =>
+        Align(alignment: alignment, child: _swipeIndicator(theme));
+
+    return DPadRowLayout.build(
+      position: dPadPosition,
+      dPad: dPad,
+      leading: lengthPill,
+      trailing: indicator,
     );
   }
 
@@ -1339,56 +1377,89 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
+  /// The steering indicator: idle, accepted, or refused.
+  ///
+  /// Three states, deliberately, because two were not enough. An accepted
+  /// turn lights the chip in the theme's accent and points it the way you
+  /// went; a refused one — a reversal into your own neck, or a repeat of the
+  /// direction already sent — turns it red and shows a block, so it can never
+  /// be mistaken for the accepted cue. An input from a player who cannot
+  /// steer leaves the chip exactly as it was.
+  ///
+  /// Both cues are local and immediate. Neither waits for the server: the
+  /// refusal never left the device, and the acceptance is the client's own
+  /// echo until the next snapshot overrides it.
   Widget _swipeIndicator(GameTheme theme) {
-    return AnimatedBuilder(
-      animation: _gestureIndicatorController,
-      builder: (context, child) {
-        final isActive =
-            _lastSwipeDirection != null &&
-            _gestureIndicatorController.isAnimating;
+    return BlocBuilder<MultiplayerCubit, MultiplayerState>(
+      buildWhen: (prev, curr) =>
+          prev.lastRejectedInputAt != curr.lastRejectedInputAt ||
+          prev.lastRejectedDirection != curr.lastRejectedDirection,
+      builder: (context, state) {
+        final rejectedDirection = state.lastRejectedInputAt == null
+            ? null
+            : state.lastRejectedDirection;
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: isActive ? 0.7 : 0.25),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedRotation(
-                turns: _getDirectionRotation(_lastSwipeDirection),
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                child: Icon(
-                  Icons.arrow_upward_rounded,
-                  color: theme.accentColor.withValues(
-                    alpha: isActive ? 1.0 : 0.6,
-                  ),
-                  size: 18,
+        return AnimatedBuilder(
+          animation: _gestureIndicatorController,
+          builder: (context, child) {
+            final isRejected = rejectedDirection != null;
+            final isActive =
+                !isRejected &&
+                _lastSwipeDirection != null &&
+                _gestureIndicatorController.isAnimating;
+
+            final cueColor = isRejected ? _rejectedCueColor : theme.accentColor;
+            final emphasis = isRejected || isActive;
+
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.backgroundColor.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: cueColor.withValues(alpha: emphasis ? 0.7 : 0.25),
+                  width: 1.5,
                 ),
               ),
-              const SizedBox(width: 6),
-              Text(
-                AppLocalizations.of(context)!.mpSwipe,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(
-                    alpha: isActive ? 0.9 : 0.6,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isRejected)
+                    Icon(Icons.block_rounded, color: cueColor, size: 18)
+                  else
+                    AnimatedRotation(
+                      turns: _getDirectionRotation(_lastSwipeDirection),
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      child: Icon(
+                        Icons.arrow_upward_rounded,
+                        color: cueColor.withValues(alpha: isActive ? 1.0 : 0.6),
+                        size: 18,
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isRejected
+                        ? AppLocalizations.of(context)!.mpTurnBlocked
+                        : AppLocalizations.of(context)!.mpSwipe,
+                    style: TextStyle(
+                      color: cueColor.withValues(alpha: emphasis ? 0.9 : 0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
+
+  /// Red regardless of theme. A refusal has to be unmistakable, and several
+  /// themes use an accent that would read as an ordinary highlight.
+  static const Color _rejectedCueColor = Color(0xFFFF5252);
 
   Widget _miniLeaderboard(
     GameTheme theme,

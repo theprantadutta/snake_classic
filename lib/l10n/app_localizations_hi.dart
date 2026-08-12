@@ -5955,4 +5955,34 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get mpLobbyWaitingOpponentReady =>
       'आपके प्रतिद्वंद्वी के तैयार होने की प्रतीक्षा…';
+
+  @override
+  String get gameDirectionalPad => 'दिशा पैड';
+
+  @override
+  String get gameGoHome => 'होम स्क्रीन पर जाएँ';
+
+  @override
+  String get gamePauseGame => 'गेम पॉज करें';
+
+  @override
+  String get gameResumeGame => 'गेम फिर से शुरू करें';
+
+  @override
+  String get gameLeaveMatch => 'मैच छोड़ें';
+
+  @override
+  String get gameSteerUp => 'ऊपर मोड़ें';
+
+  @override
+  String get gameSteerDown => 'नीचे मोड़ें';
+
+  @override
+  String get gameSteerLeft => 'बाएं मोड़ें';
+
+  @override
+  String get gameSteerRight => 'दाएं मोड़ें';
+
+  @override
+  String get mpTurnBlocked => 'अवरुद्ध';
 }
