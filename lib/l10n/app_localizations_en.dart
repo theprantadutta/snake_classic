@@ -4753,19 +4753,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get insSwipeRightDesc => 'Move snake right';
 
   @override
-  String get insArrowKeys => 'Arrow Keys (Desktop)';
+  String get insArrowKeys => 'Arrow keys';
 
   @override
   String get insArrowKeysDesc => 'Change direction';
 
   @override
-  String get insWasd => 'WASD (Desktop)';
+  String get insWasd => 'WASD';
 
   @override
   String get insWasdDesc => 'Change direction';
 
   @override
-  String get insSpacebar => 'Spacebar (Desktop)';
+  String get insSpacebar => 'Spacebar';
 
   @override
   String get insSpacebarDesc => 'Pause/Resume game';
@@ -4786,19 +4786,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get insRules => 'RULES';
 
   @override
-  String get insRule1 => '• Eat food to grow and increase score';
+  String get insRule1 => 'Eat food to grow and increase score';
 
   @override
-  String get insRule2 => '• Snake speeds up as you level up';
+  String get insRule2 => 'Snake speeds up as you level up';
 
   @override
-  String get insRule3 => '• Game ends if you hit walls or yourself';
+  String get insRule3 => 'Game ends if you hit walls or yourself';
 
   @override
-  String get insRule4 => '• Special food appears every 10 normal foods';
+  String get insRule4 => 'Special food appears every 10 normal foods';
 
   @override
-  String get insRule5 => '• Bonus food expires after 15 seconds';
+  String get insRule5 => 'Bonus food expires after 15 seconds';
 
   @override
   String get insProTips => 'PRO TIPS';
@@ -6050,4 +6050,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hwHelpMsg =>
       'Rules, controls and Versus are all explained here. Settings sits right beside it.';
+
+  @override
+  String get insOnPhone => 'On your phone';
+
+  @override
+  String get insOnKeyboard => 'On a keyboard';
 }

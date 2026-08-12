@@ -4797,19 +4797,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get insSwipeRightDesc => 'Mueve la serpiente a la derecha';
 
   @override
-  String get insArrowKeys => 'Flechas (Escritorio)';
+  String get insArrowKeys => 'Teclas de flecha';
 
   @override
   String get insArrowKeysDesc => 'Cambiar dirección';
 
   @override
-  String get insWasd => 'WASD (Escritorio)';
+  String get insWasd => 'WASD';
 
   @override
   String get insWasdDesc => 'Cambiar dirección';
 
   @override
-  String get insSpacebar => 'Barra Espaciadora (Escritorio)';
+  String get insSpacebar => 'Barra espaciadora';
 
   @override
   String get insSpacebarDesc => 'Pausar/Reanudar la partida';
@@ -4830,21 +4830,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get insRules => 'REGLAS';
 
   @override
-  String get insRule1 => '• Come para crecer y aumentar tu puntuación';
+  String get insRule1 => 'Come para crecer y aumentar tu puntuación';
 
   @override
-  String get insRule2 => '• La serpiente acelera al subir de nivel';
+  String get insRule2 => 'La serpiente acelera al subir de nivel';
 
   @override
   String get insRule3 =>
-      '• La partida termina si chocas con muros o contigo mismo';
+      'La partida termina si chocas con muros o contigo mismo';
 
   @override
-  String get insRule4 =>
-      '• La comida especial aparece cada 10 comidas normales';
+  String get insRule4 => 'La comida especial aparece cada 10 comidas normales';
 
   @override
-  String get insRule5 => '• La comida de bonus caduca a los 15 segundos';
+  String get insRule5 => 'La comida de bonus caduca a los 15 segundos';
 
   @override
   String get insProTips => 'CONSEJOS PRO';
@@ -6117,4 +6116,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get hwHelpMsg =>
       'Aquí se explican las reglas, los controles y Versus. Los ajustes están al lado.';
+
+  @override
+  String get insOnPhone => 'En el móvil';
+
+  @override
+  String get insOnKeyboard => 'Con teclado';
 }

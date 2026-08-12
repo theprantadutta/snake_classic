@@ -4812,19 +4812,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get insSwipeRightDesc => 'Déplace le serpent à droite';
 
   @override
-  String get insArrowKeys => 'Flèches (Bureau)';
+  String get insArrowKeys => 'Touches fléchées';
 
   @override
   String get insArrowKeysDesc => 'Changer de direction';
 
   @override
-  String get insWasd => 'WASD (Bureau)';
+  String get insWasd => 'WASD';
 
   @override
   String get insWasdDesc => 'Changer de direction';
 
   @override
-  String get insSpacebar => 'Barre d\'Espace (Bureau)';
+  String get insSpacebar => 'Barre d’espace';
 
   @override
   String get insSpacebarDesc => 'Pause/Reprise de la partie';
@@ -4845,21 +4845,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get insRules => 'RÈGLES';
 
   @override
-  String get insRule1 => '• Mangez pour grandir et augmenter votre score';
+  String get insRule1 => 'Mangez pour grandir et augmenter votre score';
 
   @override
-  String get insRule2 => '• Le serpent accélère à chaque niveau';
+  String get insRule2 => 'Le serpent accélère à chaque niveau';
 
   @override
   String get insRule3 =>
-      '• La partie se termine si vous touchez un mur ou vous-même';
+      'La partie se termine si vous touchez un mur ou vous-même';
 
   @override
   String get insRule4 =>
-      '• La nourriture spéciale apparaît toutes les 10 nourritures normales';
+      'La nourriture spéciale apparaît toutes les 10 nourritures normales';
 
   @override
-  String get insRule5 => '• La nourriture bonus expire après 15 secondes';
+  String get insRule5 => 'La nourriture bonus expire après 15 secondes';
 
   @override
   String get insProTips => 'CONSEILS PRO';
@@ -6132,4 +6132,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get hwHelpMsg =>
       'Règles, commandes et Versus sont expliqués ici. Les réglages sont juste à côté.';
+
+  @override
+  String get insOnPhone => 'Sur le téléphone';
+
+  @override
+  String get insOnKeyboard => 'Au clavier';
 }

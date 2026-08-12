@@ -4788,19 +4788,19 @@ class AppLocalizationsPt extends AppLocalizations {
   String get insSwipeRightDesc => 'Move a cobra para a direita';
 
   @override
-  String get insArrowKeys => 'Setas (Desktop)';
+  String get insArrowKeys => 'Teclas de setas';
 
   @override
   String get insArrowKeysDesc => 'Mudar direção';
 
   @override
-  String get insWasd => 'WASD (Desktop)';
+  String get insWasd => 'WASD';
 
   @override
   String get insWasdDesc => 'Mudar direção';
 
   @override
-  String get insSpacebar => 'Barra de Espaço (Desktop)';
+  String get insSpacebar => 'Barra de espaços';
 
   @override
   String get insSpacebarDesc => 'Pausar/Retomar o jogo';
@@ -4821,20 +4821,20 @@ class AppLocalizationsPt extends AppLocalizations {
   String get insRules => 'REGRAS';
 
   @override
-  String get insRule1 => '• Coma para crescer e aumentar a pontuação';
+  String get insRule1 => 'Coma para crescer e aumentar a pontuação';
 
   @override
-  String get insRule2 => '• A cobra acelera conforme você sobe de nível';
+  String get insRule2 => 'A cobra acelera conforme você sobe de nível';
 
   @override
   String get insRule3 =>
-      '• O jogo termina se você bater nas paredes ou em si mesmo';
+      'O jogo termina se você bater nas paredes ou em si mesmo';
 
   @override
-  String get insRule4 => '• Comida especial aparece a cada 10 comidas normais';
+  String get insRule4 => 'Comida especial aparece a cada 10 comidas normais';
 
   @override
-  String get insRule5 => '• Comida bônus expira após 15 segundos';
+  String get insRule5 => 'Comida bônus expira após 15 segundos';
 
   @override
   String get insProTips => 'DICAS PRO';
@@ -6106,4 +6106,10 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get hwHelpMsg =>
       'Regras, controlos e Versus estão explicados aqui. As definições estão mesmo ao lado.';
+
+  @override
+  String get insOnPhone => 'No telemóvel';
+
+  @override
+  String get insOnKeyboard => 'Com teclado';
 }
