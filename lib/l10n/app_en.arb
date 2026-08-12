@@ -2297,5 +2297,7 @@
   "insOnKeyboard": "On a keyboard",
   "settingsSectionYourGame": "YOUR GAME",
   "settingsStatisticsSubtitle": "Every run you have played, counted up",
-  "settingsReplaysSubtitle": "Watch your saved runs back"
+  "settingsReplaysSubtitle": "Watch your saved runs back",
+  "homeTapToPlay": "Tap to play",
+  "homeTileMe": "Me"
 }

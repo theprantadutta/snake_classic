@@ -1807,5 +1807,7 @@
   "insOnKeyboard": "Na klawiaturze",
   "settingsSectionYourGame": "TWOJA GRA",
   "settingsStatisticsSubtitle": "Wszystkie twoje rozgrywki, podliczone",
-  "settingsReplaysSubtitle": "Obejrzyj zapisane rozgrywki"
+  "settingsReplaysSubtitle": "Obejrzyj zapisane rozgrywki",
+  "homeTapToPlay": "Dotknij, aby grać",
+  "homeTileMe": "Ja"
 }

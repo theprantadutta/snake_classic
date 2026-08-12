@@ -1807,5 +1807,7 @@
   "insOnKeyboard": "Au clavier",
   "settingsSectionYourGame": "TON JEU",
   "settingsStatisticsSubtitle": "Toutes tes parties, comptées",
-  "settingsReplaysSubtitle": "Revois tes parties enregistrées"
+  "settingsReplaysSubtitle": "Revois tes parties enregistrées",
+  "homeTapToPlay": "Touche pour jouer",
+  "homeTileMe": "Moi"
 }

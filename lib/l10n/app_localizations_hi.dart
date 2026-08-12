@@ -6054,4 +6054,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settingsReplaysSubtitle => 'अपने सहेजे गए गेम दोबारा देखें';
+
+  @override
+  String get homeTapToPlay => 'खेलने के लिए टैप करें';
+
+  @override
+  String get homeTileMe => 'मैं';
 }
