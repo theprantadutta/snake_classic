@@ -10959,6 +10959,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Watch your saved runs back'**
   String get settingsReplaysSubtitle;
+
+  /// No description provided for @homeTapToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to play'**
+  String get homeTapToPlay;
+
+  /// No description provided for @homeTileMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get homeTileMe;
 }
 
 class _AppLocalizationsDelegate

@@ -6125,4 +6125,10 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settingsReplaysSubtitle => 'Rivedi le partite salvate';
+
+  @override
+  String get homeTapToPlay => 'Tocca per giocare';
+
+  @override
+  String get homeTileMe => 'Io';
 }

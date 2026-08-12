@@ -6066,4 +6066,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsReplaysSubtitle => 'Watch your saved runs back';
+
+  @override
+  String get homeTapToPlay => 'Tap to play';
+
+  @override
+  String get homeTileMe => 'Me';
 }

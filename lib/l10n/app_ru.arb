@@ -1807,5 +1807,7 @@
   "insOnKeyboard": "На клавиатуре",
   "settingsSectionYourGame": "ВАША ИГРА",
   "settingsStatisticsSubtitle": "Все ваши игры в цифрах",
-  "settingsReplaysSubtitle": "Пересмотреть сохранённые игры"
+  "settingsReplaysSubtitle": "Пересмотреть сохранённые игры",
+  "homeTapToPlay": "Нажмите, чтобы играть",
+  "homeTileMe": "Я"
 }

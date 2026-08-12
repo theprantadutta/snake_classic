@@ -1807,5 +1807,7 @@
   "insOnKeyboard": "على لوحة المفاتيح",
   "settingsSectionYourGame": "لعبتك",
   "settingsStatisticsSubtitle": "كل جولاتك مجموعة",
-  "settingsReplaysSubtitle": "شاهد جولاتك المحفوظة"
+  "settingsReplaysSubtitle": "شاهد جولاتك المحفوظة",
+  "homeTapToPlay": "انقر للعب",
+  "homeTileMe": "أنا"
 }

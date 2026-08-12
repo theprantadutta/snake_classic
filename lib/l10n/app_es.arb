@@ -1807,5 +1807,7 @@
   "insOnKeyboard": "Con teclado",
   "settingsSectionYourGame": "TU JUEGO",
   "settingsStatisticsSubtitle": "Todas tus partidas, sumadas",
-  "settingsReplaysSubtitle": "Vuelve a ver tus partidas guardadas"
+  "settingsReplaysSubtitle": "Vuelve a ver tus partidas guardadas",
+  "homeTapToPlay": "Toca para jugar",
+  "homeTileMe": "Yo"
 }

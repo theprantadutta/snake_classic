@@ -6112,4 +6112,10 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get settingsReplaysSubtitle => 'Obejrzyj zapisane rozgrywki';
+
+  @override
+  String get homeTapToPlay => 'Dotknij, aby grać';
+
+  @override
+  String get homeTileMe => 'Ja';
 }

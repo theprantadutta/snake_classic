@@ -6147,4 +6147,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settingsReplaysSubtitle => 'Revois tes parties enregistrées';
+
+  @override
+  String get homeTapToPlay => 'Touche pour jouer';
+
+  @override
+  String get homeTileMe => 'Moi';
 }

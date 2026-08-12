@@ -6102,4 +6102,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsReplaysSubtitle => 'Пересмотреть сохранённые игры';
+
+  @override
+  String get homeTapToPlay => 'Нажмите, чтобы играть';
+
+  @override
+  String get homeTileMe => 'Я';
 }

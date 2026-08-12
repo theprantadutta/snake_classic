@@ -1807,5 +1807,7 @@
   "insOnKeyboard": "Con tastiera",
   "settingsSectionYourGame": "IL TUO GIOCO",
   "settingsStatisticsSubtitle": "Tutte le tue partite, contate",
-  "settingsReplaysSubtitle": "Rivedi le partite salvate"
+  "settingsReplaysSubtitle": "Rivedi le partite salvate",
+  "homeTapToPlay": "Tocca per giocare",
+  "homeTileMe": "Io"
 }

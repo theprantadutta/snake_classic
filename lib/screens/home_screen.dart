@@ -42,8 +42,10 @@ import 'package:snake_classic/widgets/notification_permission_primer.dart';
 import 'package:snake_classic/widgets/notification_permission_softask.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
-import 'package:snake_classic/utils/game_animations.dart';
-import 'package:snake_classic/widgets/home_versus_cta.dart';
+import 'package:snake_classic/services/haptic_service.dart';
+import 'package:snake_classic/widgets/home/attract_board.dart';
+import 'package:snake_classic/widgets/home/home_arcade_bar.dart';
+import 'package:snake_classic/widgets/home/home_arcade_widgets.dart';
 import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:talker_flutter/talker_flutter.dart';
@@ -542,124 +544,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                     screenHeight < 600 || screenWidth < 350;
 
                                 // Use a simple Column with proper constraints for better stability
-                                return Center(
-                                  child: SizedBox(
-                                    width: screenWidth,
-                                    child: Column(
-                                      children: [
-                                        // Top navigation bar - fixed height
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: screenWidth * 0.04,
-                                            vertical: isVerySmallScreen ? 4 : 8,
-                                          ),
-                                          child: _buildTopNavigation(
-                                            context,
-                                            authState,
-                                            theme,
-                                            isVerySmallScreen,
-                                          ),
-                                        ),
-
-                                        // Game title with logo - flexible sizing
-                                        _buildGameTitle(theme, screenHeight),
-
-                                        // Main content area - scrollable if needed
-                                        Expanded(
-                                          child: screenHeight < 600
-                                              ? SingleChildScrollView(
-                                                  child: Column(
-                                                    children: [
-                                                      SizedBox(
-                                                        height:
-                                                            (screenHeight * 0.6)
-                                                                .clamp(
-                                                                  300,
-                                                                  500,
-                                                                ),
-                                                        child:
-                                                            _buildMainPlayArea(
-                                                              context,
-                                                              gameState,
-                                                              authState,
-                                                              theme,
-                                                              screenHeight,
-                                                              screenWidth,
-                                                              screenHeight,
-                                                            ),
-                                                      ),
-                                                      Padding(
-                                                        padding:
-                                                            EdgeInsets.symmetric(
-                                                              horizontal:
-                                                                  screenWidth *
-                                                                  0.04,
-                                                            ),
-                                                        child:
-                                                            _buildBottomNavigation(
-                                                              context,
-                                                              themeState,
-                                                              theme,
-                                                              screenHeight,
-                                                              screenWidth,
-                                                            ),
-                                                      ),
-                                                      SizedBox(
-                                                        height:
-                                                            isVerySmallScreen
-                                                            ? 8
-                                                            : 12,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                )
-                                              : Column(
-                                                  children: [
-                                                    // Main play area - takes available space
-                                                    Expanded(
-                                                      child: _buildMainPlayArea(
-                                                        context,
-                                                        gameState,
-                                                        authState,
-                                                        theme,
-                                                        screenHeight,
-                                                        screenWidth,
-                                                        screenHeight,
-                                                      ),
-                                                    ),
-
-                                                    // Bottom navigation grid - fixed at bottom
-                                                    Padding(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                            horizontal:
-                                                                screenWidth *
-                                                                0.04,
-                                                            vertical:
-                                                                isVerySmallScreen
-                                                                ? 8
-                                                                : 12,
-                                                          ),
-                                                      child:
-                                                          _buildBottomNavigation(
-                                                            context,
-                                                            themeState,
-                                                            theme,
-                                                            screenHeight,
-                                                            screenWidth,
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                return _buildArcadeBody(
+                                  context: context,
+                                  authState: authState,
+                                  theme: theme,
+                                  screenWidth: screenWidth,
+                                  screenHeight: screenHeight,
+                                  isVerySmallScreen: isVerySmallScreen,
                                 );
                               },
                             ),
                           ),
                         ),
+                        // Debug-only. It sat on top of the Versus button in the
+                        // corner; up here it covers nothing.
+                        floatingActionButtonLocation:
+                            FloatingActionButtonLocation.miniStartTop,
                         floatingActionButton: kDebugMode
                             ? FloatingActionButton(
                                 onPressed: () {
@@ -707,6 +607,401 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         );
       },
     );
+  }
+
+  /// The arcade home: a live board you tap to play, two rails of context, and
+  /// four destinations across the bottom.
+  ///
+  /// The old hub was a stack of five bands — title, hero button, versus pill,
+  /// three action buttons, eight nav tiles — each competing for the same eye.
+  /// This borrows the shape the endless runners settled on, because it solves
+  /// exactly that: the middle of the screen IS the game and IS the button, the
+  /// things you might want are pinned to the edges where they can be ignored,
+  /// and the four destinations worth a permanent slot sit under the thumb.
+  Widget _buildArcadeBody({
+    required BuildContext context,
+    required AuthState authState,
+    required GameTheme theme,
+    required double screenWidth,
+    required double screenHeight,
+    required bool isVerySmallScreen,
+  }) {
+    final horizontal = screenWidth * 0.04;
+
+    return Center(
+      child: SizedBox(
+        width: screenWidth,
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontal,
+                vertical: isVerySmallScreen ? 4 : 8,
+              ),
+              child: _buildTopNavigation(
+                context,
+                authState,
+                theme,
+                isVerySmallScreen,
+              ),
+            ),
+
+            // Everything between the bars is one tap target.
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: horizontal),
+                child: _buildArcadeStage(context, theme, isVerySmallScreen),
+              ),
+            ),
+
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                horizontal,
+                isVerySmallScreen ? 4 : 8,
+                horizontal,
+                isVerySmallScreen ? 6 : 10,
+              ),
+              child: HomeArcadeBar(
+                theme: theme,
+                compact: isVerySmallScreen,
+                destinations: _arcadeDestinations(context, theme),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The stage: demo board at the back, the tap layer over it, rails on top.
+  ///
+  /// Order matters for hit testing — Stack tests its children back to front,
+  /// so the rails and their buttons take a tap before the play layer sees it.
+  Widget _buildArcadeStage(
+    BuildContext context,
+    GameTheme theme,
+    bool isCompact,
+  ) {
+    return Stack(
+      children: [
+        Positioned.fill(child: AttractBoard(theme: theme)),
+        Positioned.fill(child: _buildTapToPlay(context, theme, isCompact)),
+        Positioned(
+          left: 0,
+          top: 0,
+          child: _buildLeftRail(context, theme, isCompact),
+        ),
+        Positioned(
+          right: 0,
+          top: 0,
+          child: _buildRightRail(context, theme, isCompact),
+        ),
+      ],
+    );
+  }
+
+  /// The whole middle, and the only thing on this screen that starts a game.
+  ///
+  /// There is no button because there does not need to be one: a player who
+  /// opens a game wants to play it, and asking them to find a 300px circle
+  /// first is ceremony. The caption is the affordance; the target is the
+  /// screen.
+  Widget _buildTapToPlay(
+    BuildContext context,
+    GameTheme theme,
+    bool isCompact,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    // The middle of this screen is mostly air, so the brand takes it. The
+    // logo and wordmark are the only things up here competing for attention
+    // and they are supposed to win.
+    final logoSize = isCompact ? 132.0 : 196.0;
+
+    return Semantics(
+      button: true,
+      label: l10n.homePlay,
+      onTap: () => _startGame(context),
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () => _startGame(context),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Weighted rather than equal: the brand block sits below the
+            // optical centre, which leaves the rails at the top their own
+            // clear band and drops the logo nearer the thumb.
+            const Spacer(flex: 5),
+            ScaleTransition(
+              scale: _playButtonPulseAnimation,
+              child:
+                  Image.asset(
+                        'assets/images/snake_classic_transparent.png',
+                        width: logoSize,
+                        height: logoSize,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.games,
+                          size: logoSize * 0.5,
+                          color: theme.accentColor,
+                        ),
+                      )
+                      .animate(
+                        onPlay: (controller) =>
+                            controller.repeat(reverse: true),
+                      )
+                      .shimmer(
+                        duration: 2500.ms,
+                        color: theme.accentColor.withValues(alpha: 0.25),
+                      ),
+            ),
+            SizedBox(height: isCompact ? 6 : 10),
+            // Scales down rather than clipping when a locale spells the
+            // title long or the screen is narrow — softWrap is off so the
+            // lines stay exactly two.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [theme.primaryColor, theme.accentColor],
+                ).createShader(bounds),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final line in _appTitleLines(l10n))
+                      Text(
+                        line,
+                        maxLines: 1,
+                        softWrap: false,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: isCompact ? 38 : 56,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white, // base for ShaderMask
+                          height: 1.02,
+                          letterSpacing: context.letterSpacing(1.5),
+                          shadows: [
+                            Shadow(
+                              color: theme.accentColor.withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(flex: 3),
+            // The armed power-up, still the last thing seen before the tap.
+            _buildPowerUpLoadoutChip(theme),
+            SizedBox(height: isCompact ? 6 : 10),
+            // The caption breathes so it reads as an invitation rather than a
+            // label, and sits low where a thumb already is.
+            Padding(
+              padding: EdgeInsets.only(bottom: isCompact ? 10 : 18),
+              child:
+                  Text(
+                        l10n.homeTapToPlay.toUpperCase(),
+                        style: TextStyle(
+                          // The theme's own accent, not white — it is the
+                          // game's voice asking, and every other piece of
+                          // type on this screen already speaks in it.
+                          color: theme.accentColor,
+                          fontSize: isCompact ? 16 : 19,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: context.letterSpacing(3),
+                          shadows: [
+                            // A dark shadow for legibility over the board,
+                            // and a little of the accent bleeding out so it
+                            // glows rather than sits.
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.55),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                            Shadow(
+                              color: theme.accentColor.withValues(alpha: 0.45),
+                              blurRadius: 16,
+                            ),
+                          ],
+                        ),
+                      )
+                      .animate(
+                        onPlay: (controller) =>
+                            controller.repeat(reverse: true),
+                      )
+                      .fadeIn(duration: 900.ms)
+                      .then()
+                      // Floor raised from 0.45: white survived that, but the
+                      // accent is green on a green board and disappeared at
+                      // the bottom of the pulse.
+                      .fade(end: 0.72, duration: 900.ms),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Left rail: who you are and what you have done.
+  Widget _buildLeftRail(BuildContext context, GameTheme theme, bool isCompact) {
+    final l10n = AppLocalizations.of(context)!;
+    final highScore = context.watch<GameSettingsCubit>().state.highScore;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HomeStatPanel(
+          theme: theme,
+          icon: Icons.emoji_events,
+          iconColor: const Color(0xFFFFC53D),
+          label: l10n.homeHighScore,
+          value: context.formatInt(highScore),
+          compact: isCompact,
+          onTap: () => context.push(AppRoutes.statistics),
+        ),
+        SizedBox(height: isCompact ? 6 : 8),
+        BlocBuilder<CoinsCubit, CoinsState>(
+          builder: (context, coinsState) => HomeStatPanel(
+            theme: theme,
+            icon: Icons.monetization_on,
+            iconColor: Colors.amber,
+            // The balance, labelled as the balance. It read "STORE 0" before,
+            // which says the store is empty rather than the wallet is.
+            label: l10n.storeTabCoins,
+            value: context.formatCompact(coinsState.total),
+            compact: isCompact,
+            onTap: () => context.push(AppRoutes.store),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Right rail: what is waiting for you.
+  Widget _buildRightRail(
+    BuildContext context,
+    GameTheme theme,
+    bool isCompact,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final adsOn =
+        getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (adsOn) ...[
+          HomeRailButton(
+            theme: theme,
+            icon: Icons.bolt,
+            label: l10n.homeTileFree,
+            tint: const Color(0xFF2FBF71),
+            highlight: true,
+            onTap: () => _watchForFreePowerUp(context),
+          ),
+          SizedBox(height: isCompact ? 6 : 8),
+        ],
+        // Versus gets a rail slot as well as its bottom-bar destination.
+        // Two ways in is not clutter for the one mode nobody discovers on
+        // their own — it was the eighth tile of a nav grid for most of this
+        // app's life, and the subtitle says what it actually is.
+        HomeRailButton(
+          theme: theme,
+          icon: Icons.sports_esports,
+          label: l10n.homeTileVersus,
+          subtitle: l10n.insVersusOnline,
+          tint: Colors.greenAccent,
+          onTap: () => _openVersusLobby(context),
+        ),
+        SizedBox(height: isCompact ? 6 : 8),
+        HomeRailButton(
+          theme: theme,
+          icon: Icons.emoji_events_outlined,
+          label: l10n.homeTileEvents,
+          tint: Colors.deepOrange,
+          onTap: () => context.push(AppRoutes.tournaments),
+        ),
+      ],
+    );
+  }
+
+  /// The four that earn a permanent slot.
+  ///
+  /// Missions carries the badge because it is the only one with something
+  /// waiting in it — an unclaimed daily reward is the reason to come back
+  /// tomorrow, and a number on a button is how that gets noticed.
+  List<ArcadeDestination> _arcadeDestinations(
+    BuildContext context,
+    GameTheme theme,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      ArcadeDestination(
+        icon: Icons.checklist_rounded,
+        label: l10n.homeTileDaily,
+        tint: Colors.cyan,
+        badgeCount: _getDailyChallengesBadge() ?? 0,
+        widgetKey: HomeWalkthrough.dailyChallengesKey,
+        onTap: () => context.push(AppRoutes.dailyChallenges),
+      ),
+      ArcadeDestination(
+        icon: Icons.person_rounded,
+        label: l10n.homeTileMe,
+        tint: theme.accentColor,
+        onTap: () => context.push(AppRoutes.profile),
+      ),
+      ArcadeDestination(
+        icon: Icons.store_rounded,
+        label: l10n.homeTileStore,
+        tint: Colors.amber,
+        widgetKey: HomeWalkthrough.storeKey,
+        onTap: () => context.push(AppRoutes.store),
+      ),
+      ArcadeDestination(
+        icon: Icons.sports_esports_rounded,
+        label: l10n.homeTileVersus,
+        tint: Colors.greenAccent,
+        widgetKey: HomeWalkthrough.versusKey,
+        onTap: () => _openVersusLobby(context),
+      ),
+    ];
+  }
+
+  /// Open the lobby, and say where the player came from.
+  ///
+  /// The entry point is the measurement the Versus button exists for: whether
+  /// it is what brings people to multiplayer.
+  void _openVersusLobby(BuildContext context) {
+    final analytics = getIt<AnalyticsFacade>();
+    analytics.trackHomeVersusCtaTapped(
+      onboardingStage: FirstRunService().hasCompletedOnboarding
+          ? OnboardingStage.established
+          : OnboardingStage.onboarding,
+    );
+    analytics.trackMultiplayerLobbyOpened(
+      entryPoint: LobbyEntryPoint.homeVersus,
+    );
+    context.push(AppRoutes.multiplayerLobby);
+  }
+
+  /// Start a game — the one action the middle of this screen performs.
+  ///
+  /// Same path the old hero button took, including the first-run skip of the
+  /// mode picker: a player who has never seen the board cannot choose between
+  /// Classic, Zen, Survival and Time Attack, so they get Classic and the
+  /// picker on their second tap.
+  Future<void> _startGame(BuildContext context) async {
+    unawaited(LegalAcceptance.recordAccepted());
+    HapticService().mediumImpact();
+
+    if (!FirstRunService().isFirstGame) {
+      await _maybeShowGameModePrompt();
+      if (!context.mounted) return;
+    }
+    context.push(AppRoutes.playLoading);
   }
 
   Widget _buildTopNavigation(
@@ -864,111 +1159,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildGameTitle(GameTheme theme, double screenHeight) {
-    // Logo and wordmark side by side, with the words stacked. Reading them as
-    // one horizontal lockup lets the mark be noticeably larger without the
-    // block growing taller than the stacked version it replaces — the logo
-    // now sets the height, and the two short lines of type sit inside it.
-    final logoSize = screenHeight < 650
-        ? 92.0
-        : screenHeight < 750
-        ? 112.0
-        : 132.0;
-
-    // Tied to the logo so the pair always reads as one unit at any size.
-    final titleSize = logoSize * 0.30;
-    final titleLines = _appTitleLines(AppLocalizations.of(context)!);
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        vertical: screenHeight < 650 ? 4 : 8,
-        horizontal: 16,
-      ),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.accentColor.withValues(alpha: 0.3),
-                    blurRadius: 30,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child:
-                  Image.asset(
-                        'assets/images/snake_classic_transparent.png',
-                        width: logoSize,
-                        height: logoSize,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.games,
-                            size: logoSize * 0.5,
-                            color: theme.accentColor,
-                          );
-                        },
-                      )
-                      .animate(
-                        onPlay: (controller) =>
-                            controller.repeat(reverse: true),
-                      )
-                      .shimmer(
-                        duration: 2500.ms,
-                        color: theme.accentColor.withValues(alpha: 0.25),
-                      )
-                      .gameHero(),
-            ),
-            SizedBox(width: screenHeight < 650 ? 10 : 14),
-            // The wordmark — same primary→accent gradient the game-over
-            // screen and the About dialog use. One ShaderMask over both
-            // lines, so the gradient runs down the whole word rather than
-            // restarting on each.
-            Flexible(
-              child: ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [theme.primaryColor, theme.accentColor],
-                ).createShader(bounds),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final line in titleLines)
-                      Text(
-                        line,
-                        maxLines: 1,
-                        overflow: TextOverflow.visible,
-                        softWrap: false,
-                        style: TextStyle(
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white, // base for ShaderMask
-                          height: 1.05,
-                          letterSpacing: context.letterSpacing(1.5),
-                          shadows: [
-                            Shadow(
-                              color: theme.accentColor.withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// "Snake" over "Classic".
   ///
   /// Split on whitespace, so a locale that writes the title as a single word
@@ -979,410 +1169,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (words.length < 2) return [title];
     if (words.length == 2) return words;
     return [words.first, words.skip(1).join(' ')];
-  }
-
-  Widget _buildMainPlayArea(
-    BuildContext context,
-    GameCubitState gameCubitState,
-    AuthState authState,
-    GameTheme theme,
-    double screenHeight,
-    double screenWidth,
-    double actualScreenHeight,
-  ) {
-    final isSmallScreen = screenHeight < 750;
-    // High score reads from GameSettingsCubit only — same pattern as
-    // CoinsCubit. The cubit's state is backed by the local Drift settings
-    // table (monotonic via the never-decrease guard) and refreshed from
-    // the server on each online launch via GameSettingsCubit.syncWithBackend.
-    // Once an online session lands the server value into the DB, every
-    // subsequent offline session shows the right number. No dual-source
-    // max needed.
-    final highScore = context.watch<GameSettingsCubit>().state.highScore;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableHeight = constraints.maxHeight;
-        final availableWidth = constraints.maxWidth;
-        final spacing = (availableHeight * 0.02).clamp(8.0, 16.0);
-
-        // Ensure minimum height constraints
-        if (availableHeight < 200) {
-          return const SizedBox(
-            height: 200,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        return Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: (availableHeight * 0.02).clamp(8.0, 20.0),
-            horizontal: 16,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Power-up loadout chip — only renders when the user has
-              // any inventory.
-              _buildPowerUpLoadoutChip(theme),
-
-              // Hero Play Button — the focal point, and now sized like one.
-              // Removing the high-score bar handed this row its height back;
-              // the button takes it rather than leaving it as empty screen.
-              Flexible(
-                flex: 7,
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxHeight: availableHeight > 0
-                        ? availableHeight * 0.58
-                        : 260,
-                    maxWidth: availableWidth * 0.88,
-                  ),
-                  child: _buildHeroPlayButton(
-                    context,
-                    theme,
-                    screenHeight,
-                    screenWidth,
-                    highScore,
-                  ),
-                ),
-              ),
-
-              SizedBox(height: (spacing * 0.6).clamp(4.0, 10.0)),
-
-              // Versus. Secondary by every visual measure — a short pill
-              // against a filled circle — and persistent, because the mode
-              // was previously reachable only through the eighth tile of a
-              // two-row nav grid and appeared in neither the tour nor the
-              // help page. It opens the lobby; it does not queue anyone.
-              HomeVersusCta(
-                key: HomeWalkthrough.versusKey,
-                theme: theme,
-                isCompact: isSmallScreen,
-                onOpen: () => _openVersusLobby(context),
-              ),
-
-              // Tighter gap directly above the action buttons so the
-              // taller button row below doesn't grow the column —
-              // ~half of the standard inter-section spacing, clamped so
-              // a very tall screen doesn't open the gap back up.
-              SizedBox(height: (spacing * 0.4).clamp(2.0, 6.0)),
-
-              // Action buttons row - Store and Pro. Taller container
-              // (~20 px more) for a more tappable target; the column's
-              // spaceEvenly distribution absorbs the extra height by
-              // shrinking the implicit gap below, keeping the total
-              // play-area height constant. Both maxHeight and minHeight
-              // grow together so the constraint stays responsive on the
-              // smallest screens.
-              Container(
-                constraints: const BoxConstraints(maxHeight: 60, minHeight: 48),
-                child: _buildActionButtonsRow(
-                  context: context,
-                  theme: theme,
-                  screenWidth: screenWidth,
-                  isSmallScreen: isSmallScreen,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeroPlayButton(
-    BuildContext context,
-    GameTheme theme,
-    double screenHeight,
-    double screenWidth,
-    int highScore,
-  ) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Room for the medal below the circle, so the two never overlap and
-        // the pair still fits the slot the hero already had.
-        const medalReserve = 42.0;
-        final maxSize = constraints.maxHeight > 0
-            ? (constraints.maxHeight - medalReserve) * 0.98
-            : 200.0;
-        final buttonSize = screenHeight < 650
-            ? (maxSize > 205 ? 205.0 : maxSize)
-            : screenHeight < 750
-            ? (maxSize > 255 ? 255.0 : maxSize)
-            : (maxSize > 310 ? 310.0 : maxSize);
-
-        final isSmallButton = buttonSize < 120;
-
-        // The best score sits under the button.
-        //
-        // It used to be a full-width bar of its own — a card, a border, two
-        // navigation buttons and a good chunk of the screen's height, all to
-        // print one number. The number is the only part a player actually
-        // wants at a glance, so it now hangs on the thing they are already
-        // looking at, in space the layout was leaving empty anyway. The
-        // trophy is the label; no wording, so it needs no translation and
-        // reads the same everywhere. It clears the button rather than
-        // overlapping it — the circle gives up the few pixels the medal
-        // needs, so nothing is ever drawn over the primary action.
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildPlayCircle(context, theme, buttonSize, isSmallButton),
-            SizedBox(height: isSmallButton ? 8 : 10),
-            _buildBestMedal(context, theme, highScore, isSmallButton),
-          ],
-        );
-      },
-    );
-  }
-
-  /// The medal that sits under the play button.
-  Widget _buildBestMedal(
-    BuildContext context,
-    GameTheme theme,
-    int highScore,
-    bool isCompact,
-  ) {
-    const gold = Color(0xFFFFC53D);
-    final l10n = AppLocalizations.of(context)!;
-
-    return Semantics(
-      label: '${l10n.homeHighScore}: ${context.formatInt(highScore)}',
-      excludeSemantics: true,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isCompact ? 12 : 14,
-          vertical: isCompact ? 5 : 6,
-        ),
-        decoration: BoxDecoration(
-          // The theme's own background with a gold wash over it, not black.
-          // It sits below the button now rather than on its rim, so it does
-          // not need to fight the bright gradient for contrast — it only
-          // needs to belong to the same screen.
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              theme.backgroundColor.withValues(alpha: 0.85),
-              Color.lerp(
-                theme.backgroundColor,
-                gold,
-                0.16,
-              )!.withValues(alpha: 0.85),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: gold.withValues(alpha: 0.45), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: theme.accentColor.withValues(alpha: 0.18),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.emoji_events, color: gold, size: isCompact ? 14 : 16),
-            SizedBox(width: isCompact ? 6 : 7),
-            Text(
-              context.formatInt(highScore),
-              maxLines: 1,
-              style: TextStyle(
-                color: gold,
-                fontSize: isCompact ? 14 : 16,
-                fontWeight: FontWeight.w900,
-                height: 1.0,
-                letterSpacing: context.letterSpacing(0.5),
-                // Tabular figures so a new best does not shuffle the digits.
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlayCircle(
-    BuildContext context,
-    GameTheme theme,
-    double buttonSize,
-    bool isSmallButton,
-  ) {
-    return GestureDetector(
-      onTap: () async {
-        // Tapping Play is the affirmative act that records acceptance of
-        // the legal notice rendered at the bottom of this screen (see
-        // FirstRunLegalNotice). Idempotent and fire-and-forget — a prefs
-        // write must never sit between the tap and the game.
-        unawaited(LegalAcceptance.recordAccepted());
-
-        // The one-time game-mode picker is skipped on the very first
-        // play. A player who has never seen the board cannot make a
-        // meaningful choice between Classic, Zen, Survival and Time
-        // Attack, and a non-dismissible sheet at that moment is pure
-        // friction — they get Classic (the default) and the picker on
-        // their second tap, once the choice means something.
-        if (!FirstRunService().isFirstGame) {
-          await _maybeShowGameModePrompt();
-          if (!context.mounted) return;
-        }
-        // Detour through the themed pre-game loader. It self-advances
-        // to /game on completion via pushReplacement so back from the
-        // game lands on Home rather than the loader.
-        context.push(AppRoutes.playLoading);
-      },
-      child: AnimatedBuilder(
-        animation: _playButtonPulseAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _playButtonPulseAnimation.value,
-            child: child,
-          );
-        },
-        child: Container(
-          key: HomeWalkthrough.playButtonKey,
-          width: buttonSize,
-          height: buttonSize,
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              colors: [
-                theme.accentColor,
-                theme.foodColor,
-                theme.accentColor.withValues(alpha: 0.8),
-              ],
-              stops: const [0.0, 0.6, 1.0],
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.4),
-                blurRadius: isSmallButton ? 20 : 30,
-                spreadRadius: isSmallButton ? 3 : 5,
-                offset: const Offset(0, 6),
-              ),
-              BoxShadow(
-                color: theme.foodColor.withValues(alpha: 0.3),
-                blurRadius: isSmallButton ? 30 : 50,
-                spreadRadius: 0,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Animated pulse ring
-              Container(
-                width: buttonSize - (isSmallButton ? 8 : 10),
-                height: buttonSize - (isSmallButton ? 8 : 10),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    width: isSmallButton ? 2 : 3,
-                  ),
-                ),
-              ),
-              // Inner content. mainAxisSize: min + Stack's
-              // Alignment.center keeps the icon+text block precisely
-              // in the middle of the circle. Transform.translate on
-              // the text counteracts the icon glyph's intrinsic
-              // bottom padding (Material icons leave ~15% empty
-              // space below the visible symbol). Text height: 1.0
-              // strips the default 1.2 line-height multiplier so
-              // the text's own glyph box doesn't add extra padding
-              // on top.
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.play_arrow_rounded,
-                    size: isSmallButton
-                        ? 60
-                        : buttonSize < 180
-                        ? 80
-                        : buttonSize < 220
-                        ? 100
-                        : 120,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        offset: const Offset(0, 3),
-                        blurRadius: 12,
-                        color: Colors.black.withValues(alpha: 0.4),
-                      ),
-                    ],
-                  ),
-                  Transform.translate(
-                    // Pull text up just enough to neutralize most of
-                    // the icon's intrinsic bottom padding, leaving a
-                    // small (~4-5px) visible gap instead of either
-                    // a big space OR an overlap.
-                    offset: Offset(
-                      0,
-                      isSmallButton
-                          ? -4.0
-                          : buttonSize < 180
-                          ? -6.0
-                          : buttonSize < 220
-                          ? -8.0
-                          : -10.0,
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.homePlay,
-                      style: TextStyle(
-                        fontSize: isSmallButton
-                            ? 14
-                            : buttonSize < 180
-                            ? 18
-                            : buttonSize < 220
-                            ? 22
-                            : 26,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: context.letterSpacing(2),
-                        height: 1.0,
-                        shadows: [
-                          Shadow(
-                            offset: const Offset(0, 2),
-                            blurRadius: 6,
-                            color: Colors.black.withValues(alpha: 0.4),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Open the lobby, and say where the player came from.
-  ///
-  /// The entry point is the measurement the CTA exists for: whether this is
-  /// what brings people to multiplayer, or whether they were finding the nav
-  /// tile anyway.
-  void _openVersusLobby(BuildContext context) {
-    final analytics = getIt<AnalyticsFacade>();
-    analytics.trackHomeVersusCtaTapped(
-      onboardingStage: FirstRunService().hasCompletedOnboarding
-          ? OnboardingStage.established
-          : OnboardingStage.onboarding,
-    );
-    analytics.trackMultiplayerLobbyOpened(
-      entryPoint: LobbyEntryPoint.homeVersus,
-    );
-    context.push(AppRoutes.multiplayerLobby);
   }
 
   Widget _buildPowerUpLoadoutChip(GameTheme theme) {
@@ -1498,64 +1284,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildActionButtonsRow({
-    required BuildContext context,
-    required GameTheme theme,
-    required double screenWidth,
-    required bool isSmallScreen,
-  }) {
-    // Show the rewarded "FREE" button only to free mobile users; Pro / desktop
-    // keep the clean two-button (PRO / STORE) layout.
-    final adsOn =
-        getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
-    final gapWidth = isSmallScreen ? 10.0 : 14.0;
-    final l10n = AppLocalizations.of(context)!;
-    return Row(
-      children: [
-        Expanded(
-          child: _buildModernActionButton(
-            context: context,
-            theme: theme,
-            icon: Icons.diamond,
-            label: l10n.homeTilePro,
-            gradient: [Colors.purple.shade400, Colors.indigo.shade400],
-            isSmallScreen: isSmallScreen,
-            onTap: () => context.push(AppRoutes.premiumBenefits),
-          ),
-        ),
-        SizedBox(width: gapWidth),
-        Expanded(
-          child: _buildModernActionButton(
-            context: context,
-            theme: theme,
-            icon: Icons.store,
-            label: l10n.homeTileStore,
-            gradient: [Colors.orange.shade400, Colors.amber.shade400],
-            isSmallScreen: isSmallScreen,
-            onTap: () => context.push(AppRoutes.store),
-            widgetKey: HomeWalkthrough.storeKey,
-          ),
-        ),
-        // Rewarded entry point — grants a free Speed Boost (no coins, so the
-        // coin economy / IAP stay safe). Opt-in and uncapped.
-        if (adsOn) ...[
-          SizedBox(width: gapWidth),
-          Expanded(
-            child: _buildModernActionButton(
-              context: context,
-              theme: theme,
-              icon: Icons.bolt,
-              label: l10n.homeTileFree,
-              gradient: [Colors.green.shade400, Colors.teal.shade400],
-              isSmallScreen: isSmallScreen,
-              onTap: () => _watchForFreePowerUp(context),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
   /// Opt-in rewarded watch from the home action row. Tells the user up front
   /// exactly what they'll get (a free Speed Boost power-up), then confirms the
   /// grant with a toast. Grants no coins, so the economy stays safe. Opt-in and
@@ -1646,501 +1374,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
-  Widget _buildModernActionButton({
-    required BuildContext context,
-    required GameTheme theme,
-    required IconData icon,
-    required String label,
-    required List<Color> gradient,
-    required bool isSmallScreen,
-    required VoidCallback onTap,
-    Key? widgetKey,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Track the parent's max height so the button fills the wider
-        // 72 px container we now give it from _buildMainPlayArea (was
-        // 48 before). Clamped to keep small-screen sanity; on a 750+ px
-        // device this lands at ~64 px tall.
-        final buttonHeight = constraints.maxHeight > 0
-            ? (constraints.maxHeight * 0.92).clamp(40.0, 54.0)
-            : 48.0;
-        // Drive icon + text sizing off the height so the visual weight
-        // scales with the button instead of staying frozen. The clamps keep
-        // the geometry within sensible bounds on extreme screen sizes.
-        final iconBgPadding = (buttonHeight * 0.13).clamp(5.0, 7.0);
-        final iconSize = (buttonHeight * 0.30).clamp(13.0, 18.0);
-        final labelSize = (buttonHeight * 0.23).clamp(11.0, 14.0);
-        final iconTextGap = (buttonHeight * 0.16).clamp(6.0, 10.0);
-
-        return GestureDetector(
-          onTap: onTap,
-          child: Container(
-            key: widgetKey,
-            height: buttonHeight,
-            constraints: BoxConstraints(
-              minWidth: 100,
-              maxWidth: constraints.maxWidth,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  gradient[0].withValues(alpha: 0.2),
-                  gradient[1].withValues(alpha: 0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: gradient[0].withValues(alpha: 0.4),
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: gradient[0].withValues(alpha: 0.22),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(iconBgPadding),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: gradient),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: gradient[0].withValues(alpha: 0.3),
-                        blurRadius: 5,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: Icon(icon, color: Colors.white, size: iconSize),
-                ),
-                SizedBox(width: iconTextGap),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: labelSize,
-                        fontWeight: FontWeight.w800,
-                        color: gradient[0],
-                        letterSpacing: context.letterSpacing(0.9),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildBottomNavigation(
-    BuildContext context,
-    ThemeState themeState,
-    GameTheme theme,
-    double screenHeight,
-    double screenWidth,
-  ) {
-    // Dynamic sizing based on screen height
-    final isVerySmallScreen = screenHeight < 650;
-    final isSmallScreen = screenHeight < 750;
-    // Note: isMediumScreen not needed in bottom navigation
-    // 8 items split 4+4 across two rows. STATS lives ONLY in the compact
-    // stats row above the nav (left of the high score).
-    final l10n = AppLocalizations.of(context)!;
-    final navigationItems = [
-      _NavItem(
-        Icons.calendar_today,
-        l10n.homeTileDaily,
-        Colors.cyan,
-        () {
-          context.push(AppRoutes.dailyChallenges);
-        },
-        badge: _getDailyChallengesBadge(),
-        widgetKey: HomeWalkthrough.dailyChallengesKey,
-      ),
-      _NavItem(Icons.timeline, l10n.homeTileBattle, Colors.deepPurple, () {
-        context.push(AppRoutes.battlePass);
-      }),
-      _NavItem(Icons.emoji_events, l10n.homeTileEvents, Colors.deepOrange, () {
-        context.push(AppRoutes.tournaments);
-      }),
-      _NavItem(Icons.leaderboard, l10n.homeTileBoard, Colors.lightBlue, () {
-        context.push(AppRoutes.leaderboard);
-      }),
-      _NavItem(Icons.people, l10n.homeTileFriends, Colors.pinkAccent, () {
-        context.push(AppRoutes.friends);
-      }),
-      _NavItem(
-        Icons.palette,
-        l10n.homeTileCosmetics,
-        Colors.indigo,
-        () {
-          context.push(AppRoutes.cosmetics);
-        },
-        widgetKey: HomeWalkthrough.cosmeticsKey,
-      ),
-      _NavItem(Icons.military_tech, l10n.homeTileAwards, Colors.orange, () {
-        context.push(AppRoutes.achievements);
-      }),
-      _NavItem(Icons.sports_esports, l10n.homeTileVersus, Colors.green, () {
-        getIt<AnalyticsFacade>().trackMultiplayerLobbyOpened(
-          entryPoint: LobbyEntryPoint.navTile,
-        );
-        context.push(AppRoutes.multiplayerLobby);
-      }),
-    ];
-
-    // The full grid, always.
-    //
-    // A previous revision hid all but two tiles until the player had a few
-    // games in, on the theory that a live-service hub means nothing to someone
-    // who has not eaten a piece of food yet. On the device that was plainly
-    // wrong: two lonely tiles under a large empty area reads as a broken or
-    // half-loaded screen, not a focused one. Whatever the tiles cost a new
-    // player in comprehension, they cost less than the app looking unfinished.
-    //
-    // Kept as a single list — if this ever gets staged again, stage it by
-    // something the player can see the logic of (an unlock, a badge), not by
-    // silently removing UI.
-
-    // Two-row layout, balanced. Ceiling-divide so 7 items become 4+3,
-    // 6 stays 3+3, 8 becomes 4+4, etc. — keeps the larger row on top
-    // visually anchoring the grid.
-    final firstRowCount = (navigationItems.length + 1) ~/ 2;
-    final firstRow = navigationItems.take(firstRowCount).toList();
-    final secondRow = navigationItems.skip(firstRowCount).toList();
-
-    Widget buildRow(List<_NavItem> items, int indexOffset) => Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: items.asMap().entries.map((entry) {
-        final index = entry.key + indexOffset;
-        final item = entry.value;
-        return _buildNavButton(
-          icon: item.icon,
-          label: item.label,
-          color: item.color,
-          onTap: item.onTap,
-          theme: theme,
-          isSmallScreen: isVerySmallScreen || isSmallScreen,
-          screenHeight: screenHeight,
-          badge: item.badge,
-          widgetKey: item.widgetKey,
-        ).gameGridItem(index);
-      }).toList(),
-    );
-
-    return Column(
-      children: [
-        buildRow(firstRow, 0),
-        // Only reserve the gap + second row when there IS a second row —
-        // otherwise the single-row onboarding grid would carry a phantom
-        // spacer under it.
-        if (secondRow.isNotEmpty) ...[
-          SizedBox(
-            height: isVerySmallScreen
-                ? 8
-                : isSmallScreen
-                ? 12
-                : 16,
-          ),
-          buildRow(secondRow, firstRowCount),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildNavButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-    required GameTheme theme,
-    required bool isSmallScreen,
-    required double screenHeight,
-    int? badge,
-    GlobalKey? widgetKey,
-  }) {
-    final buttonSize = _getResponsiveNavButtonSize(screenHeight);
-    // Icon size tracks the button bump from _getResponsiveNavButtonSize
-    // so the icon-to-button ratio stays balanced (~40-45% of the button
-    // width). Going too big crowds the rounded-corner padding; this is
-    // the sweet spot.
-    final iconSize = screenHeight < 600
-        ? 20.0
-        : screenHeight < 700
-        ? 22.0
-        : 26.0;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                key: widgetKey,
-                width: buttonSize,
-                height: buttonSize,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      color.withValues(alpha: 0.15),
-                      color.withValues(alpha: 0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 18),
-                  border: Border.all(
-                    color: color.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      spreadRadius: 0,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: color, size: iconSize),
-              ),
-              if (badge != null && badge > 0)
-                Positioned(
-                  right: -4,
-                  top: -4,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$badge',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          SizedBox(height: isSmallScreen ? 4 : 6),
-
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isSmallScreen ? 8 : 9,
-              fontWeight: FontWeight.w600,
-              color: theme.accentColor.withValues(alpha: 0.8),
-              letterSpacing: context.letterSpacing(0.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // void _showComingSoonDialog(
-  //   BuildContext context,
-  //   GameTheme theme,
-  //   String featureName,
-  // ) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         backgroundColor: theme.backgroundColor,
-  //         shape: RoundedRectangleBorder(
-  //           borderRadius: BorderRadius.circular(24),
-  //           side: BorderSide(
-  //             color: Colors.green.withValues(alpha: 0.3),
-  //             width: 2,
-  //           ),
-  //         ),
-  //         title: Row(
-  //           children: [
-  //             Icon(Icons.construction, color: Colors.amber, size: 28),
-  //             const SizedBox(width: 12),
-  //             Expanded(
-  //               child: Text(
-  //                 'Coming Soon',
-  //                 style: TextStyle(
-  //                   color: theme.accentColor,
-  //                   fontWeight: FontWeight.bold,
-  //                   fontSize: 20,
-  //                 ),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         content: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             Container(
-  //               padding: const EdgeInsets.all(20),
-  //               decoration: BoxDecoration(
-  //                 gradient: LinearGradient(
-  //                   colors: [
-  //                     Colors.green.withValues(alpha: 0.1),
-  //                     Colors.teal.withValues(alpha: 0.05),
-  //                   ],
-  //                 ),
-  //                 borderRadius: BorderRadius.circular(16),
-  //                 border: Border.all(
-  //                   color: Colors.green.withValues(alpha: 0.3),
-  //                 ),
-  //               ),
-  //               child: Column(
-  //                 children: [
-  //                   Icon(Icons.group_work, size: 48, color: Colors.green),
-  //                   const SizedBox(height: 16),
-  //                   Text(
-  //                     featureName,
-  //                     style: TextStyle(
-  //                       color: theme.accentColor,
-  //                       fontWeight: FontWeight.bold,
-  //                       fontSize: 18,
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 8),
-  //                   Text(
-  //                     'We\'re working hard to bring you an amazing multiplayer experience!',
-  //                     textAlign: TextAlign.center,
-  //                     style: TextStyle(
-  //                       color: theme.accentColor.withValues(alpha: 0.7),
-  //                       fontSize: 14,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             const SizedBox(height: 16),
-  //             Row(
-  //               children: [
-  //                 Icon(Icons.star, color: Colors.amber, size: 16),
-  //                 const SizedBox(width: 8),
-  //                 Expanded(
-  //                   child: Text(
-  //                     'Stay tuned for updates!',
-  //                     style: TextStyle(
-  //                       color: theme.accentColor.withValues(alpha: 0.8),
-  //                       fontSize: 12,
-  //                       fontStyle: FontStyle.italic,
-  //                     ),
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.of(context).pop(),
-  //             style: TextButton.styleFrom(
-  //               backgroundColor: Colors.green.withValues(alpha: 0.1),
-  //               padding: const EdgeInsets.symmetric(
-  //                 horizontal: 24,
-  //                 vertical: 12,
-  //               ),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(16),
-  //                 side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
-  //               ),
-  //             ),
-  //             child: Text(
-  //               'Got it!',
-  //               style: TextStyle(
-  //                 color: Colors.green,
-  //                 fontWeight: FontWeight.w600,
-  //               ),
-  //             ),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
-  double _getResponsiveNavButtonSize(double screenHeight) {
-    // Each tier bumped ~6dp from the previous values (38/44/50/56) to
-    // make the buttons easier to hit. The small-screen size now lands
-    // close to the Material Design 48dp minimum tap target, and the
-    // large-screen size reads more solidly without crowding the row.
-    final double base;
-    if (screenHeight < 600) {
-      base = 44.0;
-    } else if (screenHeight < 700) {
-      base = 50.0;
-    } else if (screenHeight < 850) {
-      base = 56.0;
-    } else {
-      base = 62.0;
-    }
-    // Scale up on tablets so the buttons fill the (now width-capped) row
-    // instead of floating with big gaps. 1.0x on phones (unchanged).
-    return base * context.uiScale;
-  }
-
-  /// Get the badge count for daily challenges (unclaimed rewards).
-  /// Watches the Riverpod provider so the home screen rebuilds and the
-  /// badge updates the moment a reward is claimed elsewhere — previously
-  /// the value was read once from the singleton DailyChallengeService
-  /// (a ChangeNotifier the home screen didn't subscribe to), leaving
-  /// the badge stale until a manual rebuild.
   int? _getDailyChallengesBadge() {
     final count = ref.watch(unclaimedRewardsCountProvider);
     return count > 0 ? count : null;
   }
 }
 
-// Navigation item helper class
-class _NavItem {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  final int? badge;
-  final GlobalKey? widgetKey;
-
-  _NavItem(
-    this.icon,
-    this.label,
-    this.color,
-    this.onTap, {
-    this.badge,
-    this.widgetKey,
-  });
-}
-
-/// First-launch bottom sheet that asks the user to pick a default game mode.
-/// Returns the selected GameMode, or null if dismissed without confirming.
 class _GameModeFirstLaunchSheet extends StatefulWidget {
   const _GameModeFirstLaunchSheet({required this.initialMode});
 

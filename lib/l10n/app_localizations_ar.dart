@@ -6058,4 +6058,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsReplaysSubtitle => 'شاهد جولاتك المحفوظة';
+
+  @override
+  String get homeTapToPlay => 'انقر للعب';
+
+  @override
+  String get homeTileMe => 'أنا';
 }
