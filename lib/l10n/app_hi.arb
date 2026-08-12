@@ -1804,5 +1804,8 @@
   "hwHelpTitle": "और कुछ?",
   "hwHelpMsg": "नियम, नियंत्रण और वर्सेस — सब यहाँ समझाया गया है। सेटिंग्स इसके बगल में है।",
   "insOnPhone": "आपके फ़ोन पर",
-  "insOnKeyboard": "कीबोर्ड पर"
+  "insOnKeyboard": "कीबोर्ड पर",
+  "settingsSectionYourGame": "आपका खेल",
+  "settingsStatisticsSubtitle": "आपके सभी गेमों का हिसाब",
+  "settingsReplaysSubtitle": "अपने सहेजे गए गेम दोबारा देखें"
 }

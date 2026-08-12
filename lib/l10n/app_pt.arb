@@ -1804,5 +1804,8 @@
   "hwHelpTitle": "Mais alguma coisa?",
   "hwHelpMsg": "Regras, controlos e Versus estão explicados aqui. As definições estão mesmo ao lado.",
   "insOnPhone": "No telemóvel",
-  "insOnKeyboard": "Com teclado"
+  "insOnKeyboard": "Com teclado",
+  "settingsSectionYourGame": "O TEU JOGO",
+  "settingsStatisticsSubtitle": "Todas as partidas que jogaste, somadas",
+  "settingsReplaysSubtitle": "Revê as partidas guardadas"
 }

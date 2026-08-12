@@ -1804,5 +1804,8 @@
   "hwHelpTitle": "Coś jeszcze?",
   "hwHelpMsg": "Zasady, sterowanie i Versus są opisane tutaj. Ustawienia są obok.",
   "insOnPhone": "Na telefonie",
-  "insOnKeyboard": "Na klawiaturze"
+  "insOnKeyboard": "Na klawiaturze",
+  "settingsSectionYourGame": "TWOJA GRA",
+  "settingsStatisticsSubtitle": "Wszystkie twoje rozgrywki, podliczone",
+  "settingsReplaysSubtitle": "Obejrzyj zapisane rozgrywki"
 }

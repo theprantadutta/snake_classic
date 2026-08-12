@@ -2294,5 +2294,8 @@
   "hwHelpTitle": "Anything else?",
   "hwHelpMsg": "Rules, controls and Versus are all explained here. Settings sits right beside it.",
   "insOnPhone": "On your phone",
-  "insOnKeyboard": "On a keyboard"
+  "insOnKeyboard": "On a keyboard",
+  "settingsSectionYourGame": "YOUR GAME",
+  "settingsStatisticsSubtitle": "Every run you have played, counted up",
+  "settingsReplaysSubtitle": "Watch your saved runs back"
 }

@@ -6102,4 +6102,14 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get insOnKeyboard => 'Na klawiaturze';
+
+  @override
+  String get settingsSectionYourGame => 'TWOJA GRA';
+
+  @override
+  String get settingsStatisticsSubtitle =>
+      'Wszystkie twoje rozgrywki, podliczone';
+
+  @override
+  String get settingsReplaysSubtitle => 'Obejrzyj zapisane rozgrywki';
 }

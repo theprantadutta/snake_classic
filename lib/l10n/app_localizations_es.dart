@@ -6122,4 +6122,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get insOnKeyboard => 'Con teclado';
+
+  @override
+  String get settingsSectionYourGame => 'TU JUEGO';
+
+  @override
+  String get settingsStatisticsSubtitle => 'Todas tus partidas, sumadas';
+
+  @override
+  String get settingsReplaysSubtitle => 'Vuelve a ver tus partidas guardadas';
 }

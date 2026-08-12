@@ -6116,4 +6116,13 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get insOnKeyboard => 'Con tastiera';
+
+  @override
+  String get settingsSectionYourGame => 'IL TUO GIOCO';
+
+  @override
+  String get settingsStatisticsSubtitle => 'Tutte le tue partite, contate';
+
+  @override
+  String get settingsReplaysSubtitle => 'Rivedi le partite salvate';
 }

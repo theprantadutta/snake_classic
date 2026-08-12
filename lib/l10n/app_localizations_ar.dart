@@ -6049,4 +6049,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get insOnKeyboard => 'على لوحة المفاتيح';
+
+  @override
+  String get settingsSectionYourGame => 'لعبتك';
+
+  @override
+  String get settingsStatisticsSubtitle => 'كل جولاتك مجموعة';
+
+  @override
+  String get settingsReplaysSubtitle => 'شاهد جولاتك المحفوظة';
 }

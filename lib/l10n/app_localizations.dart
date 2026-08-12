@@ -10941,6 +10941,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On a keyboard'**
   String get insOnKeyboard;
+
+  /// No description provided for @settingsSectionYourGame.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR GAME'**
+  String get settingsSectionYourGame;
+
+  /// No description provided for @settingsStatisticsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every run you have played, counted up'**
+  String get settingsStatisticsSubtitle;
+
+  /// No description provided for @settingsReplaysSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch your saved runs back'**
+  String get settingsReplaysSubtitle;
 }
 
 class _AppLocalizationsDelegate

@@ -99,7 +99,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// settings screen stays in lock-step with the cubit (source of truth).
   void _syncFromSettingsCubit(GameSettingsState s) {
     if (!s.isReady) return;
-    final changed = _dPadEnabled != s.dPadEnabled ||
+    final changed =
+        _dPadEnabled != s.dPadEnabled ||
         _dPadPosition != s.dPadPosition ||
         _screenShakeEnabled != s.screenShakeEnabled ||
         _hapticsEnabled != s.hapticsEnabled ||
@@ -153,9 +154,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _musicEnabled = _audioService.isMusicEnabled;
         _dPadEnabled = settingsData['dPadEnabled'] ?? false;
         _screenShakeEnabled = settingsData['screenShakeEnabled'] ?? false;
-        _dPadPosition = settingsData['dPadPosition'] ?? DPadPosition.bottomCenter;
-        _selectedBoardSize = settingsData['boardSize'] ?? GameConstants.availableBoardSizes[1];
-        _selectedCrashFeedbackDuration = settingsData['crashFeedbackDuration'] ?? GameConstants.defaultCrashFeedbackDuration;
+        _dPadPosition =
+            settingsData['dPadPosition'] ?? DPadPosition.bottomCenter;
+        _selectedBoardSize =
+            settingsData['boardSize'] ?? GameConstants.availableBoardSizes[1];
+        _selectedCrashFeedbackDuration =
+            settingsData['crashFeedbackDuration'] ??
+            GameConstants.defaultCrashFeedbackDuration;
       });
       // Game mode lives in SharedPreferences, not the cached settings map.
       _storageService.getGameMode().then((mode) {
@@ -222,363 +227,445 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     builder: (context, premiumState) {
                       final theme = themeState.currentTheme;
 
-                    return Scaffold(
-                      bottomNavigationBar: const SnakeBannerAd(),
-                      extendBodyBehindAppBar: true,
-                      appBar: AppBar(
-                        title: Text(
-                          l10n.settingsTitle,
-                          style: TextStyle(
-                            color: theme.accentColor,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: context.letterSpacing(2),
-                            shadows: [
-                              Shadow(
-                                offset: const Offset(0, 2),
-                                blurRadius: 4,
-                                color: Colors.black.withValues(alpha: 0.3),
-                              ),
-                            ],
-                          ),
-                        ),
-                        backgroundColor: Colors.transparent,
-                        elevation: 0,
-                        iconTheme: IconThemeData(color: theme.accentColor),
-                      ),
-                      body: AppBackground(
-                        theme: theme,
-                        child: SafeArea(
-                          child: Padding(
-                            // Extra horizontal inset on tablets caps the
-                            // settings column to a centered ~640px width
-                            // instead of stretching rows full-screen.
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 24.0 + context.sideInset(),
-                              vertical: 24.0,
+                      return Scaffold(
+                        bottomNavigationBar: const SnakeBannerAd(),
+                        extendBodyBehindAppBar: true,
+                        appBar: AppBar(
+                          title: Text(
+                            l10n.settingsTitle,
+                            style: TextStyle(
+                              color: theme.accentColor,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: context.letterSpacing(2),
+                              shadows: [
+                                Shadow(
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 4,
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                ),
+                              ],
                             ),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // 1. Controls Section (most frequently adjusted during gameplay)
-                                  _buildSection(l10n.settingsSectionControls, [
-                                    _buildAudioSwitch(
-                                      l10n.settingsDPadControls,
-                                      _dPadEnabled,
-                                      (value) async {
-                                        setState(() {
-                                          _dPadEnabled = value;
-                                        });
-                                        await context
-                                            .read<GameSettingsCubit>()
-                                            .updateDPadEnabled(value);
-                                        _analytics.trackSettingChanged(settingName: 'dpad_enabled', value: '$value');
-                                      },
-                                      theme,
-                                      description: l10n.settingsDPadSubtitle,
-                                    ),
-                                    // D-Pad Position Selector (only show when D-Pad is enabled)
-                                    if (_dPadEnabled) ...[
+                          ),
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
+                          iconTheme: IconThemeData(color: theme.accentColor),
+                        ),
+                        body: AppBackground(
+                          theme: theme,
+                          child: SafeArea(
+                            child: Padding(
+                              // Extra horizontal inset on tablets caps the
+                              // settings column to a centered ~640px width
+                              // instead of stretching rows full-screen.
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 24.0 + context.sideInset(),
+                                vertical: 24.0,
+                              ),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // 1. Controls Section (most frequently adjusted during gameplay)
+                                    _buildSection(l10n.settingsSectionControls, [
+                                      _buildAudioSwitch(
+                                        l10n.settingsDPadControls,
+                                        _dPadEnabled,
+                                        (value) async {
+                                          setState(() {
+                                            _dPadEnabled = value;
+                                          });
+                                          await context
+                                              .read<GameSettingsCubit>()
+                                              .updateDPadEnabled(value);
+                                          _analytics.trackSettingChanged(
+                                            settingName: 'dpad_enabled',
+                                            value: '$value',
+                                          );
+                                        },
+                                        theme,
+                                        description: l10n.settingsDPadSubtitle,
+                                      ),
+                                      // D-Pad Position Selector (only show when D-Pad is enabled)
+                                      if (_dPadEnabled) ...[
+                                        const SizedBox(height: 16),
+                                        _buildDPadPositionSelector(
+                                          gameState,
+                                          theme,
+                                        ),
+                                      ],
                                       const SizedBox(height: 16),
-                                      _buildDPadPositionSelector(
-                                        gameState,
-                                        theme,
-                                      ),
-                                    ],
-                                    const SizedBox(height: 16),
-                                    _buildControlInfo(theme),
-                                  ], theme),
-
-                                  const SizedBox(height: 32),
-
-                                  // 2. Gameplay Section (mode + board size + crash feedback + effects)
-                                  _buildSection(l10n.settingsSectionGameplay, [
-                                    _buildGameModeSelector(gameState, theme),
-                                    const SizedBox(height: 24),
-                                    const Divider(height: 1),
-                                    const SizedBox(height: 24),
-                                    _buildDifficultySelector(gameState, theme),
-                                    const SizedBox(height: 24),
-                                    const Divider(height: 1),
-                                    const SizedBox(height: 24),
-                                    _buildBoardSizeSelector(gameState, theme),
-                                    const SizedBox(height: 24),
-                                    const Divider(height: 1),
-                                    const SizedBox(height: 24),
-                                    _buildCrashFeedbackDurationSelector(
-                                      gameState,
-                                      theme,
-                                    ),
-                                    const SizedBox(height: 24),
-                                    const Divider(height: 1),
-                                    const SizedBox(height: 24),
-                                    _buildAudioSwitch(
-                                      l10n.settingsScreenShake,
-                                      _screenShakeEnabled,
-                                      (value) async {
-                                        setState(() {
-                                          _screenShakeEnabled = value;
-                                        });
-                                        await context
-                                            .read<GameSettingsCubit>()
-                                            .setScreenShakeEnabled(value);
-                                        _analytics.trackSettingChanged(settingName: 'screen_shake', value: '$value');
-                                      },
-                                      theme,
-                                      description: l10n.settingsScreenShakeSubtitle,
-                                    ),
-                                    const SizedBox(height: 24),
-                                    const Divider(height: 1),
-                                    const SizedBox(height: 24),
-                                    _buildAudioSwitch(
-                                      l10n.settingsVibration,
-                                      _hapticsEnabled,
-                                      (value) async {
-                                        setState(() {
-                                          _hapticsEnabled = value;
-                                        });
-                                        await context
-                                            .read<GameSettingsCubit>()
-                                            .setHapticsEnabled(value);
-                                        _analytics.trackSettingChanged(settingName: 'haptics_enabled', value: '$value');
-                                      },
-                                      theme,
-                                      description: l10n.settingsVibrationSubtitle,
-                                    ),
-                                  ], theme),
-
-                                  const SizedBox(height: 32),
-
-                                  // 3. Audio Section
-                                  _buildSection(l10n.settingsSectionAudio, [
-                                    _buildAudioSwitch(
-                                      l10n.settingsSoundEffects,
-                                      _soundEnabled,
-                                      (value) async {
-                                        setState(() {
-                                          _soundEnabled = value;
-                                        });
-                                        await _audioService.setSoundEnabled(
-                                          value,
-                                        );
-                                        _analytics.trackSettingChanged(settingName: 'sound_effects', value: '$value');
-                                      },
-                                      theme,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildAudioSwitch(
-                                      l10n.settingsBackgroundMusic,
-                                      _musicEnabled,
-                                      (value) async {
-                                        setState(() {
-                                          _musicEnabled = value;
-                                        });
-                                        await _audioService.setMusicEnabled(
-                                          value,
-                                        );
-                                        _analytics.trackSettingChanged(settingName: 'background_music', value: '$value');
-                                      },
-                                      theme,
-                                    ),
-                                  ], theme),
-
-                                  const SizedBox(height: 32),
-
-                                  // 4. Visual Section (theme + trail effects)
-                                  _buildSection(l10n.settingsSectionVisual, [
-                                    _buildThemeSelector(themeState, theme),
-                                    const SizedBox(height: 24),
-                                    const Divider(height: 1),
-                                    const SizedBox(height: 24),
-                                    _buildAudioSwitch(
-                                      l10n.settingsSnakeTrail,
-                                      themeState.isTrailSystemEnabled,
-                                      (value) async {
-                                        await context
-                                            .read<ThemeCubit>()
-                                            .setTrailSystemEnabled(value);
-                                      },
-                                      theme,
-                                      description: l10n.settingsSnakeTrailSubtitle,
-                                    ),
-                                  ], theme),
-
-                                  const SizedBox(height: 32),
-
-                                  // App language picker. Section title comes
-                                  // from the ARB (the picker itself is the
-                                  // first localized surface in the app).
-                                  _buildSection(
-                                    AppLocalizations.of(context)!
-                                        .settingsSectionLanguage,
-                                    [_buildLanguagePicker(theme)],
-                                    theme,
-                                  ),
-
-                                  const SizedBox(height: 32),
-
-                                  // 5. User Profile Section
-                                  _buildSection(
-                                      l10n.settingsSectionNotifications, [
-                                    _buildAudioSwitch(
-                                      l10n.settingsNotifDailyReminder,
-                                      _notifDailyReminder,
-                                      (v) => _toggleNotification(
-                                        NotificationType.dailyReminder,
-                                        v,
-                                        (val) => _notifDailyReminder = val,
-                                      ),
-                                      theme,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildAudioSwitch(
-                                      l10n.settingsNotifTournament,
-                                      _notifTournament,
-                                      (v) => _toggleNotification(
-                                        NotificationType.tournament,
-                                        v,
-                                        (val) => _notifTournament = val,
-                                      ),
-                                      theme,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildAudioSwitch(
-                                      l10n.settingsNotifAchievement,
-                                      _notifAchievement,
-                                      (v) => _toggleNotification(
-                                        NotificationType.achievement,
-                                        v,
-                                        (val) => _notifAchievement = val,
-                                      ),
-                                      theme,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildAudioSwitch(
-                                      l10n.settingsNotifSocial,
-                                      _notifSocial,
-                                      (v) => _toggleNotification(
-                                        NotificationType.social,
-                                        v,
-                                        (val) => _notifSocial = val,
-                                      ),
-                                      theme,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildAudioSwitch(
-                                      l10n.settingsNotifSpecialEvents,
-                                      _notifSpecialEvent,
-                                      (v) => _toggleNotification(
-                                        NotificationType.specialEvent,
-                                        v,
-                                        (val) => _notifSpecialEvent = val,
-                                      ),
-                                      theme,
-                                    ),
-                                  ], theme),
-
-                                  const SizedBox(height: 32),
-
-                                  // Diagnostic buttons that isolate each layer
-                                  // of the notification pipeline. Gated behind
-                                  // kDebugMode so production builds never see
-                                  // it — these are developer-facing controls
-                                  // for triage during development + Play Store
-                                  // internal testing, not user features. See
-                                  // NOTIFICATIONS_TESTING.md for triage guide.
-                                  if (kDebugMode) ...[
-                                    _buildSection('TEST NOTIFICATIONS', [
-                                      _buildNotificationTestPanel(theme),
+                                      _buildControlInfo(theme),
                                     ], theme),
+
                                     const SizedBox(height: 32),
-                                  ],
 
-                                  _buildSection(
-                                      l10n.settingsSectionUserProfile, [
-                                    _buildUserProfileSettings(authState, theme),
-                                  ], theme),
-
-                                  const SizedBox(height: 32),
-
-                                  // 6. Help & Tutorial Section
-                                  _buildSection(l10n.settingsSectionHelp, [
-                                    _buildReplayTutorialButton(theme),
-                                    const SizedBox(height: 16),
-                                    _buildCreditsButton(theme),
-                                    _buildRateUsButton(theme),
-                                    _buildPrivacyChoicesButton(theme),
-                                  ], theme),
-
-                                  const SizedBox(height: 32),
-
-                                  // 6b. Legal Section
-                                  _buildSection(l10n.settingsSectionLegal, [
-                                    _buildPrivacyPolicyButton(theme),
-                                    const SizedBox(height: 12),
-                                    _buildTermsButton(theme),
-                                  ], theme),
-
-                                  const SizedBox(height: 32),
-
-                                  // 7. Premium Section (if available)
-                                  if (premiumState.isInitialized)
+                                    // 2. Gameplay Section (mode + board size + crash feedback + effects)
                                     _buildSection(
-                                        l10n.settingsSectionPremium, [
-                                      _buildPremiumStatusCard(
-                                        premiumState,
-                                        theme,
-                                      ),
-                                      if (!premiumState.hasPremium)
-                                        _buildUpgradeButton(
-                                          premiumState,
+                                      l10n.settingsSectionGameplay,
+                                      [
+                                        _buildGameModeSelector(
+                                          gameState,
                                           theme,
                                         ),
-                                      _buildRestorePurchasesButton(
-                                        premiumState,
-                                        theme,
-                                      ),
-                                      _buildPurchaseHistoryButton(
-                                        premiumState,
-                                        theme,
-                                      ),
-                                      if (premiumState.hasPremium ||
-                                          premiumState.ownedSkins.isNotEmpty)
-                                        _buildCosmeticsButton(
-                                          premiumState,
+                                        const SizedBox(height: 24),
+                                        const Divider(height: 1),
+                                        const SizedBox(height: 24),
+                                        _buildDifficultySelector(
+                                          gameState,
                                           theme,
                                         ),
-                                      if (premiumState.hasBattlePass)
-                                        _buildBattlePassButton(
-                                          premiumState,
+                                        const SizedBox(height: 24),
+                                        const Divider(height: 1),
+                                        const SizedBox(height: 24),
+                                        _buildBoardSizeSelector(
+                                          gameState,
                                           theme,
                                         ),
+                                        const SizedBox(height: 24),
+                                        const Divider(height: 1),
+                                        const SizedBox(height: 24),
+                                        _buildCrashFeedbackDurationSelector(
+                                          gameState,
+                                          theme,
+                                        ),
+                                        const SizedBox(height: 24),
+                                        const Divider(height: 1),
+                                        const SizedBox(height: 24),
+                                        _buildAudioSwitch(
+                                          l10n.settingsScreenShake,
+                                          _screenShakeEnabled,
+                                          (value) async {
+                                            setState(() {
+                                              _screenShakeEnabled = value;
+                                            });
+                                            await context
+                                                .read<GameSettingsCubit>()
+                                                .setScreenShakeEnabled(value);
+                                            _analytics.trackSettingChanged(
+                                              settingName: 'screen_shake',
+                                              value: '$value',
+                                            );
+                                          },
+                                          theme,
+                                          description:
+                                              l10n.settingsScreenShakeSubtitle,
+                                        ),
+                                        const SizedBox(height: 24),
+                                        const Divider(height: 1),
+                                        const SizedBox(height: 24),
+                                        _buildAudioSwitch(
+                                          l10n.settingsVibration,
+                                          _hapticsEnabled,
+                                          (value) async {
+                                            setState(() {
+                                              _hapticsEnabled = value;
+                                            });
+                                            await context
+                                                .read<GameSettingsCubit>()
+                                                .setHapticsEnabled(value);
+                                            _analytics.trackSettingChanged(
+                                              settingName: 'haptics_enabled',
+                                              value: '$value',
+                                            );
+                                          },
+                                          theme,
+                                          description:
+                                              l10n.settingsVibrationSubtitle,
+                                        ),
+                                      ],
+                                      theme,
+                                    ),
+
+                                    const SizedBox(height: 32),
+
+                                    // 3. Audio Section
+                                    _buildSection(l10n.settingsSectionAudio, [
+                                      _buildAudioSwitch(
+                                        l10n.settingsSoundEffects,
+                                        _soundEnabled,
+                                        (value) async {
+                                          setState(() {
+                                            _soundEnabled = value;
+                                          });
+                                          await _audioService.setSoundEnabled(
+                                            value,
+                                          );
+                                          _analytics.trackSettingChanged(
+                                            settingName: 'sound_effects',
+                                            value: '$value',
+                                          );
+                                        },
+                                        theme,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildAudioSwitch(
+                                        l10n.settingsBackgroundMusic,
+                                        _musicEnabled,
+                                        (value) async {
+                                          setState(() {
+                                            _musicEnabled = value;
+                                          });
+                                          await _audioService.setMusicEnabled(
+                                            value,
+                                          );
+                                          _analytics.trackSettingChanged(
+                                            settingName: 'background_music',
+                                            value: '$value',
+                                          );
+                                        },
+                                        theme,
+                                      ),
                                     ], theme),
 
-                                  const SizedBox(height: 16),
+                                    const SizedBox(height: 32),
 
-                                  // Back Button — full width
-                                  GradientButton(
-                                    onPressed: () => context.pop(),
-                                    text: l10n.settingsBackToGame,
-                                    primaryColor: theme.accentColor,
-                                    secondaryColor: theme.foodColor,
-                                    icon: Icons.arrow_back,
-                                    width: double.infinity,
-                                  ),
-                                ],
+                                    // 4. Visual Section (theme + trail effects)
+                                    _buildSection(l10n.settingsSectionVisual, [
+                                      _buildThemeSelector(themeState, theme),
+                                      const SizedBox(height: 24),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 24),
+                                      _buildAudioSwitch(
+                                        l10n.settingsSnakeTrail,
+                                        themeState.isTrailSystemEnabled,
+                                        (value) async {
+                                          await context
+                                              .read<ThemeCubit>()
+                                              .setTrailSystemEnabled(value);
+                                        },
+                                        theme,
+                                        description:
+                                            l10n.settingsSnakeTrailSubtitle,
+                                      ),
+                                    ], theme),
+
+                                    const SizedBox(height: 32),
+
+                                    // App language picker. Section title comes
+                                    // from the ARB (the picker itself is the
+                                    // first localized surface in the app).
+                                    _buildSection(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.settingsSectionLanguage,
+                                      [_buildLanguagePicker(theme)],
+                                      theme,
+                                    ),
+
+                                    const SizedBox(height: 32),
+
+                                    // 5. User Profile Section
+                                    _buildSection(
+                                      l10n.settingsSectionNotifications,
+                                      [
+                                        _buildAudioSwitch(
+                                          l10n.settingsNotifDailyReminder,
+                                          _notifDailyReminder,
+                                          (v) => _toggleNotification(
+                                            NotificationType.dailyReminder,
+                                            v,
+                                            (val) => _notifDailyReminder = val,
+                                          ),
+                                          theme,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _buildAudioSwitch(
+                                          l10n.settingsNotifTournament,
+                                          _notifTournament,
+                                          (v) => _toggleNotification(
+                                            NotificationType.tournament,
+                                            v,
+                                            (val) => _notifTournament = val,
+                                          ),
+                                          theme,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _buildAudioSwitch(
+                                          l10n.settingsNotifAchievement,
+                                          _notifAchievement,
+                                          (v) => _toggleNotification(
+                                            NotificationType.achievement,
+                                            v,
+                                            (val) => _notifAchievement = val,
+                                          ),
+                                          theme,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _buildAudioSwitch(
+                                          l10n.settingsNotifSocial,
+                                          _notifSocial,
+                                          (v) => _toggleNotification(
+                                            NotificationType.social,
+                                            v,
+                                            (val) => _notifSocial = val,
+                                          ),
+                                          theme,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _buildAudioSwitch(
+                                          l10n.settingsNotifSpecialEvents,
+                                          _notifSpecialEvent,
+                                          (v) => _toggleNotification(
+                                            NotificationType.specialEvent,
+                                            v,
+                                            (val) => _notifSpecialEvent = val,
+                                          ),
+                                          theme,
+                                        ),
+                                      ],
+                                      theme,
+                                    ),
+
+                                    const SizedBox(height: 32),
+
+                                    // Diagnostic buttons that isolate each layer
+                                    // of the notification pipeline. Gated behind
+                                    // kDebugMode so production builds never see
+                                    // it — these are developer-facing controls
+                                    // for triage during development + Play Store
+                                    // internal testing, not user features. See
+                                    // NOTIFICATIONS_TESTING.md for triage guide.
+                                    if (kDebugMode) ...[
+                                      _buildSection('TEST NOTIFICATIONS', [
+                                        _buildNotificationTestPanel(theme),
+                                      ], theme),
+                                      const SizedBox(height: 32),
+                                    ],
+
+                                    _buildSection(
+                                      l10n.settingsSectionUserProfile,
+                                      [
+                                        _buildUserProfileSettings(
+                                          authState,
+                                          theme,
+                                        ),
+                                      ],
+                                      theme,
+                                    ),
+
+                                    const SizedBox(height: 32),
+
+                                    // 5b. Your game — statistics and replays.
+                                    // Both used to be circular buttons flanking
+                                    // the home screen's high-score bar, where
+                                    // they cost the home screen a whole row to
+                                    // offer two things a player looks at
+                                    // occasionally. They live here now, where
+                                    // the rest of "about your game" already is.
+                                    _buildSection(
+                                      l10n.settingsSectionYourGame,
+                                      [
+                                        _buildLinkButton(
+                                          theme,
+                                          icon: Icons.analytics,
+                                          label: l10n.pfStatistics,
+                                          subtitle:
+                                              l10n.settingsStatisticsSubtitle,
+                                          onPressed: () => context.push(
+                                            AppRoutes.statistics,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _buildLinkButton(
+                                          theme,
+                                          icon: Icons.video_library,
+                                          label: l10n.pfReplays,
+                                          subtitle:
+                                              l10n.settingsReplaysSubtitle,
+                                          onPressed: () =>
+                                              context.push(AppRoutes.replays),
+                                        ),
+                                      ],
+                                      theme,
+                                    ),
+
+                                    const SizedBox(height: 32),
+
+                                    // 6. Help & Tutorial Section
+                                    _buildSection(l10n.settingsSectionHelp, [
+                                      _buildReplayTutorialButton(theme),
+                                      const SizedBox(height: 16),
+                                      _buildCreditsButton(theme),
+                                      _buildRateUsButton(theme),
+                                      _buildPrivacyChoicesButton(theme),
+                                    ], theme),
+
+                                    const SizedBox(height: 32),
+
+                                    // 6b. Legal Section
+                                    _buildSection(l10n.settingsSectionLegal, [
+                                      _buildPrivacyPolicyButton(theme),
+                                      const SizedBox(height: 12),
+                                      _buildTermsButton(theme),
+                                    ], theme),
+
+                                    const SizedBox(height: 32),
+
+                                    // 7. Premium Section (if available)
+                                    if (premiumState.isInitialized)
+                                      _buildSection(
+                                        l10n.settingsSectionPremium,
+                                        [
+                                          _buildPremiumStatusCard(
+                                            premiumState,
+                                            theme,
+                                          ),
+                                          if (!premiumState.hasPremium)
+                                            _buildUpgradeButton(
+                                              premiumState,
+                                              theme,
+                                            ),
+                                          _buildRestorePurchasesButton(
+                                            premiumState,
+                                            theme,
+                                          ),
+                                          _buildPurchaseHistoryButton(
+                                            premiumState,
+                                            theme,
+                                          ),
+                                          if (premiumState.hasPremium ||
+                                              premiumState
+                                                  .ownedSkins
+                                                  .isNotEmpty)
+                                            _buildCosmeticsButton(
+                                              premiumState,
+                                              theme,
+                                            ),
+                                          if (premiumState.hasBattlePass)
+                                            _buildBattlePassButton(
+                                              premiumState,
+                                              theme,
+                                            ),
+                                        ],
+                                        theme,
+                                      ),
+
+                                    const SizedBox(height: 16),
+
+                                    // Back Button — full width
+                                    GradientButton(
+                                      onPressed: () => context.pop(),
+                                      text: l10n.settingsBackToGame,
+                                      primaryColor: theme.accentColor,
+                                      secondaryColor: theme.foodColor,
+                                      icon: Icons.arrow_back,
+                                      width: double.infinity,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              },
-            );
-          },
-        );
-      },
-    ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -630,8 +717,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(
                             color: theme.accentColor,
                             fontSize: 15,
-                            fontWeight:
-                                selected ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                         ),
                         if (subtitle != null)
@@ -661,7 +749,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             for (final locale in SupportedLocales.locales)
               option(
                 code: locale.languageCode,
-                label: SupportedLocales.endonyms[locale.languageCode] ??
+                label:
+                    SupportedLocales.endonyms[locale.languageCode] ??
                     locale.languageCode,
               ),
           ],
@@ -964,13 +1053,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 10),
           _buildControlItem(
-              l10n.settingsArrowKeys, l10n.settingsChangeDirection, theme),
+            l10n.settingsArrowKeys,
+            l10n.settingsChangeDirection,
+            theme,
+          ),
           _buildControlItem(
-              l10n.settingsWasdKeys, l10n.settingsChangeDirection, theme),
+            l10n.settingsWasdKeys,
+            l10n.settingsChangeDirection,
+            theme,
+          ),
           _buildControlItem(
-              l10n.settingsSpacebar, l10n.settingsPauseResume, theme),
+            l10n.settingsSpacebar,
+            l10n.settingsPauseResume,
+            theme,
+          ),
           _buildControlItem(
-              l10n.settingsMouseClick, l10n.settingsPauseResume, theme),
+            l10n.settingsMouseClick,
+            l10n.settingsPauseResume,
+            theme,
+          ),
           if (!kIsWeb) ...[
             const SizedBox(height: 16),
             Text(
@@ -982,10 +1083,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            _buildControlItem(l10n.settingsSwipeGestures,
-                l10n.settingsChangeDirection, theme),
             _buildControlItem(
-                l10n.settingsTapScreen, l10n.settingsPauseResume, theme),
+              l10n.settingsSwipeGestures,
+              l10n.settingsChangeDirection,
+              theme,
+            ),
+            _buildControlItem(
+              l10n.settingsTapScreen,
+              l10n.settingsPauseResume,
+              theme,
+            ),
           ],
         ] else ...[
           // Mobile controls
@@ -1000,15 +1107,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 10),
           _buildControlItem(
-              l10n.settingsSwipeUp, l10n.settingsMoveSnakeUp, theme),
+            l10n.settingsSwipeUp,
+            l10n.settingsMoveSnakeUp,
+            theme,
+          ),
           _buildControlItem(
-              l10n.settingsSwipeDown, l10n.settingsMoveSnakeDown, theme),
+            l10n.settingsSwipeDown,
+            l10n.settingsMoveSnakeDown,
+            theme,
+          ),
           _buildControlItem(
-              l10n.settingsSwipeLeft, l10n.settingsMoveSnakeLeft, theme),
+            l10n.settingsSwipeLeft,
+            l10n.settingsMoveSnakeLeft,
+            theme,
+          ),
           _buildControlItem(
-              l10n.settingsSwipeRight, l10n.settingsMoveSnakeRight, theme),
+            l10n.settingsSwipeRight,
+            l10n.settingsMoveSnakeRight,
+            theme,
+          ),
           _buildControlItem(
-              l10n.settingsTapScreen, l10n.settingsPauseResume, theme),
+            l10n.settingsTapScreen,
+            l10n.settingsPauseResume,
+            theme,
+          ),
         ],
       ],
     );
@@ -1108,11 +1230,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? null
                   : () async {
                       setState(() => _selectedGameMode = mode);
-                      await context
-                          .read<GameSettingsCubit>()
-                          .updateGameMode(mode);
+                      await context.read<GameSettingsCubit>().updateGameMode(
+                        mode,
+                      );
                       _analytics.trackSettingChanged(
-                          settingName: 'game_mode', value: mode.name);
+                        settingName: 'game_mode',
+                        value: mode.name,
+                      );
                     },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -1138,11 +1262,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: isCurrentlyPlaying
                         ? theme.accentColor.withValues(alpha: 0.5)
                         : (isSelected
-                            ? theme.accentColor
-                            : Colors.white.withValues(alpha: 0.8)),
+                              ? theme.accentColor
+                              : Colors.white.withValues(alpha: 0.8)),
                     fontSize: 11,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ),
@@ -1199,11 +1324,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       setState(() {
                         _selectedDifficulty = difficulty;
                       });
-                      await context
-                          .read<GameSettingsCubit>()
-                          .setDifficulty(difficulty);
+                      await context.read<GameSettingsCubit>().setDifficulty(
+                        difficulty,
+                      );
                       _analytics.trackSettingChanged(
-                          settingName: 'difficulty', value: difficulty.label);
+                        settingName: 'difficulty',
+                        value: difficulty.label,
+                      );
                     },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -1230,11 +1357,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: isCurrentlyPlaying
                         ? theme.accentColor.withValues(alpha: 0.5)
                         : (isSelected
-                            ? theme.accentColor
-                            : Colors.white.withValues(alpha: 0.8)),
+                              ? theme.accentColor
+                              : Colors.white.withValues(alpha: 0.8)),
                     fontSize: 12,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ),
@@ -1375,11 +1503,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       setState(() {
                         _selectedBoardSize = boardSize;
                       });
-                      await context
-                          .read<GameSettingsCubit>()
-                          .updateBoardSize(boardSize);
+                      await context.read<GameSettingsCubit>().updateBoardSize(
+                        boardSize,
+                      );
                       _analytics.trackSettingChanged(
-                          settingName: 'board_size', value: boardSize.name);
+                        settingName: 'board_size',
+                        value: boardSize.name,
+                      );
                     },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -1406,11 +1536,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: isCurrentlyPlaying
                         ? theme.accentColor.withValues(alpha: 0.5)
                         : (isSelected
-                            ? theme.accentColor
-                            : Colors.white.withValues(alpha: 0.8)),
+                              ? theme.accentColor
+                              : Colors.white.withValues(alpha: 0.8)),
                     fontSize: 11,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ),
@@ -1526,7 +1657,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await context
                     .read<GameSettingsCubit>()
                     .updateCrashFeedbackDuration(duration);
-                _analytics.trackSettingChanged(settingName: 'crash_feedback_duration', value: '${duration.inSeconds}');
+                _analytics.trackSettingChanged(
+                  settingName: 'crash_feedback_duration',
+                  value: '${duration.inSeconds}',
+                );
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -1658,8 +1792,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 authState.hasNoCredential
                     ? Icons.person_outline
                     : Icons.account_circle,
-                color:
-                    authState.hasNoCredential ? Colors.orange : Colors.green,
+                color: authState.hasNoCredential ? Colors.orange : Colors.green,
                 size: 24,
               ),
             ),
@@ -1787,9 +1920,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Text(
           hasFcmToken
               ? 'Backend sends a push to your device via FCM. Should arrive '
-                  'within ~5 seconds if token + backend + delivery all work.'
+                    'within ~5 seconds if token + backend + delivery all work.'
               : 'FCM token not yet registered. Sign in or restart the app, '
-                  'then return to retry.',
+                    'then return to retry.',
           style: TextStyle(
             color: theme.accentColor.withValues(alpha: 0.6),
             fontSize: 12,
@@ -1995,10 +2128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? 'No variant applied (no streak / no challenge / no high score yet, or no FCM token registered).'
         : 'Preview fired via backend (variant: $variant). Check your tray.';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 4),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
     );
   }
 
@@ -2030,9 +2160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final shown = await ads.showPrivacyOptions();
             if (!shown) {
               messenger.showSnackBar(
-                SnackBar(
-                  content: Text(l10n.settingsAdPrivacyUnavailable),
-                ),
+                SnackBar(content: Text(l10n.settingsAdPrivacyUnavailable)),
               );
             }
           },
@@ -2083,8 +2211,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _openLegalDoc(String title, String assetPath, IconData icon,
-      String fallbackUrl) {
+  void _openLegalDoc(
+    String title,
+    String assetPath,
+    IconData icon,
+    String fallbackUrl,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => LegalDocumentScreen(
@@ -2169,6 +2301,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// An outlined row that goes somewhere, with the sentence that says why.
+  ///
+  /// Same shape as the tutorial replay button below it, which is the pattern
+  /// this screen already uses for "this opens something else".
+  Widget _buildLinkButton(
+    GameTheme theme, {
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onPressed,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GradientButton(
+          onPressed: onPressed,
+          text: label,
+          primaryColor: theme.accentColor,
+          secondaryColor: theme.foodColor,
+          icon: icon,
+          width: double.infinity,
+          height: 44,
+          outlined: true,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          subtitle,
+          style: TextStyle(
+            color: theme.accentColor.withValues(alpha: 0.6),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildReplayTutorialButton(GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
@@ -2238,7 +2406,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.of(dialogContext).pop();
               final walkthroughService = WalkthroughService();
               await walkthroughService.initialize();
-              await walkthroughService.reset(WalkthroughService.homeWalkthroughId);
+              await walkthroughService.reset(
+                WalkthroughService.homeWalkthroughId,
+              );
               if (mounted) {
                 context.go(AppRoutes.home);
               }
@@ -2439,8 +2609,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                           bool success = false;
                           final authCubit = context.read<AuthCubit>();
-                          final scaffoldMessenger =
-                              ScaffoldMessenger.of(context);
+                          final scaffoldMessenger = ScaffoldMessenger.of(
+                            context,
+                          );
 
                           if (authState.isGuestUser) {
                             success = await authCubit.updateGuestUsername(
@@ -2452,7 +2623,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               setState(() {
                                 errorMessage = validation.errorCode != null
                                     ? _usernameErrorText(
-                                        validation.errorCode!, l10n)
+                                        validation.errorCode!,
+                                        l10n,
+                                      )
                                     : l10n.settingsUsernameUpdateFailed;
                               });
                             }
@@ -2466,7 +2639,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               setState(() {
                                 errorMessage = validation.errorCode != null
                                     ? _usernameErrorText(
-                                        validation.errorCode!, l10n)
+                                        validation.errorCode!,
+                                        l10n,
+                                      )
                                     : l10n.settingsUsernameUpdateFailed;
                               });
                             }
@@ -2505,8 +2680,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                         )
-                      : Text(l10n.settingsUpdate,
-                          style: TextStyle(color: Colors.white)),
+                      : Text(
+                          l10n.settingsUpdate,
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
               ],
             );
@@ -2515,7 +2692,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-
 }
 
 class _BoardSizePainter extends CustomPainter {
@@ -2968,8 +3144,11 @@ extension _SettingsPremium on _SettingsScreenState {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(l10n.settingsStatusLine(status)),
-                                Text(l10n.settingsDateLine(
-                                    _formatDate(transactionDate))),
+                                Text(
+                                  l10n.settingsDateLine(
+                                    _formatDate(transactionDate),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -3044,7 +3223,9 @@ extension _SettingsPremium on _SettingsScreenState {
       return 'skin';
     } else if (bare.contains('trail')) {
       return 'trail';
-    } else if (bare.contains('bundle') || bare.contains('pack') || bare.contains('collection')) {
+    } else if (bare.contains('bundle') ||
+        bare.contains('pack') ||
+        bare.contains('collection')) {
       return 'bundle';
     } else if (bare.contains('battle_pass')) {
       return 'battlepass';

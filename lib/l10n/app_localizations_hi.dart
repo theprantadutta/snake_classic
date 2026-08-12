@@ -6045,4 +6045,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get insOnKeyboard => 'कीबोर्ड पर';
+
+  @override
+  String get settingsSectionYourGame => 'आपका खेल';
+
+  @override
+  String get settingsStatisticsSubtitle => 'आपके सभी गेमों का हिसाब';
+
+  @override
+  String get settingsReplaysSubtitle => 'अपने सहेजे गए गेम दोबारा देखें';
 }

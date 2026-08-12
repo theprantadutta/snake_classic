@@ -1804,5 +1804,8 @@
   "hwHelpTitle": "Что-то ещё?",
   "hwHelpMsg": "Здесь описаны правила, управление и режим Версус. Настройки — рядом.",
   "insOnPhone": "На телефоне",
-  "insOnKeyboard": "На клавиатуре"
+  "insOnKeyboard": "На клавиатуре",
+  "settingsSectionYourGame": "ВАША ИГРА",
+  "settingsStatisticsSubtitle": "Все ваши игры в цифрах",
+  "settingsReplaysSubtitle": "Пересмотреть сохранённые игры"
 }

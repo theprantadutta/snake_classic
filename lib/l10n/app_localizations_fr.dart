@@ -6138,4 +6138,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get insOnKeyboard => 'Au clavier';
+
+  @override
+  String get settingsSectionYourGame => 'TON JEU';
+
+  @override
+  String get settingsStatisticsSubtitle => 'Toutes tes parties, comptées';
+
+  @override
+  String get settingsReplaysSubtitle => 'Revois tes parties enregistrées';
 }

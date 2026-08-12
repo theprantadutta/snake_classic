@@ -6093,4 +6093,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get insOnKeyboard => 'На клавиатуре';
+
+  @override
+  String get settingsSectionYourGame => 'ВАША ИГРА';
+
+  @override
+  String get settingsStatisticsSubtitle => 'Все ваши игры в цифрах';
+
+  @override
+  String get settingsReplaysSubtitle => 'Пересмотреть сохранённые игры';
 }

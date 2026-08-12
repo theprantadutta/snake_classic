@@ -6056,4 +6056,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insOnKeyboard => 'On a keyboard';
+
+  @override
+  String get settingsSectionYourGame => 'YOUR GAME';
+
+  @override
+  String get settingsStatisticsSubtitle =>
+      'Every run you have played, counted up';
+
+  @override
+  String get settingsReplaysSubtitle => 'Watch your saved runs back';
 }

@@ -1804,5 +1804,8 @@
   "hwHelpTitle": "أي شيء آخر؟",
   "hwHelpMsg": "القواعد والتحكم والمواجهة كلها موضحة هنا، والإعدادات بجوارها.",
   "insOnPhone": "على الهاتف",
-  "insOnKeyboard": "على لوحة المفاتيح"
+  "insOnKeyboard": "على لوحة المفاتيح",
+  "settingsSectionYourGame": "لعبتك",
+  "settingsStatisticsSubtitle": "كل جولاتك مجموعة",
+  "settingsReplaysSubtitle": "شاهد جولاتك المحفوظة"
 }
