@@ -25,9 +25,14 @@ class GameCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The action has to sit on this node. excludeSemantics removes the
+    // InkWell's semantics along with the rest of the subtree, so a label and
+    // a button role without onTap describe a control assistive tech cannot
+    // press — on the button that leaves a live match.
     return Semantics(
       label: semanticLabel,
       button: true,
+      onTap: onTap,
       excludeSemantics: true,
       child: Material(
         color: theme.backgroundColor.withValues(alpha: 0.6),

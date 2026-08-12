@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -83,6 +84,70 @@ void main() {
       expect(paused, 1);
       handle.dispose();
     });
+
+    testWidgets('each one exposes a tap action, not just a role', (
+      tester,
+    ) async {
+      // `excludeSemantics` drops the GestureDetector's own tap action along
+      // with everything else beneath it, so a label plus button: true and
+      // nothing more describes a control a screen reader cannot press. Every
+      // HUD button was in that state.
+      final handle = tester.ensureSemantics();
+      await pumpHud(tester);
+
+      for (final label in ['Go to home screen', 'Pause game']) {
+        final node = tester.getSemantics(find.bySemanticsLabel(label));
+        expect(
+          node.getSemanticsData().hasAction(SemanticsAction.tap),
+          isTrue,
+          reason: label,
+        );
+      }
+
+      handle.dispose();
+    });
+
+    testWidgets('screen-reader activation presses home exactly once', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      var home = 0;
+      await pumpHud(tester, onHome: () => home++);
+
+      tester.semantics.tap(find.semantics.byLabel('Go to home screen'));
+      await tester.pump();
+
+      expect(home, 1);
+      handle.dispose();
+    });
+
+    testWidgets('and pause exactly once', (tester) async {
+      final handle = tester.ensureSemantics();
+      var paused = 0;
+      await pumpHud(tester, onPause: () => paused++);
+
+      tester.semantics.tap(find.semantics.byLabel('Pause game'));
+      await tester.pump();
+
+      expect(paused, 1);
+      handle.dispose();
+    });
+
+    testWidgets('resume too, once the game is paused', (tester) async {
+      final handle = tester.ensureSemantics();
+      var resumed = 0;
+      await pumpHud(
+        tester,
+        status: GameStatus.paused,
+        onPause: () => resumed++,
+      );
+
+      tester.semantics.tap(find.semantics.byLabel('Resume game'));
+      await tester.pump();
+
+      expect(resumed, 1);
+      handle.dispose();
+    });
   });
 
   group('HUD controls are big enough to hit', () {
@@ -133,6 +198,32 @@ void main() {
       await tester.pump();
       expect(left, 1);
 
+      handle.dispose();
+    });
+
+    testWidgets('a screen reader can leave the match too', (tester) async {
+      // Same defect as the HUD buttons, on the one control that abandons a
+      // live match: announced as a button, with no action behind it.
+      final handle = tester.ensureSemantics();
+      var left = 0;
+      await tester.pumpWidget(
+        harness(
+          GameCircleButton(
+            icon: Icons.arrow_back_ios_new,
+            onTap: () => left++,
+            theme: GameTheme.classic,
+            semanticLabel: 'Leave match',
+          ),
+        ),
+      );
+
+      final node = tester.getSemantics(find.byType(GameCircleButton));
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+
+      tester.semantics.tap(find.semantics.byLabel('Leave match'));
+      await tester.pump();
+
+      expect(left, 1, reason: 'one activation, one exit');
       handle.dispose();
     });
   });
