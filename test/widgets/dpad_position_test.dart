@@ -263,6 +263,108 @@ void main() {
       expect(pad.canSteer, isFalse);
     });
   });
+  group('the tutorial can borrow the d-pad from a paused game', () {
+    Future<Direction?> pressDown(
+      WidgetTester tester, {
+      required bool? override,
+    }) async {
+      Direction? steered;
+      await useScreen(tester, const Size(360, 640));
+      await tester.pumpWidget(
+        harness(
+          GameBottomBar(
+            gameState: playingState(status: GameStatus.paused),
+            theme: GameTheme.classic,
+            isSmallScreen: false,
+            dPadEnabled: true,
+            canSteerOverride: override,
+            onDirection: (d) => steered = d,
+          ),
+        ),
+      );
+
+      final centre = tester.getCenter(find.byType(SteerableDPad));
+      await tester.tapAt(centre + const Offset(0, 40));
+      await tester.pump();
+      return steered;
+    }
+
+    testWidgets('the override makes a paused d-pad usable', (tester) async {
+      // The tutorial pauses the game and then asks the player to turn. Without
+      // this the control it is teaching is dimmed and swallows every press,
+      // so a d-pad player cannot finish the practice steps at all.
+      expect(await pressDown(tester, override: true), Direction.down);
+    });
+
+    testWidgets('and it looks usable while it is', (tester) async {
+      await useScreen(tester, const Size(360, 640));
+      await tester.pumpWidget(
+        harness(
+          GameBottomBar(
+            gameState: playingState(status: GameStatus.paused),
+            theme: GameTheme.classic,
+            isSmallScreen: false,
+            dPadEnabled: true,
+            canSteerOverride: true,
+            onDirection: (_) {},
+          ),
+        ),
+      );
+
+      expect(_opacityOf(tester), 1.0);
+      expect(_ignoringIn(tester), isFalse);
+    });
+
+    testWidgets('an ordinary paused game is still not steerable', (
+      tester,
+    ) async {
+      expect(await pressDown(tester, override: null), isNull);
+    });
+
+    testWidgets('and still looks unavailable', (tester) async {
+      await useScreen(tester, const Size(360, 640));
+      await tester.pumpWidget(
+        harness(
+          GameBottomBar(
+            gameState: playingState(status: GameStatus.paused),
+            theme: GameTheme.classic,
+            isSmallScreen: false,
+            dPadEnabled: true,
+            onDirection: (_) {},
+          ),
+        ),
+      );
+
+      expect(_opacityOf(tester), 0.45);
+      expect(_ignoringIn(tester), isTrue);
+    });
+
+    testWidgets('a false override can still lock a running game out', (
+      tester,
+    ) async {
+      // The override is the whole answer when present, in both directions.
+      Direction? steered;
+      await useScreen(tester, const Size(360, 640));
+      await tester.pumpWidget(
+        harness(
+          GameBottomBar(
+            gameState: playingState(),
+            theme: GameTheme.classic,
+            isSmallScreen: false,
+            dPadEnabled: true,
+            canSteerOverride: false,
+            onDirection: (d) => steered = d,
+          ),
+        ),
+      );
+
+      final centre = tester.getCenter(find.byType(SteerableDPad));
+      await tester.tapAt(centre + const Offset(0, 40));
+      await tester.pump();
+
+      expect(steered, isNull);
+    });
+  });
 }
 
 double _opacityOf(WidgetTester tester) => tester

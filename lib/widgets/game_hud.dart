@@ -270,9 +270,16 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     // the thing you can actually hit — and the thing a screen reader focuses
     // — is at least 48dp. The row is already taller than that thanks to the
     // score panel, so this costs no vertical space.
+    //
+    // onTap on the Semantics node, not only on the detector: excludeSemantics
+    // drops the GestureDetector's own tap action along with everything else
+    // beneath, so without it a screen reader announced a button and then had
+    // nothing to activate. Pause was reachable by sight and unreachable by
+    // TalkBack.
     return Semantics(
       label: semanticLabel,
       button: true,
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
         onTap: onTap,

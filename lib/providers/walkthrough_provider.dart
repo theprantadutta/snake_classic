@@ -65,9 +65,15 @@ class WalkthroughState {
 }
 
 /// Notifier for managing walkthrough state
+/// How a walkthrough ended. Finished and skipped resolve the same waiters —
+/// the tour is out of the player's way either way — but they are very
+/// different signals about the tour itself, and the old code reported both as
+/// "completed".
+enum WalkthroughOutcome { finished, skipped }
+
 class WalkthroughNotifier extends StateNotifier<WalkthroughState> {
   final WalkthroughService _service;
-  VoidCallback? _onComplete;
+  ValueChanged<WalkthroughOutcome>? _onComplete;
 
   WalkthroughNotifier()
       : _service = WalkthroughService(),
@@ -77,7 +83,7 @@ class WalkthroughNotifier extends StateNotifier<WalkthroughState> {
   Future<void> start({
     required String walkthroughId,
     required List<WalkthroughStep> steps,
-    VoidCallback? onComplete,
+    ValueChanged<WalkthroughOutcome>? onComplete,
   }) async {
     // Ensure service is initialized
     if (!_service.isInitialized) {
@@ -123,7 +129,7 @@ class WalkthroughNotifier extends StateNotifier<WalkthroughState> {
     if (!state.isActive || state.walkthroughId == null) return;
 
     await _service.markComplete(state.walkthroughId!);
-    _onComplete?.call();
+    _onComplete?.call(WalkthroughOutcome.skipped);
 
     state = const WalkthroughState();
   }
@@ -133,7 +139,7 @@ class WalkthroughNotifier extends StateNotifier<WalkthroughState> {
     if (!state.isActive || state.walkthroughId == null) return;
 
     await _service.markComplete(state.walkthroughId!);
-    _onComplete?.call();
+    _onComplete?.call(WalkthroughOutcome.finished);
 
     state = const WalkthroughState();
   }

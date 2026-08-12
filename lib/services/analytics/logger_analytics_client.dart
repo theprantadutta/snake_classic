@@ -270,13 +270,45 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   }
 
   @override
-  Future<void> trackWalkthroughStarted() async {
-    AppLogger.info('$_tag walkthrough_started');
+  Future<void> trackHomeTourStarted({required int version}) async {
+    AppLogger.info('$_tag home_tour_started v$version');
   }
 
   @override
-  Future<void> trackWalkthroughCompleted() async {
-    AppLogger.info('$_tag walkthrough_completed');
+  Future<void> trackHomeTourFinished({required int version}) async {
+    AppLogger.info('$_tag home_tour_finished v$version');
+  }
+
+  @override
+  Future<void> trackHomeTourSkipped({required int version}) async {
+    AppLogger.info('$_tag home_tour_skipped v$version');
+  }
+
+  @override
+  Future<void> trackGameTutorialStarted({required String entryPoint}) async {
+    AppLogger.info('$_tag game_tutorial_started from $entryPoint');
+  }
+
+  @override
+  Future<void> trackGameTutorialFinished({required String entryPoint}) async {
+    AppLogger.info('$_tag game_tutorial_finished from $entryPoint');
+  }
+
+  @override
+  Future<void> trackGameTutorialSkipped({required String entryPoint}) async {
+    AppLogger.info('$_tag game_tutorial_skipped from $entryPoint');
+  }
+
+  @override
+  Future<void> trackHomeVersusCtaTapped({
+    required String onboardingStage,
+  }) async {
+    AppLogger.info('$_tag home_versus_cta_tapped ($onboardingStage)');
+  }
+
+  @override
+  Future<void> trackMultiplayerLobbyOpened({required String entryPoint}) async {
+    AppLogger.info('$_tag multiplayer_lobby_opened from $entryPoint');
   }
 
   // ==================== First-run funnel ====================

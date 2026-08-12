@@ -336,13 +336,70 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   }
 
   @override
-  Future<void> trackWalkthroughStarted() {
-    return _analytics.logTutorialBegin();
+  Future<void> trackHomeTourStarted({required int version}) {
+    return _analytics.logEvent(
+      name: 'home_tour_started',
+      parameters: {'version': version},
+    );
   }
 
   @override
-  Future<void> trackWalkthroughCompleted() {
-    return _analytics.logTutorialComplete();
+  Future<void> trackHomeTourFinished({required int version}) {
+    return _analytics.logEvent(
+      name: 'home_tour_finished',
+      parameters: {'version': version},
+    );
+  }
+
+  @override
+  Future<void> trackHomeTourSkipped({required int version}) {
+    return _analytics.logEvent(
+      name: 'home_tour_skipped',
+      parameters: {'version': version},
+    );
+  }
+
+  @override
+  Future<void> trackGameTutorialStarted({required String entryPoint}) {
+    // logTutorialBegin has no parameters, and the entry point is the thing
+    // worth knowing — a replay from Settings is a different intent from a
+    // curious tap in the pause menu.
+    return _analytics.logEvent(
+      name: 'game_tutorial_started',
+      parameters: {'entry_point': entryPoint},
+    );
+  }
+
+  @override
+  Future<void> trackGameTutorialFinished({required String entryPoint}) {
+    return _analytics.logEvent(
+      name: 'game_tutorial_finished',
+      parameters: {'entry_point': entryPoint},
+    );
+  }
+
+  @override
+  Future<void> trackGameTutorialSkipped({required String entryPoint}) {
+    return _analytics.logEvent(
+      name: 'game_tutorial_skipped',
+      parameters: {'entry_point': entryPoint},
+    );
+  }
+
+  @override
+  Future<void> trackHomeVersusCtaTapped({required String onboardingStage}) {
+    return _analytics.logEvent(
+      name: 'home_versus_cta_tapped',
+      parameters: {'onboarding_stage': onboardingStage},
+    );
+  }
+
+  @override
+  Future<void> trackMultiplayerLobbyOpened({required String entryPoint}) {
+    return _analytics.logEvent(
+      name: 'multiplayer_lobby_opened',
+      parameters: {'entry_point': entryPoint},
+    );
   }
 
   // ==================== First-run funnel ====================

@@ -103,9 +103,22 @@ class InstructionsScreen extends StatelessWidget {
                             l10n.insSwipeRightDesc,
                             theme,
                           ),
+                          // The D-pad is a first-class control, not a
+                          // footnote: it is a setting a lot of players turn
+                          // on, and the page used to describe swiping as if
+                          // it were the only way to turn.
                           _buildControlItem(
-                            l10n.insTapScreen,
-                            l10n.insTapScreenDesc,
+                            l10n.insDpad,
+                            l10n.insDpadDesc,
+                            theme,
+                          ),
+                          // "Tap Screen — Pause/Resume" used to live here. The
+                          // game has never had a tap-to-pause handler; it was
+                          // simply false, and the first thing a new player
+                          // tried would have done nothing.
+                          _buildControlItem(
+                            l10n.insHudPause,
+                            l10n.insHudPauseDesc,
                             theme,
                           ),
                           const SizedBox(height: 8),
@@ -124,6 +137,44 @@ class InstructionsScreen extends StatelessWidget {
                             l10n.insSpacebarDesc,
                             theme,
                           ),
+                          const SizedBox(height: 8),
+                          _buildTipItem(l10n.insControlsNote, theme),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Versus. The lobby has supported quick match, room
+                      // codes and friend invites for a long time and the help
+                      // page said nothing about any of it, so a new player had
+                      // no reason to know the game had another mode at all.
+                      //
+                      // Deliberately factual about Quick Match: it finds you
+                      // an opponent. Promising a human being is a promise the
+                      // matchmaker does not make.
+                      _buildSection(
+                        context,
+                        l10n.insVersus,
+                        '',
+                        Icons.sports_esports,
+                        theme,
+                        2,
+                        children: [
+                          _buildControlItem(
+                            l10n.insVersusOnline,
+                            l10n.insVersusOnlineDesc,
+                            theme,
+                          ),
+                          _buildControlItem(
+                            l10n.insVersusQuick,
+                            l10n.insVersusQuickDesc,
+                            theme,
+                          ),
+                          _buildControlItem(
+                            l10n.insVersusRoom,
+                            l10n.insVersusRoomDesc,
+                            theme,
+                          ),
                         ],
                       ),
 
@@ -136,7 +187,7 @@ class InstructionsScreen extends StatelessWidget {
                         '',
                         Icons.apple,
                         theme,
-                        2,
+                        3,
                         children: [
                           _buildFoodItem(
                             l10n.insNormalFood,
@@ -168,7 +219,7 @@ class InstructionsScreen extends StatelessWidget {
                         '',
                         Icons.rule,
                         theme,
-                        3,
+                        4,
                         children: [
                           _buildRuleItem(l10n.insRule1, theme),
                           _buildRuleItem(l10n.insRule2, theme),
@@ -187,7 +238,7 @@ class InstructionsScreen extends StatelessWidget {
                         '',
                         Icons.lightbulb,
                         theme,
-                        4,
+                        5,
                         children: [
                           _buildTipItem(l10n.insTip1, theme),
                           _buildTipItem(l10n.insTip2, theme),

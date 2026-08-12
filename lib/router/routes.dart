@@ -11,6 +11,18 @@ abstract class AppRoutes {
   // Game flow
   static const String playLoading = '/play-loading';
   static const String game = '/game';
+
+  /// One-shot request to open the game with the tutorial running.
+  ///
+  /// Settings → Replay Tutorial used to reset the completion flag and route
+  /// to `/game`, where nothing read that flag — so the player got an ordinary
+  /// run instead of the tutorial they had just asked for. The intent now
+  /// travels with the navigation rather than being left in storage for
+  /// somebody to notice.
+  static const String gameWithTutorial = '/game?tutorial=1';
+
+  /// Whether a `/game` route was asked to start the tutorial.
+  static bool wantsTutorial(Uri uri) => uri.queryParameters['tutorial'] == '1';
   static const String gameOver = '/game-over';
 
   // Profile & Stats

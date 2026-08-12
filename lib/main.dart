@@ -34,6 +34,7 @@ import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
+import 'package:snake_classic/services/existing_install_probe.dart';
 import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
@@ -284,6 +285,20 @@ Future<void> _bootstrap() async {
     // safe to "fully onboarded" when uninitialized — so a late init would
     // silently show veteran UI to a brand-new player. Cheap: one prefs read.
     await FirstRunService().initialize();
+
+    // Classify installs that predate those preferences. Runs here because it
+    // needs Drift (already up, two statements above) and must land before the
+    // router builds, for the same reason initialize() must: every first-run
+    // gate reads the synchronous getters. Stamps itself, so this is a single
+    // indexed read on every launch after the first.
+    //
+    // The evidence is deliberately local and durable — a statistics row with
+    // games in it, or a high score on this device. Not the network, not "is
+    // signed in": a restored cloud profile proves someone played, not that
+    // THIS device ever did, and first-run state describes the device.
+    await FirstRunService().migrateExistingInstall(
+      () => hasLocalGameplayEvidence(getIt<AppDatabase>()),
+    );
 
     // Initialize router with analytics observer. `appRouter` is `late final`,
     // so this must run exactly once: SnakeClassicApp throws

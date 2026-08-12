@@ -3237,24 +3237,24 @@ class AppLocalizationsIt extends AppLocalizations {
       'La barra in alto mostra punteggio, livello e record. Segui i tuoi progressi mentre giochi!';
 
   @override
-  String get wtControlsTitle => 'Scorri per muoverti';
+  String get wtControlsTitle => 'Direzione';
 
   @override
   String get wtControlsMsg =>
-      'Scorri in qualsiasi direzione per cambiare la rotta del serpente. Girerà seguendo il tuo gesto.';
+      'Cambia direzione scorrendo sul campo, con il pad direzionale a schermo o con le frecce. Scegli il tuo stile in Impostazioni → Controlli.';
 
   @override
-  String get wtPracticeRightTitle => 'Provaci! Scorri a DESTRA';
+  String get wtPracticeRightTitle => 'Provaci — gira a DESTRA';
 
   @override
   String get wtPracticeRightMsg =>
-      'Scorri a DESTRA sullo schermo per continuare.';
+      'Gira a destra per continuare. Scorrimento, pad direzionale o frecce: vanno tutti bene.';
 
   @override
-  String get wtPracticeUpTitle => 'Ottimo! Ora scorri in SU';
+  String get wtPracticeUpTitle => 'Bene — ora gira in ALTO';
 
   @override
-  String get wtPracticeUpMsg => 'Scorri in SU sullo schermo per continuare.';
+  String get wtPracticeUpMsg => 'Gira in alto per continuare.';
 
   @override
   String get wtFoodTitle => 'Mangia per crescere';
@@ -3312,22 +3312,22 @@ class AppLocalizationsIt extends AppLocalizations {
   String get wtSkipTutorial => 'Salta il tutorial';
 
   @override
-  String get wtSwipeRightUpper => 'SCORRI A DESTRA';
+  String get wtSwipeRightUpper => 'GIRA A DESTRA';
 
   @override
-  String get wtSwipeLeftUpper => 'SCORRI A SINISTRA';
+  String get wtSwipeLeftUpper => 'GIRA A SINISTRA';
 
   @override
-  String get wtSwipeUpUpper => 'SCORRI IN SU';
+  String get wtSwipeUpUpper => 'GIRA IN ALTO';
 
   @override
-  String get wtSwipeDownUpper => 'SCORRI IN GIÙ';
+  String get wtSwipeDownUpper => 'GIRA IN BASSO';
 
   @override
-  String get wtSwipeAnywhereScreen => 'Scorri ovunque sullo schermo!';
+  String get wtSwipeAnywhereScreen => 'Scorrimento, pad direzionale o frecce';
 
   @override
-  String get wtSwipeAnywhere => 'Scorri ovunque!';
+  String get wtSwipeAnywhere => 'Tocca a te!';
 
   @override
   String get wtGotIt => 'Capito!';
@@ -4799,12 +4799,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get insSwipeRightDesc => 'Muove il serpente a destra';
 
   @override
-  String get insTapScreen => 'Tocca lo Schermo';
-
-  @override
-  String get insTapScreenDesc => 'Pausa/Riprendi la partita';
-
-  @override
   String get insArrowKeys => 'Frecce (Desktop)';
 
   @override
@@ -6055,4 +6049,65 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get mpTurnBlocked => 'Bloccato';
+
+  @override
+  String get insHudPause => 'Pulsante pausa';
+
+  @override
+  String get insHudPauseDesc => 'Metti in pausa o riprendi — in alto a destra';
+
+  @override
+  String get insDpad => 'Pad direzionale a schermo';
+
+  @override
+  String get insDpadDesc =>
+      'Pulsanti opzionali per girare, al posto dello scorrimento';
+
+  @override
+  String get insControlsNote =>
+      'Attiva o disattiva il pad direzionale — e scegli dove sta — in Impostazioni → Controlli.';
+
+  @override
+  String get insVersus => 'Versus';
+
+  @override
+  String get insVersusOnline => '1v1 online';
+
+  @override
+  String get insVersusOnlineDesc =>
+      'Regole classiche, due serpenti, un campo, in tempo reale';
+
+  @override
+  String get insVersusQuick => 'Partita rapida';
+
+  @override
+  String get insVersusQuickDesc => 'Ti trova un avversario automaticamente';
+
+  @override
+  String get insVersusRoom => 'Stanza privata';
+
+  @override
+  String get insVersusRoomDesc =>
+      'Crea una stanza e condividi il codice, o entra in quella di un amico';
+
+  @override
+  String get homeVersusCta => 'VERSUS';
+
+  @override
+  String get homeVersusSubtitle =>
+      '1v1 Classico · Partita rapida o invita un amico';
+
+  @override
+  String get hwVersusTitle => 'Gioca contro qualcuno';
+
+  @override
+  String get hwVersusMsg =>
+      'Versus è 1v1 Classico online. La partita rapida ti trova un avversario, oppure crea una stanza privata e invita un amico.';
+
+  @override
+  String get hwHelpTitle => 'Altro?';
+
+  @override
+  String get hwHelpMsg =>
+      'Regole, controlli e Versus sono spiegati qui. Le impostazioni sono qui accanto.';
 }

@@ -145,7 +145,10 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
     GoRoute(
       path: AppRoutes.game,
       name: 'game',
-      pageBuilder: (context, state) => _scalePage(state, const GameScreen()),
+      pageBuilder: (context, state) => _scalePage(
+        state,
+        GameScreen(startTutorial: AppRoutes.wantsTutorial(state.uri)),
+      ),
     ),
     GoRoute(
       path: AppRoutes.gameOver,
