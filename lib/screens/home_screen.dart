@@ -44,6 +44,7 @@ import 'package:snake_classic/widgets/player_progression.dart';
 import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 import 'package:snake_classic/utils/game_animations.dart';
+import 'package:snake_classic/widgets/home_versus_cta.dart';
 import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:talker_flutter/talker_flutter.dart';
@@ -1036,7 +1037,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               // was previously reachable only through the eighth tile of a
               // two-row nav grid and appeared in neither the tour nor the
               // help page. It opens the lobby; it does not queue anyone.
-              _buildVersusCta(context, theme, isSmallScreen),
+              HomeVersusCta(
+                key: HomeWalkthrough.versusKey,
+                theme: theme,
+                isCompact: isSmallScreen,
+                onOpen: () => _openVersusLobby(context),
+              ),
 
               SizedBox(height: spacing),
 
@@ -1273,96 +1279,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         );
       },
-    );
-  }
-
-  /// The secondary Home action: open the Versus lobby.
-  ///
-  /// Deliberately quiet next to PLAY — an outlined pill, not a second hero
-  /// button — because there is exactly one primary action on this screen and
-  /// it is still Play. But persistent, because Versus was previously the
-  /// eighth tile of a nav grid, absent from the tour and absent from Help,
-  /// which made a whole online mode effectively invisible.
-  ///
-  /// It opens the lobby and stops there. No queue is joined from Home: the
-  /// player chooses Find Match, Join or Create once they are looking at the
-  /// options. And no connectivity pre-flight gates the tap — the lobby's own
-  /// request is the source of truth about the network and already reports
-  /// offline properly, whereas a local pre-check can only guess wrong in a
-  /// way the player cannot argue with.
-  ///
-  /// The copy says Quick Match finds an opponent. It does not say the
-  /// opponent is a person, because that is not something the matchmaker
-  /// promises.
-  Widget _buildVersusCta(
-    BuildContext context,
-    GameTheme theme,
-    bool isSmallScreen,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Semantics(
-      button: true,
-      label: '${l10n.homeVersusCta}. ${l10n.homeVersusSubtitle}',
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: () => _openVersusLobby(context),
-        child: Container(
-          key: HomeWalkthrough.versusKey,
-          constraints: const BoxConstraints(minHeight: 48),
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 16 : 20,
-            vertical: isSmallScreen ? 8 : 10,
-          ),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.45),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.sports_esports,
-                color: theme.accentColor,
-                size: isSmallScreen ? 20 : 24,
-              ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.homeVersusCta,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: context.letterSpacing(1.5),
-                        height: 1.1,
-                      ),
-                    ),
-                    Text(
-                      l10n.homeVersusSubtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: isSmallScreen ? 10 : 11,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
