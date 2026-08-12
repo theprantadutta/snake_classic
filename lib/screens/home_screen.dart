@@ -1052,18 +1052,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               Flexible(
                 flex: 3,
                 child: Container(
-                  // maxHeight is clamped to be at least 80 (the minHeight
-                  // floor) so a transient small availableHeight on Android
-                  // resume — when SafeArea/system-bars haven't resettled —
-                  // can't produce minHeight > maxHeight and trip the
-                  // BoxConstraints assertion. The 0.25 ratio is preserved
-                  // for the common case; the clamp only kicks in below
-                  // ~320 px of available height.
+                  // The floor was 80, which is taller than the plaque needs —
+                  // the card was padded out to meet it, and that is the
+                  // height that read as wasted. 60 is the button's 44dp hit
+                  // box plus the card's padding; the score sizes itself to
+                  // whatever it gets, so a shorter slot means a smaller
+                  // number rather than an overflow.
+                  //
+                  // maxHeight is clamped to the same floor so a transient
+                  // small availableHeight on Android resume — when
+                  // SafeArea/system-bars haven't resettled — can't produce
+                  // minHeight > maxHeight and trip the BoxConstraints
+                  // assertion.
                   constraints: BoxConstraints(
-                    minHeight: 80,
+                    minHeight: 60,
                     maxHeight:
-                        (availableHeight > 0 ? availableHeight * 0.25 : 120.0)
-                            .clamp(80.0, double.infinity),
+                        (availableHeight > 0 ? availableHeight * 0.2 : 96.0)
+                            .clamp(60.0, double.infinity),
                   ),
                   child: _buildCompactStatsRow(
                     context: context,
@@ -1413,6 +1418,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
+  /// The personal-best plaque: the number, and the two places to go from it.
+  ///
+  /// It used to centre a label-over-number stack between two circular buttons
+  /// pinned to the far edges, which left a wide empty gutter on either side of
+  /// the score — the widest element on the screen carrying the least. The
+  /// stack was also wrapped in a scale-down FittedBox to absorb a sub-pixel
+  /// vertical squeeze, so on some screens the headline number silently
+  /// rendered smaller than it was designed to. That is the squeezed look.
+  ///
+  /// Now the label stacks into two short lines — HIGH over SCORE — which
+  /// frees the whole width beside it for the number and lets the number stand
+  /// as tall as both lines together. The two buttons pair up on the right
+  /// where they belong: both are "more about this score", not bookends.
+  ///
+  /// Same height as before. The card is still exactly as tall as its buttons
+  /// plus its padding, and the type is measured against the slot rather than
+  /// assumed to fit it.
   Widget _buildCompactStatsRow({
     required BuildContext context,
     required int highScore,
@@ -1421,104 +1443,143 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     required bool isSmallScreen,
     required bool hasSync,
   }) {
+    final l10n = AppLocalizations.of(context)!;
+    const gold = Color(0xFFFFC53D);
+
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 12 : 16,
-        vertical: isSmallScreen ? 10 : 14,
+        horizontal: isSmallScreen ? 14 : 18,
+        vertical: isSmallScreen ? 8 : 9,
       ),
       decoration: BoxDecoration(
+        // One soft wash out of the gold corner instead of the old three-stop
+        // amber gradient across the whole strip, which fought the themed
+        // background it sits on.
         gradient: LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [
-            theme.accentColor.withValues(alpha: 0.08),
-            Colors.amber.withValues(alpha: 0.12),
-            theme.accentColor.withValues(alpha: 0.08),
+            gold.withValues(alpha: 0.14),
+            theme.backgroundColor.withValues(alpha: 0.25),
           ],
         ),
-        borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
-        border: Border.all(
-          color: Colors.amber.withValues(alpha: 0.25),
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 18 : 22),
+        border: Border.all(color: gold.withValues(alpha: 0.28), width: 1.5),
       ),
       child: Row(
         children: [
-          // Stats button (left)
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: '${l10n.homeHighScore}: ${context.formatInt(highScore)}',
+              onTap: () => context.push(AppRoutes.statistics),
+              excludeSemantics: true,
+              child: GestureDetector(
+                onTap: () => context.push(AppRoutes.statistics),
+                behavior: HitTestBehavior.opaque,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final scaler = MediaQuery.textScalerOf(context);
+                    final available = constraints.maxHeight.isFinite
+                        ? constraints.maxHeight
+                        : (isSmallScreen ? 50.0 : 58.0);
+
+                    // Both sizes come from the slot rather than a guess. The
+                    // card's height is fixed by its parent, so hard-coded
+                    // type is a bet that the font, the player's text-scale
+                    // setting and the padding add up to less than it — and
+                    // that bet loses by a few pixels sooner or later.
+                    double labelFont = isSmallScreen ? 12.5 : 14;
+                    double numberFont = available;
+                    double labelStack() => scaler.scale(labelFont) * 1.15 * 2;
+                    double numberLine() => scaler.scale(numberFont);
+                    while (numberFont > 18 && numberLine() > available) {
+                      numberFont -= 1;
+                    }
+                    while (labelFont > 7.5 && labelStack() > available) {
+                      labelFont -= 0.5;
+                    }
+
+                    final labelStyle = TextStyle(
+                      fontSize: labelFont,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.55),
+                      letterSpacing: context.letterSpacing(1.5),
+                      height: 1.15,
+                    );
+
+                    return Row(
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (final line in _highScoreLabelLines(l10n))
+                              Text(line, maxLines: 1, style: labelStyle),
+                          ],
+                        ),
+                        SizedBox(width: isSmallScreen ? 10 : 12),
+                        // Shrinks rather than clips when a six-figure score
+                        // meets a narrow phone.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              context.formatInt(highScore),
+                              maxLines: 1,
+                              style: TextStyle(
+                                fontSize: numberFont,
+                                fontWeight: FontWeight.w900,
+                                color: gold,
+                                height: 1.0,
+                                // Tabular figures so a score ticking over
+                                // from 999 to 1,000 does not shuffle the
+                                // digits sideways.
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                                shadows: [
+                                  Shadow(
+                                    color: gold.withValues(alpha: 0.35),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (hasSync) ...[
+                          const SizedBox(width: 8),
+                          SyncStatusIndicator(size: isSmallScreen ? 12 : 14),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+
+          SizedBox(width: isSmallScreen ? 10 : 14),
+
+          // The pair. Statistics is where the number came from, replays are
+          // the run that set it — both are "more about this score", so they
+          // read as a set instead of framing it.
           _buildCircularNavButton(
             icon: Icons.analytics,
             color: theme.accentColor,
             isSmallScreen: isSmallScreen,
             onTap: () => context.push(AppRoutes.statistics),
           ),
-
-          // Center: High Score display. Wrapped in FittedBox so a
-          // marginal vertical squeeze (Row + spacer + score Text can
-          // exceed the parent's 61.2px slot by sub-pixel amounts on
-          // some screens) scales the whole stack down instead of
-          // tripping a RenderFlex overflow.
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.push(AppRoutes.statistics),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.emoji_events,
-                          color: Colors.amber,
-                          size: isSmallScreen ? 18 : 22,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          AppLocalizations.of(context)!.homeHighScore,
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? 10 : 12,
-                            fontWeight: FontWeight.w600,
-                            color: theme.accentColor.withValues(alpha: 0.7),
-                            letterSpacing: context.letterSpacing(1.5),
-                          ),
-                        ),
-                        if (hasSync) ...[
-                          const SizedBox(width: 6),
-                          SyncStatusIndicator(size: isSmallScreen ? 14 : 16),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      context.formatInt(highScore),
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 28 : 34,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.amber,
-                        height: 1.0,
-                        shadows: [
-                          Shadow(
-                            color: Colors.amber.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Replays button (right). Replaces the leaderboard entry
-          // point — online leaderboards are disabled in the offline-first
-          // build; the local replay history is the closest analog.
+          SizedBox(width: isSmallScreen ? 8 : 10),
+          // Replays replaced the leaderboard entry point — online boards are
+          // off in the offline-first build, and local replay history is the
+          // closest analog.
           _buildCircularNavButton(
             icon: Icons.video_library,
-            color: Colors.amber,
+            color: gold,
             isSmallScreen: isSmallScreen,
             onTap: () => context.push(AppRoutes.replays),
           ),
@@ -1527,31 +1588,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
+  /// "HIGH SCORE" over two lines.
+  ///
+  /// Split on whitespace, so the locales that write it as two words stack and
+  /// the ones that write it as one — Hindi, Arabic — stay on a single line
+  /// rather than being broken at an arbitrary point.
+  List<String> _highScoreLabelLines(AppLocalizations l10n) {
+    final label = l10n.homeHighScore.trim();
+    final words = label.split(RegExp(r'\s+'));
+    if (words.length < 2) return [label];
+    if (words.length == 2) return words;
+    return [words.first, words.skip(1).join(' ')];
+  }
+
   Widget _buildCircularNavButton({
     required IconData icon,
     required Color color,
     required bool isSmallScreen,
     required VoidCallback onTap,
   }) {
-    final size = isSmallScreen ? 44.0 : 52.0;
+    // Painted small, pressed large. These two set the plaque's height, and
+    // the plaque was taller than the score inside it needed — but a 38dp
+    // circle is a 38dp target, so the drawn size and the pressable size part
+    // company here: the circle shrank, the hit box did not.
+    final painted = isSmallScreen ? 38.0 : 44.0;
+    final target = isSmallScreen ? 44.0 : 48.0;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          shape: BoxShape.circle,
-          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      behavior: HitTestBehavior.opaque,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: target, minHeight: target),
+        child: Center(
+          child: Container(
+            width: painted,
+            height: painted,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: color.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ],
+            child: Icon(icon, color: color, size: isSmallScreen ? 18 : 21),
+          ),
         ),
-        child: Icon(icon, color: color, size: isSmallScreen ? 20 : 24),
       ),
     );
   }
